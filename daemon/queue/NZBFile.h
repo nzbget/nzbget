@@ -31,13 +31,13 @@
 
 #include "DownloadInfo.h"
 
-class NZBFile
+class NzbFile
 {
 public:
 	typedef std::list<FileInfo*>	TempFileList;
 
 private:
-	NZBInfo*			m_nzbInfo;
+	NzbInfo*			m_nzbInfo;
 	char*				m_fileName;
 	char*				m_password;
 
@@ -50,8 +50,8 @@ private:
 	bool				HasDuplicateFilenames();
 	void				ReadPassword();
 #ifdef WIN32
-    bool 				ParseNZB(IUnknown* nzb);
-	static void			EncodeURL(const char* filename, char* url, int bufLen);
+    bool 				ParseNzb(IUnknown* nzb);
+	static void			EncodeUrl(const char* filename, char* url, int bufLen);
 #else
 	FileInfo*			m_fileInfo;
 	ArticleInfo*		m_article;
@@ -60,24 +60,24 @@ private:
 	bool				m_ignoreNextError;
 	bool				m_hasPassword;
 
-	static void			SAX_StartElement(NZBFile* file, const char *name, const char **atts);
-	static void			SAX_EndElement(NZBFile* file, const char *name);
-	static void			SAX_characters(NZBFile* file, const char * xmlstr, int len);
-	static void*		SAX_getEntity(NZBFile* file, const char * name);
-	static void			SAX_error(NZBFile* file, const char *msg, ...);
+	static void			SAX_StartElement(NzbFile* file, const char *name, const char **atts);
+	static void			SAX_EndElement(NzbFile* file, const char *name);
+	static void			SAX_characters(NzbFile* file, const char * xmlstr, int len);
+	static void*		SAX_getEntity(NzbFile* file, const char * name);
+	static void			SAX_error(NzbFile* file, const char *msg, ...);
 	void				Parse_StartElement(const char *name, const char **atts);
 	void				Parse_EndElement(const char *name);
 	void				Parse_Content(const char *buf, int len);
 #endif
 
 public:
-						NZBFile(const char* fileName, const char* category);
-						~NZBFile();
+						NzbFile(const char* fileName, const char* category);
+						~NzbFile();
 	bool				Parse();
 	const char* 		GetFileName() const { return m_fileName; }
-	NZBInfo*			GetNZBInfo() { return m_nzbInfo; }
+	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
 	const char*			GetPassword() { return m_password; }
-	void				DetachNZBInfo() { m_nzbInfo = NULL; }
+	void				DetachNzbInfo() { m_nzbInfo = NULL; }
 
 	void				LogDebugInfo();
 };

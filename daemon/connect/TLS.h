@@ -27,7 +27,7 @@
 
 #ifndef DISABLE_TLS
 
-class TLSSocket
+class TlsSocket
 {
 private:
 	bool				m_isClient;
@@ -50,8 +50,8 @@ protected:
 	virtual void		PrintError(const char* errMsg);
 
 public:
-						TLSSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher);
-	virtual				~TLSSocket();
+						TlsSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher);
+	virtual				~TlsSocket();
 	static void			Init();
 	static void			Final();
 	bool				Start();

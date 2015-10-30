@@ -55,7 +55,7 @@ private:
 	public:
 							CoordinatorDownloadQueue(): m_massEdit(false), m_wantSave(false) {}
 		virtual bool		EditEntry(int ID, EEditAction action, int offset, const char* text);
-		virtual bool		EditList(IDList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text);
+		virtual bool		EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text);
 		virtual void		Save();
 	};
 
@@ -68,7 +68,7 @@ private:
 	int							m_serverConfigGeneration;
 
 	bool					GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
-	void					StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NNTPConnection* connection);
+	void					StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);
 	void					ArticleCompleted(ArticleDownloader* articleDownloader);
 	void					DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
 	void					StatFileInfo(FileInfo* fileInfo, bool completed);
@@ -89,15 +89,15 @@ public:
 	void					Update(Subject* Caller, void* Aspect);
 
 	// editing queue
-	void					AddNZBFileToQueue(NZBFile* nzbFile, NZBInfo* urlInfo, bool addFirst);
-	void					CheckDupeFileInfos(NZBInfo* nzbInfo);
+	void					AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, bool addFirst);
+	void					CheckDupeFileInfos(NzbInfo* nzbInfo);
 	bool					HasMoreJobs() { return m_hasMoreJobs; }
 	void					DiscardDiskFile(FileInfo* fileInfo);
 	bool					DeleteQueueEntry(DownloadQueue* downloadQueue, FileInfo* fileInfo);
-	bool					SetQueueEntryCategory(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, const char* category);
-	bool					SetQueueEntryName(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, const char* name);
-	bool					MergeQueueEntries(DownloadQueue* downloadQueue, NZBInfo* destNzbInfo, NZBInfo* srcNzbInfo);
-	bool					SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NZBInfo** newNzbInfo);
+	bool					SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* category);
+	bool					SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* name);
+	bool					MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* destNzbInfo, NzbInfo* srcNzbInfo);
+	bool					SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NzbInfo** newNzbInfo);
 };
 
 extern QueueCoordinator* g_pQueueCoordinator;

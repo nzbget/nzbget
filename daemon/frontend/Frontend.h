@@ -67,7 +67,7 @@ protected:
 	DownloadQueue*		LockQueue();
 	void				UnlockQueue();
 	bool				IsRemoteMode();
-	void				InitMessageBase(SNZBRequestBase* messageBase, int request, int size);
+	void				InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
 	void				ServerPauseUnpause(bool pause);
 	bool				RequestPauseUnpause(bool pause);
 	void				ServerSetDownloadRate(int rate);

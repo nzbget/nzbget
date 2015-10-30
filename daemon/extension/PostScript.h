@@ -29,7 +29,7 @@
 #include "Thread.h"
 #include "NzbScript.h"
 
-class PostScriptController : public Thread, public NZBScriptController
+class PostScriptController : public Thread, public NzbScriptController
 {
 private:
 	PostInfo*			m_postInfo;

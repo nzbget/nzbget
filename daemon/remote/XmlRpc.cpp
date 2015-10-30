@@ -143,7 +143,7 @@ public:
 class NzbInfoXmlCommand: public XmlCommand
 {
 protected:
-	void				AppendNZBInfoFields(NZBInfo* nzbInfo);
+	void				AppendNzbInfoFields(NzbInfo* nzbInfo);
 	void				AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue);
 };
 
@@ -156,7 +156,7 @@ public:
 class ListGroupsXmlCommand: public NzbInfoXmlCommand
 {
 private:
-	const char*			DetectStatus(NZBInfo* nzbInfo);
+	const char*			DetectStatus(NzbInfo* nzbInfo);
 public:
 	virtual void		Execute();
 };
@@ -299,7 +299,7 @@ class LoadLogXmlCommand: public LogXmlCommand
 private:
 	MessageList				m_messages;
 	int						m_nzbId;
-	NZBInfo*				m_nzbInfo;
+	NzbInfo*				m_nzbInfo;
 protected:
 	virtual void			Execute();
 	virtual MessageList*	LockMessages();
@@ -311,14 +311,14 @@ class TestServerXmlCommand: public XmlCommand
 private:
 	char*				m_errText;
 
-	class TestConnection : public NNTPConnection
+	class TestConnection : public NntpConnection
 	{
 	protected:
 		TestServerXmlCommand* m_owner;
 		virtual void	PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
 	public:
 						TestConnection(NewsServer* newsServer, TestServerXmlCommand* owner):
-							NNTPConnection(newsServer), m_owner(owner) {}
+							NntpConnection(newsServer), m_owner(owner) {}
 	};
 
 	void				PrintError(const char* errMsg);
@@ -347,7 +347,7 @@ XmlRpcProcessor::~XmlRpcProcessor()
 void XmlRpcProcessor::SetUrl(const char* url)
 {
 	m_url = strdup(url);
-	WebUtil::URLDecode(m_url);
+	WebUtil::UrlDecode(m_url);
 }
 
 
@@ -1358,11 +1358,11 @@ void StatusXmlCommand::Execute()
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	int postJobCount = 0;
 	int urlCount = 0;
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
-		urlCount += nzbInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
+		urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
 	}
 	long long remainingSize, forcedSize;
 	downloadQueue->CalcRemainingSize(&remainingSize, &forcedSize);
@@ -1423,7 +1423,7 @@ void StatusXmlCommand::Execute()
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_NEWSSERVER_ITEM : XML_NEWSSERVER_ITEM,
-			server->GetID(), BoolToStr(server->GetActive()));
+			server->GetId(), BoolToStr(server->GetActive()));
 	}
 
 	AppendResponse(IsJson() ? JSON_STATUS_END : XML_STATUS_END);
@@ -1458,7 +1458,7 @@ void LogXmlCommand::Execute()
 	if (m_idFrom > 0 && !messages->empty())
 	{
 		m_nrEntries = messages->size();
-		start = m_idFrom - messages->front()->GetID();
+		start = m_idFrom - messages->front()->GetId();
 		if (start < 0)
 		{
 			start = 0;
@@ -1493,7 +1493,7 @@ void LogXmlCommand::Execute()
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-			message->GetID(), messageType[message->GetKind()], message->GetTime(), xmltext);
+			message->GetId(), messageType[message->GetKind()], message->GetTime(), xmltext);
 
 		free(xmltext);
 	}
@@ -1588,44 +1588,44 @@ void ListFilesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 		{
 			FileInfo* fileInfo = *it2;
 
-			if ((nzbId > 0 && nzbId == fileInfo->GetNZBInfo()->GetID()) ||
-				(nzbId == 0 && (idStart == 0 || (idStart <= fileInfo->GetID() && fileInfo->GetID() <= idEnd))))
+			if ((nzbId > 0 && nzbId == fileInfo->GetNzbInfo()->GetId()) ||
+				(nzbId == 0 && (idStart == 0 || (idStart <= fileInfo->GetId() && fileInfo->GetId() <= idEnd))))
 			{
 				unsigned long fileSizeHi, fileSizeLo;
 				unsigned long remainingSizeLo, remainingSizeHi;
 				Util::SplitInt64(fileInfo->GetSize(), &fileSizeHi, &fileSizeLo);
 				Util::SplitInt64(fileInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
-				char* xmlNZBFilename = EncodeStr(fileInfo->GetNZBInfo()->GetFilename());
+				char* xmlNzbFilename = EncodeStr(fileInfo->GetNzbInfo()->GetFilename());
 				char* xmlSubject = EncodeStr(fileInfo->GetSubject());
 				char* xmlFilename = EncodeStr(fileInfo->GetFilename());
-				char* xmlDestDir = EncodeStr(fileInfo->GetNZBInfo()->GetDestDir());
-				char* xmlCategory = EncodeStr(fileInfo->GetNZBInfo()->GetCategory());
-				char* xmlNZBNicename = EncodeStr(fileInfo->GetNZBInfo()->GetName());
+				char* xmlDestDir = EncodeStr(fileInfo->GetNzbInfo()->GetDestDir());
+				char* xmlCategory = EncodeStr(fileInfo->GetNzbInfo()->GetCategory());
+				char* xmlNzbNicename = EncodeStr(fileInfo->GetNzbInfo()->GetName());
 
 				int progress = fileInfo->GetFailedSize() == 0 && fileInfo->GetSuccessSize() == 0 ? 0 :
 					(int)(1000 - fileInfo->GetRemainingSize() * 1000 / (fileInfo->GetSize() - fileInfo->GetMissedSize()));
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
-					fileInfo->GetID(), fileSizeLo, fileSizeHi, remainingSizeLo, remainingSizeHi, 
+					fileInfo->GetId(), fileSizeLo, fileSizeHi, remainingSizeLo, remainingSizeHi, 
 					fileInfo->GetTime(), BoolToStr(fileInfo->GetFilenameConfirmed()), 
-					BoolToStr(fileInfo->GetPaused()), fileInfo->GetNZBInfo()->GetID(), xmlNZBNicename,
-					xmlNZBNicename, xmlNZBFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
-					fileInfo->GetNZBInfo()->GetPriority(), fileInfo->GetActiveDownloads(), progress);
+					BoolToStr(fileInfo->GetPaused()), fileInfo->GetNzbInfo()->GetId(), xmlNzbNicename,
+					xmlNzbNicename, xmlNzbFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
+					fileInfo->GetNzbInfo()->GetPriority(), fileInfo->GetActiveDownloads(), progress);
 
-				free(xmlNZBFilename);
+				free(xmlNzbFilename);
 				free(xmlSubject);
 				free(xmlFilename);
 				free(xmlDestDir);
 				free(xmlCategory);
-				free(xmlNZBNicename);
+				free(xmlNzbNicename);
 			}
 		}
 	}
@@ -1634,7 +1634,7 @@ void ListFilesXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* nzbInfo)
+void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 {
 	const char* XML_NZB_ITEM_START =
 		"<member><name>NZBID</name><value><i4>%i</i4></value></member>\n"
@@ -1806,9 +1806,9 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* nzbInfo)
 
 	int messageCount = nzbInfo->GetMessageCount() > 0 ? nzbInfo->GetMessageCount() : nzbInfo->GetCachedMessageCount();
 
-	char* xmlURL = EncodeStr(nzbInfo->GetURL());
-	char* xmlNZBFilename = EncodeStr(nzbInfo->GetFilename());
-	char* xmlNZBNicename = EncodeStr(nzbInfo->GetName());
+	char* xmlUrl = EncodeStr(nzbInfo->GetUrl());
+	char* xmlNzbFilename = EncodeStr(nzbInfo->GetFilename());
+	char* xmlNzbNicename = EncodeStr(nzbInfo->GetName());
 	char* xmlDestDir = EncodeStr(nzbInfo->GetDestDir());
 	char* xmlFinalDir = EncodeStr(nzbInfo->GetFinalDir());
 	char* xmlCategory = EncodeStr(nzbInfo->GetCategory());
@@ -1816,8 +1816,8 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* nzbInfo)
 	const char* exParStatus = nzbInfo->GetExtraParBlocks() > 0 ? "RECIPIENT" : nzbInfo->GetExtraParBlocks() < 0 ? "DONOR" : "NONE";
 	
 	AppendFmtResponse(IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
-			 nzbInfo->GetID(), xmlNZBNicename, xmlNZBNicename, kindName[nzbInfo->GetKind()],
-			 xmlURL, xmlNZBFilename, xmlDestDir, xmlFinalDir, xmlCategory,
+			 nzbInfo->GetId(), xmlNzbNicename, xmlNzbNicename, kindName[nzbInfo->GetKind()],
+			 xmlUrl, xmlNzbFilename, xmlDestDir, xmlFinalDir, xmlCategory,
 			 parStatusName[nzbInfo->GetParStatus()], exParStatus,
 			 unpackStatusName[nzbInfo->GetUnpackStatus()], moveStatusName[nzbInfo->GetMoveStatus()],
 			 scriptStatusName[nzbInfo->GetScriptStatuses()->CalcTotalStatus()],
@@ -1828,14 +1828,14 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* nzbInfo)
 			 nzbInfo->GetTotalArticles(), nzbInfo->GetCurrentSuccessArticles(), nzbInfo->GetCurrentFailedArticles(),
 			 nzbInfo->CalcHealth(), nzbInfo->CalcCriticalHealth(false),
 			 xmlDupeKey, nzbInfo->GetDupeScore(), dupeModeName[nzbInfo->GetDupeMode()],
-			 BoolToStr(nzbInfo->GetDeleteStatus() != NZBInfo::dsNone),
+			 BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
 			 downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(), 
 			 nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ? time(NULL) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
 			 nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
-	free(xmlURL);
-	free(xmlNZBNicename);
-	free(xmlNZBFilename);
+	free(xmlUrl);
+	free(xmlNzbNicename);
+	free(xmlNzbFilename);
 	free(xmlCategory);
 	free(xmlDestDir);
 	free(xmlFinalDir);
@@ -1843,9 +1843,9 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* nzbInfo)
 		
 	// Post-processing parameters
 	int paramIndex = 0;
-	for (NZBParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+	for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 	{
-		NZBParameter* parameter = *it;
+		NzbParameter* parameter = *it;
 
 		char* xmlName = EncodeStr(parameter->GetName());
 		char* xmlValue = EncodeStr(parameter->GetValue());
@@ -1885,7 +1885,7 @@ void NzbInfoXmlCommand::AppendNZBInfoFields(NZBInfo* nzbInfo)
 		
 		AppendCondResponse(",\n", IsJson() && statIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
-				 serverStat->GetServerID(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
+				 serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
 	}
 	
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_END : XML_NZB_ITEM_END);
@@ -1969,7 +1969,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 	if (logEntries > 0 && postInfo)
 	{
-		MessageList* messages = postInfo->GetNZBInfo()->LockCachedMessages();
+		MessageList* messages = postInfo->GetNzbInfo()->LockCachedMessages();
 		if (!messages->empty())
 		{
 			if (logEntries > (int)messages->size())
@@ -1987,12 +1987,12 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-					message->GetID(), messageType[message->GetKind()], message->GetTime(), xmltext);
+					message->GetId(), messageType[message->GetKind()], message->GetTime(), xmltext);
 
 				free(xmltext);
 			}
 		}
-		postInfo->GetNZBInfo()->UnlockCachedMessages();
+		postInfo->GetNzbInfo()->UnlockCachedMessages();
 	}
 
 	AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
@@ -2050,9 +2050,9 @@ void ListGroupsXmlCommand::Execute()
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 
 		unsigned long remainingSizeLo, remainingSizeHi, remainingSizeMB;
 		unsigned long pausedSizeLo, pausedSizeHi, pausedSizeMB;
@@ -2064,12 +2064,12 @@ void ListGroupsXmlCommand::Execute()
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LIST_ITEM_START : XML_LIST_ITEM_START,
-			nzbInfo->GetID(), nzbInfo->GetID(), remainingSizeLo, remainingSizeHi, remainingSizeMB,
+			nzbInfo->GetId(), nzbInfo->GetId(), remainingSizeLo, remainingSizeHi, remainingSizeMB,
 			pausedSizeLo, pausedSizeHi, pausedSizeMB, (int)nzbInfo->GetFileList()->size(),
 			nzbInfo->GetRemainingParCount(), nzbInfo->GetPriority(), nzbInfo->GetPriority(),
 			nzbInfo->GetActiveDownloads(), status);
 
-		AppendNZBInfoFields(nzbInfo);
+		AppendNzbInfoFields(nzbInfo);
 		AppendCondResponse(",\n", IsJson());
 		AppendPostInfoFields(nzbInfo->GetPostInfo(), nrEntries, false);
 
@@ -2086,7 +2086,7 @@ void ListGroupsXmlCommand::Execute()
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* nzbInfo)
+const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 {
     const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
 
@@ -2096,7 +2096,7 @@ const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* nzbInfo)
 	{
 		bool queueScriptActive = false;
 		if (nzbInfo->GetPostInfo()->GetStage() == PostInfo::ptQueued &&
-			g_pQueueScriptCoordinator->HasJob(nzbInfo->GetID(), &queueScriptActive))
+			g_pQueueScriptCoordinator->HasJob(nzbInfo->GetId(), &queueScriptActive))
 		{
 			status = queueScriptActive ? "QS_EXECUTING" : "QS_QUEUED";
 		}
@@ -2107,7 +2107,7 @@ const char* ListGroupsXmlCommand::DetectStatus(NZBInfo* nzbInfo)
 	}
 	else if (nzbInfo->GetActiveDownloads() > 0)
 	{
-		status = nzbInfo->GetKind() == NZBInfo::nkUrl ? "FETCHING" : "DOWNLOADING";
+		status = nzbInfo->GetKind() == NzbInfo::nkUrl ? "FETCHING" : "DOWNLOADING";
 	}
 	else if ((nzbInfo->GetPausedSize() > 0) && (nzbInfo->GetRemainingSize() == nzbInfo->GetPausedSize()))
 	{
@@ -2225,15 +2225,15 @@ void EditQueueXmlCommand::Execute()
 
 	DecodeStr(editText);
 
-	IDList cIDList;
+	IdList cIdList;
 	int id = 0;
 	while (NextParamAsInt(&id))
 	{
-		cIDList.push_back(id);
+		cIdList.push_back(id);
 	}
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	bool ok = downloadQueue->EditList(&cIDList, NULL, DownloadQueue::mmID, (DownloadQueue::EEditAction)action, offset, editText);
+	bool ok = downloadQueue->EditList(&cIdList, NULL, DownloadQueue::mmId, (DownloadQueue::EEditAction)action, offset, editText);
 	DownloadQueue::Unlock();
 
 	BuildBoolResponse(ok);
@@ -2331,7 +2331,7 @@ void DownloadXmlCommand::Execute()
 		return;
 	}
 
-	NZBParameterList Params;
+	NzbParameterList Params;
 	if (v13)
 	{
 		char* paramName = NULL;
@@ -2350,9 +2350,9 @@ void DownloadXmlCommand::Execute()
 	if (!strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7))
 	{
 		// add url
-		NZBInfo* nzbInfo = new NZBInfo();
-		nzbInfo->SetKind(NZBInfo::nkUrl);
-		nzbInfo->SetURL(nzbContent);
+		NzbInfo* nzbInfo = new NzbInfo();
+		nzbInfo->SetKind(NzbInfo::nkUrl);
+		nzbInfo->SetUrl(nzbContent);
 		nzbInfo->SetFilename(nzbFilename);
 		nzbInfo->SetCategory(category);
 		nzbInfo->SetPriority(priority);
@@ -2361,7 +2361,7 @@ void DownloadXmlCommand::Execute()
 		nzbInfo->SetDupeScore(dupeScore);
 		nzbInfo->SetDupeMode(dupeMode);
 		nzbInfo->GetParameters()->CopyFrom(&Params);
-		int nzbId = nzbInfo->GetID();
+		int nzbId = nzbInfo->GetId();
 
 		char nicename[1024];
 		nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename, nicename, sizeof(nicename));
@@ -2436,28 +2436,28 @@ void PostQueueXmlCommand::Execute()
 
     const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
-	NZBList* nzbList = DownloadQueue::Lock()->GetQueue();
+	NzbList* nzbList = DownloadQueue::Lock()->GetQueue();
 
 	int index = 0;
 
-	for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
 		{
 			continue;
 		}
 
-		char* xmlInfoName = EncodeStr(postInfo->GetNZBInfo()->GetName());
+		char* xmlInfoName = EncodeStr(postInfo->GetNzbInfo()->GetName());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			nzbInfo->GetID(), xmlInfoName, postStageName[postInfo->GetStage()], postInfo->GetFileProgress());
+			nzbInfo->GetId(), xmlInfoName, postStageName[postInfo->GetStage()], postInfo->GetFileProgress());
 
 		free(xmlInfoName);
 
-		AppendNZBInfoFields(postInfo->GetNZBInfo());
+		AppendNzbInfoFields(postInfo->GetNzbInfo());
 		AppendCondResponse(",\n", IsJson());
 		AppendPostInfoFields(postInfo, nrEntries, true);
 
@@ -2540,7 +2540,7 @@ void ScanXmlCommand::Execute()
 	// optional parameter "SyncMode"
 	NextParamAsBool(&syncMode);
 
-	g_pScanner->ScanNZBDir(syncMode);
+	g_pScanner->ScanNzbDir(syncMode);
 	BuildBoolResponse(true);
 }
 
@@ -2625,7 +2625,7 @@ void HistoryXmlCommand::Execute()
 			continue;
 		}
 
-		NZBInfo* nzbInfo = NULL;
+		NzbInfo* nzbInfo = NULL;
 		char nicename[1024];
 		historyInfo->GetName(nicename, sizeof(nicename));
 
@@ -2637,10 +2637,10 @@ void HistoryXmlCommand::Execute()
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb ||
 			historyInfo->GetKind() == HistoryInfo::hkUrl)
 		{
-			nzbInfo = historyInfo->GetNZBInfo();
+			nzbInfo = historyInfo->GetNzbInfo();
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				historyInfo->GetID(), xmlNicename, nzbInfo->GetParkedFileCount(),
+				historyInfo->GetId(), xmlNicename, nzbInfo->GetParkedFileCount(),
 				historyInfo->GetTime(), status);
 		}
 		else if (historyInfo->GetKind() == HistoryInfo::hkDup)
@@ -2654,7 +2654,7 @@ void HistoryXmlCommand::Execute()
 			char* xmlDupeKey = EncodeStr(dupInfo->GetDupeKey());
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
-				historyInfo->GetID(), historyInfo->GetID(), "DUP", xmlNicename, historyInfo->GetTime(),
+				historyInfo->GetId(), historyInfo->GetId(), "DUP", xmlNicename, historyInfo->GetTime(),
 				fileSizeLo, fileSizeHi, fileSizeMB, xmlDupeKey, dupInfo->GetDupeScore(),
 				dupeModeName[dupInfo->GetDupeMode()], dupStatusName[dupInfo->GetStatus()],
 				status);
@@ -2666,7 +2666,7 @@ void HistoryXmlCommand::Execute()
 
 		if (nzbInfo)
 		{
-			AppendNZBInfoFields(nzbInfo);
+			AppendNzbInfoFields(nzbInfo);
 		}
 		
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
@@ -2688,7 +2688,7 @@ const char* HistoryXmlCommand::DetectStatus(HistoryInfo* historyInfo)
 
 	if (historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		NZBInfo* nzbInfo = historyInfo->GetNZBInfo();
+		NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
 		status = nzbInfo->MakeTextStatus(false);
 	}
 	else if (historyInfo->GetKind() == HistoryInfo::hkDup)
@@ -2731,24 +2731,24 @@ void UrlQueueXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 
-		if (nzbInfo->GetKind() == NZBInfo::nkUrl)
+		if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 		{
 			char* xmlNicename = EncodeStr(nzbInfo->GetName());
-			char* xmlNZBFilename = EncodeStr(nzbInfo->GetFilename());
-			char* xmlURL = EncodeStr(nzbInfo->GetURL());
+			char* xmlNzbFilename = EncodeStr(nzbInfo->GetFilename());
+			char* xmlUrl = EncodeStr(nzbInfo->GetUrl());
 			char* xmlCategory = EncodeStr(nzbInfo->GetCategory());
 
 			AppendCondResponse(",\n", IsJson() && index++ > 0);
 			AppendFmtResponse(IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
-				nzbInfo->GetID(), xmlNZBFilename, xmlURL, xmlNicename, xmlCategory, nzbInfo->GetPriority());
+				nzbInfo->GetId(), xmlNzbFilename, xmlUrl, xmlNicename, xmlCategory, nzbInfo->GetPriority());
 
 			free(xmlNicename);
-			free(xmlNZBFilename);
-			free(xmlURL);
+			free(xmlNzbFilename);
+			free(xmlUrl);
 			free(xmlCategory);
 		}
 	}
@@ -3163,7 +3163,7 @@ void EditServerXmlCommand::Execute()
 		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 		{
 			NewsServer* server = *it;
-			if (server->GetID() == id)
+			if (server->GetId() == id)
 			{
 				server->SetActive(active);
 				ok = true;
@@ -3215,7 +3215,7 @@ void ReadUrlXmlCommand::Execute()
 	}
 
 	WebDownloader* downloader = new WebDownloader();
-	downloader->SetURL(url);
+	downloader->SetUrl(url);
 	downloader->SetForce(true);
 	downloader->SetRetry(false);
 	downloader->SetOutputFilename(tempFileName);
@@ -3504,7 +3504,7 @@ void LoadLogXmlCommand::Execute()
 MessageList* LoadLogXmlCommand::LockMessages()
 {
 	// TODO: optimize for m_iIDFrom and m_iNrEntries
-	g_pDiskState->LoadNZBMessages(m_nzbId, &m_messages);
+	g_pDiskState->LoadNzbMessages(m_nzbId, &m_messages);
 
 	if (m_messages.empty())
 	{

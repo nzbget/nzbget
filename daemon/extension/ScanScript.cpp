@@ -49,7 +49,7 @@
 
 void ScanScriptController::ExecuteScripts(const char* nzbFilename,
 	const char* url, const char* directory, char** nzbName, char** category,
-	int* priority, NZBParameterList* parameters, bool* addTop, bool* addPaused,
+	int* priority, NzbParameterList* parameters, bool* addTop, bool* addPaused,
 	char** dupeKey, int* dupeScore, EDupeMode* dupeMode)
 {
 	ScanScriptController* scriptController = new ScanScriptController();

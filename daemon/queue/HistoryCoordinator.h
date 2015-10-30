@@ -41,7 +41,7 @@ private:
 	bool				HistorySetName(HistoryInfo* historyInfo, const char* text);
 	void				HistoryTransformToDup(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex);
 	void				SaveQueue(DownloadQueue* downloadQueue);
-	void				PrepareEdit(DownloadQueue* downloadQueue, IDList* idList, DownloadQueue::EEditAction action);
+	void				PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action);
 
 protected:
 	virtual int			ServiceInterval() { return 600000; }
@@ -50,9 +50,9 @@ protected:
 public:
 						HistoryCoordinator();
 	virtual				~HistoryCoordinator();
-	void				AddToHistory(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
-	bool				EditList(DownloadQueue* downloadQueue, IDList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
-	void				DeleteDiskFiles(NZBInfo* nzbInfo);
+	void				AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	bool				EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
+	void				DeleteDiskFiles(NzbInfo* nzbInfo);
 	void				HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex);
 	void				Redownload(DownloadQueue* downloadQueue, HistoryInfo* historyInfo);
 };

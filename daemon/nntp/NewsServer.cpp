@@ -40,7 +40,7 @@
 #include "NewsServer.h"
 
 NewsServer::NewsServer(int id, bool active, const char* name, const char* host, int port,
-	const char* user, const char* pass, bool joinGroup, bool tLS,
+	const char* user, const char* pass, bool joinGroup, bool tls,
 	const char* cipher, int maxConnections, int retention, int level, int group)
 {
 	m_id = id;
@@ -52,7 +52,7 @@ NewsServer::NewsServer(int id, bool active, const char* name, const char* host, 
 	m_group = group;
 	m_maxConnections = maxConnections;
 	m_joinGroup = joinGroup;
-	m_tLS = tLS;
+	m_tls = tls;
 	m_host = strdup(host ? host : "");
 	m_user = strdup(user ? user : "");
 	m_password = strdup(pass ? pass : "");

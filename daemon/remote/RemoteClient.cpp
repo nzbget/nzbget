@@ -98,20 +98,20 @@ void RemoteClient::perror(const char * msg)
 
 bool RemoteClient::InitConnection()
 {
-	const char* controlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
+	const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
 
 	// Create a connection to the server
-	m_connection = new Connection(controlIP, g_pOptions->GetControlPort(), false);
+	m_connection = new Connection(controlIp, g_pOptions->GetControlPort(), false);
 
 	bool OK = m_connection->Connect();
 	if (!OK)
 	{
-		printf("Unable to send request to nzbget-server at %s (port %i)\n", controlIP, g_pOptions->GetControlPort());
+		printf("Unable to send request to nzbget-server at %s (port %i)\n", controlIp, g_pOptions->GetControlPort());
 	}
 	return OK;
 }
 
-void RemoteClient::InitMessageBase(SNZBRequestBase* messageBase, int request, int size)
+void RemoteClient::InitMessageBase(SNzbRequestBase* messageBase, int request, int size)
 {
 	messageBase->m_signature	= htonl(NZBMESSAGE_SIGNATURE);
 	messageBase->m_type = htonl(request);
@@ -129,7 +129,7 @@ bool RemoteClient::ReceiveBoolResponse()
 	printf("Request sent\n");
 
 	// all bool-responses have the same format of structure, we use SNZBDownloadResponse here
-	SNZBDownloadResponse BoolResponse;
+	SNzbDownloadResponse BoolResponse;
 	memset(&BoolResponse, 0, sizeof(BoolResponse));
 
 	bool read = m_connection->Recv((char*)&BoolResponse, sizeof(BoolResponse));
@@ -184,7 +184,7 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 	bool OK = InitConnection();
 	if (OK)
 	{
-		SNZBDownloadRequest DownloadRequest;
+		SNzbDownloadRequest DownloadRequest;
 		InitMessageBase(&DownloadRequest.m_messageBase, remoteRequestDownload, sizeof(DownloadRequest));
 		DownloadRequest.m_addFirst = htonl(addFirst);
 		DownloadRequest.m_addPaused = htonl(addPaused);
@@ -237,7 +237,7 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 	return OK;
 }
 
-void RemoteClient::BuildFileList(SNZBListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue)
+void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue)
 {
 	if (ntohl(listResponse->m_trailingDataLength) > 0)
 	{
@@ -246,20 +246,20 @@ void RemoteClient::BuildFileList(SNZBListResponse* listResponse, const char* tra
 		// read nzb entries
 		for (unsigned int i = 0; i < ntohl(listResponse->m_nrTrailingNzbEntries); i++)
 		{
-			SNZBListResponseNZBEntry* listAnswer = (SNZBListResponseNZBEntry*) bufPtr;
+			SNzbListResponseNzbEntry* listAnswer = (SNzbListResponseNzbEntry*) bufPtr;
 
-			const char* fileName = bufPtr + sizeof(SNZBListResponseNZBEntry);
-			const char* name = bufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(listAnswer->m_filenameLen);
-			const char* destDir = bufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(listAnswer->m_filenameLen) + 
+			const char* fileName = bufPtr + sizeof(SNzbListResponseNzbEntry);
+			const char* name = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen);
+			const char* destDir = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) + 
 				ntohl(listAnswer->m_nameLen);
-			const char* category = bufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(listAnswer->m_filenameLen) + 
+			const char* category = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) + 
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen);
-			const char* m_queuedFilename = bufPtr + sizeof(SNZBListResponseNZBEntry) + ntohl(listAnswer->m_filenameLen) + 
+			const char* m_queuedFilename = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) + 
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) + ntohl(listAnswer->m_categoryLen);
 			
-			MatchedNZBInfo* nzbInfo = new MatchedNZBInfo();
-			nzbInfo->SetID(ntohl(listAnswer->m_id));
-			nzbInfo->SetKind((NZBInfo::EKind)ntohl(listAnswer->m_kind));
+			MatchedNzbInfo* nzbInfo = new MatchedNzbInfo();
+			nzbInfo->SetId(ntohl(listAnswer->m_id));
+			nzbInfo->SetKind((NzbInfo::EKind)ntohl(listAnswer->m_kind));
 			nzbInfo->SetSize(Util::JoinInt64(ntohl(listAnswer->m_sizeHi), ntohl(listAnswer->m_sizeLo)));
 			nzbInfo->SetRemainingSize(Util::JoinInt64(ntohl(listAnswer->m_remainingSizeHi), ntohl(listAnswer->m_remainingSizeLo)));
 			nzbInfo->SetPausedSize(Util::JoinInt64(ntohl(listAnswer->m_pausedSizeHi), ntohl(listAnswer->m_pausedSizeLo)));
@@ -275,7 +275,7 @@ void RemoteClient::BuildFileList(SNZBListResponse* listResponse, const char* tra
 
 			downloadQueue->GetQueue()->push_back(nzbInfo);
 
-			bufPtr += sizeof(SNZBListResponseNZBEntry) + ntohl(listAnswer->m_filenameLen) +
+			bufPtr += sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) + 
 				ntohl(listAnswer->m_categoryLen) + ntohl(listAnswer->m_queuedFilenameLen);
 		}
@@ -283,28 +283,28 @@ void RemoteClient::BuildFileList(SNZBListResponse* listResponse, const char* tra
 		//read ppp entries
 		for (unsigned int i = 0; i < ntohl(listResponse->m_nrTrailingPPPEntries); i++)
 		{
-			SNZBListResponsePPPEntry* listAnswer = (SNZBListResponsePPPEntry*) bufPtr;
+			SNzbListResponsePPPEntry* listAnswer = (SNzbListResponsePPPEntry*) bufPtr;
 
-			const char* name = bufPtr + sizeof(SNZBListResponsePPPEntry);
-			const char* value = bufPtr + sizeof(SNZBListResponsePPPEntry) + ntohl(listAnswer->m_nameLen);
+			const char* name = bufPtr + sizeof(SNzbListResponsePPPEntry);
+			const char* value = bufPtr + sizeof(SNzbListResponsePPPEntry) + ntohl(listAnswer->m_nameLen);
 
-			NZBInfo* nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
+			NzbInfo* nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
 			nzbInfo->GetParameters()->SetParameter(name, value);
 
-			bufPtr += sizeof(SNZBListResponsePPPEntry) + ntohl(listAnswer->m_nameLen) +
+			bufPtr += sizeof(SNzbListResponsePPPEntry) + ntohl(listAnswer->m_nameLen) +
 				ntohl(listAnswer->m_valueLen);
 		}
 
 		//read file entries
 		for (unsigned int i = 0; i < ntohl(listResponse->m_nrTrailingFileEntries); i++)
 		{
-			SNZBListResponseFileEntry* listAnswer = (SNZBListResponseFileEntry*) bufPtr;
+			SNzbListResponseFileEntry* listAnswer = (SNzbListResponseFileEntry*) bufPtr;
 
-			const char* subject = bufPtr + sizeof(SNZBListResponseFileEntry);
-			const char* fileName = bufPtr + sizeof(SNZBListResponseFileEntry) + ntohl(listAnswer->m_subjectLen);
+			const char* subject = bufPtr + sizeof(SNzbListResponseFileEntry);
+			const char* fileName = bufPtr + sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen);
 			
 			MatchedFileInfo* fileInfo = new MatchedFileInfo();
-			fileInfo->SetID(ntohl(listAnswer->m_id));
+			fileInfo->SetId(ntohl(listAnswer->m_id));
 			fileInfo->SetSize(Util::JoinInt64(ntohl(listAnswer->m_fileSizeHi), ntohl(listAnswer->m_fileSizeLo)));
 			fileInfo->SetRemainingSize(Util::JoinInt64(ntohl(listAnswer->m_remainingSizeHi), ntohl(listAnswer->m_remainingSizeLo)));
 			fileInfo->SetPaused(ntohl(listAnswer->m_paused));
@@ -314,11 +314,11 @@ void RemoteClient::BuildFileList(SNZBListResponse* listResponse, const char* tra
 			fileInfo->SetActiveDownloads(ntohl(listAnswer->m_activeDownloads));
 			fileInfo->m_match = ntohl(listAnswer->m_match);
 
-			NZBInfo* nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
-			fileInfo->SetNZBInfo(nzbInfo);
+			NzbInfo* nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
+			fileInfo->SetNzbInfo(nzbInfo);
 			nzbInfo->GetFileList()->push_back(fileInfo);
 
-			bufPtr += sizeof(SNZBListResponseFileEntry) + ntohl(listAnswer->m_subjectLen) + 
+			bufPtr += sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen) + 
 				ntohl(listAnswer->m_filenameLen);
 		}
 	}
@@ -328,7 +328,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 {
 	if (!InitConnection()) return false;
 
-	SNZBListRequest ListRequest;
+	SNzbListRequest ListRequest;
 	InitMessageBase(&ListRequest.m_messageBase, remoteRequestList, sizeof(ListRequest));
 	ListRequest.m_fileList = htonl(true);
 	ListRequest.m_serverState = htonl(true);
@@ -349,7 +349,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 	printf("Request sent\n");
 
 	// Now listen for the returned list
-	SNZBListResponse ListResponse;
+	SNzbListResponse ListResponse;
 	bool read = m_connection->Recv((char*) &ListResponse, sizeof(ListResponse));
 	if (!read || 
 		(int)ntohl(ListResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
@@ -398,9 +398,9 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			int matches = 0;
 			int nrFileEntries = 0;
 
-			for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 			{
-				NZBInfo* nzbInfo = *it;
+				NzbInfo* nzbInfo = *it;
 				for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 				{
 					FileInfo* fileInfo = *it2;
@@ -436,7 +436,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 					if (!pattern || ((MatchedFileInfo*)fileInfo)->m_match)
 					{
 						char size[20];
-						printf("[%i] %s/%s (%s%s%s)%s\n", fileInfo->GetID(), fileInfo->GetNZBInfo()->GetName(),
+						printf("[%i] %s/%s (%s%s%s)%s\n", fileInfo->GetId(), fileInfo->GetNzbInfo()->GetName(),
 							fileInfo->GetFilename(),
 							Util::FormatSize(size, sizeof(size), fileInfo->GetSize()),
 							completed, threads, status);
@@ -494,9 +494,9 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			int matches = 0;
 			int nrFileEntries = 0;
 
-			for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 			{
-				NZBInfo* nzbInfo = *it;
+				NzbInfo* nzbInfo = *it;
 
 				nrFileEntries += nzbInfo->GetFileList()->size();
 
@@ -539,7 +539,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 				char parameters[1024];
 				parameters[0] = '\0';
-				for (NZBParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+				for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 				{
 					if (parameters[0] == '\0')
 					{
@@ -549,7 +549,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 					{
 						strncat(parameters, ", ", sizeof(parameters) - strlen(parameters) - 1);
 					}
-					NZBParameter* nzbParameter = *it;
+					NzbParameter* nzbParameter = *it;
 					strncat(parameters, nzbParameter->GetName(), sizeof(parameters) - strlen(parameters) - 1);
 					strncat(parameters, "=", sizeof(parameters) - strlen(parameters) - 1);
 					strncat(parameters, nzbParameter->GetValue(), sizeof(parameters) - strlen(parameters) - 1);
@@ -560,7 +560,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 				}
 
 				char urlOrFile[100];
-				if (nzbInfo->GetKind() == NZBInfo::nkUrl)
+				if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 				{
 					strncpy(urlOrFile, "URL", sizeof(urlOrFile));
 				}
@@ -571,9 +571,9 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 					urlOrFile[100-1] = '\0';
 				}
 
-				if (!pattern || ((MatchedNZBInfo*)nzbInfo)->m_match)
+				if (!pattern || ((MatchedNzbInfo*)nzbInfo)->m_match)
 				{
-					printf("[%i] %s%s (%s, %s%s%s)%s%s\n", nzbInfo->GetID(), priority, 
+					printf("[%i] %s%s (%s, %s%s%s)%s%s\n", nzbInfo->GetId(), priority, 
 						nzbInfo->GetName(), urlOrFile, remainingStr,
 						pausedStr, threads, category, parameters);
 					matches++;
@@ -712,7 +712,7 @@ bool RemoteClient::RequestServerLog(int lines)
 {
 	if (!InitConnection()) return false;
 
-	SNZBLogRequest LogRequest;
+	SNzbLogRequest LogRequest;
 	InitMessageBase(&LogRequest.m_messageBase, remoteRequestLog, sizeof(LogRequest));
 	LogRequest.m_lines = htonl(lines);
 	LogRequest.m_idFrom = 0;
@@ -726,7 +726,7 @@ bool RemoteClient::RequestServerLog(int lines)
 	printf("Request sent\n");
 
 	// Now listen for the returned log
-	SNZBLogResponse LogResponse;
+	SNzbLogResponse LogResponse;
 	bool read = m_connection->Recv((char*) &LogResponse, sizeof(LogResponse));
 	if (!read || 
 		(int)ntohl(LogResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
@@ -761,9 +761,9 @@ bool RemoteClient::RequestServerLog(int lines)
 		char* bufPtr = (char*)buf;
 		for (unsigned int i = 0; i < ntohl(LogResponse.m_nrTrailingEntries); i++)
 		{
-			SNZBLogResponseEntry* logAnswer = (SNZBLogResponseEntry*) bufPtr;
+			SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufPtr;
 
-			char* text = bufPtr + sizeof(SNZBLogResponseEntry);
+			char* text = bufPtr + sizeof(SNzbLogResponseEntry);
 			switch (ntohl(logAnswer->m_kind))
 			{
 				case Message::mkDebug:
@@ -783,7 +783,7 @@ bool RemoteClient::RequestServerLog(int lines)
 					break;
 			}
 
-			bufPtr += sizeof(SNZBLogResponseEntry) + ntohl(logAnswer->m_textLen);
+			bufPtr += sizeof(SNzbLogResponseEntry) + ntohl(logAnswer->m_textLen);
 		}
 
 		printf("-----------------------------------\n");
@@ -798,7 +798,7 @@ bool RemoteClient::RequestServerPauseUnpause(bool pause, remotePauseUnpauseActio
 {
 	if (!InitConnection()) return false;
 
-	SNZBPauseUnpauseRequest PauseUnpauseRequest;
+	SNzbPauseUnpauseRequest PauseUnpauseRequest;
 	InitMessageBase(&PauseUnpauseRequest.m_messageBase, remoteRequestPauseUnpause, sizeof(PauseUnpauseRequest));
 	PauseUnpauseRequest.m_pause = htonl(pause);
 	PauseUnpauseRequest.m_action = htonl(action);
@@ -820,7 +820,7 @@ bool RemoteClient::RequestServerSetDownloadRate(int rate)
 {
 	if (!InitConnection()) return false;
 
-	SNZBSetDownloadRateRequest SetDownloadRateRequest;
+	SNzbSetDownloadRateRequest SetDownloadRateRequest;
 	InitMessageBase(&SetDownloadRateRequest.m_messageBase, remoteRequestSetDownloadRate, sizeof(SetDownloadRateRequest));
 	SetDownloadRateRequest.m_downloadRate = htonl(rate);
 
@@ -841,7 +841,7 @@ bool RemoteClient::RequestServerDumpDebug()
 {
 	if (!InitConnection()) return false;
 
-	SNZBDumpDebugRequest DumpDebugInfo;
+	SNzbDumpDebugRequest DumpDebugInfo;
 	InitMessageBase(&DumpDebugInfo.m_messageBase, remoteRequestDumpDebug, sizeof(DumpDebugInfo));
 
 	if (!m_connection->Send((char*)(&DumpDebugInfo), sizeof(DumpDebugInfo)))
@@ -890,7 +890,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 
 	int length = textLen + idLength + nameLength;
 
-	SNZBEditQueueRequest EditQueueRequest;
+	SNzbEditQueueRequest EditQueueRequest;
 	InitMessageBase(&EditQueueRequest.m_messageBase, remoteRequestEditQueue, sizeof(EditQueueRequest));
 	EditQueueRequest.m_action = htonl(action);
 	EditQueueRequest.m_matchMode = htonl(matchMode);
@@ -949,7 +949,7 @@ bool RemoteClient::RequestServerShutdown()
 {
 	if (!InitConnection()) return false;
 
-	SNZBShutdownRequest ShutdownRequest;
+	SNzbShutdownRequest ShutdownRequest;
 	InitMessageBase(&ShutdownRequest.m_messageBase, remoteRequestShutdown, sizeof(ShutdownRequest));
 
 	bool OK = m_connection->Send((char*)(&ShutdownRequest), sizeof(ShutdownRequest));
@@ -970,7 +970,7 @@ bool RemoteClient::RequestServerReload()
 {
 	if (!InitConnection()) return false;
 
-	SNZBReloadRequest ReloadRequest;
+	SNzbReloadRequest ReloadRequest;
 	InitMessageBase(&ReloadRequest.m_messageBase, remoteRequestReload, sizeof(ReloadRequest));
 
 	bool OK = m_connection->Send((char*)(&ReloadRequest), sizeof(ReloadRequest));
@@ -991,7 +991,7 @@ bool RemoteClient::RequestServerVersion()
 {
 	if (!InitConnection()) return false;
 
-	SNZBVersionRequest VersionRequest;
+	SNzbVersionRequest VersionRequest;
 	InitMessageBase(&VersionRequest.m_messageBase, remoteRequestVersion, sizeof(VersionRequest));
 
 	bool OK = m_connection->Send((char*)(&VersionRequest), sizeof(VersionRequest));
@@ -1012,7 +1012,7 @@ bool RemoteClient::RequestPostQueue()
 {
 	if (!InitConnection()) return false;
 
-	SNZBPostQueueRequest PostQueueRequest;
+	SNzbPostQueueRequest PostQueueRequest;
 	InitMessageBase(&PostQueueRequest.m_messageBase, remoteRequestPostQueue, sizeof(PostQueueRequest));
 
 	if (!m_connection->Send((char*)(&PostQueueRequest), sizeof(PostQueueRequest)))
@@ -1024,7 +1024,7 @@ bool RemoteClient::RequestPostQueue()
 	printf("Request sent\n");
 
 	// Now listen for the returned list
-	SNZBPostQueueResponse PostQueueResponse;
+	SNzbPostQueueResponse PostQueueResponse;
 	bool read = m_connection->Recv((char*) &PostQueueResponse, sizeof(PostQueueResponse));
 	if (!read || 
 		(int)ntohl(PostQueueResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
@@ -1059,7 +1059,7 @@ bool RemoteClient::RequestPostQueue()
 		char* bufPtr = (char*)buf;
 		for (unsigned int i = 0; i < ntohl(PostQueueResponse.m_nrTrailingEntries); i++)
 		{
-			SNZBPostQueueResponseEntry* postQueueAnswer = (SNZBPostQueueResponseEntry*) bufPtr;
+			SNzbPostQueueResponseEntry* postQueueAnswer = (SNzbPostQueueResponseEntry*) bufPtr;
 
 			int stageProgress = ntohl(postQueueAnswer->m_stageProgress);
 
@@ -1071,11 +1071,11 @@ bool RemoteClient::RequestPostQueue()
 			}
 
 			const char* postStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Unpacking", ", Executing postprocess-script", "" };
-			char* infoName = bufPtr + sizeof(SNZBPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen);
+			char* infoName = bufPtr + sizeof(SNzbPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen);
 			
 			printf("[%i] %s%s%s\n", ntohl(postQueueAnswer->m_id), infoName, postStageName[ntohl(postQueueAnswer->m_stage)], completed);
 
-			bufPtr += sizeof(SNZBPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen) + 
+			bufPtr += sizeof(SNzbPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen) + 
 				ntohl(postQueueAnswer->m_infoNameLen) + ntohl(postQueueAnswer->m_destDirLen) +
 				ntohl(postQueueAnswer->m_progressLabelLen);
 		}
@@ -1092,7 +1092,7 @@ bool RemoteClient::RequestWriteLog(int kind, const char* text)
 {
 	if (!InitConnection()) return false;
 
-	SNZBWriteLogRequest WriteLogRequest;
+	SNzbWriteLogRequest WriteLogRequest;
 	InitMessageBase(&WriteLogRequest.m_messageBase, remoteRequestWriteLog, sizeof(WriteLogRequest));
 	WriteLogRequest.m_kind = htonl(kind);
 	int length = strlen(text) + 1;
@@ -1114,7 +1114,7 @@ bool RemoteClient::RequestScan(bool syncMode)
 {
 	if (!InitConnection()) return false;
 
-	SNZBScanRequest ScanRequest;
+	SNzbScanRequest ScanRequest;
 	InitMessageBase(&ScanRequest.m_messageBase, remoteRequestScan, sizeof(ScanRequest));
 
 	ScanRequest.m_syncMode = htonl(syncMode);
@@ -1137,7 +1137,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 {
 	if (!InitConnection()) return false;
 
-	SNZBHistoryRequest HistoryRequest;
+	SNzbHistoryRequest HistoryRequest;
 	InitMessageBase(&HistoryRequest.m_messageBase, remoteRequestHistory, sizeof(HistoryRequest));
 	HistoryRequest.m_hidden = htonl(withHidden);
 
@@ -1150,7 +1150,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 	printf("Request sent\n");
 
 	// Now listen for the returned list
-	SNZBHistoryResponse HistoryResponse;
+	SNzbHistoryResponse HistoryResponse;
 	bool read = m_connection->Recv((char*) &HistoryResponse, sizeof(HistoryResponse));
 	if (!read || 
 		(int)ntohl(HistoryResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
@@ -1185,10 +1185,10 @@ bool RemoteClient::RequestHistory(bool withHidden)
 		char* bufPtr = (char*)buf;
 		for (unsigned int i = 0; i < ntohl(HistoryResponse.m_nrTrailingEntries); i++)
 		{
-			SNZBHistoryResponseEntry* listAnswer = (SNZBHistoryResponseEntry*) bufPtr;
+			SNzbHistoryResponseEntry* listAnswer = (SNzbHistoryResponseEntry*) bufPtr;
 
 			HistoryInfo::EKind kind = (HistoryInfo::EKind)ntohl(listAnswer->m_kind);
-			const char* nicename = bufPtr + sizeof(SNZBHistoryResponseEntry);
+			const char* nicename = bufPtr + sizeof(SNzbHistoryResponseEntry);
 
 			if (kind == HistoryInfo::hkNzb || kind == HistoryInfo::hkDup)
 			{
@@ -1220,7 +1220,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 					urlStatusText[ntohl(listAnswer->m_urlStatus)]);
 			}
 
-			bufPtr += sizeof(SNZBHistoryResponseEntry) + ntohl(listAnswer->m_nicenameLen);
+			bufPtr += sizeof(SNzbHistoryResponseEntry) + ntohl(listAnswer->m_nicenameLen);
 		}
 
 		printf("-----------------------------------\n");

@@ -438,9 +438,9 @@ void WinConsole::ShowMenu()
 
 void WinConsole::ShowWebUI()
 {
-	const char* iP = g_pOptions->GetControlIP();
-	if (!strcmp(g_pOptions->GetControlIP(), "localhost") ||
-		!strcmp(g_pOptions->GetControlIP(), "0.0.0.0"))
+	const char* iP = g_pOptions->GetControlIp();
+	if (!strcmp(g_pOptions->GetControlIp(), "localhost") ||
+		!strcmp(g_pOptions->GetControlIp(), "0.0.0.0"))
 	{
 		iP = "127.0.0.1";
 	}
@@ -820,11 +820,11 @@ void WinConsole::UpdateTrayIcon()
 		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
 		int urlCount = 0;
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
-			urlCount += nzbInfo->GetKind() == NZBInfo::nkUrl ? 1 : 0;
+			urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
 		}
 		DownloadQueue::Unlock();
 

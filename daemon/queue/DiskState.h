@@ -38,16 +38,16 @@ private:
 	int					fscanf(FILE* infile, const char* Format, ...);
 	bool				SaveFileInfo(FileInfo* fileInfo, const char* filename);
 	bool				LoadFileInfo(FileInfo* fileInfo, const char* filename, bool fileSummary, bool articles);
-	void				SaveNZBQueue(DownloadQueue* downloadQueue, FILE* outfile);
-	bool				LoadNZBList(NZBList* nzbList, Servers* servers, FILE* infile, int formatVersion);
-	void				SaveNZBInfo(NZBInfo* nzbInfo, FILE* outfile);
-	bool				LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, int formatVersion);
+	void				SaveNzbQueue(DownloadQueue* downloadQueue, FILE* outfile);
+	bool				LoadNzbList(NzbList* nzbList, Servers* servers, FILE* infile, int formatVersion);
+	void				SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile);
+	bool				LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, int formatVersion);
 	void				SavePostQueue(DownloadQueue* downloadQueue, FILE* outfile);
 	void				SaveDupInfo(DupInfo* dupInfo, FILE* outfile);
 	bool				LoadDupInfo(DupInfo* dupInfo, FILE* infile, int formatVersion);
 	void				SaveHistory(DownloadQueue* downloadQueue, FILE* outfile);
-	bool				LoadHistory(DownloadQueue* downloadQueue, NZBList* nzbList, Servers* servers, FILE* infile, int formatVersion);
-	NZBInfo*			FindNZBInfo(DownloadQueue* downloadQueue, int id);
+	bool				LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Servers* servers, FILE* infile, int formatVersion);
+	NzbInfo*			FindNzbInfo(DownloadQueue* downloadQueue, int id);
 	bool				SaveFeedStatus(Feeds* feeds, FILE* outfile);
 	bool				LoadFeedStatus(Feeds* feeds, FILE* infile, int formatVersion);
 	bool				SaveFeedHistory(FeedHistory* feedHistory, FILE* outfile);
@@ -57,23 +57,23 @@ private:
 	bool				SaveVolumeStat(ServerVolumes* serverVolumes, FILE* outfile);
 	bool				LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, FILE* infile, int formatVersion);
 	void				CalcFileStats(DownloadQueue* downloadQueue, int formatVersion);
-	void				CalcNZBFileStats(NZBInfo* nzbInfo, int formatVersion);
+	void				CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion);
 	bool				LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers);
 	void				SaveServerStats(ServerStatList* serverStatList, FILE* outfile);
 	bool				LoadServerStats(ServerStatList* serverStatList, Servers* servers, FILE* infile);
 	bool				FinishWriteTransaction(const char* newFileName, const char* destFileName);
 
 	// backward compatibility functions (conversions from older formats)
-	bool				LoadPostQueue12(DownloadQueue* downloadQueue, NZBList* nzbList, FILE* infile, int formatVersion);
-	bool				LoadPostQueue5(DownloadQueue* downloadQueue, NZBList* nzbList);
+	bool				LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, FILE* infile, int formatVersion);
+	bool				LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList);
 	bool				LoadUrlQueue12(DownloadQueue* downloadQueue, FILE* infile, int formatVersion);
-	bool				LoadUrlInfo12(NZBInfo* nzbInfo, FILE* infile, int formatVersion);
-	int					FindNZBInfoIndex(NZBList* nzbList, NZBInfo* nzbInfo);
+	bool				LoadUrlInfo12(NzbInfo* nzbInfo, FILE* infile, int formatVersion);
+	int					FindNzbInfoIndex(NzbList* nzbList, NzbInfo* nzbInfo);
 	void				ConvertDupeKey(char* buf, int bufsize);
-	bool				LoadFileQueue12(NZBList* nzbList, NZBList* sortList, FILE* infile, int formatVersion);
-	void				CompleteNZBList12(DownloadQueue* downloadQueue, NZBList* nzbList, int formatVersion);
+	bool				LoadFileQueue12(NzbList* nzbList, NzbList* sortList, FILE* infile, int formatVersion);
+	void				CompleteNzbList12(DownloadQueue* downloadQueue, NzbList* nzbList, int formatVersion);
 	void				CompleteDupList12(DownloadQueue* downloadQueue, int formatVersion);
-	void				CalcCriticalHealth(NZBList* nzbList);
+	void				CalcCriticalHealth(NzbList* nzbList);
 
 public:
 	bool				DownloadQueueExists();
@@ -85,7 +85,7 @@ public:
 	bool				LoadArticles(FileInfo* fileInfo);
 	void				DiscardDownloadQueue();
 	void				DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState);
-	void				DiscardFiles(NZBInfo* nzbInfo);
+	void				DiscardFiles(NzbInfo* nzbInfo);
 	bool				SaveFeeds(Feeds* feeds, FeedHistory* feedHistory);
 	bool				LoadFeeds(Feeds* feeds, FeedHistory* feedHistory);
 	bool				SaveStats(Servers* servers, ServerVolumes* serverVolumes);
@@ -93,8 +93,8 @@ public:
 	void				CleanupTempDir(DownloadQueue* downloadQueue);
 	void				WriteCacheFlag();
 	void				DeleteCacheFlag();
-	void				AppendNZBMessage(int nzbId, Message::EKind kind, const char* text);
-	void				LoadNZBMessages(int nzbId, MessageList* messages);
+	void				AppendNzbMessage(int nzbId, Message::EKind kind, const char* text);
+	void				LoadNzbMessages(int nzbId, MessageList* messages);
 };
 
 extern DiskState* g_pDiskState;

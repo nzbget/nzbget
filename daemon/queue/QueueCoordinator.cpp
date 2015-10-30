@@ -60,7 +60,7 @@ bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
 }
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditList(
-	IDList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text)
+	IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text)
 {
 	m_massEdit = true;
 	bool ret = m_owner->m_queueEditor.EditList(&m_owner->m_downloadQueue, idList, nameList, matchMode, action, offset, text);
@@ -160,9 +160,9 @@ void QueueCoordinator::Load()
 		// re-save file states into diskstate to update server ids
 		if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue())
 		{
-			for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 			{
-				NZBInfo* nzbInfo = *it;
+				NzbInfo* nzbInfo = *it;
 
 				if (g_pOptions->GetContinuePartial())
 				{
@@ -179,9 +179,9 @@ void QueueCoordinator::Load()
 				for (CompletedFiles::iterator it2 = nzbInfo->GetCompletedFiles()->begin(); it2 != nzbInfo->GetCompletedFiles()->end(); it2++)
 				{
 					CompletedFile* completedFile = *it2;
-					if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetID() > 0)
+					if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
 					{
-						FileInfo* fileInfo = new FileInfo(completedFile->GetID());
+						FileInfo* fileInfo = new FileInfo(completedFile->GetId());
 						if (g_pDiskState->LoadFileState(fileInfo, g_pServerPool->GetServers(), false))
 						{
 							g_pDiskState->SaveFileState(fileInfo, true);
@@ -212,7 +212,7 @@ void QueueCoordinator::Run()
 	{
 		bool downloadsChecked = false;
 		bool downloadStarted = false;
-		NNTPConnection* connection = g_pServerPool->GetConnection(0, NULL, NULL);
+		NntpConnection* connection = g_pServerPool->GetConnection(0, NULL, NULL);
 		if (connection)
 		{
 			// start download for next article
@@ -333,20 +333,20 @@ void QueueCoordinator::AdjustDownloadsLimit()
 	m_downloadsLimit = downloadsLimit;
 }
 
-void QueueCoordinator::AddNZBFileToQueue(NZBFile* nzbFile, NZBInfo* urlInfo, bool addFirst)
+void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, bool addFirst)
 {
 	debug("Adding NZBFile to queue");
 
-	NZBInfo* nzbInfo = nzbFile->GetNZBInfo();
+	NzbInfo* nzbInfo = nzbFile->GetNzbInfo();
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	DownloadQueue::Aspect foundAspect = { DownloadQueue::eaNzbFound, downloadQueue, nzbInfo, NULL };
 	downloadQueue->Notify(&foundAspect);
 
-	NZBInfo::EDeleteStatus deleteStatus = nzbInfo->GetDeleteStatus();
+	NzbInfo::EDeleteStatus deleteStatus = nzbInfo->GetDeleteStatus();
 
-	if (deleteStatus != NZBInfo::dsNone)
+	if (deleteStatus != NzbInfo::dsNone)
 	{
 		bool allPaused = !nzbInfo->GetFileList()->empty();
 		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
@@ -361,14 +361,14 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* nzbFile, NZBInfo* urlInfo, boo
 		nzbInfo->SetDeletePaused(allPaused);
 	}
 
-	if (deleteStatus != NZBInfo::dsManual)
+	if (deleteStatus != NzbInfo::dsManual)
 	{
 		// NZBInfo will be added either to queue or to history as duplicate
 		// and therefore can be detached from NZBFile.
-		nzbFile->DetachNZBInfo();
+		nzbFile->DetachNzbInfo();
 	}
 
-	if (deleteStatus == NZBInfo::dsNone)
+	if (deleteStatus == NzbInfo::dsNone)
 	{
 		if (g_pOptions->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce)
 		{
@@ -378,9 +378,9 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* nzbFile, NZBInfo* urlInfo, boo
 		if (urlInfo)
 		{
 			// insert at the URL position
-			for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 			{
-				NZBInfo* posNzbInfo = *it;
+				NzbInfo* posNzbInfo = *it;
 				if (posNzbInfo == urlInfo)
 				{
 					downloadQueue->GetQueue()->insert(it, nzbInfo);
@@ -400,17 +400,17 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* nzbFile, NZBInfo* urlInfo, boo
 
 	if (urlInfo)
 	{
-		nzbInfo->SetID(urlInfo->GetID());
+		nzbInfo->SetId(urlInfo->GetId());
 		downloadQueue->GetQueue()->Remove(urlInfo);
 		delete urlInfo;
 	}
 
-	if (deleteStatus == NZBInfo::dsNone)
+	if (deleteStatus == NzbInfo::dsNone)
 	{
 		nzbInfo->PrintMessage(Message::mkInfo, "Collection %s added to queue", nzbInfo->GetName());
 	}
 
-	if (deleteStatus != NZBInfo::dsManual)
+	if (deleteStatus != NzbInfo::dsManual)
 	{
 		DownloadQueue::Aspect addedAspect = { DownloadQueue::eaNzbAdded, downloadQueue, nzbInfo, NULL };
 		downloadQueue->Notify(&addedAspect);
@@ -421,7 +421,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* nzbFile, NZBInfo* urlInfo, boo
 	DownloadQueue::Unlock();
 }
 
-void QueueCoordinator::CheckDupeFileInfos(NZBInfo* nzbInfo)
+void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 {
 	debug("CheckDupeFileInfos");
 
@@ -513,9 +513,9 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 		int num = 0;
 		int fileNum = 0;
 
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 			{
 				FileInfo* fileInfo1 = *it2;
@@ -526,7 +526,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 					(!g_pOptions->GetPauseDownload() || nzbInfo->GetForcePriority()) &&
 					(!fileInfo ||
 					 (fileInfo1->GetExtraPriority() == fileInfo->GetExtraPriority() &&
-					  fileInfo1->GetNZBInfo()->GetPriority() > fileInfo->GetNZBInfo()->GetPriority()) ||
+					  fileInfo1->GetNzbInfo()->GetPriority() > fileInfo->GetNzbInfo()->GetPriority()) ||
 					 (fileInfo1->GetExtraPriority() > fileInfo->GetExtraPriority())))
 				{
 					fileInfo = fileInfo1;
@@ -564,9 +564,9 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			if (!checkedFiles)
 			{
 				int totalFileCount = 0;
-				for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+				for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 				{
-					NZBInfo* nzbInfo = *it;
+					NzbInfo* nzbInfo = *it;
 					totalFileCount += nzbInfo->GetFileList()->size();
 				}
 
@@ -589,7 +589,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 	return ok;
 }
 
-void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NNTPConnection* connection)
+void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection)
 {
 	debug("Starting new ArticleDownloader");
 
@@ -601,13 +601,13 @@ void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* art
 	articleDownloader->SetConnection(connection);
 
 	char infoName[1024];
-	snprintf(infoName, 1024, "%s%c%s [%i/%i]", fileInfo->GetNZBInfo()->GetName(), (int)PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
+	snprintf(infoName, 1024, "%s%c%s [%i/%i]", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
 	infoName[1024-1] = '\0';
 	articleDownloader->SetInfoName(infoName);
 
 	articleInfo->SetStatus(ArticleInfo::aiRunning);
 	fileInfo->SetActiveDownloads(fileInfo->GetActiveDownloads() + 1);
-	fileInfo->GetNZBInfo()->SetActiveDownloads(fileInfo->GetNZBInfo()->GetActiveDownloads() + 1);
+	fileInfo->GetNzbInfo()->SetActiveDownloads(fileInfo->GetNzbInfo()->GetActiveDownloads() + 1);
 
 	m_activeDownloads.push_back(articleDownloader);
 	articleDownloader->Start();
@@ -631,7 +631,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 	debug("Article downloaded");
 
 	FileInfo* fileInfo = articleDownloader->GetFileInfo();
-	NZBInfo* nzbInfo = fileInfo->GetNZBInfo();
+	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
 	ArticleInfo* articleInfo = articleDownloader->GetArticleInfo();
 	bool retry = false;
 	bool fileCompleted = false;
@@ -739,7 +739,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 
 void QueueCoordinator::StatFileInfo(FileInfo* fileInfo, bool completed)
 {
-	NZBInfo* nzbInfo = fileInfo->GetNZBInfo();
+	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
 	if (completed || nzbInfo->GetDeleting())
 	{
 		nzbInfo->SetSuccessSize(nzbInfo->GetSuccessSize() + fileInfo->GetSuccessSize());
@@ -812,7 +812,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 		DiscardDiskFile(fileInfo);
 	}
 
-	NZBInfo* nzbInfo = fileInfo->GetNZBInfo();
+	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
 
 	DownloadQueue::Aspect aspect = { completed && !fileDeleted ? 
 		DownloadQueue::eaFileCompleted : DownloadQueue::eaFileDeleted,
@@ -859,9 +859,9 @@ void QueueCoordinator::SavePartialState()
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 		{
 			FileInfo* fileInfo = *it2;
@@ -880,30 +880,30 @@ void QueueCoordinator::SavePartialState()
 void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo)
 {
 	if (g_pOptions->GetHealthCheck() == Options::hcNone ||
-		fileInfo->GetNZBInfo()->GetHealthPaused() ||
-		fileInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth ||
-		fileInfo->GetNZBInfo()->CalcHealth() >= fileInfo->GetNZBInfo()->CalcCriticalHealth(true) ||
+		fileInfo->GetNzbInfo()->GetHealthPaused() ||
+		fileInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsHealth ||
+		fileInfo->GetNzbInfo()->CalcHealth() >= fileInfo->GetNzbInfo()->CalcCriticalHealth(true) ||
 		(g_pOptions->GetParScan() == Options::psDupe && g_pOptions->GetHealthCheck() == Options::hcDelete &&
-		 fileInfo->GetNZBInfo()->GetSuccessArticles() * 100 / fileInfo->GetNZBInfo()->GetTotalArticles() > 10))
+		 fileInfo->GetNzbInfo()->GetSuccessArticles() * 100 / fileInfo->GetNzbInfo()->GetTotalArticles() > 10))
 	{
 		return;
 	}
 
 	if (g_pOptions->GetHealthCheck() == Options::hcPause)
 	{
-		warn("Pausing %s due to health %.1f%% below critical %.1f%%", fileInfo->GetNZBInfo()->GetName(),
-			fileInfo->GetNZBInfo()->CalcHealth() / 10.0, fileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
-		fileInfo->GetNZBInfo()->SetHealthPaused(true);
-		downloadQueue->EditEntry(fileInfo->GetNZBInfo()->GetID(), DownloadQueue::eaGroupPause, 0, NULL);
+		warn("Pausing %s due to health %.1f%% below critical %.1f%%", fileInfo->GetNzbInfo()->GetName(),
+			fileInfo->GetNzbInfo()->CalcHealth() / 10.0, fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
+		fileInfo->GetNzbInfo()->SetHealthPaused(true);
+		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, 0, NULL);
 	}
 	else if (g_pOptions->GetHealthCheck() == Options::hcDelete)
 	{
-		fileInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
+		fileInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
 			"Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%",
-			fileInfo->GetNZBInfo()->GetName(), fileInfo->GetNZBInfo()->CalcHealth() / 10.0,
-			fileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
-		fileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsHealth);
-		downloadQueue->EditEntry(fileInfo->GetNZBInfo()->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
+			fileInfo->GetNzbInfo()->GetName(), fileInfo->GetNzbInfo()->CalcHealth() / 10.0,
+			fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
+		fileInfo->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsHealth);
+		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupDelete, 0, NULL);
 	}
 }
 
@@ -971,8 +971,8 @@ void QueueCoordinator::ResetHangingDownloads()
 			m_activeDownloads.erase(it);
 
 			articleDownloader->GetFileInfo()->SetActiveDownloads(articleDownloader->GetFileInfo()->GetActiveDownloads() - 1);
-			articleDownloader->GetFileInfo()->GetNZBInfo()->SetActiveDownloads(articleDownloader->GetFileInfo()->GetNZBInfo()->GetActiveDownloads() - 1);
-			articleDownloader->GetFileInfo()->GetNZBInfo()->SetDownloadedSize(articleDownloader->GetFileInfo()->GetNZBInfo()->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
+			articleDownloader->GetFileInfo()->GetNzbInfo()->SetActiveDownloads(articleDownloader->GetFileInfo()->GetNzbInfo()->GetActiveDownloads() - 1);
+			articleDownloader->GetFileInfo()->GetNzbInfo()->SetDownloadedSize(articleDownloader->GetFileInfo()->GetNzbInfo()->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
 
 			// it's not safe to destroy pArticleDownloader, because the state of object is unknown
 			delete articleDownloader;
@@ -1010,7 +1010,7 @@ bool QueueCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, FileInfo* 
 	return downloading;
 }
 
-bool QueueCoordinator::SetQueueEntryCategory(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, const char* category)
+bool QueueCoordinator::SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* category)
 {
 	if (nzbInfo->GetPostInfo())
 	{
@@ -1031,7 +1031,7 @@ bool QueueCoordinator::SetQueueEntryCategory(DownloadQueue* downloadQueue, NZBIn
 	return ok;
 }
 
-bool QueueCoordinator::SetQueueEntryName(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, const char* name)
+bool QueueCoordinator::SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* name)
 {
 	if (nzbInfo->GetPostInfo())
 	{
@@ -1046,10 +1046,10 @@ bool QueueCoordinator::SetQueueEntryName(DownloadQueue* downloadQueue, NZBInfo* 
 	}
 
 	char nzbNicename[1024];
-	NZBInfo::MakeNiceNZBName(name, nzbNicename, sizeof(nzbNicename), false);
+	NzbInfo::MakeNiceNzbName(name, nzbNicename, sizeof(nzbNicename), false);
 	nzbInfo->SetName(nzbNicename);
 
-	if (nzbInfo->GetKind() == NZBInfo::nkUrl)
+	if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 	{
 		char filename[1024];
 		snprintf(filename, 1024, "%s.nzb", nzbNicename);
@@ -1070,7 +1070,7 @@ bool QueueCoordinator::SetQueueEntryName(DownloadQueue* downloadQueue, NZBInfo* 
 	return ok;
 }
 
-bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NZBInfo* destNzbInfo, NZBInfo* srcNzbInfo)
+bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* destNzbInfo, NzbInfo* srcNzbInfo)
 {
 	if (destNzbInfo->GetPostInfo() || srcNzbInfo->GetPostInfo())
 	{
@@ -1078,7 +1078,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NZBInfo* 
 		return false;
 	}
 
-	if (destNzbInfo->GetKind() == NZBInfo::nkUrl || srcNzbInfo->GetKind() == NZBInfo::nkUrl)
+	if (destNzbInfo->GetKind() == NzbInfo::nkUrl || srcNzbInfo->GetKind() == NzbInfo::nkUrl)
 	{
 		error("Could not merge %s and %s. URLs cannot be merged", destNzbInfo->GetName(), srcNzbInfo->GetName());
 		return false;
@@ -1092,7 +1092,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NZBInfo* 
 	for (FileList::iterator it = srcNzbInfo->GetFileList()->begin(); it != srcNzbInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* fileInfo = *it;
-		fileInfo->SetNZBInfo(destNzbInfo);
+		fileInfo->SetNzbInfo(destNzbInfo);
 		destNzbInfo->GetFileList()->push_back(fileInfo);
 	}
 
@@ -1165,14 +1165,14 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NZBInfo* 
  * If any of file-items is being downloaded the command fail.
  * For each file-item an event "eaFileDeleted" is fired.
  */
-bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NZBInfo** newNzbInfo)
+bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NzbInfo** newNzbInfo)
 {
 	if (fileList->empty())
 	{
 		return false;
 	}
 
-	NZBInfo* srcNzbInfo = NULL;
+	NzbInfo* srcNzbInfo = NULL;
 
 	for (FileList::iterator it = fileList->begin(); it != fileList->end(); it++)
 	{
@@ -1182,18 +1182,18 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 			error("Could not split %s. File is already (partially) downloaded", fileInfo->GetFilename());
 			return false;
 		}
-		if (fileInfo->GetNZBInfo()->GetPostInfo())
+		if (fileInfo->GetNzbInfo()->GetPostInfo())
 		{
 			error("Could not split %s. File in post-process-stage", fileInfo->GetFilename());
 			return false;
 		}
 		if (!srcNzbInfo)
 		{
-			srcNzbInfo = fileInfo->GetNZBInfo();
+			srcNzbInfo = fileInfo->GetNzbInfo();
 		}
 	}
 
-	NZBInfo* nzbInfo = new NZBInfo();
+	NzbInfo* nzbInfo = new NzbInfo();
 	downloadQueue->GetQueue()->push_back(nzbInfo);
 
 	nzbInfo->SetFilename(srcNzbInfo->GetFilename());
@@ -1213,10 +1213,10 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 	{
 		FileInfo* fileInfo = *it;
 
-		DownloadQueue::Aspect aspect = { DownloadQueue::eaFileDeleted, downloadQueue, fileInfo->GetNZBInfo(), fileInfo };
+		DownloadQueue::Aspect aspect = { DownloadQueue::eaFileDeleted, downloadQueue, fileInfo->GetNzbInfo(), fileInfo };
 		downloadQueue->Notify(&aspect);
 
-		fileInfo->SetNZBInfo(nzbInfo);
+		fileInfo->SetNzbInfo(nzbInfo);
 		nzbInfo->GetFileList()->push_back(fileInfo);
 		srcNzbInfo->GetFileList()->Remove(fileInfo);
 

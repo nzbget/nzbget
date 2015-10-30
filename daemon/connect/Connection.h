@@ -51,7 +51,7 @@ protected:
 	char*				m_host;
 	int					m_port;
 	SOCKET				m_socket;
-	bool				m_tLS;
+	bool				m_tls;
 	char*				m_cipher;
 	char*				m_readBuf;
 	int					m_bufAvail;
@@ -74,20 +74,20 @@ protected:
 	};
 
 #ifndef DISABLE_TLS
-	class ConTLSSocket: public TLSSocket
+	class ConTlsSocket: public TlsSocket
 	{
 	private:
 		Connection*		m_owner;
 	protected:
 		virtual void	PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
 	public:
-						ConTLSSocket(SOCKET socket, bool isClient, const char* certFile,
+						ConTlsSocket(SOCKET socket, bool isClient, const char* certFile,
 							const char* keyFile, const char* cipher, Connection* owner):
-							TLSSocket(socket, isClient, certFile, keyFile, cipher), m_owner(owner) {}
+							TlsSocket(socket, isClient, certFile, keyFile, cipher), m_owner(owner) {}
 	};
 
-	ConTLSSocket*		m_tLSSocket;
-	bool				m_tLSError;
+	ConTlsSocket*		m_tlsSocket;
+	bool				m_tlsError;
 #endif
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
@@ -95,7 +95,7 @@ protected:
 #endif
 #endif
 
-						Connection(SOCKET socket, bool tLS);
+						Connection(SOCKET socket, bool tls);
 	void				ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno);
 	virtual void		PrintError(const char* errMsg);
 	bool				DoConnect();
@@ -108,11 +108,11 @@ protected:
 #ifndef DISABLE_TLS
 	int					recv(SOCKET s, char* buf, int len, int flags);
 	int					send(SOCKET s, const char* buf, int len, int flags);
-	void				CloseTLS();
+	void				CloseTls();
 #endif
 
 public:
-						Connection(const char* host, int port, bool tLS);
+						Connection(const char* host, int port, bool tls);
 	virtual 			~Connection();
 	static void			Init();
 	static void			Final();
@@ -129,7 +129,7 @@ public:
 	void				Cancel();
 	const char*			GetHost() { return m_host; }
 	int					GetPort() { return m_port; }
-	bool				GetTLS() { return m_tLS; }
+	bool				GetTls() { return m_tls; }
 	const char*			GetCipher() { return m_cipher; }
 	void				SetCipher(const char* cipher);
 	void				SetTimeout(int timeout) { m_timeout = timeout; }
@@ -140,7 +140,7 @@ public:
 	bool				GetGracefull() { return m_gracefull; }
 	void				SetGracefull(bool gracefull) { m_gracefull = gracefull; }
 #ifndef DISABLE_TLS
-	bool				StartTLS(bool isClient, const char* certFile, const char* keyFile);
+	bool				StartTls(bool isClient, const char* certFile, const char* keyFile);
 #endif
 	int					FetchTotalBytesRead();
 };

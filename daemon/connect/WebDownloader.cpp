@@ -85,10 +85,10 @@ void WebDownloader::SetInfoName(const char* v)
 	m_infoName = strdup(v);
 }
 
-void WebDownloader::SetURL(const char * url)
+void WebDownloader::SetUrl(const char * url)
 {
 	free(m_url);
-	m_url = WebUtil::URLEncode(url);
+	m_url = WebUtil::UrlEncode(url);
 }
 
 void WebDownloader::SetStatus(EStatus status)
@@ -283,9 +283,9 @@ WebDownloader::EStatus WebDownloader::CreateConnection(URL *url)
 	}
 #endif
 
-	bool tLS = !strcasecmp(url->GetProtocol(), "https");
+	bool tls = !strcasecmp(url->GetProtocol(), "https");
 
-	m_connection = new Connection(url->GetHost(), port, tLS);
+	m_connection = new Connection(url->GetHost(), port, tls);
 
 	return adRunning;
 }
@@ -640,7 +640,7 @@ void WebDownloader::ParseRedirect(const char* location)
 		newLocation = urlBuf;
 	}
 	detail("URL %s redirected to %s", m_url, newLocation);
-	SetURL(newLocation);
+	SetUrl(newLocation);
 }
 
 bool WebDownloader::Write(void* buffer, int len)

@@ -183,7 +183,7 @@ static void openssl_dynlock_lock(int mode, struct CRYPTO_dynlock_value *l, const
 #endif /* HAVE_OPENSSL */
 
 
-void TLSSocket::Init()
+void TlsSocket::Init()
 {
 	debug("Initializing TLS library");
 
@@ -233,7 +233,7 @@ void TLSSocket::Init()
 #endif /* HAVE_OPENSSL */
 }
 
-void TLSSocket::Final()
+void TlsSocket::Final()
 {
 	debug("Finalizing TLS library");
 
@@ -260,7 +260,7 @@ void TLSSocket::Final()
 #endif /* HAVE_OPENSSL */
 }
 
-TLSSocket::TLSSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher)
+TlsSocket::TlsSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher)
 {
 	m_socket = socket;
 	m_isClient = isClient;
@@ -274,7 +274,7 @@ TLSSocket::TLSSocket(SOCKET socket, bool isClient, const char* certFile, const c
 	m_connected = false;
 }
 
-TLSSocket::~TLSSocket()
+TlsSocket::~TlsSocket()
 {
 	free(m_certFile);
 	free(m_keyFile);
@@ -282,7 +282,7 @@ TLSSocket::~TLSSocket()
 	Close();
 }
 
-void TLSSocket::ReportError(const char* errMsg)
+void TlsSocket::ReportError(const char* errMsg)
 {
 	char message[1024];
 
@@ -328,12 +328,12 @@ void TLSSocket::ReportError(const char* errMsg)
 #endif /* HAVE_OPENSSL */
 }
 
-void TLSSocket::PrintError(const char* errMsg)
+void TlsSocket::PrintError(const char* errMsg)
 {
 	error("%s", errMsg);
 }
 
-bool TLSSocket::Start()
+bool TlsSocket::Start()
 {
 #ifdef HAVE_LIBGNUTLS
 	gnutls_certificate_credentials_t cred;
@@ -464,7 +464,7 @@ bool TLSSocket::Start()
 #endif /* HAVE_OPENSSL */
 }
 
-void TLSSocket::Close()
+void TlsSocket::Close()
 {
 	if (m_session)
 	{
@@ -504,7 +504,7 @@ void TLSSocket::Close()
 	}
 }
 
-int TLSSocket::Send(const char* buffer, int size)
+int TlsSocket::Send(const char* buffer, int size)
 {
 	int ret;
 
@@ -532,7 +532,7 @@ int TLSSocket::Send(const char* buffer, int size)
 	return ret;
 }
 
-int TLSSocket::Recv(char* buffer, int size)
+int TlsSocket::Recv(char* buffer, int size)
 {
 	int ret;
 

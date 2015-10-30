@@ -125,7 +125,7 @@ void Connection::Init()
 #endif
 
 #ifndef DISABLE_TLS
-	TLSSocket::Init();
+	TlsSocket::Init();
 #endif
 
 #ifndef HAVE_GETADDRINFO
@@ -144,7 +144,7 @@ void Connection::Final()
 #endif
 
 #ifndef DISABLE_TLS
-	TLSSocket::Final();
+	TlsSocket::Final();
 #endif
 
 #ifndef HAVE_GETADDRINFO
@@ -154,13 +154,13 @@ void Connection::Final()
 #endif
 }
 
-Connection::Connection(const char* host, int port, bool tLS)
+Connection::Connection(const char* host, int port, bool tls)
 {
 	debug("Creating Connection");
 
 	m_host = NULL;
 	m_port = port;
-	m_tLS = tLS;
+	m_tls = tls;
 	m_cipher = NULL;
 	m_status = csDisconnected;
 	m_socket = INVALID_SOCKET;
@@ -172,8 +172,8 @@ Connection::Connection(const char* host, int port, bool tLS)
 	m_broken = false;
 	m_gracefull = false;
 #ifndef DISABLE_TLS
-	m_tLSSocket = NULL;
-	m_tLSError = false;
+	m_tlsSocket = NULL;
+	m_tlsError = false;
 #endif
 
 	if (host)
@@ -182,13 +182,13 @@ Connection::Connection(const char* host, int port, bool tLS)
 	}
 }
 
-Connection::Connection(SOCKET socket, bool tLS)
+Connection::Connection(SOCKET socket, bool tls)
 {
 	debug("Creating Connection");
 
 	m_host			= NULL;
 	m_port				= 0;
-	m_tLS				= tLS;
+	m_tls				= tls;
 	m_cipher			= NULL;
 	m_status			= csConnected;
 	m_socket			= socket;
@@ -197,8 +197,8 @@ Connection::Connection(SOCKET socket, bool tLS)
 	m_suppressErrors	= true;
 	m_readBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 #ifndef DISABLE_TLS
-	m_tLSSocket		= NULL;
-	m_tLSError			= false;
+	m_tlsSocket		= NULL;
+	m_tlsError			= false;
 #endif
 }
 
@@ -212,7 +212,7 @@ Connection::~Connection()
 	free(m_cipher);
 	free(m_readBuf);
 #ifndef DISABLE_TLS
-	delete m_tLSSocket;
+	delete m_tlsSocket;
 #endif
 }
 
@@ -220,9 +220,9 @@ void Connection::SetSuppressErrors(bool suppressErrors)
 {
 	m_suppressErrors = suppressErrors;
 #ifndef DISABLE_TLS
-	if (m_tLSSocket)
+	if (m_tlsSocket)
 	{
-		m_tLSSocket->SetSuppressErrors(suppressErrors);
+		m_tlsSocket->SetSuppressErrors(suppressErrors);
 	}
 #endif
 }
@@ -522,7 +522,7 @@ Connection* Connection::Accept()
 		return NULL;
 	}
 	
-	Connection* con = new Connection(socket, m_tLS);
+	Connection* con = new Connection(socket, m_tls);
 
 	return con;
 }
@@ -686,7 +686,7 @@ bool Connection::DoConnect()
 	}
 
 #ifndef DISABLE_TLS
-	if (m_tLS && !StartTLS(true, NULL, NULL))
+	if (m_tls && !StartTls(true, NULL, NULL))
 	{
 		return false;
 	}
@@ -842,7 +842,7 @@ bool Connection::DoDisconnect()
 	if (m_socket != INVALID_SOCKET)
 	{
 #ifndef DISABLE_TLS
-		CloseTLS();
+		CloseTls();
 #endif
 		if (m_gracefull)
 		{
@@ -883,10 +883,10 @@ void Connection::Cancel()
 void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno)
 {
 #ifndef DISABLE_TLS
-	if (m_tLSError)
+	if (m_tlsError)
 	{
 		// TLS-Error was already reported
-		m_tLSError = false;
+		m_tlsError = false;
 		return;
 	}
 #endif
@@ -948,24 +948,24 @@ void Connection::PrintError(const char* errMsg)
 }
 
 #ifndef DISABLE_TLS
-bool Connection::StartTLS(bool isClient, const char* certFile, const char* keyFile)
+bool Connection::StartTls(bool isClient, const char* certFile, const char* keyFile)
 {
 	debug("Starting TLS");
 
-	delete m_tLSSocket;
-	m_tLSSocket = new ConTLSSocket(m_socket, isClient, certFile, keyFile, m_cipher, this);
-	m_tLSSocket->SetSuppressErrors(m_suppressErrors);
+	delete m_tlsSocket;
+	m_tlsSocket = new ConTlsSocket(m_socket, isClient, certFile, keyFile, m_cipher, this);
+	m_tlsSocket->SetSuppressErrors(m_suppressErrors);
 
-	return m_tLSSocket->Start();
+	return m_tlsSocket->Start();
 }
 
-void Connection::CloseTLS()
+void Connection::CloseTls()
 {
-	if (m_tLSSocket)
+	if (m_tlsSocket)
 	{
-		m_tLSSocket->Close();
-		delete m_tLSSocket;
-		m_tLSSocket = NULL;
+		m_tlsSocket->Close();
+		delete m_tlsSocket;
+		m_tlsSocket = NULL;
 	}
 }
 
@@ -973,13 +973,13 @@ int Connection::recv(SOCKET s, char* buf, int len, int flags)
 {
 	int received = 0;
 	
-	if (m_tLSSocket)
+	if (m_tlsSocket)
 	{
-		m_tLSError = false;
-		received = m_tLSSocket->Recv(buf, len);
+		m_tlsError = false;
+		received = m_tlsSocket->Recv(buf, len);
 		if (received < 0)
 		{
-			m_tLSError = true;
+			m_tlsError = true;
 			return -1;
 		}
 	}
@@ -994,13 +994,13 @@ int Connection::send(SOCKET s, const char* buf, int len, int flags)
 {
 	int sent = 0;
 
-	if (m_tLSSocket)
+	if (m_tlsSocket)
 	{
-		m_tLSError = false;
-		sent = m_tLSSocket->Send(buf, len);
+		m_tlsError = false;
+		sent = m_tlsSocket->Send(buf, len);
 		if (sent < 0)
 		{
-			m_tLSError = true;
+			m_tlsError = true;
 			return -1;
 		}
 		return sent;

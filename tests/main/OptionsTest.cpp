@@ -53,7 +53,7 @@ public:
 protected:
 	virtual void		AddNewsServer(int id, bool active, const char* name, const char* host,
 							int port, const char* user, const char* pass, bool joinGroup,
-							bool tLS, const char* cipher, int maxConnections, int retention,
+							bool tls, const char* cipher, int maxConnections, int retention,
 							int level, int group)
 	{
 		m_newsServers++;

@@ -64,18 +64,18 @@ void MoveController::Run()
 	DownloadQueue::Lock();
 
 	char nzbName[1024];
-	strncpy(nzbName, m_postInfo->GetNZBInfo()->GetName(), 1024);
+	strncpy(nzbName, m_postInfo->GetNzbInfo()->GetName(), 1024);
 	nzbName[1024-1] = '\0';
 
 	char infoName[1024];
-	snprintf(infoName, 1024, "move for %s", m_postInfo->GetNZBInfo()->GetName());
+	snprintf(infoName, 1024, "move for %s", m_postInfo->GetNzbInfo()->GetName());
 	infoName[1024-1] = '\0';
 	SetInfoName(infoName);
 
-	strncpy(m_interDir, m_postInfo->GetNZBInfo()->GetDestDir(), 1024);
+	strncpy(m_interDir, m_postInfo->GetNzbInfo()->GetDestDir(), 1024);
 	m_interDir[1024-1] = '\0';
 
-	m_postInfo->GetNZBInfo()->BuildFinalDirName(m_destDir, 1024);
+	m_postInfo->GetNzbInfo()->BuildFinalDirName(m_destDir, 1024);
 	m_destDir[1024-1] = '\0';
 
 	DownloadQueue::Unlock();
@@ -91,14 +91,14 @@ void MoveController::Run()
 		PrintMessage(Message::mkInfo, "%s successful", infoName);
 		// save new dest dir
 		DownloadQueue::Lock();
-		m_postInfo->GetNZBInfo()->SetDestDir(m_destDir);
-		m_postInfo->GetNZBInfo()->SetMoveStatus(NZBInfo::msSuccess);
+		m_postInfo->GetNzbInfo()->SetDestDir(m_destDir);
+		m_postInfo->GetNzbInfo()->SetMoveStatus(NzbInfo::msSuccess);
 		DownloadQueue::Unlock();
 	}
 	else
 	{
 		PrintMessage(Message::mkError, "%s failed", infoName);
-		m_postInfo->GetNZBInfo()->SetMoveStatus(NZBInfo::msFailure);
+		m_postInfo->GetNzbInfo()->SetMoveStatus(NzbInfo::msFailure);
 	}
 
 	m_postInfo->SetStage(PostInfo::ptQueued);
@@ -154,7 +154,7 @@ bool MoveController::MoveFiles()
 
 void MoveController::AddMessage(Message::EKind kind, const char* text)
 {
-	m_postInfo->GetNZBInfo()->AddMessage(kind, text);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
 void CleanupController::StartJob(PostInfo* postInfo)
@@ -174,22 +174,22 @@ void CleanupController::Run()
 	DownloadQueue::Lock();
 
 	char nzbName[1024];
-	strncpy(nzbName, m_postInfo->GetNZBInfo()->GetName(), 1024);
+	strncpy(nzbName, m_postInfo->GetNzbInfo()->GetName(), 1024);
 	nzbName[1024-1] = '\0';
 
 	char infoName[1024];
-	snprintf(infoName, 1024, "cleanup for %s", m_postInfo->GetNZBInfo()->GetName());
+	snprintf(infoName, 1024, "cleanup for %s", m_postInfo->GetNzbInfo()->GetName());
 	infoName[1024-1] = '\0';
 	SetInfoName(infoName);
 
-	strncpy(m_destDir, m_postInfo->GetNZBInfo()->GetDestDir(), 1024);
+	strncpy(m_destDir, m_postInfo->GetNzbInfo()->GetDestDir(), 1024);
 	m_destDir[1024-1] = '\0';
 
 	bool interDir = strlen(g_pOptions->GetInterDir()) > 0 &&
 		!strncmp(m_destDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
 	if (interDir)
 	{
-		m_postInfo->GetNZBInfo()->BuildFinalDirName(m_finalDir, 1024);
+		m_postInfo->GetNzbInfo()->BuildFinalDirName(m_finalDir, 1024);
 		m_finalDir[1024-1] = '\0';
 	}
 	else
@@ -216,17 +216,17 @@ void CleanupController::Run()
 	if (ok && deleted)
 	{
 		PrintMessage(Message::mkInfo, "%s successful", infoName);
-		m_postInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csSuccess);
+		m_postInfo->GetNzbInfo()->SetCleanupStatus(NzbInfo::csSuccess);
 	}
 	else if (ok)
 	{
 		PrintMessage(Message::mkInfo, "Nothing to cleanup for %s", nzbName);
-		m_postInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csSuccess);
+		m_postInfo->GetNzbInfo()->SetCleanupStatus(NzbInfo::csSuccess);
 	}
 	else
 	{
 		PrintMessage(Message::mkError, "%s failed", infoName);
-		m_postInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csFailure);
+		m_postInfo->GetNzbInfo()->SetCleanupStatus(NzbInfo::csFailure);
 	}
 
 	m_postInfo->SetStage(PostInfo::ptQueued);
@@ -274,5 +274,5 @@ bool CleanupController::Cleanup(const char* destDir, bool *deleted)
 
 void CleanupController::AddMessage(Message::EKind kind, const char* text)
 {
-	m_postInfo->GetNZBInfo()->AddMessage(kind, text);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }

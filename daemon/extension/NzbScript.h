@@ -30,11 +30,11 @@
 #include "DownloadInfo.h"
 #include "ScriptConfig.h"
 
-class NZBScriptController : public ScriptController
+class NzbScriptController : public ScriptController
 {
 protected:
-	void				PrepareEnvParameters(NZBParameterList* parameters, const char* stripPrefix);
-	void				PrepareEnvScript(NZBParameterList* parameters, const char* scriptName);
+	void				PrepareEnvParameters(NzbParameterList* parameters, const char* stripPrefix);
+	void				PrepareEnvScript(NzbParameterList* parameters, const char* scriptName);
 	void				ExecuteScriptList(const char* scriptList);
 	virtual void		ExecuteScript(ScriptConfig::Script* script) = 0;
 };

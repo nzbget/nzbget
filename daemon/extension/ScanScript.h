@@ -28,7 +28,7 @@
 
 #include "NzbScript.h"
 
-class ScanScriptController : public NZBScriptController
+class ScanScriptController : public NzbScriptController
 {
 private:
 	const char*			m_nzbFilename;
@@ -37,7 +37,7 @@ private:
 	char**				m_nzbName;
 	char**				m_category;
 	int*				m_priority;
-	NZBParameterList*	m_parameters;
+	NzbParameterList*	m_parameters;
 	bool*				m_addTop;
 	bool*				m_addPaused;
 	char**				m_dupeKey;
@@ -54,7 +54,7 @@ protected:
 public:
 	static void			ExecuteScripts(const char* nzbFilename, const char* url,
 							const char* directory, char** nzbName, char** category, int* priority,
-							NZBParameterList* parameters, bool* addTop, bool* addPaused,
+							NzbParameterList* parameters, bool* addTop, bool* addPaused,
 							char** dupeKey, int* dupeScore, EDupeMode* dupeMode);
 };
 

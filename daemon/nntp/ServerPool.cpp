@@ -45,7 +45,7 @@
 
 static const int CONNECTION_HOLD_SECODNS = 5;
 
-ServerPool::PooledConnection::PooledConnection(NewsServer* server) : NNTPConnection(server)
+ServerPool::PooledConnection::PooledConnection(NewsServer* server) : NntpConnection(server)
 {
 	m_inUse = false;
 	m_freeTime = 0;
@@ -198,7 +198,7 @@ void ServerPool::InitConnections()
 	m_connectionsMutex.Unlock();
 }
 
-NNTPConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers)
+NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers)
 {
 	PooledConnection* connection = NULL;
 	m_connectionsMutex.Lock();
@@ -270,7 +270,7 @@ NNTPConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Ser
 	return connection;
 }
 
-void ServerPool::FreeConnection(NNTPConnection* connection, bool used)
+void ServerPool::FreeConnection(NntpConnection* connection, bool used)
 {
 	if (used)
 	{
@@ -324,7 +324,7 @@ void ServerPool::CloseUnusedConnections()
 			(connection->GetNewsServer()->GetNormLevel() == -1 ||
 			 !connection->GetNewsServer()->GetActive()))
 		{
-			debug("Closing (and deleting) unused connection to server%i", connection->GetNewsServer()->GetID());
+			debug("Closing (and deleting) unused connection to server%i", connection->GetNewsServer()->GetId());
 			if (connection->GetStatus() == Connection::csConnected)
 			{
 				connection->Disconnect();
@@ -379,7 +379,7 @@ void ServerPool::CloseUnusedConnections()
 				if (connection->GetNewsServer()->GetNormLevel() == level &&
 					connection->GetStatus() == Connection::csConnected)
 				{
-					debug("Closing (and keeping) unused connection to server%i", connection->GetNewsServer()->GetID());
+					debug("Closing (and keeping) unused connection to server%i", connection->GetNewsServer()->GetId());
 					connection->Disconnect();
 				}
 			}
@@ -411,7 +411,7 @@ void ServerPool::LogDebugInfo()
 	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)
 	{
 		NewsServer*  newsServer = *it;
-		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", newsServer->GetID(), newsServer->GetName(),
+		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", newsServer->GetId(), newsServer->GetName(),
 			newsServer->GetHost(), newsServer->GetLevel(), newsServer->GetNormLevel(),
 			newsServer->GetBlockTime() && newsServer->GetBlockTime() + m_retryInterval > curTime ?
 				newsServer->GetBlockTime() + m_retryInterval - curTime : 0);
@@ -429,7 +429,7 @@ void ServerPool::LogDebugInfo()
 	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 	{
 		PooledConnection*  connection = *it;
-		info("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", connection->GetNewsServer()->GetID(),
+		info("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", connection->GetNewsServer()->GetId(),
 			connection->GetNewsServer()->GetName(), connection->GetNewsServer()->GetHost(),
 			connection->GetNewsServer()->GetLevel(), connection->GetNewsServer()->GetNormLevel(),
 			(int)connection->GetInUse());

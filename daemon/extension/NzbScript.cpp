@@ -53,13 +53,13 @@
  * are processed. The prefix is then stripped from the names.
  * If szStripPrefix is NULL, all pp-parameters are processed; without stripping.
  */
-void NZBScriptController::PrepareEnvParameters(NZBParameterList* parameters, const char* stripPrefix)
+void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, const char* stripPrefix)
 {
 	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	for (NZBParameterList::iterator it = parameters->begin(); it != parameters->end(); it++)
+	for (NzbParameterList::iterator it = parameters->begin(); it != parameters->end(); it++)
 	{
-		NZBParameter* parameter = *it;
+		NzbParameter* parameter = *it;
 		const char* value = parameter->GetValue();
 		
 #ifdef WIN32
@@ -83,7 +83,7 @@ void NZBScriptController::PrepareEnvParameters(NZBParameterList* parameters, con
 	}
 }
 
-void NZBScriptController::PrepareEnvScript(NZBParameterList* parameters, const char* scriptName)
+void NzbScriptController::PrepareEnvScript(NzbParameterList* parameters, const char* scriptName)
 {
 	if (parameters)
 	{
@@ -102,7 +102,7 @@ void NZBScriptController::PrepareEnvScript(NZBParameterList* parameters, const c
 	PrepareEnvOptions(paramPrefix);
 }
 
-void NZBScriptController::ExecuteScriptList(const char* scriptList)
+void NzbScriptController::ExecuteScriptList(const char* scriptList)
 {
 	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
 	{

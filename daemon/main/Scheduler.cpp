@@ -320,7 +320,7 @@ void Scheduler::EditServer(bool active, const char* serverList)
 		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 		{
 			NewsServer* server = *it;
-			if ((id > 0 && server->GetID() == id) ||
+			if ((id > 0 && server->GetId() == id) ||
 				!strcasecmp(server->GetName(), serverRef))
 			{
 				if (!m_serverChanged)
@@ -351,11 +351,11 @@ void Scheduler::FetchFeed(const char* feedList)
 		for (Feeds::iterator it = g_pFeedCoordinator->GetFeeds()->begin(); it != g_pFeedCoordinator->GetFeeds()->end(); it++)
 		{
 			FeedInfo* feed = *it;
-			if (feed->GetID() == id ||
+			if (feed->GetId() == id ||
 				!strcasecmp(feed->GetName(), feedRef) ||
 				!strcasecmp("0", feedRef))
 			{
-				g_pFeedCoordinator->FetchFeed(!strcasecmp("0", feedRef) ? 0 : feed->GetID());
+				g_pFeedCoordinator->FetchFeed(!strcasecmp("0", feedRef) ? 0 : feed->GetId());
 				break;
 			}
 		}

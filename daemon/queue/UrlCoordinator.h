@@ -48,8 +48,8 @@ private:
 	bool					m_hasMoreJobs;
 	bool					m_force;
 
-	NZBInfo*				GetNextUrl(DownloadQueue* downloadQueue);
-	void					StartUrlDownload(NZBInfo* nzbInfo);
+	NzbInfo*				GetNextUrl(DownloadQueue* downloadQueue);
+	void					StartUrlDownload(NzbInfo* nzbInfo);
 	void					UrlCompleted(UrlDownloader* urlDownloader);
 	void					ResetHangingDownloads();
 
@@ -64,9 +64,9 @@ public:
 	void					Update(Subject* caller, void* aspect);
 
 	// Editing the queue
-	void					AddUrlToQueue(NZBInfo* nzbInfo, bool addTop);
+	void					AddUrlToQueue(NzbInfo* nzbInfo, bool addTop);
 	bool					HasMoreJobs() { return m_hasMoreJobs; }
-	bool					DeleteQueueEntry(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, bool avoidHistory);
+	bool					DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool avoidHistory);
 };
 
 extern UrlCoordinator* g_pUrlCoordinator;
@@ -74,7 +74,7 @@ extern UrlCoordinator* g_pUrlCoordinator;
 class UrlDownloader : public WebDownloader
 {
 private:
-	NZBInfo*				m_nzbInfo;
+	NzbInfo*				m_nzbInfo;
 	char*					m_category;
 
 protected:
@@ -83,8 +83,8 @@ protected:
 public:
 							UrlDownloader();
 							~UrlDownloader();
-	void					SetNZBInfo(NZBInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
-	NZBInfo*				GetNZBInfo() { return m_nzbInfo; }
+	void					SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
+	NzbInfo*				GetNzbInfo() { return m_nzbInfo; }
 	const char*				GetCategory() { return m_category; }
 };
 

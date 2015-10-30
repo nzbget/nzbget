@@ -82,11 +82,11 @@ Mutex ScriptController::m_runningMutex;
 class ChildWatchDog : public Thread
 {
 private:
-	pid_t			m_hProcessID;
+	pid_t			m_hProcessId;
 protected:
 	virtual void	Run();
 public:
-	void			SetProcessID(pid_t hProcessID) { m_hProcessID = hProcessID; }
+	void			SetProcessId(pid_t hProcessId) { m_hProcessId = hProcessId; }
 };
 
 void ChildWatchDog::Run()
@@ -101,7 +101,7 @@ void ChildWatchDog::Run()
 	if (!IsStopped())
 	{
 		info("Restarting hanging child process");
-		kill(m_hProcessID, SIGKILL);
+		kill(m_hProcessId, SIGKILL);
 	}
 }
 #endif
@@ -548,7 +548,7 @@ int ScriptController::Execute()
 	debug("Creating child watchdog");
 	ChildWatchDog* watchDog = new ChildWatchDog();
 	watchDog->SetAutoDestroy(false);
-	watchDog->SetProcessID(pid);
+	watchDog->SetProcessId(pid);
 	watchDog->Start();
 #endif
 	

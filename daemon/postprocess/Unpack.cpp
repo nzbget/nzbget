@@ -110,10 +110,10 @@ void UnpackController::Run()
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
 
-	strncpy(m_destDir, m_postInfo->GetNZBInfo()->GetDestDir(), 1024);
+	strncpy(m_destDir, m_postInfo->GetNzbInfo()->GetDestDir(), 1024);
 	m_destDir[1024-1] = '\0';
 
-	strncpy(m_name, m_postInfo->GetNZBInfo()->GetName(), 1024);
+	strncpy(m_name, m_postInfo->GetNzbInfo()->GetName(), 1024);
 	m_name[1024-1] = '\0';
 
 	m_cleanedUpDisk = false;
@@ -128,10 +128,10 @@ void UnpackController::Run()
 	m_autoTerminated = false;
 	m_passListTried = false;
 
-	NZBParameter* parameter = m_postInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
+	NzbParameter* parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
 	bool unpack = !(parameter && !strcasecmp(parameter->GetValue(), "no"));
 
-	parameter = m_postInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:Password", false);
+	parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:Password", false);
 	if (parameter)
 	{
 		strncpy(m_password, parameter->GetValue(), 1024-1);
@@ -150,8 +150,8 @@ void UnpackController::Run()
 
 	if (unpack)
 	{
-		bool scanNonStdFiles = m_postInfo->GetNZBInfo()->GetRenameStatus() > NZBInfo::rsSkipped ||
-			m_postInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess ||
+		bool scanNonStdFiles = m_postInfo->GetNzbInfo()->GetRenameStatus() > NzbInfo::rsSkipped ||
+			m_postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSuccess ||
 			!m_hasParFiles;
 		CheckArchiveFiles(scanNonStdFiles);
 	}
@@ -166,10 +166,10 @@ void UnpackController::Run()
 	{
 		PrintMessage(Message::mkInfo, "Second unpack attempt skipped for %s due to par-check not repaired anything", m_name);
 		PrintMessage(Message::mkError,
-			m_postInfo->GetLastUnpackStatus() == (int)NZBInfo::usPassword ?
+			m_postInfo->GetLastUnpackStatus() == (int)NzbInfo::usPassword ?
 				 "%s failed: checksum error in the encrypted file. Corrupt file or wrong password." : "%s failed.",
 			m_infoNameUp);
-		m_postInfo->GetNZBInfo()->SetUnpackStatus((NZBInfo::EUnpackStatus)m_postInfo->GetLastUnpackStatus());
+		m_postInfo->GetNzbInfo()->SetUnpackStatus((NzbInfo::EUnpackStatus)m_postInfo->GetLastUnpackStatus());
 		m_postInfo->SetStage(PostInfo::ptQueued);
 	}
 	else if (unpack && hasFiles)
@@ -207,21 +207,21 @@ void UnpackController::Run()
 		PrintMessage(Message::mkInfo, (unpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), m_name);
 
 #ifndef DISABLE_PARCHECK
-		if (unpack && m_postInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped && 
-			m_postInfo->GetNZBInfo()->GetRenameStatus() <= NZBInfo::rsSkipped && m_hasParFiles)
+		if (unpack && m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped && 
+			m_postInfo->GetNzbInfo()->GetRenameStatus() <= NzbInfo::rsSkipped && m_hasParFiles)
 		{
 			RequestParCheck(false);
 		}
 		else
 #endif
 		{
-			m_postInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSkipped);
+			m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSkipped);
 			m_postInfo->SetStage(PostInfo::ptQueued);
 		}
 	}
 
 	int unpackSec = (int)(time(NULL) - start);
-	m_postInfo->GetNZBInfo()->SetUnpackSec(m_postInfo->GetNZBInfo()->GetUnpackSec() + unpackSec);
+	m_postInfo->GetNzbInfo()->SetUnpackSec(m_postInfo->GetNzbInfo()->GetUnpackSec() + unpackSec);
 
 	m_postInfo->SetWorking(false);
 }
@@ -232,7 +232,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 	{
 		ExecuteUnpack(unpacker, m_password, multiVolumes);
 		if (!m_unpackOK && m_hasParFiles && !m_unpackPasswordError &&
-			m_postInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+			m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
 		{
 			// for rar4- or 7z-archives try par-check first, before trying password file
 			return;
@@ -241,7 +241,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 	else
 	{
 		m_unpackOK = false;
-		m_unpackDecryptError = m_postInfo->GetLastUnpackStatus() == (int)NZBInfo::usPassword;
+		m_unpackDecryptError = m_postInfo->GetLastUnpackStatus() == (int)NzbInfo::usPassword;
 	}
 
 	if (!m_unpackOK && !m_unpackStartError && !m_unpackSpaceError &&
@@ -546,7 +546,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	int correctedCount = count - (min == 0 ? 1 : 0);
 	if ((min > 1) || correctedCount != max ||
 		((difSizeMin != correctedCount || difSizeMin > max) &&
-		 m_postInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psSuccess))
+		 m_postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psSuccess))
 	{
 		PrintMessage(Message::mkWarning, "Could not join splitted file %s: missing fragments detected", destBaseName);
 		return false;
@@ -635,12 +635,12 @@ void UnpackController::Completed()
 	if (m_unpackOK && cleanupSuccess)
 	{
 		PrintMessage(Message::mkInfo, "%s %s", m_infoNameUp, "successful");
-		m_postInfo->GetNZBInfo()->SetUnpackStatus(NZBInfo::usSuccess);
-		m_postInfo->GetNZBInfo()->SetUnpackCleanedUpDisk(m_cleanedUpDisk);
+		m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSuccess);
+		m_postInfo->GetNzbInfo()->SetUnpackCleanedUpDisk(m_cleanedUpDisk);
 		if (g_pOptions->GetParRename())
 		{
 			//request par-rename check for extracted files
-			m_postInfo->GetNZBInfo()->SetRenameStatus(NZBInfo::rsNone);
+			m_postInfo->GetNzbInfo()->SetRenameStatus(NzbInfo::rsNone);
 		}
 		m_postInfo->SetStage(PostInfo::ptQueued);
 	}
@@ -648,24 +648,24 @@ void UnpackController::Completed()
 	{
 #ifndef DISABLE_PARCHECK
 		if (!m_unpackOK && 
-			(m_postInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped ||
-			 !m_postInfo->GetNZBInfo()->GetParFull()) &&
+			(m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
+			 !m_postInfo->GetNzbInfo()->GetParFull()) &&
 			!m_unpackStartError && !m_unpackSpaceError && !m_unpackPasswordError &&
 			(!GetTerminated() || m_autoTerminated) && m_hasParFiles)
 		{
 			RequestParCheck(!Util::EmptyStr(m_password) ||
 				Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_passListTried ||
 				!(m_unpackDecryptError || m_unpackPasswordError) ||
-				m_postInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped);
+				m_postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
 		}
 		else
 #endif
 		{
 			PrintMessage(Message::mkError, "%s failed", m_infoNameUp);
-			m_postInfo->GetNZBInfo()->SetUnpackStatus(
-				m_unpackSpaceError ? NZBInfo::usSpace :
-				m_unpackPasswordError || m_unpackDecryptError ? NZBInfo::usPassword :
-				NZBInfo::usFailure);
+			m_postInfo->GetNzbInfo()->SetUnpackStatus(
+				m_unpackSpaceError ? NzbInfo::usSpace :
+				m_unpackPasswordError || m_unpackDecryptError ? NzbInfo::usPassword :
+				NzbInfo::usFailure);
 			m_postInfo->SetStage(PostInfo::ptQueued);
 		}
 	}
@@ -680,9 +680,9 @@ void UnpackController::RequestParCheck(bool forceRepair)
 	m_postInfo->SetStage(PostInfo::ptFinished);
 	m_postInfo->SetUnpackTried(true);
 	m_postInfo->SetPassListTried(m_passListTried);
-	m_postInfo->SetLastUnpackStatus((int)(m_unpackSpaceError ? NZBInfo::usSpace :
-		m_unpackPasswordError || m_unpackDecryptError ? NZBInfo::usPassword :
-		NZBInfo::usFailure));
+	m_postInfo->SetLastUnpackStatus((int)(m_unpackSpaceError ? NzbInfo::usSpace :
+		m_unpackPasswordError || m_unpackDecryptError ? NzbInfo::usPassword :
+		NzbInfo::usFailure));
 }
 #endif
 
@@ -692,7 +692,7 @@ void UnpackController::CreateUnpackDir()
 		!strncmp(m_destDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
 	if (m_interDir)
 	{
-		m_postInfo->GetNZBInfo()->BuildFinalDirName(m_finalDir, 1024);
+		m_postInfo->GetNzbInfo()->BuildFinalDirName(m_finalDir, 1024);
 		m_finalDir[1024-1] = '\0';
 		snprintf(m_unpackDir, 1024, "%s%c%s", m_finalDir, PATH_SEPARATOR, "_unpack");
 		m_finalDirCreated = !Util::DirectoryExists(m_finalDir);
@@ -965,7 +965,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 		msgText[1024-1] = '\0';
 	}
 
-	m_postInfo->GetNZBInfo()->AddMessage(kind, msgText);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, msgText);
 
 	if (m_unpacker == upUnrar && !strncmp(msgText, "Unrar: UNRAR ", 6) &&
 		strstr(msgText, " Copyright ") && strstr(msgText, " Alexander Roshal"))
@@ -1015,7 +1015,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 		char msgText[1024];
 		snprintf(msgText, 1024, "Cancelling %s due to errors", m_infoName);
 		msgText[1024-1] = '\0';
-		m_postInfo->GetNZBInfo()->AddMessage(Message::mkWarning, msgText);
+		m_postInfo->GetNzbInfo()->AddMessage(Message::mkWarning, msgText);
 		m_autoTerminated = true;
 		Stop();
 	}

@@ -30,7 +30,7 @@
 #include "NewsServer.h"
 #include "Connection.h"
 
-class NNTPConnection : public Connection
+class NntpConnection : public Connection
 {
 private:
 	NewsServer*			m_newsServer;
@@ -45,8 +45,8 @@ private:
 	bool 				AuthInfoPass(int recur);
 
 public:
-						NNTPConnection(NewsServer* newsServer);
-	virtual				~NNTPConnection();
+						NntpConnection(NewsServer* newsServer);
+	virtual				~NntpConnection();
 	virtual bool 		Connect();
 	virtual bool		Disconnect();
 	NewsServer*			GetNewsServer() { return m_newsServer; }

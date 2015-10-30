@@ -52,7 +52,7 @@ private:
 		EEvent				m_event;
 	public:
 							QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event);
-		int					GetNZBID() { return m_nzbId; }
+		int					GetNzbId() { return m_nzbId; }
 		ScriptConfig::Script*	GetScript() { return m_script; }
 		EEvent				GetEvent() { return m_event; }
 	};
@@ -65,15 +65,15 @@ private:
 	bool				m_hasQueueScripts;
 	bool				m_stopped;
 
-	void				StartScript(NZBInfo* nzbInfo, QueueItem* queueItem);
-	NZBInfo*			FindNZBInfo(DownloadQueue* downloadQueue, int nzbId);
+	void				StartScript(NzbInfo* nzbInfo, QueueItem* queueItem);
+	NzbInfo*			FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
 
 public:
 						QueueScriptCoordinator();
 						~QueueScriptCoordinator();
 	void				Stop() { m_stopped = true; }
 	void				InitOptions();
-	void				EnqueueScript(NZBInfo* nzbInfo, EEvent event);
+	void				EnqueueScript(NzbInfo* nzbInfo, EEvent event);
 	void				CheckQueue();
 	bool				HasJob(int nzbId, bool* active);
 	int					GetQueueSize();

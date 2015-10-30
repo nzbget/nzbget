@@ -83,7 +83,7 @@ void LoggableFrontend::Update()
 	if (!messages->empty())
 	{
 		Message* firstMessage = messages->front();
-		int start = m_neededLogFirstId - firstMessage->GetID() + 1;
+		int start = m_neededLogFirstId - firstMessage->GetId() + 1;
 		if (start < 0)
 		{
 			PrintSkip();
@@ -92,7 +92,7 @@ void LoggableFrontend::Update()
 		for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
 		{
 			PrintMessage((*messages)[i]);
-			m_neededLogFirstId = (*messages)[i]->GetID();
+			m_neededLogFirstId = (*messages)[i]->GetId();
 		}
 	}
 	UnlockMessages();

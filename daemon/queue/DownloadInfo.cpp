@@ -49,36 +49,36 @@
 
 int FileInfo::m_idGen = 0;
 int FileInfo::m_idMax = 0;
-int NZBInfo::m_idGen = 0;
-int NZBInfo::m_idMax = 0;
+int NzbInfo::m_idGen = 0;
+int NzbInfo::m_idMax = 0;
 DownloadQueue* DownloadQueue::g_pDownloadQueue = NULL;
 bool DownloadQueue::g_bLoaded = false;
 
-NZBParameter::NZBParameter(const char* name)
+NzbParameter::NzbParameter(const char* name)
 {
 	m_name = strdup(name);
 	m_value = NULL;
 }
 
-NZBParameter::~NZBParameter()
+NzbParameter::~NzbParameter()
 {
 	free(m_name);
 	free(m_value);
 }
 
-void NZBParameter::SetValue(const char* value)
+void NzbParameter::SetValue(const char* value)
 {
 	free(m_value);
 	m_value = strdup(value);
 }
 
 
-NZBParameterList::~NZBParameterList()
+NzbParameterList::~NzbParameterList()
 {
 	Clear();
 }
 
-void NZBParameterList::Clear()
+void NzbParameterList::Clear()
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
@@ -87,14 +87,14 @@ void NZBParameterList::Clear()
 	clear();
 }
 
-void NZBParameterList::SetParameter(const char* name, const char* value)
+void NzbParameterList::SetParameter(const char* name, const char* value)
 {
-	NZBParameter* parameter = NULL;
+	NzbParameter* parameter = NULL;
 	bool deleteObj = !value || !*value;
 
 	for (iterator it = begin(); it != end(); it++)
 	{
-		NZBParameter* lookupParameter = *it;
+		NzbParameter* lookupParameter = *it;
 		if (!strcmp(lookupParameter->GetName(), name))
 		{
 			if (deleteObj)
@@ -115,18 +115,18 @@ void NZBParameterList::SetParameter(const char* name, const char* value)
 
 	if (!parameter)
 	{
-		parameter = new NZBParameter(name);
+		parameter = new NzbParameter(name);
 		push_back(parameter);
 	}
 
 	parameter->SetValue(value);
 }
 
-NZBParameter* NZBParameterList::Find(const char* name, bool caseSensitive)
+NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		NZBParameter* parameter = *it;
+		NzbParameter* parameter = *it;
 		if ((caseSensitive && !strcmp(parameter->GetName(), name)) ||
 			(!caseSensitive && !strcasecmp(parameter->GetName(), name)))
 		{
@@ -137,11 +137,11 @@ NZBParameter* NZBParameterList::Find(const char* name, bool caseSensitive)
 	return NULL;
 }
 
-void NZBParameterList::CopyFrom(NZBParameterList* sourceParameters)
+void NzbParameterList::CopyFrom(NzbParameterList* sourceParameters)
 {
 	for (iterator it = sourceParameters->begin(); it != sourceParameters->end(); it++)
 	{
-		NZBParameter* parameter = *it;
+		NzbParameter* parameter = *it;
 		SetParameter(parameter->GetName(), parameter->GetValue());
 	}
 }									  
@@ -225,7 +225,7 @@ void ServerStatList::StatOp(int serverId, int successArticles, int failedArticle
 	for (iterator it = begin(); it != end(); it++)
 	{
 		ServerStat* serverStat1 = *it;
-		if (serverStat1->GetServerID() == serverId)
+		if (serverStat1->GetServerId() == serverId)
 		{
 			serverStat = serverStat1;
 			break;
@@ -262,12 +262,12 @@ void ServerStatList::ListOp(ServerStatList* serverStats, EStatOperation statOper
 	for (iterator it = serverStats->begin(); it != serverStats->end(); it++)
 	{
 		ServerStat* serverStat = *it;
-		StatOp(serverStat->GetServerID(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles(), statOperation);
+		StatOp(serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles(), statOperation);
 	}
 }
 
 
-NZBInfo::NZBInfo() : m_fileList(true)
+NzbInfo::NzbInfo() : m_fileList(true)
 {
 	debug("Creating NZBInfo");
 
@@ -346,7 +346,7 @@ NZBInfo::NZBInfo() : m_fileList(true)
 	m_feedId = 0;
 }
 
-NZBInfo::~NZBInfo()
+NzbInfo::~NzbInfo()
 {
 	debug("Destroying NZBInfo");
 
@@ -365,7 +365,7 @@ NZBInfo::~NZBInfo()
 	m_fileList.Clear();
 }
 
-void NZBInfo::SetID(int id)
+void NzbInfo::SetId(int id)
 {
 	m_id = id;
 	if (m_idMax < m_id)
@@ -374,7 +374,7 @@ void NZBInfo::SetID(int id)
 	}
 }
 
-void NZBInfo::ResetGenID(bool max)
+void NzbInfo::ResetGenId(bool max)
 {
 	if (max)
 	{
@@ -387,12 +387,12 @@ void NZBInfo::ResetGenID(bool max)
 	}
 }
 
-int NZBInfo::GenerateID()
+int NzbInfo::GenerateId()
 {
 	return ++m_idGen;
 }
 
-void NZBInfo::ClearCompletedFiles()
+void NzbInfo::ClearCompletedFiles()
 {
 	for (CompletedFiles::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
 	{
@@ -401,19 +401,19 @@ void NZBInfo::ClearCompletedFiles()
 	m_completedFiles.clear();
 }
 
-void NZBInfo::SetDestDir(const char* destDir)
+void NzbInfo::SetDestDir(const char* destDir)
 {
 	free(m_destDir);
 	m_destDir = strdup(destDir);
 }
 
-void NZBInfo::SetFinalDir(const char* finalDir)
+void NzbInfo::SetFinalDir(const char* finalDir)
 {
 	free(m_finalDir);
 	m_finalDir = strdup(finalDir);
 }
 
-void NZBInfo::SetURL(const char* url)
+void NzbInfo::SetUrl(const char* url)
 {
 	free(m_url);
 	m_url = strdup(url);
@@ -430,7 +430,7 @@ void NZBInfo::SetURL(const char* url)
 	}
 }
 
-void NZBInfo::SetFilename(const char* filename)
+void NzbInfo::SetFilename(const char* filename)
 {
 	bool hadFilename = !Util::EmptyStr(m_filename);
 
@@ -440,7 +440,7 @@ void NZBInfo::SetFilename(const char* filename)
 	if ((!m_name || !hadFilename) && !Util::EmptyStr(filename))
 	{
 		char nzbNicename[1024];
-		MakeNiceNZBName(m_filename, nzbNicename, sizeof(nzbNicename), true);
+		MakeNiceNzbName(m_filename, nzbNicename, sizeof(nzbNicename), true);
 		nzbNicename[1024-1] = '\0';
 #ifdef WIN32
 		WebUtil::AnsiToUtf8(nzbNicename, 1024);
@@ -449,31 +449,31 @@ void NZBInfo::SetFilename(const char* filename)
 	}
 }
 
-void NZBInfo::SetName(const char* name)
+void NzbInfo::SetName(const char* name)
 {
 	free(m_name);
 	m_name = name ? strdup(name) : NULL;
 }
 
-void NZBInfo::SetCategory(const char* category)
+void NzbInfo::SetCategory(const char* category)
 {
 	free(m_category);
 	m_category = strdup(category);
 }
 
-void NZBInfo::SetQueuedFilename(const char * queuedFilename)
+void NzbInfo::SetQueuedFilename(const char * queuedFilename)
 {
 	free(m_queuedFilename);
 	m_queuedFilename = strdup(queuedFilename);
 }
 
-void NZBInfo::SetDupeKey(const char* dupeKey)
+void NzbInfo::SetDupeKey(const char* dupeKey)
 {
 	free(m_dupeKey);
 	m_dupeKey = strdup(dupeKey ? dupeKey : "");
 }
 
-void NZBInfo::MakeNiceNZBName(const char * nzbFilename, char * buffer, int size, bool removeExt)
+void NzbInfo::MakeNiceNzbName(const char * nzbFilename, char * buffer, int size, bool removeExt)
 {
 	char postname[1024];
 	const char* baseName = Util::BaseFileName(nzbFilename);
@@ -494,14 +494,14 @@ void NZBInfo::MakeNiceNZBName(const char * nzbFilename, char * buffer, int size,
 	buffer[size-1] = '\0';
 }
 
-void NZBInfo::MakeNiceUrlName(const char* urlStr, const char* nzbFilename, char* buffer, int size)
+void NzbInfo::MakeNiceUrlName(const char* urlStr, const char* nzbFilename, char* buffer, int size)
 {
 	URL url(urlStr);
 
 	if (!Util::EmptyStr(nzbFilename))
 	{
 		char nzbNicename[1024];
-		MakeNiceNZBName(nzbFilename, nzbNicename, sizeof(nzbNicename), true);
+		MakeNiceNzbName(nzbFilename, nzbNicename, sizeof(nzbNicename), true);
 		snprintf(buffer, size, "%s @ %s", nzbNicename, url.GetHost());
 	}
 	else if (url.IsValid())
@@ -516,7 +516,7 @@ void NZBInfo::MakeNiceUrlName(const char* urlStr, const char* nzbFilename, char*
 	buffer[size-1] = '\0';
 }
 
-void NZBInfo::BuildDestDirName()
+void NzbInfo::BuildDestDirName()
 {
 	char destDir[1024];
 
@@ -526,7 +526,7 @@ void NZBInfo::BuildDestDirName()
 	}
 	else
 	{
-		snprintf(destDir, 1024, "%s%s.#%i", g_pOptions->GetInterDir(), GetName(), GetID());
+		snprintf(destDir, 1024, "%s%s.#%i", g_pOptions->GetInterDir(), GetName(), GetId());
 		destDir[1024-1] = '\0';
 	}
 
@@ -537,7 +537,7 @@ void NZBInfo::BuildDestDirName()
 	SetDestDir(destDir);
 }
 
-void NZBInfo::BuildFinalDirName(char* finalDirBuf, int bufSize)
+void NzbInfo::BuildFinalDirName(char* finalDirBuf, int bufSize)
 {
 	char buffer[1024];
 	bool useCategory = m_category && m_category[0] != '\0';
@@ -577,7 +577,7 @@ void NZBInfo::BuildFinalDirName(char* finalDirBuf, int bufSize)
 #endif
 }
 
-int NZBInfo::CalcHealth()
+int NzbInfo::CalcHealth()
 {
 	if (m_currentFailedSize == 0 || m_size == m_parSize)
 	{
@@ -595,7 +595,7 @@ int NZBInfo::CalcHealth()
 	return health;
 }
 
-int NZBInfo::CalcCriticalHealth(bool allowEstimation)
+int NzbInfo::CalcCriticalHealth(bool allowEstimation)
 {
 	if (m_size == 0)
 	{
@@ -628,7 +628,7 @@ int NZBInfo::CalcCriticalHealth(bool allowEstimation)
 	return criticalHealth;
 }
 
-void NZBInfo::UpdateMinMaxTime()
+void NzbInfo::UpdateMinMaxTime()
 {
 	m_minTime = 0;
 	m_maxTime = 0;
@@ -657,18 +657,18 @@ void NZBInfo::UpdateMinMaxTime()
 	}
 }
 
-MessageList* NZBInfo::LockCachedMessages()
+MessageList* NzbInfo::LockCachedMessages()
 {
 	m_logMutex.Lock();
 	return &m_messages;
 }
 
-void NZBInfo::UnlockCachedMessages()
+void NzbInfo::UnlockCachedMessages()
 {
 	m_logMutex.Unlock();
 }
 
-void NZBInfo::AddMessage(Message::EKind kind, const char * text)
+void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 {
 	switch (kind)
 	{
@@ -699,7 +699,7 @@ void NZBInfo::AddMessage(Message::EKind kind, const char * text)
 
 	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode() && g_pOptions->GetNzbLog())
 	{
-		g_pDiskState->AppendNZBMessage(m_id, kind, text);
+		g_pDiskState->AppendNzbMessage(m_id, kind, text);
 		m_messageCount++;
 	}
 
@@ -714,7 +714,7 @@ void NZBInfo::AddMessage(Message::EKind kind, const char * text)
 	m_logMutex.Unlock();
 }
 
-void NZBInfo::PrintMessage(Message::EKind kind, const char* format, ...)
+void NzbInfo::PrintMessage(Message::EKind kind, const char* format, ...)
 {
 	char tmp2[1024];
 
@@ -727,7 +727,7 @@ void NZBInfo::PrintMessage(Message::EKind kind, const char* format, ...)
 	AddMessage(kind, tmp2);
 }
 
-void NZBInfo::ClearMessages()
+void NzbInfo::ClearMessages()
 {
 	m_logMutex.Lock();
 	m_messages.Clear();
@@ -735,14 +735,14 @@ void NZBInfo::ClearMessages()
 	m_logMutex.Unlock();
 }
 
-void NZBInfo::CopyFileList(NZBInfo* srcNzbInfo)
+void NzbInfo::CopyFileList(NzbInfo* srcNzbInfo)
 {
 	m_fileList.Clear();
 
 	for (FileList::iterator it = srcNzbInfo->GetFileList()->begin(); it != srcNzbInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* fileInfo = *it;
-		fileInfo->SetNZBInfo(this);
+		fileInfo->SetNzbInfo(this);
 		m_fileList.push_back(fileInfo);
 	}
 
@@ -779,24 +779,24 @@ void NZBInfo::CopyFileList(NZBInfo* srcNzbInfo)
 	SetMaxTime(srcNzbInfo->GetMaxTime());
 }
 
-void NZBInfo::EnterPostProcess()
+void NzbInfo::EnterPostProcess()
 {
 	m_postInfo = new PostInfo();
-	m_postInfo->SetNZBInfo(this);
+	m_postInfo->SetNzbInfo(this);
 }
 
-void NZBInfo::LeavePostProcess()
+void NzbInfo::LeavePostProcess()
 {
 	delete m_postInfo;
 	m_postInfo = NULL;
 	ClearMessages();
 }
 
-void NZBInfo::SetActiveDownloads(int activeDownloads)
+void NzbInfo::SetActiveDownloads(int activeDownloads)
 {
 	if (((m_activeDownloads == 0 && activeDownloads > 0) ||
 		 (m_activeDownloads > 0 && activeDownloads == 0)) &&
-		m_kind == NZBInfo::nkNzb)
+		m_kind == NzbInfo::nkNzb)
 	{
 		if (activeDownloads > 0)
 		{
@@ -811,130 +811,130 @@ void NZBInfo::SetActiveDownloads(int activeDownloads)
 	m_activeDownloads = activeDownloads;
 }
 
-bool NZBInfo::IsDupeSuccess()
+bool NzbInfo::IsDupeSuccess()
 {
 	bool failure =
-		m_markStatus != NZBInfo::ksSuccess &&
-		m_markStatus != NZBInfo::ksGood &&
-		(m_deleteStatus != NZBInfo::dsNone ||
-		m_markStatus == NZBInfo::ksBad ||
-		m_parStatus == NZBInfo::psFailure ||
-		m_unpackStatus == NZBInfo::usFailure ||
-		m_unpackStatus == NZBInfo::usPassword ||
-		(m_parStatus == NZBInfo::psSkipped &&
-		 m_unpackStatus == NZBInfo::usSkipped &&
+		m_markStatus != NzbInfo::ksSuccess &&
+		m_markStatus != NzbInfo::ksGood &&
+		(m_deleteStatus != NzbInfo::dsNone ||
+		m_markStatus == NzbInfo::ksBad ||
+		m_parStatus == NzbInfo::psFailure ||
+		m_unpackStatus == NzbInfo::usFailure ||
+		m_unpackStatus == NzbInfo::usPassword ||
+		(m_parStatus == NzbInfo::psSkipped &&
+		 m_unpackStatus == NzbInfo::usSkipped &&
 		 CalcHealth() < CalcCriticalHealth(true)));
 	return !failure;
 }
 
-const char* NZBInfo::MakeTextStatus(bool ignoreScriptStatus)
+const char* NzbInfo::MakeTextStatus(bool ignoreScriptStatus)
 {
 	const char* status = "FAILURE/INTERNAL_ERROR";
 
-	if (m_kind == NZBInfo::nkNzb)
+	if (m_kind == NzbInfo::nkNzb)
 	{
 		int health = CalcHealth();
 		int criticalHealth = CalcCriticalHealth(false);
 		ScriptStatus::EStatus scriptStatus = ignoreScriptStatus ? ScriptStatus::srSuccess : m_scriptStatuses.CalcTotalStatus();
 
-		if (m_markStatus == NZBInfo::ksBad)
+		if (m_markStatus == NzbInfo::ksBad)
 		{
 			status = "FAILURE/BAD";
 		}
-		else if (m_markStatus == NZBInfo::ksGood)
+		else if (m_markStatus == NzbInfo::ksGood)
 		{
 			status = "SUCCESS/GOOD";
 		}
-		else if (m_markStatus == NZBInfo::ksSuccess)
+		else if (m_markStatus == NzbInfo::ksSuccess)
 		{
 			status = "SUCCESS/MARK";
 		}
-		else if (m_deleteStatus == NZBInfo::dsHealth)
+		else if (m_deleteStatus == NzbInfo::dsHealth)
 		{
 			status = "FAILURE/HEALTH";
 		}
-		else if (m_deleteStatus == NZBInfo::dsManual)
+		else if (m_deleteStatus == NzbInfo::dsManual)
 		{
 			status = "DELETED/MANUAL";
 		}
-		else if (m_deleteStatus == NZBInfo::dsDupe)
+		else if (m_deleteStatus == NzbInfo::dsDupe)
 		{
 			status = "DELETED/DUPE";
 		}
-		else if (m_deleteStatus == NZBInfo::dsBad)
+		else if (m_deleteStatus == NzbInfo::dsBad)
 		{
 			status = "FAILURE/BAD";
 		}
-		else if (m_deleteStatus == NZBInfo::dsGood)
+		else if (m_deleteStatus == NzbInfo::dsGood)
 		{
 			status = "DELETED/GOOD";
 		}
-		else if (m_deleteStatus == NZBInfo::dsCopy)
+		else if (m_deleteStatus == NzbInfo::dsCopy)
 		{
 			status = "DELETED/COPY";
 		}
-		else if (m_deleteStatus == NZBInfo::dsScan)
+		else if (m_deleteStatus == NzbInfo::dsScan)
 		{
 			status = "FAILURE/SCAN";
 		}
-		else if (m_parStatus == NZBInfo::psFailure)
+		else if (m_parStatus == NzbInfo::psFailure)
 		{
 			status = "FAILURE/PAR";
 		}
-		else if (m_unpackStatus == NZBInfo::usFailure)
+		else if (m_unpackStatus == NzbInfo::usFailure)
 		{
 			status = "FAILURE/UNPACK";
 		}
-		else if (m_moveStatus == NZBInfo::msFailure)
+		else if (m_moveStatus == NzbInfo::msFailure)
 		{
 			status = "FAILURE/MOVE";
 		}
-		else if (m_parStatus == NZBInfo::psManual)
+		else if (m_parStatus == NzbInfo::psManual)
 		{
 			status = "WARNING/DAMAGED";
 		}
-		else if (m_parStatus == NZBInfo::psRepairPossible)
+		else if (m_parStatus == NzbInfo::psRepairPossible)
 		{
 			status = "WARNING/REPAIRABLE";
 		}
-		else if ((m_parStatus == NZBInfo::psNone || m_parStatus == NZBInfo::psSkipped) &&
-				 (m_unpackStatus == NZBInfo::usNone || m_unpackStatus == NZBInfo::usSkipped) &&
+		else if ((m_parStatus == NzbInfo::psNone || m_parStatus == NzbInfo::psSkipped) &&
+				 (m_unpackStatus == NzbInfo::usNone || m_unpackStatus == NzbInfo::usSkipped) &&
 				 health < criticalHealth)
 		{
 			status = "FAILURE/HEALTH";
 		}
-		else if ((m_parStatus == NZBInfo::psNone || m_parStatus == NZBInfo::psSkipped) &&
-				 (m_unpackStatus == NZBInfo::usNone || m_unpackStatus == NZBInfo::usSkipped) &&
+		else if ((m_parStatus == NzbInfo::psNone || m_parStatus == NzbInfo::psSkipped) &&
+				 (m_unpackStatus == NzbInfo::usNone || m_unpackStatus == NzbInfo::usSkipped) &&
 				 health < 1000 && health >= criticalHealth)
 		{
 			status = "WARNING/HEALTH";
 		}
-		else if ((m_parStatus == NZBInfo::psNone || m_parStatus == NZBInfo::psSkipped) &&
-				 (m_unpackStatus == NZBInfo::usNone || m_unpackStatus == NZBInfo::usSkipped) &&
+		else if ((m_parStatus == NzbInfo::psNone || m_parStatus == NzbInfo::psSkipped) &&
+				 (m_unpackStatus == NzbInfo::usNone || m_unpackStatus == NzbInfo::usSkipped) &&
 				 scriptStatus != ScriptStatus::srFailure && health == 1000)
 		{
 			status = "SUCCESS/HEALTH";
 		}
-		else if (m_unpackStatus == NZBInfo::usSpace)
+		else if (m_unpackStatus == NzbInfo::usSpace)
 		{
 			status = "WARNING/SPACE";
 		}
-		else if (m_unpackStatus == NZBInfo::usPassword)
+		else if (m_unpackStatus == NzbInfo::usPassword)
 		{
 			status = "WARNING/PASSWORD";
 		}
-		else if ((m_unpackStatus == NZBInfo::usSuccess ||
-				  ((m_unpackStatus == NZBInfo::usNone || m_unpackStatus == NZBInfo::usSkipped) &&
-				   m_parStatus == NZBInfo::psSuccess)) &&
+		else if ((m_unpackStatus == NzbInfo::usSuccess ||
+				  ((m_unpackStatus == NzbInfo::usNone || m_unpackStatus == NzbInfo::usSkipped) &&
+				   m_parStatus == NzbInfo::psSuccess)) &&
 				 scriptStatus == ScriptStatus::srSuccess)
 		{
 			status = "SUCCESS/ALL";
 		}
-		else if (m_unpackStatus == NZBInfo::usSuccess && scriptStatus == ScriptStatus::srNone)
+		else if (m_unpackStatus == NzbInfo::usSuccess && scriptStatus == ScriptStatus::srNone)
 		{
 			status = "SUCCESS/UNPACK";
 		}
-		else if (m_parStatus == NZBInfo::psSuccess && scriptStatus == ScriptStatus::srNone)
+		else if (m_parStatus == NzbInfo::psSuccess && scriptStatus == ScriptStatus::srNone)
 		{
 			status = "SUCCESS/PAR";
 		}
@@ -943,13 +943,13 @@ const char* NZBInfo::MakeTextStatus(bool ignoreScriptStatus)
 			status = "WARNING/SCRIPT";
 		}
 	}
-	else if (m_kind == NZBInfo::nkUrl)
+	else if (m_kind == NzbInfo::nkUrl)
 	{
-		if (m_deleteStatus == NZBInfo::dsManual)
+		if (m_deleteStatus == NzbInfo::dsManual)
 		{
 			status = "DELETED/MANUAL";
 		}
-		else if (m_deleteStatus == NZBInfo::dsDupe)
+		else if (m_deleteStatus == NzbInfo::dsDupe)
 		{
 			status = "DELETED/DUPE";
 		}
@@ -965,7 +965,7 @@ const char* NZBInfo::MakeTextStatus(bool ignoreScriptStatus)
 }
 
 
-NZBList::~NZBList()
+NzbList::~NzbList()
 {
 	if (m_ownObjects)
 	{
@@ -973,7 +973,7 @@ NZBList::~NZBList()
 	}
 }
 
-void NZBList::Clear()
+void NzbList::Clear()
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
@@ -982,7 +982,7 @@ void NZBList::Clear()
 	clear();
 }
 
-void NZBList::Add(NZBInfo* nzbInfo, bool addTop)
+void NzbList::Add(NzbInfo* nzbInfo, bool addTop)
 {
 	if (addTop)
 	{
@@ -994,7 +994,7 @@ void NZBList::Add(NZBInfo* nzbInfo, bool addTop)
 	}
 }
 
-void NZBList::Remove(NZBInfo* nzbInfo)
+void NzbList::Remove(NzbInfo* nzbInfo)
 {
 	iterator it = std::find(begin(), end(), nzbInfo);
 	if (it != end())
@@ -1003,12 +1003,12 @@ void NZBList::Remove(NZBInfo* nzbInfo)
 	}
 }
 
-NZBInfo* NZBList::Find(int id)
+NzbInfo* NzbList::Find(int id)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
-		if (nzbInfo->GetID() == id)
+		NzbInfo* nzbInfo = *it;
+		if (nzbInfo->GetId() == id)
 		{
 			return nzbInfo;
 		}
@@ -1039,7 +1039,7 @@ ArticleInfo::~ ArticleInfo()
 	free(m_resultFilename);
 }
 
-void ArticleInfo::SetMessageID(const char * messageId)
+void ArticleInfo::SetMessageId(const char * messageId)
 {
 	free(m_messageId);
 	m_messageId = strdup(messageId);
@@ -1132,7 +1132,7 @@ void FileInfo::ClearArticles()
 	m_articles.clear();
 }
 
-void FileInfo::SetID(int id)
+void FileInfo::SetId(int id)
 {
 	m_id = id;
 	if (m_idMax < m_id)
@@ -1141,7 +1141,7 @@ void FileInfo::SetID(int id)
 	}
 }
 
-void FileInfo::ResetGenID(bool max)
+void FileInfo::ResetGenId(bool max)
 {
 	if (max)
 	{
@@ -1320,12 +1320,12 @@ DupInfo::~DupInfo()
 	free(m_dupeKey);
 }
 
-void DupInfo::SetID(int id)
+void DupInfo::SetId(int id)
 {
 	m_id = id;
-	if (NZBInfo::m_idMax < m_id)
+	if (NzbInfo::m_idMax < m_id)
 	{
-		NZBInfo::m_idMax = m_id;
+		NzbInfo::m_idMax = m_id;
 	}
 }
 
@@ -1342,9 +1342,9 @@ void DupInfo::SetDupeKey(const char* dupeKey)
 }
 
 
-HistoryInfo::HistoryInfo(NZBInfo* nzbInfo)
+HistoryInfo::HistoryInfo(NzbInfo* nzbInfo)
 {
-	m_kind = nzbInfo->GetKind() == NZBInfo::nkNzb ? hkNzb : hkUrl;
+	m_kind = nzbInfo->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl;
 	m_info = nzbInfo;
 	m_time = 0;
 }
@@ -1360,7 +1360,7 @@ HistoryInfo::~HistoryInfo()
 {
 	if ((m_kind == hkNzb || m_kind == hkUrl) && m_info)
 	{
-		delete (NZBInfo*)m_info;
+		delete (NzbInfo*)m_info;
 	}
 	else if (m_kind == hkDup && m_info)
 	{
@@ -1368,15 +1368,15 @@ HistoryInfo::~HistoryInfo()
 	}
 }
 
-int HistoryInfo::GetID()
+int HistoryInfo::GetId()
 {
 	if ((m_kind == hkNzb || m_kind == hkUrl))
 	{
-		return ((NZBInfo*)m_info)->GetID();
+		return ((NzbInfo*)m_info)->GetId();
 	}
 	else // if (m_eKind == hkDup)
 	{
-		return ((DupInfo*)m_info)->GetID();
+		return ((DupInfo*)m_info)->GetId();
 	}
 }
 
@@ -1384,7 +1384,7 @@ void HistoryInfo::GetName(char* buffer, int size)
 {
 	if (m_kind == hkNzb || m_kind == hkUrl)
 	{
-		strncpy(buffer, GetNZBInfo()->GetName(), size);
+		strncpy(buffer, GetNzbInfo()->GetName(), size);
 		buffer[size-1] = '\0';
 	}
 	else if (m_kind == hkDup)
@@ -1412,7 +1412,7 @@ HistoryInfo* HistoryList::Find(int id)
 	for (iterator it = begin(); it != end(); it++)
 	{
 		HistoryInfo* historyInfo = *it;
-		if (historyInfo->GetID() == id)
+		if (historyInfo->GetId() == id)
 		{
 			return historyInfo;
 		}
@@ -1438,9 +1438,9 @@ void DownloadQueue::CalcRemainingSize(long long* remaining, long long* remaining
 	long long remainingSize = 0;
 	long long remainingForcedSize = 0;
 
-	for (NZBList::iterator it = m_queue.begin(); it != m_queue.end(); it++)
+	for (NzbList::iterator it = m_queue.begin(); it != m_queue.end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 		{
 			FileInfo* fileInfo = *it2;

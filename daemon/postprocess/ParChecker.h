@@ -96,7 +96,7 @@ public:
 	public:
 							DupeSource(int id, const char* directory);
 							~DupeSource();
-		int					GetID() { return m_id; }
+		int					GetId() { return m_id; }
 		const char*			GetDirectory() { return m_directory; }
 		int					GetUsedBlocks() { return m_usedBlocks; }
 		void				SetUsedBlocks(int usedBlocks) { m_usedBlocks = usedBlocks; }
@@ -197,7 +197,7 @@ public:
 	const char*			GetParFilename() { return m_parFilename; }
 	const char*			GetInfoName() { return m_infoName; }
 	void				SetInfoName(const char* infoName);
-	void				SetNZBName(const char* nzbName);
+	void				SetNzbName(const char* nzbName);
 	void				SetParQuick(bool parQuick) { m_parQuick = parQuick; }
 	bool				GetParQuick() { return m_parQuick; }
 	void				SetForceRepair(bool forceRepair) { m_forceRepair = forceRepair; }

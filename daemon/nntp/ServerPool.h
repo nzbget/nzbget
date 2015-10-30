@@ -38,7 +38,7 @@
 class ServerPool : public Debuggable
 {
 private:
-	class PooledConnection : public NNTPConnection
+	class PooledConnection : public NntpConnection
 	{
 	private:
 		bool			m_inUse;
@@ -79,8 +79,8 @@ public:
 	void				InitConnections();
 	int					GetMaxNormLevel() { return m_maxNormLevel; }
 	Servers*			GetServers() { return &m_servers; } // Only for read access (no lockings)
-	NNTPConnection*		GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers);
-	void 				FreeConnection(NNTPConnection* connection, bool used);
+	NntpConnection*		GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers);
+	void 				FreeConnection(NntpConnection* connection, bool used);
 	void				CloseUnusedConnections();
 	void				Changed();
 	int					GetGeneration() { return m_generation; }

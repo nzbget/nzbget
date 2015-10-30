@@ -85,7 +85,7 @@ enum remoteMatchMode
 };
 
 // The basic SNZBRequestBase struct, used in all requests
-struct SNZBRequestBase
+struct SNzbRequestBase
 {
 	int32_t					m_signature;			// Signature must be NZBMESSAGE_SIGNATURE in integer-value
 	int32_t					m_structSize;			// Size of the entire struct
@@ -95,16 +95,16 @@ struct SNZBRequestBase
 };
 
 // The basic SNZBResposneBase struct, used in all responses
-struct SNZBResponseBase
+struct SNzbResponseBase
 {
 	int32_t					m_signature;			// Signature must be NZBMESSAGE_SIGNATURE in integer-value
 	int32_t					m_structSize;			// Size of the entire struct
 };
 
 // A download request
-struct SNZBDownloadRequest
+struct SNzbDownloadRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	char					m_nzbFilename[NZBREQUESTFILENAMESIZE];// Name of nzb-file. For URLs can be empty, then the filename is read from URL download response
 	char					m_category[NZBREQUESTFILENAMESIZE];	// Category, can be empty
 	int32_t					m_addFirst;			// 1 - add file to the top of download queue
@@ -118,18 +118,18 @@ struct SNZBDownloadRequest
 };
 
 // A download response
-struct SNZBDownloadResponse
+struct SNzbDownloadResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // A list and status request
-struct SNZBListRequest
+struct SNzbListRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_fileList;			// 1 - return file list
 	int32_t					m_serverState;			// 1 - return server state
 	int32_t					m_matchMode;			// File/Group match mode, see enum eRemoteMatchMode (only values eRemoteMatchModeID (no filter) and eRemoteMatchModeRegEx are allowed)
@@ -138,9 +138,9 @@ struct SNZBListRequest
 };
 
 // A list response
-struct SNZBListResponse
+struct SNzbListResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_entrySize;			// Size of the SNZBListResponseEntry-struct
 	int32_t 				m_remainingSizeLo;		// Remaining size in bytes, Low 32-bits of 64-bit value
 	int32_t 				m_remainingSizeHi;		// Remaining size in bytes, High 32-bits of 64-bit value
@@ -168,7 +168,7 @@ struct SNZBListResponse
 };
 
 // A list response nzb entry
-struct SNZBListResponseNZBEntry
+struct SNzbListResponseNzbEntry
 {
 	int32_t					m_id;					// NZB-ID
 	int32_t					m_kind;				// Item Kind (see NZBInfo::Kind)
@@ -195,7 +195,7 @@ struct SNZBListResponseNZBEntry
 };
 
 // A list response pp-parameter entry
-struct SNZBListResponsePPPEntry
+struct SNzbListResponsePPPEntry
 {
 	int32_t					m_nzbIndex;			// Index of NZB-Entry in m_NZBEntries-list
 	int32_t					m_nameLen;				// Length of Name-string (m_szName), following to this record
@@ -205,7 +205,7 @@ struct SNZBListResponsePPPEntry
 };
 
 // A list response file entry
-struct SNZBListResponseFileEntry
+struct SNzbListResponseFileEntry
 {
 	int32_t					m_id;					// Entry-ID
 	int32_t					m_nzbIndex;			// Index of NZB-Entry in m_NZBEntries-list
@@ -224,17 +224,17 @@ struct SNZBListResponseFileEntry
 };
 
 // A log request
-struct SNZBLogRequest
+struct SNzbLogRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_idFrom;				// Only one of these two parameters
 	int32_t					m_lines;				// can be set. The another one must be set to "0".
 };
 
 // A log response
-struct SNZBLogResponse
+struct SNzbLogResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_entrySize;			// Size of the SNZBLogResponseEntry-struct
 	int32_t					m_nrTrailingEntries;	// Number of Log-entries, following to this structure
 	int32_t					m_trailingDataLength;	// Length of all Log-entries, following to this structure
@@ -242,7 +242,7 @@ struct SNZBLogResponse
 };
 
 // A log response entry
-struct SNZBLogResponseEntry
+struct SNzbLogResponseEntry
 {
 	int32_t					m_id;					// ID of Log-entry
 	int32_t					m_kind;				// see Message::Kind in "Log.h"
@@ -252,42 +252,42 @@ struct SNZBLogResponseEntry
 };
 
 // A Pause/Unpause request
-struct SNZBPauseUnpauseRequest
+struct SNzbPauseUnpauseRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_pause;				// 1 - server must be paused, 0 - server must be unpaused
 	int32_t					m_action;				// Action to be executed, see enum eRemotePauseUnpauseAction
 };
 
 // A Pause/Unpause response
-struct SNZBPauseUnpauseResponse
+struct SNzbPauseUnpauseResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // Request setting the download rate
-struct SNZBSetDownloadRateRequest
+struct SNzbSetDownloadRateRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_downloadRate;		// Speed limit, in Bytes pro Second
 };
 
 // A setting download rate response
-struct SNZBSetDownloadRateResponse
+struct SNzbSetDownloadRateResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // edit queue request
-struct SNZBEditQueueRequest
+struct SNzbEditQueueRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_action;				// Action to be executed, see enum DownloadQueue::EEditAction
 	int32_t					m_offset;				// Offset to move (for m_iAction = 0)
 	int32_t					m_matchMode;				// File/Group match mode, see enum eRemoteMatchMode
@@ -302,84 +302,84 @@ struct SNZBEditQueueRequest
 };
 
 // An edit queue response
-struct SNZBEditQueueResponse
+struct SNzbEditQueueResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // Request dumping of debug info
-struct SNZBDumpDebugRequest
+struct SNzbDumpDebugRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 };
 
 // Dumping of debug response
-struct SNZBDumpDebugResponse
+struct SNzbDumpDebugResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // Shutdown server request
-struct SNZBShutdownRequest
+struct SNzbShutdownRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 };
 
 // Shutdown server response
-struct SNZBShutdownResponse
+struct SNzbShutdownResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // Reload server request
-struct SNZBReloadRequest
+struct SNzbReloadRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 };
 
 // Reload server response
-struct SNZBReloadResponse
+struct SNzbReloadResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // Server version request
-struct SNZBVersionRequest
+struct SNzbVersionRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 };
 
 // Server version  response
-struct SNZBVersionResponse
+struct SNzbVersionResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // PostQueue request
-struct SNZBPostQueueRequest
+struct SNzbPostQueueRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 };
 
 // A PostQueue response
-struct SNZBPostQueueResponse
+struct SNzbPostQueueResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_entrySize;			// Size of the SNZBPostQueueResponseEntry-struct
 	int32_t					m_nrTrailingEntries;	// Number of PostQueue-entries, following to this structure
 	int32_t					m_trailingDataLength;	// Length of all PostQueue-entries, following to this structure
@@ -387,7 +387,7 @@ struct SNZBPostQueueResponse
 };
 
 // A PostQueue response entry
-struct SNZBPostQueueResponseEntry
+struct SNzbPostQueueResponseEntry
 {
 	int32_t					m_id;					// ID of Post-entry
 	int32_t					m_stage;				// See PrePostProcessor::EPostJobStage
@@ -406,50 +406,50 @@ struct SNZBPostQueueResponseEntry
 };
 
 // Write log request
-struct SNZBWriteLogRequest
+struct SNzbWriteLogRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_kind;				// see Message::Kind in "Log.h"
 	int32_t					m_trailingDataLength;	// Length of nzb-file in bytes
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // Write log response
-struct SNZBWriteLogResponse
+struct SNzbWriteLogResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // Scan nzb directory request
-struct SNZBScanRequest
+struct SNzbScanRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_syncMode;			// 0 - asynchronous Scan (the command returns immediately), 1 - synchronous Scan (the command returns when the scan is completed)
 };
 
 // Scan nzb directory response
-struct SNZBScanResponse
+struct SNzbScanResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_success;				// 0 - command failed, 1 - command executed successfully
 	int32_t					m_trailingDataLength;	// Length of Text-string (m_szText), following to this record
 	//char					m_szText[m_iTrailingDataLength];	// variable sized
 };
 
 // A history request
-struct SNZBHistoryRequest
+struct SNzbHistoryRequest
 {
-	SNZBRequestBase			m_messageBase;			// Must be the first in the struct
+	SNzbRequestBase			m_messageBase;			// Must be the first in the struct
 	int32_t					m_hidden;				// 0 - only return visible records, 1 - also return hidden records
 };
 
 // history response
-struct SNZBHistoryResponse
+struct SNzbHistoryResponse
 {
-	SNZBResponseBase		m_messageBase;			// Must be the first in the struct
+	SNzbResponseBase		m_messageBase;			// Must be the first in the struct
 	int32_t					m_entrySize;			// Size of the SNZBHistoryResponseEntry-struct
 	int32_t					m_nrTrailingEntries;	// Number of History-entries, following to this structure
 	int32_t					m_trailingDataLength;	// Length of all History-entries, following to this structure
@@ -457,7 +457,7 @@ struct SNZBHistoryResponse
 };
 
 // history entry
-struct SNZBHistoryResponseEntry
+struct SNzbHistoryResponseEntry
 {
 	int32_t					m_id;					// History-ID
 	int32_t					m_kind;				// Kind of Item: 1 - Collection (NZB), 2 - URL, 3 - DUP (hidden record)

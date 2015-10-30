@@ -62,20 +62,20 @@ const char* g_szMessageRequestNames[] =
 
 const unsigned int g_iMessageRequestSizes[] =
     { 0,
-		sizeof(SNZBDownloadRequest),
-		sizeof(SNZBPauseUnpauseRequest),
-		sizeof(SNZBListRequest),
-		sizeof(SNZBSetDownloadRateRequest),
-		sizeof(SNZBDumpDebugRequest),
-		sizeof(SNZBEditQueueRequest),
-		sizeof(SNZBLogRequest),
-		sizeof(SNZBShutdownRequest),
-		sizeof(SNZBReloadRequest),
-		sizeof(SNZBVersionRequest),
-		sizeof(SNZBPostQueueRequest),
-		sizeof(SNZBWriteLogRequest),
-		sizeof(SNZBScanRequest),
-		sizeof(SNZBHistoryRequest)
+		sizeof(SNzbDownloadRequest),
+		sizeof(SNzbPauseUnpauseRequest),
+		sizeof(SNzbListRequest),
+		sizeof(SNzbSetDownloadRateRequest),
+		sizeof(SNzbDumpDebugRequest),
+		sizeof(SNzbEditQueueRequest),
+		sizeof(SNzbLogRequest),
+		sizeof(SNzbShutdownRequest),
+		sizeof(SNzbReloadRequest),
+		sizeof(SNzbVersionRequest),
+		sizeof(SNzbPostQueueRequest),
+		sizeof(SNzbWriteLogRequest),
+		sizeof(SNzbScanRequest),
+		sizeof(SNzbHistoryRequest)
     };
 
 
@@ -84,7 +84,7 @@ class BinCommand
 {
 protected:
 	Connection*			m_connection;
-	SNZBRequestBase*	m_messageBase;
+	SNzbRequestBase*	m_messageBase;
 
 	bool				ReceiveRequest(void* buffer, int size);
 	void				SendBoolResponse(bool success, const char* text);
@@ -93,7 +93,7 @@ public:
 	virtual				~BinCommand() {}
 	virtual void		Execute() = 0;
 	void				SetConnection(Connection* connection) { m_connection = connection; }
-	void				SetMessageBase(SNZBRequestBase*	messageBase) { m_messageBase = messageBase; }
+	void				SetMessageBase(SNzbRequestBase*	messageBase) { m_messageBase = messageBase; }
 };
 
 class DownloadBinCommand: public BinCommand
@@ -307,7 +307,7 @@ void BinRpcProcessor::Dispatch()
 void BinCommand::SendBoolResponse(bool success, const char* text)
 {
 	// all bool-responses have the same format of structure, we use SNZBDownloadResponse here
-	SNZBDownloadResponse BoolResponse;
+	SNzbDownloadResponse BoolResponse;
 	memset(&BoolResponse, 0, sizeof(BoolResponse));
 	BoolResponse.m_messageBase.m_signature = htonl(NZBMESSAGE_SIGNATURE);
 	BoolResponse.m_messageBase.m_structSize = htonl(sizeof(BoolResponse));
@@ -322,11 +322,11 @@ void BinCommand::SendBoolResponse(bool success, const char* text)
 
 bool BinCommand::ReceiveRequest(void* buffer, int size)
 {
-	memcpy(buffer, m_messageBase, sizeof(SNZBRequestBase));
-	size -= sizeof(SNZBRequestBase);
+	memcpy(buffer, m_messageBase, sizeof(SNzbRequestBase));
+	size -= sizeof(SNzbRequestBase);
 	if (size > 0)
 	{
-		if (!m_connection->Recv(((char*)buffer) + sizeof(SNZBRequestBase), size))
+		if (!m_connection->Recv(((char*)buffer) + sizeof(SNzbRequestBase), size))
 		{
 			error("invalid request");
 			return false;
@@ -337,7 +337,7 @@ bool BinCommand::ReceiveRequest(void* buffer, int size)
 
 void PauseUnpauseBinCommand::Execute()
 {
-	SNZBPauseUnpauseRequest PauseUnpauseRequest;
+	SNzbPauseUnpauseRequest PauseUnpauseRequest;
 	if (!ReceiveRequest(&PauseUnpauseRequest, sizeof(PauseUnpauseRequest)))
 	{
 		return;
@@ -365,7 +365,7 @@ void PauseUnpauseBinCommand::Execute()
 
 void SetDownloadRateBinCommand::Execute()
 {
-	SNZBSetDownloadRateRequest SetDownloadRequest;
+	SNzbSetDownloadRateRequest SetDownloadRequest;
 	if (!ReceiveRequest(&SetDownloadRequest, sizeof(SetDownloadRequest)))
 	{
 		return;
@@ -377,7 +377,7 @@ void SetDownloadRateBinCommand::Execute()
 
 void DumpDebugBinCommand::Execute()
 {
-	SNZBDumpDebugRequest DumpDebugRequest;
+	SNzbDumpDebugRequest DumpDebugRequest;
 	if (!ReceiveRequest(&DumpDebugRequest, sizeof(DumpDebugRequest)))
 	{
 		return;
@@ -389,7 +389,7 @@ void DumpDebugBinCommand::Execute()
 
 void ShutdownBinCommand::Execute()
 {
-	SNZBShutdownRequest ShutdownRequest;
+	SNzbShutdownRequest ShutdownRequest;
 	if (!ReceiveRequest(&ShutdownRequest, sizeof(ShutdownRequest)))
 	{
 		return;
@@ -401,7 +401,7 @@ void ShutdownBinCommand::Execute()
 
 void ReloadBinCommand::Execute()
 {
-	SNZBReloadRequest ReloadRequest;
+	SNzbReloadRequest ReloadRequest;
 	if (!ReceiveRequest(&ReloadRequest, sizeof(ReloadRequest)))
 	{
 		return;
@@ -413,7 +413,7 @@ void ReloadBinCommand::Execute()
 
 void VersionBinCommand::Execute()
 {
-	SNZBVersionRequest VersionRequest;
+	SNzbVersionRequest VersionRequest;
 	if (!ReceiveRequest(&VersionRequest, sizeof(VersionRequest)))
 	{
 		return;
@@ -424,7 +424,7 @@ void VersionBinCommand::Execute()
 
 void DownloadBinCommand::Execute()
 {
-	SNZBDownloadRequest DownloadRequest;
+	SNzbDownloadRequest DownloadRequest;
 	if (!ReceiveRequest(&DownloadRequest, sizeof(DownloadRequest)))
 	{
 		return;
@@ -451,9 +451,9 @@ void DownloadBinCommand::Execute()
 	if (!strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7))
 	{
 		// add url
-		NZBInfo* nzbInfo = new NZBInfo();
-		nzbInfo->SetKind(NZBInfo::nkUrl);
-		nzbInfo->SetURL(nzbContent);
+		NzbInfo* nzbInfo = new NzbInfo();
+		nzbInfo->SetKind(NzbInfo::nkUrl);
+		nzbInfo->SetUrl(nzbContent);
 		nzbInfo->SetFilename(DownloadRequest.m_nzbFilename);
 		nzbInfo->SetCategory(DownloadRequest.m_category);
 		nzbInfo->SetPriority(priority);
@@ -488,17 +488,17 @@ void DownloadBinCommand::Execute()
 
 void ListBinCommand::Execute()
 {
-	SNZBListRequest ListRequest;
+	SNzbListRequest ListRequest;
 	if (!ReceiveRequest(&ListRequest, sizeof(ListRequest)))
 	{
 		return;
 	}
 
-	SNZBListResponse ListResponse;
+	SNzbListResponse ListResponse;
 	memset(&ListResponse, 0, sizeof(ListResponse));
 	ListResponse.m_messageBase.m_signature = htonl(NZBMESSAGE_SIGNATURE);
 	ListResponse.m_messageBase.m_structSize = htonl(sizeof(ListResponse));
-	ListResponse.m_entrySize = htonl(sizeof(SNZBListResponseFileEntry));
+	ListResponse.m_entrySize = htonl(sizeof(SNzbListResponseFileEntry));
 	ListResponse.m_regExValid = 0;
 
 	char* buf = NULL;
@@ -523,10 +523,10 @@ void ListBinCommand::Execute()
 		// calculate required buffer size for nzbs
 		int nrNzbEntries = downloadQueue->GetQueue()->size();
 		int nrPPPEntries = 0;
-		bufsize += nrNzbEntries * sizeof(SNZBListResponseNZBEntry);
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		bufsize += nrNzbEntries * sizeof(SNzbListResponseNzbEntry);
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			bufsize += strlen(nzbInfo->GetFilename()) + 1;
 			bufsize += strlen(nzbInfo->GetName()) + 1;
 			bufsize += strlen(nzbInfo->GetDestDir()) + 1;
@@ -536,10 +536,10 @@ void ListBinCommand::Execute()
 			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 
 			// calculate required buffer size for pp-parameters
-			for (NZBParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 			{
-				NZBParameter* nzbParameter = *it;
-				bufsize += sizeof(SNZBListResponsePPPEntry);
+				NzbParameter* nzbParameter = *it;
+				bufsize += sizeof(SNzbListResponsePPPEntry);
 				bufsize += strlen(nzbParameter->GetName()) + 1;
 				bufsize += strlen(nzbParameter->GetValue()) + 1;
 				// align struct to 4-bytes, needed by ARM-processor (and may be others)
@@ -550,14 +550,14 @@ void ListBinCommand::Execute()
 
 		// calculate required buffer size for files
 		int nrFileEntries = 0;
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 			{
 				FileInfo* fileInfo = *it2;
 				nrFileEntries++;
-				bufsize += sizeof(SNZBListResponseFileEntry);
+				bufsize += sizeof(SNzbListResponseFileEntry);
 				bufsize += strlen(fileInfo->GetSubject()) + 1;
 				bufsize += strlen(fileInfo->GetFilename()) + 1;
 				// align struct to 4-bytes, needed by ARM-processor (and may be others)
@@ -569,18 +569,18 @@ void ListBinCommand::Execute()
 		char* bufptr = buf;
 
 		// write nzb entries
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 
-			SNZBListResponseNZBEntry* listAnswer = (SNZBListResponseNZBEntry*) bufptr;
+			SNzbListResponseNzbEntry* listAnswer = (SNzbListResponseNzbEntry*) bufptr;
 
 			unsigned long sizeHi, sizeLo, remainingSizeHi, remainingSizeLo, pausedSizeHi, pausedSizeLo;
 			Util::SplitInt64(nzbInfo->GetSize(), &sizeHi, &sizeLo);
 			Util::SplitInt64(nzbInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
 			Util::SplitInt64(nzbInfo->GetPausedSize(), &pausedSizeHi, &pausedSizeLo);
 
-			listAnswer->m_id					= htonl(nzbInfo->GetID());
+			listAnswer->m_id					= htonl(nzbInfo->GetId());
 			listAnswer->m_kind				= htonl(nzbInfo->GetKind());
 			listAnswer->m_sizeLo				= htonl(sizeLo);
 			listAnswer->m_sizeHi				= htonl(sizeHi);
@@ -597,7 +597,7 @@ void ListBinCommand::Execute()
 			listAnswer->m_destDirLen			= htonl(strlen(nzbInfo->GetDestDir()) + 1);
 			listAnswer->m_categoryLen			= htonl(strlen(nzbInfo->GetCategory()) + 1);
 			listAnswer->m_queuedFilenameLen	= htonl(strlen(nzbInfo->GetQueuedFilename()) + 1);
-			bufptr += sizeof(SNZBListResponseNZBEntry);
+			bufptr += sizeof(SNzbListResponseNzbEntry);
 			strcpy(bufptr, nzbInfo->GetFilename());
 			bufptr += ntohl(listAnswer->m_filenameLen);
 			strcpy(bufptr, nzbInfo->GetName());
@@ -619,17 +619,17 @@ void ListBinCommand::Execute()
 
 		// write ppp entries
 		int nzbIndex = 1;
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, nzbIndex++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, nzbIndex++)
 		{
-			NZBInfo* nzbInfo = *it;
-			for (NZBParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+			NzbInfo* nzbInfo = *it;
+			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 			{
-				NZBParameter* nzbParameter = *it;
-				SNZBListResponsePPPEntry* listAnswer = (SNZBListResponsePPPEntry*) bufptr;
+				NzbParameter* nzbParameter = *it;
+				SNzbListResponsePPPEntry* listAnswer = (SNzbListResponsePPPEntry*) bufptr;
 				listAnswer->m_nzbIndex	= htonl(nzbIndex);
 				listAnswer->m_nameLen		= htonl(strlen(nzbParameter->GetName()) + 1);
 				listAnswer->m_valueLen	= htonl(strlen(nzbParameter->GetValue()) + 1);
-				bufptr += sizeof(SNZBListResponsePPPEntry);
+				bufptr += sizeof(SNzbListResponsePPPEntry);
 				strcpy(bufptr, nzbParameter->GetName());
 				bufptr += ntohl(listAnswer->m_nameLen);
 				strcpy(bufptr, nzbParameter->GetValue());
@@ -645,22 +645,22 @@ void ListBinCommand::Execute()
 		}
 
 		// write file entries
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 			{
 				FileInfo* fileInfo = *it2;
 
 				unsigned long sizeHi, sizeLo;
-				SNZBListResponseFileEntry* listAnswer = (SNZBListResponseFileEntry*) bufptr;
-				listAnswer->m_id = htonl(fileInfo->GetID());
+				SNzbListResponseFileEntry* listAnswer = (SNzbListResponseFileEntry*) bufptr;
+				listAnswer->m_id = htonl(fileInfo->GetId());
 
 				int nzbIndex = 0;
 				for (unsigned int i = 0; i < downloadQueue->GetQueue()->size(); i++)
 				{
 					nzbIndex++;
-					if (downloadQueue->GetQueue()->at(i) == fileInfo->GetNZBInfo())
+					if (downloadQueue->GetQueue()->at(i) == fileInfo->GetNzbInfo())
 					{
 						break;
 					}
@@ -670,7 +670,7 @@ void ListBinCommand::Execute()
 				if (regEx && !matchGroup)
 				{
 					char filename[MAX_PATH];
-					snprintf(filename, sizeof(filename) - 1, "%s/%s", fileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
+					snprintf(filename, sizeof(filename) - 1, "%s/%s", fileInfo->GetNzbInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
 					listAnswer->m_match = htonl(regEx->Match(filename));
 				}
 
@@ -685,7 +685,7 @@ void ListBinCommand::Execute()
 				listAnswer->m_activeDownloads	= htonl(fileInfo->GetActiveDownloads());
 				listAnswer->m_subjectLen		= htonl(strlen(fileInfo->GetSubject()) + 1);
 				listAnswer->m_filenameLen		= htonl(strlen(fileInfo->GetFilename()) + 1);
-				bufptr += sizeof(SNZBListResponseFileEntry);
+				bufptr += sizeof(SNzbListResponseFileEntry);
 				strcpy(bufptr, fileInfo->GetSubject());
 				bufptr += ntohl(listAnswer->m_subjectLen);
 				strcpy(bufptr, fileInfo->GetFilename());
@@ -714,9 +714,9 @@ void ListBinCommand::Execute()
 	{
 		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 		}
 		long long remainingSize;
@@ -761,7 +761,7 @@ void ListBinCommand::Execute()
 
 void LogBinCommand::Execute()
 {
-	SNZBLogRequest LogRequest;
+	SNzbLogRequest LogRequest;
 	if (!ReceiveRequest(&LogRequest, sizeof(LogRequest)))
 	{
 		return;
@@ -782,7 +782,7 @@ void LogBinCommand::Execute()
 	}
 	if (idFrom > 0 && !messages->empty())
 	{
-		start = idFrom - messages->front()->GetID();
+		start = idFrom - messages->front()->GetId();
 		if (start < 0)
 		{
 			start = 0;
@@ -795,7 +795,7 @@ void LogBinCommand::Execute()
 	}
 
 	// calculate required buffer size
-	int bufsize = nrEntries * sizeof(SNZBLogResponseEntry);
+	int bufsize = nrEntries * sizeof(SNzbLogResponseEntry);
 	for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
 	{
 		Message* message = (*messages)[i];
@@ -809,12 +809,12 @@ void LogBinCommand::Execute()
 	for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
 	{
 		Message* message = (*messages)[i];
-		SNZBLogResponseEntry* logAnswer = (SNZBLogResponseEntry*) bufptr;
-		logAnswer->m_id = htonl(message->GetID());
+		SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufptr;
+		logAnswer->m_id = htonl(message->GetId());
 		logAnswer->m_kind = htonl(message->GetKind());
 		logAnswer->m_time = htonl((int)message->GetTime());
 		logAnswer->m_textLen = htonl(strlen(message->GetText()) + 1);
-		bufptr += sizeof(SNZBLogResponseEntry);
+		bufptr += sizeof(SNzbLogResponseEntry);
 		strcpy(bufptr, message->GetText());
 		bufptr += ntohl(logAnswer->m_textLen);
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
@@ -828,10 +828,10 @@ void LogBinCommand::Execute()
 
 	g_pLog->UnlockMessages();
 
-	SNZBLogResponse LogResponse;
+	SNzbLogResponse LogResponse;
 	LogResponse.m_messageBase.m_signature = htonl(NZBMESSAGE_SIGNATURE);
 	LogResponse.m_messageBase.m_structSize = htonl(sizeof(LogResponse));
-	LogResponse.m_entrySize = htonl(sizeof(SNZBLogResponseEntry));
+	LogResponse.m_entrySize = htonl(sizeof(SNzbLogResponseEntry));
 	LogResponse.m_nrTrailingEntries = htonl(nrEntries);
 	LogResponse.m_trailingDataLength = htonl(bufsize);
 
@@ -849,7 +849,7 @@ void LogBinCommand::Execute()
 
 void EditQueueBinCommand::Execute()
 {
-	SNZBEditQueueRequest EditQueueRequest;
+	SNzbEditQueueRequest EditQueueRequest;
 	if (!ReceiveRequest(&EditQueueRequest, sizeof(EditQueueRequest)))
 	{
 		return;
@@ -889,15 +889,15 @@ void EditQueueBinCommand::Execute()
 	int32_t* ids = (int32_t*)(buf + textLen);
 	char* names = (buf + textLen + nrIdEntries * sizeof(int32_t));
 
-	IDList cIDList;
+	IdList cIdList;
 	NameList cNameList;
 
 	if (nrIdEntries > 0)
 	{
-		cIDList.reserve(nrIdEntries);
+		cIdList.reserve(nrIdEntries);
 		for (int i = 0; i < nrIdEntries; i++)
 		{
-			cIDList.push_back(ntohl(ids[i]));
+			cIdList.push_back(ntohl(ids[i]));
 		}
 	}
 
@@ -913,7 +913,7 @@ void EditQueueBinCommand::Execute()
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	bool ok = downloadQueue->EditList(
-		nrIdEntries > 0 ? &cIDList : NULL,
+		nrIdEntries > 0 ? &cIdList : NULL,
 		nrNameEntries > 0 ? &cNameList : NULL,
 		(DownloadQueue::EMatchMode)matchMode, (DownloadQueue::EEditAction)action, offset, text);
 	DownloadQueue::Unlock();
@@ -939,29 +939,29 @@ void EditQueueBinCommand::Execute()
 
 void PostQueueBinCommand::Execute()
 {
-	SNZBPostQueueRequest PostQueueRequest;
+	SNzbPostQueueRequest PostQueueRequest;
 	if (!ReceiveRequest(&PostQueueRequest, sizeof(PostQueueRequest)))
 	{
 		return;
 	}
 
-	SNZBPostQueueResponse PostQueueResponse;
+	SNzbPostQueueResponse PostQueueResponse;
 	memset(&PostQueueResponse, 0, sizeof(PostQueueResponse));
 	PostQueueResponse.m_messageBase.m_signature = htonl(NZBMESSAGE_SIGNATURE);
 	PostQueueResponse.m_messageBase.m_structSize = htonl(sizeof(PostQueueResponse));
-	PostQueueResponse.m_entrySize = htonl(sizeof(SNZBPostQueueResponseEntry));
+	PostQueueResponse.m_entrySize = htonl(sizeof(SNzbPostQueueResponseEntry));
 
 	char* buf = NULL;
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
-	NZBList* nzbList = DownloadQueue::Lock()->GetQueue();
+	NzbList* nzbList = DownloadQueue::Lock()->GetQueue();
 
 	// calculate required buffer size
 	int NrEntries = 0;
-	for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
 		{
@@ -969,10 +969,10 @@ void PostQueueBinCommand::Execute()
 		}
 
 		NrEntries++;
-		bufsize += sizeof(SNZBPostQueueResponseEntry);
-		bufsize += strlen(postInfo->GetNZBInfo()->GetFilename()) + 1;
-		bufsize += strlen(postInfo->GetNZBInfo()->GetName()) + 1;
-		bufsize += strlen(postInfo->GetNZBInfo()->GetDestDir()) + 1;
+		bufsize += sizeof(SNzbPostQueueResponseEntry);
+		bufsize += strlen(postInfo->GetNzbInfo()->GetFilename()) + 1;
+		bufsize += strlen(postInfo->GetNzbInfo()->GetName()) + 1;
+		bufsize += strlen(postInfo->GetNzbInfo()->GetDestDir()) + 1;
 		bufsize += strlen(postInfo->GetProgressLabel()) + 1;
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
@@ -982,32 +982,32 @@ void PostQueueBinCommand::Execute()
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 
-	for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
 		{
 			continue;
 		}
 
-		SNZBPostQueueResponseEntry* postQueueAnswer = (SNZBPostQueueResponseEntry*) bufptr;
-		postQueueAnswer->m_id				= htonl(nzbInfo->GetID());
+		SNzbPostQueueResponseEntry* postQueueAnswer = (SNzbPostQueueResponseEntry*) bufptr;
+		postQueueAnswer->m_id				= htonl(nzbInfo->GetId());
 		postQueueAnswer->m_stage			= htonl(postInfo->GetStage());
 		postQueueAnswer->m_stageProgress	= htonl(postInfo->GetStageProgress());
 		postQueueAnswer->m_fileProgress	= htonl(postInfo->GetFileProgress());
 		postQueueAnswer->m_totalTimeSec	= htonl((int)(postInfo->GetStartTime() ? curTime - postInfo->GetStartTime() : 0));
 		postQueueAnswer->m_stageTimeSec	= htonl((int)(postInfo->GetStageTime() ? curTime - postInfo->GetStageTime() : 0));
-		postQueueAnswer->m_nzbFilenameLen		= htonl(strlen(postInfo->GetNZBInfo()->GetFilename()) + 1);
-		postQueueAnswer->m_infoNameLen		= htonl(strlen(postInfo->GetNZBInfo()->GetName()) + 1);
-		postQueueAnswer->m_destDirLen			= htonl(strlen(postInfo->GetNZBInfo()->GetDestDir()) + 1);
+		postQueueAnswer->m_nzbFilenameLen		= htonl(strlen(postInfo->GetNzbInfo()->GetFilename()) + 1);
+		postQueueAnswer->m_infoNameLen		= htonl(strlen(postInfo->GetNzbInfo()->GetName()) + 1);
+		postQueueAnswer->m_destDirLen			= htonl(strlen(postInfo->GetNzbInfo()->GetDestDir()) + 1);
 		postQueueAnswer->m_progressLabelLen	= htonl(strlen(postInfo->GetProgressLabel()) + 1);
-		bufptr += sizeof(SNZBPostQueueResponseEntry);
-		strcpy(bufptr, postInfo->GetNZBInfo()->GetFilename());
+		bufptr += sizeof(SNzbPostQueueResponseEntry);
+		strcpy(bufptr, postInfo->GetNzbInfo()->GetFilename());
 		bufptr += ntohl(postQueueAnswer->m_nzbFilenameLen);
-		strcpy(bufptr, postInfo->GetNZBInfo()->GetName());
+		strcpy(bufptr, postInfo->GetNzbInfo()->GetName());
 		bufptr += ntohl(postQueueAnswer->m_infoNameLen);
-		strcpy(bufptr, postInfo->GetNZBInfo()->GetDestDir());
+		strcpy(bufptr, postInfo->GetNzbInfo()->GetDestDir());
 		bufptr += ntohl(postQueueAnswer->m_destDirLen);
 		strcpy(bufptr, postInfo->GetProgressLabel());
 		bufptr += ntohl(postQueueAnswer->m_progressLabelLen);
@@ -1039,7 +1039,7 @@ void PostQueueBinCommand::Execute()
 
 void WriteLogBinCommand::Execute()
 {
-	SNZBWriteLogRequest WriteLogRequest;
+	SNzbWriteLogRequest WriteLogRequest;
 	if (!ReceiveRequest(&WriteLogRequest, sizeof(WriteLogRequest)))
 	{
 		return;
@@ -1082,7 +1082,7 @@ void WriteLogBinCommand::Execute()
 
 void ScanBinCommand::Execute()
 {
-	SNZBScanRequest ScanRequest;
+	SNzbScanRequest ScanRequest;
 	if (!ReceiveRequest(&ScanRequest, sizeof(ScanRequest)))
 	{
 		return;
@@ -1090,13 +1090,13 @@ void ScanBinCommand::Execute()
 
 	bool syncMode = ntohl(ScanRequest.m_syncMode);
 
-	g_pScanner->ScanNZBDir(syncMode);
+	g_pScanner->ScanNzbDir(syncMode);
 	SendBoolResponse(true, syncMode ? "Scan-Command completed" : "Scan-Command scheduled successfully");
 }
 
 void HistoryBinCommand::Execute()
 {
-	SNZBHistoryRequest HistoryRequest;
+	SNzbHistoryRequest HistoryRequest;
 	if (!ReceiveRequest(&HistoryRequest, sizeof(HistoryRequest)))
 	{
 		return;
@@ -1104,11 +1104,11 @@ void HistoryBinCommand::Execute()
 
 	bool showHidden = ntohl(HistoryRequest.m_hidden);
 
-	SNZBHistoryResponse HistoryResponse;
+	SNzbHistoryResponse HistoryResponse;
 	memset(&HistoryResponse, 0, sizeof(HistoryResponse));
 	HistoryResponse.m_messageBase.m_signature = htonl(NZBMESSAGE_SIGNATURE);
 	HistoryResponse.m_messageBase.m_structSize = htonl(sizeof(HistoryResponse));
-	HistoryResponse.m_entrySize = htonl(sizeof(SNZBHistoryResponseEntry));
+	HistoryResponse.m_entrySize = htonl(sizeof(SNzbHistoryResponseEntry));
 
 	char* buf = NULL;
 	int bufsize = 0;
@@ -1126,7 +1126,7 @@ void HistoryBinCommand::Execute()
 			nrEntries++;
 		}
 	}
-	bufsize += nrEntries * sizeof(SNZBHistoryResponseEntry);
+	bufsize += nrEntries * sizeof(SNzbHistoryResponseEntry);
 	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* historyInfo = *it;
@@ -1149,8 +1149,8 @@ void HistoryBinCommand::Execute()
 		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
-			SNZBHistoryResponseEntry* listAnswer = (SNZBHistoryResponseEntry*) bufptr;
-			listAnswer->m_id					= htonl(historyInfo->GetID());
+			SNzbHistoryResponseEntry* listAnswer = (SNzbHistoryResponseEntry*) bufptr;
+			listAnswer->m_id					= htonl(historyInfo->GetId());
 			listAnswer->m_kind				= htonl((int)historyInfo->GetKind());
 			listAnswer->m_time				= htonl((int)historyInfo->GetTime());
 
@@ -1160,7 +1160,7 @@ void HistoryBinCommand::Execute()
 
 			if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 			{
-				NZBInfo* nzbInfo = historyInfo->GetNZBInfo();
+				NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
 				unsigned long sizeHi, sizeLo;
 				Util::SplitInt64(nzbInfo->GetSize(), &sizeHi, &sizeLo);
 				listAnswer->m_sizeLo				= htonl(sizeLo);
@@ -1179,11 +1179,11 @@ void HistoryBinCommand::Execute()
 			}
 			else if (historyInfo->GetKind() == HistoryInfo::hkUrl)
 			{
-				NZBInfo* nzbInfo = historyInfo->GetNZBInfo();
+				NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
 				listAnswer->m_urlStatus			= htonl(nzbInfo->GetUrlStatus());
 			}
 
-			bufptr += sizeof(SNZBHistoryResponseEntry);
+			bufptr += sizeof(SNzbHistoryResponseEntry);
 			strcpy(bufptr, nicename);
 			bufptr += ntohl(listAnswer->m_nicenameLen);
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)

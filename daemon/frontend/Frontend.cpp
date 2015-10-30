@@ -82,8 +82,8 @@ bool Frontend::PrepareData()
 		}
 		if (!RequestMessages() || ((m_summary || m_fileList) && !RequestFileList()))
 		{
-			const char* controlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
-			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", controlIP, g_pOptions->GetControlPort());
+			const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
+			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", controlIp, g_pOptions->GetControlPort());
 			Stop();
 			return false;
 		}
@@ -100,9 +100,9 @@ bool Frontend::PrepareData()
 
 			DownloadQueue *downloadQueue = DownloadQueue::Lock();
 			m_postJobCount = 0;
-			for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 			{
-				NZBInfo* nzbInfo = *it;
+				NzbInfo* nzbInfo = *it;
 				m_postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			}
 			downloadQueue->CalcRemainingSize(&m_remainingSize, NULL);
@@ -201,7 +201,7 @@ bool Frontend::ServerEditQueue(DownloadQueue::EEditAction action, int offset, in
 	return false;
 }
 
-void Frontend::InitMessageBase(SNZBRequestBase* messageBase, int request, int size)
+void Frontend::InitMessageBase(SNzbRequestBase* messageBase, int request, int size)
 {
 	messageBase->m_signature	= htonl(NZBMESSAGE_SIGNATURE);
 	messageBase->m_type = htonl(request);
@@ -216,8 +216,8 @@ void Frontend::InitMessageBase(SNZBRequestBase* messageBase, int request, int si
 
 bool Frontend::RequestMessages()
 {
-	const char* controlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
-	Connection connection(controlIP, g_pOptions->GetControlPort(), false);
+	const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
+	Connection connection(controlIp, g_pOptions->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -225,7 +225,7 @@ bool Frontend::RequestMessages()
 		return false;
 	}
 
-	SNZBLogRequest LogRequest;
+	SNzbLogRequest LogRequest;
 	InitMessageBase(&LogRequest.m_messageBase, remoteRequestLog, sizeof(LogRequest));
 	LogRequest.m_lines = htonl(m_neededLogEntries);
 	if (m_neededLogEntries == 0)
@@ -243,7 +243,7 @@ bool Frontend::RequestMessages()
 	}
 
 	// Now listen for the returned log
-	SNZBLogResponse LogResponse;
+	SNzbLogResponse LogResponse;
 	bool read = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
 	if (!read || 
 		(int)ntohl(LogResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
@@ -270,14 +270,14 @@ bool Frontend::RequestMessages()
 		char* bufPtr = (char*)buf;
 		for (unsigned int i = 0; i < ntohl(LogResponse.m_nrTrailingEntries); i++)
 		{
-			SNZBLogResponseEntry* logAnswer = (SNZBLogResponseEntry*) bufPtr;
+			SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufPtr;
 
-			char* text = bufPtr + sizeof(SNZBLogResponseEntry);
+			char* text = bufPtr + sizeof(SNzbLogResponseEntry);
 
 			Message* message = new Message(ntohl(logAnswer->m_id), (Message::EKind)ntohl(logAnswer->m_kind), ntohl(logAnswer->m_time), text);
 			m_remoteMessages.push_back(message);
 
-			bufPtr += sizeof(SNZBLogResponseEntry) + ntohl(logAnswer->m_textLen);
+			bufPtr += sizeof(SNzbLogResponseEntry) + ntohl(logAnswer->m_textLen);
 		}
 
 		free(buf);
@@ -288,8 +288,8 @@ bool Frontend::RequestMessages()
 
 bool Frontend::RequestFileList()
 {
-	const char* controlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
-	Connection connection(controlIP, g_pOptions->GetControlPort(), false);
+	const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
+	Connection connection(controlIp, g_pOptions->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -297,7 +297,7 @@ bool Frontend::RequestFileList()
 		return false;
 	}
 
-	SNZBListRequest ListRequest;
+	SNzbListRequest ListRequest;
 	InitMessageBase(&ListRequest.m_messageBase, remoteRequestList, sizeof(ListRequest));
 	ListRequest.m_fileList = htonl(m_fileList);
 	ListRequest.m_serverState = htonl(m_summary);
@@ -308,7 +308,7 @@ bool Frontend::RequestFileList()
 	}
 
 	// Now listen for the returned list
-	SNZBListResponse ListResponse;
+	SNzbListResponse ListResponse;
 	bool read = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
 	if (!read || 
 		(int)ntohl(ListResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||

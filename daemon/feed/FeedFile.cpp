@@ -146,7 +146,7 @@ FeedFile* FeedFile::Create(const char* fileName)
 
 	// filename needs to be properly encoded
 	char* url = (char*)malloc(strlen(fileName)*3 + 1);
-	EncodeURL(fileName, url);
+	EncodeUrl(fileName, url);
 	debug("url=\"%s\"", url);
 	_variant_t v(url);
 	free(url);
@@ -170,7 +170,7 @@ FeedFile* FeedFile::Create(const char* fileName)
     return file;
 }
 
-void FeedFile::EncodeURL(const char* filename, char* url)
+void FeedFile::EncodeUrl(const char* filename, char* url)
 {
 	while (char ch = *filename++)
 	{

@@ -98,8 +98,8 @@ private:
 		virtual void	PrintMessage(Message::EKind kind, const char* format, ...);
 	public:
 		PostDupeMatcher(PostInfo* postInfo):
-			DupeMatcher(postInfo->GetNZBInfo()->GetDestDir(),
-				postInfo->GetNZBInfo()->GetSize() - postInfo->GetNZBInfo()->GetParSize()),
+			DupeMatcher(postInfo->GetNzbInfo()->GetDestDir(),
+				postInfo->GetNzbInfo()->GetSize() - postInfo->GetNzbInfo()->GetParSize()),
 				m_postInfo(postInfo) {}
 	};
 
@@ -129,17 +129,17 @@ protected:
 	void				ParCheckCompleted();
 	void				ParRenameCompleted();
 	void				CheckPauseState(PostInfo* postInfo);
-	bool				RequestMorePars(NZBInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFound);
+	bool				RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFound);
 #endif
 
 public:
 						ParCoordinator();
 	virtual				~ParCoordinator();
-	void				PausePars(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
+	void				PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 
 #ifndef DISABLE_PARCHECK
 	bool				AddPar(FileInfo* fileInfo, bool deleted);
-	void				FindPars(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, const char* parFilename, 
+	void				FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename, 
 							Blocks* blocks, bool strictParName, bool exactParName, int* blockFound);
 	void				StartParCheckJob(PostInfo* postInfo);
 	void				StartParRenameJob(PostInfo* postInfo);

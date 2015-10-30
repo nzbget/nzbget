@@ -411,7 +411,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_retries				= 0;
 	m_retryInterval		= 0;
 	m_controlPort			= 0;
-	m_controlIP			= NULL;
+	m_controlIp			= NULL;
 	m_controlUsername		= NULL;
 	m_controlPassword		= NULL;
 	m_restrictedUsername	= NULL;
@@ -422,7 +422,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_securePort			= 0;
 	m_secureCert			= NULL;
 	m_secureKey			= NULL;
-	m_authorizedIP		= NULL;
+	m_authorizedIp		= NULL;
 	m_lockFile			= NULL;
 	m_daemonUsername		= NULL;
 	m_outputMode			= omLoggable;
@@ -457,7 +457,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_nzbDirFileAge		= 0;
 	m_parCleanupQueue		= false;
 	m_diskSpace			= 0;
-	m_tLS					= false;
+	m_tls					= false;
 	m_dumpCore				= false;
 	m_parPauseQueue		= false;
 	m_scriptPauseQueue		= false;
@@ -560,7 +560,7 @@ Options::~Options()
 	free(m_configTemplate);
 	free(m_scriptDir);
 	free(m_requiredDir);
-	free(m_controlIP);
+	free(m_controlIp);
 	free(m_controlUsername);
 	free(m_controlPassword);
 	free(m_restrictedUsername);
@@ -569,7 +569,7 @@ Options::~Options()
 	free(m_addPassword);
 	free(m_secureCert);
 	free(m_secureKey);
-	free(m_authorizedIP);
+	free(m_authorizedIp);
 	free(m_logFile);
 	free(m_lockFile);
 	free(m_daemonUsername);
@@ -922,7 +922,7 @@ void Options::InitOptions()
 	m_scanScript			= strdup(GetOption(OPTION_SCANSCRIPT));
 	m_queueScript			= strdup(GetOption(OPTION_QUEUESCRIPT));
 	m_feedScript			= strdup(GetOption(OPTION_FEEDSCRIPT));
-	m_controlIP			= strdup(GetOption(OPTION_CONTROLIP));
+	m_controlIp			= strdup(GetOption(OPTION_CONTROLIP));
 	m_controlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_controlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
 	m_restrictedUsername	= strdup(GetOption(OPTION_RESTRICTEDUSERNAME));
@@ -931,7 +931,7 @@ void Options::InitOptions()
 	m_addPassword			= strdup(GetOption(OPTION_ADDPASSWORD));
 	m_secureCert			= strdup(GetOption(OPTION_SECURECERT));
 	m_secureKey			= strdup(GetOption(OPTION_SECUREKEY));
-	m_authorizedIP		= strdup(GetOption(OPTION_AUTHORIZEDIP));
+	m_authorizedIp		= strdup(GetOption(OPTION_AUTHORIZEDIP));
 	m_lockFile			= strdup(GetOption(OPTION_LOCKFILE));
 	m_daemonUsername		= strdup(GetOption(OPTION_DAEMONUSERNAME));
 	m_logFile				= strdup(GetOption(OPTION_LOGFILE));
@@ -1251,18 +1251,18 @@ void Options::InitServers()
 
 		sprintf(optname, "Server%i.Encryption", n);
 		const char* ntls = GetOption(optname);
-		bool tLS = false;
+		bool tls = false;
 		if (ntls)
 		{
-			tLS = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+			tls = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
 #ifdef DISABLE_TLS
-			if (tLS)
+			if (tls)
 			{
 				ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support", optname);
-				tLS = false;
+				tls = false;
 			}
 #endif
-			m_tLS |= tLS;
+			m_tls |= tls;
 		}
 
 		sprintf(optname, "Server%i.Cipher", n);
@@ -1291,7 +1291,7 @@ void Options::InitServers()
 					nhost,
 					nport ? atoi(nport) : 119,
 					nusername, npassword,
-					joinGroup, tLS, ncipher,
+					joinGroup, tls, ncipher,
 					nconnections ? atoi(nconnections) : 1,
 					nretention ? atoi(nretention) : 0,
 					nlevel ? atoi(nlevel) : 0,

@@ -35,7 +35,7 @@
 #include "Log.h"
 #include "Thread.h"
 
-class NZBInfo;
+class NzbInfo;
 class DownloadQueue;
 class PostInfo;
 
@@ -48,7 +48,7 @@ private:
 
 public:
 						ServerStat(int serverId);
-	int					GetServerID() { return m_serverId; }
+	int					GetServerId() { return m_serverId; }
 	int					GetSuccessArticles() { return m_successArticles; }
 	void				SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
 	int					GetFailedArticles() { return m_failedArticles; }
@@ -101,8 +101,8 @@ public:
 						~ArticleInfo();
 	void 				SetPartNumber(int s) { m_partNumber = s; }
 	int 				GetPartNumber() { return m_partNumber; }
-	const char* 		GetMessageID() { return m_messageId; }
-	void 				SetMessageID(const char* messageId);
+	const char* 		GetMessageId() { return m_messageId; }
+	void 				SetMessageId(const char* messageId);
 	void 				SetSize(int size) { m_size = size; }
 	int 				GetSize() { return m_size; }
 	void				AttachSegment(char* content, long long offset, int size);
@@ -128,7 +128,7 @@ public:
 
 private:
 	int					m_id;
-	NZBInfo*			m_nzbInfo;
+	NzbInfo*			m_nzbInfo;
 	Articles			m_articles;
 	Groups				m_groups;
 	ServerStatList		m_serverStats;
@@ -166,11 +166,11 @@ private:
 public:
 						FileInfo(int id = 0);
 						~FileInfo();
-	int					GetID() { return m_id; }
-	void				SetID(int id);
-	static void			ResetGenID(bool max);
-	NZBInfo*			GetNZBInfo() { return m_nzbInfo; }
-	void				SetNZBInfo(NZBInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
+	int					GetId() { return m_id; }
+	void				SetId(int id);
+	static void			ResetGenId(bool max);
+	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
+	void				SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
 	Articles* 			GetArticles() { return &m_articles; }
 	Groups* 			GetGroups() { return &m_groups; }
 	const char*			GetSubject() { return m_subject; }
@@ -261,7 +261,7 @@ private:
 public:
 						CompletedFile(int id, const char* fileName, EStatus status, unsigned long crc);
 						~CompletedFile();
-	int					GetID() { return m_id; }
+	int					GetId() { return m_id; }
 	void				SetFileName(const char* fileName);
 	const char*			GetFileName() { return m_fileName; }
 	EStatus				GetStatus() { return m_status; }
@@ -270,7 +270,7 @@ public:
 
 typedef std::deque<CompletedFile*>	CompletedFiles;
 
-class NZBParameter
+class NzbParameter
 {
 private:
 	char* 				m_name;
@@ -278,25 +278,25 @@ private:
 
 	void				SetValue(const char* value);
 
-	friend class NZBParameterList;
+	friend class NzbParameterList;
 
 public:
-						NZBParameter(const char* name);
-						~NZBParameter();
+						NzbParameter(const char* name);
+						~NzbParameter();
 	const char*			GetName() { return m_name; }
 	const char*			GetValue() { return m_value; }
 };
 
-typedef std::deque<NZBParameter*> NZBParameterListBase;
+typedef std::deque<NzbParameter*> NzbParameterListBase;
 
-class NZBParameterList : public NZBParameterListBase
+class NzbParameterList : public NzbParameterListBase
 {
 public:
-						~NZBParameterList();
+						~NzbParameterList();
 	void				SetParameter(const char* name, const char* value);
-	NZBParameter*		Find(const char* name, bool caseSensitive);
+	NzbParameter*		Find(const char* name, bool caseSensitive);
 	void				Clear();
-	void				CopyFrom(NZBParameterList* sourceParameters);
+	void				CopyFrom(NzbParameterList* sourceParameters);
 };
 
 class ScriptStatus
@@ -340,7 +340,7 @@ enum EDupeMode
 	dmForce
 };
 
-class NZBInfo
+class NzbInfo
 {
 public:
 	enum ERenameStatus
@@ -487,7 +487,7 @@ private:
 	unsigned int		m_fullContentHash;
 	unsigned int		m_filteredContentHash;
 	FileList			m_fileList;
-	NZBParameterList	m_ppParameters;
+	NzbParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
 	ServerStatList		m_serverStats;
 	ServerStatList		m_currentServerStats;
@@ -515,19 +515,19 @@ private:
 	void				ClearMessages();
 
 public:
-						NZBInfo();
-						~NZBInfo();
-	int					GetID() { return m_id; }
-	void				SetID(int id);
-	static void			ResetGenID(bool max);
-	static int			GenerateID();
+						NzbInfo();
+						~NzbInfo();
+	int					GetId() { return m_id; }
+	void				SetId(int id);
+	static void			ResetGenId(bool max);
+	static int			GenerateId();
 	EKind				GetKind() { return m_kind; }
 	void				SetKind(EKind kind) { m_kind = kind; }
-	const char*			GetURL() { return m_url; }			// needs locking (for shared objects)
-	void				SetURL(const char* url);				// needs locking (for shared objects)
+	const char*			GetUrl() { return m_url; }			// needs locking (for shared objects)
+	void				SetUrl(const char* url);				// needs locking (for shared objects)
 	const char*			GetFilename() { return m_filename; }
 	void				SetFilename(const char* filename);
-	static void			MakeNiceNZBName(const char* nzbFilename, char* buffer, int size, bool removeExt);
+	static void			MakeNiceNzbName(const char* nzbFilename, char* buffer, int size, bool removeExt);
 	static void			MakeNiceUrlName(const char* url, const char* nzbFilename, char* buffer, int size);
 	const char*			GetDestDir() { return m_destDir; }   // needs locking (for shared objects)
 	void				SetDestDir(const char* destDir);     // needs locking (for shared objects)
@@ -631,7 +631,7 @@ public:
 	bool				GetAddUrlPaused() { return m_addUrlPaused; }
 	void				SetAddUrlPaused(bool addUrlPaused) { m_addUrlPaused = addUrlPaused; }
 	FileList*			GetFileList() { return &m_fileList; }					// needs locking (for shared objects)
-	NZBParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
+	NzbParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
 	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
 	ServerStatList*		GetServerStats() { return &m_serverStats; }
 	ServerStatList*		GetCurrentServerStats() { return &m_currentServerStats; }
@@ -667,10 +667,10 @@ public:
 	void 				SetQueueScriptTime(time_t queueScriptTime) { m_queueScriptTime = queueScriptTime; }
 	void				SetParFull(bool parFull) { m_parFull = parFull; }
 	bool				GetParFull() { return m_parFull; }
-	int					GetFeedID() { return m_feedId; }
-	void				SetFeedID(int feedId) { m_feedId = feedId; }
+	int					GetFeedId() { return m_feedId; }
+	void				SetFeedId(int feedId) { m_feedId = feedId; }
 
-	void				CopyFileList(NZBInfo* srcNzbInfo);
+	void				CopyFileList(NzbInfo* srcNzbInfo);
 	void				UpdateMinMaxTime();
 	PostInfo*			GetPostInfo() { return m_postInfo; }
 	void				EnterPostProcess();
@@ -687,19 +687,19 @@ public:
 	void				UnlockCachedMessages();
 };
 
-typedef std::deque<NZBInfo*> NZBQueueBase;
+typedef std::deque<NzbInfo*> NzbQueueBase;
 
-class NZBList : public NZBQueueBase
+class NzbList : public NzbQueueBase
 {
 private:
 	bool				m_ownObjects;
 public:
-						NZBList(bool ownObjects = false) { m_ownObjects = ownObjects; }
-						~NZBList();
+						NzbList(bool ownObjects = false) { m_ownObjects = ownObjects; }
+						~NzbList();
 	void				Clear();
-	void				Add(NZBInfo* nzbInfo, bool addTop);
-	void				Remove(NZBInfo* nzbInfo);
-	NZBInfo*			Find(int id);
+	void				Add(NzbInfo* nzbInfo, bool addTop);
+	void				Remove(NzbInfo* nzbInfo);
+	NzbInfo*			Find(int id);
 };
 
 class PostInfo
@@ -722,7 +722,7 @@ public:
 	typedef std::vector<char*>		ParredFiles;
 
 private:
-	NZBInfo*			m_nzbInfo;
+	NzbInfo*			m_nzbInfo;
 	bool				m_working;
 	bool				m_deleted;
 	bool				m_requestParCheck;
@@ -745,8 +745,8 @@ private:
 public:
 						PostInfo();
 						~PostInfo();
-	NZBInfo*			GetNZBInfo() { return m_nzbInfo; }
-	void				SetNZBInfo(NZBInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
+	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
+	void				SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
 	EStage				GetStage() { return m_stage; }
 	void				SetStage(EStage stage) { m_stage = stage; }
 	void				SetProgressLabel(const char* progressLabel);
@@ -782,7 +782,7 @@ public:
 	ParredFiles*		GetParredFiles() { return &m_parredFiles; }
 };
 
-typedef std::vector<int> IDList;
+typedef std::vector<int> IdList;
 
 typedef std::vector<char*> NameList;
 
@@ -814,8 +814,8 @@ private:
 public:
 						DupInfo();
 						~DupInfo();
-	int					GetID() { return m_id; }
-	void				SetID(int id);
+	int					GetId() { return m_id; }
+	void				SetId(int id);
 	const char*			GetName() { return m_name; }			// needs locking (for shared objects)
 	void				SetName(const char* name);			// needs locking (for shared objects)
 	const char*			GetDupeKey() { return m_dupeKey; }	// needs locking (for shared objects)
@@ -851,14 +851,14 @@ private:
 	time_t				m_time;
 
 public:
-						HistoryInfo(NZBInfo* nzbInfo);
+						HistoryInfo(NzbInfo* nzbInfo);
 						HistoryInfo(DupInfo* dupInfo);
 						~HistoryInfo();
 	EKind				GetKind() { return m_kind; }
-	int					GetID();
-	NZBInfo*			GetNZBInfo() { return (NZBInfo*)m_info; }
+	int					GetId();
+	NzbInfo*			GetNzbInfo() { return (NzbInfo*)m_info; }
 	DupInfo*			GetDupInfo() { return (DupInfo*)m_info; }
-	void				DiscardNZBInfo() { m_info = NULL; }
+	void				DiscardNzbInfo() { m_info = NULL; }
 	time_t				GetTime() { return m_time; }
 	void				SetTime(time_t time) { m_time = time; }
 	void				GetName(char* buffer, int size);		// needs locking (for shared objects)
@@ -890,7 +890,7 @@ public:
 	{
 		EAspectAction action;
 		DownloadQueue* downloadQueue;
-		NZBInfo* nzbInfo;
+		NzbInfo* nzbInfo;
 		FileInfo* fileInfo;
 	};
 
@@ -946,13 +946,13 @@ public:
 
 	enum EMatchMode
 	{
-		mmID = 1,
+		mmId = 1,
 		mmName,
 		mmRegEx
 	};
 
 private:
-	NZBList					m_queue;
+	NzbList					m_queue;
 	HistoryList				m_history;
 	Mutex	 				m_lockMutex;
 
@@ -969,10 +969,10 @@ public:
 	static bool				IsLoaded() { return g_bLoaded; }
 	static DownloadQueue*	Lock();
 	static void				Unlock();
-	NZBList*				GetQueue() { return &m_queue; }
+	NzbList*				GetQueue() { return &m_queue; }
 	HistoryList*			GetHistory() { return &m_history; }
 	virtual bool			EditEntry(int ID, EEditAction action, int offset, const char* text) = 0;
-	virtual bool			EditList(IDList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text) = 0;
+	virtual bool			EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text) = 0;
 	virtual void			Save() = 0;
 	void					CalcRemainingSize(long long* remaining, long long* remainingForced);
 };

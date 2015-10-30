@@ -98,7 +98,7 @@ private:
 	void			PrintFilename(FileInfo* fileInfo, int row, bool selected);
 	void			PrintGroupQueue();
 	void			ResetColWidths();
-	void			PrintGroupname(NZBInfo* nzbInfo, int row, bool selected, bool calcColWidth);
+	void			PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, bool calcColWidth);
 	void			PrintTopHeader(char* header, int lineNr, bool upTime);
 	int				PrintMessage(Message* Msg, int row, int maxLines);
 	void			PrintKeyInputBar();

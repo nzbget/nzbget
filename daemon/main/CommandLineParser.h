@@ -62,7 +62,7 @@ public:
 	};
 	enum EMatchMode
 	{
-		mmID = 1,
+		mmId = 1,
 		mmName,
 		mmRegEx
 	};
@@ -113,7 +113,7 @@ private:
 
 	void				InitCommandLine(int argc, const char* argv[]);
 	void				InitFileArg(int argc, const char* argv[]);
-	void				ParseFileIDList(int argc, const char* argv[], int optind);
+	void				ParseFileIdList(int argc, const char* argv[], int optind);
 	void				ParseFileNameList(int argc, const char* argv[], int optind);
 	bool				ParseTime(const char* time, int* hours, int* minutes);
 	void				ReportError(const char* errMessage);
@@ -134,8 +134,8 @@ public:
 	NameList*			GetOptionList() { return &m_optionList; }
 	int					GetEditQueueAction() { return m_editQueueAction; }
 	int					GetEditQueueOffset() { return m_editQueueOffset; }
-	int*				GetEditQueueIDList() { return m_editQueueIdList; }
-	int					GetEditQueueIDCount() { return m_editQueueIdCount; }
+	int*				GetEditQueueIdList() { return m_editQueueIdList; }
+	int					GetEditQueueIdCount() { return m_editQueueIdCount; }
 	NameList*			GetEditQueueNameList() { return &m_editQueueNameList; }
 	EMatchMode			GetMatchMode() { return m_eMatchMode; }
 	const char*			GetEditQueueText() { return m_editQueueText; }
@@ -144,7 +144,7 @@ public:
 	bool				GetAddPaused() { return m_addPaused; }
 	const char*			GetLastArg() { return m_lastArg; }
 	int					GetAddPriority() { return m_addPriority; }
-	char*				GetAddNZBFilename() { return m_addNzbFilename; }
+	char*				GetAddNzbFilename() { return m_addNzbFilename; }
 	bool				GetAddTop() { return m_addTop; }
 	const char*			GetAddDupeKey() { return m_addDupeKey; }
 	int					GetAddDupeScore() { return m_addDupeScore; }

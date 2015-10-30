@@ -96,7 +96,7 @@ public:
 	bool				Terminate();
 	void				SetInfoName(const char* v);
 	const char*			GetInfoName() { return m_infoName; }
-	void 				SetURL(const char* url);
+	void 				SetUrl(const char* url);
 	const char*			GetOutputFilename() { return m_outputFilename; }
 	void 				SetOutputFilename(const char* v);
 	time_t				GetLastUpdateTime() { return m_lastUpdateTime; }

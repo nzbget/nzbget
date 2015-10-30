@@ -47,25 +47,25 @@ private:
 	ParCoordinator		m_parCoordinator;
 	DownloadQueueObserver	m_downloadQueueObserver;
 	int					m_jobCount;
-	NZBInfo*			m_curJob;
+	NzbInfo*			m_curJob;
 	const char*			m_pauseReason;
 
-	bool				IsNZBFileCompleted(NZBInfo* nzbInfo, bool ignorePausedPars, bool allowOnlyOneDeleted);
-	bool				IsNZBFileDownloading(NZBInfo* nzbInfo);
+	bool				IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars, bool allowOnlyOneDeleted);
+	bool				IsNzbFileDownloading(NzbInfo* nzbInfo);
 	void				CheckPostQueue();
 	void				JobCompleted(DownloadQueue* downloadQueue, PostInfo* postInfo);
 	void				StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo);
 	void				SaveQueue(DownloadQueue* downloadQueue);
 	void				SanitisePostQueue(DownloadQueue* downloadQueue);
 	void				UpdatePauseState(bool needPause, const char* reason);
-	void				NZBFound(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
-	void				NZBDeleted(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
-	void				NZBCompleted(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, bool saveQueue);
-	bool				PostQueueDelete(DownloadQueue* downloadQueue, IDList* idList);
+	void				NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void				NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void				NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool saveQueue);
+	bool				PostQueueDelete(DownloadQueue* downloadQueue, IdList* idList);
 	void				DeletePostThread(PostInfo* postInfo);
-	NZBInfo*			GetNextJob(DownloadQueue* downloadQueue);
+	NzbInfo*			GetNextJob(DownloadQueue* downloadQueue);
 	void				DownloadQueueUpdate(Subject* Caller, void* Aspect);
-	void				DeleteCleanup(NZBInfo* nzbInfo);
+	void				DeleteCleanup(NzbInfo* nzbInfo);
 
 public:
 						PrePostProcessor();
@@ -74,9 +74,9 @@ public:
 	virtual void		Stop();
 	bool				HasMoreJobs() { return m_jobCount > 0; }
 	int					GetJobCount() { return m_jobCount; }
-	bool				EditList(DownloadQueue* downloadQueue, IDList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
-	void				NZBAdded(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
-	void				NZBDownloaded(DownloadQueue* downloadQueue, NZBInfo* nzbInfo);
+	bool				EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
+	void				NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void				NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 };
 
 extern PrePostProcessor* g_pPrePostProcessor;

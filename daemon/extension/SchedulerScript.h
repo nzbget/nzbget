@@ -28,7 +28,7 @@
 
 #include "NzbScript.h"
 
-class SchedulerScriptController : public Thread, public NZBScriptController
+class SchedulerScriptController : public Thread, public NzbScriptController
 {
 private:
 	char*				m_script;

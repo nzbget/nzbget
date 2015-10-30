@@ -123,7 +123,7 @@ void ArticleDownloader::Run()
 	NewsServer* lastServer = NULL;
 	int level = 0;
 	int serverConfigGeneration = g_pServerPool->GetGeneration();
-	bool force = m_fileInfo->GetNZBInfo()->GetForcePriority();
+	bool force = m_fileInfo->GetNzbInfo()->GetForcePriority();
 
 	while (!IsStopped())
 	{
@@ -183,7 +183,7 @@ void ArticleDownloader::Run()
 
 			if (status == adFinished || status == adFailed || status == adNotFound || status == adCrcError)
 			{
-				m_serverStats.StatOp(newsServer->GetID(), status == adFinished ? 1 : 0, status == adFinished ? 0 : 1, ServerStatList::soSet);
+				m_serverStats.StatOp(newsServer->GetId(), status == adFinished ? 1 : 0, status == adFinished ? 0 : 1, ServerStatList::soSet);
 			}
 		}
 
@@ -348,7 +348,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	// retrieve article
 	char tmp[1024];
-	snprintf(tmp, 1024, "ARTICLE %s\r\n", m_articleInfo->GetMessageID());
+	snprintf(tmp, 1024, "ARTICLE %s\r\n", m_articleInfo->GetMessageId());
 	tmp[1024-1] = '\0';
 
 	for (int retry = 3; retry > 0; retry--)
@@ -442,11 +442,11 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			else if (!strncmp(line, "Message-ID: ", 12))
 			{
 				char* p = line + 12;
-				if (strncmp(p, m_articleInfo->GetMessageID(), strlen(m_articleInfo->GetMessageID())))
+				if (strncmp(p, m_articleInfo->GetMessageId(), strlen(m_articleInfo->GetMessageId())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
 					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_infoName,
-						m_connectionName, m_articleInfo->GetMessageID(), p);
+						m_connectionName, m_articleInfo->GetMessageId(), p);
 					status = adFailed;
 					break;
 				}
@@ -685,7 +685,7 @@ void ArticleDownloader::Stop()
 
 bool ArticleDownloader::Terminate()
 {
-	NNTPConnection* connection = m_connection;
+	NntpConnection* connection = m_connection;
 	bool terminated = Kill();
 	if (terminated && connection)
 	{
@@ -693,7 +693,7 @@ bool ArticleDownloader::Terminate()
 		connection->SetSuppressErrors(true);
 		connection->Cancel();
 		connection->Disconnect();
-		g_pStatMeter->AddServerData(connection->FetchTotalBytesRead(), connection->GetNewsServer()->GetID());
+		g_pStatMeter->AddServerData(connection->FetchTotalBytesRead(), connection->GetNewsServer()->GetId());
 		g_pServerPool->FreeConnection(connection, true);
 	}
 	return terminated;
@@ -719,6 +719,6 @@ void ArticleDownloader::FreeConnection(bool keepConnected)
 void ArticleDownloader::AddServerData()
 {
 	int bytesRead = m_connection->FetchTotalBytesRead();
-	g_pStatMeter->AddServerData(bytesRead, m_connection->GetNewsServer()->GetID());
+	g_pStatMeter->AddServerData(bytesRead, m_connection->GetNewsServer()->GetId());
 	m_downloadedSize += bytesRead;
 }

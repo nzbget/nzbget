@@ -2267,7 +2267,7 @@ BreakLoop:
 	*output = '\0';
 }
 
-void WebUtil::URLDecode(char* raw)
+void WebUtil::UrlDecode(char* raw)
 {
 	char* output = raw;
 	for (char* p = raw;;)
@@ -2299,7 +2299,7 @@ BreakLoop:
 	*output = '\0';
 }
 
-char* WebUtil::URLEncode(const char* raw)
+char* WebUtil::UrlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of spaces
 	int reqSize = strlen(raw);
@@ -2443,13 +2443,13 @@ URL::URL(const char* address)
 	m_host = NULL;
 	m_resource = NULL;
 	m_port = 0;
-	m_tLS = false;
+	m_tls = false;
 	m_valid = false;
 
 	if (address)
 	{
 		m_address = strdup(address);
-		ParseURL();
+		ParseUrl();
 	}
 }
 
@@ -2463,7 +2463,7 @@ URL::~URL()
 	free(m_resource);
 }
 
-void URL::ParseURL()
+void URL::ParseUrl()
 {
 	// Examples:
 	// http://user:password@host:port/path/to/resource?param

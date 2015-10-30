@@ -68,7 +68,7 @@ public:
 	void				Finish(bool success);
 	bool				GetDuplicate() { return m_duplicate; }
 	void				CompleteFileParts();
-	static bool			MoveCompletedFiles(NZBInfo* nzbInfo, const char* oldDestDir);
+	static bool			MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir);
 	void				FlushCache();
 };
 

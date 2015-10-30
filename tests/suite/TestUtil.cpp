@@ -47,7 +47,7 @@
 #include "TestUtil.h"
 
 bool TestUtil::m_usedWorkingDir = false;
-std::string dataDir;
+std::string DataDir;
 
 class NullStreamBuf : public std::streambuf
 {
@@ -66,16 +66,16 @@ void TestUtil::Init(const char* argv0)
 	Util::NormalizePathSeparators(filename);
 	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';
-	dataDir = filename;
-	dataDir += "/testdata";
-	if (!Util::DirectoryExists(dataDir.c_str()))
+	DataDir = filename;
+	DataDir += "/testdata";
+	if (!Util::DirectoryExists(DataDir.c_str()))
 	{
-		dataDir = filename;
-		dataDir += "/tests/testdata";
+		DataDir = filename;
+		DataDir += "/tests/testdata";
 	}
-	if (!Util::DirectoryExists(dataDir.c_str()))
+	if (!Util::DirectoryExists(DataDir.c_str()))
 	{
-		dataDir = "";
+		DataDir = "";
 	}
 }
 
@@ -89,12 +89,12 @@ void TestUtil::Final()
 
 const std::string TestUtil::TestDataDir()
 {
-	if (dataDir == "")
+	if (DataDir == "")
 	{
 		printf("ERROR: Directory \"testdata\" not found.\n");
 		exit(1);
 	}
-	return dataDir;
+	return DataDir;
 }
 
 const std::string TestUtil::WorkingDir()

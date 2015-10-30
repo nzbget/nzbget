@@ -163,7 +163,7 @@ public:
 	public:
 		virtual void	AddNewsServer(int id, bool active, const char* name, const char* host,
 							int port, const char* user, const char* pass, bool joinGroup,
-							bool tLS, const char* cipher, int maxConnections, int retention,
+							bool tls, const char* cipher, int maxConnections, int retention,
 							int level, int group) = 0;
 		virtual void	AddFeed(int id, const char* name, const char* url, int interval,
 							const char* filter, bool backlog, bool pauseNzb, const char* category,
@@ -213,7 +213,7 @@ private:
 	bool				m_saveQueue;
 	bool				m_flushQueue;
 	bool				m_dupeCheck;
-	char*				m_controlIP;
+	char*				m_controlIp;
 	char*				m_controlUsername;
 	char*				m_controlPassword;
 	char*				m_restrictedUsername;
@@ -225,7 +225,7 @@ private:
 	int					m_securePort;
 	char*				m_secureCert;
 	char*				m_secureKey;
-	char*				m_authorizedIP;
+	char*				m_authorizedIp;
 	char*				m_lockFile;
 	char*				m_daemonUsername;
 	EOutputMode			m_outputMode;
@@ -261,7 +261,7 @@ private:
 	int					m_nzbDirFileAge;
 	bool				m_parCleanupQueue;
 	int					m_diskSpace;
-	bool				m_tLS;
+	bool				m_tls;
 	bool				m_dumpCore;
 	bool				m_parPauseQueue;
 	bool				m_scriptPauseQueue;
@@ -368,7 +368,7 @@ public:
 	bool				GetSaveQueue() { return m_saveQueue; }
 	bool				GetFlushQueue() { return m_flushQueue; }
 	bool				GetDupeCheck() { return m_dupeCheck; }
-	const char*			GetControlIP() { return m_controlIP; }
+	const char*			GetControlIp() { return m_controlIp; }
 	const char*			GetControlUsername() { return m_controlUsername; }
 	const char*			GetControlPassword() { return m_controlPassword; }
 	const char*			GetRestrictedUsername() { return m_restrictedUsername; }
@@ -380,7 +380,7 @@ public:
 	int					GetSecurePort() { return m_securePort; }
 	const char*			GetSecureCert() { return m_secureCert; }
 	const char*			GetSecureKey() { return m_secureKey; }
-	const char*			GetAuthorizedIP() { return m_authorizedIP; }
+	const char*			GetAuthorizedIp() { return m_authorizedIp; }
 	const char*			GetLockFile() { return m_lockFile; }
 	const char*			GetDaemonUsername() { return m_daemonUsername; }
 	EOutputMode			GetOutputMode() { return m_outputMode; }
@@ -405,7 +405,7 @@ public:
 	const char*			GetFeedScript() { return m_feedScript; }
 	int					GetUMask() { return m_uMask; }
 	int					GetUpdateInterval() {return m_updateInterval; }
-	bool				GetCursesNZBName() { return m_cursesNzbName; }
+	bool				GetCursesNzbName() { return m_cursesNzbName; }
 	bool				GetCursesTime() { return m_cursesTime; }
 	bool				GetCursesGroup() { return m_cursesGroup; }
 	bool				GetCrcCheck() { return m_crcCheck; }
@@ -415,7 +415,7 @@ public:
 	int					GetNzbDirFileAge() { return m_nzbDirFileAge; }
 	bool				GetParCleanupQueue() { return m_parCleanupQueue; }
 	int					GetDiskSpace() { return m_diskSpace; }
-	bool				GetTLS() { return m_tLS; }
+	bool				GetTls() { return m_tls; }
 	bool				GetDumpCore() { return m_dumpCore; }
 	bool				GetParPauseQueue() { return m_parPauseQueue; }
 	bool				GetScriptPauseQueue() { return m_scriptPauseQueue; }

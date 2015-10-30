@@ -133,7 +133,7 @@ NCursesFrontend::NCursesFrontend()
 	m_messagesWinClientHeight = 0;
     m_selectedQueueEntry = 0;
 	m_queueScrollOffset = 0;
-	m_showNzbname = g_pOptions->GetCursesNZBName();
+	m_showNzbname = g_pOptions->GetCursesNzbName();
 	m_showTimestamp = g_pOptions->GetCursesTime();
 	m_groupFiles = g_pOptions->GetCursesGroup();
 	m_queueWindowPercentage = 50;
@@ -392,9 +392,9 @@ int NCursesFrontend::CalcQueueSize()
 	}
 	else
 	{
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			queueSize += nzbInfo->GetFileList()->size();
 		}
 	}
@@ -754,9 +754,9 @@ void NCursesFrontend::PrintFileQueue()
 	int pausedFiles = 0;
 	int fileNum = 0;
 
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++, fileNum++)
 		{
 			FileInfo* fileInfo = *it2;
@@ -828,9 +828,9 @@ void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
 
 	char priority[100];
 	priority[0] = '\0';
-	if (fileInfo->GetNZBInfo()->GetPriority() != 0)
+	if (fileInfo->GetNzbInfo()->GetPriority() != 0)
 	{
-		sprintf(priority, " [%+i]", fileInfo->GetNZBInfo()->GetPriority());
+		sprintf(priority, " [%+i]", fileInfo->GetNzbInfo()->GetPriority());
 	}
 
 	char completed[20];
@@ -843,7 +843,7 @@ void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
 	char nzbNiceName[1024];
 	if (m_showNzbname)
 	{
-		strncpy(nzbNiceName, fileInfo->GetNZBInfo()->GetName(), 1023);
+		strncpy(nzbNiceName, fileInfo->GetNzbInfo()->GetName(), 1023);
 		int len = strlen(nzbNiceName);
 		nzbNiceName[len] = PATH_SEPARATOR;
 		nzbNiceName[len + 1] = '\0';
@@ -855,7 +855,7 @@ void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
 
 	char size[20];
 	char buffer[MAX_SCREEN_WIDTH];
-	snprintf(buffer, MAX_SCREEN_WIDTH, "%s%i%s%s%s %s%s (%s%s)%s", Brace1, fileInfo->GetID(),
+	snprintf(buffer, MAX_SCREEN_WIDTH, "%s%i%s%s%s %s%s (%s%s)%s", Brace1, fileInfo->GetId(),
 		Brace2, priority, downloading, nzbNiceName, fileInfo->GetFilename(),
 		Util::FormatSize(size, sizeof(size), fileInfo->GetSize()),
 		completed, fileInfo->GetPaused() ? " (paused)" : "");
@@ -944,9 +944,9 @@ void NCursesFrontend::PrintGroupQueue()
 		ResetColWidths();
 		int calcLineNr = lineNr;
 		int i = 0;
-        for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
+        for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
         {
-            NZBInfo* nzbInfo = *it;
+            NzbInfo* nzbInfo = *it;
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
 				PrintGroupname(nzbInfo, calcLineNr++, false, true);
@@ -956,9 +956,9 @@ void NCursesFrontend::PrintGroupQueue()
 		long long remaining = 0;
 		long long paused = 0;
 		i = 0;
-        for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
+        for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
         {
-            NZBInfo* nzbInfo = *it;
+            NzbInfo* nzbInfo = *it;
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
 				PrintGroupname(nzbInfo, lineNr++, i == m_selectedQueueEntry, false);
@@ -989,7 +989,7 @@ void NCursesFrontend::ResetColWidths()
 	m_colWidthLeft = 0;
 }
 
-void NCursesFrontend::PrintGroupname(NZBInfo* nzbInfo, int row, bool selected, bool calcColWidth)
+void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, bool calcColWidth)
 {
 	int color = NCURSES_COLORPAIR_TEXT;
 	char chBrace1 = '[';
@@ -1050,7 +1050,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* nzbInfo, int row, bool selected, b
 		Util::FormatSize(total, sizeof(total), nzbInfo->GetSize());
 
 		char nameWithIds[1024];
-		snprintf(nameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, nzbInfo->GetID(), chBrace2, 
+		snprintf(nameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, nzbInfo->GetId(), chBrace2, 
 			priority, downloading, nzbInfo->GetName());
 		nameWithIds[nameLen] = '\0';
 
@@ -1096,7 +1096,7 @@ void NCursesFrontend::PrintGroupname(NZBInfo* nzbInfo, int row, bool selected, b
 	}
 	else
 	{
-		snprintf(buffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, nzbInfo->GetID(), 
+		snprintf(buffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, nzbInfo->GetId(), 
 			chBrace2, downloading, nzbInfo->GetName());
 	}
 
@@ -1117,8 +1117,8 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 		DownloadQueue* downloadQueue = LockQueue();
 		if (m_selectedQueueEntry >= 0 && m_selectedQueueEntry < (int)downloadQueue->GetQueue()->size())
 		{
-			NZBInfo* nzbInfo = downloadQueue->GetQueue()->at(m_selectedQueueEntry);
-			ID = nzbInfo->GetID();
+			NzbInfo* nzbInfo = downloadQueue->GetQueue()->at(m_selectedQueueEntry);
+			ID = nzbInfo->GetId();
 			if (action == DownloadQueue::eaFilePause)
 			{
 				if (nzbInfo->GetRemainingSize() == nzbInfo->GetPausedSize())
@@ -1158,15 +1158,15 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 		DownloadQueue* downloadQueue = LockQueue();
 
 		int fileNum = 0;
-		for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++, fileNum++)
 			{
 				if (m_selectedQueueEntry == fileNum)
 				{
 					FileInfo* fileInfo = *it2;
-					ID = fileInfo->GetID();
+					ID = fileInfo->GetId();
 					if (action == DownloadQueue::eaFilePause)
 					{
 						action = !fileInfo->GetPaused() ? DownloadQueue::eaFilePause : DownloadQueue::eaFileResume;

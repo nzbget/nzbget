@@ -54,7 +54,7 @@
 #ifndef DISABLE_PARCHECK
 bool ParCoordinator::PostParChecker::RequestMorePars(int blockNeeded, int* blockFound)
 {
-	return m_owner->RequestMorePars(m_postInfo->GetNZBInfo(), GetParFilename(), blockNeeded, blockFound);
+	return m_owner->RequestMorePars(m_postInfo->GetNzbInfo(), GetParFilename(), blockNeeded, blockFound);
 }
 
 void ParCoordinator::PostParChecker::UpdateProgress()
@@ -71,7 +71,7 @@ void ParCoordinator::PostParChecker::PrintMessage(Message::EKind kind, const cha
 	va_end(args);
 	text[1024-1] = '\0';
 
-	m_postInfo->GetNZBInfo()->AddMessage(kind, text);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
 void ParCoordinator::PostParChecker::RegisterParredFile(const char* filename)
@@ -97,7 +97,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 {
 	CompletedFile* completedFile = NULL;
 
-	for (CompletedFiles::iterator it = m_postInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFiles::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* completedFile2 = *it;
 		if (!strcasecmp(completedFile2->GetFileName(), filename))
@@ -115,10 +115,10 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 
 	*crc = completedFile->GetCrc();
 
-	if (completedFile->GetStatus() == CompletedFile::cfPartial && completedFile->GetID() > 0 &&
-		!m_postInfo->GetNZBInfo()->GetReprocess())
+	if (completedFile->GetStatus() == CompletedFile::cfPartial && completedFile->GetId() > 0 &&
+		!m_postInfo->GetNzbInfo()->GetReprocess())
 	{
-		FileInfo* tmpFileInfo = new FileInfo(completedFile->GetID());
+		FileInfo* tmpFileInfo = new FileInfo(completedFile->GetId());
 
 		if (!g_pDiskState->LoadFileState(tmpFileInfo, NULL, true))
 		{
@@ -139,9 +139,9 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 
 	return completedFile->GetStatus() == CompletedFile::cfSuccess ? ParChecker::fsSuccess :
 		completedFile->GetStatus() == CompletedFile::cfFailure &&
-			!m_postInfo->GetNZBInfo()->GetReprocess() ? ParChecker::fsFailure :
+			!m_postInfo->GetNzbInfo()->GetReprocess() ? ParChecker::fsFailure :
 		completedFile->GetStatus() == CompletedFile::cfPartial && segments->size() > 0 &&
-			!m_postInfo->GetNZBInfo()->GetReprocess()? ParChecker::fsPartial :
+			!m_postInfo->GetNzbInfo()->GetReprocess()? ParChecker::fsPartial :
 		ParChecker::fsUnknown;
 }
 
@@ -149,17 +149,17 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	NZBList dupeList;
-	g_pDupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNZBInfo(), &dupeList);
+	NzbList dupeList;
+	g_pDupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNzbInfo(), &dupeList);
 
 	if (!dupeList.empty())
 	{
 		PostDupeMatcher dupeMatcher(m_postInfo);
-		PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", m_postInfo->GetNZBInfo()->GetName());
+		PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", m_postInfo->GetNzbInfo()->GetName());
 		bool sizeComparisonPossible = dupeMatcher.Prepare();
-		for (NZBList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+		for (NzbList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
 		{
-			NZBInfo* dupeNzbInfo = *it;
+			NzbInfo* dupeNzbInfo = *it;
 			if (sizeComparisonPossible)
 			{
 				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", Util::BaseFileName(dupeNzbInfo->GetDestDir()));
@@ -168,7 +168,7 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 			if (useDupe)
 			{
 				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", Util::BaseFileName(dupeNzbInfo->GetDestDir()));
-				dupeSourceList->push_back(new ParChecker::DupeSource(dupeNzbInfo->GetID(), dupeNzbInfo->GetDestDir()));
+				dupeSourceList->push_back(new ParChecker::DupeSource(dupeNzbInfo->GetId(), dupeNzbInfo->GetDestDir()));
 			}
 		}
 		if (dupeSourceList->empty())
@@ -194,16 +194,16 @@ void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceL
 			{
 				HistoryInfo* historyInfo = *it;
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
-					historyInfo->GetNZBInfo()->GetID() == dupeSource->GetID())
+					historyInfo->GetNzbInfo()->GetId() == dupeSource->GetId())
 				{
-					historyInfo->GetNZBInfo()->SetExtraParBlocks(historyInfo->GetNZBInfo()->GetExtraParBlocks() - dupeSource->GetUsedBlocks());
+					historyInfo->GetNzbInfo()->SetExtraParBlocks(historyInfo->GetNzbInfo()->GetExtraParBlocks() - dupeSource->GetUsedBlocks());
 				}
 			}
 		}
 		totalExtraParBlocks += dupeSource->GetUsedBlocks();
 	}
 
-	m_postInfo->GetNZBInfo()->SetExtraParBlocks(m_postInfo->GetNZBInfo()->GetExtraParBlocks() + totalExtraParBlocks);
+	m_postInfo->GetNzbInfo()->SetExtraParBlocks(m_postInfo->GetNzbInfo()->GetExtraParBlocks() + totalExtraParBlocks);
 
 	DownloadQueue::Unlock();
 }
@@ -222,7 +222,7 @@ void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind kind, const cha
 	va_end(args);
 	text[1024-1] = '\0';
 	
-	m_postInfo->GetNZBInfo()->AddMessage(kind, text);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
 void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
@@ -235,7 +235,7 @@ void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
  */
 void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
 {
-	for (CompletedFiles::iterator it = m_postInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFiles::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* completedFile = *it;
 		if (!strcasecmp(completedFile->GetFileName(), oldFilename))
@@ -255,7 +255,7 @@ void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind kind, const ch
 	va_end(args);
 	text[1024-1] = '\0';
 
-	m_postInfo->GetNZBInfo()->AddMessage(kind, text);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
 #endif
@@ -301,11 +301,11 @@ void ParCoordinator::Stop()
 }
 #endif
 
-void ParCoordinator::PausePars(DownloadQueue* downloadQueue, NZBInfo* nzbInfo)
+void ParCoordinator::PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
 	debug("ParCoordinator: Pausing pars");
 
-	downloadQueue->EditEntry(nzbInfo->GetID(), 
+	downloadQueue->EditEntry(nzbInfo->GetId(), 
 		DownloadQueue::eaGroupPauseExtraPars, 0, NULL);
 }
 
@@ -318,13 +318,13 @@ void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
 {
 	m_currentJob = jkParCheck;
 	m_parChecker.SetPostInfo(postInfo);
-	m_parChecker.SetDestDir(postInfo->GetNZBInfo()->GetDestDir());
-	m_parChecker.SetNZBName(postInfo->GetNZBInfo()->GetName());
+	m_parChecker.SetDestDir(postInfo->GetNzbInfo()->GetDestDir());
+	m_parChecker.SetNzbName(postInfo->GetNzbInfo()->GetName());
 	m_parChecker.SetParTime(time(NULL));
-	m_parChecker.SetDownloadSec(postInfo->GetNZBInfo()->GetDownloadSec());
+	m_parChecker.SetDownloadSec(postInfo->GetNzbInfo()->GetDownloadSec());
 	m_parChecker.SetParQuick(g_pOptions->GetParQuick() && !postInfo->GetForceParFull());
 	m_parChecker.SetForceRepair(postInfo->GetForceRepair());
-	m_parChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", postInfo->GetNZBInfo()->GetName());
+	m_parChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", postInfo->GetNzbInfo()->GetName());
 	postInfo->SetWorking(true);
 	m_parChecker.Start();
 }
@@ -334,12 +334,12 @@ void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
  */
 void ParCoordinator::StartParRenameJob(PostInfo* postInfo)
 {
-	const char* destDir = postInfo->GetNZBInfo()->GetDestDir();
+	const char* destDir = postInfo->GetNzbInfo()->GetDestDir();
 
 	char finalDir[1024];
-	if (postInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess)
+	if (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess)
 	{
-		postInfo->GetNZBInfo()->BuildFinalDirName(finalDir, 1024);
+		postInfo->GetNzbInfo()->BuildFinalDirName(finalDir, 1024);
 		finalDir[1024-1] = '\0';
 		destDir = finalDir;
 	}
@@ -347,9 +347,9 @@ void ParCoordinator::StartParRenameJob(PostInfo* postInfo)
 	m_currentJob = jkParRename;
 	m_parRenamer.SetPostInfo(postInfo);
 	m_parRenamer.SetDestDir(destDir);
-	m_parRenamer.SetInfoName(postInfo->GetNZBInfo()->GetName());
-	m_parRenamer.SetDetectMissing(postInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
-	m_parRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", postInfo->GetNZBInfo()->GetName());
+	m_parRenamer.SetInfoName(postInfo->GetNzbInfo()->GetName());
+	m_parRenamer.SetDetectMissing(postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone);
+	m_parRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", postInfo->GetNzbInfo()->GetName());
 	postInfo->SetWorking(true);
 	m_parRenamer.Start();
 }
@@ -383,11 +383,11 @@ bool ParCoordinator::Cancel()
 bool ParCoordinator::AddPar(FileInfo* fileInfo, bool deleted)
 {
 	bool sameCollection = m_parChecker.IsRunning() &&
-		fileInfo->GetNZBInfo() == m_parChecker.GetPostInfo()->GetNZBInfo();
+		fileInfo->GetNzbInfo() == m_parChecker.GetPostInfo()->GetNzbInfo();
 	if (sameCollection && !deleted)
 	{
 		char fullFilename[1024];
-		snprintf(fullFilename, 1024, "%s%c%s", fileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename());
+		snprintf(fullFilename, 1024, "%s%c%s", fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename());
 		fullFilename[1024-1] = '\0';
 		m_parChecker.AddParFile(fullFilename);
 	}
@@ -407,27 +407,27 @@ void ParCoordinator::ParCheckCompleted()
 	// Update ParStatus (accumulate result)
 	if ((m_parChecker.GetStatus() == ParChecker::psRepaired ||
 		m_parChecker.GetStatus() == ParChecker::psRepairNotNeeded) &&
-		postInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+		postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
 	{
-		postInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSuccess);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psSuccess);
 		postInfo->SetParRepaired(m_parChecker.GetStatus() == ParChecker::psRepaired);
 	}
 	else if (m_parChecker.GetStatus() == ParChecker::psRepairPossible &&
-		postInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)
+		postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psFailure)
 	{
-		postInfo->GetNZBInfo()->SetParStatus(NZBInfo::psRepairPossible);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psRepairPossible);
 	}
 	else
 	{
-		postInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psFailure);
 	}
 
-	int waitTime = postInfo->GetNZBInfo()->GetDownloadSec() - m_parChecker.GetDownloadSec();
+	int waitTime = postInfo->GetNzbInfo()->GetDownloadSec() - m_parChecker.GetDownloadSec();
 	postInfo->SetStartTime(postInfo->GetStartTime() + (time_t)waitTime);
 	int parSec = (int)(time(NULL) - m_parChecker.GetParTime()) - waitTime;
-	postInfo->GetNZBInfo()->SetParSec(postInfo->GetNZBInfo()->GetParSec() + parSec);
+	postInfo->GetNzbInfo()->SetParSec(postInfo->GetNzbInfo()->GetParSec() + parSec);
 
-	postInfo->GetNZBInfo()->SetParFull(m_parChecker.GetParFull());
+	postInfo->GetNzbInfo()->SetParFull(m_parChecker.GetParFull());
 
 	postInfo->SetWorking(false);
 	postInfo->SetStage(PostInfo::ptQueued);
@@ -444,7 +444,7 @@ void ParCoordinator::ParCheckCompleted()
 * special case: returns true if there are any unpaused par2-files in the queue regardless
 * of the amount of blocks; this is to keep par-checker wait for download completion.
 */
-bool ParCoordinator::RequestMorePars(NZBInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFoundOut)
+bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFoundOut)
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	
@@ -549,7 +549,7 @@ bool ParCoordinator::RequestMorePars(NZBInfo* nzbInfo, const char* parFilename, 
 	return ok;
 }
 
-void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NZBInfo* nzbInfo, const char* parFilename,
+void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
 	Blocks* blocks, bool strictParName, bool exactParName, int* blockFound)
 {
     *blockFound = 0;
@@ -659,7 +659,7 @@ void ParCoordinator::UpdateParCheckProgress()
 		else if (postInfo->GetStage() == PostInfo::ptVerifyingRepaired)
 		{
 			int repairSec = (int)(current - m_parChecker.GetRepairTime());
-			postInfo->GetNZBInfo()->SetRepairSec(postInfo->GetNZBInfo()->GetRepairSec() + repairSec);
+			postInfo->GetNzbInfo()->SetRepairSec(postInfo->GetNzbInfo()->GetRepairSec() + repairSec);
 		}
 	}
 
@@ -695,7 +695,7 @@ void ParCoordinator::UpdateParCheckProgress()
 
 void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 {
-	if (g_pOptions->GetPausePostProcess() && !postInfo->GetNZBInfo()->GetForcePriority())
+	if (g_pOptions->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority())
 	{
 		time_t stageTime = postInfo->GetStageTime();
 		time_t startTime = postInfo->GetStartTime();
@@ -704,7 +704,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 		time_t waitTime = time(NULL);
 		
 		// wait until Post-processor is unpaused
-		while (g_pOptions->GetPausePostProcess() && !postInfo->GetNZBInfo()->GetForcePriority() && !m_stopped)
+		while (g_pOptions->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
 		{
 			usleep(50 * 1000);
 			
@@ -737,9 +737,9 @@ void ParCoordinator::ParRenameCompleted()
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	
 	PostInfo* postInfo = m_parRenamer.GetPostInfo();
-	postInfo->GetNZBInfo()->SetRenameStatus(m_parRenamer.GetStatus() == ParRenamer::psSuccess ? NZBInfo::rsSuccess : NZBInfo::rsFailure);
+	postInfo->GetNzbInfo()->SetRenameStatus(m_parRenamer.GetStatus() == ParRenamer::psSuccess ? NzbInfo::rsSuccess : NzbInfo::rsFailure);
 
-	if (m_parRenamer.HasMissedFiles() && postInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+	if (m_parRenamer.HasMissedFiles() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
 	{
 		m_parRenamer.PrintMessage(Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_parRenamer.GetInfoName());
 		postInfo->SetRequestParCheck(true);

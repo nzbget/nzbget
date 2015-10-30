@@ -122,7 +122,7 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 	m_sigVerify			= false;
 	m_pubKeyFilename		= NULL;
 	m_sigFilename			= NULL;
-	m_eMatchMode			= mmID;
+	m_eMatchMode			= mmId;
 	m_pauseDownload		= false;
 
 	InitCommandLine(argc, argv);
@@ -487,7 +487,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				}
 				else
 				{
-					m_eMatchMode = mmID;
+					m_eMatchMode = mmId;
 				};
 				bool post = !strcasecmp(optarg, "O");
 				bool history = !strcasecmp(optarg, "H");
@@ -919,9 +919,9 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 	}
 	else if (m_clientOperation == opClientRequestEditQueue)
 	{
-		if (m_eMatchMode == mmID)
+		if (m_eMatchMode == mmId)
 		{
-			ParseFileIDList(argc, argv, optind);
+			ParseFileIdList(argc, argv, optind);
 		}
 		else
 		{
@@ -964,10 +964,10 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 	}
 }
 
-void CommandLineParser::ParseFileIDList(int argc, const char* argv[], int optind)
+void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind)
 {
-	std::vector<int> IDs;
-	IDs.clear();
+	std::vector<int> Ids;
+	Ids.clear();
 
 	while (optind < argc)
 	{
@@ -1025,11 +1025,11 @@ void CommandLineParser::ParseFileIDList(int argc, const char* argv[], int optind
 			{
 				if (editQueueIdFrom < editQueueIdTo || editQueueIdTo == 0)
 				{
-					IDs.push_back(editQueueIdFrom + i);
+					Ids.push_back(editQueueIdFrom + i);
 				}
 				else
 				{
-					IDs.push_back(editQueueIdFrom - i);
+					Ids.push_back(editQueueIdFrom - i);
 				}
 			}
 
@@ -1039,11 +1039,11 @@ void CommandLineParser::ParseFileIDList(int argc, const char* argv[], int optind
 		free(writableFileIdList);
 	}
 
-	m_editQueueIdCount = IDs.size();
+	m_editQueueIdCount = Ids.size();
 	m_editQueueIdList = (int*)malloc(sizeof(int) * m_editQueueIdCount);
 	for (int i = 0; i < m_editQueueIdCount; i++)
 	{
-		m_editQueueIdList[i] = IDs[i];
+		m_editQueueIdList[i] = Ids[i];
 	}
 }
 

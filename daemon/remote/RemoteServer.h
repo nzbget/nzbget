@@ -33,11 +33,11 @@
 class RemoteServer : public Thread
 {
 private:
-	bool				m_tLS;
+	bool				m_tls;
 	Connection*			m_connection;
 
 public:
-						RemoteServer(bool tLS);
+						RemoteServer(bool tls);
 						~RemoteServer();
 	virtual void		Run();
 	virtual void 		Stop();
@@ -46,13 +46,13 @@ public:
 class RequestProcessor : public Thread
 {
 private:
-	bool				m_tLS;
+	bool				m_tls;
 	Connection*			m_connection;
 
 public:
 						~RequestProcessor();
 	virtual void		Run();
-	void				SetTLS(bool tLS) { m_tLS = tLS; }
+	void				SetTls(bool tls) { m_tls = tls; }
 	void				SetConnection(Connection* connection) { m_connection = connection; }
 };
 

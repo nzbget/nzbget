@@ -127,7 +127,7 @@ void WebProcessor::Execute()
 		return;
 	}
 
-	ParseURL();
+	ParseUrl();
 
 	if (!CheckCredentials())
 	{
@@ -201,7 +201,7 @@ void WebProcessor::ParseHeaders()
 	debug("X-Auth-Token=%s", m_authToken);
 }
 
-void WebProcessor::ParseURL()
+void WebProcessor::ParseUrl()
 {
 	// remove subfolder "nzbget" from the path (if exists)
 	// http://localhost:6789/nzbget/username:password/jsonrpc -> http://localhost:6789/username:password/jsonrpc
@@ -251,7 +251,7 @@ void WebProcessor::ParseURL()
 bool WebProcessor::CheckCredentials()
 {
 	if (!Util::EmptyStr(g_pOptions->GetControlPassword()) &&
-		!(!Util::EmptyStr(g_pOptions->GetAuthorizedIP()) && IsAuthorizedIP(m_connection->GetRemoteAddr())))
+		!(!Util::EmptyStr(g_pOptions->GetAuthorizedIp()) && IsAuthorizedIp(m_connection->GetRemoteAddr())))
 	{
 		if (Util::EmptyStr(m_authInfo))
 		{
@@ -300,16 +300,16 @@ bool WebProcessor::CheckCredentials()
 	return true;
 }
 
-bool WebProcessor::IsAuthorizedIP(const char* remoteAddr)
+bool WebProcessor::IsAuthorizedIp(const char* remoteAddr)
 {
-	const char* remoteIP = m_connection->GetRemoteAddr();
+	const char* remoteIp = m_connection->GetRemoteAddr();
 
 	// split option AuthorizedIP into tokens and check each token
 	bool authorized = false;
-	Tokenizer tok(g_pOptions->GetAuthorizedIP(), ",;");
+	Tokenizer tok(g_pOptions->GetAuthorizedIp(), ",;");
 	while (const char* iP = tok.Next())
 	{
-		if (!strcmp(iP, remoteIP))
+		if (!strcmp(iP, remoteIp))
 		{
 			authorized = true;
 			break;

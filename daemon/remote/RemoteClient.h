@@ -35,7 +35,7 @@
 class RemoteClient
 {
 private:
-	class MatchedNZBInfo: public NZBInfo
+	class MatchedNzbInfo: public NzbInfo
 	{
 	public:
 		bool		m_match;
@@ -51,7 +51,7 @@ private:
 	bool			m_verbose;
 
 	bool			InitConnection();
-	void			InitMessageBase(SNZBRequestBase* messageBase, int request, int size);
+	void			InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
 	bool			ReceiveBoolResponse();
 	void			printf(const char* msg, ...);
 	void			perror(const char* msg);
@@ -77,7 +77,7 @@ public:
 	bool 			RequestWriteLog(int kind, const char* text);
 	bool			RequestScan(bool syncMode);
 	bool			RequestHistory(bool withHidden);
-	void			BuildFileList(SNZBListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue);
+	void			BuildFileList(SNzbListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue);
 };
 
 #endif

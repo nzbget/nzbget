@@ -320,7 +320,7 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
 	feedDownloader->SetAutoDestroy(true);
 	feedDownloader->Attach(this);
 	feedDownloader->SetFeedInfo(feedInfo);
-	feedDownloader->SetURL(feedInfo->GetUrl());
+	feedDownloader->SetUrl(feedInfo->GetUrl());
 	if (strlen(feedInfo->GetName()) > 0)
 	{
 		feedDownloader->SetInfoName(feedInfo->GetName());
@@ -328,16 +328,16 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
 	else
 	{
 		char urlName[1024];
-		NZBInfo::MakeNiceUrlName(feedInfo->GetUrl(), "", urlName, sizeof(urlName));
+		NzbInfo::MakeNiceUrlName(feedInfo->GetUrl(), "", urlName, sizeof(urlName));
 		feedDownloader->SetInfoName(urlName);
 	}
 	feedDownloader->SetForce(force || g_pOptions->GetUrlForce());
 
 	char tmp[1024];
 
-	if (feedInfo->GetID() > 0)
+	if (feedInfo->GetId() > 0)
 	{
-		snprintf(tmp, 1024, "%sfeed-%i.tmp", g_pOptions->GetTempDir(), feedInfo->GetID());
+		snprintf(tmp, 1024, "%sfeed-%i.tmp", g_pOptions->GetTempDir(), feedInfo->GetId());
 	}
 	else
 	{
@@ -398,16 +398,16 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 		{
 			FeedScriptController::ExecuteScripts(
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
-				feedInfo->GetOutputFilename(), feedInfo->GetID());
+				feedInfo->GetOutputFilename(), feedInfo->GetId());
 			FeedFile* feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
 			remove(feedInfo->GetOutputFilename());
 
-			NZBList addedNZBs;
+			NzbList addedNzbs;
 
 			m_downloadsMutex.Lock();
 			if (feedFile)
 			{
-				ProcessFeed(feedInfo, feedFile->GetFeedItemInfos(), &addedNZBs);
+				ProcessFeed(feedInfo, feedFile->GetFeedItemInfos(), &addedNzbs);
 				delete feedFile;
 			}
 			feedInfo->SetLastUpdate(time(NULL));
@@ -416,9 +416,9 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			m_downloadsMutex.Unlock();
 
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
-			for (NZBList::iterator it = addedNZBs.begin(); it != addedNZBs.end(); it++)
+			for (NzbList::iterator it = addedNzbs.begin(); it != addedNzbs.end(); it++)
 			{
-				NZBInfo* nzbInfo = *it;
+				NzbInfo* nzbInfo = *it;
 				downloadQueue->GetQueue()->Add(nzbInfo, false);
 			}
 			downloadQueue->Save();
@@ -463,7 +463,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 	delete feedFilter;
 }
 
-void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NZBList* addedNzbs)
+void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NzbList* addedNzbs)
 {
 	debug("Process feed %s", feedInfo->GetName());
 
@@ -485,7 +485,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 			}
 			else if (!feedHistoryInfo)
 			{
-				NZBInfo* nzbInfo = CreateNZBInfo(feedInfo, feedItemInfo);
+				NzbInfo* nzbInfo = CreateNzbInfo(feedInfo, feedItemInfo);
 				addedNzbs->Add(nzbInfo, false);
 				status = FeedHistoryInfo::hsFetched;
 				added++;
@@ -512,14 +512,14 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 	}
 }
 
-NZBInfo* FeedCoordinator::CreateNZBInfo(FeedInfo* feedInfo, FeedItemInfo* feedItemInfo)
+NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedItemInfo)
 {
 	debug("Download %s from %s", feedItemInfo->GetUrl(), feedInfo->GetName());
 
-	NZBInfo* nzbInfo = new NZBInfo();
-	nzbInfo->SetKind(NZBInfo::nkUrl);
-	nzbInfo->SetFeedID(feedInfo->GetID());
-	nzbInfo->SetURL(feedItemInfo->GetUrl());
+	NzbInfo* nzbInfo = new NzbInfo();
+	nzbInfo->SetKind(NzbInfo::nkUrl);
+	nzbInfo->SetFeedId(feedInfo->GetId());
+	nzbInfo->SetUrl(feedItemInfo->GetUrl());
 
 	// add .nzb-extension if not present
 	char nzbName[1024];
@@ -557,7 +557,7 @@ bool FeedCoordinator::ViewFeed(int id, FeedItemInfos** ppFeedItemInfos)
 
 	FeedInfo* feedInfo = m_feeds.at(id - 1);
 
-	return PreviewFeed(feedInfo->GetID(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(), 
+	return PreviewFeed(feedInfo->GetId(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(), 
 		feedInfo->GetBacklog(), feedInfo->GetPauseNzb(), feedInfo->GetCategory(),
 		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetFeedScript(), 0, NULL, ppFeedItemInfos);
 }
@@ -626,7 +626,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		{
 			FeedScriptController::ExecuteScripts(
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
-				feedInfo->GetOutputFilename(), feedInfo->GetID());
+				feedInfo->GetOutputFilename(), feedInfo->GetId());
 			feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
 		}
 
@@ -678,7 +678,7 @@ void FeedCoordinator::FetchFeed(int id)
 	for (Feeds::iterator it = m_feeds.begin(); it != m_feeds.end(); it++)
 	{
 		FeedInfo* feedInfo = *it;
-		if (feedInfo->GetID() == id || id == 0)
+		if (feedInfo->GetId() == id || id == 0)
 		{
 			feedInfo->SetFetch(true);
 			m_force = true;
@@ -695,14 +695,14 @@ void FeedCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
 	if (queueAspect->action == DownloadQueue::eaUrlCompleted)
 	{
 		m_downloadsMutex.Lock();
-		FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(queueAspect->nzbInfo->GetURL());
+		FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(queueAspect->nzbInfo->GetUrl());
 		if (feedHistoryInfo)
 		{
 			feedHistoryInfo->SetStatus(FeedHistoryInfo::hsFetched);
 		}
 		else
 		{
-			m_feedHistory.Add(queueAspect->nzbInfo->GetURL(), FeedHistoryInfo::hsFetched, time(NULL));
+			m_feedHistory.Add(queueAspect->nzbInfo->GetUrl(), FeedHistoryInfo::hsFetched, time(NULL));
 		}
 		m_save = true;
 		m_downloadsMutex.Unlock();

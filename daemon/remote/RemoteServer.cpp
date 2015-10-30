@@ -53,11 +53,11 @@
 //*****************************************************************
 // RemoteServer
 
-RemoteServer::RemoteServer(bool tLS)
+RemoteServer::RemoteServer(bool tls)
 {
 	debug("Creating RemoteServer");
 
-	m_tLS = tLS;
+	m_tls = tls;
 	m_connection = NULL;
 }
 
@@ -73,7 +73,7 @@ void RemoteServer::Run()
 	debug("Entering RemoteServer-loop");
 
 #ifndef DISABLE_TLS
-	if (m_tLS)
+	if (m_tls)
 	{
 		if (strlen(g_pOptions->GetSecureCert()) == 0 || !Util::FileExists(g_pOptions->GetSecureCert()))
 		{
@@ -95,9 +95,9 @@ void RemoteServer::Run()
 
 		if (!m_connection)
 		{
-			m_connection = new Connection(g_pOptions->GetControlIP(), 
-				m_tLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(),
-				m_tLS);
+			m_connection = new Connection(g_pOptions->GetControlIp(), 
+				m_tls ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(),
+				m_tls);
 			m_connection->SetTimeout(g_pOptions->GetUrlTimeout());
 			m_connection->SetSuppressErrors(false);
 			bind = m_connection->Bind();
@@ -126,7 +126,7 @@ void RemoteServer::Run()
 		commandThread->SetAutoDestroy(true);
 		commandThread->SetConnection(acceptedConnection);
 #ifndef DISABLE_TLS
-		commandThread->SetTLS(m_tLS);
+		commandThread->SetTls(m_tls);
 #endif
 		commandThread->Start();
 	}
@@ -168,7 +168,7 @@ void RequestProcessor::Run()
 	m_connection->SetSuppressErrors(true);
 
 #ifndef DISABLE_TLS
-	if (m_tLS && !m_connection->StartTLS(false, g_pOptions->GetSecureCert(), g_pOptions->GetSecureKey()))
+	if (m_tls && !m_connection->StartTls(false, g_pOptions->GetSecureCert(), g_pOptions->GetSecureKey()))
 	{
 		debug("Could not establish secure connection to web-client: Start TLS failed");
 		return;
@@ -233,6 +233,6 @@ void RequestProcessor::Run()
 
 	if (!ok)
 	{
-		warn("Non-nzbget request received on port %i from %s", m_tLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(), m_connection->GetRemoteAddr());
+		warn("Non-nzbget request received on port %i from %s", m_tls ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(), m_connection->GetRemoteAddr());
 	}
 }

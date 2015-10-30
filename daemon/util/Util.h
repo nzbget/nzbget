@@ -264,13 +264,13 @@ public:
 	 * Decodes URL-string.
 	 * The string is decoded on the place overwriting the content of raw-data.
 	 */
-	static void URLDecode(char* raw);
+	static void UrlDecode(char* raw);
 
 	/*
 	 * Makes valid URL by replacing of spaces with "%20".
 	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */
-	static char* URLEncode(const char* raw);
+	static char* UrlEncode(const char* raw);
 
 #ifdef WIN32
 	static bool Utf8ToAnsi(char* buffer, int bufLen);
@@ -296,9 +296,9 @@ private:
 	char*				m_host;
 	char*				m_resource;
 	int					m_port;
-	bool				m_tLS;
+	bool				m_tls;
 	bool				m_valid;
-	void				ParseURL();
+	void				ParseUrl();
 
 public:
 	 					URL(const char* address);
@@ -311,7 +311,7 @@ public:
 	const char*			GetHost() { return m_host; }
 	const char*			GetResource() { return m_resource; }
 	int					GetPort() { return m_port; }
-	bool				GetTLS() { return m_tLS; }
+	bool				GetTls() { return m_tls; }
 };
 
 class RegEx

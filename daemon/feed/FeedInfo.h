@@ -68,7 +68,7 @@ public:
 							const char* filter, bool pauseNzb, const char* category, int priority,
 							const char* feedScript);
 						~FeedInfo();
-	int					GetID() { return m_id; }
+	int					GetId() { return m_id; }
 	const char*			GetName() { return m_name; }
 	const char*			GetUrl() { return m_url; }
 	int					GetInterval() { return m_interval; }

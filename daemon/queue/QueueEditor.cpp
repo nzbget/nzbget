@@ -77,7 +77,7 @@ public:
 	};
 
 private:
-	NZBList*				m_nzbList;
+	NzbList*				m_nzbList;
 	QueueEditor::ItemList*	m_sortItemList;
 	ESortCriteria			m_sortCriteria;
 	ESortOrder				m_sortOrder;
@@ -85,10 +85,10 @@ private:
 	void					AlignSelectedGroups();
 
 public:
-							GroupSorter(NZBList* nzbList, QueueEditor::ItemList* sortItemList) :
+							GroupSorter(NzbList* nzbList, QueueEditor::ItemList* sortItemList) :
 								m_nzbList(nzbList), m_sortItemList(sortItemList) {}
 	bool					Execute(const char* sort);
-	bool					operator()(NZBInfo* nzbInfo1, NZBInfo* nzbInfo2) const;
+	bool					operator()(NzbInfo* nzbInfo1, NzbInfo* nzbInfo2) const;
 };
 
 bool GroupSorter::Execute(const char* sort)
@@ -139,7 +139,7 @@ bool GroupSorter::Execute(const char* sort)
 
 	AlignSelectedGroups();
 
-	NZBList tempList = *m_nzbList;
+	NzbList tempList = *m_nzbList;
 
 	ESortOrder origSortOrder = m_sortOrder;
 	if (m_sortOrder == soAuto && m_sortCriteria == scPriority)
@@ -160,7 +160,7 @@ bool GroupSorter::Execute(const char* sort)
 	return true;
 }
 
-bool GroupSorter::operator()(NZBInfo* nzbInfo1, NZBInfo* nzbInfo2) const
+bool GroupSorter::operator()(NzbInfo* nzbInfo1, NzbInfo* nzbInfo2) const
 {
 	// if list of ID is empty - sort all items
 	bool sortItem1 = m_sortItemList->empty();
@@ -218,12 +218,12 @@ bool GroupSorter::operator()(NZBInfo* nzbInfo1, NZBInfo* nzbInfo2) const
 
 void GroupSorter::AlignSelectedGroups()
 {
-	NZBInfo* lastNzbInfo = NULL;
+	NzbInfo* lastNzbInfo = NULL;
 	unsigned int lastNum = 0;
 	unsigned int num = 0;
 	while (num < m_nzbList->size())
 	{
-		NZBInfo* nzbInfo = m_nzbList->at(num);
+		NzbInfo* nzbInfo = m_nzbList->at(num);
 
 		bool selected = false;
 		for (QueueEditor::ItemList::iterator it = m_sortItemList->begin(); it != m_sortItemList->end(); it++)
@@ -255,7 +255,7 @@ void GroupSorter::AlignSelectedGroups()
 }
 
 
-QueueEditor::EditItem::EditItem(FileInfo* fileInfo, NZBInfo* nzbInfo, int offset)
+QueueEditor::EditItem::EditItem(FileInfo* fileInfo, NzbInfo* nzbInfo, int offset)
 {
 	m_fileInfo = fileInfo;
 	m_nzbInfo = nzbInfo;
@@ -274,13 +274,13 @@ QueueEditor::~QueueEditor()
 
 FileInfo* QueueEditor::FindFileInfo(int id)
 {
-	for (NZBList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 		{
 			FileInfo* fileInfo = *it2;
-			if (fileInfo->GetID() == id)
+			if (fileInfo->GetId() == id)
 			{
 				return fileInfo;
 			}
@@ -302,8 +302,8 @@ void QueueEditor::PauseUnpauseEntry(FileInfo* fileInfo, bool pause)
  */
 void QueueEditor::DeleteEntry(FileInfo* fileInfo)
 {
-	fileInfo->GetNZBInfo()->PrintMessage(
-		fileInfo->GetNZBInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
+	fileInfo->GetNzbInfo()->PrintMessage(
+		fileInfo->GetNzbInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
 		"Deleting file %s from download queue", fileInfo->GetFilename());
 	g_pQueueCoordinator->DeleteQueueEntry(m_downloadQueue, fileInfo);
 }
@@ -314,7 +314,7 @@ void QueueEditor::DeleteEntry(FileInfo* fileInfo)
 void QueueEditor::MoveEntry(FileInfo* fileInfo, int offset)
 {
 	int entry = 0;
-	for (FileList::iterator it = fileInfo->GetNZBInfo()->GetFileList()->begin(); it != fileInfo->GetNZBInfo()->GetFileList()->end(); it++)
+	for (FileList::iterator it = fileInfo->GetNzbInfo()->GetFileList()->begin(); it != fileInfo->GetNzbInfo()->GetFileList()->end(); it++)
 	{
 		FileInfo* fileInfo2 = *it;
 		if (fileInfo2 == fileInfo)
@@ -325,7 +325,7 @@ void QueueEditor::MoveEntry(FileInfo* fileInfo, int offset)
 	}
 
 	int newEntry = entry + offset;
-	int size = (int)fileInfo->GetNZBInfo()->GetFileList()->size();
+	int size = (int)fileInfo->GetNzbInfo()->GetFileList()->size();
 
 	if (newEntry < 0)
 	{
@@ -338,20 +338,20 @@ void QueueEditor::MoveEntry(FileInfo* fileInfo, int offset)
 
 	if (newEntry >= 0 && newEntry <= size - 1)
 	{
-		fileInfo->GetNZBInfo()->GetFileList()->erase(fileInfo->GetNZBInfo()->GetFileList()->begin() + entry);
-		fileInfo->GetNZBInfo()->GetFileList()->insert(fileInfo->GetNZBInfo()->GetFileList()->begin() + newEntry, fileInfo);
+		fileInfo->GetNzbInfo()->GetFileList()->erase(fileInfo->GetNzbInfo()->GetFileList()->begin() + entry);
+		fileInfo->GetNzbInfo()->GetFileList()->insert(fileInfo->GetNzbInfo()->GetFileList()->begin() + newEntry, fileInfo);
 	}
 }
 
 /*
  * Moves group in the queue
  */
-void QueueEditor::MoveGroup(NZBInfo* nzbInfo, int offset)
+void QueueEditor::MoveGroup(NzbInfo* nzbInfo, int offset)
 {
 	int entry = 0;
-	for (NZBList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo2 = *it;
+		NzbInfo* nzbInfo2 = *it;
 		if (nzbInfo2 == nzbInfo)
 		{
 			break;
@@ -381,12 +381,12 @@ void QueueEditor::MoveGroup(NZBInfo* nzbInfo, int offset)
 bool QueueEditor::EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text)
 {
 	m_downloadQueue = downloadQueue;
-	IDList cIDList;
-	cIDList.push_back(ID);
-	return InternEditList(NULL, &cIDList, action, offset, text);
+	IdList cIdList;
+	cIdList.push_back(ID);
+	return InternEditList(NULL, &cIdList, action, offset, text);
 }
 
-bool QueueEditor::EditList(DownloadQueue* downloadQueue, IDList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode,
+bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode,
 	DownloadQueue::EEditAction action, int offset, const char* text)
 {
 	if (action == DownloadQueue::eaPostDelete)
@@ -403,8 +403,8 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IDList* idList, NameLis
 
 	if (nameList)
 	{
-		idList = new IDList();
-		ok = BuildIDListFromNameList(idList, nameList, matchMode, action);
+		idList = new IdList();
+		ok = BuildIdListFromNameList(idList, nameList, matchMode, action);
 	}
 
 	ok = ok && (InternEditList(NULL, idList, action, offset, text) || matchMode == DownloadQueue::mmRegEx);
@@ -420,7 +420,7 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IDList* idList, NameLis
 }
 
 bool QueueEditor::InternEditList(ItemList* itemList, 
-	IDList* idList, DownloadQueue::EEditAction action, int offset, const char* text)
+	IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text)
 {
 	ItemList workItems;
 	if (!itemList)
@@ -474,26 +474,26 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 						break;
 
 					case DownloadQueue::eaGroupSetPriority:
-						SetNZBPriority(item->m_nzbInfo, text);
+						SetNzbPriority(item->m_nzbInfo, text);
 						break;
 
 					case DownloadQueue::eaGroupSetCategory:
 					case DownloadQueue::eaGroupApplyCategory:
-						SetNZBCategory(item->m_nzbInfo, text, action == DownloadQueue::eaGroupApplyCategory);
+						SetNzbCategory(item->m_nzbInfo, text, action == DownloadQueue::eaGroupApplyCategory);
 						break;
 
 					case DownloadQueue::eaGroupSetName:
-						SetNZBName(item->m_nzbInfo, text);
+						SetNzbName(item->m_nzbInfo, text);
 						break;
 
 					case DownloadQueue::eaGroupSetDupeKey:
 					case DownloadQueue::eaGroupSetDupeScore:
 					case DownloadQueue::eaGroupSetDupeMode:
-						SetNZBDupeParam(item->m_nzbInfo, action, text);
+						SetNzbDupeParam(item->m_nzbInfo, action, text);
 						break;
 
 					case DownloadQueue::eaGroupSetParameter:
-						SetNZBParameter(item->m_nzbInfo, text);
+						SetNzbParameter(item->m_nzbInfo, text);
 						break;
 
 					case DownloadQueue::eaGroupMoveTop:
@@ -512,7 +512,7 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 					case DownloadQueue::eaGroupDelete:
 					case DownloadQueue::eaGroupDupeDelete:
 					case DownloadQueue::eaGroupFinalDelete:
-						if (item->m_nzbInfo->GetKind() == NZBInfo::nkUrl)
+						if (item->m_nzbInfo->GetKind() == NzbInfo::nkUrl)
 						{
 							DeleteUrl(item->m_nzbInfo, action);
 						}
@@ -533,7 +533,7 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 	return itemList->size() > 0;
 }
 
-void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
+void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 	DownloadQueue::EEditAction action, int offset)
 {
 	if (action == DownloadQueue::eaFileMoveTop || action == DownloadQueue::eaGroupMoveTop)
@@ -550,9 +550,9 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 		(action == DownloadQueue::eaFileMoveOffset || action == DownloadQueue::eaFileMoveTop || action == DownloadQueue::eaFileMoveBottom))
 	{
 		// add IDs to list in order they currently have in download queue
-		for (NZBList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			int nrEntries = (int)nzbInfo->GetFileList()->size();
 			int lastDestPos = -1;
 			int start, end, step;
@@ -571,7 +571,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 			for (int index = start; index != end; index += step)
 			{
 				FileInfo* fileInfo = nzbInfo->GetFileList()->at(index);
-				IDList::iterator it2 = std::find(idList->begin(), idList->end(), fileInfo->GetID());
+				IdList::iterator it2 = std::find(idList->begin(), idList->end(), fileInfo->GetId());
 				if (it2 != idList->end())
 				{
 					int workOffset = offset;
@@ -626,8 +626,8 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 		}
 		for (int index = start; index != end; index += step)
 		{
-			NZBInfo* nzbInfo = m_downloadQueue->GetQueue()->at(index);
-			IDList::iterator it2 = std::find(idList->begin(), idList->end(), nzbInfo->GetID());
+			NzbInfo* nzbInfo = m_downloadQueue->GetQueue()->at(index);
+			IdList::iterator it2 = std::find(idList->begin(), idList->end(), nzbInfo->GetId());
 			if (it2 != idList->end())
 			{
 				int workOffset = offset;
@@ -664,13 +664,13 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 		// check ID range
 		int maxId = 0;
 		int minId = MAX_ID;
-		for (NZBList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
+			NzbInfo* nzbInfo = *it;
 			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 			{
 				FileInfo* fileInfo = *it2;
-				int ID = fileInfo->GetID();
+				int ID = fileInfo->GetId();
 				if (ID > maxId)
 				{
 					maxId = ID;
@@ -683,7 +683,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 		}
 
 		//add IDs to list in order they were transmitted in command
-		for (IDList::iterator it = idList->begin(); it != idList->end(); it++)
+		for (IdList::iterator it = idList->begin(); it != idList->end(); it++)
 		{
 			int id = *it;
 			if (minId <= id && id <= maxId)
@@ -701,10 +701,10 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 		// check ID range
 		int maxId = 0;
 		int minId = MAX_ID;
-		for (NZBList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
+		for (NzbList::iterator it = m_downloadQueue->GetQueue()->begin(); it != m_downloadQueue->GetQueue()->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
-			int ID = nzbInfo->GetID();
+			NzbInfo* nzbInfo = *it;
+			int ID = nzbInfo->GetId();
 			if (ID > maxId)
 			{
 				maxId = ID;
@@ -716,15 +716,15 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 		}
 
 		//add IDs to list in order they were transmitted in command
-		for (IDList::iterator it = idList->begin(); it != idList->end(); it++)
+		for (IdList::iterator it = idList->begin(); it != idList->end(); it++)
 		{
 			int id = *it;
 			if (minId <= id && id <= maxId)
 			{
-				for (NZBList::iterator it2 = m_downloadQueue->GetQueue()->begin(); it2 != m_downloadQueue->GetQueue()->end(); it2++)
+				for (NzbList::iterator it2 = m_downloadQueue->GetQueue()->begin(); it2 != m_downloadQueue->GetQueue()->end(); it2++)
 				{
-					NZBInfo* nzbInfo = *it2;
-					if (id == nzbInfo->GetID())
+					NzbInfo* nzbInfo = *it2;
+					if (id == nzbInfo->GetId())
 					{
 						itemList->push_back(new EditItem(NULL, nzbInfo, offset));
 					}
@@ -734,7 +734,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IDList* idList,
 	}
 }
 
-bool QueueEditor::BuildIDListFromNameList(IDList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action)
+bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action)
 {
 #ifndef HAVE_REGEX_H
 	if (matchMode == mmRegEx)
@@ -743,7 +743,7 @@ bool QueueEditor::BuildIDListFromNameList(IDList* idList, NameList* nameList, Do
 	}
 #endif
 
-	std::set<int> uniqueIDs;
+	std::set<int> uniqueIds;
 
 	for (NameList::iterator it = nameList->begin(); it != nameList->end(); it++)
 	{
@@ -762,9 +762,9 @@ bool QueueEditor::BuildIDListFromNameList(IDList* idList, NameList* nameList, Do
 
 		bool found = false;
 
-		for (NZBList::iterator it3 = m_downloadQueue->GetQueue()->begin(); it3 != m_downloadQueue->GetQueue()->end(); it3++)
+		for (NzbList::iterator it3 = m_downloadQueue->GetQueue()->begin(); it3 != m_downloadQueue->GetQueue()->end(); it3++)
 		{
-			NZBInfo* nzbInfo = *it3;
+			NzbInfo* nzbInfo = *it3;
 
 			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 			{
@@ -773,12 +773,12 @@ bool QueueEditor::BuildIDListFromNameList(IDList* idList, NameList* nameList, Do
 				{
 					// file action
 					char filename[MAX_PATH];
-					snprintf(filename, sizeof(filename) - 1, "%s/%s", fileInfo->GetNZBInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
+					snprintf(filename, sizeof(filename) - 1, "%s/%s", fileInfo->GetNzbInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
 					if (((!regEx && !strcmp(filename, name)) || (regEx && regEx->Match(filename))) &&
-						(uniqueIDs.find(fileInfo->GetID()) == uniqueIDs.end()))
+						(uniqueIds.find(fileInfo->GetId()) == uniqueIds.end()))
 					{
-						uniqueIDs.insert(fileInfo->GetID());
-						idList->push_back(fileInfo->GetID());
+						uniqueIds.insert(fileInfo->GetId());
+						idList->push_back(fileInfo->GetId());
 						found = true;
 					}
 				}
@@ -789,10 +789,10 @@ bool QueueEditor::BuildIDListFromNameList(IDList* idList, NameList* nameList, Do
 				// group action
 				const char *filename = nzbInfo->GetName();
 				if (((!regEx && !strcmp(filename, name)) || (regEx && regEx->Match(filename))) &&
-					(uniqueIDs.find(nzbInfo->GetID()) == uniqueIDs.end()))
+					(uniqueIds.find(nzbInfo->GetId()) == uniqueIds.end()))
 				{
-					uniqueIDs.insert(nzbInfo->GetID());
-					idList->push_back(nzbInfo->GetID());
+					uniqueIds.insert(nzbInfo->GetId());
+					idList->push_back(nzbInfo->GetId());
 					found = true;
 				}
 			}
@@ -809,11 +809,11 @@ bool QueueEditor::BuildIDListFromNameList(IDList* idList, NameList* nameList, Do
 	return true;
 }
 
-bool QueueEditor::EditGroup(NZBInfo* nzbInfo, DownloadQueue::EEditAction action, int offset, const char* text)
+bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, int offset, const char* text)
 {
 	ItemList itemList;
 	bool allPaused = true;
-	int id = nzbInfo->GetID();
+	int id = nzbInfo->GetId();
 
 	// collecting files belonging to group
 	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
@@ -830,7 +830,7 @@ bool QueueEditor::EditGroup(NZBInfo* nzbInfo, DownloadQueue::EEditAction action,
 		nzbInfo->SetDeletePaused(allPaused);
 		if (action == DownloadQueue::eaGroupDupeDelete)
 		{
-			nzbInfo->SetDeleteStatus(NZBInfo::dsDupe);
+			nzbInfo->SetDeleteStatus(NzbInfo::dsDupe);
 		}
 		nzbInfo->SetCleanupDisk(CanCleanupDisk(nzbInfo));
 	}
@@ -886,7 +886,7 @@ void QueueEditor::PauseParsInGroups(ItemList* itemList, bool extraParsOnly)
 		{
 			EditItem* item = *it;
 			if (!firstFileInfo || 
-				(firstFileInfo->GetNZBInfo() == item->m_fileInfo->GetNZBInfo()))
+				(firstFileInfo->GetNzbInfo() == item->m_fileInfo->GetNzbInfo()))
 			{
 				GroupFileList.push_back(item->m_fileInfo);
 				if (!firstFileInfo)
@@ -989,7 +989,7 @@ void QueueEditor::PausePars(FileList* fileList, bool extraParsOnly)
 	}
 }
 
-void QueueEditor::SetNZBPriority(NZBInfo* nzbInfo, const char* priority)
+void QueueEditor::SetNzbPriority(NzbInfo* nzbInfo, const char* priority)
 {
 	debug("Setting priority %s for %s", priority, nzbInfo->GetName());
 
@@ -997,7 +997,7 @@ void QueueEditor::SetNZBPriority(NZBInfo* nzbInfo, const char* priority)
 	nzbInfo->SetPriority(priorityVal);
 }
 
-void QueueEditor::SetNZBCategory(NZBInfo* nzbInfo, const char* category, bool applyParams)
+void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool applyParams)
 {
 	debug("QueueEditor: setting category '%s' for '%s'", category, nzbInfo->GetName());
 
@@ -1087,7 +1087,7 @@ void QueueEditor::SetNZBCategory(NZBInfo* nzbInfo, const char* category, bool ap
 	}
 }
 
-void QueueEditor::SetNZBName(NZBInfo* nzbInfo, const char* name)
+void QueueEditor::SetNzbName(NzbInfo* nzbInfo, const char* name)
 {
 	debug("QueueEditor: renaming '%s' to '%s'", nzbInfo->GetName(), name);
 
@@ -1099,9 +1099,9 @@ void QueueEditor::SetNZBName(NZBInfo* nzbInfo, const char* name)
 * The deletion is most always possible, except the case if all remaining files in queue 
 * (belonging to this nzb-file) are PARS.
 */
-bool QueueEditor::CanCleanupDisk(NZBInfo* nzbInfo)
+bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 {
-	if (nzbInfo->GetDeleteStatus() != NZBInfo::dsNone)
+	if (nzbInfo->GetDeleteStatus() != NzbInfo::dsNone)
 	{
 		return true;
 	}
@@ -1169,7 +1169,7 @@ bool QueueEditor::SplitGroup(ItemList* itemList, const char* name)
 		delete item;
 	}
 
-	NZBInfo* newNzbInfo = NULL;
+	NzbInfo* newNzbInfo = NULL;
 	bool ok = g_pQueueCoordinator->SplitQueueEntries(m_downloadQueue, &fileList, name, &newNzbInfo);
 
 	return ok;
@@ -1189,7 +1189,7 @@ void QueueEditor::ReorderFiles(ItemList* itemList)
 	}
 
 	EditItem* firstItem = itemList->front();
-	NZBInfo* nzbInfo = firstItem->m_fileInfo->GetNZBInfo();
+	NzbInfo* nzbInfo = firstItem->m_fileInfo->GetNzbInfo();
 	unsigned int insertPos = 0;
 
 	// now can reorder
@@ -1211,7 +1211,7 @@ void QueueEditor::ReorderFiles(ItemList* itemList)
 	}
 }
 
-void QueueEditor::SetNZBParameter(NZBInfo* nzbInfo, const char* paramString)
+void QueueEditor::SetNzbParameter(NzbInfo* nzbInfo, const char* paramString)
 {
 	debug("QueueEditor: setting nzb parameter '%s' for '%s'", paramString, Util::BaseFileName(nzbInfo->GetFilename()));
 
@@ -1232,7 +1232,7 @@ void QueueEditor::SetNZBParameter(NZBInfo* nzbInfo, const char* paramString)
 	free(str);
 }
 
-void QueueEditor::SetNZBDupeParam(NZBInfo* nzbInfo, DownloadQueue::EEditAction action, const char* text)
+void QueueEditor::SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, const char* text)
 {
 	debug("QueueEditor: setting dupe parameter %i='%s' for '%s'", (int)action, text, nzbInfo->GetName());
 
@@ -1276,7 +1276,7 @@ void QueueEditor::SetNZBDupeParam(NZBInfo* nzbInfo, DownloadQueue::EEditAction a
 	}
 }
 
-bool QueueEditor::DeleteUrl(NZBInfo* nzbInfo, DownloadQueue::EEditAction action)
+bool QueueEditor::DeleteUrl(NzbInfo* nzbInfo, DownloadQueue::EEditAction action)
 {
 	return g_pUrlCoordinator->DeleteQueueEntry(m_downloadQueue, nzbInfo, action == DownloadQueue::eaGroupFinalDelete);
 }

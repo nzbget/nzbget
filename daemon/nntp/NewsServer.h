@@ -46,7 +46,7 @@ private:
 	int				m_level;
 	int				m_normLevel;
 	bool			m_joinGroup;
-	bool			m_tLS;
+	bool			m_tls;
 	char*			m_cipher;
 	int				m_retention;
 	time_t			m_blockTime;
@@ -54,12 +54,12 @@ private:
 public:
 					NewsServer(int id, bool active, const char* name, const char* host, int port,
 						const char* user, const char* pass, bool joinGroup,
-						bool tLS, const char* cipher, int maxConnections, int retention,
+						bool tls, const char* cipher, int maxConnections, int retention,
 						int level, int group);
 					~NewsServer();
-	int				GetID() { return m_id; }
-	int				GetStateID() { return m_stateId; }
-	void			SetStateID(int stateId) { m_stateId = stateId; }
+	int				GetId() { return m_id; }
+	int				GetStateId() { return m_stateId; }
+	void			SetStateId(int stateId) { m_stateId = stateId; }
 	bool			GetActive() { return m_active; }
 	void			SetActive(bool active) { m_active = active; }
 	const char*		GetName() { return m_name; }
@@ -73,7 +73,7 @@ public:
 	int				GetNormLevel() { return m_normLevel; }
 	void			SetNormLevel(int level) { m_normLevel = level; }
 	int				GetJoinGroup() { return m_joinGroup; }
-	bool			GetTLS() { return m_tLS; }
+	bool			GetTls() { return m_tls; }
 	const char*		GetCipher() { return m_cipher; }
 	int				GetRetention() { return m_retention; }
 	time_t			GetBlockTime() { return m_blockTime; }

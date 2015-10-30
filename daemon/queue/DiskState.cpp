@@ -282,7 +282,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue)
 	}
 
 	// save nzb-infos
-	SaveNZBQueue(downloadQueue, outfile);
+	SaveNzbQueue(downloadQueue, outfile);
 
 	// save history
 	SaveHistory(downloadQueue, outfile);
@@ -306,20 +306,20 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	bool ok = false;
 	int formatVersion = stateFile.GetFileVersion();
 
-	NZBList nzbList(false);
-	NZBList sortList(false);
+	NzbList nzbList(false);
+	NzbList sortList(false);
 
 	if (formatVersion < 43)
 	{
 		// load nzb-infos
-		if (!LoadNZBList(&nzbList, servers, infile, formatVersion)) goto error;
+		if (!LoadNzbList(&nzbList, servers, infile, formatVersion)) goto error;
 
 		// load file-infos
 		if (!LoadFileQueue12(&nzbList, &sortList, infile, formatVersion)) goto error;
 	}
 	else
 	{
-		if (!LoadNZBList(downloadQueue->GetQueue(), servers, infile, formatVersion)) goto error;
+		if (!LoadNzbList(downloadQueue->GetQueue(), servers, infile, formatVersion)) goto error;
 	}
 
 	if (formatVersion >= 7 && formatVersion < 45)
@@ -359,7 +359,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	if (formatVersion < 43)
 	{
 		// finalize queue reading
-		CompleteNZBList12(downloadQueue, &sortList, formatVersion);
+		CompleteNzbList12(downloadQueue, &sortList, formatVersion);
 	}
 
 	if (formatVersion < 47)
@@ -378,8 +378,8 @@ error:
 		error("Error reading diskstate for download queue and history");
 	}
 
-	NZBInfo::ResetGenID(true);
-	FileInfo::ResetGenID(true);
+	NzbInfo::ResetGenId(true);
+	FileInfo::ResetGenId(true);
 
 	if (formatVersion > 0)
 	{
@@ -389,12 +389,12 @@ error:
 	return ok;
 }
 
-void DiskState::CompleteNZBList12(DownloadQueue* downloadQueue, NZBList* nzbList, int formatVersion)
+void DiskState::CompleteNzbList12(DownloadQueue* downloadQueue, NzbList* nzbList, int formatVersion)
 {
 	// put all NZBs referenced from file queue into pDownloadQueue->GetQueue()
-	for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		downloadQueue->GetQueue()->push_back(nzbInfo);
 	}
 
@@ -403,19 +403,19 @@ void DiskState::CompleteNZBList12(DownloadQueue* downloadQueue, NZBList* nzbList
 		// due to a bug in r811 (v12-testing) new NZBIDs were generated on each refresh of web-ui
 		// this resulted in very high numbers for NZBIDs
 		// here we renumber NZBIDs in order to keep them low.
-		NZBInfo::ResetGenID(false);
+		NzbInfo::ResetGenId(false);
 		int id = 1;
-		for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+		for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 		{
-			NZBInfo* nzbInfo = *it;
-			nzbInfo->SetID(id++);
+			NzbInfo* nzbInfo = *it;
+			nzbInfo->SetId(id++);
 		}
 	}
 }
 
 void DiskState::CompleteDupList12(DownloadQueue* downloadQueue, int formatVersion)
 {
-	NZBInfo::ResetGenID(true);
+	NzbInfo::ResetGenId(true);
 
 	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
 	{
@@ -423,24 +423,24 @@ void DiskState::CompleteDupList12(DownloadQueue* downloadQueue, int formatVersio
 
 		if (historyInfo->GetKind() == HistoryInfo::hkDup)
 		{
-			historyInfo->GetDupInfo()->SetID(NZBInfo::GenerateID());
+			historyInfo->GetDupInfo()->SetId(NzbInfo::GenerateId());
 		}
 	}
 }
 
-void DiskState::SaveNZBQueue(DownloadQueue* downloadQueue, FILE* outfile)
+void DiskState::SaveNzbQueue(DownloadQueue* downloadQueue, FILE* outfile)
 {
 	debug("Saving nzb list to disk");
 
 	fprintf(outfile, "%i\n", (int)downloadQueue->GetQueue()->size());
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
-		SaveNZBInfo(nzbInfo, outfile);
+		NzbInfo* nzbInfo = *it;
+		SaveNzbInfo(nzbInfo, outfile);
 	}
 }
 
-bool DiskState::LoadNZBList(NZBList* nzbList, Servers* servers, FILE* infile, int formatVersion)
+bool DiskState::LoadNzbList(NzbList* nzbList, Servers* servers, FILE* infile, int formatVersion)
 {
 	debug("Loading nzb list from disk");
 
@@ -449,9 +449,9 @@ bool DiskState::LoadNZBList(NZBList* nzbList, Servers* servers, FILE* infile, in
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		NZBInfo* nzbInfo = new NZBInfo();
+		NzbInfo* nzbInfo = new NzbInfo();
 		nzbList->push_back(nzbInfo);
-		if (!LoadNZBInfo(nzbInfo, servers, infile, formatVersion)) goto error;
+		if (!LoadNzbInfo(nzbInfo, servers, infile, formatVersion)) goto error;
 	}
 
 	return true;
@@ -461,11 +461,11 @@ error:
 	return false;
 }
 
-void DiskState::SaveNZBInfo(NZBInfo* nzbInfo, FILE* outfile)
+void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
 {
-	fprintf(outfile, "%i\n", nzbInfo->GetID());
+	fprintf(outfile, "%i\n", nzbInfo->GetId());
 	fprintf(outfile, "%i\n", (int)nzbInfo->GetKind());
-	fprintf(outfile, "%s\n", nzbInfo->GetURL());
+	fprintf(outfile, "%s\n", nzbInfo->GetUrl());
 	fprintf(outfile, "%s\n", nzbInfo->GetFilename());
 	fprintf(outfile, "%s\n", nzbInfo->GetDestDir());
 	fprintf(outfile, "%s\n", nzbInfo->GetFinalDir());
@@ -474,7 +474,7 @@ void DiskState::SaveNZBInfo(NZBInfo* nzbInfo, FILE* outfile)
 	fprintf(outfile, "%s\n", nzbInfo->GetCategory());
 	fprintf(outfile, "%i,%i,%i,%i,%i\n", (int)nzbInfo->GetPriority(), 
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetStage() + 1 : 0,
-		(int)nzbInfo->GetDeletePaused(), (int)nzbInfo->GetManyDupeFiles(), nzbInfo->GetFeedID());
+		(int)nzbInfo->GetDeletePaused(), (int)nzbInfo->GetManyDupeFiles(), nzbInfo->GetFeedId());
 	fprintf(outfile, "%i,%i,%i,%i,%i,%i,%i\n", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
 		(int)nzbInfo->GetMoveStatus(), (int)nzbInfo->GetRenameStatus(), (int)nzbInfo->GetDeleteStatus(),
 		(int)nzbInfo->GetMarkStatus(), (int)nzbInfo->GetUrlStatus());
@@ -514,14 +514,14 @@ void DiskState::SaveNZBInfo(NZBInfo* nzbInfo, FILE* outfile)
 	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* completedFile = *it;
-		fprintf(outfile, "%i,%i,%lu,%s\n", completedFile->GetID(), (int)completedFile->GetStatus(),
+		fprintf(outfile, "%i,%i,%lu,%s\n", completedFile->GetId(), (int)completedFile->GetStatus(),
 			completedFile->GetCrc(), completedFile->GetFileName());
 	}
 
 	fprintf(outfile, "%i\n", (int)nzbInfo->GetParameters()->size());
-	for (NZBParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+	for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 	{
-		NZBParameter* parameter = *it;
+		NzbParameter* parameter = *it;
 		fprintf(outfile, "%s=%s\n", parameter->GetName(), parameter->GetValue());
 	}
 
@@ -550,13 +550,13 @@ void DiskState::SaveNZBInfo(NZBInfo* nzbInfo, FILE* outfile)
 		FileInfo* fileInfo = *it;
 		if (!fileInfo->GetDeleted())
 		{
-			fprintf(outfile, "%i,%i,%i,%i\n", fileInfo->GetID(), (int)fileInfo->GetPaused(), 
+			fprintf(outfile, "%i,%i,%i,%i\n", fileInfo->GetId(), (int)fileInfo->GetPaused(), 
 				(int)fileInfo->GetTime(), (int)fileInfo->GetExtraPriority());
 		}
 	}
 }
 
-bool DiskState::LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, int formatVersion)
+bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, int formatVersion)
 {
 	char buf[10240];
 
@@ -564,18 +564,18 @@ bool DiskState::LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, in
 	{
 		int id;
 		if (fscanf(infile, "%i\n", &id) != 1) goto error;
-		nzbInfo->SetID(id);
+		nzbInfo->SetId(id);
 	}
 
 	if (formatVersion >= 46)
 	{
 		int kind;
 		if (fscanf(infile, "%i\n", &kind) != 1) goto error;
-		nzbInfo->SetKind((NZBInfo::EKind)kind);
+		nzbInfo->SetKind((NzbInfo::EKind)kind);
 
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		nzbInfo->SetURL(buf);
+		nzbInfo->SetUrl(buf);
 	}
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
@@ -652,14 +652,14 @@ bool DiskState::LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, in
 			nzbInfo->EnterPostProcess();
 			nzbInfo->GetPostInfo()->SetStage((PostInfo::EStage)postStage);
 		}
-		nzbInfo->SetFeedID(feedId);
+		nzbInfo->SetFeedId(feedId);
 	}
 
 	if (formatVersion >= 8 && formatVersion < 18)
 	{
 		int parStatus;
 		if (fscanf(infile, "%i\n", &parStatus) != 1) goto error;
-		nzbInfo->SetParStatus((NZBInfo::EParStatus)parStatus);
+		nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
 	}
 
 	if (formatVersion >= 9 && formatVersion < 18)
@@ -708,17 +708,17 @@ bool DiskState::LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, in
 		{
 			if (fscanf(infile, "%i,%i,%i\n", &parStatus, &unpackStatus, &scriptStatus) != 3) goto error;
 		}
-		nzbInfo->SetParStatus((NZBInfo::EParStatus)parStatus);
-		nzbInfo->SetUnpackStatus((NZBInfo::EUnpackStatus)unpackStatus);
-		nzbInfo->SetMoveStatus((NZBInfo::EMoveStatus)moveStatus);
-		nzbInfo->SetRenameStatus((NZBInfo::ERenameStatus)renameStatus);
-		nzbInfo->SetDeleteStatus((NZBInfo::EDeleteStatus)deleteStatus);
-		nzbInfo->SetMarkStatus((NZBInfo::EMarkStatus)markStatus);
-		if (nzbInfo->GetKind() == NZBInfo::nkNzb ||
-			(NZBInfo::EUrlStatus)urlStatus >= NZBInfo::lsFailed ||
-			(NZBInfo::EUrlStatus)urlStatus >= NZBInfo::lsScanSkipped)
+		nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
+		nzbInfo->SetUnpackStatus((NzbInfo::EUnpackStatus)unpackStatus);
+		nzbInfo->SetMoveStatus((NzbInfo::EMoveStatus)moveStatus);
+		nzbInfo->SetRenameStatus((NzbInfo::ERenameStatus)renameStatus);
+		nzbInfo->SetDeleteStatus((NzbInfo::EDeleteStatus)deleteStatus);
+		nzbInfo->SetMarkStatus((NzbInfo::EMarkStatus)markStatus);
+		if (nzbInfo->GetKind() == NzbInfo::nkNzb ||
+			(NzbInfo::EUrlStatus)urlStatus >= NzbInfo::lsFailed ||
+			(NzbInfo::EUrlStatus)urlStatus >= NzbInfo::lsScanSkipped)
 		{
-			nzbInfo->SetUrlStatus((NZBInfo::EUrlStatus)urlStatus);
+			nzbInfo->SetUrlStatus((NzbInfo::EUrlStatus)urlStatus);
 		}
 		if (formatVersion < 23)
 		{
@@ -748,7 +748,7 @@ bool DiskState::LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%i,%i,%i,%i\n", &deleted, &unpackCleanedUpDisk, &healthPaused, &healthDeleted) != 4) goto error;
 		nzbInfo->SetUnpackCleanedUpDisk((bool)unpackCleanedUpDisk);
 		nzbInfo->SetHealthPaused((bool)healthPaused);
-		nzbInfo->SetDeleteStatus(healthDeleted ? NZBInfo::dsHealth : deleted ? NZBInfo::dsManual : NZBInfo::dsNone);
+		nzbInfo->SetDeleteStatus(healthDeleted ? NzbInfo::dsHealth : deleted ? NzbInfo::dsManual : NzbInfo::dsNone);
 	}
 
 	if (formatVersion >= 28)
@@ -996,7 +996,7 @@ bool DiskState::LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, in
 	
 	if (formatVersion < 26)
 	{
-		NZBParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
+		NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
 		if (!unpackParameter)
 		{
 			nzbInfo->GetParameters()->SetParameter("*Unpack:", g_pOptions->GetUnpack() ? "yes" : "no");
@@ -1029,11 +1029,11 @@ bool DiskState::LoadNZBInfo(NZBInfo* nzbInfo, Servers* servers, FILE* infile, in
 			bool res = LoadFileInfo(fileInfo, fileName, true, false);
 			if (res)
 			{
-				fileInfo->SetID(id);
+				fileInfo->SetId(id);
 				fileInfo->SetPaused(paused);
 				fileInfo->SetTime(time);
 				fileInfo->SetExtraPriority(extraPriority != 0);
-				fileInfo->SetNZBInfo(nzbInfo);
+				fileInfo->SetNzbInfo(nzbInfo);
 				if (formatVersion < 30)
 				{
 					nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
@@ -1054,7 +1054,7 @@ error:
 	return false;
 }
 
-bool DiskState::LoadFileQueue12(NZBList* nzbList, NZBList* sortList, FILE* infile, int formatVersion)
+bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, FILE* infile, int formatVersion)
 {
 	debug("Loading file queue from disk");
 
@@ -1090,13 +1090,13 @@ bool DiskState::LoadFileQueue12(NZBList* nzbList, NZBList* sortList, FILE* infil
 		bool res = LoadFileInfo(fileInfo, fileName, true, false);
 		if (res)
 		{
-			NZBInfo* nzbInfo = nzbList->at(nzbIndex - 1);
+			NzbInfo* nzbInfo = nzbList->at(nzbIndex - 1);
 			nzbInfo->SetPriority(priority);
-			fileInfo->SetID(id);
+			fileInfo->SetId(id);
 			fileInfo->SetPaused(paused);
 			fileInfo->SetTime(time);
 			fileInfo->SetExtraPriority(extraPriority != 0);
-			fileInfo->SetNZBInfo(nzbInfo);
+			fileInfo->SetNzbInfo(nzbInfo);
 			if (formatVersion < 30)
 			{
 				nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
@@ -1127,7 +1127,7 @@ void DiskState::SaveServerStats(ServerStatList* serverStatList, FILE* outfile)
 	for (ServerStatList::iterator it = serverStatList->begin(); it != serverStatList->end(); it++)
 	{
 		ServerStat* serverStat = *it;
-		fprintf(outfile, "%i,%i,%i\n", serverStat->GetServerID(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
+		fprintf(outfile, "%i,%i,%i\n", serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
 	}
 }
 
@@ -1146,9 +1146,9 @@ bool DiskState::LoadServerStats(ServerStatList* serverStatList, Servers* servers
 			for (Servers::iterator it = servers->begin(); it != servers->end(); it++)
 			{
 				NewsServer* newsServer = *it;
-				if (newsServer->GetStateID() == serverId)
+				if (newsServer->GetStateId() == serverId)
 				{
-					serverStatList->StatOp(newsServer->GetID(), successArticles, failedArticles, ServerStatList::soSet);
+					serverStatList->StatOp(newsServer->GetId(), successArticles, failedArticles, ServerStatList::soSet);
 				}
 			}
 		}
@@ -1164,7 +1164,7 @@ error:
 bool DiskState::SaveFile(FileInfo* fileInfo)
 {
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetID());
+	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetId());
 	fileName[1024-1] = '\0';
 	return SaveFileInfo(fileInfo, fileName);
 }
@@ -1207,7 +1207,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 	{
 		ArticleInfo* articleInfo = *it;
 		fprintf(outfile, "%i,%i\n", articleInfo->GetPartNumber(), articleInfo->GetSize());
-		fprintf(outfile, "%s\n", articleInfo->GetMessageID());
+		fprintf(outfile, "%s\n", articleInfo->GetMessageId());
 	}
 
 	fclose(outfile);
@@ -1217,7 +1217,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 bool DiskState::LoadArticles(FileInfo* fileInfo)
 {
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetID());
+	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetId());
 	fileName[1024-1] = '\0';
 	return LoadFileInfo(fileInfo, fileName, false, true);
 }
@@ -1324,7 +1324,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 			ArticleInfo* articleInfo = new ArticleInfo();
 			articleInfo->SetPartNumber(PartNumber);
 			articleInfo->SetSize(PartSize);
-			articleInfo->SetMessageID(buf);
+			articleInfo->SetMessageId(buf);
 			fileInfo->GetArticles()->push_back(articleInfo);
 		}
 	}
@@ -1343,7 +1343,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	debug("Saving FileState to disk");
 
 	char filename[1024];
-	snprintf(filename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), fileInfo->GetID(), completed ? "c" : "s");
+	snprintf(filename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	filename[1024-1] = '\0';
 
 	FILE* outfile = fopen(filename, FOPEN_WB);
@@ -1381,7 +1381,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed)
 {
 	char filename[1024];
-	snprintf(filename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), fileInfo->GetID(), completed ? "c" : "s");
+	snprintf(filename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	filename[1024-1] = '\0';
 
 	bool hasArticles = !fileInfo->GetArticles()->empty();
@@ -1486,7 +1486,7 @@ error:
 	return false;
 }
 
-void DiskState::DiscardFiles(NZBInfo* nzbInfo)
+void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 {
 	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
 	{
@@ -1499,28 +1499,28 @@ void DiskState::DiscardFiles(NZBInfo* nzbInfo)
 	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* completedFile = *it;
-		if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetID() > 0)
+		if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
 		{
-			snprintf(filename, 1024, "%s%i", g_pOptions->GetQueueDir(), completedFile->GetID());
+			snprintf(filename, 1024, "%s%i", g_pOptions->GetQueueDir(), completedFile->GetId());
 			filename[1024-1] = '\0';
 			remove(filename);
 
-			snprintf(filename, 1024, "%s%is", g_pOptions->GetQueueDir(), completedFile->GetID());
+			snprintf(filename, 1024, "%s%is", g_pOptions->GetQueueDir(), completedFile->GetId());
 			filename[1024-1] = '\0';
 			remove(filename);
 
-			snprintf(filename, 1024, "%s%ic", g_pOptions->GetQueueDir(), completedFile->GetID());
+			snprintf(filename, 1024, "%s%ic", g_pOptions->GetQueueDir(), completedFile->GetId());
 			filename[1024-1] = '\0';
 			remove(filename);
 		}
 	}
 
-	snprintf(filename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), nzbInfo->GetID());
+	snprintf(filename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), nzbInfo->GetId());
 	filename[1024-1] = '\0';
 	remove(filename);
 }
 
-bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NZBList* nzbList, FILE* infile, int formatVersion)
+bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, FILE* infile, int formatVersion)
 {
 	debug("Loading post-queue from disk");
 
@@ -1554,7 +1554,7 @@ bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NZBList* nzbList, 
 		if (formatVersion < 21 && stage > (int)PostInfo::ptVerifyingRepaired) stage++;
 		if (formatVersion < 20 && stage > (int)PostInfo::ptUnpacking) stage++;
 
-		NZBInfo* nzbInfo = NULL;
+		NzbInfo* nzbInfo = NULL;
 
 		if (formatVersion < 43)
 		{
@@ -1563,7 +1563,7 @@ bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NZBList* nzbList, 
 		}
 		else
 		{
-			nzbInfo = FindNZBInfo(downloadQueue, nzbId);
+			nzbInfo = FindNzbInfo(downloadQueue, nzbId);
 			if (!nzbInfo) goto error;
 		}
 
@@ -1593,7 +1593,7 @@ error:
  * Loads post-queue created with older versions of nzbget.
  * Returns true if successful, false if not
  */
-bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NZBList* nzbList)
+bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 {
 	debug("Loading post-queue from disk");
 
@@ -1636,10 +1636,10 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NZBList* nzbList)
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 		// find NZBInfo based on NZBFilename
-		NZBInfo* nzbInfo = NULL;
-		for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+		NzbInfo* nzbInfo = NULL;
+		for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 		{
-			NZBInfo* nzbInfo2 = *it;
+			NzbInfo* nzbInfo2 = *it;
 			if (!strcmp(nzbInfo2->GetFilename(), buf))
 			{
 				nzbInfo = nzbInfo2;
@@ -1650,7 +1650,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NZBList* nzbList)
 		bool newNzbInfo = !nzbInfo;
 		if (newNzbInfo)
 		{
-			nzbInfo = new NZBInfo();
+			nzbInfo = new NzbInfo();
 			nzbList->push_front(nzbInfo);
 			nzbInfo->SetFilename(buf);
 		}
@@ -1709,7 +1709,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NZBList* nzbList)
 		if (fscanf(infile, "%i\n", &parCheck) != 1) goto error; // ParCheck
 
 		if (fscanf(infile, "%i\n", &intValue) != 1) goto error;
-		nzbInfo->SetParStatus(parCheck ? (NZBInfo::EParStatus)intValue : NZBInfo::psSkipped);
+		nzbInfo->SetParStatus(parCheck ? (NzbInfo::EParStatus)intValue : NzbInfo::psSkipped);
 
 		if (formatVersion < 7)
 		{
@@ -1762,7 +1762,7 @@ bool DiskState::LoadUrlQueue12(DownloadQueue* downloadQueue, FILE* infile, int f
 
 	for (int i = 0; i < size; i++)
 	{
-		NZBInfo* nzbInfo = new NZBInfo();
+		NzbInfo* nzbInfo = new NzbInfo();
 		if (!LoadUrlInfo12(nzbInfo, infile, formatVersion)) goto error;
 		downloadQueue->GetQueue()->push_back(nzbInfo);
 	}
@@ -1774,7 +1774,7 @@ error:
 	return false;
 }
 
-bool DiskState::LoadUrlInfo12(NZBInfo* nzbInfo, FILE* infile, int formatVersion)
+bool DiskState::LoadUrlInfo12(NzbInfo* nzbInfo, FILE* infile, int formatVersion)
 {
 	char buf[10240];
 
@@ -1782,7 +1782,7 @@ bool DiskState::LoadUrlInfo12(NZBInfo* nzbInfo, FILE* infile, int formatVersion)
 	{
 		int id;
 		if (fscanf(infile, "%i\n", &id) != 1) goto error;
-		nzbInfo->SetID(id);
+		nzbInfo->SetId(id);
 	}
 
 	int statusDummy, priority;
@@ -1798,7 +1798,7 @@ bool DiskState::LoadUrlInfo12(NZBInfo* nzbInfo, FILE* infile, int formatVersion)
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	nzbInfo->SetURL(buf);
+	nzbInfo->SetUrl(buf);
 
 	if (!fgets(buf, sizeof(buf), infile)) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -1899,11 +1899,11 @@ void DiskState::SaveHistory(DownloadQueue* downloadQueue, FILE* outfile)
 	{
 		HistoryInfo* historyInfo = *it;
 
-		fprintf(outfile, "%i,%i,%i\n", historyInfo->GetID(), (int)historyInfo->GetKind(), (int)historyInfo->GetTime());
+		fprintf(outfile, "%i,%i,%i\n", historyInfo->GetId(), (int)historyInfo->GetKind(), (int)historyInfo->GetTime());
 
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl)
 		{
-			SaveNZBInfo(historyInfo->GetNZBInfo(), outfile);
+			SaveNzbInfo(historyInfo->GetNzbInfo(), outfile);
 		}
 		else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 		{
@@ -1912,7 +1912,7 @@ void DiskState::SaveHistory(DownloadQueue* downloadQueue, FILE* outfile)
 	}
 }
 
-bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NZBList* nzbList, Servers* servers, FILE* infile, int formatVersion)
+bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Servers* servers, FILE* infile, int formatVersion)
 {
 	debug("Loading history from disk");
 
@@ -1948,7 +1948,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NZBList* nzbList, Serv
 
 		if (kind == HistoryInfo::hkNzb)
 		{
-			NZBInfo* nzbInfo = NULL;
+			NzbInfo* nzbInfo = NULL;
 
 			if (formatVersion < 43)
 			{
@@ -1958,8 +1958,8 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NZBList* nzbList, Serv
 			}
 			else
 			{
-				nzbInfo = new NZBInfo();
-				if (!LoadNZBInfo(nzbInfo, servers, infile, formatVersion)) goto error;
+				nzbInfo = new NzbInfo();
+				if (!LoadNzbInfo(nzbInfo, servers, infile, formatVersion)) goto error;
 				nzbInfo->LeavePostProcess();
 			}
 
@@ -1968,15 +1968,15 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NZBList* nzbList, Serv
 			if (formatVersion < 28 && nzbInfo->GetParStatus() == 0 &&
 				nzbInfo->GetUnpackStatus() == 0 && nzbInfo->GetMoveStatus() == 0)
 			{
-				nzbInfo->SetDeleteStatus(NZBInfo::dsManual);
+				nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
 			}
 		}
 		else if (kind == HistoryInfo::hkUrl)
 		{
-			NZBInfo* nzbInfo = new NZBInfo();
+			NzbInfo* nzbInfo = new NzbInfo();
 			if (formatVersion >= 46)
 			{
-				if (!LoadNZBInfo(nzbInfo, servers, infile, formatVersion)) goto error;
+				if (!LoadNzbInfo(nzbInfo, servers, infile, formatVersion)) goto error;
 			}
 			else
 			{
@@ -1990,7 +1990,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NZBList* nzbList, Serv
 			if (!LoadDupInfo(dupInfo, infile, formatVersion)) goto error;
 			if (formatVersion >= 47)
 			{
-				dupInfo->SetID(id);
+				dupInfo->SetId(id);
 			}
 			historyInfo = new HistoryInfo(dupInfo);
 		}
@@ -2015,12 +2015,12 @@ error:
 /*
 * Find index of nzb-info.
 */
-int DiskState::FindNZBInfoIndex(NZBList* nzbList, NZBInfo* nzbInfo)
+int DiskState::FindNzbInfoIndex(NzbList* nzbList, NzbInfo* nzbInfo)
 {
 	int nzbIndex = 0;
-	for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 	{
-		NZBInfo* nzbInfo2 = *it;
+		NzbInfo* nzbInfo2 = *it;
 		nzbIndex++;
 		if (nzbInfo2 == nzbInfo)
 		{
@@ -2033,12 +2033,12 @@ int DiskState::FindNZBInfoIndex(NZBList* nzbList, NZBInfo* nzbInfo)
 /*
 * Find nzb-info by id.
 */
-NZBInfo* DiskState::FindNZBInfo(DownloadQueue* downloadQueue, int id)
+NzbInfo* DiskState::FindNzbInfo(DownloadQueue* downloadQueue, int id)
 {
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
-		if (nzbInfo->GetID() == id)
+		NzbInfo* nzbInfo = *it;
+		if (nzbInfo->GetId() == id)
 		{
 			return nzbInfo;
 		}
@@ -2107,7 +2107,7 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	// info and articles file
 	if (deleteData)
 	{
-		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetID());
+		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetId());
 		fileName[1024-1] = '\0';
 		remove(fileName);
 	}
@@ -2115,7 +2115,7 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	// partial state file
 	if (deletePartialState)
 	{
-		snprintf(fileName, 1024, "%s%is", g_pOptions->GetQueueDir(), fileInfo->GetID());
+		snprintf(fileName, 1024, "%s%is", g_pOptions->GetQueueDir(), fileInfo->GetId());
 		fileName[1024-1] = '\0';
 		remove(fileName);
 	}
@@ -2123,7 +2123,7 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	// completed state file
 	if (deleteCompletedState)
 	{
-		snprintf(fileName, 1024, "%s%ic", g_pOptions->GetQueueDir(), fileInfo->GetID());
+		snprintf(fileName, 1024, "%s%ic", g_pOptions->GetQueueDir(), fileInfo->GetId());
 		fileName[1024-1] = '\0';
 		remove(fileName);
 	}
@@ -2327,12 +2327,12 @@ error:
 }
 
 // calculate critical health for old NZBs
-void DiskState::CalcCriticalHealth(NZBList* nzbList)
+void DiskState::CalcCriticalHealth(NzbList* nzbList)
 {
 	// build list of old NZBs which do not have critical health calculated
-	for (NZBList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
+		NzbInfo* nzbInfo = *it;
 		if (nzbInfo->CalcCriticalHealth(false) == 1000)
 		{
 			debug("Calculating critical health for %s", nzbInfo->GetName());
@@ -2359,10 +2359,10 @@ void DiskState::CalcCriticalHealth(NZBList* nzbList)
 
 void DiskState::CalcFileStats(DownloadQueue* downloadQueue, int formatVersion)
 {
-	for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
-		NZBInfo* nzbInfo = *it;
-		CalcNZBFileStats(nzbInfo, formatVersion);
+		NzbInfo* nzbInfo = *it;
+		CalcNzbFileStats(nzbInfo, formatVersion);
 	}
 
 	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
@@ -2370,12 +2370,12 @@ void DiskState::CalcFileStats(DownloadQueue* downloadQueue, int formatVersion)
 		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 		{
-			CalcNZBFileStats(historyInfo->GetNZBInfo(), formatVersion);
+			CalcNzbFileStats(historyInfo->GetNzbInfo(), formatVersion);
 		}
 	}
 }
 
-void DiskState::CalcNZBFileStats(NZBInfo* nzbInfo, int formatVersion)
+void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 {
 	int pausedFileCount = 0;
 	int remainingParCount = 0;
@@ -2448,13 +2448,13 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 		{
 			if (g_pOptions->GetContinuePartial() && !cacheWasActive)
 			{
-				for (NZBList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+				for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 				{
-					NZBInfo* nzbInfo = *it;
+					NzbInfo* nzbInfo = *it;
 					for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 					{
 						FileInfo* fileInfo = *it2;
-						if (fileInfo->GetID() == id)
+						if (fileInfo->GetId() == id)
 						{
 							if (!LoadArticles(fileInfo)) goto error;
 							if (!LoadFileState(fileInfo, servers, false)) goto error;
@@ -2607,7 +2607,7 @@ public:
 	bool			m_perfect;
 
 					~ServerRef();
-	int				GetStateID() { return m_stateId; }
+	int				GetStateId() { return m_stateId; }
 	const char*		GetName() { return m_name; }
 	const char*		GetHost() { return m_host; }
 	int				GetPort() { return m_port; }
@@ -2694,7 +2694,7 @@ void MatchServers(Servers* servers, ServerRefList* serverRefs)
 		if (matchedRefs.size() == 1)
 		{
 			ServerRef* ref = matchedRefs.front();
-			newsServer->SetStateID(ref->GetStateID());
+			newsServer->SetStateId(ref->GetStateId());
 			ref->SetMatched(true);
 			ref->SetPerfect(true);
 		}
@@ -2704,7 +2704,7 @@ void MatchServers(Servers* servers, ServerRefList* serverRefs)
 	for (Servers::iterator it = servers->begin(); it != servers->end(); it++)
 	{
 		NewsServer* newsServer = *it;
-		if (!newsServer->GetStateID())
+		if (!newsServer->GetStateId())
 		{
 			ServerRefList matchedRefs;
 			matchedRefs.insert(matchedRefs.begin(), serverRefs->begin(), serverRefs->end());
@@ -2729,7 +2729,7 @@ void MatchServers(Servers* servers, ServerRefList* serverRefs)
 			if (!matchedRefs.empty())
 			{
 				ServerRef* ref = matchedRefs.front();
-				newsServer->SetStateID(ref->GetStateID());
+				newsServer->SetStateId(ref->GetStateId());
 				ref->SetMatched(true);
 			}
 		}
@@ -2791,10 +2791,10 @@ bool DiskState::LoadServerInfo(Servers* servers, FILE* infile, int formatVersion
 	for (Servers::iterator it = servers->begin(); it != servers->end(); it++)
 	{
 		NewsServer* newsServer = *it;
-		*perfectMatch = *perfectMatch && newsServer->GetStateID();
-		debug("Server %i -> %i", newsServer->GetID(), newsServer->GetStateID());
-		debug("Server %i.Name: %s", newsServer->GetID(), newsServer->GetName());
-		debug("Server %i.Host: %s:%i", newsServer->GetID(), newsServer->GetHost(), newsServer->GetPort());
+		*perfectMatch = *perfectMatch && newsServer->GetStateId();
+		debug("Server %i -> %i", newsServer->GetId(), newsServer->GetStateId());
+		debug("Server %i.Name: %s", newsServer->GetId(), newsServer->GetName());
+		debug("Server %i.Host: %s:%i", newsServer->GetId(), newsServer->GetHost(), newsServer->GetPort());
 	}
 
 	debug("All servers perfectly matched: %s", *perfectMatch ? "yes" : "no");
@@ -2866,9 +2866,9 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, F
 			for (Servers::iterator it = servers->begin(); it != servers->end(); it++)
 			{
 				NewsServer* newsServer = *it;
-				if (newsServer->GetStateID() == i)
+				if (newsServer->GetStateId() == i)
 				{
-					serverVolume = serverVolumes->at(newsServer->GetID());
+					serverVolume = serverVolumes->at(newsServer->GetId());
 				}
 			}
 		}
@@ -2944,7 +2944,7 @@ void DiskState::DeleteCacheFlag()
 	remove(flagFilename);
 }
 
-void DiskState::AppendNZBMessage(int nzbId, Message::EKind kind, const char* text)
+void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* text)
 {
 	char logFilename[1024];
 	snprintf(logFilename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), nzbId);
@@ -2990,7 +2990,7 @@ void DiskState::AppendNZBMessage(int nzbId, Message::EKind kind, const char* tex
 	fclose(outfile);
 }
 
-void DiskState::LoadNZBMessages(int nzbId, MessageList* messages)
+void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 {
 	// Important:
 	//   - Other threads may be writing into the log-file at any time;

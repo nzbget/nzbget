@@ -45,7 +45,7 @@
 
 static const int CONNECTION_LINEBUFFER_SIZE = 1024*10;
 
-NNTPConnection::NNTPConnection(NewsServer* newsServer) : Connection(newsServer->GetHost(), newsServer->GetPort(), newsServer->GetTLS())
+NntpConnection::NntpConnection(NewsServer* newsServer) : Connection(newsServer->GetHost(), newsServer->GetPort(), newsServer->GetTls())
 {
 	m_newsServer = newsServer;
 	m_activeGroup = NULL;
@@ -54,13 +54,13 @@ NNTPConnection::NNTPConnection(NewsServer* newsServer) : Connection(newsServer->
 	SetCipher(newsServer->GetCipher());
 }
 
-NNTPConnection::~NNTPConnection()
+NntpConnection::~NntpConnection()
 {
 	free(m_activeGroup);
 	free(m_lineBuf);
 }
 
-const char* NNTPConnection::Request(const char* req)
+const char* NntpConnection::Request(const char* req)
 {
 	if (!req)
 	{
@@ -95,7 +95,7 @@ const char* NNTPConnection::Request(const char* req)
 	return answer;
 }
 
-bool NNTPConnection::Authenticate()
+bool NntpConnection::Authenticate()
 {
 	if (strlen(m_newsServer->GetUser()) == 0 || strlen(m_newsServer->GetPassword()) == 0)
 	{
@@ -109,7 +109,7 @@ bool NNTPConnection::Authenticate()
 	return !m_authError;
 }
 
-bool NNTPConnection::AuthInfoUser(int recur)
+bool NntpConnection::AuthInfoUser(int recur)
 {
 	if (recur > 10)
 	{
@@ -152,7 +152,7 @@ bool NNTPConnection::AuthInfoUser(int recur)
 	return false;
 }
 
-bool NNTPConnection::AuthInfoPass(int recur)
+bool NntpConnection::AuthInfoPass(int recur)
 {
 	if (recur > 10)
 	{
@@ -190,7 +190,7 @@ bool NNTPConnection::AuthInfoPass(int recur)
 	return false;
 }
 
-const char* NNTPConnection::JoinGroup(const char* grp)
+const char* NntpConnection::JoinGroup(const char* grp)
 {
 	if (m_activeGroup && !strcmp(m_activeGroup, grp))
 	{
@@ -219,7 +219,7 @@ const char* NNTPConnection::JoinGroup(const char* grp)
 	return answer;
 }
 
-bool NNTPConnection::Connect()
+bool NntpConnection::Connect()
 {
 	debug("Opening connection to %s", GetHost());
 
@@ -260,7 +260,7 @@ bool NNTPConnection::Connect()
 	return true;
 }
 
-bool NNTPConnection::Disconnect()
+bool NntpConnection::Disconnect()
 {
 	if (m_status == csConnected)
 	{
@@ -274,7 +274,7 @@ bool NNTPConnection::Disconnect()
 	return Connection::Disconnect();
 }
 
-void NNTPConnection::ReportErrorAnswer(const char* msgPrefix, const char* answer)
+void NntpConnection::ReportErrorAnswer(const char* msgPrefix, const char* answer)
 {
 	char errStr[1024];
 	snprintf(errStr, 1024, msgPrefix, m_newsServer->GetName(), m_newsServer->GetHost(), answer);

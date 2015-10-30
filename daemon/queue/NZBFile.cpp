@@ -54,13 +54,13 @@ using namespace MSXML;
 #include "DiskState.h"
 #include "Util.h"
 
-NZBFile::NZBFile(const char* fileName, const char* category)
+NzbFile::NzbFile(const char* fileName, const char* category)
 {
     debug("Creating NZBFile");
 
     m_fileName = strdup(fileName);
 	m_password = NULL;
-	m_nzbInfo = new NZBInfo();
+	m_nzbInfo = new NzbInfo();
 	m_nzbInfo->SetFilename(fileName);
 	m_nzbInfo->SetCategory(category);
 	m_nzbInfo->BuildDestDirName();
@@ -74,7 +74,7 @@ NZBFile::NZBFile(const char* fileName, const char* category)
 #endif
 }
 
-NZBFile::~NZBFile()
+NzbFile::~NzbFile()
 {
     debug("Destroying NZBFile");
 
@@ -90,12 +90,12 @@ NZBFile::~NZBFile()
 	delete m_nzbInfo;
 }
 
-void NZBFile::LogDebugInfo()
+void NzbFile::LogDebugInfo()
 {
     info(" NZBFile %s", m_fileName);
 }
 
-void NZBFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
+void NzbFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
 {
 	// make Article-List big enough
 	while ((int)fileInfo->GetArticles()->size() < articleInfo->GetPartNumber())
@@ -109,7 +109,7 @@ void NZBFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
 	(*fileInfo->GetArticles())[index] = articleInfo;
 }
 
-void NZBFile::AddFileInfo(FileInfo* fileInfo)
+void NzbFile::AddFileInfo(FileInfo* fileInfo)
 {
 	// calculate file size and delete empty articles
 
@@ -159,7 +159,7 @@ void NZBFile::AddFileInfo(FileInfo* fileInfo)
 	missedSize += uncountedArticles * oneSize;
 	size += missedSize;
 	m_nzbInfo->GetFileList()->push_back(fileInfo);
-	fileInfo->SetNZBInfo(m_nzbInfo);
+	fileInfo->SetNzbInfo(m_nzbInfo);
 	fileInfo->SetSize(size);
 	fileInfo->SetRemainingSize(size - missedSize);
 	fileInfo->SetMissedSize(missedSize);
@@ -167,7 +167,7 @@ void NZBFile::AddFileInfo(FileInfo* fileInfo)
 	fileInfo->SetMissedArticles(missedArticles);
 }
 
-void NZBFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
+void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 {
 	// Example subject: some garbage "title" yEnc (10/99)
 
@@ -301,7 +301,7 @@ void NZBFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 	}
 }
 
-bool NZBFile::HasDuplicateFilenames()
+bool NzbFile::HasDuplicateFilenames()
 {
 	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
     {
@@ -335,7 +335,7 @@ bool NZBFile::HasDuplicateFilenames()
 /**
  * Generate filenames from subjects and check if the parsing of subject was correct
  */
-void NZBFile::BuildFilenames()
+void NzbFile::BuildFilenames()
 {
 	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
     {
@@ -368,7 +368,7 @@ bool CompareFileInfo(FileInfo* first, FileInfo* second)
 	return strcmp(first->GetFilename(), second->GetFilename()) > 0;
 }
 
-void NZBFile::CalcHashes()
+void NzbFile::CalcHashes()
 {
 	TempFileList fileList;
 
@@ -394,11 +394,11 @@ void NZBFile::CalcHashes()
 		for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 		{
 			ArticleInfo* article = *it;
-			int len = strlen(article->GetMessageID());
-			fullContentHash = Util::HashBJ96(article->GetMessageID(), len, fullContentHash);
+			int len = strlen(article->GetMessageId());
+			fullContentHash = Util::HashBJ96(article->GetMessageId(), len, fullContentHash);
 			if (!skip)
 			{
-				filteredContentHash = Util::HashBJ96(article->GetMessageID(), len, filteredContentHash);
+				filteredContentHash = Util::HashBJ96(article->GetMessageId(), len, filteredContentHash);
 				useForFilteredCount++;
 			}
 		}
@@ -414,7 +414,7 @@ void NZBFile::CalcHashes()
 	m_nzbInfo->SetFilteredContentHash(filteredContentHash);
 }
 
-void NZBFile::ProcessFiles()
+void NzbFile::ProcessFiles()
 {
 	BuildFilenames();
 
@@ -470,7 +470,7 @@ void NZBFile::ProcessFiles()
  * Password read using XML-parser may have special characters (such as TAB) stripped.
  * This function rereads password directly from file to keep all characters intact.
  */
-void NZBFile::ReadPassword()
+void NzbFile::ReadPassword()
 {
     FILE* file = fopen(m_fileName, FOPEN_RB);
     if (!file)
@@ -515,7 +515,7 @@ void NZBFile::ReadPassword()
 }
 
 #ifdef WIN32
-bool NZBFile::Parse()
+bool NzbFile::Parse()
 {
     CoInitialize(NULL);
 
@@ -541,11 +541,11 @@ bool NZBFile::Parse()
 	{
 		// 2. now trying filename encoded as URL
 		char url[2048];
-		EncodeURL(m_fileName, url, 2048);
+		EncodeUrl(m_fileName, url, 2048);
 		debug("url=\"%s\"", url);
-		_variant_t vURL(url);
+		_variant_t vUrl(url);
 
-		success = doc->load(vURL);
+		success = doc->load(vUrl);
 	}
 
 	if (success == VARIANT_FALSE)
@@ -561,12 +561,12 @@ bool NZBFile::Parse()
 		return false;
 	}
 
-    if (!ParseNZB(doc))
+    if (!ParseNzb(doc))
 	{
 		return false;
 	}
 
-	if (GetNZBInfo()->GetFileList()->empty())
+	if (GetNzbInfo()->GetFileList()->empty())
 	{
 		char messageText[1024];
 		snprintf(messageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName));
@@ -581,7 +581,7 @@ bool NZBFile::Parse()
     return true;
 }
 
-void NZBFile::EncodeURL(const char* filename, char* url, int bufLen)
+void NzbFile::EncodeUrl(const char* filename, char* url, int bufLen)
 {
 	char utfFilename[2048];
 	strncpy(utfFilename, filename, 2048);
@@ -611,7 +611,7 @@ void NZBFile::EncodeURL(const char* filename, char* url, int bufLen)
 	*url = NULL;
 }
 
-bool NZBFile::ParseNZB(IUnknown* nzb)
+bool NzbFile::ParseNzb(IUnknown* nzb)
 {
 	MSXML::IXMLDOMDocumentPtr doc = nzb;
 	MSXML::IXMLDOMNodePtr root = doc->documentElement;
@@ -671,7 +671,7 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 			{
 				ArticleInfo* article = new ArticleInfo();
 				article->SetPartNumber(partNumber);
-				article->SetMessageID(id);
+				article->SetMessageId(id);
 				article->SetSize(lsize);
 				AddArticle(fileInfo, article);
 			}
@@ -684,7 +684,7 @@ bool NZBFile::ParseNZB(IUnknown* nzb)
 
 #else
 
-bool NZBFile::Parse()
+bool NzbFile::Parse()
 {
 	xmlSAXHandler SAX_handler = {0};
 	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
@@ -720,7 +720,7 @@ bool NZBFile::Parse()
 	return true;
 }
 
-void NZBFile::Parse_StartElement(const char *name, const char **atts)
+void NzbFile::Parse_StartElement(const char *name, const char **atts)
 {
 	char tagAttrMessage[1024];
 	snprintf(tagAttrMessage, 1024, "Malformed nzb-file, tag <%s> must have attributes", name);
@@ -809,7 +809,7 @@ void NZBFile::Parse_StartElement(const char *name, const char **atts)
 	}
 }
 
-void NZBFile::Parse_EndElement(const char *name)
+void NzbFile::Parse_EndElement(const char *name)
 {
 	if (!strcmp("file", name))
 	{
@@ -841,7 +841,7 @@ void NZBFile::Parse_EndElement(const char *name)
 		// Get the #text part
 		char ID[2048];
 		snprintf(ID, 2048, "<%s>", m_tagContent);
-		m_article->SetMessageID(ID);
+		m_article->SetMessageId(ID);
 		m_article = NULL;
 	}
 	else if (!strcmp("meta", name) && m_hasPassword)
@@ -850,7 +850,7 @@ void NZBFile::Parse_EndElement(const char *name)
 	}
 }
 
-void NZBFile::Parse_Content(const char *buf, int len)
+void NzbFile::Parse_Content(const char *buf, int len)
 {
 	m_tagContent = (char*)realloc(m_tagContent, m_tagContentLen + len + 1);
 	strncpy(m_tagContent + m_tagContentLen, buf, len);
@@ -858,17 +858,17 @@ void NZBFile::Parse_Content(const char *buf, int len)
 	m_tagContent[m_tagContentLen] = '\0';
 }
 
-void NZBFile::SAX_StartElement(NZBFile* file, const char *name, const char **atts)
+void NzbFile::SAX_StartElement(NzbFile* file, const char *name, const char **atts)
 {
 	file->Parse_StartElement(name, atts);
 }
 
-void NZBFile::SAX_EndElement(NZBFile* file, const char *name)
+void NzbFile::SAX_EndElement(NzbFile* file, const char *name)
 {
 	file->Parse_EndElement(name);
 }
 
-void NZBFile::SAX_characters(NZBFile* file, const char * xmlstr, int len)
+void NzbFile::SAX_characters(NzbFile* file, const char * xmlstr, int len)
 {
 	char* str = (char*)xmlstr;
 	
@@ -910,19 +910,19 @@ void NZBFile::SAX_characters(NZBFile* file, const char * xmlstr, int len)
 	}
 }
 
-void* NZBFile::SAX_getEntity(NZBFile* file, const char * name)
+void* NzbFile::SAX_getEntity(NzbFile* file, const char * name)
 {
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
 	if (!e)
 	{
-		file->GetNZBInfo()->AddMessage(Message::mkWarning, "entity not found");
+		file->GetNzbInfo()->AddMessage(Message::mkWarning, "entity not found");
 		file->m_ignoreNextError = true;
 	}
 
 	return e;
 }
 
-void NZBFile::SAX_error(NZBFile* file, const char *msg, ...)
+void NzbFile::SAX_error(NzbFile* file, const char *msg, ...)
 {
 	if (file->m_ignoreNextError)
 	{
@@ -943,6 +943,6 @@ void NZBFile::SAX_error(NZBFile* file, const char *msg, ...)
 	char textMessage[1024];
 	snprintf(textMessage, 1024, "Error parsing nzb-file: %s", errMsg);
 	textMessage[1024-1] = '\0';
-	file->GetNZBInfo()->AddMessage(Message::mkError, textMessage);
+	file->GetNzbInfo()->AddMessage(Message::mkError, textMessage);
 }
 #endif

@@ -477,7 +477,7 @@ void ParChecker::SetDestDir(const char * destDir)
 	m_destDir = strdup(destDir);
 }
 
-void ParChecker::SetNZBName(const char * nzbName)
+void ParChecker::SetNzbName(const char * nzbName)
 {
 	free(m_nzbName);
 	m_nzbName = strdup(nzbName);

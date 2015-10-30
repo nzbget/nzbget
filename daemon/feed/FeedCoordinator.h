@@ -100,8 +100,8 @@ private:
 	void					StartFeedDownload(FeedInfo* feedInfo, bool force);
 	void					FeedCompleted(FeedDownloader* feedDownloader);
 	void					FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos);
-	void					ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NZBList* addedNzbs);
-	NZBInfo*				CreateNZBInfo(FeedInfo* feedInfo, FeedItemInfo* feedItemInfo);
+	void					ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NzbList* addedNzbs);
+	NzbInfo*				CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedItemInfo);
 	void					ResetHangingDownloads();
 	void					DownloadQueueUpdate(Subject* caller, void* aspect);
 	void					CleanupHistory();

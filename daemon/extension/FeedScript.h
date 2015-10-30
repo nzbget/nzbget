@@ -28,7 +28,7 @@
 
 #include "NzbScript.h"
 
-class FeedScriptController : public NZBScriptController
+class FeedScriptController : public NzbScriptController
 {
 private:
 	const char*			m_feedFile;

@@ -372,15 +372,15 @@ void Run(bool reload)
 		if (!g_pCommandLineParser->GetServerMode())
 		{
 			const char* category = g_pCommandLineParser->GetAddCategory() ? g_pCommandLineParser->GetAddCategory() : "";
-			NZBFile* nzbFile = new NZBFile(g_pCommandLineParser->GetArgFilename(), category);
+			NzbFile* nzbFile = new NzbFile(g_pCommandLineParser->GetArgFilename(), category);
 			if (!nzbFile->Parse())
 			{
 				printf("Parsing NZB-document %s failed\n\n", g_pCommandLineParser->GetArgFilename() ? g_pCommandLineParser->GetArgFilename() : "N/A");
 				delete nzbFile;
 				return;
 			}
-			g_pScanner->InitPPParameters(category, nzbFile->GetNZBInfo()->GetParameters(), false);
-			g_pQueueCoordinator->AddNZBFileToQueue(nzbFile, NULL, false);
+			g_pScanner->InitPPParameters(category, nzbFile->GetNzbInfo()->GetParameters(), false);
+			g_pQueueCoordinator->AddNzbFileToQueue(nzbFile, NULL, false);
 			delete nzbFile;
 		}
 
@@ -525,11 +525,11 @@ protected:
 
 	virtual void		AddNewsServer(int id, bool active, const char* name, const char* host,
 							int port, const char* user, const char* pass, bool joinGroup,
-							bool tLS, const char* cipher, int maxConnections, int retention,
+							bool tls, const char* cipher, int maxConnections, int retention,
 							int level, int group)
 	{
 		g_pServerPool->AddServer(new NewsServer(id, active, name, host, port, user, pass, joinGroup,
-							tLS, cipher, maxConnections, retention, level, group));
+							tls, cipher, maxConnections, retention, level, group));
 	}
 
 	virtual void		AddFeed(int id, const char* name, const char* url, int interval,
@@ -627,7 +627,7 @@ void ProcessClientRequest()
 		case CommandLineParser::opClientRequestEditQueue:
 			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_pCommandLineParser->GetEditQueueAction(),
 				g_pCommandLineParser->GetEditQueueOffset(), g_pCommandLineParser->GetEditQueueText(),
-				g_pCommandLineParser->GetEditQueueIDList(), g_pCommandLineParser->GetEditQueueIDCount(),
+				g_pCommandLineParser->GetEditQueueIdList(), g_pCommandLineParser->GetEditQueueIdCount(),
 				g_pCommandLineParser->GetEditQueueNameList(), (remoteMatchMode)g_pCommandLineParser->GetMatchMode());
 			break;
 
@@ -644,7 +644,7 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestDownload:
-			Client->RequestServerDownload(g_pCommandLineParser->GetAddNZBFilename(), g_pCommandLineParser->GetArgFilename(),
+			Client->RequestServerDownload(g_pCommandLineParser->GetAddNzbFilename(), g_pCommandLineParser->GetArgFilename(),
 				g_pCommandLineParser->GetAddCategory(), g_pCommandLineParser->GetAddTop(), g_pCommandLineParser->GetAddPaused(), g_pCommandLineParser->GetAddPriority(),
 				g_pCommandLineParser->GetAddDupeKey(), g_pCommandLineParser->GetAddDupeMode(), g_pCommandLineParser->GetAddDupeScore());
 			break;
@@ -700,7 +700,7 @@ void ProcessClientRequest()
 void ProcessWebGet()
 {
 	WebDownloader downloader;
-	downloader.SetURL(g_pCommandLineParser->GetLastArg());
+	downloader.SetUrl(g_pCommandLineParser->GetLastArg());
 	downloader.SetForce(true);
 	downloader.SetRetry(false);
 	downloader.SetOutputFilename(g_pCommandLineParser->GetWebGetFilename());

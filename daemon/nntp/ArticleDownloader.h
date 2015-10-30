@@ -66,7 +66,7 @@ public:
 private:
 	FileInfo*			m_fileInfo;
 	ArticleInfo*		m_articleInfo;
-	NNTPConnection* 	m_connection;
+	NntpConnection* 	m_connection;
 	EStatus				m_status;
 	Mutex			 	m_connectionMutex;
 	char*				m_infoName;
@@ -107,7 +107,7 @@ public:
 	void				SetInfoName(const char* infoName);
 	const char*			GetInfoName() { return m_infoName; }
 	const char*			GetConnectionName() { return m_connectionName; }
-	void				SetConnection(NNTPConnection* connection) { m_connection = connection; }
+	void				SetConnection(NntpConnection* connection) { m_connection = connection; }
 	void				CompleteFileParts() { m_articleWriter.CompleteFileParts(); }
 	int					GetDownloadedSize() { return m_downloadedSize; }
 

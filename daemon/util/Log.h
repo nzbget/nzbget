@@ -69,7 +69,7 @@ private:
 public:
 						Message(unsigned int id, EKind kind, time_t time, const char* text);
 						~Message();
-	unsigned int		GetID() { return m_id; }
+	unsigned int		GetId() { return m_id; }
 	EKind				GetKind() { return m_kind; }
 	time_t				GetTime() { return m_time; }
 	const char*			GetText() { return m_text; }

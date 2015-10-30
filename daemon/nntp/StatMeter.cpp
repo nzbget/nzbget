@@ -250,7 +250,7 @@ void StatMeter::Init()
 	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
 	{
 		NewsServer* server = *it;
-		m_serverVolumes[server->GetID()] = new ServerVolume();
+		m_serverVolumes[server->GetId()] = new ServerVolume();
 	}
 }
 

@@ -47,7 +47,7 @@ void TestNzb(std::string testFilename)
 	std::string nzbFilename(TestUtil::TestDataDir() + "/nzbfile/"+ testFilename + ".nzb");
 	std::string infoFilename(TestUtil::TestDataDir() + "/nzbfile/"+ testFilename + ".txt");
 
-	NZBFile* nzbFile = new NZBFile(nzbFilename.c_str(), "");
+	NzbFile* nzbFile = new NzbFile(nzbFilename.c_str(), "");
 	bool parsedOK = nzbFile->Parse();
 	REQUIRE(parsedOK == true);
 
@@ -59,13 +59,13 @@ void TestNzb(std::string testFilename)
 	REQUIRE(*buffer);
 
 	int fileCount = atoi(buffer);
-	REQUIRE(nzbFile->GetNZBInfo()->GetFileCount() == fileCount);
+	REQUIRE(nzbFile->GetNzbInfo()->GetFileCount() == fileCount);
 
 	for (int i = 0; i < fileCount; i++)
 	{
 		while (fgets(buffer, sizeof(buffer), infofile) && *buffer == '#') ;
 		REQUIRE(*buffer);
-		FileInfo* fileInfo = nzbFile->GetNZBInfo()->GetFileList()->at(i);
+		FileInfo* fileInfo = nzbFile->GetNzbInfo()->GetFileList()->at(i);
 		REQUIRE(fileInfo != NULL);
 		Util::TrimRight(buffer);
 		REQUIRE(std::string(fileInfo->GetFilename()) == std::string(buffer));

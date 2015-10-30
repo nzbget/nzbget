@@ -80,7 +80,7 @@ TEST_CASE("WebUtil: URLEncode", "[Util][Quick]")
 {
 	const char* badUrl = "http://www.example.com/nzb_get/12344/Debian V7 6 64 bit OS.nzb";
 	const char* correctedUrl = "http://www.example.com/nzb_get/12344/Debian%20V7%206%2064%20bit%20OS.nzb";
-	char* testString = WebUtil::URLEncode(badUrl);
+	char* testString = WebUtil::UrlEncode(badUrl);
 
 	REQUIRE(strcmp(testString, correctedUrl) == 0);
 
