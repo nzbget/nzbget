@@ -52,7 +52,7 @@
 #include "Util.h"
 #include "Unpack.h"
 #include "Cleanup.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "QueueScript.h"
 #include "ParParser.h"
 

@@ -49,7 +49,7 @@
 #include "QueueCoordinator.h"
 #include "DiskState.h"
 #include "Util.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "DupeCoordinator.h"
 #include "ParParser.h"
 #include "PrePostProcessor.h"

@@ -34,7 +34,7 @@
 
 #include "nzbget.h"
 #include "Log.h"
-#include "NTService.h"
+#include "WinService.h"
 
 extern void ExitProc();
 RunProc Run = NULL;

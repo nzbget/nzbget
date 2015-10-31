@@ -70,7 +70,7 @@
 #include "nzbget.h"
 #endif
 
-#include "TLS.h"
+#include "TlsSocket.h"
 #include "Thread.h"
 #include "Log.h"
 

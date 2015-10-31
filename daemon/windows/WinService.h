@@ -23,8 +23,8 @@
  */
 
 
-#ifndef NTSERVICE_H
-#define NTSERVICE_H
+#ifndef WINSERVICE_H
+#define WINSERVICE_H
 
 typedef void (*RunProc)(void);
 

@@ -33,7 +33,7 @@
 #include "Log.h"
 #include "Thread.h"
 #include "NewsServer.h"
-#include "NNTPConnection.h"
+#include "NntpConnection.h"
 
 class ServerPool : public Debuggable
 {

@@ -113,7 +113,7 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	tests/feed/FeedFilterTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/ParCheckerTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/ParRenamerTest.cpp \
-@WITH_TESTS_TRUE@	tests/queue/NZBFileTest.cpp \
+@WITH_TESTS_TRUE@	tests/queue/NzbFileTest.cpp \
 @WITH_TESTS_TRUE@	tests/util/UtilTest.cpp
 
 @WITH_TESTS_TRUE@am__append_3 = \
@@ -142,8 +142,8 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" \
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
-	daemon/connect/Connection.h daemon/connect/TLS.cpp \
-	daemon/connect/TLS.h daemon/connect/WebDownloader.cpp \
+	daemon/connect/Connection.h daemon/connect/TlsSocket.cpp \
+	daemon/connect/TlsSocket.h daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h daemon/extension/FeedScript.cpp \
 	daemon/extension/FeedScript.h daemon/extension/NzbScript.cpp \
 	daemon/extension/NzbScript.h daemon/extension/PostScript.cpp \
@@ -176,8 +176,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
 	daemon/nntp/ArticleWriter.h daemon/nntp/Decoder.cpp \
 	daemon/nntp/Decoder.h daemon/nntp/NewsServer.cpp \
-	daemon/nntp/NewsServer.h daemon/nntp/NNTPConnection.cpp \
-	daemon/nntp/NNTPConnection.h daemon/nntp/ServerPool.cpp \
+	daemon/nntp/NewsServer.h daemon/nntp/NntpConnection.cpp \
+	daemon/nntp/NntpConnection.h daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h daemon/nntp/StatMeter.cpp \
 	daemon/nntp/StatMeter.h daemon/postprocess/Cleanup.cpp \
 	daemon/postprocess/Cleanup.h \
@@ -199,8 +199,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
-	daemon/queue/HistoryCoordinator.h daemon/queue/NZBFile.cpp \
-	daemon/queue/NZBFile.h daemon/queue/QueueCoordinator.cpp \
+	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
+	daemon/queue/NzbFile.h daemon/queue/QueueCoordinator.cpp \
 	daemon/queue/QueueCoordinator.h daemon/queue/QueueEditor.cpp \
 	daemon/queue/QueueEditor.h daemon/queue/Scanner.cpp \
 	daemon/queue/Scanner.h daemon/queue/UrlCoordinator.cpp \
@@ -242,7 +242,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	tests/main/OptionsTest.cpp tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
 	tests/postprocess/ParRenamerTest.cpp \
-	tests/queue/NZBFileTest.cpp tests/util/UtilTest.cpp
+	tests/queue/NzbFileTest.cpp tests/util/UtilTest.cpp
 @WITH_PAR2_TRUE@am__objects_1 = commandline.$(OBJEXT) crc.$(OBJEXT) \
 @WITH_PAR2_TRUE@	creatorpacket.$(OBJEXT) \
 @WITH_PAR2_TRUE@	criticalpacket.$(OBJEXT) datablock.$(OBJEXT) \
@@ -263,8 +263,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_TESTS_TRUE@	FeedFilterTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ParCheckerTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT) \
-@WITH_TESTS_TRUE@	NZBFileTest.$(OBJEXT) UtilTest.$(OBJEXT)
-am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
+@WITH_TESTS_TRUE@	NzbFileTest.$(OBJEXT) UtilTest.$(OBJEXT)
+am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	WebDownloader.$(OBJEXT) FeedScript.$(OBJEXT) \
 	NzbScript.$(OBJEXT) PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
 	ScanScript.$(OBJEXT) SchedulerScript.$(OBJEXT) \
@@ -277,14 +277,14 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TLS.$(OBJEXT) \
 	Scheduler.$(OBJEXT) StackTrace.$(OBJEXT) \
 	ArticleDownloader.$(OBJEXT) ArticleWriter.$(OBJEXT) \
 	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
-	NNTPConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
+	NntpConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
 	StatMeter.$(OBJEXT) Cleanup.$(OBJEXT) DupeMatcher.$(OBJEXT) \
 	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
 	ParParser.$(OBJEXT) ParRenamer.$(OBJEXT) \
 	PrePostProcessor.$(OBJEXT) Unpack.$(OBJEXT) \
 	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
-	NZBFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
+	NzbFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) Scanner.$(OBJEXT) \
 	UrlCoordinator.$(OBJEXT) BinRpc.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
@@ -423,8 +423,8 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 nzbget_SOURCES = daemon/connect/Connection.cpp \
-	daemon/connect/Connection.h daemon/connect/TLS.cpp \
-	daemon/connect/TLS.h daemon/connect/WebDownloader.cpp \
+	daemon/connect/Connection.h daemon/connect/TlsSocket.cpp \
+	daemon/connect/TlsSocket.h daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h daemon/extension/FeedScript.cpp \
 	daemon/extension/FeedScript.h daemon/extension/NzbScript.cpp \
 	daemon/extension/NzbScript.h daemon/extension/PostScript.cpp \
@@ -457,8 +457,8 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
 	daemon/nntp/ArticleWriter.h daemon/nntp/Decoder.cpp \
 	daemon/nntp/Decoder.h daemon/nntp/NewsServer.cpp \
-	daemon/nntp/NewsServer.h daemon/nntp/NNTPConnection.cpp \
-	daemon/nntp/NNTPConnection.h daemon/nntp/ServerPool.cpp \
+	daemon/nntp/NewsServer.h daemon/nntp/NntpConnection.cpp \
+	daemon/nntp/NntpConnection.h daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h daemon/nntp/StatMeter.cpp \
 	daemon/nntp/StatMeter.h daemon/postprocess/Cleanup.cpp \
 	daemon/postprocess/Cleanup.h \
@@ -480,8 +480,8 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
-	daemon/queue/HistoryCoordinator.h daemon/queue/NZBFile.cpp \
-	daemon/queue/NZBFile.h daemon/queue/QueueCoordinator.cpp \
+	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
+	daemon/queue/NzbFile.h daemon/queue/QueueCoordinator.cpp \
 	daemon/queue/QueueCoordinator.h daemon/queue/QueueEditor.cpp \
 	daemon/queue/QueueEditor.h daemon/queue/Scanner.cpp \
 	daemon/queue/Scanner.h daemon/queue/UrlCoordinator.cpp \
@@ -510,8 +510,8 @@ EXTRA_DIST = \
 	$(testdata_FILES)
 
 windows_FILES = \
-	daemon/windows/NTService.cpp \
-	daemon/windows/NTService.h \
+	daemon/windows/WinService.cpp \
+	daemon/windows/WinService.h \
 	daemon/windows/win32.h \
 	daemon/windows/WinConsole.cpp \
 	daemon/windows/WinConsole.h \
@@ -786,10 +786,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoggableFrontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Maintenance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NCursesFrontend.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NNTPConnection.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NZBFile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NZBFileTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewsServer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NntpConnection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbFile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbFileTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Observer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@
@@ -817,10 +817,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Service.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StackTrace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StatMeter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TLS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestUtil.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thread.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TlsSocket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UrlCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Util.Po@am__quote@
@@ -879,19 +879,19 @@ Connection.obj: daemon/connect/Connection.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Connection.obj `if test -f 'daemon/connect/Connection.cpp'; then $(CYGPATH_W) 'daemon/connect/Connection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/Connection.cpp'; fi`
 
-TLS.o: daemon/connect/TLS.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TLS.o -MD -MP -MF "$(DEPDIR)/TLS.Tpo" -c -o TLS.o `test -f 'daemon/connect/TLS.cpp' || echo '$(srcdir)/'`daemon/connect/TLS.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TLS.Tpo" "$(DEPDIR)/TLS.Po"; else rm -f "$(DEPDIR)/TLS.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/TLS.cpp' object='TLS.o' libtool=no @AMDEPBACKSLASH@
+TlsSocket.o: daemon/connect/TlsSocket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TlsSocket.o -MD -MP -MF "$(DEPDIR)/TlsSocket.Tpo" -c -o TlsSocket.o `test -f 'daemon/connect/TlsSocket.cpp' || echo '$(srcdir)/'`daemon/connect/TlsSocket.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TlsSocket.Tpo" "$(DEPDIR)/TlsSocket.Po"; else rm -f "$(DEPDIR)/TlsSocket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/TlsSocket.cpp' object='TlsSocket.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TLS.o `test -f 'daemon/connect/TLS.cpp' || echo '$(srcdir)/'`daemon/connect/TLS.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TlsSocket.o `test -f 'daemon/connect/TlsSocket.cpp' || echo '$(srcdir)/'`daemon/connect/TlsSocket.cpp
 
-TLS.obj: daemon/connect/TLS.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TLS.obj -MD -MP -MF "$(DEPDIR)/TLS.Tpo" -c -o TLS.obj `if test -f 'daemon/connect/TLS.cpp'; then $(CYGPATH_W) 'daemon/connect/TLS.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/TLS.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TLS.Tpo" "$(DEPDIR)/TLS.Po"; else rm -f "$(DEPDIR)/TLS.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/TLS.cpp' object='TLS.obj' libtool=no @AMDEPBACKSLASH@
+TlsSocket.obj: daemon/connect/TlsSocket.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TlsSocket.obj -MD -MP -MF "$(DEPDIR)/TlsSocket.Tpo" -c -o TlsSocket.obj `if test -f 'daemon/connect/TlsSocket.cpp'; then $(CYGPATH_W) 'daemon/connect/TlsSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/TlsSocket.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TlsSocket.Tpo" "$(DEPDIR)/TlsSocket.Po"; else rm -f "$(DEPDIR)/TlsSocket.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/connect/TlsSocket.cpp' object='TlsSocket.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TLS.obj `if test -f 'daemon/connect/TLS.cpp'; then $(CYGPATH_W) 'daemon/connect/TLS.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/TLS.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TlsSocket.obj `if test -f 'daemon/connect/TlsSocket.cpp'; then $(CYGPATH_W) 'daemon/connect/TlsSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/connect/TlsSocket.cpp'; fi`
 
 WebDownloader.o: daemon/connect/WebDownloader.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT WebDownloader.o -MD -MP -MF "$(DEPDIR)/WebDownloader.Tpo" -c -o WebDownloader.o `test -f 'daemon/connect/WebDownloader.cpp' || echo '$(srcdir)/'`daemon/connect/WebDownloader.cpp; \
@@ -1271,19 +1271,19 @@ NewsServer.obj: daemon/nntp/NewsServer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NewsServer.obj `if test -f 'daemon/nntp/NewsServer.cpp'; then $(CYGPATH_W) 'daemon/nntp/NewsServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NewsServer.cpp'; fi`
 
-NNTPConnection.o: daemon/nntp/NNTPConnection.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NNTPConnection.o -MD -MP -MF "$(DEPDIR)/NNTPConnection.Tpo" -c -o NNTPConnection.o `test -f 'daemon/nntp/NNTPConnection.cpp' || echo '$(srcdir)/'`daemon/nntp/NNTPConnection.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NNTPConnection.Tpo" "$(DEPDIR)/NNTPConnection.Po"; else rm -f "$(DEPDIR)/NNTPConnection.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NNTPConnection.cpp' object='NNTPConnection.o' libtool=no @AMDEPBACKSLASH@
+NntpConnection.o: daemon/nntp/NntpConnection.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NntpConnection.o -MD -MP -MF "$(DEPDIR)/NntpConnection.Tpo" -c -o NntpConnection.o `test -f 'daemon/nntp/NntpConnection.cpp' || echo '$(srcdir)/'`daemon/nntp/NntpConnection.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NntpConnection.Tpo" "$(DEPDIR)/NntpConnection.Po"; else rm -f "$(DEPDIR)/NntpConnection.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NntpConnection.cpp' object='NntpConnection.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NNTPConnection.o `test -f 'daemon/nntp/NNTPConnection.cpp' || echo '$(srcdir)/'`daemon/nntp/NNTPConnection.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NntpConnection.o `test -f 'daemon/nntp/NntpConnection.cpp' || echo '$(srcdir)/'`daemon/nntp/NntpConnection.cpp
 
-NNTPConnection.obj: daemon/nntp/NNTPConnection.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NNTPConnection.obj -MD -MP -MF "$(DEPDIR)/NNTPConnection.Tpo" -c -o NNTPConnection.obj `if test -f 'daemon/nntp/NNTPConnection.cpp'; then $(CYGPATH_W) 'daemon/nntp/NNTPConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NNTPConnection.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NNTPConnection.Tpo" "$(DEPDIR)/NNTPConnection.Po"; else rm -f "$(DEPDIR)/NNTPConnection.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NNTPConnection.cpp' object='NNTPConnection.obj' libtool=no @AMDEPBACKSLASH@
+NntpConnection.obj: daemon/nntp/NntpConnection.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NntpConnection.obj -MD -MP -MF "$(DEPDIR)/NntpConnection.Tpo" -c -o NntpConnection.obj `if test -f 'daemon/nntp/NntpConnection.cpp'; then $(CYGPATH_W) 'daemon/nntp/NntpConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NntpConnection.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NntpConnection.Tpo" "$(DEPDIR)/NntpConnection.Po"; else rm -f "$(DEPDIR)/NntpConnection.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nntp/NntpConnection.cpp' object='NntpConnection.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NNTPConnection.obj `if test -f 'daemon/nntp/NNTPConnection.cpp'; then $(CYGPATH_W) 'daemon/nntp/NNTPConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NNTPConnection.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NntpConnection.obj `if test -f 'daemon/nntp/NntpConnection.cpp'; then $(CYGPATH_W) 'daemon/nntp/NntpConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nntp/NntpConnection.cpp'; fi`
 
 ServerPool.o: daemon/nntp/ServerPool.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ServerPool.o -MD -MP -MF "$(DEPDIR)/ServerPool.Tpo" -c -o ServerPool.o `test -f 'daemon/nntp/ServerPool.cpp' || echo '$(srcdir)/'`daemon/nntp/ServerPool.cpp; \
@@ -1481,19 +1481,19 @@ HistoryCoordinator.obj: daemon/queue/HistoryCoordinator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HistoryCoordinator.obj `if test -f 'daemon/queue/HistoryCoordinator.cpp'; then $(CYGPATH_W) 'daemon/queue/HistoryCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/HistoryCoordinator.cpp'; fi`
 
-NZBFile.o: daemon/queue/NZBFile.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NZBFile.o -MD -MP -MF "$(DEPDIR)/NZBFile.Tpo" -c -o NZBFile.o `test -f 'daemon/queue/NZBFile.cpp' || echo '$(srcdir)/'`daemon/queue/NZBFile.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NZBFile.Tpo" "$(DEPDIR)/NZBFile.Po"; else rm -f "$(DEPDIR)/NZBFile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/NZBFile.cpp' object='NZBFile.o' libtool=no @AMDEPBACKSLASH@
+NzbFile.o: daemon/queue/NzbFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFile.o -MD -MP -MF "$(DEPDIR)/NzbFile.Tpo" -c -o NzbFile.o `test -f 'daemon/queue/NzbFile.cpp' || echo '$(srcdir)/'`daemon/queue/NzbFile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbFile.Tpo" "$(DEPDIR)/NzbFile.Po"; else rm -f "$(DEPDIR)/NzbFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/NzbFile.cpp' object='NzbFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NZBFile.o `test -f 'daemon/queue/NZBFile.cpp' || echo '$(srcdir)/'`daemon/queue/NZBFile.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NzbFile.o `test -f 'daemon/queue/NzbFile.cpp' || echo '$(srcdir)/'`daemon/queue/NzbFile.cpp
 
-NZBFile.obj: daemon/queue/NZBFile.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NZBFile.obj -MD -MP -MF "$(DEPDIR)/NZBFile.Tpo" -c -o NZBFile.obj `if test -f 'daemon/queue/NZBFile.cpp'; then $(CYGPATH_W) 'daemon/queue/NZBFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/NZBFile.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NZBFile.Tpo" "$(DEPDIR)/NZBFile.Po"; else rm -f "$(DEPDIR)/NZBFile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/NZBFile.cpp' object='NZBFile.obj' libtool=no @AMDEPBACKSLASH@
+NzbFile.obj: daemon/queue/NzbFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFile.obj -MD -MP -MF "$(DEPDIR)/NzbFile.Tpo" -c -o NzbFile.obj `if test -f 'daemon/queue/NzbFile.cpp'; then $(CYGPATH_W) 'daemon/queue/NzbFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/NzbFile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbFile.Tpo" "$(DEPDIR)/NzbFile.Po"; else rm -f "$(DEPDIR)/NzbFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/queue/NzbFile.cpp' object='NzbFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NZBFile.obj `if test -f 'daemon/queue/NZBFile.cpp'; then $(CYGPATH_W) 'daemon/queue/NZBFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/NZBFile.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NzbFile.obj `if test -f 'daemon/queue/NzbFile.cpp'; then $(CYGPATH_W) 'daemon/queue/NzbFile.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/queue/NzbFile.cpp'; fi`
 
 QueueCoordinator.o: daemon/queue/QueueCoordinator.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueueCoordinator.o -MD -MP -MF "$(DEPDIR)/QueueCoordinator.Tpo" -c -o QueueCoordinator.o `test -f 'daemon/queue/QueueCoordinator.cpp' || echo '$(srcdir)/'`daemon/queue/QueueCoordinator.cpp; \
@@ -2083,19 +2083,19 @@ ParRenamerTest.obj: tests/postprocess/ParRenamerTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`
 
-NZBFileTest.o: tests/queue/NZBFileTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NZBFileTest.o -MD -MP -MF "$(DEPDIR)/NZBFileTest.Tpo" -c -o NZBFileTest.o `test -f 'tests/queue/NZBFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NZBFileTest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NZBFileTest.Tpo" "$(DEPDIR)/NZBFileTest.Po"; else rm -f "$(DEPDIR)/NZBFileTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/queue/NZBFileTest.cpp' object='NZBFileTest.o' libtool=no @AMDEPBACKSLASH@
+NzbFileTest.o: tests/queue/NzbFileTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFileTest.o -MD -MP -MF "$(DEPDIR)/NzbFileTest.Tpo" -c -o NzbFileTest.o `test -f 'tests/queue/NzbFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NzbFileTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbFileTest.Tpo" "$(DEPDIR)/NzbFileTest.Po"; else rm -f "$(DEPDIR)/NzbFileTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/queue/NzbFileTest.cpp' object='NzbFileTest.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NZBFileTest.o `test -f 'tests/queue/NZBFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NZBFileTest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NzbFileTest.o `test -f 'tests/queue/NzbFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NzbFileTest.cpp
 
-NZBFileTest.obj: tests/queue/NZBFileTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NZBFileTest.obj -MD -MP -MF "$(DEPDIR)/NZBFileTest.Tpo" -c -o NZBFileTest.obj `if test -f 'tests/queue/NZBFileTest.cpp'; then $(CYGPATH_W) 'tests/queue/NZBFileTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/queue/NZBFileTest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NZBFileTest.Tpo" "$(DEPDIR)/NZBFileTest.Po"; else rm -f "$(DEPDIR)/NZBFileTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/queue/NZBFileTest.cpp' object='NZBFileTest.obj' libtool=no @AMDEPBACKSLASH@
+NzbFileTest.obj: tests/queue/NzbFileTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFileTest.obj -MD -MP -MF "$(DEPDIR)/NzbFileTest.Tpo" -c -o NzbFileTest.obj `if test -f 'tests/queue/NzbFileTest.cpp'; then $(CYGPATH_W) 'tests/queue/NzbFileTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/queue/NzbFileTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbFileTest.Tpo" "$(DEPDIR)/NzbFileTest.Po"; else rm -f "$(DEPDIR)/NzbFileTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/queue/NzbFileTest.cpp' object='NzbFileTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NZBFileTest.obj `if test -f 'tests/queue/NZBFileTest.cpp'; then $(CYGPATH_W) 'tests/queue/NZBFileTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/queue/NZBFileTest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NzbFileTest.obj `if test -f 'tests/queue/NzbFileTest.cpp'; then $(CYGPATH_W) 'tests/queue/NzbFileTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/queue/NzbFileTest.cpp'; fi`
 
 UtilTest.o: tests/util/UtilTest.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT UtilTest.o -MD -MP -MF "$(DEPDIR)/UtilTest.Tpo" -c -o UtilTest.o `test -f 'tests/util/UtilTest.cpp' || echo '$(srcdir)/'`tests/util/UtilTest.cpp; \

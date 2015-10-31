@@ -90,7 +90,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="daemon\connect\Connection.cpp" />
-    <ClCompile Include="daemon\connect\TLS.cpp" />
+    <ClCompile Include="daemon\connect\TlsSocket.cpp" />
     <ClCompile Include="daemon\connect\WebDownloader.cpp" />
     <ClCompile Include="daemon\extension\FeedScript.cpp" />
     <ClCompile Include="daemon\extension\NzbScript.cpp" />
@@ -118,7 +118,7 @@
     <ClCompile Include="daemon\nntp\ArticleWriter.cpp" />
     <ClCompile Include="daemon\nntp\Decoder.cpp" />
     <ClCompile Include="daemon\nntp\NewsServer.cpp" />
-    <ClCompile Include="daemon\nntp\NNTPConnection.cpp" />
+    <ClCompile Include="daemon\nntp\NntpConnection.cpp" />
     <ClCompile Include="daemon\nntp\ServerPool.cpp" />
     <ClCompile Include="daemon\nntp\StatMeter.cpp" />
     <ClCompile Include="daemon\postprocess\Cleanup.cpp" />
@@ -133,7 +133,7 @@
     <ClCompile Include="daemon\queue\DownloadInfo.cpp" />
     <ClCompile Include="daemon\queue\DupeCoordinator.cpp" />
     <ClCompile Include="daemon\queue\HistoryCoordinator.cpp" />
-    <ClCompile Include="daemon\queue\NZBFile.cpp" />
+    <ClCompile Include="daemon\queue\NzbFile.cpp" />
     <ClCompile Include="daemon\queue\QueueCoordinator.cpp" />
     <ClCompile Include="daemon\queue\QueueEditor.cpp" />
     <ClCompile Include="daemon\queue\Scanner.cpp" />
@@ -149,7 +149,7 @@
     <ClCompile Include="daemon\util\Service.cpp" />
     <ClCompile Include="daemon\util\Thread.cpp" />
     <ClCompile Include="daemon\util\Util.cpp" />
-    <ClCompile Include="daemon\windows\NTService.cpp" />
+    <ClCompile Include="daemon\windows\WinService.cpp" />
     <ClCompile Include="daemon\windows\WinConsole.cpp" />
     <ClCompile Include="lib\par2\commandline.cpp" />
     <ClCompile Include="lib\par2\crc.cpp" />
@@ -177,7 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="daemon\connect\Connection.h" />
-    <ClInclude Include="daemon\connect\TLS.h" />
+    <ClInclude Include="daemon\connect\TlsSocket.h" />
     <ClInclude Include="daemon\connect\WebDownloader.h" />
     <ClInclude Include="daemon\extension\FeedScript.h" />
     <ClInclude Include="daemon\extension\NzbScript.h" />
@@ -205,7 +205,7 @@
     <ClInclude Include="daemon\nntp\ArticleWriter.h" />
     <ClInclude Include="daemon\nntp\Decoder.h" />
     <ClInclude Include="daemon\nntp\NewsServer.h" />
-    <ClInclude Include="daemon\nntp\NNTPConnection.h" />
+    <ClInclude Include="daemon\nntp\NntpConnection.h" />
     <ClInclude Include="daemon\nntp\ServerPool.h" />
     <ClInclude Include="daemon\nntp\StatMeter.h" />
     <ClInclude Include="daemon\postprocess\Cleanup.h" />
@@ -220,7 +220,7 @@
     <ClInclude Include="daemon\queue\DownloadInfo.h" />
     <ClInclude Include="daemon\queue\DupeCoordinator.h" />
     <ClInclude Include="daemon\queue\HistoryCoordinator.h" />
-    <ClInclude Include="daemon\queue\NZBFile.h" />
+    <ClInclude Include="daemon\queue\NzbFile.h" />
     <ClInclude Include="daemon\queue\QueueCoordinator.h" />
     <ClInclude Include="daemon\queue\QueueEditor.h" />
     <ClInclude Include="daemon\queue\Scanner.h" />
@@ -237,7 +237,7 @@
     <ClInclude Include="daemon\util\Service.h" />
     <ClInclude Include="daemon\util\Thread.h" />
     <ClInclude Include="daemon\util\Util.h" />
-    <ClInclude Include="daemon\windows\NTService.h" />
+    <ClInclude Include="daemon\windows\WinService.h" />
     <ClInclude Include="daemon\windows\win32.h" />
     <ClInclude Include="daemon\windows\WinConsole.h" />
     <ClInclude Include="lib\par2\commandline.h" />

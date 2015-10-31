@@ -46,7 +46,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
 

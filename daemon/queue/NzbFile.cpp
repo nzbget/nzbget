@@ -47,7 +47,7 @@ using namespace MSXML;
 #endif
 
 #include "nzbget.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "Log.h"
 #include "DownloadInfo.h"
 #include "Options.h"

@@ -33,7 +33,7 @@
 #endif
 #endif
 #ifndef DISABLE_TLS
-#include "TLS.h"
+#include "TlsSocket.h"
 #endif
 
 class Connection

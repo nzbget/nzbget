@@ -32,7 +32,7 @@
 #include "Observer.h"
 #include "DownloadInfo.h"
 #include "Thread.h"
-#include "NNTPConnection.h"
+#include "NntpConnection.h"
 #include "Decoder.h"
 #include "ArticleWriter.h"
 

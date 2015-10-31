@@ -24,8 +24,8 @@ bin_PROGRAMS = nzbget
 nzbget_SOURCES = \
 	daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h \
-	daemon/connect/TLS.cpp \
-	daemon/connect/TLS.h \
+	daemon/connect/TlsSocket.cpp \
+	daemon/connect/TlsSocket.h \
 	daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h \
 	daemon/extension/FeedScript.cpp \
@@ -80,8 +80,8 @@ nzbget_SOURCES = \
 	daemon/nntp/Decoder.h \
 	daemon/nntp/NewsServer.cpp \
 	daemon/nntp/NewsServer.h \
-	daemon/nntp/NNTPConnection.cpp \
-	daemon/nntp/NNTPConnection.h \
+	daemon/nntp/NntpConnection.cpp \
+	daemon/nntp/NntpConnection.h \
 	daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h \
 	daemon/nntp/StatMeter.cpp \
@@ -110,8 +110,8 @@ nzbget_SOURCES = \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h \
-	daemon/queue/NZBFile.cpp \
-	daemon/queue/NZBFile.h \
+	daemon/queue/NzbFile.cpp \
+	daemon/queue/NzbFile.h \
 	daemon/queue/QueueCoordinator.cpp \
 	daemon/queue/QueueCoordinator.h \
 	daemon/queue/QueueEditor.cpp \
@@ -216,7 +216,7 @@ nzbget_SOURCES += \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
 	tests/postprocess/ParRenamerTest.cpp \
-	tests/queue/NZBFileTest.cpp \
+	tests/queue/NzbFileTest.cpp \
 	tests/util/UtilTest.cpp
 
 AM_CPPFLAGS += \
@@ -231,8 +231,8 @@ EXTRA_DIST = \
 	$(testdata_FILES)
 
 windows_FILES = \
-	daemon/windows/NTService.cpp \
-	daemon/windows/NTService.h \
+	daemon/windows/WinService.cpp \
+	daemon/windows/WinService.h \
 	daemon/windows/win32.h \
 	daemon/windows/WinConsole.cpp \
 	daemon/windows/WinConsole.h \

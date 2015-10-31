@@ -56,7 +56,7 @@
 #include "nzbget.h"
 #include "ServerPool.h"
 #include "Log.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "Options.h"
 #include "CommandLineParser.h"
 #include "ScriptConfig.h"
@@ -86,7 +86,7 @@
 #include "Util.h"
 #include "StackTrace.h"
 #ifdef WIN32
-#include "NTService.h"
+#include "WinService.h"
 #include "WinConsole.h"
 #include "WebDownloader.h"
 #endif

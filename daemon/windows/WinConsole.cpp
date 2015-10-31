@@ -46,7 +46,7 @@
 #include "FeedCoordinator.h"
 #include "StatMeter.h"
 #include "WinConsole.h"
-#include "NTService.h"
+#include "WinService.h"
 #include "resource.h"
 
 extern Options* g_pOptions;

@@ -39,7 +39,7 @@
 
 #include "nzbget.h"
 #include "Log.h"
-#include "NNTPConnection.h"
+#include "NntpConnection.h"
 #include "Connection.h"
 #include "NewsServer.h"
 

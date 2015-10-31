@@ -32,12 +32,12 @@
 
 #include "Log.h"
 #include "Thread.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "ArticleDownloader.h"
 #include "DownloadInfo.h"
 #include "Observer.h"
 #include "QueueEditor.h"
-#include "NNTPConnection.h"
+#include "NntpConnection.h"
                                             
 class QueueCoordinator : public Thread, public Observer, public Debuggable
 {

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef TLS_H
-#define TLS_H
+#ifndef TLSSOCKET_H
+#define TLSSOCKET_H
 
 #ifndef DISABLE_TLS
 
@@ -40,7 +40,7 @@ private:
 	bool				m_initialized;
 	bool				m_connected;
 
-	// using "void*" to prevent the including of GnuTLS/OpenSSL header files into TLS.h
+	// using "void*" to prevent the including of GnuTLS/OpenSSL header files into TlsSocket.h
 	void*				m_context;
 	void*				m_session;
 

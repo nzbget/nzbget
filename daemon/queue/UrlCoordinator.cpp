@@ -45,7 +45,7 @@
 #include "Options.h"
 #include "WebDownloader.h"
 #include "Util.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "Scanner.h"
 #include "DiskState.h"
 #include "QueueScript.h"
