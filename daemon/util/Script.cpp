@@ -56,7 +56,7 @@
 
 // System global variable holding environments variables
 extern char** environ;
-extern char* (*g_szEnvironmentVariables)[];
+extern char* (*g_EnvironmentVariables)[];
 
 ScriptController::RunningScripts ScriptController::m_runningScripts;
 Mutex ScriptController::m_runningMutex;
@@ -127,9 +127,9 @@ void EnvironmentStrings::Clear()
 
 void EnvironmentStrings::InitFromCurrentProcess()
 {
-	for (int i = 0; (*g_szEnvironmentVariables)[i]; i++)
+	for (int i = 0; (*g_EnvironmentVariables)[i]; i++)
 	{
-		char* var = (*g_szEnvironmentVariables)[i];
+		char* var = (*g_EnvironmentVariables)[i];
 		// Ignore all env vars set by NZBGet.
 		// This is to avoid the passing of env vars after program update (when NZBGet is
 		// started from a script which was started by a previous instance of NZBGet).
@@ -270,7 +270,7 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 {
 	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	Options::OptEntries* optEntries = g_pOptions->LockOptEntries();
+	Options::OptEntries* optEntries = g_Options->LockOptEntries();
 
 	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
@@ -286,7 +286,7 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 		}
 	}
 
-	g_pOptions->UnlockOptEntries();
+	g_Options->UnlockOptEntries();
 }
 
 void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, const char* value)

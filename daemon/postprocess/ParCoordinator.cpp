@@ -120,7 +120,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 	{
 		FileInfo* tmpFileInfo = new FileInfo(completedFile->GetId());
 
-		if (!g_pDiskState->LoadFileState(tmpFileInfo, NULL, true))
+		if (!g_DiskState->LoadFileState(tmpFileInfo, NULL, true))
 		{
 			delete tmpFileInfo;
 			return ParChecker::fsUnknown;
@@ -150,7 +150,7 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	NzbList dupeList;
-	g_pDupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNzbInfo(), &dupeList);
+	g_DupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNzbInfo(), &dupeList);
 
 	if (!dupeList.empty())
 	{
@@ -322,7 +322,7 @@ void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
 	m_parChecker.SetNzbName(postInfo->GetNzbInfo()->GetName());
 	m_parChecker.SetParTime(time(NULL));
 	m_parChecker.SetDownloadSec(postInfo->GetNzbInfo()->GetDownloadSec());
-	m_parChecker.SetParQuick(g_pOptions->GetParQuick() && !postInfo->GetForceParFull());
+	m_parChecker.SetParQuick(g_Options->GetParQuick() && !postInfo->GetForceParFull());
 	m_parChecker.SetForceRepair(postInfo->GetForceRepair());
 	m_parChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", postInfo->GetNzbInfo()->GetName());
 	postInfo->SetWorking(true);
@@ -666,15 +666,15 @@ void ParCoordinator::UpdateParCheckProgress()
 	bool parCancel = false;
 	if (!m_parChecker.GetCancelled())
 	{
-		if ((g_pOptions->GetParTimeLimit() > 0) &&
+		if ((g_Options->GetParTimeLimit() > 0) &&
 			m_parChecker.GetStage() == ParChecker::ptRepairing &&
-			((g_pOptions->GetParTimeLimit() > 5 && current - postInfo->GetStageTime() > 5 * 60) ||
-			(g_pOptions->GetParTimeLimit() <= 5 && current - postInfo->GetStageTime() > 1 * 60)))
+			((g_Options->GetParTimeLimit() > 5 && current - postInfo->GetStageTime() > 5 * 60) ||
+			(g_Options->GetParTimeLimit() <= 5 && current - postInfo->GetStageTime() > 1 * 60)))
 		{
 			// first five (or one) minutes elapsed, now can check the estimated time
 			int estimatedRepairTime = (int)((current - postInfo->GetStartTime()) * 1000 / 
 				(postInfo->GetStageProgress() > 0 ? postInfo->GetStageProgress() : 1));
-			if (estimatedRepairTime > g_pOptions->GetParTimeLimit() * 60)
+			if (estimatedRepairTime > g_Options->GetParTimeLimit() * 60)
 			{
 				debug("Estimated repair time %i seconds", estimatedRepairTime);
 				m_parChecker.PrintMessage(Message::mkWarning, "Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_parChecker.GetInfoName(), estimatedRepairTime / 60);
@@ -695,7 +695,7 @@ void ParCoordinator::UpdateParCheckProgress()
 
 void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 {
-	if (g_pOptions->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority())
+	if (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority())
 	{
 		time_t stageTime = postInfo->GetStageTime();
 		time_t startTime = postInfo->GetStartTime();
@@ -704,7 +704,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 		time_t waitTime = time(NULL);
 		
 		// wait until Post-processor is unpaused
-		while (g_pOptions->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
+		while (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
 		{
 			usleep(50 * 1000);
 			

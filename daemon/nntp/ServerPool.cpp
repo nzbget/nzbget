@@ -60,14 +60,14 @@ ServerPool::ServerPool()
 	m_generation = 0;
 	m_retryInterval = 0;
 
-	g_pLog->RegisterDebuggable(this);
+	g_Log->RegisterDebuggable(this);
 }
 
 ServerPool::~ ServerPool()
 {
 	debug("Destroying ServerPool");
 
-	g_pLog->UnregisterDebuggable(this);
+	g_Log->UnregisterDebuggable(this);
 
 	m_levels.clear();
 

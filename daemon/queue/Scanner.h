@@ -137,6 +137,6 @@ public:
 	void				InitPPParameters(const char* category, NzbParameterList* parameters, bool reset);
 };
 
-extern Scanner* g_pScanner;
+extern Scanner* g_Scanner;
 
 #endif

@@ -54,8 +54,8 @@
 #include "CommandLineParser.h"
 
 extern void ExitProc();
-extern int g_iArgumentCount;
-extern char* (*g_szArguments)[];
+extern int g_ArgumentCount;
+extern char* (*g_Arguments)[];
 
 
 #ifdef HAVE_OPENSSL
@@ -168,7 +168,7 @@ bool Maintenance::StartUpdate(EBranch branch)
 		)
 	{
 		char filename[MAX_PATH + 100];
-		snprintf(filename, sizeof(filename), "%s%c%s", g_pOptions->GetAppDir(), PATH_SEPARATOR, m_updateScript);
+		snprintf(filename, sizeof(filename), "%s%c%s", g_Options->GetAppDir(), PATH_SEPARATOR, m_updateScript);
 		free(m_updateScript);
 		m_updateScript = strdup(filename);
 	}
@@ -204,7 +204,7 @@ bool Maintenance::CheckUpdates(char** updateInfo)
 bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 {
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%cpackage-info.json", g_pOptions->GetWebDir(), PATH_SEPARATOR);
+	snprintf(fileName, 1024, "%s%cpackage-info.json", g_Options->GetWebDir(), PATH_SEPARATOR);
 	fileName[1024-1] = '\0';
 
 	char* packageInfo;
@@ -289,14 +289,14 @@ void UpdateScriptController::Run()
     const char* branchName[] = { "STABLE", "TESTING", "DEVEL" };
 	SetEnvVar("NZBUP_BRANCH", branchName[m_branch]);
 
-	SetEnvVar("NZBUP_RUNMODE", g_pCommandLineParser->GetDaemonMode() ? "DAEMON" : "SERVER");
+	SetEnvVar("NZBUP_RUNMODE", g_CommandLineParser->GetDaemonMode() ? "DAEMON" : "SERVER");
 
-	for (int i = 0; i < g_iArgumentCount; i++)
+	for (int i = 0; i < g_ArgumentCount; i++)
 	{
 		char envName[40];
 		snprintf(envName, 40, "NZBUP_CMDLINE%i", i);
 		infoName[40-1] = '\0';
-		SetEnvVar(envName, (*g_szArguments)[i]);
+		SetEnvVar(envName, (*g_Arguments)[i]);
 	}
 
 	char processId[20];
@@ -318,7 +318,7 @@ void UpdateScriptController::Run()
 
 	Execute();
 
-	g_pMaintenance->ResetUpdateController();
+	g_Maintenance->ResetUpdateController();
 }
 
 void UpdateScriptController::AddMessage(Message::EKind kind, const char* text)
@@ -340,7 +340,7 @@ void UpdateScriptController::AddMessage(Message::EKind kind, const char* text)
 	}
 	else
 	{
-		g_pMaintenance->AddMessage(kind, time(NULL), text);
+		g_Maintenance->AddMessage(kind, time(NULL), text);
 		ScriptController::AddMessage(kind, text);
 	}
 }

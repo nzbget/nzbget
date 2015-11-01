@@ -956,17 +956,17 @@ private:
 	HistoryList				m_history;
 	Mutex	 				m_lockMutex;
 
-	static DownloadQueue*	g_pDownloadQueue;
-	static bool				g_bLoaded;
+	static DownloadQueue*	g_DownloadQueue;
+	static bool				g_Loaded;
 
 protected:
 							DownloadQueue() : m_queue(true) {}
-	static void				Init(DownloadQueue* globalInstance) { g_pDownloadQueue = globalInstance; }
-	static void				Final() { g_pDownloadQueue = NULL; }
-	static void				Loaded() { g_bLoaded = true; }
+	static void				Init(DownloadQueue* globalInstance) { g_DownloadQueue = globalInstance; }
+	static void				Final() { g_DownloadQueue = NULL; }
+	static void				Loaded() { g_Loaded = true; }
 
 public:
-	static bool				IsLoaded() { return g_bLoaded; }
+	static bool				IsLoaded() { return g_Loaded; }
 	static DownloadQueue*	Lock();
 	static void				Unlock();
 	NzbList*				GetQueue() { return &m_queue; }

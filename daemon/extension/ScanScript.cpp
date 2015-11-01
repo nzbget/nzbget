@@ -68,7 +68,7 @@ void ScanScriptController::ExecuteScripts(const char* nzbFilename,
 	scriptController->m_dupeMode = dupeMode;
 	scriptController->m_prefixLen = 0;
 
-	scriptController->ExecuteScriptList(g_pOptions->GetScanScript());
+	scriptController->ExecuteScriptList(g_Options->GetScanScript());
 
 	delete scriptController;
 }
@@ -146,7 +146,7 @@ void ScanScriptController::AddMessage(Message::EKind kind, const char* text)
 		{
 			free(*m_category);
 			*m_category = strdup(msgText + 6 + 9);
-			g_pScanner->InitPPParameters(*m_category, m_parameters, true);
+			g_Scanner->InitPPParameters(*m_category, m_parameters, true);
 		}
 		else if (!strncmp(msgText + 6, "NZBPR_", 6))
 		{

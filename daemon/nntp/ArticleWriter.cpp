@@ -76,12 +76,12 @@ ArticleWriter::~ArticleWriter()
 	if (m_articleData)
 	{
 		free(m_articleData);
-		g_pArticleCache->Free(m_articleSize);
+		g_ArticleCache->Free(m_articleSize);
 	}
 
 	if (m_flushing)
 	{
-		g_pArticleCache->UnlockFlush();
+		g_ArticleCache->UnlockFlush();
 	}
 }
 
@@ -92,11 +92,11 @@ void ArticleWriter::SetInfoName(const char* infoName)
 
 void ArticleWriter::SetWriteBuffer(FILE* outFile, int recSize)
 {
-	if (g_pOptions->GetWriteBuffer() > 0)
+	if (g_Options->GetWriteBuffer() > 0)
 	{
 		setvbuf(outFile, NULL, _IOFBF,
-			recSize > 0 && recSize < g_pOptions->GetWriteBuffer() * 1024 ?
-			recSize : g_pOptions->GetWriteBuffer() * 1024);
+			recSize > 0 && recSize < g_Options->GetWriteBuffer() * 1024 ?
+			recSize : g_Options->GetWriteBuffer() * 1024);
 	}
 }
 
@@ -119,13 +119,13 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, long lo
 	// prepare file for writing
 	if (m_format == Decoder::efYenc)
 	{
-		if (g_pOptions->GetDupeCheck() &&
+		if (g_Options->GetDupeCheck() &&
 			m_fileInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
 			!m_fileInfo->GetNzbInfo()->GetManyDupeFiles())
 		{
 			m_fileInfo->LockOutputFile();
 			bool outputInitialized = m_fileInfo->GetOutputInitialized();
-			if (!g_pOptions->GetDirectWrite())
+			if (!g_Options->GetDirectWrite())
 			{
 				m_fileInfo->SetOutputInitialized(true);
 			}
@@ -138,7 +138,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, long lo
 			}
 		}
 
-		if (g_pOptions->GetDirectWrite())
+		if (g_Options->GetDirectWrite())
 		{
 			m_fileInfo->LockOutputFile();
 			if (!m_fileInfo->GetOutputInitialized())
@@ -155,21 +155,21 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, long lo
 	}
 
 	// allocate cache buffer
-	if (g_pOptions->GetArticleCache() > 0 && g_pOptions->GetDecode() &&
-		(!g_pOptions->GetDirectWrite() || m_format == Decoder::efYenc))
+	if (g_Options->GetArticleCache() > 0 && g_Options->GetDecode() &&
+		(!g_Options->GetDirectWrite() || m_format == Decoder::efYenc))
 	{
 		if (m_articleData)
 		{
 			free(m_articleData);
-			g_pArticleCache->Free(m_articleSize);
+			g_ArticleCache->Free(m_articleSize);
 		}
 
-		m_articleData = (char*)g_pArticleCache->Alloc(m_articleSize);
+		m_articleData = (char*)g_ArticleCache->Alloc(m_articleSize);
 
-		while (!m_articleData && g_pArticleCache->GetFlushing())
+		while (!m_articleData && g_ArticleCache->GetFlushing())
 		{
 			usleep(5 * 1000);
-			m_articleData = (char*)g_pArticleCache->Alloc(m_articleSize);
+			m_articleData = (char*)g_ArticleCache->Alloc(m_articleSize);
 		}
 
 		if (!m_articleData)
@@ -180,7 +180,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, long lo
 
 	if (!m_articleData)
 	{
-		bool directWrite = g_pOptions->GetDirectWrite() && m_format == Decoder::efYenc;
+		bool directWrite = g_Options->GetDirectWrite() && m_format == Decoder::efYenc;
 		const char* filename = directWrite ? m_outputFilename : m_tempFilename;
 		m_outFile = fopen(filename, directWrite ? FOPEN_RBP : FOPEN_WB);
 		if (!m_outFile)
@@ -192,7 +192,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, long lo
 		}
 		SetWriteBuffer(m_outFile, m_articleInfo->GetSize());
 
-		if (g_pOptions->GetDirectWrite() && m_format == Decoder::efYenc)
+		if (g_Options->GetDirectWrite() && m_format == Decoder::efYenc)
 		{
 			fseek(m_outFile, m_articleOffset, SEEK_SET);
 		}
@@ -203,12 +203,12 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, long lo
 
 bool ArticleWriter::Write(char* bufffer, int len)
 {
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
 		m_articlePtr += len;
 	}
 
-	if (g_pOptions->GetDecode() && m_articleData)
+	if (g_Options->GetDecode() && m_articleData)
 	{
 		if (m_articlePtr > m_articleSize)
 		{
@@ -239,9 +239,9 @@ void ArticleWriter::Finish(bool success)
 		return;
 	}
 
-	bool directWrite = g_pOptions->GetDirectWrite() && m_format == Decoder::efYenc;
+	bool directWrite = g_Options->GetDirectWrite() && m_format == Decoder::efYenc;
 
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
 		if (!directWrite && !m_articleData)
 		{
@@ -259,12 +259,12 @@ void ArticleWriter::Finish(bool success)
 		{
 			if (m_articleSize != m_articlePtr)
 			{
-				m_articleData = (char*)g_pArticleCache->Realloc(m_articleData, m_articleSize, m_articlePtr);
+				m_articleData = (char*)g_ArticleCache->Realloc(m_articleData, m_articleSize, m_articlePtr);
 			}
-			g_pArticleCache->LockContent();
+			g_ArticleCache->LockContent();
 			m_articleInfo->AttachSegment(m_articleData, m_articleOffset, m_articlePtr);
 			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() + 1);
-			g_pArticleCache->UnlockContent();
+			g_ArticleCache->UnlockContent();
 			m_articleData = NULL;
 		}
 		else
@@ -288,7 +288,7 @@ void ArticleWriter::Finish(bool success)
 /* creates output file and subdirectores */
 bool ArticleWriter::CreateOutputFile(long long size)
 {
-	if (g_pOptions->GetDirectWrite() && Util::FileExists(m_outputFilename) &&
+	if (g_Options->GetDirectWrite() && Util::FileExists(m_outputFilename) &&
 		Util::FileSize(m_outputFilename) == size)
 	{
 		// keep existing old file from previous program session
@@ -327,7 +327,7 @@ void ArticleWriter::BuildOutputFilename()
 {
 	char filename[1024];
 
-	snprintf(filename, 1024, "%s%i.%03i", g_pOptions->GetTempDir(), m_fileInfo->GetId(), m_articleInfo->GetPartNumber());
+	snprintf(filename, 1024, "%s%i.%03i", g_Options->GetTempDir(), m_fileInfo->GetId(), m_articleInfo->GetPartNumber());
 	filename[1024-1] = '\0';
 	m_articleInfo->SetResultFilename(filename);
 
@@ -336,7 +336,7 @@ void ArticleWriter::BuildOutputFilename()
 	tmpname[1024-1] = '\0';
 	m_tempFilename = strdup(tmpname);
 
-	if (g_pOptions->GetDirectWrite())
+	if (g_Options->GetDirectWrite())
 	{
 		m_fileInfo->LockOutputFile();
 
@@ -363,7 +363,7 @@ void ArticleWriter::CompleteFileParts()
 	debug("Completing file parts");
 	debug("ArticleFilename: %s", m_fileInfo->GetFilename());
 
-	bool directWrite = g_pOptions->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
+	bool directWrite = g_Options->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
 	char errBuf[256];
 
 	char nzbName[1024];
@@ -382,7 +382,7 @@ void ArticleWriter::CompleteFileParts()
 
 	bool cached = m_fileInfo->GetCachedArticles() > 0;
 
-	if (!g_pOptions->GetDecode())
+	if (!g_Options->GetDecode())
 	{
 		detail("Moving articles for %s", infoFilename);
 	}
@@ -415,7 +415,7 @@ void ArticleWriter::CompleteFileParts()
 	snprintf(tmpdestfile, 1024, "%s.tmp", ofn);
 	tmpdestfile[1024-1] = '\0';
 
-	if (g_pOptions->GetDecode() && !directWrite)
+	if (g_Options->GetDecode() && !directWrite)
 	{
 		remove(tmpdestfile);
 		outfile = fopen(tmpdestfile, FOPEN_WBP);
@@ -438,7 +438,7 @@ void ArticleWriter::CompleteFileParts()
 		strncpy(tmpdestfile, m_outputFilename, 1024);
 		tmpdestfile[1024-1] = '\0';
 	}
-	else if (!g_pOptions->GetDecode())
+	else if (!g_Options->GetDecode())
 	{
 		remove(tmpdestfile);
 		if (!Util::CreateDirectory(ofn))
@@ -456,7 +456,7 @@ void ArticleWriter::CompleteFileParts()
 
 	if (cached)
 	{
-		g_pArticleCache->LockFlush();
+		g_ArticleCache->LockFlush();
 		m_flushing = true;
 	}
 
@@ -465,7 +465,7 @@ void ArticleWriter::CompleteFileParts()
 	bool firstArticle = true;
 	unsigned long crc = 0;
 
-	if (g_pOptions->GetDecode() && !directWrite)
+	if (g_Options->GetDecode() && !directWrite)
 	{
 		buffer = (char*)malloc(BUFFER_SIZE);
 	}
@@ -478,7 +478,7 @@ void ArticleWriter::CompleteFileParts()
 			continue;
 		}
 
-		if (g_pOptions->GetDecode() && !directWrite && pa->GetSegmentOffset() > -1 &&
+		if (g_Options->GetDecode() && !directWrite && pa->GetSegmentOffset() > -1 &&
 			pa->GetSegmentOffset() > ftell(outfile) && ftell(outfile) > -1)
 		{
 			memset(buffer, 0, BUFFER_SIZE);
@@ -493,7 +493,7 @@ void ArticleWriter::CompleteFileParts()
 			pa->DiscardSegment();
 			SetLastUpdateTimeNow();
 		}
-		else if (g_pOptions->GetDecode() && !directWrite)
+		else if (g_Options->GetDecode() && !directWrite)
 		{
 			FILE* infile = pa->GetResultFilename() ? fopen(pa->GetResultFilename(), FOPEN_RB) : NULL;
 			if (infile)
@@ -517,7 +517,7 @@ void ArticleWriter::CompleteFileParts()
 					pa->GetPartNumber(), (int)m_fileInfo->GetArticles()->size());
 			}
 		}
-		else if (!g_pOptions->GetDecode())
+		else if (!g_Options->GetDecode())
 		{
 			char dstFileName[1024];
 			snprintf(dstFileName, 1024, "%s%c%03i", ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
@@ -541,7 +541,7 @@ void ArticleWriter::CompleteFileParts()
 
 	if (cached)
 	{
-		g_pArticleCache->UnlockFlush();
+		g_ArticleCache->UnlockFlush();
 		m_flushing = false;
 	}
 
@@ -604,7 +604,7 @@ void ArticleWriter::CompleteFileParts()
 			m_fileInfo->GetMissedArticles() + m_fileInfo->GetFailedArticles(),
 			m_fileInfo->GetTotalArticles(), infoFilename);
 
-		if (g_pOptions->GetBrokenLog())
+		if (g_Options->GetBrokenLog())
 		{
 			char brokenLogName[1024];
 			snprintf(brokenLogName, 1024, "%s%c_brokenlog.txt", nzbDestDir, (int)PATH_SEPARATOR);
@@ -617,10 +617,10 @@ void ArticleWriter::CompleteFileParts()
 
 		crc = 0;
 
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 		{
-			g_pDiskState->DiscardFile(m_fileInfo, false, true, false);
-			g_pDiskState->SaveFileState(m_fileInfo, true);
+			g_DiskState->DiscardFile(m_fileInfo, false, true, false);
+			g_DiskState->SaveFileState(m_fileInfo, true);
 		}
 	}
 
@@ -645,7 +645,7 @@ void ArticleWriter::FlushCache()
 {
 	detail("Flushing cache for %s", m_infoName);
 
-	bool directWrite = g_pOptions->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
+	bool directWrite = g_Options->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
 	FILE* outfile = NULL;
 	bool needBufFile = false;
 	char destFile[1024];
@@ -653,12 +653,12 @@ void ArticleWriter::FlushCache()
 	int flushedArticles = 0;
 	long long flushedSize = 0;
 
-	g_pArticleCache->LockFlush();
+	g_ArticleCache->LockFlush();
 
 	FileInfo::Articles cachedArticles;
 	cachedArticles.reserve(m_fileInfo->GetArticles()->size());
 
-	g_pArticleCache->LockContent();
+	g_ArticleCache->LockContent();
 	for (FileInfo::Articles::iterator it = m_fileInfo->GetArticles()->begin(); it != m_fileInfo->GetArticles()->end(); it++)
 	{
 		ArticleInfo* pa = *it;
@@ -667,7 +667,7 @@ void ArticleWriter::FlushCache()
 			cachedArticles.push_back(pa);
 		}
 	}
-	g_pArticleCache->UnlockContent();
+	g_ArticleCache->UnlockContent();
 
 	for (FileInfo::Articles::iterator it = cachedArticles.begin(); it != cachedArticles.end(); it++)
 	{
@@ -745,11 +745,11 @@ void ArticleWriter::FlushCache()
 		fclose(outfile);
 	}
 
-	g_pArticleCache->LockContent();
+	g_ArticleCache->LockContent();
 	m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() - flushedArticles);
-	g_pArticleCache->UnlockContent();
+	g_ArticleCache->UnlockContent();
 
-	g_pArticleCache->UnlockFlush();
+	g_ArticleCache->UnlockFlush();
 
 	detail("Saved %i articles (%.2f MB) from cache into disk for %s", flushedArticles, (float)(flushedSize / 1024.0 / 1024.0), m_infoName);
 }
@@ -799,7 +799,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
     }
 
 	// move brokenlog.txt
-	if (g_pOptions->GetBrokenLog())
+	if (g_Options->GetBrokenLog())
 	{
 		char oldBrokenLogName[1024];
 		snprintf(oldBrokenLogName, 1024, "%s%c_brokenlog.txt", oldDestDir, (int)PATH_SEPARATOR);
@@ -900,14 +900,14 @@ void* ArticleCache::Alloc(int size)
 	m_allocMutex.Lock();
 
 	void* p = NULL;
-	if (m_allocated + size <= (size_t)g_pOptions->GetArticleCache() * 1024 * 1024)
+	if (m_allocated + size <= (size_t)g_Options->GetArticleCache() * 1024 * 1024)
 	{
 		p = malloc(size);
 		if (p)
 		{
-			if (!m_allocated && g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode() && g_pOptions->GetContinuePartial())
+			if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
 			{
-				g_pDiskState->WriteCacheFlag();
+				g_DiskState->WriteCacheFlag();
 			}
 			m_allocated += size;
 		}
@@ -939,9 +939,9 @@ void ArticleCache::Free(int size)
 {
 	m_allocMutex.Lock();
 	m_allocated -= size;
-	if (!m_allocated && g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode() && g_pOptions->GetContinuePartial())
+	if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
 	{
-		g_pDiskState->DeleteCacheFlag();
+		g_DiskState->DeleteCacheFlag();
 	}
 	m_allocMutex.Unlock();
 }
@@ -961,14 +961,14 @@ void ArticleCache::UnlockFlush()
 void ArticleCache::Run()
 {
 	// automatically flush the cache if it is filled to 90% (only in DirectWrite mode)
-	size_t fillThreshold = (size_t)g_pOptions->GetArticleCache() * 1024 * 1024 / 100 * 90;
+	size_t fillThreshold = (size_t)g_Options->GetArticleCache() * 1024 * 1024 / 100 * 90;
 
 	int resetCounter = 0;
 	bool justFlushed = false;
 	while (!IsStopped() || m_allocated > 0)
 	{
 		if ((justFlushed || resetCounter >= 1000  || IsStopped() ||
-			 (g_pOptions->GetDirectWrite() && m_allocated >= fillThreshold)) &&
+			 (g_Options->GetDirectWrite() && m_allocated >= fillThreshold)) &&
 			m_allocated > 0)
 		{
 			justFlushed = CheckFlush(m_allocated >= fillThreshold);

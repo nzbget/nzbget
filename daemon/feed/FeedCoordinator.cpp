@@ -87,7 +87,7 @@ void FeedCoordinator::FilterHelper::CalcDupeStatus(const char* title, const char
 	statuses[0] = '\0';
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	DupeCoordinator::EDupeStatus dupeStatus = g_pDupeCoordinator->GetDupeStatus(downloadQueue, title, dupeKey);
+	DupeCoordinator::EDupeStatus dupeStatus = g_DupeCoordinator->GetDupeStatus(downloadQueue, title, dupeKey);
 	DownloadQueue::Unlock();
 
 	for (int i = 1; i <= (int)DupeCoordinator::dsFailure; i = i << 1)
@@ -111,7 +111,7 @@ FeedCoordinator::FeedCoordinator()
 	m_force = false;
 	m_save = false;
 
-	g_pLog->RegisterDebuggable(this);
+	g_Log->RegisterDebuggable(this);
 
 	m_downloadQueueObserver.m_owner = this;
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
@@ -124,7 +124,7 @@ FeedCoordinator::~FeedCoordinator()
 	debug("Destroying FeedCoordinator");
 	// Cleanup
 
-	g_pLog->UnregisterDebuggable(this);
+	g_Log->UnregisterDebuggable(this);
 
 	debug("Deleting FeedDownloaders");
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
@@ -164,10 +164,10 @@ void FeedCoordinator::Run()
 		usleep(20 * 1000);
 	}
 
-	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetReloadQueue())
+	if (g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetReloadQueue())
 	{
 		m_downloadsMutex.Lock();
-		g_pDiskState->LoadFeeds(&m_feeds, &m_feedHistory);
+		g_DiskState->LoadFeeds(&m_feeds, &m_feedHistory);
 		m_downloadsMutex.Unlock();
 	}
 
@@ -184,11 +184,11 @@ void FeedCoordinator::Run()
 		{
 			// this code should not be called too often, once per second is OK
 
-			if (!g_pOptions->GetPauseDownload() || m_force || g_pOptions->GetUrlForce())
+			if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
 			{
 				m_downloadsMutex.Lock();
 				time_t current = time(NULL);
-				if ((int)m_activeDownloads.size() < g_pOptions->GetUrlConnections())
+				if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
 				{
 					m_force = false;
 					// check feed list and update feeds
@@ -261,7 +261,7 @@ void FeedCoordinator::Stop()
 
 void FeedCoordinator::ResetHangingDownloads()
 {
-	const int TimeOut = g_pOptions->GetTerminateTimeout();
+	const int TimeOut = g_Options->GetTerminateTimeout();
 	if (TimeOut == 0)
 	{
 		return;
@@ -331,17 +331,17 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
 		NzbInfo::MakeNiceUrlName(feedInfo->GetUrl(), "", urlName, sizeof(urlName));
 		feedDownloader->SetInfoName(urlName);
 	}
-	feedDownloader->SetForce(force || g_pOptions->GetUrlForce());
+	feedDownloader->SetForce(force || g_Options->GetUrlForce());
 
 	char tmp[1024];
 
 	if (feedInfo->GetId() > 0)
 	{
-		snprintf(tmp, 1024, "%sfeed-%i.tmp", g_pOptions->GetTempDir(), feedInfo->GetId());
+		snprintf(tmp, 1024, "%sfeed-%i.tmp", g_Options->GetTempDir(), feedInfo->GetId());
 	}
 	else
 	{
-		snprintf(tmp, 1024, "%sfeed-%i-%i.tmp", g_pOptions->GetTempDir(), (int)time(NULL), rand());
+		snprintf(tmp, 1024, "%sfeed-%i-%i.tmp", g_Options->GetTempDir(), (int)time(NULL), rand());
 	}
 
 	tmp[1024-1] = '\0';
@@ -397,7 +397,7 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 		if (!feedInfo->GetPreview())
 		{
 			FeedScriptController::ExecuteScripts(
-				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
+				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId());
 			FeedFile* feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
 			remove(feedInfo->GetOutputFilename());
@@ -625,7 +625,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		if (feedInfo->GetStatus() == FeedInfo::fsFinished)
 		{
 			FeedScriptController::ExecuteScripts(
-				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_pOptions->GetFeedScript(),
+				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId());
 			feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
 		}
@@ -723,9 +723,9 @@ void FeedCoordinator::CheckSaveFeeds()
 	m_downloadsMutex.Lock();
 	if (m_save)
 	{
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 		{
-			g_pDiskState->SaveFeeds(&m_feeds, &m_feedHistory);
+			g_DiskState->SaveFeeds(&m_feeds, &m_feedHistory);
 		}
 		m_save = false;
 	}
@@ -749,7 +749,7 @@ void FeedCoordinator::CleanupHistory()
 		}
 	}
 
-	time_t borderDate = oldestUpdate - g_pOptions->GetFeedHistory() * 60*60*24;
+	time_t borderDate = oldestUpdate - g_Options->GetFeedHistory() * 60*60*24;
 	int i = 0;
 	for (FeedHistory::iterator it = m_feedHistory.begin(); it != m_feedHistory.end(); )
 	{

@@ -148,6 +148,6 @@ public:
 #define debug(...)   do { } while(0)
 #endif
 
-extern Log* g_pLog;
+extern Log* g_Log;
 
 #endif

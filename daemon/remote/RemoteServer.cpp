@@ -75,13 +75,13 @@ void RemoteServer::Run()
 #ifndef DISABLE_TLS
 	if (m_tls)
 	{
-		if (strlen(g_pOptions->GetSecureCert()) == 0 || !Util::FileExists(g_pOptions->GetSecureCert()))
+		if (strlen(g_Options->GetSecureCert()) == 0 || !Util::FileExists(g_Options->GetSecureCert()))
 		{
 			error("Could not initialize TLS, secure certificate is not configured or the cert-file was not found. Check option <SecureCert>");
 			return;
 		}
 
-		if (strlen(g_pOptions->GetSecureKey()) == 0 || !Util::FileExists(g_pOptions->GetSecureKey()))
+		if (strlen(g_Options->GetSecureKey()) == 0 || !Util::FileExists(g_Options->GetSecureKey()))
 		{
 			error("Could not initialize TLS, secure key is not configured or the key-file was not found. Check option <SecureKey>");
 			return;
@@ -95,10 +95,10 @@ void RemoteServer::Run()
 
 		if (!m_connection)
 		{
-			m_connection = new Connection(g_pOptions->GetControlIp(), 
-				m_tls ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(),
+			m_connection = new Connection(g_Options->GetControlIp(), 
+				m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(),
 				m_tls);
-			m_connection->SetTimeout(g_pOptions->GetUrlTimeout());
+			m_connection->SetTimeout(g_Options->GetUrlTimeout());
 			m_connection->SetSuppressErrors(false);
 			bind = m_connection->Bind();
 		}
@@ -168,7 +168,7 @@ void RequestProcessor::Run()
 	m_connection->SetSuppressErrors(true);
 
 #ifndef DISABLE_TLS
-	if (m_tls && !m_connection->StartTls(false, g_pOptions->GetSecureCert(), g_pOptions->GetSecureKey()))
+	if (m_tls && !m_connection->StartTls(false, g_Options->GetSecureCert(), g_Options->GetSecureKey()))
 	{
 		debug("Could not establish secure connection to web-client: Start TLS failed");
 		return;
@@ -233,6 +233,6 @@ void RequestProcessor::Run()
 
 	if (!ok)
 	{
-		warn("Non-nzbget request received on port %i from %s", m_tls ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(), m_connection->GetRemoteAddr());
+		warn("Non-nzbget request received on port %i from %s", m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(), m_connection->GetRemoteAddr());
 	}
 }

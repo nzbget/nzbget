@@ -136,6 +136,6 @@ public:
 	bool				Load(bool* perfectServerMatch);
 };
 
-extern StatMeter* g_pStatMeter;
+extern StatMeter* g_StatMeter;
 
 #endif

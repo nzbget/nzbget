@@ -185,8 +185,8 @@ void CleanupController::Run()
 	strncpy(m_destDir, m_postInfo->GetNzbInfo()->GetDestDir(), 1024);
 	m_destDir[1024-1] = '\0';
 
-	bool interDir = strlen(g_pOptions->GetInterDir()) > 0 &&
-		!strncmp(m_destDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
+	bool interDir = strlen(g_Options->GetInterDir()) > 0 &&
+		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
 	if (interDir)
 	{
 		m_postInfo->GetNzbInfo()->BuildFinalDirName(m_finalDir, 1024);
@@ -253,7 +253,7 @@ bool CleanupController::Cleanup(const char* destDir, bool *deleted)
 		}
 
 		// check file extension
-		bool deleteIt = Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;") && !isDir;
+		bool deleteIt = Util::MatchFileExt(filename, g_Options->GetExtCleanupDisk(), ",;") && !isDir;
 
 		if (deleteIt)
 		{

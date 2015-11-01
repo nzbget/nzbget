@@ -103,7 +103,7 @@ void WebDownloader::Run()
 
 	SetStatus(adRunning);
 
-	int remainedDownloadRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
+	int remainedDownloadRetries = g_Options->GetRetries() > 0 ? g_Options->GetRetries() : 1;
 	int remainedConnectRetries = remainedDownloadRetries > 10 ? remainedDownloadRetries : 10;
 	if (!m_retry)
 	{
@@ -121,19 +121,19 @@ void WebDownloader::Run()
 
 		if ((((Status == adFailed) && (remainedDownloadRetries > 1)) ||
 			((Status == adConnectError) && (remainedConnectRetries > 1)))
-			&& !IsStopped() && !(!m_force && g_pOptions->GetPauseDownload()))
+			&& !IsStopped() && !(!m_force && g_Options->GetPauseDownload()))
 		{
-			detail("Waiting %i sec to retry", g_pOptions->GetRetryInterval());
+			detail("Waiting %i sec to retry", g_Options->GetRetryInterval());
 			int msec = 0;
-			while (!IsStopped() && (msec < g_pOptions->GetRetryInterval() * 1000) && 
-				!(!m_force && g_pOptions->GetPauseDownload()))
+			while (!IsStopped() && (msec < g_Options->GetRetryInterval() * 1000) && 
+				!(!m_force && g_Options->GetPauseDownload()))
 			{
 				usleep(100 * 1000);
 				msec += 100;
 			}
 		}
 
-		if (IsStopped() || (!m_force && g_pOptions->GetPauseDownload()))
+		if (IsStopped() || (!m_force && g_Options->GetPauseDownload()))
 		{
 			Status = adRetry;
 			break;
@@ -193,7 +193,7 @@ WebDownloader::EStatus WebDownloader::Download()
 		return Status;
 	}
 
-	m_connection->SetTimeout(g_pOptions->GetUrlTimeout());
+	m_connection->SetTimeout(g_Options->GetUrlTimeout());
 	m_connection->SetSuppressErrors(false);
 
 	// connection
@@ -696,9 +696,9 @@ bool WebDownloader::PrepareFile()
 		error("Could not %s file %s", "create", filename);
 		return false;
 	}
-	if (g_pOptions->GetWriteBuffer() > 0)
+	if (g_Options->GetWriteBuffer() > 0)
 	{
-		setvbuf(m_outFile, NULL, _IOFBF, g_pOptions->GetWriteBuffer() * 1024);
+		setvbuf(m_outFile, NULL, _IOFBF, g_Options->GetWriteBuffer() * 1024);
 	}
 
 	return true;

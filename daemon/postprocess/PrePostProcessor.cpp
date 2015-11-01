@@ -84,7 +84,7 @@ void PrePostProcessor::Run()
 		usleep(20 * 1000);
 	}
 
-	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetReloadQueue())
+	if (g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetReloadQueue())
 	{
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
 		SanitisePostQueue(downloadQueue);
@@ -93,7 +93,7 @@ void PrePostProcessor::Run()
 
 	while (!IsStopped())
 	{
-		if (!g_pOptions->GetTempPausePostprocess())
+		if (!g_Options->GetTempPausePostprocess())
 		{
 			// check post-queue every 200 msec
 			CheckPostQueue();
@@ -163,7 +163,7 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 	{
 		if (queueAspect->action == DownloadQueue::eaFileCompleted && !queueAspect->nzbInfo->GetPostInfo())
 		{
-			g_pQueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeFileDownloaded);
+			g_QueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeFileDownloaded);
 		}
 
 		if (
@@ -181,7 +181,7 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 			{
 				queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
 					"Collection %s completely downloaded", queueAspect->nzbInfo->GetName());
-				g_pQueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeNzbDownloaded);
+				g_QueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeNzbDownloaded);
 				NzbDownloaded(queueAspect->downloadQueue, queueAspect->nzbInfo);
 			}
 			else if ((queueAspect->action == DownloadQueue::eaFileDeleted ||
@@ -200,15 +200,15 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 
 void PrePostProcessor::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	if (g_pOptions->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce)
+	if (g_Options->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce)
 	{
-		g_pDupeCoordinator->NzbFound(downloadQueue, nzbInfo);
+		g_DupeCoordinator->NzbFound(downloadQueue, nzbInfo);
 	}
 }
 
 void PrePostProcessor::NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	if (g_pOptions->GetParCheck() != Options::pcForce)
+	if (g_Options->GetParCheck() != Options::pcForce)
 	{
 		m_parCoordinator.PausePars(downloadQueue, nzbInfo);
 	}
@@ -222,7 +222,7 @@ void PrePostProcessor::NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	}
 	else
 	{
-		g_pQueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeNzbAdded);
+		g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeNzbAdded);
 	}
 }
 
@@ -231,10 +231,10 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsHealth ||
 		nzbInfo->GetDeleteStatus() == NzbInfo::dsBad)
 	{
-		g_pQueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeNzbDeleted);
+		g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeNzbDeleted);
 	}
 
-	if (!nzbInfo->GetPostInfo() && g_pOptions->GetDecode())
+	if (!nzbInfo->GetPostInfo() && g_Options->GetDecode())
 	{
 		nzbInfo->PrintMessage(Message::mkInfo, "Queueing %s for post-processing", nzbInfo->GetName());
 
@@ -242,13 +242,13 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 		m_jobCount++;
 
 		if (nzbInfo->GetParStatus() == NzbInfo::psNone &&
-			g_pOptions->GetParCheck() != Options::pcAlways &&
-			g_pOptions->GetParCheck() != Options::pcForce)
+			g_Options->GetParCheck() != Options::pcAlways &&
+			g_Options->GetParCheck() != Options::pcForce)
 		{
 			nzbInfo->SetParStatus(NzbInfo::psSkipped);
 		}
 
-		if (nzbInfo->GetRenameStatus() == NzbInfo::rsNone && !g_pOptions->GetParRename())
+		if (nzbInfo->GetRenameStatus() == NzbInfo::rsNone && !g_Options->GetParRename())
 		{
 			nzbInfo->SetRenameStatus(NzbInfo::rsSkipped);
 		}
@@ -284,22 +284,22 @@ void PrePostProcessor::NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo
 
 void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool saveQueue)
 {
-	bool addToHistory = g_pOptions->GetKeepHistory() > 0 && !nzbInfo->GetAvoidHistory();
+	bool addToHistory = g_Options->GetKeepHistory() > 0 && !nzbInfo->GetAvoidHistory();
 	if (addToHistory)
 	{
-		g_pHistoryCoordinator->AddToHistory(downloadQueue, nzbInfo);
+		g_HistoryCoordinator->AddToHistory(downloadQueue, nzbInfo);
 	}
 	nzbInfo->SetAvoidHistory(false);
 
 	bool needSave = addToHistory;
 
-	if (g_pOptions->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce &&
+	if (g_Options->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce &&
 		(nzbInfo->GetDeleteStatus() == NzbInfo::dsNone ||
 		 nzbInfo->GetDeleteStatus() == NzbInfo::dsHealth ||
 		 nzbInfo->GetDeleteStatus() == NzbInfo::dsBad ||
 		 nzbInfo->GetDeleteStatus() == NzbInfo::dsScan))
 	{
-		g_pDupeCoordinator->NzbCompleted(downloadQueue, nzbInfo);
+		g_DupeCoordinator->NzbCompleted(downloadQueue, nzbInfo);
 		needSave = true;
 	}
 
@@ -308,12 +308,12 @@ void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbIn
 		nzbInfo->GetDeleteStatus() != NzbInfo::dsBad)
 		// nzbs deleted by health check or marked as bad are processed as downloaded with failure status
 	{
-		g_pQueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeNzbDeleted);
+		g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeNzbDeleted);
 	}
 
 	if (!addToHistory)
 	{
-		g_pHistoryCoordinator->DeleteDiskFiles(nzbInfo);
+		g_HistoryCoordinator->DeleteDiskFiles(nzbInfo);
 		downloadQueue->GetQueue()->Remove(nzbInfo);
 		delete nzbInfo;
 	}
@@ -326,7 +326,7 @@ void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbIn
 
 void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 {
-	if ((g_pOptions->GetDeleteCleanupDisk() && nzbInfo->GetCleanupDisk()) ||
+	if ((g_Options->GetDeleteCleanupDisk() && nzbInfo->GetCleanupDisk()) ||
 		nzbInfo->GetDeleteStatus() == NzbInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk
@@ -387,7 +387,7 @@ void PrePostProcessor::CheckPostQueue()
 			if (postInfo->GetRequestParCheck() &&
 				(postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
 				 (postInfo->GetForceRepair() && !postInfo->GetNzbInfo()->GetParFull())) &&
-				g_pOptions->GetParCheck() != Options::pcManual)
+				g_Options->GetParCheck() != Options::pcManual)
 			{
 				postInfo->SetForceParFull(postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
 				postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psNone);
@@ -397,7 +397,7 @@ void PrePostProcessor::CheckPostQueue()
 				DeletePostThread(postInfo);
 			}
 			else if (postInfo->GetRequestParCheck() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
-				g_pOptions->GetParCheck() == Options::pcManual)
+				g_Options->GetParCheck() == Options::pcManual)
 			{
 				postInfo->SetRequestParCheck(false);
 				postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psManual);
@@ -425,7 +425,7 @@ void PrePostProcessor::CheckPostQueue()
 			}
 
 			if (postInfo->GetStage() == PostInfo::ptQueued &&
-				(!g_pOptions->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
+				(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
 			{
 				DeletePostThread(postInfo);
 				StartJob(downloadQueue, postInfo);
@@ -435,7 +435,7 @@ void PrePostProcessor::CheckPostQueue()
 				UpdatePauseState(false, NULL);
 				JobCompleted(downloadQueue, postInfo);
 			}
-			else if (!g_pOptions->GetPausePostProcess())
+			else if (!g_Options->GetPausePostProcess())
 			{
 				error("Internal error: invalid state in post-processor");
 				// TODO: cancel (delete) current job
@@ -453,9 +453,9 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
 	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
 		NzbInfo* nzbInfo1 = *it;
-		if (nzbInfo1->GetPostInfo() && !g_pQueueScriptCoordinator->HasJob(nzbInfo1->GetId(), NULL) &&
+		if (nzbInfo1->GetPostInfo() && !g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), NULL) &&
 			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
-			(!g_pOptions->GetPausePostProcess() || nzbInfo1->GetForcePriority()))
+			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()))
 		{
 			nzbInfo = nzbInfo1;
 		}
@@ -508,7 +508,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	if (postInfo->GetNzbInfo()->GetRenameStatus() == NzbInfo::rsNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
 	{
-		UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-rename");
+		UpdatePauseState(g_Options->GetParPauseQueue(), "par-rename");
 		m_parCoordinator.StartParRenameJob(postInfo);
 		return;
 	}
@@ -517,7 +517,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	{
 		if (ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), NULL))
 		{
-			UpdatePauseState(g_pOptions->GetParPauseQueue(), "par-check");
+			UpdatePauseState(g_Options->GetParPauseQueue(), "par-check");
 			m_parCoordinator.StartParCheckJob(postInfo);
 		}
 		else
@@ -531,7 +531,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		return;
 	}
 	else if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
-		((g_pOptions->GetParScan() != Options::psDupe &&
+		((g_Options->GetParScan() != Options::psDupe &&
 		  postInfo->GetNzbInfo()->CalcHealth() < postInfo->GetNzbInfo()->CalcCriticalHealth(false) &&
 		  postInfo->GetNzbInfo()->CalcCriticalHealth(false) < 1000) ||
 		  postInfo->GetNzbInfo()->CalcHealth() == 0) &&
@@ -569,7 +569,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 
 	bool cleanup = !unpack &&
 		postInfo->GetNzbInfo()->GetCleanupStatus() == NzbInfo::csNone &&
-		!Util::EmptyStr(g_pOptions->GetExtCleanupDisk()) &&
+		!Util::EmptyStr(g_Options->GetExtCleanupDisk()) &&
 		((postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSuccess &&
 		  postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usFailure &&
 		  postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usSpace &&
@@ -590,8 +590,8 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psFailure &&
 		postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psManual &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
-		!Util::EmptyStr(g_pOptions->GetInterDir()) &&
-		!strncmp(postInfo->GetNzbInfo()->GetDestDir(), g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
+		!Util::EmptyStr(g_Options->GetInterDir()) &&
+		!strncmp(postInfo->GetNzbInfo()->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
 
 	bool postScript = true;
 
@@ -622,22 +622,22 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 
 	if (unpack)
 	{
-		UpdatePauseState(g_pOptions->GetUnpackPauseQueue(), "unpack");
+		UpdatePauseState(g_Options->GetUnpackPauseQueue(), "unpack");
 		UnpackController::StartJob(postInfo);
 	}
 	else if (cleanup)
 	{
-		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetScriptPauseQueue(), "cleanup");
+		UpdatePauseState(g_Options->GetUnpackPauseQueue() || g_Options->GetScriptPauseQueue(), "cleanup");
 		CleanupController::StartJob(postInfo);
 	}
 	else if (moveInter)
 	{
-		UpdatePauseState(g_pOptions->GetUnpackPauseQueue() || g_pOptions->GetScriptPauseQueue(), "move");
+		UpdatePauseState(g_Options->GetUnpackPauseQueue() || g_Options->GetScriptPauseQueue(), "move");
 		MoveController::StartJob(postInfo);
 	}
 	else
 	{
-		UpdatePauseState(g_pOptions->GetScriptPauseQueue(), "post-process-script");
+		UpdatePauseState(g_Options->GetScriptPauseQueue(), "post-process-script");
 		PostScriptController::StartJob(postInfo);
 	}
 }
@@ -673,7 +673,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 			 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0) ||
 			(nzbInfo->CalcHealth() < nzbInfo->CalcCriticalHealth(false) &&
 			 nzbInfo->CalcCriticalHealth(false) < 1000);
-		if (g_pOptions->GetParCleanupQueue() && canCleanupQueue && !nzbInfo->GetFileList()->empty())
+		if (g_Options->GetParCleanupQueue() && canCleanupQueue && !nzbInfo->GetFileList()->empty())
 		{
 			nzbInfo->PrintMessage(Message::mkInfo, "Cleaning up download queue for %s", nzbInfo->GetName());
 			nzbInfo->SetParCleanup(true);
@@ -740,15 +740,15 @@ bool PrePostProcessor::IsNzbFileDownloading(NzbInfo* nzbInfo)
 
 void PrePostProcessor::UpdatePauseState(bool needPause, const char* reason)
 {
-	if (needPause && !g_pOptions->GetTempPauseDownload())
+	if (needPause && !g_Options->GetTempPauseDownload())
 	{
 		info("Pausing download before %s", reason);
 	}
-	else if (!needPause && g_pOptions->GetTempPauseDownload())
+	else if (!needPause && g_Options->GetTempPauseDownload())
 	{
 		info("Unpausing download after %s", m_pauseReason);
 	}
-	g_pOptions->SetTempPauseDownload(needPause);
+	g_Options->SetTempPauseDownload(needPause);
 	m_pauseReason = reason;
 }
 

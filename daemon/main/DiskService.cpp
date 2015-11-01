@@ -59,8 +59,8 @@ void DiskService::ServiceWork()
 	m_interval++;
 	if (m_interval == 5)
 	{
-		if (!g_pOptions->GetPauseDownload() && 
-			g_pOptions->GetDiskSpace() > 0 && !g_pStatMeter->GetStandBy())
+		if (!g_Options->GetPauseDownload() && 
+			g_Options->GetDiskSpace() > 0 && !g_StatMeter->GetStandBy())
 		{
 			// check free disk space every 1 second
 			CheckDiskSpace();
@@ -76,32 +76,32 @@ void DiskService::ServiceWork()
 
 void DiskService::CheckDiskSpace()
 {
-	long long freeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
-	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+	long long freeSpace = Util::FreeDiskSize(g_Options->GetDestDir());
+	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 	{
-		warn("Low disk space on %s. Pausing download", g_pOptions->GetDestDir());
-		g_pOptions->SetPauseDownload(true);
+		warn("Low disk space on %s. Pausing download", g_Options->GetDestDir());
+		g_Options->SetPauseDownload(true);
 	}
 
-	if (!Util::EmptyStr(g_pOptions->GetInterDir()))
+	if (!Util::EmptyStr(g_Options->GetInterDir()))
 	{
-		freeSpace = Util::FreeDiskSize(g_pOptions->GetInterDir());
-		if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+		freeSpace = Util::FreeDiskSize(g_Options->GetInterDir());
+		if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 		{
-			warn("Low disk space on %s. Pausing download", g_pOptions->GetInterDir());
-			g_pOptions->SetPauseDownload(true);
+			warn("Low disk space on %s. Pausing download", g_Options->GetInterDir());
+			g_Options->SetPauseDownload(true);
 		}
 	}
 }
 
 void DiskService::CheckRequiredDir()
 {
-	if (!Util::EmptyStr(g_pOptions->GetRequiredDir()))
+	if (!Util::EmptyStr(g_Options->GetRequiredDir()))
 	{
 		bool allExist = true;
 		bool wasWaitingReported = m_waitingReported;
 		// split RequiredDir into tokens
-		Tokenizer tok(g_pOptions->GetRequiredDir(), ",;");
+		Tokenizer tok(g_Options->GetRequiredDir(), ",;");
 		while (const char* dir = tok.Next())
 		{
 			if (!Util::FileExists(dir) && !Util::DirectoryExists(dir))
@@ -125,7 +125,7 @@ void DiskService::CheckRequiredDir()
 		info("All required directories available");
 	}
 
-	g_pOptions->SetTempPauseDownload(false);
-	g_pOptions->SetTempPausePostprocess(false);
+	g_Options->SetTempPauseDownload(false);
+	g_Options->SetTempPausePostprocess(false);
 	m_waitingRequiredDir = false;
 }

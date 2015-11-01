@@ -123,6 +123,6 @@ public:
 	ConfigTemplates*	GetConfigTemplates() { return &m_configTemplates; }
 };
 
-extern ScriptConfig* g_pScriptConfig;
+extern ScriptConfig* g_ScriptConfig;
 
 #endif

@@ -51,8 +51,8 @@ int FileInfo::m_idGen = 0;
 int FileInfo::m_idMax = 0;
 int NzbInfo::m_idGen = 0;
 int NzbInfo::m_idMax = 0;
-DownloadQueue* DownloadQueue::g_pDownloadQueue = NULL;
-bool DownloadQueue::g_bLoaded = false;
+DownloadQueue* DownloadQueue::g_DownloadQueue = NULL;
+bool DownloadQueue::g_Loaded = false;
 
 NzbParameter::NzbParameter(const char* name)
 {
@@ -520,13 +520,13 @@ void NzbInfo::BuildDestDirName()
 {
 	char destDir[1024];
 
-	if (Util::EmptyStr(g_pOptions->GetInterDir()))
+	if (Util::EmptyStr(g_Options->GetInterDir()))
 	{
 		BuildFinalDirName(destDir, 1024);
 	}
 	else
 	{
-		snprintf(destDir, 1024, "%s%s.#%i", g_pOptions->GetInterDir(), GetName(), GetId());
+		snprintf(destDir, 1024, "%s%s.#%i", g_Options->GetInterDir(), GetName(), GetId());
 		destDir[1024-1] = '\0';
 	}
 
@@ -542,12 +542,12 @@ void NzbInfo::BuildFinalDirName(char* finalDirBuf, int bufSize)
 	char buffer[1024];
 	bool useCategory = m_category && m_category[0] != '\0';
 
-	snprintf(finalDirBuf, bufSize, "%s", g_pOptions->GetDestDir());
+	snprintf(finalDirBuf, bufSize, "%s", g_Options->GetDestDir());
 	finalDirBuf[bufSize-1] = '\0';
 
 	if (useCategory)
 	{
-		Options::Category *category = g_pOptions->FindCategory(m_category, false);
+		Options::Category *category = g_Options->FindCategory(m_category, false);
 		if (category && category->GetDestDir() && category->GetDestDir()[0] != '\0')
 		{
 			snprintf(finalDirBuf, bufSize, "%s", category->GetDestDir());
@@ -556,7 +556,7 @@ void NzbInfo::BuildFinalDirName(char* finalDirBuf, int bufSize)
 		}
 	}
 
-	if (g_pOptions->GetAppendCategoryDir() && useCategory)
+	if (g_Options->GetAppendCategoryDir() && useCategory)
 	{
 		char categoryDir[1024];
 		strncpy(categoryDir, m_category, 1024);
@@ -697,13 +697,13 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 	Message* message = new Message(++m_idMessageGen, kind, time(NULL), text);
 	m_messages.push_back(message);
 
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode() && g_pOptions->GetNzbLog())
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetNzbLog())
 	{
-		g_pDiskState->AppendNzbMessage(m_id, kind, text);
+		g_DiskState->AppendNzbMessage(m_id, kind, text);
 		m_messageCount++;
 	}
 
-	while (m_messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+	while (m_messages.size() > (unsigned int)g_Options->GetLogBufferSize())
 	{
 		Message* message = m_messages.front();
 		delete message;
@@ -1065,7 +1065,7 @@ void ArticleInfo::DiscardSegment()
 	{
 		free(m_segmentContent);
 		m_segmentContent = NULL;
-		g_pArticleCache->Free(m_segmentSize);
+		g_ArticleCache->Free(m_segmentSize);
 	}
 }
 
@@ -1424,13 +1424,13 @@ HistoryInfo* HistoryList::Find(int id)
 
 DownloadQueue* DownloadQueue::Lock()
 {
-	g_pDownloadQueue->m_lockMutex.Lock();
-	return g_pDownloadQueue;
+	g_DownloadQueue->m_lockMutex.Lock();
+	return g_DownloadQueue;
 }
 
 void DownloadQueue::Unlock()
 {
-	g_pDownloadQueue->m_lockMutex.Unlock();
+	g_DownloadQueue->m_lockMutex.Unlock();
 }
 
 void DownloadQueue::CalcRemainingSize(long long* remaining, long long* remainingForced)

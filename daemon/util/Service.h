@@ -63,6 +63,6 @@ public:
 	virtual void		Run();
 };
 
-extern ServiceCoordinator* g_pServiceCoordinator;
+extern ServiceCoordinator* g_ServiceCoordinator;
 
 #endif

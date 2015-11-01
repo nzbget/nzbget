@@ -63,7 +63,7 @@ public:
 	static bool			VerifySignature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
 };
 
-extern Maintenance* g_pMaintenance;
+extern Maintenance* g_Maintenance;
 
 class UpdateScriptController : public Thread, public ScriptController
 {

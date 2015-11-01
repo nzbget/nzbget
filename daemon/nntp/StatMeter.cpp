@@ -91,8 +91,8 @@ void ServerVolume::CalcSlots(time_t locCurTime)
 void ServerVolume::AddData(int bytes)
 {
 	time_t curTime = time(NULL);
-	time_t locCurTime = curTime + g_pOptions->GetLocalTimeOffset();
-	time_t locDataTime = m_dataTime + g_pOptions->GetLocalTimeOffset();
+	time_t locCurTime = curTime + g_Options->GetLocalTimeOffset();
+	time_t locDataTime = m_dataTime + g_Options->GetLocalTimeOffset();
 
 	int lastMinSlot = m_minSlot;
 	int lastHourSlot = m_hourSlot;
@@ -221,7 +221,7 @@ StatMeter::StatMeter()
 	m_lastTimeOffset = 0;
 	m_statChanged = false;
 
-	g_pLog->RegisterDebuggable(this);
+	g_Log->RegisterDebuggable(this);
 }
 
 StatMeter::~StatMeter()
@@ -229,7 +229,7 @@ StatMeter::~StatMeter()
 	debug("Destroying StatMeter");
 	// Cleanup
 
-	g_pLog->UnregisterDebuggable(this);
+	g_Log->UnregisterDebuggable(this);
 
 	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
 	{
@@ -245,9 +245,9 @@ void StatMeter::Init()
 	m_lastCheck = m_startServer;
 	AdjustTimeOffset();
 
-	m_serverVolumes.resize(1 + g_pServerPool->GetServers()->size());
+	m_serverVolumes.resize(1 + g_ServerPool->GetServers()->size());
 	m_serverVolumes[0] = new ServerVolume();
-	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
 	{
 		NewsServer* server = *it;
 		m_serverVolumes[server->GetId()] = new ServerVolume();
@@ -262,10 +262,10 @@ void StatMeter::AdjustTimeOffset()
 	tmSplittedTime.tm_isdst = -1;
 	time_t locTime = mktime(&tmSplittedTime);
 	time_t localTimeDelta = utcTime - locTime;
-	g_pOptions->SetLocalTimeOffset((int)localTimeDelta + g_pOptions->GetTimeCorrection());
+	g_Options->SetLocalTimeOffset((int)localTimeDelta + g_Options->GetTimeCorrection());
 	m_lastTimeOffset = utcTime;
 
-	debug("UTC delta: %i (%i+%i)", g_pOptions->GetLocalTimeOffset(), (int)localTimeDelta, g_pOptions->GetTimeCorrection());
+	debug("UTC delta: %i (%i+%i)", g_Options->GetLocalTimeOffset(), (int)localTimeDelta, g_Options->GetTimeCorrection());
 }
 
 /*
@@ -382,7 +382,7 @@ void StatMeter::AddSpeedReading(int bytes)
 	time_t curTime = time(NULL);
 	int nowSlot = (int)curTime / SPEEDMETER_SLOTSIZE;
 
-	if (g_pOptions->GetAccurateRate())
+	if (g_Options->GetAccurateRate())
 	{
 		m_speedMutex.Lock();
 	}
@@ -435,7 +435,7 @@ void StatMeter::AddSpeedReading(int bytes)
 	m_speedTotalBytes += bytes;
 	m_allBytes += bytes;
 
-	if (g_pOptions->GetAccurateRate())
+	if (g_Options->GetAccurateRate())
 	{
 		m_speedMutex.Unlock();
 	}
@@ -520,13 +520,13 @@ void StatMeter::UnlockServerVolumes()
 
 void StatMeter::Save()
 {
-	if (!g_pOptions->GetServerMode())
+	if (!g_Options->GetServerMode())
 	{
 		return;
 	}
 
 	m_volumeMutex.Lock();
-	g_pDiskState->SaveStats(g_pServerPool->GetServers(), &m_serverVolumes);
+	g_DiskState->SaveStats(g_ServerPool->GetServers(), &m_serverVolumes);
 	m_statChanged = false;
 	m_volumeMutex.Unlock();
 }
@@ -535,12 +535,12 @@ bool StatMeter::Load(bool* perfectServerMatch)
 {
 	m_volumeMutex.Lock();
 
-	bool ok = g_pDiskState->LoadStats(g_pServerPool->GetServers(), &m_serverVolumes, perfectServerMatch);
+	bool ok = g_DiskState->LoadStats(g_ServerPool->GetServers(), &m_serverVolumes, perfectServerMatch);
 
 	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
 	{
 		ServerVolume* serverVolume = *it;
-		serverVolume->CalcSlots(serverVolume->GetDataTime() + g_pOptions->GetLocalTimeOffset());
+		serverVolume->CalcSlots(serverVolume->GetDataTime() + g_Options->GetLocalTimeOffset());
 	}
 
 	m_volumeMutex.Unlock();

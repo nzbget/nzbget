@@ -57,6 +57,6 @@ public:
 	void				Redownload(DownloadQueue* downloadQueue, HistoryInfo* historyInfo);
 };
 
-extern HistoryCoordinator* g_pHistoryCoordinator;
+extern HistoryCoordinator* g_HistoryCoordinator;
 
 #endif

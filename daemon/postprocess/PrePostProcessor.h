@@ -79,6 +79,6 @@ public:
 	void				NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 };
 
-extern PrePostProcessor* g_pPrePostProcessor;
+extern PrePostProcessor* g_PrePostProcessor;
 
 #endif

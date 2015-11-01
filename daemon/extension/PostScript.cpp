@@ -54,7 +54,7 @@ void PostScriptController::StartJob(PostInfo* postInfo)
 {
 	PostScriptController* scriptController = new PostScriptController();
 	scriptController->m_postInfo = postInfo;
-	scriptController->SetWorkingDir(g_pOptions->GetDestDir());
+	scriptController->SetWorkingDir(g_Options->GetDestDir());
 	scriptController->SetAutoDestroy(false);
 	scriptController->m_prefixLen = 0;
 
@@ -315,14 +315,14 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 		DownloadQueue::Unlock();
 	}
 
-	if (g_pOptions->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority())
+	if (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority())
 	{
 		time_t stageTime = m_postInfo->GetStageTime();
 		time_t startTime = m_postInfo->GetStartTime();
 		time_t waitTime = time(NULL);
 
 		// wait until Post-processor is unpaused
-		while (g_pOptions->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
+		while (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
 		{
 			usleep(100 * 1000);
 

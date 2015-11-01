@@ -79,6 +79,6 @@ public:
 	int					GetQueueSize();
 };
 
-extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
+extern QueueScriptCoordinator* g_QueueScriptCoordinator;
 
 #endif

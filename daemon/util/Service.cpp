@@ -50,7 +50,7 @@
 Service::Service()
 {
 	m_lastTick = 0;
-	g_pServiceCoordinator->RegisterService(this);
+	g_ServiceCoordinator->RegisterService(this);
 }
 
 

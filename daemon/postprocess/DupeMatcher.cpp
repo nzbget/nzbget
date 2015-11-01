@@ -84,7 +84,7 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 	unrar.m_filenameBufLen = filenameBufLen;
 
 	char** cmdArgs = NULL;
-	if (!Util::SplitCommandLine(g_pOptions->GetUnrarCmd(), &cmdArgs))
+	if (!Util::SplitCommandLine(g_Options->GetUnrarCmd(), &cmdArgs))
 	{
 		return false;
 	}

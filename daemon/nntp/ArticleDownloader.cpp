@@ -115,14 +115,14 @@ void ArticleDownloader::Run()
 	m_articleWriter.Prepare();
 
 	EStatus status = adFailed;
-	int retries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
+	int retries = g_Options->GetRetries() > 0 ? g_Options->GetRetries() : 1;
 	int remainedRetries = retries;
 	Servers failedServers;
-	failedServers.reserve(g_pServerPool->GetServers()->size());
+	failedServers.reserve(g_ServerPool->GetServers()->size());
 	NewsServer* wantServer = NULL;
 	NewsServer* lastServer = NULL;
 	int level = 0;
-	int serverConfigGeneration = g_pServerPool->GetGeneration();
+	int serverConfigGeneration = g_ServerPool->GetGeneration();
 	bool force = m_fileInfo->GetNzbInfo()->GetForcePriority();
 
 	while (!IsStopped())
@@ -130,17 +130,17 @@ void ArticleDownloader::Run()
 		status = adFailed;
 
 		SetStatus(adWaiting);
-		while (!m_connection && !(IsStopped() || serverConfigGeneration != g_pServerPool->GetGeneration()))
+		while (!m_connection && !(IsStopped() || serverConfigGeneration != g_ServerPool->GetGeneration()))
 		{
-			m_connection = g_pServerPool->GetConnection(level, wantServer, &failedServers);
+			m_connection = g_ServerPool->GetConnection(level, wantServer, &failedServers);
 			usleep(5 * 1000);
 		}
 		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
 
-		if (IsStopped() || (g_pOptions->GetPauseDownload() && !force) ||
-			(g_pOptions->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
-			serverConfigGeneration != g_pServerPool->GetGeneration())
+		if (IsStopped() || (g_Options->GetPauseDownload() && !force) ||
+			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
+			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
 			status = adRetry;
 			break;
@@ -210,7 +210,7 @@ void ArticleDownloader::Run()
 
 		if (!connected && m_connection && !IsStopped())
 		{
-			g_pServerPool->BlockServer(lastServer);
+			g_ServerPool->BlockServer(lastServer);
 		}
 
 		wantServer = NULL;
@@ -228,9 +228,9 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if (IsStopped() || (g_pOptions->GetPauseDownload() && !force) ||
-			(g_pOptions->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
-			serverConfigGeneration != g_pServerPool->GetGeneration())
+		if (IsStopped() || (g_Options->GetPauseDownload() && !force) ||
+			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
+			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
 			status = adRetry;
 			break;
@@ -244,7 +244,7 @@ void ArticleDownloader::Run()
 			// if all servers from all levels were tried, break the loop with failure status
 
 			bool allServersOnLevelFailed = true;
-			for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+			for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
 			{
 				NewsServer* candidateServer = *it;
 				if (candidateServer->GetNormLevel() == level)
@@ -274,7 +274,7 @@ void ArticleDownloader::Run()
 
 			if (allServersOnLevelFailed)
 			{
-				if (level < g_pServerPool->GetMaxNormLevel())
+				if (level < g_ServerPool->GetMaxNormLevel())
 				{
 					detail("Article %s @ all level %i servers failed, increasing level", m_infoName, level);
 					level++;
@@ -366,10 +366,10 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		return status;
 	}
 
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
 		m_yDecoder.Clear();
-		m_yDecoder.SetCrcCheck(g_pOptions->GetCrcCheck());
+		m_yDecoder.SetCrcCheck(g_Options->GetCrcCheck());
 		m_uDecoder.Clear();
 	}
 
@@ -389,9 +389,9 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		}
 
 		// Throttle the bandwidth
-		while (!IsStopped() && (g_pOptions->GetDownloadRate() > 0.0f) &&
-			(g_pStatMeter->CalcCurrentDownloadSpeed() > g_pOptions->GetDownloadRate() ||
-			g_pStatMeter->CalcMomentaryDownloadSpeed() > g_pOptions->GetDownloadRate()))
+		while (!IsStopped() && (g_Options->GetDownloadRate() > 0.0f) &&
+			(g_StatMeter->CalcCurrentDownloadSpeed() > g_Options->GetDownloadRate() ||
+			g_StatMeter->CalcMomentaryDownloadSpeed() > g_Options->GetDownloadRate()))
 		{
 			SetLastUpdateTimeNow();
 			usleep(10 * 1000);
@@ -400,8 +400,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		int len = 0;
 		char* line = m_connection->ReadLine(lineBuf, LineBufSize, &len);
 
-		g_pStatMeter->AddSpeedReading(len);
-		if (g_pOptions->GetAccurateRate())
+		g_StatMeter->AddSpeedReading(len);
+		if (g_Options->GetAccurateRate())
 		{
 			AddServerData();
 		}
@@ -453,7 +453,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			}
 		}
 
-		if (m_format == Decoder::efUnknown && g_pOptions->GetDecode())
+		if (m_format == Decoder::efUnknown && g_Options->GetDecode())
 		{
 			m_format = Decoder::DetectFormat(line, len);
 			if (m_format != Decoder::efUnknown)
@@ -465,7 +465,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		}
 
 		// write to output file
-		if (((body && m_format != Decoder::efUnknown) || !g_pOptions->GetDecode()) && !Write(line, len))
+		if (((body && m_format != Decoder::efUnknown) || !g_Options->GetDecode()) && !Write(line, len))
 		{
 			status = adFatalError;
 			break;
@@ -545,7 +545,7 @@ bool ArticleDownloader::Write(char* line, int len)
 	long long articleOffset = 0;
 	int articleSize = 0;
 
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
 		if (m_format == Decoder::efYenc)
 		{
@@ -591,7 +591,7 @@ bool ArticleDownloader::Write(char* line, int len)
 
 ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 {
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
 		Decoder* decoder = NULL;
 		if (m_format == Decoder::efYenc)
@@ -620,7 +620,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 
 			if (m_format == Decoder::efYenc)
 			{
-				m_articleInfo->SetCrc(g_pOptions->GetCrcCheck() ?
+				m_articleInfo->SetCrc(g_Options->GetCrcCheck() ?
 					m_yDecoder.GetCalculatedCrc() : m_yDecoder.GetExpectedCrc());
 			}
 
@@ -693,8 +693,8 @@ bool ArticleDownloader::Terminate()
 		connection->SetSuppressErrors(true);
 		connection->Cancel();
 		connection->Disconnect();
-		g_pStatMeter->AddServerData(connection->FetchTotalBytesRead(), connection->GetNewsServer()->GetId());
-		g_pServerPool->FreeConnection(connection, true);
+		g_StatMeter->AddServerData(connection->FetchTotalBytesRead(), connection->GetNewsServer()->GetId());
+		g_ServerPool->FreeConnection(connection, true);
 	}
 	return terminated;
 }
@@ -710,7 +710,7 @@ void ArticleDownloader::FreeConnection(bool keepConnected)
 			m_connection->Disconnect();
 		}
 		AddServerData();
-		g_pServerPool->FreeConnection(m_connection, true);
+		g_ServerPool->FreeConnection(m_connection, true);
 		m_connection = NULL;
 		m_connectionMutex.Unlock();
 	}
@@ -719,6 +719,6 @@ void ArticleDownloader::FreeConnection(bool keepConnected)
 void ArticleDownloader::AddServerData()
 {
 	int bytesRead = m_connection->FetchTotalBytesRead();
-	g_pStatMeter->AddServerData(bytesRead, m_connection->GetNewsServer()->GetId());
+	g_StatMeter->AddServerData(bytesRead, m_connection->GetNewsServer()->GetId());
 	m_downloadedSize += bytesRead;
 }

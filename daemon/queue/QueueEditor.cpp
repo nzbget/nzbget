@@ -305,7 +305,7 @@ void QueueEditor::DeleteEntry(FileInfo* fileInfo)
 	fileInfo->GetNzbInfo()->PrintMessage(
 		fileInfo->GetNzbInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
 		"Deleting file %s from download queue", fileInfo->GetFilename());
-	g_pQueueCoordinator->DeleteQueueEntry(m_downloadQueue, fileInfo);
+	g_QueueCoordinator->DeleteQueueEntry(m_downloadQueue, fileInfo);
 }
 
 /*
@@ -391,11 +391,11 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameLis
 {
 	if (action == DownloadQueue::eaPostDelete)
 	{
-		return g_pPrePostProcessor->EditList(downloadQueue, idList, action, offset, text);
+		return g_PrePostProcessor->EditList(downloadQueue, idList, action, offset, text);
 	}
 	else if (DownloadQueue::eaHistoryDelete <= action && action <= DownloadQueue::eaHistorySetName)
 	{
-		return g_pHistoryCoordinator->EditList(downloadQueue, idList, action, offset, text);
+		return g_HistoryCoordinator->EditList(downloadQueue, idList, action, offset, text);
 	}
 
 	m_downloadQueue = downloadQueue;
@@ -1001,11 +1001,11 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 {
 	debug("QueueEditor: setting category '%s' for '%s'", category, nzbInfo->GetName());
 
-	bool oldUnpack = g_pOptions->GetUnpack();
-	const char* oldPostScript = g_pOptions->GetPostScript();
+	bool oldUnpack = g_Options->GetUnpack();
+	const char* oldPostScript = g_Options->GetPostScript();
 	if (applyParams && !Util::EmptyStr(nzbInfo->GetCategory()))
 	{
-		Options::Category* categoryObj = g_pOptions->FindCategory(nzbInfo->GetCategory(), false);
+		Options::Category* categoryObj = g_Options->FindCategory(nzbInfo->GetCategory(), false);
 		if (categoryObj)
 		{
 			oldUnpack = categoryObj->GetUnpack();
@@ -1016,18 +1016,18 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 		}
 	}
 
-	g_pQueueCoordinator->SetQueueEntryCategory(m_downloadQueue, nzbInfo, category);
+	g_QueueCoordinator->SetQueueEntryCategory(m_downloadQueue, nzbInfo, category);
 
 	if (!applyParams)
 	{
 		return;
 	}
 
-	bool newUnpack = g_pOptions->GetUnpack();
-	const char* newPostScript = g_pOptions->GetPostScript();
+	bool newUnpack = g_Options->GetUnpack();
+	const char* newPostScript = g_Options->GetPostScript();
 	if (!Util::EmptyStr(nzbInfo->GetCategory()))
 	{
-		Options::Category* categoryObj = g_pOptions->FindCategory(nzbInfo->GetCategory(), false);
+		Options::Category* categoryObj = g_Options->FindCategory(nzbInfo->GetCategory(), false);
 		if (categoryObj)
 		{
 			newUnpack = categoryObj->GetUnpack();
@@ -1091,7 +1091,7 @@ void QueueEditor::SetNzbName(NzbInfo* nzbInfo, const char* name)
 {
 	debug("QueueEditor: renaming '%s' to '%s'", nzbInfo->GetName(), name);
 
-	g_pQueueCoordinator->SetQueueEntryName(m_downloadQueue, nzbInfo, name);
+	g_QueueCoordinator->SetQueueEntryName(m_downloadQueue, nzbInfo, name);
 }
 
 /**
@@ -1141,7 +1141,7 @@ bool QueueEditor::MergeGroups(ItemList* itemList)
 		if (item->m_nzbInfo != destItem->m_nzbInfo)
 		{
 			debug("merge %s to %s", item->m_nzbInfo->GetFilename(), destItem->m_nzbInfo->GetFilename());
-			if (g_pQueueCoordinator->MergeQueueEntries(m_downloadQueue, destItem->m_nzbInfo, item->m_nzbInfo))
+			if (g_QueueCoordinator->MergeQueueEntries(m_downloadQueue, destItem->m_nzbInfo, item->m_nzbInfo))
 			{
 				ok = false;
 			}
@@ -1170,7 +1170,7 @@ bool QueueEditor::SplitGroup(ItemList* itemList, const char* name)
 	}
 
 	NzbInfo* newNzbInfo = NULL;
-	bool ok = g_pQueueCoordinator->SplitQueueEntries(m_downloadQueue, &fileList, name, &newNzbInfo);
+	bool ok = g_QueueCoordinator->SplitQueueEntries(m_downloadQueue, &fileList, name, &newNzbInfo);
 
 	return ok;
 }
@@ -1278,5 +1278,5 @@ void QueueEditor::SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction a
 
 bool QueueEditor::DeleteUrl(NzbInfo* nzbInfo, DownloadQueue::EEditAction action)
 {
-	return g_pUrlCoordinator->DeleteQueueEntry(m_downloadQueue, nzbInfo, action == DownloadQueue::eaGroupFinalDelete);
+	return g_UrlCoordinator->DeleteQueueEntry(m_downloadQueue, nzbInfo, action == DownloadQueue::eaGroupFinalDelete);
 }

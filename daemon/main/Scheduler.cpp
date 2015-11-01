@@ -152,8 +152,8 @@ void Scheduler::CheckTasks()
 			}
 		}
 
-		time_t localCurrent = current + g_pOptions->GetLocalTimeOffset();
-		time_t localLastCheck = m_lastCheck + g_pOptions->GetLocalTimeOffset();
+		time_t localCurrent = current + g_Options->GetLocalTimeOffset();
+		time_t localLastCheck = m_lastCheck + g_Options->GetLocalTimeOffset();
 
 		tm tmCurrent;
 		gmtime_r(&localCurrent, &tmCurrent);
@@ -224,26 +224,26 @@ void Scheduler::ExecuteTask(Task* task)
 		case scDownloadRate:
 			if (!Util::EmptyStr(task->m_param))
 			{
-				g_pOptions->SetDownloadRate(atoi(task->m_param) * 1024);
+				g_Options->SetDownloadRate(atoi(task->m_param) * 1024);
 				m_downloadRateChanged = true;
 			}
 			break;
 
 		case scPauseDownload:
 		case scUnpauseDownload:
-			g_pOptions->SetPauseDownload(task->m_command == scPauseDownload);
+			g_Options->SetPauseDownload(task->m_command == scPauseDownload);
 			m_pauseDownloadChanged = true;
 			break;
 
 		case scPausePostProcess:
 		case scUnpausePostProcess:
-			g_pOptions->SetPausePostProcess(task->m_command == scPausePostProcess);
+			g_Options->SetPausePostProcess(task->m_command == scPausePostProcess);
 			m_pausePostProcessChanged = true;
 			break;
 
 		case scPauseScan:
 		case scUnpauseScan:
-			g_pOptions->SetPauseScan(task->m_command == scPauseScan);
+			g_Options->SetPauseScan(task->m_command == scPauseScan);
 			m_pauseScanChanged = true;
 			break;
 
@@ -282,24 +282,24 @@ void Scheduler::PrintLog()
 {
 	if (m_downloadRateChanged)
 	{
-		info("Scheduler: setting download rate to %i KB/s", g_pOptions->GetDownloadRate() / 1024);
+		info("Scheduler: setting download rate to %i KB/s", g_Options->GetDownloadRate() / 1024);
 	}
 	if (m_pauseDownloadChanged)
 	{
-		info("Scheduler: %s download", g_pOptions->GetPauseDownload() ? "pausing" : "unpausing");
+		info("Scheduler: %s download", g_Options->GetPauseDownload() ? "pausing" : "unpausing");
 	}
 	if (m_pausePostProcessChanged)
 	{
-		info("Scheduler: %s post-processing", g_pOptions->GetPausePostProcess() ? "pausing" : "unpausing");
+		info("Scheduler: %s post-processing", g_Options->GetPausePostProcess() ? "pausing" : "unpausing");
 	}
 	if (m_pauseScanChanged)
 	{
-		info("Scheduler: %s scan", g_pOptions->GetPauseScan() ? "pausing" : "unpausing");
+		info("Scheduler: %s scan", g_Options->GetPauseScan() ? "pausing" : "unpausing");
 	}
 	if (m_serverChanged)
 	{
 		int index = 0;
-		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++, index++)
+		for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++, index++)
 		{
 			NewsServer* server = *it;
 			if (server->GetActive() != m_serverStatusList[index])
@@ -307,7 +307,7 @@ void Scheduler::PrintLog()
 				info("Scheduler: %s %s", server->GetActive() ? "activating" : "deactivating", server->GetName());
 			}
 		}
-		g_pServerPool->Changed();
+		g_ServerPool->Changed();
 	}
 }
 
@@ -317,7 +317,7 @@ void Scheduler::EditServer(bool active, const char* serverList)
 	while (const char* serverRef = tok.Next())
 	{
 		int id = atoi(serverRef);
-		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+		for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
 		{
 			NewsServer* server = *it;
 			if ((id > 0 && server->GetId() == id) ||
@@ -327,8 +327,8 @@ void Scheduler::EditServer(bool active, const char* serverList)
 				{
 					// store old server status for logging
 					m_serverStatusList.clear();
-					m_serverStatusList.reserve(g_pServerPool->GetServers()->size());
-					for (Servers::iterator it2 = g_pServerPool->GetServers()->begin(); it2 != g_pServerPool->GetServers()->end(); it2++)
+					m_serverStatusList.reserve(g_ServerPool->GetServers()->size());
+					for (Servers::iterator it2 = g_ServerPool->GetServers()->begin(); it2 != g_ServerPool->GetServers()->end(); it2++)
 					{
 						NewsServer* server2 = *it2;
 						m_serverStatusList.push_back(server2->GetActive());
@@ -348,14 +348,14 @@ void Scheduler::FetchFeed(const char* feedList)
 	while (const char* feedRef = tok.Next())
 	{
 		int id = atoi(feedRef);
-		for (Feeds::iterator it = g_pFeedCoordinator->GetFeeds()->begin(); it != g_pFeedCoordinator->GetFeeds()->end(); it++)
+		for (Feeds::iterator it = g_FeedCoordinator->GetFeeds()->begin(); it != g_FeedCoordinator->GetFeeds()->end(); it++)
 		{
 			FeedInfo* feed = *it;
 			if (feed->GetId() == id ||
 				!strcasecmp(feed->GetName(), feedRef) ||
 				!strcasecmp("0", feedRef))
 			{
-				g_pFeedCoordinator->FetchFeed(!strcasecmp("0", feedRef) ? 0 : feed->GetId());
+				g_FeedCoordinator->FetchFeed(!strcasecmp("0", feedRef) ? 0 : feed->GetId());
 				break;
 			}
 		}
@@ -364,14 +364,14 @@ void Scheduler::FetchFeed(const char* feedList)
 
 void Scheduler::CheckScheduledResume()
 {
-	time_t resumeTime = g_pOptions->GetResumeTime();
+	time_t resumeTime = g_Options->GetResumeTime();
 	time_t currentTime = time(NULL);
 	if (resumeTime > 0 && currentTime >= resumeTime)
 	{
 		info("Autoresume");
-		g_pOptions->SetResumeTime(0);
-		g_pOptions->SetPauseDownload(false);
-		g_pOptions->SetPausePostProcess(false);
-		g_pOptions->SetPauseScan(false);
+		g_Options->SetResumeTime(0);
+		g_Options->SetPauseDownload(false);
+		g_Options->SetPausePostProcess(false);
+		g_Options->SetPauseScan(false);
 	}
 }

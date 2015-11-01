@@ -162,7 +162,7 @@ void UnpackController::Run()
 	bool hasFiles = m_hasRarFiles || m_hasNonStdRarFiles || m_hasSevenZipFiles || m_hasSevenZipMultiFiles || m_hasSplittedFiles;
 
 	if (m_postInfo->GetUnpackTried() && !m_postInfo->GetParRepaired() &&
-		(!Util::EmptyStr(m_password) || Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_postInfo->GetPassListTried()))
+		(!Util::EmptyStr(m_password) || Util::EmptyStr(g_Options->GetUnpackPassFile()) || m_postInfo->GetPassListTried()))
 	{
 		PrintMessage(Message::mkInfo, "Second unpack attempt skipped for %s due to par-check not repaired anything", m_name);
 		PrintMessage(Message::mkError,
@@ -247,12 +247,12 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 	if (!m_unpackOK && !m_unpackStartError && !m_unpackSpaceError &&
 		(m_unpackDecryptError || m_unpackPasswordError) &&
 		(!GetTerminated() || m_autoTerminated) &&
-		Util::EmptyStr(m_password) && !Util::EmptyStr(g_pOptions->GetUnpackPassFile()))
+		Util::EmptyStr(m_password) && !Util::EmptyStr(g_Options->GetUnpackPassFile()))
 	{
-		FILE* infile = fopen(g_pOptions->GetUnpackPassFile(), FOPEN_RB);
+		FILE* infile = fopen(g_Options->GetUnpackPassFile(), FOPEN_RB);
 		if (!infile)
 		{
-			PrintMessage(Message::mkError, "Could not open file %s", g_pOptions->GetUnpackPassFile());
+			PrintMessage(Message::mkError, "Could not open file %s", g_Options->GetUnpackPassFile());
 			return;
 		}
 
@@ -305,7 +305,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 	//   unrar x -y -p- -o+ *.rar ./_unpack/
 
 	ParamList params;
-	if (!PrepareCmdParams(g_pOptions->GetUnrarCmd(), &params, "unrar"))
+	if (!PrepareCmdParams(g_Options->GetUnrarCmd(), &params, "unrar"))
 	{
 		return;
 	}
@@ -374,7 +374,7 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 	//   7z x -y -p- -o./_unpack *.7z.001
 
 	ParamList params;
-	if (!PrepareCmdParams(g_pOptions->GetSevenZipCmd(), &params, "7-Zip"))
+	if (!PrepareCmdParams(g_Options->GetSevenZipCmd(), &params, "7-Zip"))
 	{
 		return;
 	}
@@ -567,9 +567,9 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 		PrintMessage(Message::mkError, "Could not create file %s: %s", destFilename, Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
 		return false;
 	}
-	if (g_pOptions->GetWriteBuffer() > 0)
+	if (g_Options->GetWriteBuffer() > 0)
 	{
-		setvbuf(outFile, NULL, _IOFBF, g_pOptions->GetWriteBuffer() * 1024);
+		setvbuf(outFile, NULL, _IOFBF, g_Options->GetWriteBuffer() * 1024);
 	}
 
 	long long totalSize = firstSegmentSize * (count - 1) + difSegmentSize;
@@ -637,7 +637,7 @@ void UnpackController::Completed()
 		PrintMessage(Message::mkInfo, "%s %s", m_infoNameUp, "successful");
 		m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSuccess);
 		m_postInfo->GetNzbInfo()->SetUnpackCleanedUpDisk(m_cleanedUpDisk);
-		if (g_pOptions->GetParRename())
+		if (g_Options->GetParRename())
 		{
 			//request par-rename check for extracted files
 			m_postInfo->GetNzbInfo()->SetRenameStatus(NzbInfo::rsNone);
@@ -654,7 +654,7 @@ void UnpackController::Completed()
 			(!GetTerminated() || m_autoTerminated) && m_hasParFiles)
 		{
 			RequestParCheck(!Util::EmptyStr(m_password) ||
-				Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_passListTried ||
+				Util::EmptyStr(g_Options->GetUnpackPassFile()) || m_passListTried ||
 				!(m_unpackDecryptError || m_unpackPasswordError) ||
 				m_postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
 		}
@@ -688,8 +688,8 @@ void UnpackController::RequestParCheck(bool forceRepair)
 
 void UnpackController::CreateUnpackDir()
 {
-	m_interDir = strlen(g_pOptions->GetInterDir()) > 0 &&
-		!strncmp(m_destDir, g_pOptions->GetInterDir(), strlen(g_pOptions->GetInterDir()));
+	m_interDir = strlen(g_Options->GetInterDir()) > 0 &&
+		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
 	if (m_interDir)
 	{
 		m_postInfo->GetNzbInfo()->BuildFinalDirName(m_finalDir, 1024);
@@ -843,7 +843,7 @@ bool UnpackController::Cleanup()
 		Util::RemoveDirectory(m_finalDir);
 	}		
 
-	if (m_unpackOK && ok && g_pOptions->GetUnpackCleanupDisk())
+	if (m_unpackOK && ok && g_Options->GetUnpackCleanupDisk())
 	{
 		PrintMessage(Message::mkInfo, "Deleting archive files");
 

@@ -106,7 +106,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 				warn("%s", message);
 				// Flag saying QueueCoordinator to skip nzb-file
 				nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
-				g_pHistoryCoordinator->DeleteDiskFiles(nzbInfo);
+				g_HistoryCoordinator->DeleteDiskFiles(nzbInfo);
 			}
 			else
 			{
@@ -273,7 +273,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 			warn("%s", message);
 			// Flag saying QueueCoordinator to skip nzb-file
 			nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
-			g_pHistoryCoordinator->DeleteDiskFiles(nzbInfo);
+			g_HistoryCoordinator->DeleteDiskFiles(nzbInfo);
 		}
 		else
 		{
@@ -429,7 +429,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 	if (historyDupe)
 	{
 		info("Found duplicate %s for %s", historyDupe->GetNzbInfo()->GetName(), nzbName);
-		g_pHistoryCoordinator->Redownload(downloadQueue, historyDupe);
+		g_HistoryCoordinator->Redownload(downloadQueue, historyDupe);
 	}
 }
 
@@ -459,7 +459,7 @@ void DupeCoordinator::HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* his
 		return;
 	}
 
-	if (!g_pOptions->GetDupeCheck() ||
+	if (!g_Options->GetDupeCheck() ||
 		(historyInfo->GetKind() == HistoryInfo::hkNzb &&
 		 historyInfo->GetNzbInfo()->GetDupeMode() == dmForce) ||
 		(historyInfo->GetKind() == HistoryInfo::hkDup &&
@@ -507,7 +507,7 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* 
 			historyInfo != markHistoryInfo &&
 			SameNameOrKey(historyInfo->GetNzbInfo()->GetName(), historyInfo->GetNzbInfo()->GetDupeKey(), nzbName, dupeKey))
 		{
-			g_pHistoryCoordinator->HistoryHide(downloadQueue, historyInfo, index);
+			g_HistoryCoordinator->HistoryHide(downloadQueue, historyInfo, index);
 			index++;
 			it = downloadQueue->GetHistory()->rbegin() + index;
 			changed = true;

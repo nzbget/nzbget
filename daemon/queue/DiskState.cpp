@@ -108,10 +108,10 @@ StateFile::StateFile(const char* filename, int formatVersion)
 
 	m_formatVersion = formatVersion;
 
-	snprintf(m_destFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), filename);
+	snprintf(m_destFilename, 1024, "%s%s", g_Options->GetQueueDir(), filename);
 	m_destFilename[1024-1] = '\0';
 
-	snprintf(m_tempFilename, 1024, "%s%s.new", g_pOptions->GetQueueDir(), filename);
+	snprintf(m_tempFilename, 1024, "%s%s.new", g_Options->GetQueueDir(), filename);
 	m_tempFilename[1024-1] = '\0';
 }
 
@@ -155,7 +155,7 @@ bool StateFile::FinishWriteTransaction()
 	char errBuf[256];
 
 	// flush file content before renaming
-	if (g_pOptions->GetFlushQueue())
+	if (g_Options->GetFlushQueue())
 	{
 		debug("Flushing data for file %s", Util::BaseFileName(m_tempFilename));
 		fflush(m_file);
@@ -179,7 +179,7 @@ bool StateFile::FinishWriteTransaction()
 	}
 
 	// flush directory buffer after renaming
-	if (g_pOptions->GetFlushQueue())
+	if (g_Options->GetFlushQueue())
 	{
 		debug("Flushing directory for file %s", Util::BaseFileName(m_destFilename));
 		if (!Util::FlushDirBuffers(m_destFilename, errBuf, sizeof(errBuf)))
@@ -999,7 +999,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
 		if (!unpackParameter)
 		{
-			nzbInfo->GetParameters()->SetParameter("*Unpack:", g_pOptions->GetUnpack() ? "yes" : "no");
+			nzbInfo->GetParameters()->SetParameter("*Unpack:", g_Options->GetUnpack() ? "yes" : "no");
 		}
 	}
 
@@ -1023,7 +1023,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 			}
 
 			char fileName[1024];
-			snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
+			snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), id);
 			fileName[1024-1] = '\0';
 			FileInfo* fileInfo = new FileInfo();
 			bool res = LoadFileInfo(fileInfo, fileName, true, false);
@@ -1084,7 +1084,7 @@ bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, FILE* infil
 		if (nzbIndex > nzbList->size()) goto error;
 
 		char fileName[1024];
-		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), id);
+		snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), id);
 		fileName[1024-1] = '\0';
 		FileInfo* fileInfo = new FileInfo();
 		bool res = LoadFileInfo(fileInfo, fileName, true, false);
@@ -1164,7 +1164,7 @@ error:
 bool DiskState::SaveFile(FileInfo* fileInfo)
 {
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetId());
+	snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
 	fileName[1024-1] = '\0';
 	return SaveFileInfo(fileInfo, fileName);
 }
@@ -1217,7 +1217,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 bool DiskState::LoadArticles(FileInfo* fileInfo)
 {
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetId());
+	snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
 	fileName[1024-1] = '\0';
 	return LoadFileInfo(fileInfo, fileName, false, true);
 }
@@ -1343,7 +1343,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	debug("Saving FileState to disk");
 
 	char filename[1024];
-	snprintf(filename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
+	snprintf(filename, 1024, "%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	filename[1024-1] = '\0';
 
 	FILE* outfile = fopen(filename, FOPEN_WB);
@@ -1381,7 +1381,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed)
 {
 	char filename[1024];
-	snprintf(filename, 1024, "%s%i%s", g_pOptions->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
+	snprintf(filename, 1024, "%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	filename[1024-1] = '\0';
 
 	bool hasArticles = !fileInfo->GetArticles()->empty();
@@ -1501,21 +1501,21 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 		CompletedFile* completedFile = *it;
 		if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
 		{
-			snprintf(filename, 1024, "%s%i", g_pOptions->GetQueueDir(), completedFile->GetId());
+			snprintf(filename, 1024, "%s%i", g_Options->GetQueueDir(), completedFile->GetId());
 			filename[1024-1] = '\0';
 			remove(filename);
 
-			snprintf(filename, 1024, "%s%is", g_pOptions->GetQueueDir(), completedFile->GetId());
+			snprintf(filename, 1024, "%s%is", g_Options->GetQueueDir(), completedFile->GetId());
 			filename[1024-1] = '\0';
 			remove(filename);
 
-			snprintf(filename, 1024, "%s%ic", g_pOptions->GetQueueDir(), completedFile->GetId());
+			snprintf(filename, 1024, "%s%ic", g_Options->GetQueueDir(), completedFile->GetId());
 			filename[1024-1] = '\0';
 			remove(filename);
 		}
 	}
 
-	snprintf(filename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), nzbInfo->GetId());
+	snprintf(filename, 1024, "%sn%i.log", g_Options->GetQueueDir(), nzbInfo->GetId());
 	filename[1024-1] = '\0';
 	remove(filename);
 }
@@ -1598,7 +1598,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 	debug("Loading post-queue from disk");
 
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "postq");
+	snprintf(fileName, 1024, "%s%s", g_Options->GetQueueDir(), "postq");
 	fileName[1024-1] = '\0';
 
 	if (!Util::FileExists(fileName))
@@ -2054,11 +2054,11 @@ void DiskState::DiscardDownloadQueue()
 	debug("Discarding queue");
 
 	char fullFilename[1024];
-	snprintf(fullFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
+	snprintf(fullFilename, 1024, "%s%s", g_Options->GetQueueDir(), "queue");
 	fullFilename[1024-1] = '\0';
 	remove(fullFilename);
 
-	DirBrowser dir(g_pOptions->GetQueueDir());
+	DirBrowser dir(g_Options->GetQueueDir());
 	while (const char* filename = dir.Next())
 	{
 		// delete all files whose names have only characters '0'..'9'
@@ -2073,17 +2073,17 @@ void DiskState::DiscardDownloadQueue()
 		}
 		if (onlyNums)
 		{
-			snprintf(fullFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), filename);
+			snprintf(fullFilename, 1024, "%s%s", g_Options->GetQueueDir(), filename);
 			fullFilename[1024-1] = '\0';
 			remove(fullFilename);
 
 			// delete file state file
-			snprintf(fullFilename, 1024, "%s%ss", g_pOptions->GetQueueDir(), filename);
+			snprintf(fullFilename, 1024, "%s%ss", g_Options->GetQueueDir(), filename);
 			fullFilename[1024-1] = '\0';
 			remove(fullFilename);
 
 			// delete failed info file
-			snprintf(fullFilename, 1024, "%s%sc", g_pOptions->GetQueueDir(), filename);
+			snprintf(fullFilename, 1024, "%s%sc", g_Options->GetQueueDir(), filename);
 			fullFilename[1024-1] = '\0';
 			remove(fullFilename);
 		}
@@ -2095,7 +2095,7 @@ bool DiskState::DownloadQueueExists()
 	debug("Checking if a saved queue exists on disk");
 
 	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_pOptions->GetQueueDir(), "queue");
+	snprintf(fileName, 1024, "%s%s", g_Options->GetQueueDir(), "queue");
 	fileName[1024-1] = '\0';
 	return Util::FileExists(fileName);
 }
@@ -2107,7 +2107,7 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	// info and articles file
 	if (deleteData)
 	{
-		snprintf(fileName, 1024, "%s%i", g_pOptions->GetQueueDir(), fileInfo->GetId());
+		snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
 		fileName[1024-1] = '\0';
 		remove(fileName);
 	}
@@ -2115,7 +2115,7 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	// partial state file
 	if (deletePartialState)
 	{
-		snprintf(fileName, 1024, "%s%is", g_pOptions->GetQueueDir(), fileInfo->GetId());
+		snprintf(fileName, 1024, "%s%is", g_Options->GetQueueDir(), fileInfo->GetId());
 		fileName[1024-1] = '\0';
 		remove(fileName);
 	}
@@ -2123,7 +2123,7 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	// completed state file
 	if (deleteCompletedState)
 	{
-		snprintf(fileName, 1024, "%s%ic", g_pOptions->GetQueueDir(), fileInfo->GetId());
+		snprintf(fileName, 1024, "%s%ic", g_Options->GetQueueDir(), fileInfo->GetId());
 		fileName[1024-1] = '\0';
 		remove(fileName);
 	}
@@ -2131,7 +2131,7 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 
 void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 {
-	DirBrowser dir(g_pOptions->GetTempDir());
+	DirBrowser dir(g_Options->GetTempDir());
 	while (const char* filename = dir.Next())
 	{
 		int id, part;
@@ -2139,7 +2139,7 @@ void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 			(sscanf(filename, "%i.%i", &id, &part) == 2))
 		{
 			char fullFilename[1024];
-			snprintf(fullFilename, 1024, "%s%s", g_pOptions->GetTempDir(), filename);
+			snprintf(fullFilename, 1024, "%s%s", g_Options->GetTempDir(), filename);
 			fullFilename[1024-1] = '\0';
 			remove(fullFilename);
 		}
@@ -2434,19 +2434,19 @@ void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers)
 {
 	char cacheFlagFilename[1024];
-	snprintf(cacheFlagFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "acache");
+	snprintf(cacheFlagFilename, 1024, "%s%s", g_Options->GetQueueDir(), "acache");
 	cacheFlagFilename[1024-1] = '\0';
 
 	bool cacheWasActive = Util::FileExists(cacheFlagFilename);
 
-	DirBrowser dir(g_pOptions->GetQueueDir());
+	DirBrowser dir(g_Options->GetQueueDir());
 	while (const char* filename = dir.Next())
 	{
 		int id;
 		char suffix;
 		if (sscanf(filename, "%i%c", &id, &suffix) == 2 && suffix == 's')
 		{
-			if (g_pOptions->GetContinuePartial() && !cacheWasActive)
+			if (g_Options->GetContinuePartial() && !cacheWasActive)
 			{
 				for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 				{
@@ -2465,7 +2465,7 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 			else
 			{
 				char fullFilename[1024];
-				snprintf(fullFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), filename);
+				snprintf(fullFilename, 1024, "%s%s", g_Options->GetQueueDir(), filename);
 				fullFilename[1024-1] = '\0';
 				remove(fullFilename);
 			}
@@ -2922,7 +2922,7 @@ error:
 void DiskState::WriteCacheFlag()
 {
 	char flagFilename[1024];
-	snprintf(flagFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "acache");
+	snprintf(flagFilename, 1024, "%s%s", g_Options->GetQueueDir(), "acache");
 	flagFilename[1024-1] = '\0';
 
 	FILE* outfile = fopen(flagFilename, FOPEN_WB);
@@ -2938,7 +2938,7 @@ void DiskState::WriteCacheFlag()
 void DiskState::DeleteCacheFlag()
 {
 	char flagFilename[1024];
-	snprintf(flagFilename, 1024, "%s%s", g_pOptions->GetQueueDir(), "acache");
+	snprintf(flagFilename, 1024, "%s%s", g_Options->GetQueueDir(), "acache");
 	flagFilename[1024-1] = '\0';
 
 	remove(flagFilename);
@@ -2947,7 +2947,7 @@ void DiskState::DeleteCacheFlag()
 void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* text)
 {
 	char logFilename[1024];
-	snprintf(logFilename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), nzbId);
+	snprintf(logFilename, 1024, "%sn%i.log", g_Options->GetQueueDir(), nzbId);
 	logFilename[1024-1] = '\0';
 
 	FILE* outfile = fopen(logFilename, FOPEN_ABP);
@@ -2974,7 +2974,7 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 	}
 
 	time_t tm = time(NULL);
-	time_t rawtime = tm + g_pOptions->GetTimeCorrection();
+	time_t rawtime = tm + g_Options->GetTimeCorrection();
 	
 	char time[50];
 #ifdef HAVE_CTIME_R_3
@@ -2997,7 +2997,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 	//   - The log-file may also be deleted from another thread;
 
 	char logFilename[1024];
-	snprintf(logFilename, 1024, "%sn%i.log", g_pOptions->GetQueueDir(), nzbId);
+	snprintf(logFilename, 1024, "%sn%i.log", g_Options->GetQueueDir(), nzbId);
 	logFilename[1024-1] = '\0';
 
 	if (!Util::FileExists(logFilename))

@@ -280,7 +280,7 @@ void SignalProc(int signum)
 void InstallErrorHandler()
 {
 #ifdef HAVE_SYS_PRCTL_H
-	if (g_pOptions->GetDumpCore())
+	if (g_Options->GetDumpCore())
 	{
 		EnableDumpCore();
 	}

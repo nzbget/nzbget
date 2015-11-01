@@ -54,6 +54,6 @@ public:
 	void				ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, NzbList* dupeList);
 };
 
-extern DupeCoordinator* g_pDupeCoordinator;
+extern DupeCoordinator* g_DupeCoordinator;
 
 #endif

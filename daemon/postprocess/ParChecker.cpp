@@ -129,10 +129,10 @@ public:
 Result Repairer::PreProcess(const char *parFilename)
 {
 	char memParam[20];
-	snprintf(memParam, 20, "-m%i", g_pOptions->GetParBuffer());
+	snprintf(memParam, 20, "-m%i", g_Options->GetParBuffer());
 	memParam[20-1] = '\0';
 
-	if (g_pOptions->GetParScan() == Options::psFull)
+	if (g_Options->GetParScan() == Options::psFull)
 	{
 		char wildcardParam[1024];
 		strncpy(wildcardParam, parFilename, 1024);
@@ -202,7 +202,7 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 
 void Repairer::BeginRepair()
 {
-	int maxThreads = g_pOptions->GetParThreads() > 0 ? g_pOptions->GetParThreads() : Util::NumberOfCpuCores();
+	int maxThreads = g_Options->GetParThreads() > 0 ? g_Options->GetParThreads() : Util::NumberOfCpuCores();
 	maxThreads = maxThreads > 0 ? maxThreads : 1;
 
 	int threads = maxThreads > (int)missingblockcount ? (int)missingblockcount : maxThreads;
@@ -548,7 +548,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 				allStatus = status;
 			}
 
-			if (g_pOptions->GetBrokenLog())
+			if (g_Options->GetBrokenLog())
 			{
 				WriteBrokenLog(status);
 			}
@@ -610,8 +610,8 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 
 	if (m_hasDamagedFiles && !IsStopped() && repairer->missingfilecount > 0 && 
 		!(addedSplittedFragments && res == eRepairPossible) &&
-		(g_pOptions->GetParScan() == Options::psExtended ||
-		 g_pOptions->GetParScan() == Options::psDupe))
+		(g_Options->GetParScan() == Options::psExtended ||
+		 g_Options->GetParScan() == Options::psDupe))
 	{
 		if (AddMissingFiles())
 		{
@@ -625,7 +625,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 	}
 
 	if (m_hasDamagedFiles && !IsStopped() && res == eRepairNotPossible &&
-		g_pOptions->GetParScan() == Options::psDupe)
+		g_Options->GetParScan() == Options::psDupe)
 	{
 		if (AddDupeFiles())
 		{
@@ -653,7 +653,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 	else if (res == eRepairPossible)
 	{
 		status = psRepairPossible;
-		if (g_pOptions->GetParRepair())
+		if (g_Options->GetParRepair())
 		{
 			PrintMessage(Message::mkInfo, "Repairing %s", m_infoName);
 
@@ -1269,8 +1269,8 @@ void ParChecker::signal_done(std::string str, int available, int total)
 				}
 			}
 
-			bool ignore = Util::MatchFileExt(filename, g_pOptions->GetParIgnoreExt(), ",;") ||
-				Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;");
+			bool ignore = Util::MatchFileExt(filename, g_Options->GetParIgnoreExt(), ",;") ||
+				Util::MatchFileExt(filename, g_Options->GetExtCleanupDisk(), ",;");
 			m_hasDamagedFiles |= !ignore;
 
 			if (fileExists)
@@ -1311,8 +1311,8 @@ void ParChecker::CheckEmptyFiles()
 			const char* filename = filenameObj.c_str();
 			if (!Util::EmptyStr(filename) && !IsProcessedFile(filename))
 			{
-				bool ignore = Util::MatchFileExt(filename, g_pOptions->GetParIgnoreExt(), ",;") ||
-					Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;");
+				bool ignore = Util::MatchFileExt(filename, g_Options->GetParIgnoreExt(), ",;") ||
+					Util::MatchFileExt(filename, g_Options->GetExtCleanupDisk(), ",;");
 				m_hasDamagedFiles |= !ignore;
 
 				int total = sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0;

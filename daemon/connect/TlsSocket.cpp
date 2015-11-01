@@ -83,12 +83,12 @@
  */
 
 typedef std::list<Mutex*> Mutexes;
-Mutexes* g_pGCryptLibMutexes;
+Mutexes* g_GCryptLibMutexes;
 
 static int gcry_mutex_init(void **priv)
 {
 	Mutex* mutex = new Mutex();
-	g_pGCryptLibMutexes->push_back(mutex);
+	g_GCryptLibMutexes->push_back(mutex);
 	*priv = mutex;
 	return 0;
 }
@@ -96,7 +96,7 @@ static int gcry_mutex_init(void **priv)
 static int gcry_mutex_destroy(void **lock)
 {
 	Mutex* mutex = ((Mutex*)*lock);
-	g_pGCryptLibMutexes->remove(mutex);
+	g_GCryptLibMutexes->remove(mutex);
 	delete mutex;
 	return 0;
 }
@@ -130,11 +130,11 @@ static struct gcry_thread_cbs gcry_threads_Mutex =
  * Mutexes for OpenSSL
  */
 
-Mutex* *g_pOpenSSLMutexes;
+Mutex* *g_OpenSSLMutexes;
 
 static void openssl_locking(int mode, int n, const char *file, int line)
 {
-	Mutex* mutex = g_pOpenSSLMutexes[n];
+	Mutex* mutex = g_OpenSSLMutexes[n];
 	if (mode & CRYPTO_LOCK)
 	{
 		mutex->Lock();
@@ -189,7 +189,7 @@ void TlsSocket::Init()
 
 #ifdef HAVE_LIBGNUTLS
 #ifdef NEED_GCRYPT_LOCKING
-	g_pGCryptLibMutexes = new Mutexes();
+	g_GCryptLibMutexes = new Mutexes();
 #endif /* NEED_GCRYPT_LOCKING */
 
 	int error_code;
@@ -214,10 +214,10 @@ void TlsSocket::Init()
 
 #ifdef HAVE_OPENSSL
 	int maxMutexes = CRYPTO_num_locks();
-	g_pOpenSSLMutexes = (Mutex**)malloc(sizeof(Mutex*)*maxMutexes);
+	g_OpenSSLMutexes = (Mutex**)malloc(sizeof(Mutex*)*maxMutexes);
 	for (int i=0; i < maxMutexes; i++)
 	{
-		g_pOpenSSLMutexes[i] = new Mutex();
+		g_OpenSSLMutexes[i] = new Mutex();
 	}
 	
 	SSL_load_error_strings();
@@ -242,11 +242,11 @@ void TlsSocket::Final()
 
 #ifdef NEED_GCRYPT_LOCKING
 	// fixing memory leak in gcryptlib
-	for (Mutexes::iterator it = g_pGCryptLibMutexes->begin(); it != g_pGCryptLibMutexes->end(); it++)
+	for (Mutexes::iterator it = g_GCryptLibMutexes->begin(); it != g_GCryptLibMutexes->end(); it++)
 	{
 		delete *it;
 	}
-	delete g_pGCryptLibMutexes;
+	delete g_GCryptLibMutexes;
 #endif /* NEED_GCRYPT_LOCKING */
 #endif /* HAVE_LIBGNUTLS */
 
@@ -254,9 +254,9 @@ void TlsSocket::Final()
 	int maxMutexes = CRYPTO_num_locks();
 	for (int i=0; i < maxMutexes; i++)
 	{
-		delete g_pOpenSSLMutexes[i];
+		delete g_OpenSSLMutexes[i];
 	}
-	free(g_pOpenSSLMutexes);
+	free(g_OpenSSLMutexes);
 #endif /* HAVE_OPENSSL */
 }
 

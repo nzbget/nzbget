@@ -389,7 +389,7 @@ void NzbFile::CalcHashes()
 
 		// check file extension
 		bool skip = !fileInfo->GetParFile() &&
-			Util::MatchFileExt(fileInfo->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;");
+			Util::MatchFileExt(fileInfo->GetFilename(), g_Options->GetExtCleanupDisk(), ",;");
 
 		for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 		{
@@ -450,12 +450,12 @@ void NzbFile::ProcessFiles()
 
 	CalcHashes();
 
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
 		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* fileInfo = *it;
-			g_pDiskState->SaveFile(fileInfo);
+			g_DiskState->SaveFile(fileInfo);
 			fileInfo->ClearArticles();
 		}
 	}

@@ -69,7 +69,7 @@ Frontend::Frontend()
 	m_dnTimeSec = 0;
 	m_allBytes = 0;
 	m_standBy = 0;
-	m_updateInterval = g_pOptions->GetUpdateInterval();
+	m_updateInterval = g_Options->GetUpdateInterval();
 }
 
 bool Frontend::PrepareData()
@@ -82,8 +82,8 @@ bool Frontend::PrepareData()
 		}
 		if (!RequestMessages() || ((m_summary || m_fileList) && !RequestFileList()))
 		{
-			const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
-			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", controlIp, g_pOptions->GetControlPort());
+			const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
+			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", controlIp, g_Options->GetControlPort());
 			Stop();
 			return false;
 		}
@@ -92,11 +92,11 @@ bool Frontend::PrepareData()
 	{
 		if (m_summary)
 		{
-			m_currentDownloadSpeed = g_pStatMeter->CalcCurrentDownloadSpeed();
-			m_pauseDownload = g_pOptions->GetPauseDownload();
-			m_downloadLimit = g_pOptions->GetDownloadRate();
+			m_currentDownloadSpeed = g_StatMeter->CalcCurrentDownloadSpeed();
+			m_pauseDownload = g_Options->GetPauseDownload();
+			m_downloadLimit = g_Options->GetDownloadRate();
 			m_threadCount = Thread::GetThreadCount();
-			g_pStatMeter->CalcTotalStat(&m_upTimeSec, &m_dnTimeSec, &m_allBytes, &m_standBy);
+			g_StatMeter->CalcTotalStat(&m_upTimeSec, &m_dnTimeSec, &m_allBytes, &m_standBy);
 
 			DownloadQueue *downloadQueue = DownloadQueue::Lock();
 			m_postJobCount = 0;
@@ -133,7 +133,7 @@ MessageList* Frontend::LockMessages()
 	}
 	else
 	{
-		return g_pLog->LockMessages();
+		return g_Log->LockMessages();
 	}
 }
 
@@ -141,7 +141,7 @@ void Frontend::UnlockMessages()
 {
 	if (!IsRemoteMode())
 	{
-		g_pLog->UnlockMessages();
+		g_Log->UnlockMessages();
 	}
 }
 
@@ -157,7 +157,7 @@ void Frontend::UnlockQueue()
 
 bool Frontend::IsRemoteMode()
 {
-	return g_pOptions->GetRemoteClientMode();
+	return g_Options->GetRemoteClientMode();
 }
 
 void Frontend::ServerPauseUnpause(bool pause)
@@ -168,8 +168,8 @@ void Frontend::ServerPauseUnpause(bool pause)
 	}
 	else
 	{
-		g_pOptions->SetResumeTime(0);
-		g_pOptions->SetPauseDownload(pause);
+		g_Options->SetResumeTime(0);
+		g_Options->SetPauseDownload(pause);
 	}
 }
 
@@ -181,7 +181,7 @@ void Frontend::ServerSetDownloadRate(int rate)
 	}
 	else
 	{
-		g_pOptions->SetDownloadRate(rate);
+		g_Options->SetDownloadRate(rate);
 	}
 }
 
@@ -207,17 +207,17 @@ void Frontend::InitMessageBase(SNzbRequestBase* messageBase, int request, int si
 	messageBase->m_type = htonl(request);
 	messageBase->m_structSize = htonl(size);
 
-	strncpy(messageBase->m_username, g_pOptions->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
+	strncpy(messageBase->m_username, g_Options->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
 	messageBase->m_username[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 
-	strncpy(messageBase->m_password, g_pOptions->GetControlPassword(), NZBREQUESTPASSWORDSIZE);
+	strncpy(messageBase->m_password, g_Options->GetControlPassword(), NZBREQUESTPASSWORDSIZE);
 	messageBase->m_password[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
 
 bool Frontend::RequestMessages()
 {
-	const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
-	Connection connection(controlIp, g_pOptions->GetControlPort(), false);
+	const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
+	Connection connection(controlIp, g_Options->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -288,8 +288,8 @@ bool Frontend::RequestMessages()
 
 bool Frontend::RequestFileList()
 {
-	const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
-	Connection connection(controlIp, g_pOptions->GetControlPort(), false);
+	const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
+	Connection connection(controlIp, g_Options->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)

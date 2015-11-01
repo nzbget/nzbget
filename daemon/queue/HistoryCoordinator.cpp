@@ -72,7 +72,7 @@ void HistoryCoordinator::ServiceWork()
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	time_t minTime = time(NULL) - g_pOptions->GetKeepHistory() * 60*60*24;
+	time_t minTime = time(NULL) - g_Options->GetKeepHistory() * 60*60*24;
 	bool changed = false;
 	int index = 0;
 
@@ -83,7 +83,7 @@ void HistoryCoordinator::ServiceWork()
 		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetKind() != HistoryInfo::hkDup && historyInfo->GetTime() < minTime)
 		{
-			if (g_pOptions->GetDupeCheck() && historyInfo->GetKind() == HistoryInfo::hkNzb)
+			if (g_Options->GetDupeCheck() && historyInfo->GetKind() == HistoryInfo::hkNzb)
 			{
 				// replace history element
 				HistoryHide(downloadQueue, historyInfo, index);
@@ -125,15 +125,15 @@ void HistoryCoordinator::ServiceWork()
 
 void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 {
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
 		// delete parked files
-		g_pDiskState->DiscardFiles(nzbInfo);
+		g_DiskState->DiscardFiles(nzbInfo);
 	}
 	nzbInfo->GetFileList()->Clear();
 
 	// delete nzb-file
-	if (!g_pOptions->GetNzbCleanupDisk())
+	if (!g_Options->GetNzbCleanupDisk())
 	{
 		return;
 	}
@@ -188,7 +188,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 			if (!fileInfo->GetDeleted())
 			{
 				detail("Parking file %s", fileInfo->GetFilename());
-				g_pQueueCoordinator->DiscardDiskFile(fileInfo);
+				g_QueueCoordinator->DiscardDiskFile(fileInfo);
 				parkedFiles++;
 				it++;
 			}
@@ -316,15 +316,15 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 						break;
 
 					case DownloadQueue::eaHistoryMarkBad:
-						g_pDupeCoordinator->HistoryMark(downloadQueue, historyInfo, NzbInfo::ksBad);
+						g_DupeCoordinator->HistoryMark(downloadQueue, historyInfo, NzbInfo::ksBad);
 						break;
 
 					case DownloadQueue::eaHistoryMarkGood:
-						g_pDupeCoordinator->HistoryMark(downloadQueue, historyInfo, NzbInfo::ksGood);
+						g_DupeCoordinator->HistoryMark(downloadQueue, historyInfo, NzbInfo::ksGood);
 						break;
 
 					case DownloadQueue::eaHistoryMarkSuccess:
-						g_pDupeCoordinator->HistoryMark(downloadQueue, historyInfo, NzbInfo::ksSuccess);
+						g_DupeCoordinator->HistoryMark(downloadQueue, historyInfo, NzbInfo::ksSuccess);
 						break;
 
 					default:
@@ -358,7 +358,7 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 	}
 
 	if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
-		g_pOptions->GetDeleteCleanupDisk() &&
+		g_Options->GetDeleteCleanupDisk() &&
 		(historyInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsNone ||
 		historyInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psFailure ||
 		historyInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usFailure ||
@@ -373,7 +373,7 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 		}
 	}
 
-	if (final || !g_pOptions->GetDupeCheck() || historyInfo->GetKind() == HistoryInfo::hkUrl)
+	if (final || !g_Options->GetDupeCheck() || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
 		downloadQueue->GetHistory()->erase(itHistory);
 		delete historyInfo;
@@ -472,7 +472,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 	{
 		// start postprocessing
 		debug("Restarting postprocessing for %s", niceName);
-		g_pPrePostProcessor->NzbDownloaded(downloadQueue, nzbInfo);
+		g_PrePostProcessor->NzbDownloaded(downloadQueue, nzbInfo);
 	}
 
 	delete historyInfo;
@@ -543,7 +543,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 		}
 	}
 
-	g_pDiskState->DiscardFiles(nzbInfo);
+	g_DiskState->DiscardFiles(nzbInfo);
 
 	// reset status fields (which are not reset by "HistoryReturn")
 	nzbInfo->SetMoveStatus(NzbInfo::msNone);
@@ -563,12 +563,12 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	nzbInfo->CopyFileList(nzbFile->GetNzbInfo());
 
-	g_pQueueCoordinator->CheckDupeFileInfos(nzbInfo);
+	g_QueueCoordinator->CheckDupeFileInfos(nzbInfo);
 	delete nzbFile;
 
 	HistoryReturn(downloadQueue, itHistory, historyInfo, false);
 
-	g_pPrePostProcessor->NzbAdded(downloadQueue, nzbInfo);
+	g_PrePostProcessor->NzbAdded(downloadQueue, nzbInfo);
 }
 
 bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const char* text)

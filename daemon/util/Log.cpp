@@ -46,17 +46,17 @@
 #include "Log.h"
 #include "Util.h"
 
-Log* g_pLog = NULL;
+Log* g_Log = NULL;
 
 void Log::Init()
 {
-	g_pLog = new Log();
+	g_Log = new Log();
 }
 
 void Log::Final()
 {
-	delete g_pLog;
-	g_pLog = NULL;
+	delete g_Log;
+	g_Log = NULL;
 }
 
 Log::Log()
@@ -109,7 +109,7 @@ void Log::Filelog(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	time_t rawtime = time(NULL) + g_pOptions->GetTimeCorrection();
+	time_t rawtime = time(NULL) + g_Options->GetTimeCorrection();
 	
 	char time[50];
 #ifdef HAVE_CTIME_R_3
@@ -120,7 +120,7 @@ void Log::Filelog(const char* msg, ...)
 	time[50-1] = '\0';
 	time[strlen(time) - 1] = '\0'; // trim LF
 
-	if ((int)rawtime/86400 != (int)m_lastWritten/86400 && g_pOptions->GetWriteLog() == Options::wlRotate)
+	if ((int)rawtime/86400 != (int)m_lastWritten/86400 && g_Options->GetWriteLog() == Options::wlRotate)
 	{
 		RotateLog();
 	}
@@ -181,24 +181,24 @@ void debug(const char* msg, ...)
 #endif
 	tmp2[1024-1] = '\0';
 
-	g_pLog->m_logMutex.Lock();
+	g_Log->m_logMutex.Lock();
 
-	if (!g_pOptions && g_pLog->m_extraDebug)
+	if (!g_Options && g_Log->m_extraDebug)
 	{
 		printf("%s\n", tmp2);
 	}
 
-	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetDebugTarget() : Options::mtScreen;
+	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetDebugTarget() : Options::mtScreen;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
-		g_pLog->AddMessage(Message::mkDebug, tmp2);
+		g_Log->AddMessage(Message::mkDebug, tmp2);
 	}
 	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
-		g_pLog->Filelog("DEBUG\t%s", tmp2);
+		g_Log->Filelog("DEBUG\t%s", tmp2);
 	}
 
-	g_pLog->m_logMutex.Unlock();
+	g_Log->m_logMutex.Unlock();
 }
 #endif
 
@@ -212,19 +212,19 @@ void error(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_logMutex.Lock();
+	g_Log->m_logMutex.Lock();
 
-	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetErrorTarget() : Options::mtBoth;
+	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetErrorTarget() : Options::mtBoth;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
-		g_pLog->AddMessage(Message::mkError, tmp2);
+		g_Log->AddMessage(Message::mkError, tmp2);
 	}
 	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
-		g_pLog->Filelog("ERROR\t%s", tmp2);
+		g_Log->Filelog("ERROR\t%s", tmp2);
 	}
 
-	g_pLog->m_logMutex.Unlock();
+	g_Log->m_logMutex.Unlock();
 }
 
 void warn(const char* msg, ...)
@@ -237,19 +237,19 @@ void warn(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_logMutex.Lock();
+	g_Log->m_logMutex.Lock();
 
-	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetWarningTarget() : Options::mtScreen;
+	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetWarningTarget() : Options::mtScreen;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
-		g_pLog->AddMessage(Message::mkWarning, tmp2);
+		g_Log->AddMessage(Message::mkWarning, tmp2);
 	}
 	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
-		g_pLog->Filelog("WARNING\t%s", tmp2);
+		g_Log->Filelog("WARNING\t%s", tmp2);
 	}
 
-	g_pLog->m_logMutex.Unlock();
+	g_Log->m_logMutex.Unlock();
 }
 
 void info(const char* msg, ...)
@@ -262,19 +262,19 @@ void info(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_logMutex.Lock();
+	g_Log->m_logMutex.Lock();
 
-	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetInfoTarget() : Options::mtScreen;
+	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetInfoTarget() : Options::mtScreen;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
-		g_pLog->AddMessage(Message::mkInfo, tmp2);
+		g_Log->AddMessage(Message::mkInfo, tmp2);
 	}
 	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
-		g_pLog->Filelog("INFO\t%s", tmp2);
+		g_Log->Filelog("INFO\t%s", tmp2);
 	}
 
-	g_pLog->m_logMutex.Unlock();
+	g_Log->m_logMutex.Unlock();
 }
 
 void detail(const char* msg, ...)
@@ -287,19 +287,19 @@ void detail(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_pLog->m_logMutex.Lock();
+	g_Log->m_logMutex.Lock();
 
-	Options::EMessageTarget messageTarget = g_pOptions ? g_pOptions->GetDetailTarget() : Options::mtScreen;
+	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetDetailTarget() : Options::mtScreen;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
 	{
-		g_pLog->AddMessage(Message::mkDetail, tmp2);
+		g_Log->AddMessage(Message::mkDetail, tmp2);
 	}
 	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
-		g_pLog->Filelog("DETAIL\t%s", tmp2);
+		g_Log->Filelog("DETAIL\t%s", tmp2);
 	}
 
-	g_pLog->m_logMutex.Unlock();
+	g_Log->m_logMutex.Unlock();
 }
 
 //************************************************************
@@ -351,9 +351,9 @@ void Log::AddMessage(Message::EKind kind, const char * text)
 	Message* message = new Message(++m_idGen, kind, time(NULL), text);
 	m_messages.push_back(message);
 
-	if (m_optInit && g_pOptions)
+	if (m_optInit && g_Options)
 	{
-		while (m_messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+		while (m_messages.size() > (unsigned int)g_Options->GetLogBufferSize())
 		{
 			Message* message = m_messages.front();
 			delete message;
@@ -375,13 +375,13 @@ void Log::UnlockMessages()
 
 void Log::ResetLog()
 {
-	remove(g_pOptions->GetLogFile());
+	remove(g_Options->GetLogFile());
 }
 
 void Log::RotateLog()
 {
 	char directory[1024];
-	strncpy(directory, g_pOptions->GetLogFile(), 1024);
+	strncpy(directory, g_Options->GetLogFile(), 1024);
 	directory[1024-1] = '\0';
 
 	// split the full filename into path, basename and extension
@@ -408,7 +408,7 @@ void Log::RotateLog()
 	snprintf(fileMask, 1024, "%s-####-##-##%s", baseName, baseExt);
 	fileMask[1024-1] = '\0';
 
-	time_t curTime = time(NULL) + g_pOptions->GetTimeCorrection();
+	time_t curTime = time(NULL) + g_Options->GetTimeCorrection();
 	int curDay = (int)curTime / 86400;
 	char fullFilename[1024];
 
@@ -429,12 +429,12 @@ void Log::RotateLog()
 			time_t fileTime = Util::Timegm(&tm);
 			int fileDay = (int)fileTime / 86400;
 
-			if (fileDay <= curDay - g_pOptions->GetRotateLog())
+			if (fileDay <= curDay - g_Options->GetRotateLog())
 			{
 				char message[1024];
 				snprintf(message, 1024, "Deleting old log-file %s\n", filename);
 				message[1024-1] = '\0';
-				g_pLog->AddMessage(Message::mkInfo, message);
+				g_Log->AddMessage(Message::mkInfo, message);
 
 				remove(fullFilename);
 			}
@@ -467,16 +467,16 @@ void Log::InitOptions()
 {
 	const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
-	if (g_pOptions->GetWriteLog() != Options::wlNone && g_pOptions->GetLogFile())
+	if (g_Options->GetWriteLog() != Options::wlNone && g_Options->GetLogFile())
 	{
-		m_logFilename = strdup(g_pOptions->GetLogFile());
+		m_logFilename = strdup(g_Options->GetLogFile());
 #ifdef WIN32
 		WebUtil::Utf8ToAnsi(m_logFilename, strlen(m_logFilename) + 1);
 #endif
 
-		if (g_pOptions->GetServerMode() && g_pOptions->GetWriteLog() == Options::wlReset)
+		if (g_Options->GetServerMode() && g_Options->GetWriteLog() == Options::wlReset)
 		{
-			g_pLog->ResetLog();
+			g_Log->ResetLog();
 		}
 	}
 
@@ -489,19 +489,19 @@ void Log::InitOptions()
 		switch (message->GetKind())
 		{
 			case Message::mkDebug:
-				target = g_pOptions->GetDebugTarget();
+				target = g_Options->GetDebugTarget();
 				break;
 			case Message::mkDetail:
-				target = g_pOptions->GetDetailTarget();
+				target = g_Options->GetDetailTarget();
 				break;
 			case Message::mkInfo:
-				target = g_pOptions->GetInfoTarget();
+				target = g_Options->GetInfoTarget();
 				break;
 			case Message::mkWarning:
-				target = g_pOptions->GetWarningTarget();
+				target = g_Options->GetWarningTarget();
 				break;
 			case Message::mkError:
-				target = g_pOptions->GetErrorTarget();
+				target = g_Options->GetErrorTarget();
 				break;
 		}
 

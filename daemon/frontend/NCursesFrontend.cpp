@@ -133,9 +133,9 @@ NCursesFrontend::NCursesFrontend()
 	m_messagesWinClientHeight = 0;
     m_selectedQueueEntry = 0;
 	m_queueScrollOffset = 0;
-	m_showNzbname = g_pOptions->GetCursesNzbName();
-	m_showTimestamp = g_pOptions->GetCursesTime();
-	m_groupFiles = g_pOptions->GetCursesGroup();
+	m_showNzbname = g_Options->GetCursesNzbName();
+	m_showTimestamp = g_Options->GetCursesTime();
+	m_groupFiles = g_Options->GetCursesGroup();
 	m_queueWindowPercentage = 50;
 	m_dataUpdatePos = 0;
     m_updateNextTime = false;
@@ -547,7 +547,7 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 		text = (char*)malloc(len);
 
 		time_t rawtime = Msg->GetTime();
-		rawtime += g_pOptions->GetTimeCorrection();
+		rawtime += g_Options->GetTimeCorrection();
 
 		char time[50];
 #ifdef HAVE_CTIME_R_3

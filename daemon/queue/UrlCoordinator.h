@@ -69,7 +69,7 @@ public:
 	bool					DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool avoidHistory);
 };
 
-extern UrlCoordinator* g_pUrlCoordinator;
+extern UrlCoordinator* g_UrlCoordinator;
 
 class UrlDownloader : public WebDownloader
 {

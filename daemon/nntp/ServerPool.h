@@ -87,6 +87,6 @@ public:
 	void				BlockServer(NewsServer* newsServer);
 };
 
-extern ServerPool* g_pServerPool;
+extern ServerPool* g_ServerPool;
 
 #endif

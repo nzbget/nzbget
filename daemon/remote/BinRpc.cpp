@@ -55,12 +55,12 @@
 extern void ExitProc();
 extern void Reload();
 
-const char* g_szMessageRequestNames[] =
+const char* g_MessageRequestNames[] =
     { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
 		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan", 
 		"Pause/Unpause postprocessor", "History" };
 
-const unsigned int g_iMessageRequestSizes[] =
+const unsigned int g_MessageRequestSizes[] =
     { 0,
 		sizeof(SNzbDownloadRequest),
 		sizeof(SNzbPauseUnpauseRequest),
@@ -200,18 +200,18 @@ void BinRpcProcessor::Execute()
 	// Read the first package which needs to be a request
 	if (!m_connection->Recv(((char*)&m_messageBase) + sizeof(m_messageBase.m_signature), sizeof(m_messageBase) - sizeof(m_messageBase.m_signature)))
 	{
-		warn("Non-nzbget request received on port %i from %s", g_pOptions->GetControlPort(), m_connection->GetRemoteAddr());
+		warn("Non-nzbget request received on port %i from %s", g_Options->GetControlPort(), m_connection->GetRemoteAddr());
 		return;
 	}
 
-	if ((strlen(g_pOptions->GetControlUsername()) > 0 && strcmp(m_messageBase.m_username, g_pOptions->GetControlUsername())) ||
-		strcmp(m_messageBase.m_password, g_pOptions->GetControlPassword()))
+	if ((strlen(g_Options->GetControlUsername()) > 0 && strcmp(m_messageBase.m_username, g_Options->GetControlUsername())) ||
+		strcmp(m_messageBase.m_password, g_Options->GetControlPassword()))
 	{
-		warn("nzbget request received on port %i from %s, but username or password invalid", g_pOptions->GetControlPort(), m_connection->GetRemoteAddr());
+		warn("nzbget request received on port %i from %s, but username or password invalid", g_Options->GetControlPort(), m_connection->GetRemoteAddr());
 		return;
 	}
 
-	debug("%s request received from %s", g_szMessageRequestNames[ntohl(m_messageBase.m_type)], m_connection->GetRemoteAddr());
+	debug("%s request received from %s", g_MessageRequestNames[ntohl(m_messageBase.m_type)], m_connection->GetRemoteAddr());
 
 	Dispatch();
 }
@@ -220,10 +220,10 @@ void BinRpcProcessor::Dispatch()
 {
 	if (ntohl(m_messageBase.m_type) >= (int)remoteRequestDownload &&
 		   ntohl(m_messageBase.m_type) <= (int)remoteRequestHistory &&
-		   g_iMessageRequestSizes[ntohl(m_messageBase.m_type)] != ntohl(m_messageBase.m_structSize))
+		   g_MessageRequestSizes[ntohl(m_messageBase.m_type)] != ntohl(m_messageBase.m_structSize))
 	{
 		error("Invalid size of request: expected %i Bytes, but received %i Bytes",
-			 g_iMessageRequestSizes[ntohl(m_messageBase.m_type)], ntohl(m_messageBase.m_structSize));
+			 g_MessageRequestSizes[ntohl(m_messageBase.m_type)], ntohl(m_messageBase.m_structSize));
 		return;
 	}
 	
@@ -343,20 +343,20 @@ void PauseUnpauseBinCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetResumeTime(0);
+	g_Options->SetResumeTime(0);
 
 	switch (ntohl(PauseUnpauseRequest.m_action))
 	{
 		case remotePauseUnpauseActionDownload:
-			g_pOptions->SetPauseDownload(ntohl(PauseUnpauseRequest.m_pause));
+			g_Options->SetPauseDownload(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 
 		case remotePauseUnpauseActionPostProcess:
-			g_pOptions->SetPausePostProcess(ntohl(PauseUnpauseRequest.m_pause));
+			g_Options->SetPausePostProcess(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 
 		case remotePauseUnpauseActionScan:
-			g_pOptions->SetPauseScan(ntohl(PauseUnpauseRequest.m_pause));
+			g_Options->SetPauseScan(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 	}
 
@@ -371,7 +371,7 @@ void SetDownloadRateBinCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(ntohl(SetDownloadRequest.m_downloadRate));
+	g_Options->SetDownloadRate(ntohl(SetDownloadRequest.m_downloadRate));
 	SendBoolResponse(true, "Rate-Command completed successfully");
 }
 
@@ -383,7 +383,7 @@ void DumpDebugBinCommand::Execute()
 		return;
 	}
 
-	g_pLog->LogDebugInfo();
+	g_Log->LogDebugInfo();
 	SendBoolResponse(true, "Debug-Command completed successfully");
 }
 
@@ -471,7 +471,7 @@ void DownloadBinCommand::Execute()
 	}
 	else
 	{
-		ok = g_pScanner->AddExternalFile(DownloadRequest.m_nzbFilename, DownloadRequest.m_category, priority,
+		ok = g_Scanner->AddExternalFile(DownloadRequest.m_nzbFilename, DownloadRequest.m_category, priority,
 			DownloadRequest.m_dupeKey, dupeScore, (EDupeMode)dupeMode, NULL, addTop, addPaused,
 			NULL, NULL, nzbContent, bufLen, NULL) != Scanner::asFailed;
 	}
@@ -724,21 +724,21 @@ void ListBinCommand::Execute()
 		DownloadQueue::Unlock();
 
 		unsigned long sizeHi, sizeLo;
-		ListResponse.m_downloadRate = htonl(g_pStatMeter->CalcCurrentDownloadSpeed());
+		ListResponse.m_downloadRate = htonl(g_StatMeter->CalcCurrentDownloadSpeed());
 		Util::SplitInt64(remainingSize, &sizeHi, &sizeLo);
 		ListResponse.m_remainingSizeHi = htonl(sizeHi);
 		ListResponse.m_remainingSizeLo = htonl(sizeLo);
-		ListResponse.m_downloadLimit = htonl(g_pOptions->GetDownloadRate());
-		ListResponse.m_downloadPaused = htonl(g_pOptions->GetPauseDownload());
-		ListResponse.m_postPaused = htonl(g_pOptions->GetPausePostProcess());
-		ListResponse.m_scanPaused = htonl(g_pOptions->GetPauseScan());
+		ListResponse.m_downloadLimit = htonl(g_Options->GetDownloadRate());
+		ListResponse.m_downloadPaused = htonl(g_Options->GetPauseDownload());
+		ListResponse.m_postPaused = htonl(g_Options->GetPausePostProcess());
+		ListResponse.m_scanPaused = htonl(g_Options->GetPauseScan());
 		ListResponse.m_threadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 		ListResponse.m_postJobCount = htonl(postJobCount);
 
 		int upTimeSec, dnTimeSec;
 		long long allBytes;
 		bool standBy;
-		g_pStatMeter->CalcTotalStat(&upTimeSec, &dnTimeSec, &allBytes, &standBy);
+		g_StatMeter->CalcTotalStat(&upTimeSec, &dnTimeSec, &allBytes, &standBy);
 		ListResponse.m_upTimeSec = htonl(upTimeSec);
 		ListResponse.m_downloadTimeSec = htonl(dnTimeSec);
 		ListResponse.m_downloadStandBy = htonl(standBy);
@@ -767,7 +767,7 @@ void LogBinCommand::Execute()
 		return;
 	}
 
-	MessageList* messages = g_pLog->LockMessages();
+	MessageList* messages = g_Log->LockMessages();
 
 	int nrEntries = ntohl(LogRequest.m_lines);
 	unsigned int idFrom = ntohl(LogRequest.m_idFrom);
@@ -826,7 +826,7 @@ void LogBinCommand::Execute()
 		}
 	}
 
-	g_pLog->UnlockMessages();
+	g_Log->UnlockMessages();
 
 	SNzbLogResponse LogResponse;
 	LogResponse.m_messageBase.m_signature = htonl(NZBMESSAGE_SIGNATURE);
@@ -1090,7 +1090,7 @@ void ScanBinCommand::Execute()
 
 	bool syncMode = ntohl(ScanRequest.m_syncMode);
 
-	g_pScanner->ScanNzbDir(syncMode);
+	g_Scanner->ScanNzbDir(syncMode);
 	SendBoolResponse(true, syncMode ? "Scan-Command completed" : "Scan-Command scheduled successfully");
 }
 

@@ -192,7 +192,7 @@ const char* PossibleConfigLocations[] =
 	};
 #endif
 
-Options* g_pOptions = NULL;
+Options* g_Options = NULL;
 
 Options::OptEntry::OptEntry()
 {
@@ -364,7 +364,7 @@ Options::Options(CmdOptList* commandLineOptions, Extender* extender)
 void Options::Init(const char* exeName, const char* configFilename, bool noConfig,
 	CmdOptList* commandLineOptions, bool noDiskAccess, Extender* extender)
 {
-	g_pOptions = this;
+	g_Options = this;
 	m_extender = extender;
 	m_noDiskAccess = noDiskAccess;
 	m_noConfig = noConfig;
@@ -548,7 +548,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 
 Options::~Options()
 {
-	g_pOptions = NULL;
+	g_Options = NULL;
 	free(m_configFilename);
 	free(m_appDir);
 	free(m_destDir);

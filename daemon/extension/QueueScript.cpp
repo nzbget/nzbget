@@ -138,7 +138,7 @@ void QueueScriptController::Run()
 		DownloadQueue::Unlock();
 	}
 
-	g_pQueueScriptCoordinator->CheckQueue();
+	g_QueueScriptCoordinator->CheckQueue();
 }
 
 void QueueScriptController::ExecuteScript(ScriptConfig::Script* script)
@@ -272,7 +272,7 @@ QueueScriptCoordinator::~QueueScriptCoordinator()
 void QueueScriptCoordinator::InitOptions()
 {
 	m_hasQueueScripts = false;
-	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
+	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 	{
 		ScriptConfig::Script* script = *it;
 		if (script->GetQueueScript())
@@ -311,15 +311,15 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 	// respect option "EventInterval"
 	time_t curTime = time(NULL);
 	if (event == qeFileDownloaded &&
-		(g_pOptions->GetEventInterval() == -1 ||
-		 (g_pOptions->GetEventInterval() > 0 && curTime - nzbInfo->GetQueueScriptTime() > 0 &&
-		 (int)(curTime - nzbInfo->GetQueueScriptTime()) < g_pOptions->GetEventInterval())))
+		(g_Options->GetEventInterval() == -1 ||
+		 (g_Options->GetEventInterval() > 0 && curTime - nzbInfo->GetQueueScriptTime() > 0 &&
+		 (int)(curTime - nzbInfo->GetQueueScriptTime()) < g_Options->GetEventInterval())))
 	{
 		m_queueMutex.Unlock();
 		return;
 	}
 
-	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
+	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 	{
 		ScriptConfig::Script* script = *it;
 
@@ -331,7 +331,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		bool useScript = false;
 
 		// check queue-scripts
-		const char* queueScript = g_pOptions->GetQueueScript();
+		const char* queueScript = g_Options->GetQueueScript();
 		if (!Util::EmptyStr(queueScript))
 		{
 			// split szQueueScript into tokens

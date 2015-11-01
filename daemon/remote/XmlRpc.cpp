@@ -1154,20 +1154,20 @@ void PauseUnpauseXmlCommand::Execute()
 
 	bool ok = true;
 
-	g_pOptions->SetResumeTime(0);
+	g_Options->SetResumeTime(0);
 
 	switch (m_pauseAction)
 	{
 		case paDownload:
-			g_pOptions->SetPauseDownload(m_pause);
+			g_Options->SetPauseDownload(m_pause);
 			break;
 
 		case paPostProcess:
-			g_pOptions->SetPausePostProcess(m_pause);
+			g_Options->SetPausePostProcess(m_pause);
 			break;
 
 		case paScan:
-			g_pOptions->SetPauseScan(m_pause);
+			g_Options->SetPauseScan(m_pause);
 			break;
 
 		default:
@@ -1194,7 +1194,7 @@ void ScheduleResumeXmlCommand::Execute()
 
 	time_t curTime = time(NULL);
 
-	g_pOptions->SetResumeTime(curTime + seconds);
+	g_Options->SetResumeTime(curTime + seconds);
 
 	BuildBoolResponse(true);
 }
@@ -1235,7 +1235,7 @@ void VersionXmlCommand::Execute()
 
 void DumpDebugXmlCommand::Execute()
 {
-	g_pLog->LogDebugInfo();
+	g_Log->LogDebugInfo();
 	BuildBoolResponse(true);
 }
 
@@ -1253,7 +1253,7 @@ void SetDownloadRateXmlCommand::Execute()
 		return;
 	}
 
-	g_pOptions->SetDownloadRate(rate * 1024);
+	g_Options->SetDownloadRate(rate * 1024);
 	BuildBoolResponse(true);
 }
 
@@ -1376,34 +1376,34 @@ void StatusXmlCommand::Execute()
 	Util::SplitInt64(forcedSize, &forcedSizeHi, &forcedSizeLo);
 	int forcedMBytes = (int)(forcedSize / 1024 / 1024);
 
-	long long articleCache = g_pArticleCache->GetAllocated();
+	long long articleCache = g_ArticleCache->GetAllocated();
 	unsigned long articleCacheHi, articleCacheLo;
 	Util::SplitInt64(articleCache, &articleCacheHi, &articleCacheLo);
 	int articleCacheMBytes = (int)(articleCache / 1024 / 1024);
 
-	int downloadRate = (int)(g_pStatMeter->CalcCurrentDownloadSpeed());
-	int downloadLimit = (int)(g_pOptions->GetDownloadRate());
-	bool downloadPaused = g_pOptions->GetPauseDownload();
-	bool postPaused = g_pOptions->GetPausePostProcess();
-	bool scanPaused = g_pOptions->GetPauseScan();
+	int downloadRate = (int)(g_StatMeter->CalcCurrentDownloadSpeed());
+	int downloadLimit = (int)(g_Options->GetDownloadRate());
+	bool downloadPaused = g_Options->GetPauseDownload();
+	bool postPaused = g_Options->GetPausePostProcess();
+	bool scanPaused = g_Options->GetPauseScan();
 	int threadCount = Thread::GetThreadCount() - 1; // not counting itself
 
 	unsigned long downloadedSizeHi, downloadedSizeLo;
 	int upTimeSec, downloadTimeSec;
 	long long allBytes;
 	bool serverStandBy;
-	g_pStatMeter->CalcTotalStat(&upTimeSec, &downloadTimeSec, &allBytes, &serverStandBy);
+	g_StatMeter->CalcTotalStat(&upTimeSec, &downloadTimeSec, &allBytes, &serverStandBy);
 	int downloadedMBytes = (int)(allBytes / 1024 / 1024);
 	Util::SplitInt64(allBytes, &downloadedSizeHi, &downloadedSizeLo);
 	int averageDownloadRate = (int)(downloadTimeSec > 0 ? allBytes / downloadTimeSec : 0);
 	unsigned long freeDiskSpaceHi, freeDiskSpaceLo;
-	long long freeDiskSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
+	long long freeDiskSpace = Util::FreeDiskSize(g_Options->GetDestDir());
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
 	int serverTime = time(NULL);
-	int resumeTime = g_pOptions->GetResumeTime();
-	bool feedActive = g_pFeedCoordinator->HasActiveDownloads();
-	int queuedScripts = g_pQueueScriptCoordinator->GetQueueSize();
+	int resumeTime = g_Options->GetResumeTime();
+	bool feedActive = g_FeedCoordinator->HasActiveDownloads();
+	int queuedScripts = g_QueueScriptCoordinator->GetQueueSize();
 
 	AppendFmtResponse(IsJson() ? JSON_STATUS_START : XML_STATUS_START,
 		remainingSizeLo, remainingSizeHi, remainingMBytes, forcedSizeLo,
@@ -1417,7 +1417,7 @@ void StatusXmlCommand::Execute()
 		BoolToStr(feedActive), queuedScripts);
 
 	int index = 0;
-	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
 	{
 		NewsServer* server = *it;
 
@@ -1504,12 +1504,12 @@ void LogXmlCommand::Execute()
 
 MessageList* LogXmlCommand::LockMessages()
 {
-	return g_pLog->LockMessages();
+	return g_Log->LockMessages();
 }
 
 void LogXmlCommand::UnlockMessages()
 {
-	g_pLog->UnlockMessages();
+	g_Log->UnlockMessages();
 }
 
 // struct[] listfiles(int IDFrom, int IDTo, int NZBID) 
@@ -2096,7 +2096,7 @@ const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 	{
 		bool queueScriptActive = false;
 		if (nzbInfo->GetPostInfo()->GetStage() == PostInfo::ptQueued &&
-			g_pQueueScriptCoordinator->HasJob(nzbInfo->GetId(), &queueScriptActive))
+			g_QueueScriptCoordinator->HasJob(nzbInfo->GetId(), &queueScriptActive))
 		{
 			status = queueScriptActive ? "QS_EXECUTING" : "QS_QUEUED";
 		}
@@ -2389,7 +2389,7 @@ void DownloadXmlCommand::Execute()
 		//debug("FileContent=%s", szFileContent);
 
 		int nzbId = -1;
-		g_pScanner->AddExternalFile(nzbFilename, category, priority,
+		g_Scanner->AddExternalFile(nzbFilename, category, priority,
 			dupeKey, dupeScore, dupeMode, Params.empty() ? NULL : &Params, addTop, addPaused, NULL,
 			NULL, nzbContent, len, &nzbId);
 
@@ -2524,7 +2524,7 @@ void ClearLogXmlCommand::Execute()
 		return;
 	}
 
-	g_pLog->Clear();
+	g_Log->Clear();
 
 	BuildBoolResponse(true);
 }
@@ -2540,7 +2540,7 @@ void ScanXmlCommand::Execute()
 	// optional parameter "SyncMode"
 	NextParamAsBool(&syncMode);
 
-	g_pScanner->ScanNzbDir(syncMode);
+	g_Scanner->ScanNzbDir(syncMode);
 	BuildBoolResponse(true);
 }
 
@@ -2777,7 +2777,7 @@ void ConfigXmlCommand::Execute()
 
 	int index = 0;
 
-	Options::OptEntries* optEntries = g_pOptions->LockOptEntries();
+	Options::OptEntries* optEntries = g_Options->LockOptEntries();
 
 	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
@@ -2794,7 +2794,7 @@ void ConfigXmlCommand::Execute()
 		free(xmlValue);
 	}
 
-	g_pOptions->UnlockOptEntries();
+	g_Options->UnlockOptEntries();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -2815,7 +2815,7 @@ void LoadConfigXmlCommand::Execute()
 		"}";
 
 	Options::OptEntries* optEntries = new Options::OptEntries();
-	if (!g_pScriptConfig->LoadConfig(optEntries))
+	if (!g_ScriptConfig->LoadConfig(optEntries))
 	{
 		BuildErrorResponse(3, "Could not read configuration file");
 		delete optEntries;
@@ -2864,7 +2864,7 @@ void SaveConfigXmlCommand::Execute()
 	}
 
 	// save to config file
-	bool ok = g_pScriptConfig->SaveConfig(optEntries);
+	bool ok = g_ScriptConfig->SaveConfig(optEntries);
 
 	delete optEntries;
 
@@ -2902,12 +2902,12 @@ void ConfigTemplatesXmlCommand::Execute()
 	bool loadFromDisk = false;
 	NextParamAsBool(&loadFromDisk);
 
-	ScriptConfig::ConfigTemplates* configTemplates = g_pScriptConfig->GetConfigTemplates();
+	ScriptConfig::ConfigTemplates* configTemplates = g_ScriptConfig->GetConfigTemplates();
 	
 	if (loadFromDisk)
 	{
 		configTemplates = new ScriptConfig::ConfigTemplates();
-		if (!g_pScriptConfig->LoadConfigTemplates(configTemplates))
+		if (!g_ScriptConfig->LoadConfigTemplates(configTemplates))
 		{
 			BuildErrorResponse(3, "Could not read configuration templates");
 			delete configTemplates;
@@ -3006,7 +3006,7 @@ void ViewFeedXmlCommand::Execute()
 		debug("Url=%s", url);
 		debug("Filter=%s", filter);
 
-		ok = g_pFeedCoordinator->PreviewFeed(id, name, url, filter, backlog, pauseNzb,
+		ok = g_FeedCoordinator->PreviewFeed(id, name, url, filter, backlog, pauseNzb,
 			category, priority, interval, feedFilter, cacheTimeSec, cacheId, &feedItemInfos);
 	}
 	else
@@ -3020,7 +3020,7 @@ void ViewFeedXmlCommand::Execute()
 
 		debug("ID=%i", id);
 
-		ok = g_pFeedCoordinator->ViewFeed(id, &feedItemInfos);
+		ok = g_FeedCoordinator->ViewFeed(id, &feedItemInfos);
 	}
 
 	if (!ok)
@@ -3132,7 +3132,7 @@ void FetchFeedXmlCommand::Execute()
 		return;
 	}
 
-	g_pFeedCoordinator->FetchFeed(id);
+	g_FeedCoordinator->FetchFeed(id);
 
 	BuildBoolResponse(true);
 }
@@ -3160,7 +3160,7 @@ void EditServerXmlCommand::Execute()
 			return;
 		}
 
-		for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+		for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
 		{
 			NewsServer* server = *it;
 			if (server->GetId() == id)
@@ -3179,7 +3179,7 @@ void EditServerXmlCommand::Execute()
 
 	if (ok)
 	{
-		g_pServerPool->Changed();
+		g_ServerPool->Changed();
 	}
 
 	BuildBoolResponse(ok);
@@ -3209,7 +3209,7 @@ void ReadUrlXmlCommand::Execute()
 	int num = 1;
 	while (num == 1 || Util::FileExists(tempFileName))
 	{
-		snprintf(tempFileName, 1024, "%sreadurl-%i.tmp", g_pOptions->GetTempDir(), num);
+		snprintf(tempFileName, 1024, "%sreadurl-%i.tmp", g_Options->GetTempDir(), num);
 		tempFileName[1024-1] = '\0';
 		num++;
 	}
@@ -3251,7 +3251,7 @@ void ReadUrlXmlCommand::Execute()
 void CheckUpdatesXmlCommand::Execute()
 {
 	char* updateInfo = NULL;
-	bool ok = g_pMaintenance->CheckUpdates(&updateInfo);
+	bool ok = g_Maintenance->CheckUpdates(&updateInfo);
 
 	if (ok)
 	{
@@ -3303,7 +3303,7 @@ void StartUpdateXmlCommand::Execute()
 		return;
 	}
 
-	bool ok = g_pMaintenance->StartUpdate(branch);
+	bool ok = g_Maintenance->StartUpdate(branch);
 
 	BuildBoolResponse(ok);
 }
@@ -3311,12 +3311,12 @@ void StartUpdateXmlCommand::Execute()
 // struct[] logupdate(idfrom, entries)
 MessageList* LogUpdateXmlCommand::LockMessages()
 {
-	return g_pMaintenance->LockMessages();
+	return g_Maintenance->LockMessages();
 }
 
 void LogUpdateXmlCommand::UnlockMessages()
 {
-	g_pMaintenance->UnlockMessages();
+	g_Maintenance->UnlockMessages();
 }
 
 // struct[] servervolumes()
@@ -3390,7 +3390,7 @@ void ServerVolumesXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	ServerVolumes* serverVolumes = g_pStatMeter->LockServerVolumes();
+	ServerVolumes* serverVolumes = g_StatMeter->LockServerVolumes();
 
 	int index = 0;
 
@@ -3443,7 +3443,7 @@ void ServerVolumesXmlCommand::Execute()
 		AppendResponse(IsJson() ? JSON_VOLUME_ITEM_END : XML_VOLUME_ITEM_END);
 	}
 
-	g_pStatMeter->UnlockServerVolumes();
+	g_StatMeter->UnlockServerVolumes();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -3471,7 +3471,7 @@ void ResetServerVolumeXmlCommand::Execute()
 	}
 
 	bool ok = false;
-	ServerVolumes* serverVolumes = g_pStatMeter->LockServerVolumes();
+	ServerVolumes* serverVolumes = g_StatMeter->LockServerVolumes();
 	int index = 0;
 	for (ServerVolumes::iterator it = serverVolumes->begin(); it != serverVolumes->end(); it++, index++)
 	{
@@ -3482,7 +3482,7 @@ void ResetServerVolumeXmlCommand::Execute()
 			ok = true;
 		}
 	}
-	g_pStatMeter->UnlockServerVolumes();
+	g_StatMeter->UnlockServerVolumes();
 
 	BuildBoolResponse(ok);
 }
@@ -3504,7 +3504,7 @@ void LoadLogXmlCommand::Execute()
 MessageList* LoadLogXmlCommand::LockMessages()
 {
 	// TODO: optimize for m_iIDFrom and m_iNrEntries
-	g_pDiskState->LoadNzbMessages(m_nzbId, &m_messages);
+	g_DiskState->LoadNzbMessages(m_nzbId, &m_messages);
 
 	if (m_messages.empty())
 	{
@@ -3561,7 +3561,7 @@ void TestServerXmlCommand::Execute()
 
 	NewsServer server(0, true, "test server", host, port, username, password, false, encryption, cipher, 1, 0, 0, 0);
 	TestConnection* connection = new TestConnection(&server, this);
-	connection->SetTimeout(timeout == 0 ? g_pOptions->GetArticleTimeout() : timeout);
+	connection->SetTimeout(timeout == 0 ? g_Options->GetArticleTimeout() : timeout);
 	connection->SetSuppressErrors(false);
 	m_errText = NULL;
 

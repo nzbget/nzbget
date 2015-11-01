@@ -250,8 +250,8 @@ void WebProcessor::ParseUrl()
 
 bool WebProcessor::CheckCredentials()
 {
-	if (!Util::EmptyStr(g_pOptions->GetControlPassword()) &&
-		!(!Util::EmptyStr(g_pOptions->GetAuthorizedIp()) && IsAuthorizedIp(m_connection->GetRemoteAddr())))
+	if (!Util::EmptyStr(g_Options->GetControlPassword()) &&
+		!(!Util::EmptyStr(g_Options->GetAuthorizedIp()) && IsAuthorizedIp(m_connection->GetRemoteAddr())))
 	{
 		if (Util::EmptyStr(m_authInfo))
 		{
@@ -271,28 +271,28 @@ bool WebProcessor::CheckCredentials()
 		char* pw = strchr(m_authInfo, ':');
 		if (pw) *pw++ = '\0';
 
-		if ((Util::EmptyStr(g_pOptions->GetControlUsername()) ||
-			 !strcmp(m_authInfo, g_pOptions->GetControlUsername())) &&
-			pw && !strcmp(pw, g_pOptions->GetControlPassword()))
+		if ((Util::EmptyStr(g_Options->GetControlUsername()) ||
+			 !strcmp(m_authInfo, g_Options->GetControlUsername())) &&
+			pw && !strcmp(pw, g_Options->GetControlPassword()))
 		{
 			m_userAccess = uaControl;
 		}
-		else if (!Util::EmptyStr(g_pOptions->GetRestrictedUsername()) &&
-			!strcmp(m_authInfo, g_pOptions->GetRestrictedUsername()) &&
-			pw && !strcmp(pw, g_pOptions->GetRestrictedPassword()))
+		else if (!Util::EmptyStr(g_Options->GetRestrictedUsername()) &&
+			!strcmp(m_authInfo, g_Options->GetRestrictedUsername()) &&
+			pw && !strcmp(pw, g_Options->GetRestrictedPassword()))
 		{
 			m_userAccess = uaRestricted;
 		}
-		else if (!Util::EmptyStr(g_pOptions->GetAddUsername()) &&
-			!strcmp(m_authInfo, g_pOptions->GetAddUsername()) &&
-			pw && !strcmp(pw, g_pOptions->GetAddPassword()))
+		else if (!Util::EmptyStr(g_Options->GetAddUsername()) &&
+			!strcmp(m_authInfo, g_Options->GetAddUsername()) &&
+			pw && !strcmp(pw, g_Options->GetAddPassword()))
 		{
 			m_userAccess = uaAdd;
 		}
 		else
 		{
 			warn("Request received on port %i from %s, but username or password invalid (%s:%s)",
-				g_pOptions->GetControlPort(), m_connection->GetRemoteAddr(), m_authInfo, pw);
+				g_Options->GetControlPort(), m_connection->GetRemoteAddr(), m_authInfo, pw);
 			return false;
 		}
 	}
@@ -306,7 +306,7 @@ bool WebProcessor::IsAuthorizedIp(const char* remoteAddr)
 
 	// split option AuthorizedIP into tokens and check each token
 	bool authorized = false;
-	Tokenizer tok(g_pOptions->GetAuthorizedIp(), ",;");
+	Tokenizer tok(g_Options->GetAuthorizedIp(), ",;");
 	while (const char* iP = tok.Next())
 	{
 		if (!strcmp(iP, remoteIp))
@@ -339,7 +339,7 @@ void WebProcessor::Dispatch()
 		return;
 	}
 
-	if (Util::EmptyStr(g_pOptions->GetWebDir()))
+	if (Util::EmptyStr(g_Options->GetWebDir()))
 	{
 		SendErrorResponse(ERR_HTTP_SERVICE_UNAVAILABLE);
 		return;
@@ -371,7 +371,7 @@ void WebProcessor::Dispatch()
 	}
 
 	char disk_filename[1024];
-	snprintf(disk_filename, sizeof(disk_filename), "%s%s%s", g_pOptions->GetWebDir(), m_url + 1, defRes);
+	snprintf(disk_filename, sizeof(disk_filename), "%s%s%s", g_Options->GetWebDir(), m_url + 1, defRes);
 
 	disk_filename[sizeof(disk_filename)-1] = '\0';
 

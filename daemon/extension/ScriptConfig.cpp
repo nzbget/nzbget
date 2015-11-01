@@ -53,7 +53,7 @@ static const char* FEED_SCRIPT_SIGNATURE = "FEED";
 static const char* END_SCRIPT_SIGNATURE = " SCRIPT";
 static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
 
-ScriptConfig* g_pScriptConfig = NULL;
+ScriptConfig* g_ScriptConfig = NULL;
 
 
 ScriptConfig::ConfigTemplate::ConfigTemplate(Script* script, const char* templ)
@@ -153,14 +153,14 @@ ScriptConfig::~ScriptConfig()
 bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 {
 	// read config file
-	FILE* infile = fopen(g_pOptions->GetConfigFilename(), FOPEN_RB);
+	FILE* infile = fopen(g_Options->GetConfigFilename(), FOPEN_RB);
 
 	if (!infile)
 	{
 		return false;
 	}
 
-	int bufLen = (int)Util::FileSize(g_pOptions->GetConfigFilename()) + 1;
+	int bufLen = (int)Util::FileSize(g_Options->GetConfigFilename()) + 1;
 	char* buf = (char*)malloc(bufLen);
 
 	while (fgets(buf, bufLen - 1, infile))
@@ -176,7 +176,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 
 		char* optname;
 		char* optvalue;
-		if (g_pOptions->SplitOptionString(buf, &optname, &optvalue))
+		if (g_Options->SplitOptionString(buf, &optname, &optvalue))
 		{
 			Options::OptEntry* optEntry = new Options::OptEntry();
 			optEntry->SetName(optname);
@@ -197,7 +197,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 {
 	// save to config file
-	FILE* infile = fopen(g_pOptions->GetConfigFilename(), FOPEN_RBP);
+	FILE* infile = fopen(g_Options->GetConfigFilename(), FOPEN_RBP);
 
 	if (!infile)
 	{
@@ -208,7 +208,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	std::set<Options::OptEntry*> writtenOptions;
 
 	// read config file into memory array
-	int bufLen = (int)Util::FileSize(g_pOptions->GetConfigFilename()) + 1;
+	int bufLen = (int)Util::FileSize(g_Options->GetConfigFilename()) + 1;
 	char* buf = (char*)malloc(bufLen);
 	while (fgets(buf, bufLen - 1, infile))
 	{
@@ -230,7 +230,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 
 			char* optname;
 			char* optvalue;
-			if (g_pOptions->SplitOptionString(buf, &optname, &optvalue))
+			if (g_Options->SplitOptionString(buf, &optname, &optvalue))
 			{
 				Options::OptEntry *optEntry = optEntries->FindOption(optname);
 				if (optEntry)
@@ -272,7 +272,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	int pos = (int)ftell(infile);
 	fclose(infile);
 
-	Util::TruncateFile(g_pOptions->GetConfigFilename(), pos);
+	Util::TruncateFile(g_Options->GetConfigFilename(), pos);
 
 	return true;
 }
@@ -281,7 +281,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 {
 	char* buffer;
 	int length;
-	if (!Util::LoadFileIntoBuffer(g_pOptions->GetConfigTemplate(), &buffer, &length))
+	if (!Util::LoadFileIntoBuffer(g_Options->GetConfigTemplate(), &buffer, &length))
 	{
 		return false;
 	}
@@ -289,7 +289,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 	configTemplates->push_back(configTemplate);
 	free(buffer);
 
-	if (!g_pOptions->GetScriptDir())
+	if (!g_Options->GetScriptDir())
 	{
 		return true;
 	}
@@ -369,17 +369,17 @@ void ScriptConfig::InitScripts()
 
 void ScriptConfig::LoadScripts(Scripts* scripts)
 {
-	if (strlen(g_pOptions->GetScriptDir()) == 0)
+	if (strlen(g_Options->GetScriptDir()) == 0)
 	{
 		return;
 	}
 
 	Scripts tmpScripts;
-	LoadScriptDir(&tmpScripts, g_pOptions->GetScriptDir(), false);
+	LoadScriptDir(&tmpScripts, g_Options->GetScriptDir(), false);
 	tmpScripts.sort(CompareScripts);
 
 	// first add all scripts from m_szScriptOrder
-	Tokenizer tok(g_pOptions->GetScriptOrder(), ",;");
+	Tokenizer tok(g_Options->GetScriptOrder(), ",;");
 	while (const char* scriptName = tok.Next())
 	{
 		Script* script = tmpScripts.Find(scriptName);

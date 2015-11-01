@@ -98,15 +98,15 @@ void RemoteClient::perror(const char * msg)
 
 bool RemoteClient::InitConnection()
 {
-	const char* controlIp = !strcmp(g_pOptions->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIp();
+	const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
 
 	// Create a connection to the server
-	m_connection = new Connection(controlIp, g_pOptions->GetControlPort(), false);
+	m_connection = new Connection(controlIp, g_Options->GetControlPort(), false);
 
 	bool OK = m_connection->Connect();
 	if (!OK)
 	{
-		printf("Unable to send request to nzbget-server at %s (port %i)\n", controlIp, g_pOptions->GetControlPort());
+		printf("Unable to send request to nzbget-server at %s (port %i)\n", controlIp, g_Options->GetControlPort());
 	}
 	return OK;
 }
@@ -117,10 +117,10 @@ void RemoteClient::InitMessageBase(SNzbRequestBase* messageBase, int request, in
 	messageBase->m_type = htonl(request);
 	messageBase->m_structSize = htonl(size);
 
-	strncpy(messageBase->m_username, g_pOptions->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
+	strncpy(messageBase->m_username, g_Options->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
 	messageBase->m_username[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 
-	strncpy(messageBase->m_password, g_pOptions->GetControlPassword(), NZBREQUESTPASSWORDSIZE - 1);
+	strncpy(messageBase->m_password, g_Options->GetControlPassword(), NZBREQUESTPASSWORDSIZE - 1);
 	messageBase->m_password[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
 

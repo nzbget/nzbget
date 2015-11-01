@@ -110,32 +110,32 @@ void DisableCout();
 #endif
 void BootConfig();
 
-Thread* g_pFrontend = NULL;
-CommandLineParser* g_pCommandLineParser = NULL;
-ServerPool* g_pServerPool = NULL;
-QueueCoordinator* g_pQueueCoordinator = NULL;
-UrlCoordinator* g_pUrlCoordinator = NULL;
-RemoteServer* g_pRemoteServer = NULL;
-RemoteServer* g_pRemoteSecureServer = NULL;
-StatMeter* g_pStatMeter = NULL;
-PrePostProcessor* g_pPrePostProcessor = NULL;
-HistoryCoordinator* g_pHistoryCoordinator = NULL;
-DupeCoordinator* g_pDupeCoordinator = NULL;
-DiskState* g_pDiskState = NULL;
-Scheduler* g_pScheduler = NULL;
-Scanner* g_pScanner = NULL;
-FeedCoordinator* g_pFeedCoordinator = NULL;
-Maintenance* g_pMaintenance = NULL;
-ArticleCache* g_pArticleCache = NULL;
-QueueScriptCoordinator* g_pQueueScriptCoordinator = NULL;
-ServiceCoordinator* g_pServiceCoordinator = NULL;
-DiskService* g_pDiskService = NULL;
-int g_iArgumentCount;
-char* (*g_szEnvironmentVariables)[] = NULL;
-char* (*g_szArguments)[] = NULL;
-bool g_bReloading = true;
+Thread* g_Frontend = NULL;
+CommandLineParser* g_CommandLineParser = NULL;
+ServerPool* g_ServerPool = NULL;
+QueueCoordinator* g_QueueCoordinator = NULL;
+UrlCoordinator* g_UrlCoordinator = NULL;
+RemoteServer* g_RemoteServer = NULL;
+RemoteServer* g_RemoteSecureServer = NULL;
+StatMeter* g_StatMeter = NULL;
+PrePostProcessor* g_PrePostProcessor = NULL;
+HistoryCoordinator* g_HistoryCoordinator = NULL;
+DupeCoordinator* g_DupeCoordinator = NULL;
+DiskState* g_DiskState = NULL;
+Scheduler* g_Scheduler = NULL;
+Scanner* g_Scanner = NULL;
+FeedCoordinator* g_FeedCoordinator = NULL;
+Maintenance* g_Maintenance = NULL;
+ArticleCache* g_ArticleCache = NULL;
+QueueScriptCoordinator* g_QueueScriptCoordinator = NULL;
+ServiceCoordinator* g_ServiceCoordinator = NULL;
+DiskService* g_DiskService = NULL;
+int g_ArgumentCount;
+char* (*g_EnvironmentVariables)[] = NULL;
+char* (*g_Arguments)[] = NULL;
+bool g_Reloading = true;
 #ifdef WIN32
-WinConsole* g_pWinConsole = NULL;
+WinConsole* g_WinConsole = NULL;
 #endif
 
 /*
@@ -157,9 +157,9 @@ int main(int argc, char *argv[], char *argp[])
 
 	Util::Init();
 
-	g_iArgumentCount = argc;
-	g_szArguments = (char*(*)[])argv;
-	g_szEnvironmentVariables = (char*(*)[])argp;
+	g_ArgumentCount = argc;
+	g_Arguments = (char*(*)[])argv;
+	g_EnvironmentVariables = (char*(*)[])argp;
 
 	if (argc > 1 && (!strcmp(argv[1], "-tests") || !strcmp(argv[1], "--tests")))
 	{
@@ -211,9 +211,9 @@ void RunMain()
 	Util::GetCurrentDirectory(curDir, sizeof(curDir));
 	
 	bool reload = false;
-	while (g_bReloading)
+	while (g_Reloading)
 	{
-		g_bReloading = false;
+		g_Reloading = false;
 		Util::SetCurrentDirectory(curDir);
 		Run(reload);
 		reload = true;
@@ -232,40 +232,40 @@ void Run(bool reload)
 	}
 
 #ifdef WIN32
-	g_pWinConsole = new WinConsole();
-	g_pWinConsole->InitAppMode();
+	g_WinConsole = new WinConsole();
+	g_WinConsole->InitAppMode();
 #endif
 
-	g_pServiceCoordinator = new ServiceCoordinator();
-	g_pServerPool = new ServerPool();
-	g_pScheduler = new Scheduler();
-	g_pQueueCoordinator = new QueueCoordinator();
-	g_pStatMeter = new StatMeter();
-	g_pScanner = new Scanner();
-	g_pPrePostProcessor = new PrePostProcessor();
-	g_pHistoryCoordinator = new HistoryCoordinator();
-	g_pDupeCoordinator = new DupeCoordinator();
-	g_pUrlCoordinator = new UrlCoordinator();
-	g_pFeedCoordinator = new FeedCoordinator();
-	g_pArticleCache = new ArticleCache();
-	g_pMaintenance = new Maintenance();
-	g_pQueueScriptCoordinator = new QueueScriptCoordinator();
-	g_pDiskService = new DiskService();
+	g_ServiceCoordinator = new ServiceCoordinator();
+	g_ServerPool = new ServerPool();
+	g_Scheduler = new Scheduler();
+	g_QueueCoordinator = new QueueCoordinator();
+	g_StatMeter = new StatMeter();
+	g_Scanner = new Scanner();
+	g_PrePostProcessor = new PrePostProcessor();
+	g_HistoryCoordinator = new HistoryCoordinator();
+	g_DupeCoordinator = new DupeCoordinator();
+	g_UrlCoordinator = new UrlCoordinator();
+	g_FeedCoordinator = new FeedCoordinator();
+	g_ArticleCache = new ArticleCache();
+	g_Maintenance = new Maintenance();
+	g_QueueScriptCoordinator = new QueueScriptCoordinator();
+	g_DiskService = new DiskService();
 
 	BootConfig();
 
 #ifndef WIN32
-	if (g_pOptions->GetUMask() < 01000)
+	if (g_Options->GetUMask() < 01000)
 	{
 		/* set newly created file permissions */
-		umask(g_pOptions->GetUMask());
+		umask(g_Options->GetUMask());
 	}
 #endif
 	
-	g_pScanner->InitOptions();
-	g_pQueueScriptCoordinator->InitOptions();
+	g_Scanner->InitOptions();
+	g_QueueScriptCoordinator->InitOptions();
 
-	if (g_pCommandLineParser->GetDaemonMode())
+	if (g_CommandLineParser->GetDaemonMode())
 	{
 #ifdef WIN32
 		info("nzbget %s service-mode", Util::VersionRevision());
@@ -277,11 +277,11 @@ void Run(bool reload)
 		info("nzbget %s daemon-mode", Util::VersionRevision());
 #endif
 	}
-	else if (g_pOptions->GetServerMode())
+	else if (g_Options->GetServerMode())
 	{
 		info("nzbget %s server-mode", Util::VersionRevision());
 	}
-	else if (g_pCommandLineParser->GetRemoteClientMode())
+	else if (g_CommandLineParser->GetRemoteClientMode())
 	{
 		info("nzbget %s remote-mode", Util::VersionRevision());
 	}
@@ -291,35 +291,35 @@ void Run(bool reload)
 		Connection::Init();
 	}
 
-	if (!g_pCommandLineParser->GetRemoteClientMode())
+	if (!g_CommandLineParser->GetRemoteClientMode())
 	{
-		g_pServerPool->InitConnections();
-		g_pStatMeter->Init();
+		g_ServerPool->InitConnections();
+		g_StatMeter->Init();
 	}
 
 	InstallErrorHandler();
 
 #ifdef DEBUG
-	if (g_pCommandLineParser->GetTestBacktrace())
+	if (g_CommandLineParser->GetTestBacktrace())
 	{
 		TestSegFault();
 	}
 #endif
 
-	if (g_pCommandLineParser->GetWebGet())
+	if (g_CommandLineParser->GetWebGet())
 	{
 		ProcessWebGet();
 		return;
 	}
 
-	if (g_pCommandLineParser->GetSigVerify())
+	if (g_CommandLineParser->GetSigVerify())
 	{
 		ProcessSigVerify();
 		return;
 	}
 
 	// client request
-	if (g_pCommandLineParser->GetClientOperation() != CommandLineParser::opClientNoOperation)
+	if (g_CommandLineParser->GetClientOperation() != CommandLineParser::opClientNoOperation)
 	{
 		ProcessClientRequest();
 		Cleanup();
@@ -327,121 +327,121 @@ void Run(bool reload)
 	}
 
 	// Setup the network-server
-	if (g_pOptions->GetServerMode())
+	if (g_Options->GetServerMode())
 	{
 		WebProcessor::Init();
-		g_pRemoteServer = new RemoteServer(false);
-		g_pRemoteServer->Start();
+		g_RemoteServer = new RemoteServer(false);
+		g_RemoteServer->Start();
 
-		if (g_pOptions->GetSecureControl())
+		if (g_Options->GetSecureControl())
 		{
-			g_pRemoteSecureServer = new RemoteServer(true);
-			g_pRemoteSecureServer->Start();
+			g_RemoteSecureServer = new RemoteServer(true);
+			g_RemoteSecureServer->Start();
 		}
 	}
 
 	// Create the frontend
-	if (!g_pCommandLineParser->GetDaemonMode())
+	if (!g_CommandLineParser->GetDaemonMode())
 	{
-		switch (g_pOptions->GetOutputMode())
+		switch (g_Options->GetOutputMode())
 		{
 			case Options::omNCurses:
 #ifndef DISABLE_CURSES
-				g_pFrontend = new NCursesFrontend();
+				g_Frontend = new NCursesFrontend();
 				break;
 #endif
 			case Options::omColored:
-				g_pFrontend = new ColoredFrontend();
+				g_Frontend = new ColoredFrontend();
 				break;
 			case Options::omLoggable:
-				g_pFrontend = new LoggableFrontend();
+				g_Frontend = new LoggableFrontend();
 				break;
 		}
 	}
 
 	// Starting a thread with the frontend
-	if (g_pFrontend)
+	if (g_Frontend)
 	{
-		g_pFrontend->Start();
+		g_Frontend->Start();
 	}
 
 	// Starting QueueCoordinator and PrePostProcessor
-	if (!g_pCommandLineParser->GetRemoteClientMode())
+	if (!g_CommandLineParser->GetRemoteClientMode())
 	{
 		// Standalone-mode
-		if (!g_pCommandLineParser->GetServerMode())
+		if (!g_CommandLineParser->GetServerMode())
 		{
-			const char* category = g_pCommandLineParser->GetAddCategory() ? g_pCommandLineParser->GetAddCategory() : "";
-			NzbFile* nzbFile = new NzbFile(g_pCommandLineParser->GetArgFilename(), category);
+			const char* category = g_CommandLineParser->GetAddCategory() ? g_CommandLineParser->GetAddCategory() : "";
+			NzbFile* nzbFile = new NzbFile(g_CommandLineParser->GetArgFilename(), category);
 			if (!nzbFile->Parse())
 			{
-				printf("Parsing NZB-document %s failed\n\n", g_pCommandLineParser->GetArgFilename() ? g_pCommandLineParser->GetArgFilename() : "N/A");
+				printf("Parsing NZB-document %s failed\n\n", g_CommandLineParser->GetArgFilename() ? g_CommandLineParser->GetArgFilename() : "N/A");
 				delete nzbFile;
 				return;
 			}
-			g_pScanner->InitPPParameters(category, nzbFile->GetNzbInfo()->GetParameters(), false);
-			g_pQueueCoordinator->AddNzbFileToQueue(nzbFile, NULL, false);
+			g_Scanner->InitPPParameters(category, nzbFile->GetNzbInfo()->GetParameters(), false);
+			g_QueueCoordinator->AddNzbFileToQueue(nzbFile, NULL, false);
 			delete nzbFile;
 		}
 
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 		{
-			g_pDiskState = new DiskState();
+			g_DiskState = new DiskState();
 		}
 
 #ifdef WIN32
-		g_pWinConsole->Start();
+		g_WinConsole->Start();
 #endif
-		g_pQueueCoordinator->Start();
-		g_pUrlCoordinator->Start();
-		g_pPrePostProcessor->Start();
-		g_pFeedCoordinator->Start();
-		g_pServiceCoordinator->Start();
-		if (g_pOptions->GetArticleCache() > 0)
+		g_QueueCoordinator->Start();
+		g_UrlCoordinator->Start();
+		g_PrePostProcessor->Start();
+		g_FeedCoordinator->Start();
+		g_ServiceCoordinator->Start();
+		if (g_Options->GetArticleCache() > 0)
 		{
-			g_pArticleCache->Start();
+			g_ArticleCache->Start();
 		}
 
 		// enter main program-loop
-		while (g_pQueueCoordinator->IsRunning() || 
-			g_pUrlCoordinator->IsRunning() || 
-			g_pPrePostProcessor->IsRunning() ||
-			g_pFeedCoordinator->IsRunning() ||
-			g_pServiceCoordinator->IsRunning() ||
+		while (g_QueueCoordinator->IsRunning() || 
+			g_UrlCoordinator->IsRunning() || 
+			g_PrePostProcessor->IsRunning() ||
+			g_FeedCoordinator->IsRunning() ||
+			g_ServiceCoordinator->IsRunning() ||
 #ifdef WIN32
-			g_pWinConsole->IsRunning() ||
+			g_WinConsole->IsRunning() ||
 #endif
-			g_pArticleCache->IsRunning())
+			g_ArticleCache->IsRunning())
 		{
-			if (!g_pOptions->GetServerMode() && 
-				!g_pQueueCoordinator->HasMoreJobs() && 
-				!g_pUrlCoordinator->HasMoreJobs() && 
-				!g_pPrePostProcessor->HasMoreJobs())
+			if (!g_Options->GetServerMode() && 
+				!g_QueueCoordinator->HasMoreJobs() && 
+				!g_UrlCoordinator->HasMoreJobs() && 
+				!g_PrePostProcessor->HasMoreJobs())
 			{
 				// Standalone-mode: download completed
-				if (!g_pQueueCoordinator->IsStopped())
+				if (!g_QueueCoordinator->IsStopped())
 				{
-					g_pQueueCoordinator->Stop();
+					g_QueueCoordinator->Stop();
 				}
-				if (!g_pUrlCoordinator->IsStopped())
+				if (!g_UrlCoordinator->IsStopped())
 				{
-					g_pUrlCoordinator->Stop();
+					g_UrlCoordinator->Stop();
 				}
-				if (!g_pPrePostProcessor->IsStopped())
+				if (!g_PrePostProcessor->IsStopped())
 				{
-					g_pPrePostProcessor->Stop();
+					g_PrePostProcessor->Stop();
 				}
-				if (!g_pFeedCoordinator->IsStopped())
+				if (!g_FeedCoordinator->IsStopped())
 				{
-					g_pFeedCoordinator->Stop();
+					g_FeedCoordinator->Stop();
 				}
-				if (!g_pArticleCache->IsStopped())
+				if (!g_ArticleCache->IsStopped())
 				{
-					g_pArticleCache->Stop();
+					g_ArticleCache->Stop();
 				}
-				if (!g_pServiceCoordinator->IsStopped())
+				if (!g_ServiceCoordinator->IsStopped())
 				{
-					g_pServiceCoordinator->Stop();
+					g_ServiceCoordinator->Stop();
 				}
 			}
 			usleep(100 * 1000);
@@ -459,51 +459,51 @@ void Run(bool reload)
 	ScriptController::TerminateAll();
 
 	// Stop network-server
-	if (g_pRemoteServer)
+	if (g_RemoteServer)
 	{
 		debug("stopping RemoteServer");
-		g_pRemoteServer->Stop();
+		g_RemoteServer->Stop();
 		int maxWaitMSec = 1000;
-		while (g_pRemoteServer->IsRunning() && maxWaitMSec > 0)
+		while (g_RemoteServer->IsRunning() && maxWaitMSec > 0)
 		{
 			usleep(100 * 1000);
 			maxWaitMSec -= 100;
 		}
-		if (g_pRemoteServer->IsRunning())
+		if (g_RemoteServer->IsRunning())
 		{
 			debug("Killing RemoteServer");
-			g_pRemoteServer->Kill();
+			g_RemoteServer->Kill();
 		}
 		debug("RemoteServer stopped");
 	}
 
-	if (g_pRemoteSecureServer)
+	if (g_RemoteSecureServer)
 	{
 		debug("stopping RemoteSecureServer");
-		g_pRemoteSecureServer->Stop();
+		g_RemoteSecureServer->Stop();
 		int maxWaitMSec = 1000;
-		while (g_pRemoteSecureServer->IsRunning() && maxWaitMSec > 0)
+		while (g_RemoteSecureServer->IsRunning() && maxWaitMSec > 0)
 		{
 			usleep(100 * 1000);
 			maxWaitMSec -= 100;
 		}
-		if (g_pRemoteSecureServer->IsRunning())
+		if (g_RemoteSecureServer->IsRunning())
 		{
 			debug("Killing RemoteSecureServer");
-			g_pRemoteSecureServer->Kill();
+			g_RemoteSecureServer->Kill();
 		}
 		debug("RemoteSecureServer stopped");
 	}
 
 	// Stop Frontend
-	if (g_pFrontend)
+	if (g_Frontend)
 	{
-		if (!g_pCommandLineParser->GetRemoteClientMode())
+		if (!g_CommandLineParser->GetRemoteClientMode())
 		{
 			debug("Stopping Frontend");
-			g_pFrontend->Stop();
+			g_Frontend->Stop();
 		}
-		while (g_pFrontend->IsRunning())
+		while (g_Frontend->IsRunning())
 		{
 			usleep(50 * 1000);
 		}
@@ -519,7 +519,7 @@ protected:
 #ifdef WIN32
 	virtual void		SetupFirstStart()
 	{
-		g_pWinConsole->SetupFirstStart();
+		g_WinConsole->SetupFirstStart();
 	}
 #endif
 
@@ -528,7 +528,7 @@ protected:
 							bool tls, const char* cipher, int maxConnections, int retention,
 							int level, int group)
 	{
-		g_pServerPool->AddServer(new NewsServer(id, active, name, host, port, user, pass, joinGroup,
+		g_ServerPool->AddServer(new NewsServer(id, active, name, host, port, user, pass, joinGroup,
 							tls, cipher, maxConnections, retention, level, group));
 	}
 
@@ -536,72 +536,72 @@ protected:
 							const char* filter, bool backlog, bool pauseNzb, const char* category,
 							int priority, const char* feedScript)
 	{
-		g_pFeedCoordinator->AddFeed(new FeedInfo(id, name, url, backlog, interval, filter, pauseNzb, category, priority, feedScript));
+		g_FeedCoordinator->AddFeed(new FeedInfo(id, name, url, backlog, interval, filter, pauseNzb, category, priority, feedScript));
 	}
 
 	virtual void		AddTask(int id, int hours, int minutes, int weekDaysBits,
 							Options::ESchedulerCommand command, const char* param)
 	{
-		g_pScheduler->AddTask(new Scheduler::Task(id, hours, minutes, weekDaysBits, (Scheduler::ECommand)command, param));
+		g_Scheduler->AddTask(new Scheduler::Task(id, hours, minutes, weekDaysBits, (Scheduler::ECommand)command, param));
 	}
 } g_OptionsExtender;
 
 void BootConfig()
 {
 	debug("Parsing command line");
-	g_pCommandLineParser = new CommandLineParser(g_iArgumentCount, (const char**)(*g_szArguments));
-	if (g_pCommandLineParser->GetPrintVersion())
+	g_CommandLineParser = new CommandLineParser(g_ArgumentCount, (const char**)(*g_Arguments));
+	if (g_CommandLineParser->GetPrintVersion())
 	{
 		printf("nzbget version: %s\n", Util::VersionRevision());
 		exit(0);
 	}
-	if (g_pCommandLineParser->GetPrintUsage() || g_pCommandLineParser->GetErrors() || g_iArgumentCount <= 1)
+	if (g_CommandLineParser->GetPrintUsage() || g_CommandLineParser->GetErrors() || g_ArgumentCount <= 1)
 	{
-		g_pCommandLineParser->PrintUsage(((const char**)(*g_szArguments))[0]);
+		g_CommandLineParser->PrintUsage(((const char**)(*g_Arguments))[0]);
 		exit(0);
 	}
 
 	debug("Reading options");
-	g_pOptions = new Options((*g_szArguments)[0], g_pCommandLineParser->GetConfigFilename(),
-							 g_pCommandLineParser->GetNoConfig(), (Options::CmdOptList*)g_pCommandLineParser->GetOptionList(),
+	g_Options = new Options((*g_Arguments)[0], g_CommandLineParser->GetConfigFilename(),
+							 g_CommandLineParser->GetNoConfig(), (Options::CmdOptList*)g_CommandLineParser->GetOptionList(),
 							 &g_OptionsExtender);
-	g_pOptions->SetRemoteClientMode(g_pCommandLineParser->GetRemoteClientMode());
-	g_pOptions->SetServerMode(g_pCommandLineParser->GetServerMode());
-	g_pOptions->SetPauseDownload(g_pCommandLineParser->GetPauseDownload());
+	g_Options->SetRemoteClientMode(g_CommandLineParser->GetRemoteClientMode());
+	g_Options->SetServerMode(g_CommandLineParser->GetServerMode());
+	g_Options->SetPauseDownload(g_CommandLineParser->GetPauseDownload());
 
-	g_pLog->InitOptions();
+	g_Log->InitOptions();
 
-	if (g_pOptions->GetFatalError())
+	if (g_Options->GetFatalError())
 	{
 		exit(1);
 	}
-	else if (g_pOptions->GetConfigErrors() &&
-			 g_pCommandLineParser->GetClientOperation() == CommandLineParser::opClientNoOperation)
+	else if (g_Options->GetConfigErrors() &&
+			 g_CommandLineParser->GetClientOperation() == CommandLineParser::opClientNoOperation)
 	{
 		info("Pausing all activities due to errors in configuration");
-		g_pOptions->SetPauseDownload(true);
-		g_pOptions->SetPausePostProcess(true);
-		g_pOptions->SetPauseScan(true);
+		g_Options->SetPauseDownload(true);
+		g_Options->SetPausePostProcess(true);
+		g_Options->SetPauseScan(true);
 	}
 
-	g_pServerPool->SetTimeout(g_pOptions->GetArticleTimeout());
-	g_pServerPool->SetRetryInterval(g_pOptions->GetRetryInterval());
+	g_ServerPool->SetTimeout(g_Options->GetArticleTimeout());
+	g_ServerPool->SetRetryInterval(g_Options->GetRetryInterval());
 
-	g_pScriptConfig = new ScriptConfig();
+	g_ScriptConfig = new ScriptConfig();
 }
 
 void ProcessClientRequest()
 {
 	RemoteClient* Client = new RemoteClient();
 
-	switch (g_pCommandLineParser->GetClientOperation())
+	switch (g_CommandLineParser->GetClientOperation())
 	{
 		case CommandLineParser::opClientRequestListFiles:
-			Client->RequestServerList(true, false, g_pCommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_pCommandLineParser->GetEditQueueText() : NULL);
+			Client->RequestServerList(true, false, g_CommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_CommandLineParser->GetEditQueueText() : NULL);
 			break;
 
 		case CommandLineParser::opClientRequestListGroups:
-			Client->RequestServerList(false, true, g_pCommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_pCommandLineParser->GetEditQueueText() : NULL);
+			Client->RequestServerList(false, true, g_CommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_CommandLineParser->GetEditQueueText() : NULL);
 			break;
 
 		case CommandLineParser::opClientRequestListStatus:
@@ -617,7 +617,7 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestSetRate:
-			Client->RequestServerSetDownloadRate(g_pCommandLineParser->GetSetRate());
+			Client->RequestServerSetDownloadRate(g_CommandLineParser->GetSetRate());
 			break;
 
 		case CommandLineParser::opClientRequestDumpDebug:
@@ -625,14 +625,14 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestEditQueue:
-			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_pCommandLineParser->GetEditQueueAction(),
-				g_pCommandLineParser->GetEditQueueOffset(), g_pCommandLineParser->GetEditQueueText(),
-				g_pCommandLineParser->GetEditQueueIdList(), g_pCommandLineParser->GetEditQueueIdCount(),
-				g_pCommandLineParser->GetEditQueueNameList(), (remoteMatchMode)g_pCommandLineParser->GetMatchMode());
+			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_CommandLineParser->GetEditQueueAction(),
+				g_CommandLineParser->GetEditQueueOffset(), g_CommandLineParser->GetEditQueueText(),
+				g_CommandLineParser->GetEditQueueIdList(), g_CommandLineParser->GetEditQueueIdCount(),
+				g_CommandLineParser->GetEditQueueNameList(), (remoteMatchMode)g_CommandLineParser->GetMatchMode());
 			break;
 
 		case CommandLineParser::opClientRequestLog:
-			Client->RequestServerLog(g_pCommandLineParser->GetLogLines());
+			Client->RequestServerLog(g_CommandLineParser->GetLogLines());
 			break;
 
 		case CommandLineParser::opClientRequestShutdown:
@@ -644,9 +644,9 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestDownload:
-			Client->RequestServerDownload(g_pCommandLineParser->GetAddNzbFilename(), g_pCommandLineParser->GetArgFilename(),
-				g_pCommandLineParser->GetAddCategory(), g_pCommandLineParser->GetAddTop(), g_pCommandLineParser->GetAddPaused(), g_pCommandLineParser->GetAddPriority(),
-				g_pCommandLineParser->GetAddDupeKey(), g_pCommandLineParser->GetAddDupeMode(), g_pCommandLineParser->GetAddDupeScore());
+			Client->RequestServerDownload(g_CommandLineParser->GetAddNzbFilename(), g_CommandLineParser->GetArgFilename(),
+				g_CommandLineParser->GetAddCategory(), g_CommandLineParser->GetAddTop(), g_CommandLineParser->GetAddPaused(), g_CommandLineParser->GetAddPriority(),
+				g_CommandLineParser->GetAddDupeKey(), g_CommandLineParser->GetAddDupeMode(), g_CommandLineParser->GetAddDupeScore());
 			break;
 
 		case CommandLineParser::opClientRequestVersion:
@@ -658,7 +658,7 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestWriteLog:
-			Client->RequestWriteLog(g_pCommandLineParser->GetWriteLogKind(), g_pCommandLineParser->GetLastArg());
+			Client->RequestWriteLog(g_CommandLineParser->GetWriteLogKind(), g_CommandLineParser->GetLastArg());
 			break;
 
 		case CommandLineParser::opClientRequestScanAsync:
@@ -687,7 +687,7 @@ void ProcessClientRequest()
 
 		case CommandLineParser::opClientRequestHistory:
 		case CommandLineParser::opClientRequestHistoryAll:
-			Client->RequestHistory(g_pCommandLineParser->GetClientOperation() == CommandLineParser::opClientRequestHistoryAll);
+			Client->RequestHistory(g_CommandLineParser->GetClientOperation() == CommandLineParser::opClientRequestHistoryAll);
 			break;
 
 		case CommandLineParser::opClientNoOperation:
@@ -700,10 +700,10 @@ void ProcessClientRequest()
 void ProcessWebGet()
 {
 	WebDownloader downloader;
-	downloader.SetUrl(g_pCommandLineParser->GetLastArg());
+	downloader.SetUrl(g_CommandLineParser->GetLastArg());
 	downloader.SetForce(true);
 	downloader.SetRetry(false);
-	downloader.SetOutputFilename(g_pCommandLineParser->GetWebGetFilename());
+	downloader.SetOutputFilename(g_CommandLineParser->GetWebGetFilename());
 	downloader.SetInfoName("WebGet");
 
 	WebDownloader::EStatus status = downloader.DownloadWithRedirects(5);
@@ -715,8 +715,8 @@ void ProcessWebGet()
 void ProcessSigVerify()
 {
 #ifdef HAVE_OPENSSL
-	bool ok = Maintenance::VerifySignature(g_pCommandLineParser->GetLastArg(),
-		g_pCommandLineParser->GetSigFilename(), g_pCommandLineParser->GetPubKeyFilename());
+	bool ok = Maintenance::VerifySignature(g_CommandLineParser->GetLastArg(),
+		g_CommandLineParser->GetSigFilename(), g_CommandLineParser->GetPubKeyFilename());
 	exit(ok ? 93 : 1);
 #else
 	printf("ERROR: Could not verify signature, the program was compiled without OpenSSL support\n");
@@ -726,32 +726,32 @@ void ProcessSigVerify()
 
 void ExitProc()
 {
-	if (!g_bReloading)
+	if (!g_Reloading)
 	{
 		info("Stopping, please wait...");
 	}
-	if (g_pCommandLineParser->GetRemoteClientMode())
+	if (g_CommandLineParser->GetRemoteClientMode())
 	{
-		if (g_pFrontend)
+		if (g_Frontend)
 		{
 			debug("Stopping Frontend");
-			g_pFrontend->Stop();
+			g_Frontend->Stop();
 		}
 	}
 	else
 	{
-		if (g_pQueueCoordinator)
+		if (g_QueueCoordinator)
 		{
 			debug("Stopping QueueCoordinator");
-			g_pServiceCoordinator->Stop();
-			g_pQueueCoordinator->Stop();
-			g_pUrlCoordinator->Stop();
-			g_pPrePostProcessor->Stop();
-			g_pFeedCoordinator->Stop();
-			g_pArticleCache->Stop();
-			g_pQueueScriptCoordinator->Stop();
+			g_ServiceCoordinator->Stop();
+			g_QueueCoordinator->Stop();
+			g_UrlCoordinator->Stop();
+			g_PrePostProcessor->Stop();
+			g_FeedCoordinator->Stop();
+			g_ArticleCache->Stop();
+			g_QueueScriptCoordinator->Stop();
 #ifdef WIN32
-			g_pWinConsole->Stop();
+			g_WinConsole->Stop();
 #endif
 		}
 	}
@@ -759,7 +759,7 @@ void ExitProc()
 
 void Reload()
 {
-	g_bReloading = true;
+	g_Reloading = true;
 	info("Reloading...");
 	ExitProc();
 }
@@ -769,134 +769,134 @@ void Cleanup()
 	debug("Cleaning up global objects");
 
 	debug("Deleting UrlCoordinator");
-	delete g_pUrlCoordinator;
-	g_pUrlCoordinator = NULL;
+	delete g_UrlCoordinator;
+	g_UrlCoordinator = NULL;
 	debug("UrlCoordinator deleted");
 
 	debug("Deleting RemoteServer");
-	delete g_pRemoteServer;
-	g_pRemoteServer = NULL;
+	delete g_RemoteServer;
+	g_RemoteServer = NULL;
 	debug("RemoteServer deleted");
 
 	debug("Deleting RemoteSecureServer");
-	delete g_pRemoteSecureServer;
-	g_pRemoteSecureServer = NULL;
+	delete g_RemoteSecureServer;
+	g_RemoteSecureServer = NULL;
 	debug("RemoteSecureServer deleted");
 
 	debug("Deleting PrePostProcessor");
-	delete g_pPrePostProcessor;
-	g_pPrePostProcessor = NULL;
-	delete g_pScanner;
-	g_pScanner = NULL;
+	delete g_PrePostProcessor;
+	g_PrePostProcessor = NULL;
+	delete g_Scanner;
+	g_Scanner = NULL;
 	debug("PrePostProcessor deleted");
 
 	debug("Deleting HistoryCoordinator");
-	delete g_pHistoryCoordinator;
-	g_pHistoryCoordinator = NULL;
+	delete g_HistoryCoordinator;
+	g_HistoryCoordinator = NULL;
 	debug("HistoryCoordinator deleted");
 
 	debug("Deleting DupeCoordinator");
-	delete g_pDupeCoordinator;
-	g_pDupeCoordinator = NULL;
+	delete g_DupeCoordinator;
+	g_DupeCoordinator = NULL;
 	debug("DupeCoordinator deleted");
 
 	debug("Deleting Frontend");
-	delete g_pFrontend;
-	g_pFrontend = NULL;
+	delete g_Frontend;
+	g_Frontend = NULL;
 	debug("Frontend deleted");
 
 	debug("Deleting QueueCoordinator");
-	delete g_pQueueCoordinator;
-	g_pQueueCoordinator = NULL;
+	delete g_QueueCoordinator;
+	g_QueueCoordinator = NULL;
 	debug("QueueCoordinator deleted");
 
 	debug("Deleting DiskState");
-	delete g_pDiskState;
-	g_pDiskState = NULL;
+	delete g_DiskState;
+	g_DiskState = NULL;
 	debug("DiskState deleted");
 
 	debug("Deleting Options");
-	if (g_pOptions)
+	if (g_Options)
 	{
-		if (g_pCommandLineParser->GetDaemonMode() && !g_bReloading)
+		if (g_CommandLineParser->GetDaemonMode() && !g_Reloading)
 		{
 			info("Deleting lock file");
-			remove(g_pOptions->GetLockFile());
+			remove(g_Options->GetLockFile());
 		}
-		delete g_pOptions;
+		delete g_Options;
 	}
 	debug("Options deleted");
 
 	debug("Deleting CommandLineParser");
-	if (g_pCommandLineParser)
+	if (g_CommandLineParser)
 	{
-		delete g_pCommandLineParser;
-		g_pCommandLineParser = NULL;
+		delete g_CommandLineParser;
+		g_CommandLineParser = NULL;
 	}
 	debug("CommandLineParser deleted");
 
 	debug("Deleting ScriptConfig");
-	if (g_pScriptConfig)
+	if (g_ScriptConfig)
 	{
-		delete g_pScriptConfig;
-		g_pScriptConfig = NULL;
+		delete g_ScriptConfig;
+		g_ScriptConfig = NULL;
 	}
 	debug("ScriptConfig deleted");
 
 	debug("Deleting ServerPool");
-	delete g_pServerPool;
-	g_pServerPool = NULL;
+	delete g_ServerPool;
+	g_ServerPool = NULL;
 	debug("ServerPool deleted");
 
 	debug("Deleting Scheduler");
-	delete g_pScheduler;
-	g_pScheduler = NULL;
+	delete g_Scheduler;
+	g_Scheduler = NULL;
 	debug("Scheduler deleted");
 
 	debug("Deleting FeedCoordinator");
-	delete g_pFeedCoordinator;
-	g_pFeedCoordinator = NULL;
+	delete g_FeedCoordinator;
+	g_FeedCoordinator = NULL;
 	debug("FeedCoordinator deleted");
 
 	debug("Deleting ArticleCache");
-	delete g_pArticleCache;
-	g_pArticleCache = NULL;
+	delete g_ArticleCache;
+	g_ArticleCache = NULL;
 	debug("ArticleCache deleted");
 
 	debug("Deleting QueueScriptCoordinator");
-	delete g_pQueueScriptCoordinator;
-	g_pQueueScriptCoordinator = NULL;
+	delete g_QueueScriptCoordinator;
+	g_QueueScriptCoordinator = NULL;
 	debug("QueueScriptCoordinator deleted");
 
 	debug("Deleting Maintenance");
-	delete g_pMaintenance;
-	g_pMaintenance = NULL;
+	delete g_Maintenance;
+	g_Maintenance = NULL;
 	debug("Maintenance deleted");
 
 	debug("Deleting StatMeter");
-	delete g_pStatMeter;
-	g_pStatMeter = NULL;
+	delete g_StatMeter;
+	g_StatMeter = NULL;
 	debug("StatMeter deleted");
 
 	debug("Deleting ServiceCoordinator");
-	delete g_pServiceCoordinator;
-	g_pServiceCoordinator = NULL;
+	delete g_ServiceCoordinator;
+	g_ServiceCoordinator = NULL;
 	debug("ServiceCoordinator deleted");
 
 	debug("Deleting DiskService");
-	delete g_pDiskService;
-	g_pDiskService = NULL;
+	delete g_DiskService;
+	g_DiskService = NULL;
 	debug("DiskService deleted");
 
-	if (!g_bReloading)
+	if (!g_Reloading)
 	{
 		Connection::Final();
 		Thread::Final();
 	}
 
 #ifdef WIN32
-	delete g_pWinConsole;
-	g_pWinConsole = NULL;
+	delete g_WinConsole;
+	g_WinConsole = NULL;
 #endif
 
 	debug("Global objects cleaned up");
@@ -928,21 +928,21 @@ void Daemonize()
 	dup(d);
 
 	// change running directory
-	chdir(g_pOptions->GetDestDir());
+	chdir(g_Options->GetDestDir());
 
 	// set up lock-file
 	int lfp = -1;
-	if (!Util::EmptyStr(g_pOptions->GetLockFile()))
+	if (!Util::EmptyStr(g_Options->GetLockFile()))
 	{
-		lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
+		lfp = open(g_Options->GetLockFile(), O_RDWR | O_CREAT, 0640);
 		if (lfp < 0)
 		{
-			error("Starting daemon failed: could not create lock-file %s", g_pOptions->GetLockFile());
+			error("Starting daemon failed: could not create lock-file %s", g_Options->GetLockFile());
 			exit(1);
 		}
 		if (lockf(lfp, F_TLOCK, 0) < 0)
 		{
-			error("Starting daemon failed: could not acquire lock on lock-file %s", g_pOptions->GetLockFile());
+			error("Starting daemon failed: could not acquire lock on lock-file %s", g_Options->GetLockFile());
 			exit(1);
 		}
 	}
@@ -950,7 +950,7 @@ void Daemonize()
 	/* Drop user if there is one, and we were run as root */
 	if (getuid() == 0 || geteuid() == 0)
 	{
-		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUsername());
+		struct passwd *pw = getpwnam(g_Options->GetDaemonUsername());
 		if (pw)
 		{
 			// Change owner of lock file
@@ -960,7 +960,7 @@ void Daemonize()
 			// Set primary group.
 			setgid(pw->pw_gid);
 			// Try setting aux groups correctly - not critical if this fails.
-			initgroups(g_pOptions->GetDaemonUsername(), pw->pw_gid);
+			initgroups(g_Options->GetDaemonUsername(), pw->pw_gid);
 			// Finally, set uid.
 			setuid(pw->pw_uid);
 		}

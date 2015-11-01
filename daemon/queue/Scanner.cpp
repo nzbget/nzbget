@@ -138,8 +138,8 @@ Scanner::~Scanner()
 
 void Scanner::InitOptions()
 {
-	m_nzbDirInterval = g_pOptions->GetNzbDirInterval() * 1000;
-	const char* scanScript = g_pOptions->GetScanScript();
+	m_nzbDirInterval = g_Options->GetNzbDirInterval() * 1000;
+	const char* scanScript = g_Options->GetScanScript();
 	m_scanScript = scanScript && strlen(scanScript) > 0;
 }
 
@@ -162,18 +162,18 @@ void Scanner::ServiceWork()
 	m_scanMutex.Lock();
 
 	if (m_requestedNzbDirScan || 
-		(!g_pOptions->GetPauseScan() && g_pOptions->GetNzbDirInterval() > 0 && 
-		 m_nzbDirInterval >= g_pOptions->GetNzbDirInterval() * 1000))
+		(!g_Options->GetPauseScan() && g_Options->GetNzbDirInterval() > 0 && 
+		 m_nzbDirInterval >= g_Options->GetNzbDirInterval() * 1000))
 	{
 		// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
 		bool checkStat = !m_requestedNzbDirScan;
 		m_requestedNzbDirScan = false;
 		m_scanning = true;
-		CheckIncomingNzbs(g_pOptions->GetNzbDir(), "", checkStat);
+		CheckIncomingNzbs(g_Options->GetNzbDir(), "", checkStat);
 		if (!checkStat && m_scanScript)
 		{
 			// if immediate scan requested, we need second scan to process files extracted by NzbProcess-script
-			CheckIncomingNzbs(g_pOptions->GetNzbDir(), "", checkStat);
+			CheckIncomingNzbs(g_Options->GetNzbDir(), "", checkStat);
 		}
 		m_scanning = false;
 		m_nzbDirInterval = 0;
@@ -183,13 +183,13 @@ void Scanner::ServiceWork()
 		//   - one additional scan is neccessary to check sizes of detected files;
 		//   - another scan is required to check files which were extracted by NzbProcess-script;
 		//   - third scan is needed to check sizes of extracted files.
-		if (g_pOptions->GetNzbDirInterval() > 0 && g_pOptions->GetNzbDirFileAge() < g_pOptions->GetNzbDirInterval())
+		if (g_Options->GetNzbDirInterval() > 0 && g_Options->GetNzbDirFileAge() < g_Options->GetNzbDirInterval())
 		{
 			int maxPass = m_scanScript ? 3 : 1;
 			if (m_pass < maxPass)
 			{
 				// scheduling another scan of incoming directory in NzbDirFileAge seconds.
-				m_nzbDirInterval = (g_pOptions->GetNzbDirInterval() - g_pOptions->GetNzbDirFileAge()) * 1000;
+				m_nzbDirInterval = (g_Options->GetNzbDirInterval() - g_Options->GetNzbDirFileAge()) * 1000;
 				m_pass++;
 			}
 			else
@@ -274,7 +274,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 		{
 			inList = true;
 			if (fileData->GetSize() == size &&
-				current - fileData->GetLastChange() >= g_pOptions->GetNzbDirFileAge())
+				current - fileData->GetLastChange() >= g_Options->GetNzbDirFileAge())
 			{
 				canProcess = true;
 				delete fileData;
@@ -319,7 +319,7 @@ void Scanner::DropOldFiles()
     {
         FileData* fileData = *it;
 		if ((current - fileData->GetLastChange() >= 
-			(g_pOptions->GetNzbDirInterval() + g_pOptions->GetNzbDirFileAge()) * 2) ||
+			(g_Options->GetNzbDirInterval() + g_Options->GetNzbDirFileAge()) * 2) ||
 			// can occur if the system clock was adjusted
 			current < fileData->GetLastChange())
 		{
@@ -444,12 +444,12 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 
 void Scanner::InitPPParameters(const char* category, NzbParameterList* parameters, bool reset)
 {
-	bool unpack = g_pOptions->GetUnpack();
-	const char* postScript = g_pOptions->GetPostScript();
+	bool unpack = g_Options->GetUnpack();
+	const char* postScript = g_Options->GetPostScript();
 	
 	if (!Util::EmptyStr(category))
 	{
-		Options::Category* categoryObj = g_pOptions->FindCategory(category, false);
+		Options::Category* categoryObj = g_Options->FindCategory(category, false);
 		if (categoryObj)
 		{
 			unpack = categoryObj->GetUnpack();
@@ -462,7 +462,7 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 
 	if (reset)
 	{
-		for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
+		for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 		{
 			ScriptConfig::Script* script = *it;
 			char param[1024];
@@ -554,12 +554,12 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 
 	if (ok)
 	{
-		g_pQueueCoordinator->AddNzbFileToQueue(nzbFile, urlInfo, addTop);
+		g_QueueCoordinator->AddNzbFileToQueue(nzbFile, urlInfo, addTop);
 	}
 	else if (!urlInfo)
 	{
 		nzbFile->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsScan);
-		g_pQueueCoordinator->AddNzbFileToQueue(nzbFile, urlInfo, addTop);
+		g_QueueCoordinator->AddNzbFileToQueue(nzbFile, urlInfo, addTop);
 	}
 
 	if (nzbId)
@@ -603,7 +603,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 		int num = 1;
 		while (num == 1 || Util::FileExists(tempFileName))
 		{
-			snprintf(tempFileName, 1024, "%snzb-%i.tmp", g_pOptions->GetTempDir(), num);
+			snprintf(tempFileName, 1024, "%snzb-%i.tmp", g_Options->GetTempDir(), num);
 			tempFileName[1024-1] = '\0';
 			num++;
 		}
@@ -637,7 +637,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 
 	char scanFileName[1024];
-	snprintf(scanFileName, 1024, "%s%s", g_pOptions->GetNzbDir(), validNzbName);
+	snprintf(scanFileName, 1024, "%s%s", g_Options->GetNzbDir(), validNzbName);
 
 	char *ext = strrchr(validNzbName, '.');
 	if (ext)
@@ -651,11 +651,11 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	{
 		if (ext)
 		{
-			snprintf(scanFileName, 1024, "%s%s_%i.%s", g_pOptions->GetNzbDir(), validNzbName, num, ext);
+			snprintf(scanFileName, 1024, "%s%s_%i.%s", g_Options->GetNzbDir(), validNzbName, num, ext);
 		}
 		else
 		{
-			snprintf(scanFileName, 1024, "%s%s_%i", g_pOptions->GetNzbDir(), validNzbName, num);
+			snprintf(scanFileName, 1024, "%s%s_%i", g_Options->GetNzbDir(), validNzbName, num);
 		}
 		scanFileName[1024-1] = '\0';
 		num++;
@@ -673,7 +673,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 
 	char* useCategory = strdup(category ? category : "");
-	Options::Category* categoryObj = g_pOptions->FindCategory(useCategory, true);
+	Options::Category* categoryObj = g_Options->FindCategory(useCategory, true);
 	if (categoryObj && strcmp(useCategory, categoryObj->GetName()))
 	{
 		free(useCategory);

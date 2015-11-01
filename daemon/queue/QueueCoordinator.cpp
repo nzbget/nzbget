@@ -80,9 +80,9 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 		return;
 	}
 
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
-		g_pDiskState->SaveDownloadQueue(this);
+		g_DiskState->SaveDownloadQueue(this);
 	}
 
 	m_wantSave = false;
@@ -95,7 +95,7 @@ QueueCoordinator::QueueCoordinator()
 	m_hasMoreJobs = true;
 	m_serverConfigGeneration = 0;
 
-	g_pLog->RegisterDebuggable(this);
+	g_Log->RegisterDebuggable(this);
 
 	m_downloadQueue.m_owner = this;
 	CoordinatorDownloadQueue::Init(&m_downloadQueue);
@@ -106,7 +106,7 @@ QueueCoordinator::~QueueCoordinator()
 	debug("Destroying QueueCoordinator");
 	// Cleanup
 
-	g_pLog->UnregisterDebuggable(this);
+	g_Log->UnregisterDebuggable(this);
 
 	debug("Deleting ArticleDownloaders");
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
@@ -128,23 +128,23 @@ void QueueCoordinator::Load()
 	bool perfectServerMatch = true;
 	bool queueLoaded = false;
 
-	if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue())
+	if (g_Options->GetServerMode() && g_Options->GetSaveQueue())
 	{
-		statLoaded = g_pStatMeter->Load(&perfectServerMatch);
+		statLoaded = g_StatMeter->Load(&perfectServerMatch);
 
-		if (g_pOptions->GetReloadQueue() && g_pDiskState->DownloadQueueExists())
+		if (g_Options->GetReloadQueue() && g_DiskState->DownloadQueueExists())
 		{
-			queueLoaded = g_pDiskState->LoadDownloadQueue(downloadQueue, g_pServerPool->GetServers());
+			queueLoaded = g_DiskState->LoadDownloadQueue(downloadQueue, g_ServerPool->GetServers());
 		}
 		else
 		{
-			g_pDiskState->DiscardDownloadQueue();
+			g_DiskState->DiscardDownloadQueue();
 		}
 	}
 
 	if (queueLoaded && statLoaded)
 	{
-		g_pDiskState->CleanupTempDir(downloadQueue);
+		g_DiskState->CleanupTempDir(downloadQueue);
 	}
 
 	if (queueLoaded && statLoaded && !perfectServerMatch)
@@ -152,26 +152,26 @@ void QueueCoordinator::Load()
 		debug("Changes in section <NEWS SERVERS> of config file detected, resaving queue");
 
 		// re-save current server list into diskstate to update server ids
-		g_pStatMeter->Save();
+		g_StatMeter->Save();
 
 		// re-save queue into diskstate to update server ids
 		downloadQueue->Save();
 
 		// re-save file states into diskstate to update server ids
-		if (g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue())
+		if (g_Options->GetServerMode() && g_Options->GetSaveQueue())
 		{
 			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 			{
 				NzbInfo* nzbInfo = *it;
 
-				if (g_pOptions->GetContinuePartial())
+				if (g_Options->GetContinuePartial())
 				{
 					for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 					{
 						FileInfo* fileInfo = *it2;
 						if (!fileInfo->GetArticles()->empty())
 						{
-							g_pDiskState->SaveFileState(fileInfo, false);
+							g_DiskState->SaveFileState(fileInfo, false);
 						}
 					}
 				}
@@ -182,9 +182,9 @@ void QueueCoordinator::Load()
 					if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
 					{
 						FileInfo* fileInfo = new FileInfo(completedFile->GetId());
-						if (g_pDiskState->LoadFileState(fileInfo, g_pServerPool->GetServers(), false))
+						if (g_DiskState->LoadFileState(fileInfo, g_ServerPool->GetServers(), false))
 						{
-							g_pDiskState->SaveFileState(fileInfo, true);
+							g_DiskState->SaveFileState(fileInfo, true);
 						}
 						delete fileInfo;
 					}
@@ -206,13 +206,13 @@ void QueueCoordinator::Run()
 	bool wasStandBy = true;
 	bool articeDownloadsRunning = false;
 	int resetCounter = 0;
-	g_pStatMeter->IntervalCheck();
+	g_StatMeter->IntervalCheck();
 
 	while (!IsStopped())
 	{
 		bool downloadsChecked = false;
 		bool downloadStarted = false;
-		NntpConnection* connection = g_pServerPool->GetConnection(0, NULL, NULL);
+		NntpConnection* connection = g_ServerPool->GetConnection(0, NULL, NULL);
 		if (connection)
 		{
 			// start download for next article
@@ -226,7 +226,7 @@ void QueueCoordinator::Run()
 			downloadsChecked = true;
 			m_hasMoreJobs = hasMoreArticles || articeDownloadsRunning;
 			if (hasMoreArticles && !IsStopped() && (int)m_activeDownloads.size() < m_downloadsLimit &&
-				(!g_pOptions->GetTempPauseDownload() || fileInfo->GetExtraPriority()))
+				(!g_Options->GetTempPauseDownload() || fileInfo->GetExtraPriority()))
 			{
 				StartArticleDownload(fileInfo, articleInfo, connection);
 				articeDownloadsRunning = true;
@@ -240,7 +240,7 @@ void QueueCoordinator::Run()
 			
 			if (freeConnection)
 			{
-				g_pServerPool->FreeConnection(connection, false);
+				g_ServerPool->FreeConnection(connection, false);
 			}
 		}
 
@@ -254,7 +254,7 @@ void QueueCoordinator::Run()
 		bool standBy = !articeDownloadsRunning;
 		if (standBy != wasStandBy)
 		{
-			g_pStatMeter->EnterLeaveStandBy(standBy);
+			g_StatMeter->EnterLeaveStandBy(standBy);
 			wasStandBy = standBy;
 			if (standBy)
 			{
@@ -268,7 +268,7 @@ void QueueCoordinator::Run()
 
 		if (!standBy)
 		{
-			g_pStatMeter->AddSpeedReading(0);
+			g_StatMeter->AddSpeedReading(0);
 		}
 
 		Util::SetStandByMode(standBy);
@@ -277,14 +277,14 @@ void QueueCoordinator::Run()
 		if (resetCounter >= 1000)
 		{
 			// this code should not be called too often, once per second is OK
-			g_pServerPool->CloseUnusedConnections();
+			g_ServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
 			if (!standBy)
 			{
 				SavePartialState();
 			}
 			resetCounter = 0;
-			g_pStatMeter->IntervalCheck();
+			g_StatMeter->IntervalCheck();
 			AdjustDownloadsLimit();
 		}
 	}
@@ -312,7 +312,7 @@ void QueueCoordinator::Run()
 **/
 void QueueCoordinator::AdjustDownloadsLimit()
 {
-	if (m_serverConfigGeneration == g_pServerPool->GetGeneration())
+	if (m_serverConfigGeneration == g_ServerPool->GetGeneration())
 	{
 		return;
 	}
@@ -321,7 +321,7 @@ void QueueCoordinator::AdjustDownloadsLimit()
 	int downloadsLimit = 2;
 
 	// allow one thread per 0-level (main) and 1-level (backup) server connection
-	for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+	for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
 	{
 		NewsServer* newsServer = *it;
 		if ((newsServer->GetNormLevel() == 0 || newsServer->GetNormLevel() == 1) && newsServer->GetActive())
@@ -353,9 +353,9 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 		{
 			FileInfo* fileInfo = *it;
 			allPaused &= fileInfo->GetPaused();
-			if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+			if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 			{
-				g_pDiskState->DiscardFile(fileInfo, true, false, false);
+				g_DiskState->DiscardFile(fileInfo, true, false, false);
 			}
 		}
 		nzbInfo->SetDeletePaused(allPaused);
@@ -370,7 +370,7 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 
 	if (deleteStatus == NzbInfo::dsNone)
 	{
-		if (g_pOptions->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce)
+		if (g_Options->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce)
 		{
 			CheckDupeFileInfos(nzbInfo);
 		}
@@ -425,7 +425,7 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 {
 	debug("CheckDupeFileInfos");
 
-	if (!g_pOptions->GetDupeCheck() || nzbInfo->GetDupeMode() == dmForce)
+	if (!g_Options->GetDupeCheck() || nzbInfo->GetDupeMode() == dmForce)
 	{
 		return;
 	}
@@ -466,9 +466,9 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 		FileInfo* fileInfo = *it;
 		StatFileInfo(fileInfo, false);
 		nzbInfo->GetFileList()->Remove(fileInfo);
-		if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 		{
-			g_pDiskState->DiscardFile(fileInfo, true, false, false);
+			g_DiskState->DiscardFile(fileInfo, true, false, false);
 		}
 	}
 }
@@ -521,9 +521,9 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 				FileInfo* fileInfo1 = *it2;
 				if ((!checkedFiles || !checkedFiles[num]) && 
 					!fileInfo1->GetPaused() && !fileInfo1->GetDeleted() &&
-					(g_pOptions->GetPropagationDelay() == 0 ||
-					 (int)fileInfo1->GetTime() < (int)curDate - g_pOptions->GetPropagationDelay()) &&
-					(!g_pOptions->GetPauseDownload() || nzbInfo->GetForcePriority()) &&
+					(g_Options->GetPropagationDelay() == 0 ||
+					 (int)fileInfo1->GetTime() < (int)curDate - g_Options->GetPropagationDelay()) &&
+					(!g_Options->GetPauseDownload() || nzbInfo->GetForcePriority()) &&
 					(!fileInfo ||
 					 (fileInfo1->GetExtraPriority() == fileInfo->GetExtraPriority() &&
 					  fileInfo1->GetNzbInfo()->GetPriority() > fileInfo->GetNzbInfo()->GetPriority()) ||
@@ -542,9 +542,9 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			break;
 		}
 
-		if (fileInfo->GetArticles()->empty() && g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode())
+		if (fileInfo->GetArticles()->empty() && g_Options->GetSaveQueue() && g_Options->GetServerMode())
 		{
-			g_pDiskState->LoadArticles(fileInfo);
+			g_DiskState->LoadArticles(fileInfo);
 		}
 
 		// check if the file has any articles left for download
@@ -683,7 +683,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 	{
 		fileInfo->SetFilename(articleDownloader->GetArticleFilename());
 		fileInfo->SetFilenameConfirmed(true);
-		if (g_pOptions->GetDupeCheck() &&
+		if (g_Options->GetDupeCheck() &&
 			nzbInfo->GetDupeMode() != dmForce &&
 			!nzbInfo->GetManyDupeFiles() &&
 			Util::FileExists(nzbInfo->GetDestDir(), fileInfo->GetFilename()))
@@ -791,7 +791,7 @@ void QueueCoordinator::StatFileInfo(FileInfo* fileInfo, bool completed)
 
 void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed)
 {
-	while (g_pArticleCache->FileBusy(fileInfo))
+	while (g_ArticleCache->FileBusy(fileInfo))
 	{
 		usleep(5*1000);
 	}
@@ -801,10 +801,10 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 
 	StatFileInfo(fileInfo, completed);
 
-	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode() &&
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() &&
 		(!completed || (fileInfo->GetMissedArticles() == 0 && fileInfo->GetFailedArticles() == 0)))
 	{
-		g_pDiskState->DiscardFile(fileInfo, true, true, false);
+		g_DiskState->DiscardFile(fileInfo, true, true, false);
 	}
 
 	if (!completed)
@@ -832,7 +832,7 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* fileInfo)
 {
 	// deleting temporary files
 
-	if (!g_pOptions->GetDirectWrite())
+	if (!g_Options->GetDirectWrite())
 	{
 		for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 		{
@@ -844,7 +844,7 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* fileInfo)
 		}
 	}
 
-	if (g_pOptions->GetDirectWrite() && fileInfo->GetOutputFilename())
+	if (g_Options->GetDirectWrite() && fileInfo->GetOutputFilename())
 	{
 		remove(fileInfo->GetOutputFilename());
 	}
@@ -852,7 +852,7 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* fileInfo)
 
 void QueueCoordinator::SavePartialState()
 {
-	if (!(g_pOptions->GetServerMode() && g_pOptions->GetSaveQueue() && g_pOptions->GetContinuePartial()))
+	if (!(g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetContinuePartial()))
 	{
 		return;
 	}
@@ -868,7 +868,7 @@ void QueueCoordinator::SavePartialState()
 			if (fileInfo->GetPartialChanged())
 			{
 				debug("Saving partial state for %s", fileInfo->GetFilename());
-				g_pDiskState->SaveFileState(fileInfo, false);
+				g_DiskState->SaveFileState(fileInfo, false);
 				fileInfo->SetPartialChanged(false);
 			}
 		}
@@ -879,24 +879,24 @@ void QueueCoordinator::SavePartialState()
 
 void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo)
 {
-	if (g_pOptions->GetHealthCheck() == Options::hcNone ||
+	if (g_Options->GetHealthCheck() == Options::hcNone ||
 		fileInfo->GetNzbInfo()->GetHealthPaused() ||
 		fileInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsHealth ||
 		fileInfo->GetNzbInfo()->CalcHealth() >= fileInfo->GetNzbInfo()->CalcCriticalHealth(true) ||
-		(g_pOptions->GetParScan() == Options::psDupe && g_pOptions->GetHealthCheck() == Options::hcDelete &&
+		(g_Options->GetParScan() == Options::psDupe && g_Options->GetHealthCheck() == Options::hcDelete &&
 		 fileInfo->GetNzbInfo()->GetSuccessArticles() * 100 / fileInfo->GetNzbInfo()->GetTotalArticles() > 10))
 	{
 		return;
 	}
 
-	if (g_pOptions->GetHealthCheck() == Options::hcPause)
+	if (g_Options->GetHealthCheck() == Options::hcPause)
 	{
 		warn("Pausing %s due to health %.1f%% below critical %.1f%%", fileInfo->GetNzbInfo()->GetName(),
 			fileInfo->GetNzbInfo()->CalcHealth() / 10.0, fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
 		fileInfo->GetNzbInfo()->SetHealthPaused(true);
 		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, 0, NULL);
 	}
-	else if (g_pOptions->GetHealthCheck() == Options::hcDelete)
+	else if (g_Options->GetHealthCheck() == Options::hcDelete)
 	{
 		fileInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
 			"Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%",
@@ -916,9 +916,9 @@ void QueueCoordinator::LogDebugInfo()
 	downloadQueue->CalcRemainingSize(&remaining, &remainingForced);
 	info("     Remaining: %.1f MB, Forced: %.1f MB", remaining / 1024.0 / 1024.0, remainingForced / 1024.0 / 1024.0);
 	info("     Download: %s, Post-process: %s, Scan: %s",
-		 (g_pOptions->GetPauseDownload() ? "paused" : g_pOptions->GetTempPauseDownload() ? "temp-paused" : "active"),
-		 (g_pOptions->GetPausePostProcess() ? "paused" : "active"),
-		 (g_pOptions->GetPauseScan() ? "paused" : "active"));
+		 (g_Options->GetPauseDownload() ? "paused" : g_Options->GetTempPauseDownload() ? "temp-paused" : "active"),
+		 (g_Options->GetPausePostProcess() ? "paused" : "active"),
+		 (g_Options->GetPauseScan() ? "paused" : "active"));
 
 	info("   ---------- QueueCoordinator");
 	info("    Active Downloads: %i, Limit: %i", m_activeDownloads.size(), m_downloadsLimit);
@@ -932,7 +932,7 @@ void QueueCoordinator::LogDebugInfo()
 
 void QueueCoordinator::ResetHangingDownloads()
 {
-	if (g_pOptions->GetTerminateTimeout() == 0 && g_pOptions->GetArticleTimeout() == 0)
+	if (g_Options->GetTerminateTimeout() == 0 && g_Options->GetArticleTimeout() == 0)
 	{
 		return;
 	}
@@ -944,7 +944,7 @@ void QueueCoordinator::ResetHangingDownloads()
 	{
 		ArticleDownloader* articleDownloader = *it;
 																		   
-		if (tm - articleDownloader->GetLastUpdateTime() > g_pOptions->GetArticleTimeout() + 1 &&
+		if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetArticleTimeout() + 1 &&
 		   articleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
 			error("Cancelling hanging download %s @ %s", articleDownloader->GetInfoName(),
@@ -952,7 +952,7 @@ void QueueCoordinator::ResetHangingDownloads()
 			articleDownloader->Stop();
 		}
 		
-		if (tm - articleDownloader->GetLastUpdateTime() > g_pOptions->GetTerminateTimeout() &&
+		if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetTerminateTimeout() &&
 		   articleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
 			ArticleInfo* articleInfo = articleDownloader->GetArticleInfo();
@@ -1154,7 +1154,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 	free(queuedFilename);
 
 	downloadQueue->GetQueue()->Remove(srcNzbInfo);
-	g_pDiskState->DiscardFiles(srcNzbInfo);
+	g_DiskState->DiscardFiles(srcNzbInfo);
 	delete srcNzbInfo;
 
 	return true;
@@ -1272,7 +1272,7 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 	if (srcNzbInfo->GetFileList()->empty())
 	{
 		downloadQueue->GetQueue()->Remove(srcNzbInfo);
-		g_pDiskState->DiscardFiles(srcNzbInfo);
+		g_DiskState->DiscardFiles(srcNzbInfo);
 		delete srcNzbInfo;
 	}
 

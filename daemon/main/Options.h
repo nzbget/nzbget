@@ -465,6 +465,6 @@ public:
 	int					GetLocalTimeOffset() { return m_localTimeOffset; }
 };
 
-extern Options* g_pOptions;
+extern Options* g_Options;
 
 #endif

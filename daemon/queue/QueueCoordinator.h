@@ -100,6 +100,6 @@ public:
 	bool					SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NzbInfo** newNzbInfo);
 };
 
-extern QueueCoordinator* g_pQueueCoordinator;
+extern QueueCoordinator* g_QueueCoordinator;
 
 #endif

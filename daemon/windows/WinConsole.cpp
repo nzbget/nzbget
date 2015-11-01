@@ -49,14 +49,14 @@
 #include "WinService.h"
 #include "resource.h"
 
-extern Options* g_pOptions;
-extern char* (*g_szArguments)[];
-extern int g_iArgumentCount;
+extern Options* g_Options;
+extern char* (*g_Arguments)[];
+extern int g_ArgumentCount;
 extern void ExitProc();
 extern void Reload();
-extern WinConsole* g_pWinConsole;
-extern FeedCoordinator* g_pFeedCoordinator;
-extern StatMeter* g_pStatMeter;
+extern WinConsole* g_WinConsole;
+extern FeedCoordinator* g_FeedCoordinator;
+extern StatMeter* g_StatMeter;
 
 #define UM_TRAYICON (WM_USER + 1)
 #define UM_QUIT (WM_USER + 2)
@@ -80,7 +80,7 @@ BOOL WINAPI WinConsole::ConsoleCtrlHandler(DWORD dwCtrlType)
 		case CTRL_LOGOFF_EVENT:
 		case CTRL_SHUTDOWN_EVENT:
 			ExitProc();
-			while (g_pWinConsole)
+			while (g_WinConsole)
 			{
 				usleep(20 * 1000);
 			}
@@ -113,8 +113,8 @@ WinConsole::~WinConsole()
 {
 	if (m_initialArguments)
 	{
-		g_szArguments =	(char*(*)[])m_initialArguments;
-		g_iArgumentCount = m_initialArgumentCount;
+		g_Arguments =	(char*(*)[])m_initialArguments;
+		g_ArgumentCount = m_initialArgumentCount;
 	}
 	free(m_defaultArguments);
 	delete m_iconData;
@@ -129,34 +129,34 @@ void WinConsole::InitAppMode()
     GetWindowThreadProcessId(GetConsoleWindow(), &processId);
     m_appMode = false;
 
-	if (GetCurrentProcessId() == processId && g_iArgumentCount == 1)
+	if (GetCurrentProcessId() == processId && g_ArgumentCount == 1)
 	{
-		m_initialArguments = (char**)g_szArguments;
-		m_initialArgumentCount = g_iArgumentCount;
+		m_initialArguments = (char**)g_Arguments;
+		m_initialArgumentCount = g_ArgumentCount;
 
 		// make command line to start in server mode
 		m_defaultArguments = (char**)malloc(sizeof(char*) * 3);
-		m_defaultArguments[0] = (*g_szArguments)[0];
+		m_defaultArguments[0] = (*g_Arguments)[0];
 		m_defaultArguments[1] = "-s";
 		m_defaultArguments[2] = NULL;
-		g_szArguments = (char*(*)[])m_defaultArguments;
-		g_iArgumentCount = 2;
+		g_Arguments = (char*(*)[])m_defaultArguments;
+		g_ArgumentCount = 2;
 		m_appMode = true;
 	}
-	else if (GetCurrentProcessId() == processId && g_iArgumentCount > 1)
+	else if (GetCurrentProcessId() == processId && g_ArgumentCount > 1)
 	{
-		for (int i = 1; i < g_iArgumentCount; i++)
+		for (int i = 1; i < g_ArgumentCount; i++)
 		{
-			if (!strcmp((*g_szArguments)[i], "-D"))
+			if (!strcmp((*g_Arguments)[i], "-D"))
 			{
 				break;
 			}
-			if (!strcmp((*g_szArguments)[i], "-app"))
+			if (!strcmp((*g_Arguments)[i], "-app"))
 			{
 				m_appMode = true;
 			}
 
-			if (!strcmp((*g_szArguments)[i], "-auto"))
+			if (!strcmp((*g_Arguments)[i], "-auto"))
 			{
 				m_autoParam = true;
 			}
@@ -164,25 +164,25 @@ void WinConsole::InitAppMode()
 
 		if (m_appMode)
 		{
-			m_initialArguments = (char**)g_szArguments;
-			m_initialArgumentCount = g_iArgumentCount;
+			m_initialArguments = (char**)g_Arguments;
+			m_initialArgumentCount = g_ArgumentCount;
 
 			// remove "-app" from command line
-			int argc = g_iArgumentCount - 1 - (m_autoParam ? 1 : 0);
+			int argc = g_ArgumentCount - 1 - (m_autoParam ? 1 : 0);
 			m_defaultArguments = (char**)malloc(sizeof(char*) * (argc + 2));
 
 			int p = 0;
-			for (int i = 0; i < g_iArgumentCount; i++)
+			for (int i = 0; i < g_ArgumentCount; i++)
 			{
-				if (strcmp((*g_szArguments)[i], "-app") &&
-					strcmp((*g_szArguments)[i], "-auto"))
+				if (strcmp((*g_Arguments)[i], "-app") &&
+					strcmp((*g_Arguments)[i], "-auto"))
 				{
-					m_defaultArguments[p++] = (*g_szArguments)[i];
+					m_defaultArguments[p++] = (*g_Arguments)[i];
 				}
 			}
 			m_defaultArguments[p] = NULL;
-			g_szArguments = (char*(*)[])m_defaultArguments;
-			g_iArgumentCount = p;
+			g_Arguments = (char*(*)[])m_defaultArguments;
+			g_ArgumentCount = p;
 		}
 	}
 
@@ -304,7 +304,7 @@ void WinConsole::CreateTrayIcon()
 
 LRESULT CALLBACK WinConsole::TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	return g_pWinConsole->TrayWndProc(hwndWin, uMsg, wParam, lParam);
+	return g_WinConsole->TrayWndProc(hwndWin, uMsg, wParam, lParam);
 }
 
 LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -320,10 +320,10 @@ LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM l
 		case UM_TRAYICON:
 			if (lParam == WM_LBUTTONUP && !m_doubleClick)
 			{
-				g_pOptions->SetPauseDownload(!g_pOptions->GetPauseDownload());
-				g_pOptions->SetPausePostProcess(g_pOptions->GetPauseDownload());
-				g_pOptions->SetPauseScan(g_pOptions->GetPauseDownload());
-				g_pOptions->SetResumeTime(0);
+				g_Options->SetPauseDownload(!g_Options->GetPauseDownload());
+				g_Options->SetPausePostProcess(g_Options->GetPauseDownload());
+				g_Options->SetPauseScan(g_Options->GetPauseDownload());
+				g_Options->SetResumeTime(0);
 				UpdateTrayIcon();
 			}
 			else if (lParam == WM_LBUTTONDBLCLK && m_doubleClick)
@@ -369,27 +369,27 @@ void WinConsole::ShowMenu()
 			break;
 
 		case ID_SHOW_DESTDIR:
-			ShowInExplorer(g_pOptions->GetDestDir());
+			ShowInExplorer(g_Options->GetDestDir());
 			break;
 
 		case ID_SHOW_INTERDIR:
-			ShowInExplorer(g_pOptions->GetInterDir());
+			ShowInExplorer(g_Options->GetInterDir());
 			break;
 
 		case ID_SHOW_NZBDIR:
-			ShowInExplorer(g_pOptions->GetNzbDir());
+			ShowInExplorer(g_Options->GetNzbDir());
 			break;
 
 		case ID_SHOW_CONFIGFILE:
-			ShowInExplorer(g_pOptions->GetConfigFilename());
+			ShowInExplorer(g_Options->GetConfigFilename());
 			break;
 
 		case ID_SHOW_LOGFILE:
-			ShowInExplorer(g_pOptions->GetLogFile());
+			ShowInExplorer(g_Options->GetLogFile());
 			break;
 
 		case ID_SHOW_SCRIPTDIR:
-			ShowInExplorer(g_pOptions->GetScriptDir());
+			ShowInExplorer(g_Options->GetScriptDir());
 			break;
 
 		case ID_INFO_HOMEPAGE:
@@ -438,15 +438,15 @@ void WinConsole::ShowMenu()
 
 void WinConsole::ShowWebUI()
 {
-	const char* iP = g_pOptions->GetControlIp();
-	if (!strcmp(g_pOptions->GetControlIp(), "localhost") ||
-		!strcmp(g_pOptions->GetControlIp(), "0.0.0.0"))
+	const char* iP = g_Options->GetControlIp();
+	if (!strcmp(g_Options->GetControlIp(), "localhost") ||
+		!strcmp(g_Options->GetControlIp(), "0.0.0.0"))
 	{
 		iP = "127.0.0.1";
 	}
 
 	char url[1024];
-	snprintf(url, 1024, "http://%s:%i", iP, g_pOptions->GetControlPort());
+	snprintf(url, 1024, "http://%s:%i", iP, g_Options->GetControlPort());
 	url[1024-1] = '\0';
 	ShellExecute(0, "open", url, NULL, NULL, SW_SHOWNORMAL);
 }
@@ -490,7 +490,7 @@ void WinConsole::ShowAboutBox()
 
 BOOL CALLBACK WinConsole::AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	return g_pWinConsole->AboutDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_WinConsole->AboutDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
 BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -569,7 +569,7 @@ void WinConsole::ShowPrefsDialog()
 
 BOOL CALLBACK WinConsole::PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	return g_pWinConsole->PrefsDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_WinConsole->PrefsDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
 BOOL WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -752,7 +752,7 @@ void WinConsole::ShowRunningDialog()
 
 BOOL CALLBACK WinConsole::RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	return g_pWinConsole->RunningDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_WinConsole->RunningDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
 BOOL WinConsole::RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -800,16 +800,16 @@ void WinConsole::UpdateTrayIcon()
 	strncpy(oldTip, m_iconData->szTip, sizeof(m_iconData->szTip));
 	oldTip[200-1] = '\0';
 
-	if (g_pOptions->GetPauseDownload())
+	if (g_Options->GetPauseDownload())
 	{
 		m_iconData->hIcon = m_pausedIcon;
 		strncpy(m_iconData->szTip, "NZBGet - paused", sizeof(m_iconData->szTip));
 	}
-	else if (!g_pStatMeter->GetStandBy())
+	else if (!g_StatMeter->GetStandBy())
 	{
 		m_iconData->hIcon = m_workingIcon;
 		char speed[100];
-		Util::FormatSpeed(speed, sizeof(speed), g_pStatMeter->CalcCurrentDownloadSpeed());
+		Util::FormatSpeed(speed, sizeof(speed), g_StatMeter->CalcCurrentDownloadSpeed());
 		char tip[200];
 		snprintf(tip, sizeof(tip), "NZBGet - downloading at %s", speed);
 		tip[200-1] = '\0';
@@ -838,7 +838,7 @@ void WinConsole::UpdateTrayIcon()
 			m_iconData->hIcon = m_workingIcon;
 			strncpy(m_iconData->szTip, "NZBGet - fetching URLs", sizeof(m_iconData->szTip));
 		}
-		else if (g_pFeedCoordinator->HasActiveDownloads())
+		else if (g_FeedCoordinator->HasActiveDownloads())
 		{
 			m_iconData->hIcon = m_workingIcon;
 			strncpy(m_iconData->szTip, "NZBGet - fetching feeds", sizeof(m_iconData->szTip));
@@ -859,7 +859,7 @@ void WinConsole::UpdateTrayIcon()
 void WinConsole::BuildMenu()
 {
 	int index = 0;
-	for (Options::Categories::iterator it = g_pOptions->GetCategories()->begin(); it != g_pOptions->GetCategories()->end(); it++, index++)
+	for (Options::Categories::iterator it = g_Options->GetCategories()->begin(); it != g_Options->GetCategories()->end(); it++, index++)
 	{
 		Options::Category* category = *it;
 
@@ -890,7 +890,7 @@ BOOL DeleteMenu(
 
 void WinConsole::ShowCategoryDir(int catIndex)
 {
-	Options::Category* category = g_pOptions->GetCategories()->at(catIndex);
+	Options::Category* category = g_Options->GetCategories()->at(catIndex);
 
 	char destDir[1024];
 
@@ -906,7 +906,7 @@ void WinConsole::ShowCategoryDir(int catIndex)
 		categoryDir[1024 - 1] = '\0';
 		Util::MakeValidFilename(categoryDir, '_', true);
 
-		snprintf(destDir, 1024, "%s%s", g_pOptions->GetDestDir(), categoryDir);
+		snprintf(destDir, 1024, "%s%s", g_Options->GetDestDir(), categoryDir);
 		destDir[1024-1] = '\0';
 	}
 
@@ -916,7 +916,7 @@ void WinConsole::ShowCategoryDir(int catIndex)
 void WinConsole::OpenConfigFileInTextEdit()
 {
 	char lParam[MAX_PATH + 3];
-	snprintf(lParam, sizeof(lParam), "\"%s\"", g_pOptions->GetConfigFilename());
+	snprintf(lParam, sizeof(lParam), "\"%s\"", g_Options->GetConfigFilename());
 	lParam[sizeof(lParam)-1] = '\0';
 	ShellExecute(0, "open", "notepad.exe", lParam, NULL, SW_SHOWNORMAL);
 }
@@ -945,7 +945,7 @@ void WinConsole::SetupConfigFile()
 	Util::CreateDirectory(appDataPath);
 
 	char confTemplateFilename[MAX_PATH + 30];
-	snprintf(confTemplateFilename, sizeof(confTemplateFilename), "%s\\nzbget.conf.template", g_pOptions->GetAppDir());
+	snprintf(confTemplateFilename, sizeof(confTemplateFilename), "%s\\nzbget.conf.template", g_Options->GetAppDir());
 	confTemplateFilename[sizeof(confTemplateFilename)-1] = '\0';
 
 	CopyFile(confTemplateFilename, filename, FALSE);
@@ -992,7 +992,7 @@ void WinConsole::SetupScripts()
 	Util::CreateDirectory(destDir);
 
 	char srcDir[MAX_PATH + 30];
-	snprintf(srcDir, sizeof(srcDir), "%s\\scripts", g_pOptions->GetAppDir());
+	snprintf(srcDir, sizeof(srcDir), "%s\\scripts", g_Options->GetAppDir());
 	srcDir[sizeof(srcDir)-1] = '\0';
 
 	DirBrowser dir(srcDir);
@@ -1030,7 +1030,7 @@ void WinConsole::ShowFactoryResetDialog()
 
 BOOL CALLBACK WinConsole::FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	return g_pWinConsole->FactoryResetDialogProc(hwndDlg, uMsg, wParam, lParam);
+	return g_WinConsole->FactoryResetDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
 BOOL WinConsole::FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -1061,8 +1061,8 @@ void WinConsole::ResetFactoryDefaults()
 	char message[1024];
 	char errBuf[200];
 
-	g_pOptions->SetPauseDownload(true);
-	g_pOptions->SetPausePostProcess(true);
+	g_Options->SetPauseDownload(true);
+	g_Options->SetPausePostProcess(true);
 
 	char commonAppDataPath[MAX_PATH];
 	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, commonAppDataPath);
@@ -1093,7 +1093,7 @@ void WinConsole::ResetFactoryDefaults()
 	}
 
 	// delete old config file in the program's directory
-	snprintf(path, sizeof(path), "%s\\nzbget.conf", g_pOptions->GetAppDir());
+	snprintf(path, sizeof(path), "%s\\nzbget.conf", g_Options->GetAppDir());
 
 	remove(path);
 	Util::GetLastErrorMessage(errBuf, sizeof(errBuf));

@@ -99,6 +99,6 @@ public:
 	bool				FileBusy(FileInfo* fileInfo) { return fileInfo == m_fileInfo; }
 };
 
-extern ArticleCache* g_pArticleCache;
+extern ArticleCache* g_ArticleCache;
 
 #endif
