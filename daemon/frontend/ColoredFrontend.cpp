@@ -48,7 +48,7 @@ ColoredFrontend::ColoredFrontend()
 	m_summary = true;
 	m_needGoBack = false;
 #ifdef WIN32
-	m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	m_console = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif
 }
 
@@ -59,9 +59,9 @@ void ColoredFrontend::BeforePrint()
 		// go back one line
 #ifdef WIN32
 		CONSOLE_SCREEN_BUFFER_INFO BufInfo;
-		GetConsoleScreenBufferInfo(m_hConsole, &BufInfo);
+		GetConsoleScreenBufferInfo(m_console, &BufInfo);
 		BufInfo.dwCursorPosition.Y--;
-		SetConsoleCursorPosition(m_hConsole, BufInfo.dwCursorPosition);
+		SetConsoleCursorPosition(m_console, BufInfo.dwCursorPosition);
 #else
 		printf("\r\033[1A");
 #endif
@@ -130,27 +130,27 @@ void ColoredFrontend::PrintMessage(Message * message)
 	switch (message->GetKind())
 	{
 		case Message::mkDebug:
-			SetConsoleTextAttribute(m_hConsole, 8);
+			SetConsoleTextAttribute(m_console, 8);
 			printf("[DEBUG]");
 			break;
 		case Message::mkError:
-			SetConsoleTextAttribute(m_hConsole, 4);
+			SetConsoleTextAttribute(m_console, 4);
 			printf("[ERROR]");
 			break; 
 		case Message::mkWarning:
-			SetConsoleTextAttribute(m_hConsole, 5);
+			SetConsoleTextAttribute(m_console, 5);
 			printf("[WARNING]");
 			break;
 		case Message::mkInfo:
-			SetConsoleTextAttribute(m_hConsole, 2);
+			SetConsoleTextAttribute(m_console, 2);
 			printf("[INFO]");
 			break;
 		case Message::mkDetail:
-			SetConsoleTextAttribute(m_hConsole, 2);
+			SetConsoleTextAttribute(m_console, 2);
 			printf("[DETAIL]");
 			break;
 	}
-	SetConsoleTextAttribute(m_hConsole, 7);
+	SetConsoleTextAttribute(m_console, 7);
 	char* msg = strdup(message->GetText());
 	CharToOem(msg, msg);
 	printf(" %s\n", msg);

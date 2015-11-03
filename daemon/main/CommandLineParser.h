@@ -87,7 +87,7 @@ private:
 	int*				m_editQueueIdList;
 	int					m_editQueueIdCount;
 	NameList			m_editQueueNameList;
-	EMatchMode			m_eMatchMode;
+	EMatchMode			m_matchMode;
 	char*				m_editQueueText;
 	char*				m_argFilename;
 	char*				m_addCategory;
@@ -137,7 +137,7 @@ public:
 	int*				GetEditQueueIdList() { return m_editQueueIdList; }
 	int					GetEditQueueIdCount() { return m_editQueueIdCount; }
 	NameList*			GetEditQueueNameList() { return &m_editQueueNameList; }
-	EMatchMode			GetMatchMode() { return m_eMatchMode; }
+	EMatchMode			GetMatchMode() { return m_matchMode; }
 	const char*			GetEditQueueText() { return m_editQueueText; }
 	const char*			GetArgFilename() { return m_argFilename; }
 	const char*			GetAddCategory() { return m_addCategory; }

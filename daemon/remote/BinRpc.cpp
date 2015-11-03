@@ -218,8 +218,8 @@ void BinRpcProcessor::Execute()
 
 void BinRpcProcessor::Dispatch()
 {
-	if (ntohl(m_messageBase.m_type) >= (int)remoteRequestDownload &&
-		   ntohl(m_messageBase.m_type) <= (int)remoteRequestHistory &&
+	if (ntohl(m_messageBase.m_type) >= (int)rrDownload &&
+		   ntohl(m_messageBase.m_type) <= (int)rrHistory &&
 		   g_MessageRequestSizes[ntohl(m_messageBase.m_type)] != ntohl(m_messageBase.m_structSize))
 	{
 		error("Invalid size of request: expected %i Bytes, but received %i Bytes",
@@ -231,59 +231,59 @@ void BinRpcProcessor::Dispatch()
 
 	switch (ntohl(m_messageBase.m_type))
 	{
-		case remoteRequestDownload:
+		case rrDownload:
 			command = new DownloadBinCommand();
 			break;
 
-		case remoteRequestList:
+		case rrList:
 			command = new ListBinCommand();
 			break;
 
-		case remoteRequestLog:
+		case rrLog:
 			command = new LogBinCommand();
 			break;
 
-		case remoteRequestPauseUnpause:
+		case rrPauseUnpause:
 			command = new PauseUnpauseBinCommand();
 			break;
 
-		case remoteRequestEditQueue:
+		case rrEditQueue:
 			command = new EditQueueBinCommand();
 			break;
 
-		case remoteRequestSetDownloadRate:
+		case rrSetDownloadRate:
 			command = new SetDownloadRateBinCommand();
 			break;
 
-		case remoteRequestDumpDebug:
+		case rrDumpDebug:
 			command = new DumpDebugBinCommand();
 			break;
 
-		case remoteRequestShutdown:
+		case rrShutdown:
 			command = new ShutdownBinCommand();
 			break;
 
-		case remoteRequestReload:
+		case rrReload:
 			command = new ReloadBinCommand();
 			break;
 
-		case remoteRequestVersion:
+		case rrVersion:
 			command = new VersionBinCommand();
 			break;
 
-		case remoteRequestPostQueue:
+		case rrPostQueue:
 			command = new PostQueueBinCommand();
 			break;
 
-		case remoteRequestWriteLog:
+		case rrWriteLog:
 			command = new WriteLogBinCommand();
 			break;
 
-		case remoteRequestScan:
+		case rrScan:
 			command = new ScanBinCommand();
 			break;
 
-		case remoteRequestHistory:
+		case rrHistory:
 			command = new HistoryBinCommand();
 			break;
 
@@ -347,15 +347,15 @@ void PauseUnpauseBinCommand::Execute()
 
 	switch (ntohl(PauseUnpauseRequest.m_action))
 	{
-		case remotePauseUnpauseActionDownload:
+		case rpDownload:
 			g_Options->SetPauseDownload(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 
-		case remotePauseUnpauseActionPostProcess:
+		case rpPostProcess:
 			g_Options->SetPausePostProcess(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 
-		case remotePauseUnpauseActionScan:
+		case rpScan:
 			g_Options->SetPauseScan(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 	}
@@ -506,12 +506,12 @@ void ListBinCommand::Execute()
 
 	if (ntohl(ListRequest.m_fileList))
 	{
-		remoteMatchMode matchMode = (remoteMatchMode)ntohl(ListRequest.m_matchMode);
+		ERemoteMatchMode matchMode = (ERemoteMatchMode)ntohl(ListRequest.m_matchMode);
 		bool matchGroup = ntohl(ListRequest.m_matchGroup);
 		const char* pattern = ListRequest.m_pattern;
 
 		RegEx *regEx = NULL;
-		if (matchMode == remoteMatchModeRegEx)
+		if (matchMode == rmRegEx)
 		{
 			regEx = new RegEx(pattern);
 			ListResponse.m_regExValid = regEx->IsValid();

@@ -332,7 +332,7 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 	char* lineBuf = (char*)malloc(LineBufSize);
 	m_contentLen = -1;
 	bool firstLine = true;
-	m_gZip = false;
+	m_gzip = false;
 	m_redirecting = false;
 	m_redirected = false;
 
@@ -400,7 +400,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 
 #ifndef DISABLE_GZIP
 	m_gUnzipStream = NULL;
-	if (m_gZip)
+	if (m_gzip)
 	{
 		m_gUnzipStream = new GUnzipStream(1024*10);
 	}
@@ -446,7 +446,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 		writtenLen += len;
 
 		//detect end of file
-		if (writtenLen == m_contentLen || (m_contentLen == -1 && m_gZip && m_confirmedLength))
+		if (writtenLen == m_contentLen || (m_contentLen == -1 && m_gzip && m_confirmedLength))
 		{
 			end = true;
 			break;
@@ -535,7 +535,7 @@ void WebDownloader::ProcessHeader(const char* line)
 	}
 	else if (!strncasecmp(line, "Content-Encoding: gzip", 22))
 	{
-		m_gZip = true;
+		m_gzip = true;
 	}
 	else if (!strncasecmp(line, "Content-Disposition: ", 21))
 	{
@@ -651,7 +651,7 @@ bool WebDownloader::Write(void* buffer, int len)
 	}
 
 #ifndef DISABLE_GZIP
-	if (m_gZip)
+	if (m_gzip)
 	{
 		m_gUnzipStream->Write(buffer, len);
 		const void *outBuf;

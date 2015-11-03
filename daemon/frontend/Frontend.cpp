@@ -226,7 +226,7 @@ bool Frontend::RequestMessages()
 	}
 
 	SNzbLogRequest LogRequest;
-	InitMessageBase(&LogRequest.m_messageBase, remoteRequestLog, sizeof(LogRequest));
+	InitMessageBase(&LogRequest.m_messageBase, rrLog, sizeof(LogRequest));
 	LogRequest.m_lines = htonl(m_neededLogEntries);
 	if (m_neededLogEntries == 0)
 	{
@@ -298,7 +298,7 @@ bool Frontend::RequestFileList()
 	}
 
 	SNzbListRequest ListRequest;
-	InitMessageBase(&ListRequest.m_messageBase, remoteRequestList, sizeof(ListRequest));
+	InitMessageBase(&ListRequest.m_messageBase, rrList, sizeof(ListRequest));
 	ListRequest.m_fileList = htonl(m_fileList);
 	ListRequest.m_serverState = htonl(m_summary);
 
@@ -366,7 +366,7 @@ bool Frontend::RequestPauseUnpause(bool pause)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerPauseUnpause(pause, remotePauseUnpauseActionDownload);
+	return client.RequestServerPauseUnpause(pause, rpDownload);
 }
 
 bool Frontend::RequestSetDownloadRate(int rate)
@@ -380,5 +380,5 @@ bool Frontend::RequestEditQueue(DownloadQueue::EEditAction action, int offset, i
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(action, offset, NULL, &id, 1, NULL, remoteMatchModeId);
+	return client.RequestServerEditQueue(action, offset, NULL, &id, 1, NULL, rmId);
 }

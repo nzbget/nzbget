@@ -64,11 +64,11 @@ public:
 						bool addFirst, bool addPaused, int priority,
 						const char* dupeKey, int dupeMode, int dupeScore);
 	bool			RequestServerList(bool files, bool groups, const char* pattern);
-	bool			RequestServerPauseUnpause(bool pause, remotePauseUnpauseAction action);
+	bool			RequestServerPauseUnpause(bool pause, ERemotePauseUnpauseAction action);
 	bool			RequestServerSetDownloadRate(int rate);
 	bool			RequestServerDumpDebug();
 	bool 			RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
-						int* idList, int idCount, NameList* nameList, remoteMatchMode matchMode);
+						int* idList, int idCount, NameList* nameList, ERemoteMatchMode matchMode);
 	bool			RequestServerLog(int lines);
 	bool			RequestServerShutdown();
 	bool			RequestServerReload();

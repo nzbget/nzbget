@@ -66,10 +66,10 @@ private:
 	bool				m_detached;
 	FILE*				m_readpipe;
 #ifdef WIN32
-	HANDLE				m_hProcess;
+	HANDLE				m_processId;
 	char				m_cmdLine[2048];
 #else
-	pid_t				m_hProcess;
+	pid_t				m_processId;
 #endif
 
 	typedef std::vector<ScriptController*>	RunningScripts;

@@ -120,7 +120,7 @@ void UnpackController::Run()
 	m_password[0] = '\0';
 	m_finalDir[0] = '\0';
 	m_finalDirCreated = false;
-	m_unpackOK = true;
+	m_unpackOk = true;
 	m_unpackStartError = false;
 	m_unpackSpaceError = false;
 	m_unpackDecryptError = false;
@@ -183,17 +183,17 @@ void UnpackController::Run()
 			UnpackArchives(upUnrar, false);
 		}
 
-		if (m_hasSevenZipFiles && m_unpackOK)
+		if (m_hasSevenZipFiles && m_unpackOk)
 		{
 			UnpackArchives(upSevenZip, false);
 		}
 
-		if (m_hasSevenZipMultiFiles && m_unpackOK)
+		if (m_hasSevenZipMultiFiles && m_unpackOk)
 		{
 			UnpackArchives(upSevenZip, true);
 		}
 
-		if (m_hasSplittedFiles && m_unpackOK)
+		if (m_hasSplittedFiles && m_unpackOk)
 		{
 			JoinSplittedFiles();
 		}
@@ -231,7 +231,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 	if (!m_postInfo->GetUnpackTried() || m_postInfo->GetParRepaired())
 	{
 		ExecuteUnpack(unpacker, m_password, multiVolumes);
-		if (!m_unpackOK && m_hasParFiles && !m_unpackPasswordError &&
+		if (!m_unpackOk && m_hasParFiles && !m_unpackPasswordError &&
 			m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
 		{
 			// for rar4- or 7z-archives try par-check first, before trying password file
@@ -240,11 +240,11 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 	}
 	else
 	{
-		m_unpackOK = false;
+		m_unpackOk = false;
 		m_unpackDecryptError = m_postInfo->GetLastUnpackStatus() == (int)NzbInfo::usPassword;
 	}
 
-	if (!m_unpackOK && !m_unpackStartError && !m_unpackSpaceError &&
+	if (!m_unpackOk && !m_unpackStartError && !m_unpackSpaceError &&
 		(m_unpackDecryptError || m_unpackPasswordError) &&
 		(!GetTerminated() || m_autoTerminated) &&
 		Util::EmptyStr(m_password) && !Util::EmptyStr(g_Options->GetUnpackPassFile()))
@@ -257,7 +257,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 		}
 
 		char password[512];
-		while (!m_unpackOK && !m_unpackStartError && !m_unpackSpaceError &&
+		while (!m_unpackOk && !m_unpackStartError && !m_unpackSpaceError &&
 			(m_unpackDecryptError || m_unpackPasswordError) &&
 			fgets(password, sizeof(password) - 1, infile))
 		{
@@ -347,7 +347,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 	SetLogPrefix("Unrar");
 	ResetEnv();
 
-	m_allOKMessageReceived = false;
+	m_allOkMessageReceived = false;
 	m_unpacker = upUnrar;
 
 	SetProgressLabel("");
@@ -355,12 +355,12 @@ void UnpackController::ExecuteUnrar(const char* password)
 	SetLogPrefix(NULL);
 	SetProgressLabel("");
 
-	m_unpackOK = exitCode == 0 && m_allOKMessageReceived && !GetTerminated();
+	m_unpackOk = exitCode == 0 && m_allOkMessageReceived && !GetTerminated();
 	m_unpackStartError = exitCode == -1;
 	m_unpackSpaceError = exitCode == 5;
 	m_unpackPasswordError |= exitCode == 11; // only for rar5-archives
 
-	if (!m_unpackOK && exitCode > 0)
+	if (!m_unpackOk && exitCode > 0)
 	{
 		PrintMessage(Message::mkError, "Unrar error code: %i", exitCode);
 	}
@@ -410,7 +410,7 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 	SetScript(params.at(0));
 	ResetEnv();
 
-	m_allOKMessageReceived = false;
+	m_allOkMessageReceived = false;
 	m_unpacker = upSevenZip;
 
 	PrintMessage(Message::mkInfo, "Executing 7-Zip");
@@ -420,10 +420,10 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 	SetLogPrefix(NULL);
 	SetProgressLabel("");
 
-	m_unpackOK = exitCode == 0 && m_allOKMessageReceived && !GetTerminated();
+	m_unpackOk = exitCode == 0 && m_allOkMessageReceived && !GetTerminated();
 	m_unpackStartError = exitCode == -1;
 
-	if (!m_unpackOK && exitCode > 0)
+	if (!m_unpackOk && exitCode > 0)
 	{
 		PrintMessage(Message::mkError, "7-Zip error code: %i", exitCode);
 	}
@@ -441,7 +441,7 @@ bool UnpackController::PrepareCmdParams(const char* command, ParamList* params, 
 	if (!Util::SplitCommandLine(command, &cmdArgs))
 	{
 		PrintMessage(Message::mkError, "Could not start %s, failed to parse command line: %s", infoName, command);
-		m_unpackOK = false;
+		m_unpackOk = false;
 		m_unpackStartError = true;
 		return false;
 	}
@@ -479,7 +479,7 @@ void UnpackController::JoinSplittedFiles()
 			{
 				if (!JoinFile(filename))
 				{
-					m_unpackOK = false;
+					m_unpackOk = false;
 					break;
 				}
 			}
@@ -632,7 +632,7 @@ void UnpackController::Completed()
 {
 	bool cleanupSuccess = Cleanup();
 
-	if (m_unpackOK && cleanupSuccess)
+	if (m_unpackOk && cleanupSuccess)
 	{
 		PrintMessage(Message::mkInfo, "%s %s", m_infoNameUp, "successful");
 		m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSuccess);
@@ -647,7 +647,7 @@ void UnpackController::Completed()
 	else
 	{
 #ifndef DISABLE_PARCHECK
-		if (!m_unpackOK && 
+		if (!m_unpackOk && 
 			(m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
 			 !m_postInfo->GetNzbInfo()->GetParFull()) &&
 			!m_unpackStartError && !m_unpackSpaceError && !m_unpackPasswordError &&
@@ -798,7 +798,7 @@ bool UnpackController::Cleanup()
 
 	FileList extractedFiles;
 
-	if (m_unpackOK)
+	if (m_unpackOk)
 	{
 		// moving files back
 		DirBrowser dir(m_unpackDir);
@@ -838,12 +838,12 @@ bool UnpackController::Cleanup()
 		PrintMessage(Message::mkError, "Could not delete temporary directory %s: %s", m_unpackDir, errBuf);
 	}
 
-	if (!m_unpackOK && m_finalDirCreated)
+	if (!m_unpackOk && m_finalDirCreated)
 	{
 		Util::RemoveDirectory(m_finalDir);
 	}		
 
-	if (m_unpackOK && ok && g_Options->GetUnpackCleanupDisk())
+	if (m_unpackOk && ok && g_Options->GetUnpackCleanupDisk())
 	{
 		PrintMessage(Message::mkInfo, "Deleting archive files");
 
@@ -1023,7 +1023,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 	if ((m_unpacker == upUnrar && !strncmp(text, "Unrar: All OK", 13)) ||
 		(m_unpacker == upSevenZip && !strncmp(text, "7-Zip: Everything is Ok", 23)))
 	{
-		m_allOKMessageReceived = true;
+		m_allOkMessageReceived = true;
 	}
 }
 

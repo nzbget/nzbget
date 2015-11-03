@@ -249,7 +249,7 @@ private:
 	char*				m_queueScript;
 	char*				m_feedScript;
 	bool				m_noConfig;
-	int					m_uMask;
+	int					m_umask;
 	int					m_updateInterval;
 	bool				m_cursesNzbName;
 	bool				m_cursesTime;
@@ -403,7 +403,7 @@ public:
 	const char*			GetScanScript() { return m_scanScript; }
 	const char*			GetQueueScript() { return m_queueScript; }
 	const char*			GetFeedScript() { return m_feedScript; }
-	int					GetUMask() { return m_uMask; }
+	int					GetUMask() { return m_umask; }
 	int					GetUpdateInterval() {return m_updateInterval; }
 	bool				GetCursesNzbName() { return m_cursesNzbName; }
 	bool				GetCursesTime() { return m_cursesTime; }

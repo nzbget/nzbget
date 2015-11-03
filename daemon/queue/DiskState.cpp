@@ -235,7 +235,7 @@ FILE* StateFile::BeginReadTransaction()
  * Standard fscanf scans beoynd current line if the next line is empty.
  * This wrapper fixes that.
  */
-int DiskState::fscanf(FILE* infile, const char* Format, ...)
+int DiskState::fscanf(FILE* infile, const char* format, ...)
 {
 	char line[1024];
 	if (!fgets(line, sizeof(line), infile)) 
@@ -244,8 +244,8 @@ int DiskState::fscanf(FILE* infile, const char* Format, ...)
 	}
 
 	va_list ap;
-	va_start(ap, Format);
-	int res = vsscanf(line, Format, ap);
+	va_start(ap, format);
+	int res = vsscanf(line, format, ap);
 	va_end(ap);
 
 	return res;

@@ -108,7 +108,7 @@ void WebProcessor::SetUrl(const char* url)
 
 void WebProcessor::Execute()
 {
-	m_gZip =false;
+	m_gzip =false;
 	m_userAccess = uaControl;
 	m_authInfo[0] = '\0';
 	m_authToken[0] = '\0';
@@ -179,7 +179,7 @@ void WebProcessor::ParseHeaders()
 		}
 		if (!strncasecmp(p, "Accept-Encoding: ", 17))
 		{
-			m_gZip = strstr(p, "gzip");
+			m_gzip = strstr(p, "gzip");
 		}
 		if (!strncasecmp(p, "Origin: ", 8))
 		{
@@ -476,27 +476,27 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"\r\n";
 	
 #ifndef DISABLE_GZIP
-	char *gBuf = NULL;
-	bool gZip = m_gZip && bodyLen > MAX_UNCOMPRESSED_SIZE;
-	if (gZip)
+	char *gbuf = NULL;
+	bool gzip = m_gzip && bodyLen > MAX_UNCOMPRESSED_SIZE;
+	if (gzip)
 	{
 		unsigned int outLen = ZLib::GZipLen(bodyLen);
-		gBuf = (char*)malloc(outLen);
-		int gZippedLen = ZLib::GZip(body, bodyLen, gBuf, outLen);
-		if (gZippedLen > 0 && gZippedLen < bodyLen)
+		gbuf = (char*)malloc(outLen);
+		int gzippedLen = ZLib::GZip(body, bodyLen, gbuf, outLen);
+		if (gzippedLen > 0 && gzippedLen < bodyLen)
 		{
-			body = gBuf;
-			bodyLen = gZippedLen;
+			body = gbuf;
+			bodyLen = gzippedLen;
 		}
 		else
 		{
-			free(gBuf);
-			gBuf = NULL;
-			gZip = false;
+			free(gbuf);
+			gbuf = NULL;
+			gzip = false;
 		}
 	}
 #else
-	bool gZip = false;
+	bool gzip = false;
 #endif
 	
 	char contentTypeHeader[1024];
@@ -513,7 +513,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	snprintf(responseHeader, 1024, RESPONSE_HEADER, 
 		m_origin ? m_origin : "",
 		m_serverAuthToken[m_userAccess], bodyLen, contentTypeHeader,
-		gZip ? "Content-Encoding: gzip\r\n" : "",
+		gzip ? "Content-Encoding: gzip\r\n" : "",
 		Util::VersionRevision());
 	
 	// Send the request answer
@@ -521,7 +521,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	m_connection->Send(body, bodyLen);
 	
 #ifndef DISABLE_GZIP
-	free(gBuf);
+	free(gbuf);
 #endif
 }
 

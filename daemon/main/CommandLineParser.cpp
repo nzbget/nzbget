@@ -95,35 +95,35 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 	m_printVersion = false;
 	m_printUsage = false;
 
-	m_editQueueAction		= 0;
-	m_editQueueIdList		= NULL;
-	m_editQueueIdCount		= 0;
-	m_editQueueOffset		= 0;
-	m_editQueueText		= NULL;
-	m_argFilename			= NULL;
-	m_lastArg				= NULL;
-	m_addCategory			= NULL;
-	m_addPriority			= 0;
-	m_addNzbFilename		= NULL;
-	m_addPaused			= false;
-	m_serverMode			= false;
-	m_daemonMode			= false;
-	m_remoteClientMode		= false;
-	m_printOptions			= false;
-	m_addTop				= false;
-	m_addDupeKey			= NULL;
-	m_addDupeScore			= 0;
-	m_addDupeMode			= 0;
-	m_logLines				= 0;
-	m_writeLogKind			= 0;
-	m_testBacktrace		= false;
-	m_webGet				= false;
-	m_webGetFilename		= NULL;
-	m_sigVerify			= false;
-	m_pubKeyFilename		= NULL;
-	m_sigFilename			= NULL;
-	m_eMatchMode			= mmId;
-	m_pauseDownload		= false;
+	m_editQueueAction = 0;
+	m_editQueueIdList = NULL;
+	m_editQueueIdCount = 0;
+	m_editQueueOffset = 0;
+	m_editQueueText = NULL;
+	m_argFilename = NULL;
+	m_lastArg = NULL;
+	m_addCategory = NULL;
+	m_addPriority = 0;
+	m_addNzbFilename = NULL;
+	m_addPaused = false;
+	m_serverMode = false;
+	m_daemonMode = false;
+	m_remoteClientMode = false;
+	m_printOptions = false;
+	m_addTop = false;
+	m_addDupeKey = NULL;
+	m_addDupeScore = 0;
+	m_addDupeMode = 0;
+	m_logLines = 0;
+	m_writeLogKind = 0;
+	m_testBacktrace = false;
+	m_webGet = false;
+	m_webGetFilename = NULL;
+	m_sigVerify = false;
+	m_pubKeyFilename = NULL;
+	m_sigFilename = NULL;
+	m_matchMode = mmId;
+	m_pauseDownload = false;
 
 	InitCommandLine(argc, argv);
 
@@ -367,7 +367,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 
 				if (optarg && (!strcasecmp(optarg, "FR") || !strcasecmp(optarg, "GR")))
 				{
-					m_eMatchMode = mmRegEx;
+					m_matchMode = mmRegEx;
 
 					optind++;
 					if (optind > argc)
@@ -479,15 +479,15 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				bool file = !strcasecmp(optarg, "F") || !strcasecmp(optarg, "FN") || !strcasecmp(optarg, "FR");
 				if (!strcasecmp(optarg, "GN") || !strcasecmp(optarg, "FN"))
 				{
-					m_eMatchMode = mmName;
+					m_matchMode = mmName;
 				}
 				else if (!strcasecmp(optarg, "GR") || !strcasecmp(optarg, "FR"))
 				{
-					m_eMatchMode = mmRegEx;
+					m_matchMode = mmRegEx;
 				}
 				else
 				{
-					m_eMatchMode = mmId;
+					m_matchMode = mmId;
 				};
 				bool post = !strcasecmp(optarg, "O");
 				bool history = !strcasecmp(optarg, "H");
@@ -919,7 +919,7 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 	}
 	else if (m_clientOperation == opClientRequestEditQueue)
 	{
-		if (m_eMatchMode == mmId)
+		if (m_matchMode == mmId)
 		{
 			ParseFileIdList(argc, argv, optind);
 		}

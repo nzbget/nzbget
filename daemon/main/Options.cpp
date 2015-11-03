@@ -445,7 +445,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_scanScript			= NULL;
 	m_queueScript			= NULL;
 	m_feedScript			= NULL;
-	m_uMask				= 0;
+	m_umask				= 0;
 	m_updateInterval		= 0;
 	m_cursesNzbName		= false;
 	m_cursesTime			= false;
@@ -952,7 +952,7 @@ void Options::InitOptions()
 	m_urlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
 	m_logBufferSize		= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
 	m_rotateLog			= ParseIntValue(OPTION_ROTATELOG, 10);
-	m_uMask				= ParseIntValue(OPTION_UMASK, 8);
+	m_umask				= ParseIntValue(OPTION_UMASK, 8);
 	m_updateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
 	m_writeBuffer			= ParseIntValue(OPTION_WRITEBUFFER, 10);
 	m_nzbDirInterval		= ParseIntValue(OPTION_NZBDIRINTERVAL, 10);

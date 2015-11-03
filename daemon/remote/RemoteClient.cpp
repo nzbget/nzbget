@@ -185,7 +185,7 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 	if (OK)
 	{
 		SNzbDownloadRequest DownloadRequest;
-		InitMessageBase(&DownloadRequest.m_messageBase, remoteRequestDownload, sizeof(DownloadRequest));
+		InitMessageBase(&DownloadRequest.m_messageBase, rrDownload, sizeof(DownloadRequest));
 		DownloadRequest.m_addFirst = htonl(addFirst);
 		DownloadRequest.m_addPaused = htonl(addPaused);
 		DownloadRequest.m_priority = htonl(priority);
@@ -329,10 +329,10 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 	if (!InitConnection()) return false;
 
 	SNzbListRequest ListRequest;
-	InitMessageBase(&ListRequest.m_messageBase, remoteRequestList, sizeof(ListRequest));
+	InitMessageBase(&ListRequest.m_messageBase, rrList, sizeof(ListRequest));
 	ListRequest.m_fileList = htonl(true);
 	ListRequest.m_serverState = htonl(true);
-	ListRequest.m_matchMode = htonl(pattern ? remoteMatchModeRegEx : remoteMatchModeId);
+	ListRequest.m_matchMode = htonl(pattern ? rmRegEx : rmId);
 	ListRequest.m_matchGroup = htonl(groups);
 	if (pattern)
 	{
@@ -713,7 +713,7 @@ bool RemoteClient::RequestServerLog(int lines)
 	if (!InitConnection()) return false;
 
 	SNzbLogRequest LogRequest;
-	InitMessageBase(&LogRequest.m_messageBase, remoteRequestLog, sizeof(LogRequest));
+	InitMessageBase(&LogRequest.m_messageBase, rrLog, sizeof(LogRequest));
 	LogRequest.m_lines = htonl(lines);
 	LogRequest.m_idFrom = 0;
 
@@ -794,12 +794,12 @@ bool RemoteClient::RequestServerLog(int lines)
 	return true;
 }
 
-bool RemoteClient::RequestServerPauseUnpause(bool pause, remotePauseUnpauseAction action)
+bool RemoteClient::RequestServerPauseUnpause(bool pause, ERemotePauseUnpauseAction action)
 {
 	if (!InitConnection()) return false;
 
 	SNzbPauseUnpauseRequest PauseUnpauseRequest;
-	InitMessageBase(&PauseUnpauseRequest.m_messageBase, remoteRequestPauseUnpause, sizeof(PauseUnpauseRequest));
+	InitMessageBase(&PauseUnpauseRequest.m_messageBase, rrPauseUnpause, sizeof(PauseUnpauseRequest));
 	PauseUnpauseRequest.m_pause = htonl(pause);
 	PauseUnpauseRequest.m_action = htonl(action);
 
@@ -821,7 +821,7 @@ bool RemoteClient::RequestServerSetDownloadRate(int rate)
 	if (!InitConnection()) return false;
 
 	SNzbSetDownloadRateRequest SetDownloadRateRequest;
-	InitMessageBase(&SetDownloadRateRequest.m_messageBase, remoteRequestSetDownloadRate, sizeof(SetDownloadRateRequest));
+	InitMessageBase(&SetDownloadRateRequest.m_messageBase, rrSetDownloadRate, sizeof(SetDownloadRateRequest));
 	SetDownloadRateRequest.m_downloadRate = htonl(rate);
 
 	if (!m_connection->Send((char*)(&SetDownloadRateRequest), sizeof(SetDownloadRateRequest)))
@@ -842,7 +842,7 @@ bool RemoteClient::RequestServerDumpDebug()
 	if (!InitConnection()) return false;
 
 	SNzbDumpDebugRequest DumpDebugInfo;
-	InitMessageBase(&DumpDebugInfo.m_messageBase, remoteRequestDumpDebug, sizeof(DumpDebugInfo));
+	InitMessageBase(&DumpDebugInfo.m_messageBase, rrDumpDebug, sizeof(DumpDebugInfo));
 
 	if (!m_connection->Send((char*)(&DumpDebugInfo), sizeof(DumpDebugInfo)))
 	{
@@ -858,7 +858,7 @@ bool RemoteClient::RequestServerDumpDebug()
 }
 
 bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
-	int* idList, int idCount, NameList* nameList, remoteMatchMode matchMode)
+	int* idList, int idCount, NameList* nameList, ERemoteMatchMode matchMode)
 {
 	if ((idCount <= 0 || idList == NULL) && (nameList == NULL || nameList->size() == 0))
 	{
@@ -891,7 +891,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	int length = textLen + idLength + nameLength;
 
 	SNzbEditQueueRequest EditQueueRequest;
-	InitMessageBase(&EditQueueRequest.m_messageBase, remoteRequestEditQueue, sizeof(EditQueueRequest));
+	InitMessageBase(&EditQueueRequest.m_messageBase, rrEditQueue, sizeof(EditQueueRequest));
 	EditQueueRequest.m_action = htonl(action);
 	EditQueueRequest.m_matchMode = htonl(matchMode);
 	EditQueueRequest.m_offset = htonl((int)offset);
@@ -950,7 +950,7 @@ bool RemoteClient::RequestServerShutdown()
 	if (!InitConnection()) return false;
 
 	SNzbShutdownRequest ShutdownRequest;
-	InitMessageBase(&ShutdownRequest.m_messageBase, remoteRequestShutdown, sizeof(ShutdownRequest));
+	InitMessageBase(&ShutdownRequest.m_messageBase, rrShutdown, sizeof(ShutdownRequest));
 
 	bool OK = m_connection->Send((char*)(&ShutdownRequest), sizeof(ShutdownRequest));
 	if (OK)
@@ -971,7 +971,7 @@ bool RemoteClient::RequestServerReload()
 	if (!InitConnection()) return false;
 
 	SNzbReloadRequest ReloadRequest;
-	InitMessageBase(&ReloadRequest.m_messageBase, remoteRequestReload, sizeof(ReloadRequest));
+	InitMessageBase(&ReloadRequest.m_messageBase, rrReload, sizeof(ReloadRequest));
 
 	bool OK = m_connection->Send((char*)(&ReloadRequest), sizeof(ReloadRequest));
 	if (OK)
@@ -992,7 +992,7 @@ bool RemoteClient::RequestServerVersion()
 	if (!InitConnection()) return false;
 
 	SNzbVersionRequest VersionRequest;
-	InitMessageBase(&VersionRequest.m_messageBase, remoteRequestVersion, sizeof(VersionRequest));
+	InitMessageBase(&VersionRequest.m_messageBase, rrVersion, sizeof(VersionRequest));
 
 	bool OK = m_connection->Send((char*)(&VersionRequest), sizeof(VersionRequest));
 	if (OK)
@@ -1013,7 +1013,7 @@ bool RemoteClient::RequestPostQueue()
 	if (!InitConnection()) return false;
 
 	SNzbPostQueueRequest PostQueueRequest;
-	InitMessageBase(&PostQueueRequest.m_messageBase, remoteRequestPostQueue, sizeof(PostQueueRequest));
+	InitMessageBase(&PostQueueRequest.m_messageBase, rrPostQueue, sizeof(PostQueueRequest));
 
 	if (!m_connection->Send((char*)(&PostQueueRequest), sizeof(PostQueueRequest)))
 	{
@@ -1093,7 +1093,7 @@ bool RemoteClient::RequestWriteLog(int kind, const char* text)
 	if (!InitConnection()) return false;
 
 	SNzbWriteLogRequest WriteLogRequest;
-	InitMessageBase(&WriteLogRequest.m_messageBase, remoteRequestWriteLog, sizeof(WriteLogRequest));
+	InitMessageBase(&WriteLogRequest.m_messageBase, rrWriteLog, sizeof(WriteLogRequest));
 	WriteLogRequest.m_kind = htonl(kind);
 	int length = strlen(text) + 1;
 	WriteLogRequest.m_trailingDataLength = htonl(length);
@@ -1115,7 +1115,7 @@ bool RemoteClient::RequestScan(bool syncMode)
 	if (!InitConnection()) return false;
 
 	SNzbScanRequest ScanRequest;
-	InitMessageBase(&ScanRequest.m_messageBase, remoteRequestScan, sizeof(ScanRequest));
+	InitMessageBase(&ScanRequest.m_messageBase, rrScan, sizeof(ScanRequest));
 
 	ScanRequest.m_syncMode = htonl(syncMode);
 
@@ -1138,7 +1138,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 	if (!InitConnection()) return false;
 
 	SNzbHistoryRequest HistoryRequest;
-	InitMessageBase(&HistoryRequest.m_messageBase, remoteRequestHistory, sizeof(HistoryRequest));
+	InitMessageBase(&HistoryRequest.m_messageBase, rrHistory, sizeof(HistoryRequest));
 	HistoryRequest.m_hidden = htonl(withHidden);
 
 	if (!m_connection->Send((char*)(&HistoryRequest), sizeof(HistoryRequest)))

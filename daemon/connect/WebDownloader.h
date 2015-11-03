@@ -64,7 +64,7 @@ private:
 	bool				m_force;
 	bool				m_redirecting;
 	bool				m_redirected;
-	bool				m_gZip;
+	bool				m_gzip;
 	bool				m_retry;
 #ifndef DISABLE_GZIP
 	GUnzipStream*		m_gUnzipStream;

@@ -609,11 +609,11 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestDownloadPause:
-			Client->RequestServerPauseUnpause(true, remotePauseUnpauseActionDownload);
+			Client->RequestServerPauseUnpause(true, rpDownload);
 			break;
 
 		case CommandLineParser::opClientRequestDownloadUnpause:
-			Client->RequestServerPauseUnpause(false, remotePauseUnpauseActionDownload);
+			Client->RequestServerPauseUnpause(false, rpDownload);
 			break;
 
 		case CommandLineParser::opClientRequestSetRate:
@@ -628,7 +628,7 @@ void ProcessClientRequest()
 			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_CommandLineParser->GetEditQueueAction(),
 				g_CommandLineParser->GetEditQueueOffset(), g_CommandLineParser->GetEditQueueText(),
 				g_CommandLineParser->GetEditQueueIdList(), g_CommandLineParser->GetEditQueueIdCount(),
-				g_CommandLineParser->GetEditQueueNameList(), (remoteMatchMode)g_CommandLineParser->GetMatchMode());
+				g_CommandLineParser->GetEditQueueNameList(), (ERemoteMatchMode)g_CommandLineParser->GetMatchMode());
 			break;
 
 		case CommandLineParser::opClientRequestLog:
@@ -670,19 +670,19 @@ void ProcessClientRequest()
 			break;
 
 		case CommandLineParser::opClientRequestPostPause:
-			Client->RequestServerPauseUnpause(true, remotePauseUnpauseActionPostProcess);
+			Client->RequestServerPauseUnpause(true, rpPostProcess);
 			break;
 
 		case CommandLineParser::opClientRequestPostUnpause:
-			Client->RequestServerPauseUnpause(false, remotePauseUnpauseActionPostProcess);
+			Client->RequestServerPauseUnpause(false, rpPostProcess);
 			break;
 
 		case CommandLineParser::opClientRequestScanPause:
-			Client->RequestServerPauseUnpause(true, remotePauseUnpauseActionScan);
+			Client->RequestServerPauseUnpause(true, rpScan);
 			break;
 
 		case CommandLineParser::opClientRequestScanUnpause:
-			Client->RequestServerPauseUnpause(false, remotePauseUnpauseActionScan);
+			Client->RequestServerPauseUnpause(false, rpScan);
 			break;
 
 		case CommandLineParser::opClientRequestHistory:

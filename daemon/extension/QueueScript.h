@@ -47,14 +47,14 @@ private:
 	class QueueItem
 	{
 	private:
-		int					m_nzbId;
+		int						m_nzbId;
 		ScriptConfig::Script*	m_script;
-		EEvent				m_event;
+		EEvent					m_event;
 	public:
-							QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event);
-		int					GetNzbId() { return m_nzbId; }
+								QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event);
+		int						GetNzbId() { return m_nzbId; }
 		ScriptConfig::Script*	GetScript() { return m_script; }
-		EEvent				GetEvent() { return m_event; }
+		EEvent					GetEvent() { return m_event; }
 	};
 
 	typedef std::list<QueueItem*> Queue;

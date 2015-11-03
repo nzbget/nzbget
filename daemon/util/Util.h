@@ -43,7 +43,7 @@ class DirBrowser
 private:
 #ifdef WIN32
 	WIN32_FIND_DATA		m_findData;
-	HANDLE				m_hFile;
+	HANDLE				m_file;
 	bool				m_first;
 #else
 	void*				m_dir;    // DIR*, declared as void* to avoid including of <dirent>
@@ -162,7 +162,7 @@ public:
 	static unsigned int HashBJ96(const char* buffer, int bufSize, unsigned int initValue);
 
 #ifdef WIN32
-	static bool RegReadStr(HKEY hKey, const char* keyName, const char* valueName, char* buffer, int* bufLen);
+	static bool RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, char* buffer, int* bufLen);
 #endif
 
 	static void SetStandByMode(bool standBy);

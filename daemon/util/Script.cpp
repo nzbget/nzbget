@@ -82,11 +82,11 @@ Mutex ScriptController::m_runningMutex;
 class ChildWatchDog : public Thread
 {
 private:
-	pid_t			m_hProcessId;
+	pid_t			m_processId;
 protected:
 	virtual void	Run();
 public:
-	void			SetProcessId(pid_t hProcessId) { m_hProcessId = hProcessId; }
+	void			SetProcessId(pid_t processId) { m_processId = processId; }
 };
 
 void ChildWatchDog::Run()
@@ -101,7 +101,7 @@ void ChildWatchDog::Run()
 	if (!IsStopped())
 	{
 		info("Restarting hanging child process");
-		kill(m_hProcessId, SIGKILL);
+		kill(m_processId, SIGKILL);
 	}
 }
 #endif
@@ -206,7 +206,7 @@ ScriptController::ScriptController()
 	m_logPrefix = NULL;
 	m_terminated = false;
 	m_detached = false;
-	m_hProcess = 0;
+	m_processId = 0;
 	ResetEnv();
 
 	m_runningMutex.Lock();
@@ -402,42 +402,42 @@ int ScriptController::Execute()
 	}
 	
 	// create pipes to write and read data
-	HANDLE hReadPipe, hWritePipe;
-	SECURITY_ATTRIBUTES SecurityAttributes;
-	memset(&SecurityAttributes, 0, sizeof(SecurityAttributes));
-	SecurityAttributes.nLength = sizeof(SecurityAttributes);
-	SecurityAttributes.bInheritHandle = TRUE;
+	HANDLE readPipe, writePipe;
+	SECURITY_ATTRIBUTES securityAttributes;
+	memset(&securityAttributes, 0, sizeof(securityAttributes));
+	securityAttributes.nLength = sizeof(securityAttributes);
+	securityAttributes.bInheritHandle = TRUE;
 
-	CreatePipe(&hReadPipe, &hWritePipe, &SecurityAttributes, 0);
+	CreatePipe(&readPipe, &writePipe, &securityAttributes, 0);
 
-	SetHandleInformation(hReadPipe, HANDLE_FLAG_INHERIT, 0);
+	SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
 
-	STARTUPINFO StartupInfo;
-	memset(&StartupInfo, 0, sizeof(StartupInfo));
-	StartupInfo.cb = sizeof(StartupInfo);
-	StartupInfo.dwFlags = STARTF_USESTDHANDLES;
-	StartupInfo.hStdInput = 0;
-	StartupInfo.hStdOutput = hWritePipe;
-	StartupInfo.hStdError = hWritePipe;
+	STARTUPINFO startupInfo;
+	memset(&startupInfo, 0, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	startupInfo.dwFlags = STARTF_USESTDHANDLES;
+	startupInfo.hStdInput = 0;
+	startupInfo.hStdOutput = writePipe;
+	startupInfo.hStdError = writePipe;
 
-	PROCESS_INFORMATION ProcessInfo;
-	memset(&ProcessInfo, 0, sizeof(ProcessInfo));
+	PROCESS_INFORMATION processInfo;
+	memset(&processInfo, 0, sizeof(processInfo));
 
 	char* environmentStrings = m_environmentStrings.GetStrings();
 
-	BOOL ok = CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, environmentStrings, m_workingDir, &StartupInfo, &ProcessInfo);
+	BOOL ok = CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, environmentStrings, m_workingDir, &startupInfo, &processInfo);
 	if (!ok)
 	{
-		DWORD dwErrCode = GetLastError();
+		DWORD errCode = GetLastError();
 		char errMsg[255];
 		errMsg[255-1] = '\0';
-		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwErrCode, 0, errMsg, 255, NULL))
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errCode, 0, errMsg, 255, NULL))
 		{
 			PrintMessage(Message::mkError, "Could not start %s: %s", m_infoName, errMsg);
 		}
 		else
 		{
-			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, dwErrCode);
+			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, errCode);
 		}
 		if (!Util::FileExists(m_script))
 		{
@@ -449,14 +449,14 @@ int ScriptController::Execute()
 
 	free(environmentStrings);
 
-	debug("Child Process-ID: %i", (int)ProcessInfo.dwProcessId);
+	debug("Child Process-ID: %i", (int)processInfo.dwProcessId);
 
-	m_hProcess = ProcessInfo.hProcess;
+	m_processId = processInfo.hProcess;
 
 	// close unused "write" end
-	CloseHandle(hWritePipe);
+	CloseHandle(writePipe);
 
-	pipein = _open_osfhandle((intptr_t)hReadPipe, _O_RDONLY);
+	pipein = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
 
 #else
 
@@ -530,7 +530,7 @@ int ScriptController::Execute()
 
 	free(environmentStrings);
 
-	m_hProcess = pid;
+	m_processId = pid;
 
 	// close unused "write" end
 	close(pipeout);
@@ -609,13 +609,13 @@ int ScriptController::Execute()
 	if (!m_terminated && !m_detached)
 	{
 #ifdef WIN32
-	WaitForSingleObject(m_hProcess, INFINITE);
-	DWORD dExitCode = 0;
-	GetExitCodeProcess(m_hProcess, &dExitCode);
-	exitCode = dExitCode;
+	WaitForSingleObject(m_processId, INFINITE);
+	DWORD exitCode = 0;
+	GetExitCodeProcess(m_processId, &exitCode);
+	exitCode = exitCode;
 #else
 	int status = 0;
-	waitpid(m_hProcess, &status, 0);
+	waitpid(m_processId, &status, 0);
 	if (WIFEXITED(status))
 	{
 		exitCode = WEXITSTATUS(status);
@@ -642,26 +642,26 @@ void ScriptController::Terminate()
 	m_terminated = true;
 
 #ifdef WIN32
-	BOOL ok = TerminateProcess(m_hProcess, -1);
+	BOOL ok = TerminateProcess(m_processId, -1);
 	if (ok)
 	{
 		// wait 60 seconds for process to terminate
-		WaitForSingleObject(m_hProcess, 60 * 1000);
+		WaitForSingleObject(m_processId, 60 * 1000);
 	}
 	else
 	{
-		DWORD dExitCode = 0;
-		GetExitCodeProcess(m_hProcess, &dExitCode);
-		ok = dExitCode != STILL_ACTIVE;
+		DWORD exitCode = 0;
+		GetExitCodeProcess(m_processId, &exitCode);
+		ok = exitCode != STILL_ACTIVE;
 	}
 #else
-	pid_t hKillProcess = m_hProcess;
-	if (getpgid(hKillProcess) == hKillProcess)
+	pid_t killId = m_processId;
+	if (getpgid(killId) == killId)
 	{
 		// if the child process has its own group (setsid() was successful), kill the whole group
-		hKillProcess = -hKillProcess;
+		killId = -killId;
 	}
-	bool ok = hKillProcess && kill(hKillProcess, SIGKILL) == 0;
+	bool ok = killId && kill(killId, SIGKILL) == 0;
 #endif
 
 	if (ok)
@@ -682,7 +682,7 @@ void ScriptController::TerminateAll()
 	for (RunningScripts::iterator it = m_runningScripts.begin(); it != m_runningScripts.end(); it++)
 	{
 		ScriptController* script = *it;
-		if (script->m_hProcess && !script->m_detached)
+		if (script->m_processId && !script->m_detached)
 		{
 			script->Terminate();
 		}
@@ -703,7 +703,7 @@ void ScriptController::Resume()
 {
 	m_terminated = false;
 	m_detached = false;
-	m_hProcess = 0;
+	m_processId = 0;
 }
 
 bool ScriptController::ReadLine(char* buf, int bufSize, FILE* stream)

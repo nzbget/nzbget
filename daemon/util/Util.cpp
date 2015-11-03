@@ -149,15 +149,15 @@ DirBrowser::DirBrowser(const char* path)
 	char mask[MAX_PATH + 1];
 	snprintf(mask, MAX_PATH + 1, "%s%c*.*", path, (int)PATH_SEPARATOR);
 	mask[MAX_PATH] = '\0';
-	m_hFile = FindFirstFile(mask, &m_findData);
+	m_file = FindFirstFile(mask, &m_findData);
 	m_first = true;
 }
 
 DirBrowser::~DirBrowser()
 {
-	if (m_hFile != INVALID_HANDLE_VALUE)
+	if (m_file != INVALID_HANDLE_VALUE)
 	{
-		FindClose(m_hFile);
+		FindClose(m_file);
 	}
 }
 
@@ -166,12 +166,12 @@ const char* DirBrowser::Next()
 	bool ok = false;
 	if (m_first)
 	{
-		ok = m_hFile != INVALID_HANDLE_VALUE;
+		ok = m_file != INVALID_HANDLE_VALUE;
 		m_first = false;
 	}
 	else
 	{
-		ok = FindNextFile(m_hFile, &m_findData) != 0;
+		ok = FindNextFile(m_file, &m_findData) != 0;
 	}
 	if (ok)
 	{
@@ -1363,15 +1363,15 @@ unsigned int Util::HashBJ96(const char* buffer, int bufSize, unsigned int initVa
 }
 
 #ifdef WIN32
-bool Util::RegReadStr(HKEY hKey, const char* keyName, const char* valueName, char* buffer, int* bufLen)
+bool Util::RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, char* buffer, int* bufLen)
 {
-	HKEY hSubKey;
-	if (!RegOpenKeyEx(hKey, keyName, 0, KEY_READ, &hSubKey))
+	HKEY subKey;
+	if (!RegOpenKeyEx(keyRoot, keyName, 0, KEY_READ, &subKey))
 	{
 		DWORD retBytes = *bufLen;
-		LONG ret = RegQueryValueEx(hSubKey, valueName, NULL, NULL, (LPBYTE)buffer, &retBytes);
+		LONG ret = RegQueryValueEx(subKey, valueName, NULL, NULL, (LPBYTE)buffer, &retBytes);
 		*bufLen = retBytes;
-		RegCloseKey(hSubKey);
+		RegCloseKey(subKey);
 		return ret == 0;
 	}
 	return false;

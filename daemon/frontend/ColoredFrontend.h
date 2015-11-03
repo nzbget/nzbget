@@ -36,7 +36,7 @@ private:
 	bool			m_needGoBack;
 
 #ifdef WIN32
-	HANDLE			m_hConsole;
+	HANDLE			m_console;
 #endif
 
 protected:

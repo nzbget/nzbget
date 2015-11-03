@@ -69,7 +69,7 @@ private:
 	char				m_unpackDir[1024];
 	char				m_password[1024];
 	bool				m_interDir;
-	bool				m_allOKMessageReceived;
+	bool				m_allOkMessageReceived;
 	bool				m_noFilesMessageReceived;
 	bool				m_hasParFiles;
 	bool				m_hasRarFiles;
@@ -77,7 +77,7 @@ private:
 	bool				m_hasSevenZipFiles;
 	bool				m_hasSevenZipMultiFiles;
 	bool				m_hasSplittedFiles;
-	bool				m_unpackOK;
+	bool				m_unpackOk;
 	bool				m_unpackStartError;
 	bool				m_unpackSpaceError;
 	bool				m_unpackDecryptError;

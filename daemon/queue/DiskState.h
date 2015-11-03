@@ -35,7 +35,7 @@
 class DiskState
 {
 private:
-	int					fscanf(FILE* infile, const char* Format, ...);
+	int					fscanf(FILE* infile, const char* format, ...);
 	bool				SaveFileInfo(FileInfo* fileInfo, const char* filename);
 	bool				LoadFileInfo(FileInfo* fileInfo, const char* filename, bool fileSummary, bool articles);
 	void				SaveNzbQueue(DownloadQueue* downloadQueue, FILE* outfile);
