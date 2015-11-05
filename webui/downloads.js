@@ -780,7 +780,6 @@ var DownloadsUI = (new function($)
 		dupeKey = dupeKey.replace('imdb=', '');
 		dupeKey = dupeKey.replace('series=', '');
 		dupeKey = dupeKey.replace('nzb=', '#');
-		dupeKey = dupeKey.replace('=', ' ');
 		dupeKey = dupeKey === '' ? 'title' : dupeKey;
 		return dupeKey;
 	}
