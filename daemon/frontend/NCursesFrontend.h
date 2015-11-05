@@ -42,14 +42,14 @@ private:
 
 	enum EInputMode
 	{
-	    normal,
-	    editQueue,
-	    downloadRate
+		normal,
+		editQueue,
+		downloadRate
 	};
 
 	bool				m_useColor;
 	int					m_dataUpdatePos;
-    bool				m_updateNextTime;
+	bool				m_updateNextTime;
 	int					m_screenHeight;
 	int					m_screenWidth;
 	int					m_queueWinTop;

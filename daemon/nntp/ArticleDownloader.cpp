@@ -261,7 +261,7 @@ void ArticleDownloader::Run()
 							{
 								serverFailed = true;
 								break;
-							}					
+							}
 						}
 					}
 					if (!serverFailed)
@@ -286,7 +286,7 @@ void ArticleDownloader::Run()
 					break;
 				}
 			}
-			
+
 			remainedRetries = retries;
 		}
 	}
@@ -335,7 +335,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			response = m_connection->JoinGroup(*it);
 			if (response && !strncmp(response, "2", 1))
 			{
-				break; 
+				break;
 			}
 		}
 
@@ -530,7 +530,7 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response
 		// OK
 		return adFinished;
 	}
-	else 
+	else
 	{
 		// unknown error, no special handling
 		detail("Article %s @ %s failed, %s: %s", m_infoName, m_connectionName, comment, response);
@@ -652,7 +652,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 			return adFailed;
 		}
 	}
-	else 
+	else
 	{
 		return adFinished;
 	}
@@ -701,7 +701,7 @@ bool ArticleDownloader::Terminate()
 
 void ArticleDownloader::FreeConnection(bool keepConnected)
 {
-	if (m_connection)							
+	if (m_connection)
 	{
 		debug("Releasing connection");
 		m_connectionMutex.Lock();

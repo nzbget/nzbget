@@ -219,7 +219,7 @@ void QueueCoordinator::Run()
 			FileInfo* fileInfo;
 			ArticleInfo* articleInfo;
 			bool freeConnection = false;
-			
+
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
 			bool hasMoreArticles = GetNextArticle(downloadQueue, fileInfo, articleInfo);
 			articeDownloadsRunning = !m_activeDownloads.empty();
@@ -237,7 +237,7 @@ void QueueCoordinator::Run()
 				freeConnection = true;
 			}
 			DownloadQueue::Unlock();
-			
+
 			if (freeConnection)
 			{
 				g_ServerPool->FreeConnection(connection, false);
@@ -415,7 +415,7 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 		DownloadQueue::Aspect addedAspect = { DownloadQueue::eaNzbAdded, downloadQueue, nzbInfo, NULL };
 		downloadQueue->Notify(&addedAspect);
 	}
-		
+
 	downloadQueue->Save();
 
 	DownloadQueue::Unlock();
@@ -446,7 +446,7 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 			FileInfo* fileInfo2 = *it2;
 			if (fileInfo != fileInfo2 &&
 				!strcmp(fileInfo->GetFilename(), fileInfo2->GetFilename()) &&
-				(fileInfo->GetSize() < fileInfo2->GetSize() || 
+				(fileInfo->GetSize() < fileInfo2->GetSize() ||
 				 (fileInfo->GetSize() == fileInfo2->GetSize() && index2 < index1)))
 			{
 				warn("File \"%s\" appears twice in collection, adding only the biggest file", fileInfo->GetFilename());
@@ -507,7 +507,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 	bool* checkedFiles = NULL;
 	time_t curDate = time(NULL);
 
-	while (!ok) 
+	while (!ok)
 	{
 		fileInfo = NULL;
 		int num = 0;
@@ -519,7 +519,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 			{
 				FileInfo* fileInfo1 = *it2;
-				if ((!checkedFiles || !checkedFiles[num]) && 
+				if ((!checkedFiles || !checkedFiles[num]) &&
 					!fileInfo1->GetPaused() && !fileInfo1->GetDeleted() &&
 					(g_Options->GetPropagationDelay() == 0 ||
 					 (int)fileInfo1->GetTime() < (int)curDate - g_Options->GetPropagationDelay()) &&
@@ -814,7 +814,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 
 	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
 
-	DownloadQueue::Aspect aspect = { completed && !fileDeleted ? 
+	DownloadQueue::Aspect aspect = { completed && !fileDeleted ?
 		DownloadQueue::eaFileCompleted : DownloadQueue::eaFileDeleted,
 		downloadQueue, nzbInfo, fileInfo };
 	downloadQueue->Notify(&aspect);
@@ -943,7 +943,7 @@ void QueueCoordinator::ResetHangingDownloads()
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end();)
 	{
 		ArticleDownloader* articleDownloader = *it;
-																		   
+
 		if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetArticleTimeout() + 1 &&
 		   articleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
@@ -951,7 +951,7 @@ void QueueCoordinator::ResetHangingDownloads()
 				articleDownloader->GetConnectionName());
 			articleDownloader->Stop();
 		}
-		
+
 		if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetTerminateTimeout() &&
 		   articleDownloader->GetStatus() == ArticleDownloader::adRunning)
 		{
@@ -980,7 +980,7 @@ void QueueCoordinator::ResetHangingDownloads()
 			continue;
 		}
 		it++;
-	}                                              
+	}
 
 	DownloadQueue::Unlock();
 }
@@ -1139,7 +1139,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 
 	// reattach completed file items to new NZBInfo-object
 	for (CompletedFiles::iterator it = srcNzbInfo->GetCompletedFiles()->begin(); it != srcNzbInfo->GetCompletedFiles()->end(); it++)
-    {
+	{
 		CompletedFile* completedFile = *it;
 		destNzbInfo->GetCompletedFiles()->push_back(completedFile);
 	}

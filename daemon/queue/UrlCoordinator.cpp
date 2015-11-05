@@ -83,7 +83,7 @@ void UrlDownloader::ProcessHeader(const char* line)
 			value++;
 			while (*value == ' ') value++;
 			Util::Trim(value);
-			
+
 			debug("X-DNZB: %s", modLine);
 			debug("Value: %s", value);
 
@@ -235,7 +235,7 @@ void UrlCoordinator::ResetHangingDownloads()
 			continue;
 		}
 		it++;
-	}                                              
+	}
 
 	DownloadQueue::Unlock();
 }
@@ -448,7 +448,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 		downloadQueue->GetHistory()->push_front(historyInfo);
 		deleteObj = false;
 	}
-		
+
 	downloadQueue->Save();
 
 	DownloadQueue::Unlock();
@@ -476,7 +476,7 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 				urlDownloader->Stop();
 				return true;
 			}
-		}                                              
+		}
 	}
 
 	info("Deleting URL %s", nzbInfo->GetName());

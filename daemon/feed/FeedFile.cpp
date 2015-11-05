@@ -35,7 +35,7 @@
 #include <list>
 #ifdef WIN32
 #include <comutil.h>
-#import <msxml.tlb> named_guids 
+#import <msxml.tlb> named_guids
 using namespace MSXML;
 #else
 #include <libxml/parser.h>
@@ -53,9 +53,9 @@ using namespace MSXML;
 
 FeedFile::FeedFile(const char* fileName)
 {
-    debug("Creating FeedFile");
+	debug("Creating FeedFile");
 
-    m_fileName = strdup(fileName);
+	m_fileName = strdup(fileName);
 	m_feedItemInfos = new FeedItemInfos();
 	m_feedItemInfos->Retain();
 
@@ -82,7 +82,7 @@ FeedFile::~FeedFile()
 
 void FeedFile::LogDebugInfo()
 {
-    info(" FeedFile %s", m_fileName);
+	info(" FeedFile %s", m_fileName);
 }
 
 void FeedFile::AddItem(FeedItemInfo* feedItemInfo)
@@ -92,7 +92,7 @@ void FeedFile::AddItem(FeedItemInfo* feedItemInfo)
 
 void FeedFile::ParseSubject(FeedItemInfo* feedItemInfo)
 {
-	// if title has quatation marks we use only part within quatation marks 
+	// if title has quatation marks we use only part within quatation marks
 	char* p = (char*)feedItemInfo->GetTitle();
 	char* start = strchr(p, '\"');
 	if (start)
@@ -128,18 +128,18 @@ void FeedFile::ParseSubject(FeedItemInfo* feedItemInfo)
 #ifdef WIN32
 FeedFile* FeedFile::Create(const char* fileName)
 {
-    CoInitialize(NULL);
+	CoInitialize(NULL);
 
 	HRESULT hr;
 
 	MSXML::IXMLDOMDocumentPtr doc;
 	hr = doc.CreateInstance(MSXML::CLSID_DOMDocument);
-    if (FAILED(hr))
-    {
-        return NULL;
-    }
+	if (FAILED(hr))
+	{
+		return NULL;
+	}
 
-    // Load the XML document file...
+	// Load the XML document file...
 	doc->put_resolveExternals(VARIANT_FALSE);
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
@@ -160,14 +160,14 @@ FeedFile* FeedFile::Create(const char* fileName)
 		return NULL;
 	}
 
-    FeedFile* file = new FeedFile(fileName);
-    if (!file->ParseFeed(doc))
+	FeedFile* file = new FeedFile(fileName);
+	if (!file->ParseFeed(doc))
 	{
 		delete file;
 		file = NULL;
 	}
 
-    return file;
+	return file;
 }
 
 void FeedFile::EncodeUrl(const char* filename, char* url)
@@ -207,8 +207,8 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 
 		MSXML::IXMLDOMNodePtr tag;
 		MSXML::IXMLDOMNodePtr attr;
-		
-		// <title>Debian 6</title> 
+
+		// <title>Debian 6</title>
 		tag = node->selectSingleNode("title");
 		if (!tag)
 		{
@@ -378,7 +378,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 
 FeedFile* FeedFile::Create(const char* fileName)
 {
-    FeedFile* file = new FeedFile(fileName);
+	FeedFile* file = new FeedFile(fileName);
 
 	xmlSAXHandler SAX_handler = {0};
 	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
@@ -390,21 +390,21 @@ FeedFile* FeedFile::Create(const char* fileName)
 	file->m_ignoreNextError = false;
 
 	int ret = xmlSAXUserParseFile(&SAX_handler, file, fileName);
-    
-    if (ret != 0)
+
+	if (ret != 0)
 	{
-        error("Failed to parse rss feed");
+		error("Failed to parse rss feed");
 		delete file;
 		file = NULL;
 	}
-	
+
 	return file;
 }
 
 void FeedFile::Parse_StartElement(const char *name, const char **atts)
 {
 	ResetTagContent();
-	
+
 	if (!strcmp("item", name))
 	{
 		delete m_feedItemInfo;
@@ -546,7 +546,7 @@ void FeedFile::SAX_EndElement(FeedFile* file, const char *name)
 void FeedFile::SAX_characters(FeedFile* file, const char * xmlstr, int len)
 {
 	char* str = (char*)xmlstr;
-	
+
 	// trim starting blanks
 	int off = 0;
 	for (int i = 0; i < len; i++)
@@ -561,9 +561,9 @@ void FeedFile::SAX_characters(FeedFile* file, const char * xmlstr, int len)
 			break;
 		}
 	}
-	
+
 	int newlen = len - off;
-	
+
 	// trim ending blanks
 	for (int i = len - 1; i >= off; i--)
 	{
@@ -577,7 +577,7 @@ void FeedFile::SAX_characters(FeedFile* file, const char * xmlstr, int len)
 			break;
 		}
 	}
-	
+
 	if (newlen > 0)
 	{
 		// interpret tag content
@@ -604,16 +604,16 @@ void FeedFile::SAX_error(FeedFile* file, const char *msg, ...)
 		file->m_ignoreNextError = false;
 		return;
 	}
-	
-    va_list argp;
-    va_start(argp, msg);
-    char errMsg[1024];
-    vsnprintf(errMsg, sizeof(errMsg), msg, argp);
-    errMsg[1024-1] = '\0';
-    va_end(argp);
+
+	va_list argp;
+	va_start(argp, msg);
+	char errMsg[1024];
+	vsnprintf(errMsg, sizeof(errMsg), msg, argp);
+	errMsg[1024-1] = '\0';
+	va_end(argp);
 
 	// remove trailing CRLF
 	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
-    error("Error parsing rss feed: %s", errMsg);
+	error("Error parsing rss feed: %s", errMsg);
 }
 #endif

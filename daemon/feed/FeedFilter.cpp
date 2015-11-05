@@ -519,14 +519,14 @@ bool FeedFilter::Term::ParseNumericParam(const char* param)
 	m_fFloatParam = atof(param);
 	m_intParam = (long long)m_fFloatParam;
 	m_float = strchr(param, '.');
-	
+
 	const char* p;
 	for (p = param; *p && ((*p >= '0' && *p <='9') || *p == '.' || *p == '-') ; p++) ;
 	if (*p)
 	{
 		return false;
 	}
-	
+
 	return true;
 }
 

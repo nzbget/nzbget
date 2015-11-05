@@ -399,7 +399,7 @@ void XmlRpcProcessor::Dispatch()
 		if (pstart)
 		{
 			char* pend = strchr(pstart + 1, '?');
-			if (pend) 
+			if (pend)
 			{
 				int len = (int)(pend - pstart - 1 < (int)sizeof(methodName) - 1 ? pend - pstart - 1 : (int)sizeof(methodName) - 1);
 				len = len >= sizeof(methodName) ? sizeof(methodName) - 1 : len;
@@ -418,8 +418,8 @@ void XmlRpcProcessor::Dispatch()
 	else if (m_protocol == rpXmlRpc)
 	{
 		WebUtil::XmlParseTagValue(m_request, "methodName", methodName, sizeof(methodName), NULL);
-	} 
-	else if (m_protocol == rpJsonRpc) 
+	}
+	else if (m_protocol == rpJsonRpc)
 	{
 		int valueLen = 0;
 		if (const char* methodPtr = WebUtil::JsonFindField(m_request, "method", &valueLen))
@@ -574,7 +574,7 @@ void XmlRpcProcessor::BuildResponse(const char* response, const char* callbackFu
 	m_response.Append(closeTag);
 	m_response.Append(footer);
 	m_response.Append(callbackFooter);
-	
+
 	m_contentType = xmlRpc ? "text/xml" : "application/json";
 }
 
@@ -582,7 +582,7 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* methodName)
 {
 	XmlCommand* command = NULL;
 
-	if (m_userAccess == uaAdd && 
+	if (m_userAccess == uaAdd &&
 		!(!strcasecmp(methodName, "append") || !strcasecmp(methodName, "appendurl") ||
 		 !strcasecmp(methodName, "version")))
 	{
@@ -779,7 +779,7 @@ XmlCommand::XmlCommand()
 }
 
 bool XmlCommand::IsJson()
-{ 
+{
 	return m_protocol == XmlRpcProcessor::rpJsonRpc || m_protocol == XmlRpcProcessor::rpJsonPRpc;
 }
 
@@ -816,18 +816,18 @@ void XmlCommand::OptimizeResponse(int recordCount)
 
 void XmlCommand::BuildErrorResponse(int errCode, const char* errText, ...)
 {
-	const char* XML_RESPONSE_ERROR_BODY = 
+	const char* XML_RESPONSE_ERROR_BODY =
 		"<struct>\n"
 		"<member><name>faultCode</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>faultString</name><value><string>%s</string></value></member>\n"
 		"</struct>\n";
 
-	const char* JSON_RESPONSE_ERROR_BODY = 
+	const char* JSON_RESPONSE_ERROR_BODY =
 		"{\n"
-        "\"name\" : \"JSONRPCError\",\n"
-        "\"code\" : %i,\n"
-        "\"message\" : \"%s\"\n"
-        "}";
+		"\"name\" : \"JSONRPCError\",\n"
+		"\"code\" : %i,\n"
+		"\"message\" : \"%s\"\n"
+		"}";
 
 	char fullText[1024];
 
@@ -1093,7 +1093,7 @@ char* XmlCommand::EncodeStr(const char* str)
 		return strdup("");
 	}
 
-	if (IsJson()) 
+	if (IsJson())
 	{
 		return WebUtil::JsonEncode(str);
 	}
@@ -1177,7 +1177,7 @@ void PauseUnpauseXmlCommand::Execute()
 	BuildBoolResponse(ok);
 }
 
-// bool scheduleresume(int Seconds) 
+// bool scheduleresume(int Seconds)
 void ScheduleResumeXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
@@ -1259,7 +1259,7 @@ void SetDownloadRateXmlCommand::Execute()
 
 void StatusXmlCommand::Execute()
 {
-	const char* XML_STATUS_START = 
+	const char* XML_STATUS_START =
 		"<struct>\n"
 		"<member><name>RemainingSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>RemainingSizeHi</name><value><i4>%u</i4></value></member>\n"
@@ -1301,7 +1301,7 @@ void StatusXmlCommand::Execute()
 		"</data></array></value></member>\n"
 		"</struct>\n";
 
-	const char* JSON_STATUS_START = 
+	const char* JSON_STATUS_START =
 		"{\n"
 		"\"RemainingSizeLo\" : %u,\n"
 		"\"RemainingSizeHi\" : %u,\n"
@@ -1339,17 +1339,17 @@ void StatusXmlCommand::Execute()
 		"\"QueueScriptCount\" : %i,\n"
 		"\"NewsServers\" : [\n";
 
-	const char* JSON_STATUS_END = 
+	const char* JSON_STATUS_END =
 		"]\n"
 		"}";
 
-	const char* XML_NEWSSERVER_ITEM = 
+	const char* XML_NEWSSERVER_ITEM =
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Active</name><value><boolean>%s</boolean></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_NEWSSERVER_ITEM = 
+	const char* JSON_NEWSSERVER_ITEM =
 		"{\n"
 		"\"ID\" : %i,\n"
 		"\"Active\" : %s\n"
@@ -1409,9 +1409,9 @@ void StatusXmlCommand::Execute()
 		remainingSizeLo, remainingSizeHi, remainingMBytes, forcedSizeLo,
 		forcedSizeHi, forcedMBytes, downloadedSizeLo, downloadedSizeHi,
 		downloadedMBytes, articleCacheLo, articleCacheHi, articleCacheMBytes,
-		downloadRate, averageDownloadRate, downloadLimit, threadCount, 
-		postJobCount, postJobCount, urlCount, upTimeSec, downloadTimeSec, 
-		BoolToStr(downloadPaused), BoolToStr(downloadPaused), BoolToStr(downloadPaused), 
+		downloadRate, averageDownloadRate, downloadLimit, threadCount,
+		postJobCount, postJobCount, urlCount, upTimeSec, downloadTimeSec,
+		BoolToStr(downloadPaused), BoolToStr(downloadPaused), BoolToStr(downloadPaused),
 		BoolToStr(serverStandBy), BoolToStr(postPaused), BoolToStr(scanPaused),
 		freeDiskSpaceLo, freeDiskSpaceHi,	freeDiskSpaceMB, serverTime, resumeTime,
 		BoolToStr(feedActive), queuedScripts);
@@ -1465,7 +1465,7 @@ void LogXmlCommand::Execute()
 		}
 	}
 
-	const char* XML_LOG_ITEM = 
+	const char* XML_LOG_ITEM =
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Kind</name><value><string>%s</string></value></member>\n"
@@ -1473,7 +1473,7 @@ void LogXmlCommand::Execute()
 		"<member><name>Text</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_LOG_ITEM = 
+	const char* JSON_LOG_ITEM =
 		"{\n"
 		"\"ID\" : %i,\n"
 		"\"Kind\" : \"%s\",\n"
@@ -1481,7 +1481,7 @@ void LogXmlCommand::Execute()
 		"\"Text\" : \"%s\"\n"
 		"}";
 
-    const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
+	const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL" };
 
 	int index = 0;
 
@@ -1512,7 +1512,7 @@ void LogXmlCommand::UnlockMessages()
 	g_Log->UnlockMessages();
 }
 
-// struct[] listfiles(int IDFrom, int IDTo, int NZBID) 
+// struct[] listfiles(int IDFrom, int IDTo, int NZBID)
 // For backward compatibility with 0.8 parameter "NZBID" is optional
 void ListFilesXmlCommand::Execute()
 {
@@ -1540,7 +1540,7 @@ void ListFilesXmlCommand::Execute()
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	const char* XML_LIST_ITEM = 
+	const char* XML_LIST_ITEM =
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FileSizeLo</name><value><i4>%u</i4></value></member>\n"
@@ -1563,7 +1563,7 @@ void ListFilesXmlCommand::Execute()
 		"<member><name>Progress</name><value><i4>%u</i4></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_LIST_ITEM = 
+	const char* JSON_LIST_ITEM =
 		"{\n"
 		"\"ID\" : %i,\n"
 		"\"FileSizeLo\" : %u,\n"
@@ -1614,8 +1614,8 @@ void ListFilesXmlCommand::Execute()
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
-					fileInfo->GetId(), fileSizeLo, fileSizeHi, remainingSizeLo, remainingSizeHi, 
-					fileInfo->GetTime(), BoolToStr(fileInfo->GetFilenameConfirmed()), 
+					fileInfo->GetId(), fileSizeLo, fileSizeHi, remainingSizeLo, remainingSizeHi,
+					fileInfo->GetTime(), BoolToStr(fileInfo->GetFilenameConfirmed()),
 					BoolToStr(fileInfo->GetPaused()), fileInfo->GetNzbInfo()->GetId(), xmlNzbNicename,
 					xmlNzbNicename, xmlNzbFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
 					fileInfo->GetNzbInfo()->GetPriority(), fileInfo->GetActiveDownloads(), progress);
@@ -1684,14 +1684,14 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	const char* XML_NZB_ITEM_SCRIPT_START =
 		"</data></array></value></member>\n"
 		"<member><name>ScriptStatuses</name><value><array><data>\n";
-	
+
 	const char* XML_NZB_ITEM_STATS_START =
 		"</data></array></value></member>\n"
 		"<member><name>ServerStats</name><value><array><data>\n";
-	
+
 	const char* XML_NZB_ITEM_END =
 		"</data></array></value></member>\n";
-	
+
 	const char* JSON_NZB_ITEM_START =
 		"\"NZBID\" : %i,\n"
 		"\"NZBName\" : \"%s\",\n"
@@ -1740,62 +1740,62 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	const char* JSON_NZB_ITEM_SCRIPT_START =
 		"],\n"
 		"\"ScriptStatuses\" : [\n";
-	
+
 	const char* JSON_NZB_ITEM_STATS_START =
 		"],\n"
 		"\"ServerStats\" : [\n";
-	
+
 	const char* JSON_NZB_ITEM_END =
 		"]\n";
-	
+
 	const char* XML_PARAMETER_ITEM =
 		"<value><struct>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>Value</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
-	
+
 	const char* JSON_PARAMETER_ITEM =
 		"{\n"
 		"\"Name\" : \"%s\",\n"
 		"\"Value\" : \"%s\"\n"
 		"}";
-	
+
 	const char* XML_SCRIPT_ITEM =
 		"<value><struct>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
-	
+
 	const char* JSON_SCRIPT_ITEM =
 		"{\n"
 		"\"Name\" : \"%s\",\n"
 		"\"Status\" : \"%s\"\n"
 		"}";
-	
+
 	const char* XML_STAT_ITEM =
 		"<value><struct>\n"
 		"<member><name>ServerID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>SuccessArticles</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FailedArticles</name><value><i4>%i</i4></value></member>\n"
 		"</struct></value>\n";
-	
+
 	const char* JSON_STAT_ITEM =
 		"{\n"
 		"\"ServerID\" : %i,\n"
 		"\"SuccessArticles\" : %i,\n"
 		"\"FailedArticles\" : %i\n"
 		"}";
-	
-    const char* kindName[] = { "NZB", "URL" };
-    const char* parStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
-    const char* unpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "SPACE", "PASSWORD" };
-    const char* moveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
-    const char* scriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
-    const char* deleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
-    const char* markStatusName[] = { "NONE", "BAD", "GOOD", "SUCCESS" };
+
+	const char* kindName[] = { "NZB", "URL" };
+	const char* parStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "REPAIR_POSSIBLE", "MANUAL" };
+	const char* unpackStatusName[] = { "NONE", "NONE", "FAILURE", "SUCCESS", "SPACE", "PASSWORD" };
+	const char* moveStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+	const char* scriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+	const char* deleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
+	const char* markStatusName[] = { "NONE", "BAD", "GOOD", "SUCCESS" };
 	const char* urlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
-    const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
-	
+	const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
+
 	unsigned long fileSizeHi, fileSizeLo, fileSizeMB;
 	Util::SplitInt64(nzbInfo->GetSize(), &fileSizeHi, &fileSizeLo);
 	fileSizeMB = (int)(nzbInfo->GetSize() / 1024 / 1024);
@@ -1814,7 +1814,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	char* xmlCategory = EncodeStr(nzbInfo->GetCategory());
 	char* xmlDupeKey = EncodeStr(nzbInfo->GetDupeKey());
 	const char* exParStatus = nzbInfo->GetExtraParBlocks() > 0 ? "RECIPIENT" : nzbInfo->GetExtraParBlocks() < 0 ? "DONOR" : "NONE";
-	
+
 	AppendFmtResponse(IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
 			 nzbInfo->GetId(), xmlNzbNicename, xmlNzbNicename, kindName[nzbInfo->GetKind()],
 			 xmlUrl, xmlNzbFilename, xmlDestDir, xmlFinalDir, xmlCategory,
@@ -1829,7 +1829,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 			 nzbInfo->CalcHealth(), nzbInfo->CalcCriticalHealth(false),
 			 xmlDupeKey, nzbInfo->GetDupeScore(), dupeModeName[nzbInfo->GetDupeMode()],
 			 BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
-			 downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(), 
+			 downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(),
 			 nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ? time(NULL) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
 			 nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
@@ -1840,7 +1840,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	free(xmlDestDir);
 	free(xmlFinalDir);
 	free(xmlDupeKey);
-		
+
 	// Post-processing parameters
 	int paramIndex = 0;
 	for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
@@ -1849,57 +1849,57 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 
 		char* xmlName = EncodeStr(parameter->GetName());
 		char* xmlValue = EncodeStr(parameter->GetValue());
-		
+
 		AppendCondResponse(",\n", IsJson() && paramIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
-		
+
 		free(xmlName);
 		free(xmlValue);
 	}
-	
+
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_SCRIPT_START : XML_NZB_ITEM_SCRIPT_START);
-	
+
 	// Script statuses
 	int scriptIndex = 0;
 	for (ScriptStatusList::iterator it = nzbInfo->GetScriptStatuses()->begin(); it != nzbInfo->GetScriptStatuses()->end(); it++)
 	{
 		ScriptStatus* scriptStatus = *it;
-		
+
 		char* xmlName = EncodeStr(scriptStatus->GetName());
 		char* xmlStatus = EncodeStr(scriptStatusName[scriptStatus->GetStatus()]);
-		
+
 		AppendCondResponse(",\n", IsJson() && scriptIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
-		
+
 		free(xmlName);
 		free(xmlStatus);
 	}
-	
+
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_STATS_START : XML_NZB_ITEM_STATS_START);
-	
+
 	// Server stats
 	int statIndex = 0;
 	for (ServerStatList::iterator it = nzbInfo->GetCurrentServerStats()->begin(); it != nzbInfo->GetCurrentServerStats()->end(); it++)
 	{
 		ServerStat* serverStat = *it;
-		
+
 		AppendCondResponse(",\n", IsJson() && statIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
 				 serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
 	}
-	
+
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_END : XML_NZB_ITEM_END);
 }
 
 void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue)
 {
-	const char* XML_GROUPQUEUE_ITEM_START = 
+	const char* XML_GROUPQUEUE_ITEM_START =
 		"<member><name>PostInfoText</name><value><string>%s</string></value></member>\n"
 		"<member><name>PostStageProgress</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>PostStageTimeSec</name><value><i4>%i</i4></value></member>\n";
 		// PostTotalTimeSec is printed by method "AppendNZBInfoFields"
 
-	const char* XML_POSTQUEUE_ITEM_START = 
+	const char* XML_POSTQUEUE_ITEM_START =
 		"<member><name>ProgressLabel</name><value><string>%s</string></value></member>\n"
 		"<member><name>StageProgress</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>StageTimeSec</name><value><i4>%i</i4></value></member>\n"
@@ -1910,7 +1910,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 	const char* XML_POSTQUEUE_ITEM_END =
 		"</data></array></value></member>\n";
-		
+
 	const char* JSON_GROUPQUEUE_ITEM_START =
 		"\"PostInfoText\" : \"%s\",\n"
 		"\"PostStageProgress\" : %i,\n"
@@ -1924,7 +1924,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 	const char* JSON_LOG_START =
 		"\"Log\" : [\n";
-	
+
 	const char* JSON_POSTQUEUE_ITEM_END =
 		"]\n";
 
@@ -1943,7 +1943,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 		"\"Time\" : %i,\n"
 		"\"Text\" : \"%s\"\n"
 		"}";
-	
+
 	const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
 	const char* itemStart = postQueue ? IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START :
@@ -1964,7 +1964,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 	{
 		AppendFmtResponse(itemStart, "NONE", "", 0, 0, 0, 0);
 	}
-	
+
 	AppendResponse(IsJson() ? JSON_LOG_START : XML_LOG_START);
 
 	if (logEntries > 0 && postInfo)
@@ -2006,7 +2006,7 @@ void ListGroupsXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	const char* XML_LIST_ITEM_START = 
+	const char* XML_LIST_ITEM_START =
 		"<value><struct>\n"
 		"<member><name>FirstID</name><value><i4>%i</i4></value></member>\n"				// deprecated, use "NZBID" instead
 		"<member><name>LastID</name><value><i4>%i</i4></value></member>\n"				// deprecated, use "NZBID" instead
@@ -2023,10 +2023,10 @@ void ListGroupsXmlCommand::Execute()
 		"<member><name>ActiveDownloads</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Status</name><value><string>%s</string></value></member>\n";
 
-	const char* XML_LIST_ITEM_END = 
+	const char* XML_LIST_ITEM_END =
 		"</struct></value>\n";
 
-	const char* JSON_LIST_ITEM_START = 
+	const char* JSON_LIST_ITEM_START =
 		"{\n"
 		"\"FirstID\" : %i,\n"					// deprecated, use "NZBID" instead
 		"\"LastID\" : %i,\n"					// deprecated, use "NZBID" instead
@@ -2042,7 +2042,7 @@ void ListGroupsXmlCommand::Execute()
 		"\"MaxPriority\" : %i,\n"
 		"\"ActiveDownloads\" : %i,\n"
 		"\"Status\" : \"%s\",\n";
-	
+
 	const char* JSON_LIST_ITEM_END =
 		"}";
 
@@ -2088,7 +2088,7 @@ void ListGroupsXmlCommand::Execute()
 
 const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 {
-    const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
+	const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
 
 	const char* status = NULL;
 
@@ -2121,13 +2121,13 @@ const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 	return status;
 }
 
-typedef struct 
+typedef struct
 {
 	int				actionId;
 	const char*	actionName;
 } EditCommandEntry;
 
-EditCommandEntry EditCommandNameMap[] = { 
+EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaFileMoveOffset, "FileMoveOffset" },
 	{ DownloadQueue::eaFileMoveTop, "FileMoveTop" },
 	{ DownloadQueue::eaFileMoveBottom, "FileMoveBottom" },
@@ -2162,7 +2162,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaHistoryDelete, "HistoryDelete" },
 	{ DownloadQueue::eaHistoryFinalDelete, "HistoryFinalDelete" },
 	{ DownloadQueue::eaHistoryReturn, "HistoryReturn" },
-	{ DownloadQueue::eaHistoryProcess, "HistoryProcess" },		
+	{ DownloadQueue::eaHistoryProcess, "HistoryProcess" },
 	{ DownloadQueue::eaHistoryRedownload, "HistoryRedownload" },
 	{ DownloadQueue::eaHistorySetParameter, "HistorySetParameter" },
 	{ DownloadQueue::eaHistorySetDupeKey, "HistorySetDupeKey" },
@@ -2412,7 +2412,7 @@ void PostQueueXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	const char* XML_POSTQUEUE_ITEM_START = 
+	const char* XML_POSTQUEUE_ITEM_START =
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>InfoName</name><value><string>%s</string></value></member>\n"
@@ -2422,7 +2422,7 @@ void PostQueueXmlCommand::Execute()
 
 	const char* XML_POSTQUEUE_ITEM_END =
 		"</struct></value>\n";
-		
+
 	const char* JSON_POSTQUEUE_ITEM_START =
 		"{\n"
 		"\"ID\" : %i,\n"
@@ -2434,7 +2434,7 @@ void PostQueueXmlCommand::Execute()
 	const char* JSON_POSTQUEUE_ITEM_END =
 		"}";
 
-    const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
+	const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
 	NzbList* nzbList = DownloadQueue::Lock()->GetQueue();
 
@@ -2507,7 +2507,7 @@ void WriteLogXmlCommand::Execute()
 	else if (!strcmp(kind, "DEBUG"))
 	{
 		debug(text);
-	} 
+	}
 	else
 	{
 		BuildErrorResponse(3, "Invalid Kind");
@@ -2567,11 +2567,11 @@ void HistoryXmlCommand::Execute()
 		"\"HistoryTime\" : %i,\n"
 		"\"Status\" : \"%s\",\n"
 		"\"Log\" : [],\n";								// Deprected, always empty
-	
+
 	const char* XML_HISTORY_ITEM_END =
 		"</struct></value>";
 
-	const char* JSON_HISTORY_ITEM_END = 
+	const char* JSON_HISTORY_ITEM_END =
 		"}";
 
 	const char* XML_HISTORY_DUP_ITEM =
@@ -2607,7 +2607,7 @@ void HistoryXmlCommand::Execute()
 		"\"Status\" : \"%s\"\n";
 
 	const char* dupStatusName[] = { "UNKNOWN", "SUCCESS", "FAILURE", "DELETED", "DUPE", "BAD", "GOOD" };
-    const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
 
 	bool dup = false;
 	NextParamAsBool(&dup);
@@ -2668,7 +2668,7 @@ void HistoryXmlCommand::Execute()
 		{
 			AppendNzbInfoFields(nzbInfo);
 		}
-		
+
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
 
 		if (it == downloadQueue->GetHistory()->begin())
@@ -2707,7 +2707,7 @@ void UrlQueueXmlCommand::Execute()
 {
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	const char* XML_URLQUEUE_ITEM = 
+	const char* XML_URLQUEUE_ITEM =
 		"<value><struct>\n"
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NZBFilename</name><value><string>%s</string></value></member>\n"
@@ -2717,7 +2717,7 @@ void UrlQueueXmlCommand::Execute()
 		"<member><name>Priority</name><value><i4>%i</i4></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_URLQUEUE_ITEM = 
+	const char* JSON_URLQUEUE_ITEM =
 		"{\n"
 		"\"ID\" : %i,\n"
 		"\"NZBFilename\" : \"%s\",\n"
@@ -2761,13 +2761,13 @@ void UrlQueueXmlCommand::Execute()
 // struct[] config()
 void ConfigXmlCommand::Execute()
 {
-	const char* XML_CONFIG_ITEM = 
+	const char* XML_CONFIG_ITEM =
 		"<value><struct>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>Value</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_CONFIG_ITEM = 
+	const char* JSON_CONFIG_ITEM =
 		"{\n"
 		"\"Name\" : \"%s\",\n"
 		"\"Value\" : \"%s\"\n"
@@ -2802,13 +2802,13 @@ void ConfigXmlCommand::Execute()
 // struct[] loadconfig()
 void LoadConfigXmlCommand::Execute()
 {
-	const char* XML_CONFIG_ITEM = 
+	const char* XML_CONFIG_ITEM =
 		"<value><struct>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>Value</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_CONFIG_ITEM = 
+	const char* JSON_CONFIG_ITEM =
 		"{\n"
 		"\"Name\" : \"%s\",\n"
 		"\"Value\" : \"%s\"\n"
@@ -2875,7 +2875,7 @@ void SaveConfigXmlCommand::Execute()
 // parameter "loadFromDisk" is optional (new in v14)
 void ConfigTemplatesXmlCommand::Execute()
 {
-	const char* XML_CONFIG_ITEM = 
+	const char* XML_CONFIG_ITEM =
 		"<value><struct>\n"
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>DisplayName</name><value><string>%s</string></value></member>\n"
@@ -2887,7 +2887,7 @@ void ConfigTemplatesXmlCommand::Execute()
 		"<member><name>Template</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_CONFIG_ITEM = 
+	const char* JSON_CONFIG_ITEM =
 		"{\n"
 		"\"Name\" : \"%s\",\n"
 		"\"DisplayName\" : \"%s\",\n"
@@ -2903,7 +2903,7 @@ void ConfigTemplatesXmlCommand::Execute()
 	NextParamAsBool(&loadFromDisk);
 
 	ScriptConfig::ConfigTemplates* configTemplates = g_ScriptConfig->GetConfigTemplates();
-	
+
 	if (loadFromDisk)
 	{
 		configTemplates = new ScriptConfig::ConfigTemplates();
@@ -3029,7 +3029,7 @@ void ViewFeedXmlCommand::Execute()
 		return;
 	}
 
-	const char* XML_FEED_ITEM = 
+	const char* XML_FEED_ITEM =
 		"<value><struct>\n"
 		"<member><name>Title</name><value><string>%s</string></value></member>\n"
 		"<member><name>Filename</name><value><string>%s</string></value></member>\n"
@@ -3050,7 +3050,7 @@ void ViewFeedXmlCommand::Execute()
 		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
-	const char* JSON_FEED_ITEM = 
+	const char* JSON_FEED_ITEM =
 		"{\n"
 		"\"Title\" : \"%s\",\n"
 		"\"Filename\" : \"%s\",\n"
@@ -3071,16 +3071,16 @@ void ViewFeedXmlCommand::Execute()
 		"\"Status\" : \"%s\"\n"
 		"}";
 
-    const char* statusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
-    const char* matchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
-    const char* dupeModeType[] = { "SCORE", "ALL", "FORCE" };
+	const char* statusType[] = { "UNKNOWN", "BACKLOG", "FETCHED", "NEW" };
+	const char* matchStatusType[] = { "IGNORED", "ACCEPTED", "REJECTED" };
+	const char* dupeModeType[] = { "SCORE", "ALL", "FORCE" };
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	int index = 0;
 
-    for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
-    {
-        FeedItemInfo* feedItemInfo = *it;
+	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
+	{
+		FeedItemInfo* feedItemInfo = *it;
 
 		if (includeNonMatching || feedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
@@ -3110,7 +3110,7 @@ void ViewFeedXmlCommand::Execute()
 			free(xmladdcategory);
 			free(xmldupekey);
 		}
-    }
+	}
 
 	feedItemInfos->Release();
 
@@ -3409,7 +3409,7 @@ void ServerVolumesXmlCommand::Execute()
 		AppendCondResponse(",\n", IsJson() && index > 0);
 		AppendFmtResponse(IsJson() ? JSON_VOLUME_ITEM_START : XML_VOLUME_ITEM_START,
 				 index, (int)serverVolume->GetDataTime(), serverVolume->GetFirstDay(),
-				 totalSizeLo, totalSizeHi, totalSizeMB, customSizeLo, customSizeHi, customSizeMB, 
+				 totalSizeLo, totalSizeHi, totalSizeMB, customSizeLo, customSizeHi, customSizeMB,
 				 (int)serverVolume->GetCustomTime(), serverVolume->GetSecSlot(),
 				 serverVolume->GetMinSlot(), serverVolume->GetHourSlot(), serverVolume->GetDaySlot());
 

@@ -95,7 +95,7 @@ void RemoteServer::Run()
 
 		if (!m_connection)
 		{
-			m_connection = new Connection(g_Options->GetControlIp(), 
+			m_connection = new Connection(g_Options->GetControlIp(),
 				m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(),
 				m_tls);
 			m_connection->SetTimeout(g_Options->GetUrlTimeout());
@@ -114,7 +114,7 @@ void RemoteServer::Run()
 			// Remote server could not bind or accept connection, waiting 1/2 sec and try again
 			if (IsStopped())
 			{
-				break; 
+				break;
 			}
 			usleep(500 * 1000);
 			delete m_connection;
@@ -191,7 +191,7 @@ void RequestProcessor::Run()
 		processor.SetConnection(m_connection);
 		processor.Execute();
 	}
-	else if (!strncmp((char*)&signature, "POST", 4) || 
+	else if (!strncmp((char*)&signature, "POST", 4) ||
 		!strncmp((char*)&signature, "GET ", 4) ||
 		!strncmp((char*)&signature, "OPTI", 4))
 	{

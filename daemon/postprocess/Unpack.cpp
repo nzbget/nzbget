@@ -137,7 +137,7 @@ void UnpackController::Run()
 		strncpy(m_password, parameter->GetValue(), 1024-1);
 		m_password[1024-1] = '\0';
 	}
-	
+
 	DownloadQueue::Unlock();
 
 	snprintf(m_infoName, 1024, "unpack for %s", m_name);
@@ -207,7 +207,7 @@ void UnpackController::Run()
 		PrintMessage(Message::mkInfo, (unpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), m_name);
 
 #ifndef DISABLE_PARCHECK
-		if (unpack && m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped && 
+		if (unpack && m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
 			m_postInfo->GetNzbInfo()->GetRenameStatus() <= NzbInfo::rsSkipped && m_hasParFiles)
 		{
 			RequestParCheck(false);
@@ -301,7 +301,7 @@ void UnpackController::ExecuteUnpack(EUnpacker unpacker, const char* password, b
 
 void UnpackController::ExecuteUnrar(const char* password)
 {
-	// Format: 
+	// Format:
 	//   unrar x -y -p- -o+ *.rar ./_unpack/
 
 	ParamList params;
@@ -368,7 +368,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 
 void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 {
-	// Format: 
+	// Format:
 	//   7z x -y -p- -o./_unpack *.7z
 	// OR
 	//   7z x -y -p- -o./_unpack *.7z.001
@@ -532,7 +532,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 			count++;
 			min = segNum < min || min == -1 ? segNum : min;
 			max = segNum > max ? segNum : max;
-			
+
 			long long segmentSize = Util::FileSize(fullFilename);
 			if (segmentSize != firstSegmentSize)
 			{
@@ -647,7 +647,7 @@ void UnpackController::Completed()
 	else
 	{
 #ifndef DISABLE_PARCHECK
-		if (!m_unpackOk && 
+		if (!m_unpackOk &&
 			(m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
 			 !m_postInfo->GetNzbInfo()->GetParFull()) &&
 			!m_unpackStartError && !m_unpackSpaceError && !m_unpackPasswordError &&
@@ -780,7 +780,7 @@ bool UnpackController::FileHasRarSignature(const char* filename)
 		fclose(infile);
 	}
 
-	bool rar = cnt == sizeof(fileSignature) && 
+	bool rar = cnt == sizeof(fileSignature) &&
 		(!strcmp(rar4Signature, fileSignature) || !strcmp(rar5Signature, fileSignature));
 	return rar;
 }
@@ -841,7 +841,7 @@ bool UnpackController::Cleanup()
 	if (!m_unpackOk && m_finalDirCreated)
 	{
 		Util::RemoveDirectory(m_finalDir);
-	}		
+	}
 
 	if (m_unpackOk && ok && g_Options->GetUnpackCleanupDisk())
 	{
@@ -955,7 +955,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 	strncpy(msgText, text, 1024);
 	msgText[1024-1] = '\0';
 	int len = strlen(text);
-	
+
 	// Modify unrar messages for better readability:
 	// remove the destination path part from message "Extracting file.xxx"
 	if (m_unpacker == upUnrar && !strncmp(text, "Unrar: Extracting  ", 19) &&

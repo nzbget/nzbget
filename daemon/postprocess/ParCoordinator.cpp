@@ -221,7 +221,7 @@ void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind kind, const cha
 	vsnprintf(text, 1024, format, args);
 	va_end(args);
 	text[1024-1] = '\0';
-	
+
 	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
@@ -305,7 +305,7 @@ void ParCoordinator::PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
 	debug("ParCoordinator: Pausing pars");
 
-	downloadQueue->EditEntry(nzbInfo->GetId(), 
+	downloadQueue->EditEntry(nzbInfo->GetId(),
 		DownloadQueue::eaGroupPauseExtraPars, 0, NULL);
 }
 
@@ -447,23 +447,23 @@ void ParCoordinator::ParCheckCompleted()
 bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFoundOut)
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	
+
 	Blocks blocks;
 	blocks.clear();
 	int blockFound = 0;
-    int curBlockFound = 0;
+	int curBlockFound = 0;
 
 	FindPars(downloadQueue, nzbInfo, parFilename, &blocks, true, true, &curBlockFound);
-    blockFound += curBlockFound;
+	blockFound += curBlockFound;
 	if (blockFound < blockNeeded)
 	{
 		FindPars(downloadQueue, nzbInfo, parFilename, &blocks, true, false, &curBlockFound);
-        blockFound += curBlockFound;
+		blockFound += curBlockFound;
 	}
 	if (blockFound < blockNeeded)
 	{
 		FindPars(downloadQueue, nzbInfo, parFilename, &blocks, false, false, &curBlockFound);
-        blockFound += curBlockFound;
+		blockFound += curBlockFound;
 	}
 
 	if (blockFound >= blockNeeded)
@@ -473,7 +473,7 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 		// if par-collection was built exponentially and all par-files present,
 		// this step selects par-files with exact number of blocks we need.
 		while (blockNeeded > 0)
-		{               
+		{
 			BlockInfo* bestBlockInfo = NULL;
 			for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
 			{
@@ -501,11 +501,11 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 				break;
 			}
 		}
-			
+
 		// 2. then unpause other files
-		// this step only needed if the par-collection was built not exponentially 
+		// this step only needed if the par-collection was built not exponentially
 		// or not all par-files present (or some of them were corrupted)
-		// this step is not optimal, but we hope, that the first step will work good 
+		// this step is not optimal, but we hope, that the first step will work good
 		// in most cases and we will not need the second step often
 		while (blockNeeded > 0)
 		{
@@ -552,8 +552,8 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
 	Blocks* blocks, bool strictParName, bool exactParName, int* blockFound)
 {
-    *blockFound = 0;
-	
+	*blockFound = 0;
+
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
 	char* baseParFilename = Util::BaseFileName(parFilename);
 	char mainBaseFilename[1024];
@@ -561,7 +561,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, NULL))
 	{
 		// should not happen
-        nzbInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", baseParFilename);
+		nzbInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", baseParFilename);
 		return;
 	}
 	int maxlen = mainBaseLen < 1024 ? mainBaseLen : 1024 - 1;
@@ -591,7 +591,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 				strncpy(loFileName, fileInfo->GetFilename(), 1024);
 				loFileName[1024-1] = '\0';
 				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-				
+
 				char candidateFileName[1024];
 				snprintf(candidateFileName, 1024, "%s.par2", mainBaseFilename);
 				candidateFileName[1024-1] = '\0';
@@ -603,8 +603,8 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 				}
 			}
 
-            bool alreadyAdded = false;
-            // check if file is not in the list already
+			bool alreadyAdded = false;
+			// check if file is not in the list already
 			if (useFile)
 			{
 				for (Blocks::iterator it = blocks->begin(); it != blocks->end(); it++)
@@ -614,15 +614,15 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 					{
 						alreadyAdded = true;
 						break;
-                	}
-        		}
+					}
+				}
 			}
-                
+
 			// if it is a par2-file with blocks and it was from the same NZB-request
 			// and it belongs to the same file collection (same base name),
 			// then OK, we can use it
-            if (useFile && !alreadyAdded)
-            {
+			if (useFile && !alreadyAdded)
+			{
 				BlockInfo* blockInfo = new BlockInfo();
 				blockInfo->m_fileInfo = fileInfo;
 				blockInfo->m_blockCount = blockCount;
@@ -644,7 +644,7 @@ void ParCoordinator::UpdateParCheckProgress()
 	}
 	postInfo->SetFileProgress(m_parChecker.GetFileProgress());
 	postInfo->SetStageProgress(m_parChecker.GetStageProgress());
-    PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
+	PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
 	PostInfo::EStage stage = StageKind[m_parChecker.GetStage()];
 	time_t current = time(NULL);
 
@@ -672,7 +672,7 @@ void ParCoordinator::UpdateParCheckProgress()
 			(g_Options->GetParTimeLimit() <= 5 && current - postInfo->GetStageTime() > 1 * 60)))
 		{
 			// first five (or one) minutes elapsed, now can check the estimated time
-			int estimatedRepairTime = (int)((current - postInfo->GetStartTime()) * 1000 / 
+			int estimatedRepairTime = (int)((current - postInfo->GetStartTime()) * 1000 /
 				(postInfo->GetStageProgress() > 0 ? postInfo->GetStageProgress() : 1));
 			if (estimatedRepairTime > g_Options->GetParTimeLimit() * 60)
 			{
@@ -689,7 +689,7 @@ void ParCoordinator::UpdateParCheckProgress()
 	}
 
 	DownloadQueue::Unlock();
-	
+
 	CheckPauseState(postInfo);
 }
 
@@ -702,16 +702,16 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 		time_t parTime = m_parChecker.GetParTime();
 		time_t repairTime = m_parChecker.GetRepairTime();
 		time_t waitTime = time(NULL);
-		
+
 		// wait until Post-processor is unpaused
 		while (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
 		{
 			usleep(50 * 1000);
-			
+
 			// update time stamps
-			
+
 			time_t delta = time(NULL) - waitTime;
-			
+
 			if (stageTime > 0)
 			{
 				postInfo->SetStageTime(stageTime + delta);
@@ -735,7 +735,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 void ParCoordinator::ParRenameCompleted()
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	
+
 	PostInfo* postInfo = m_parRenamer.GetPostInfo();
 	postInfo->GetNzbInfo()->SetRenameStatus(m_parRenamer.GetStatus() == ParRenamer::psSuccess ? NzbInfo::rsSuccess : NzbInfo::rsFailure);
 
@@ -747,7 +747,7 @@ void ParCoordinator::ParRenameCompleted()
 
 	postInfo->SetWorking(false);
 	postInfo->SetStage(PostInfo::ptQueued);
-	
+
 	downloadQueue->Save();
 
 	DownloadQueue::Unlock();
@@ -756,20 +756,20 @@ void ParCoordinator::ParRenameCompleted()
 void ParCoordinator::UpdateParRenameProgress()
 {
 	DownloadQueue::Lock();
-	
+
 	PostInfo* postInfo = m_parRenamer.GetPostInfo();
 	postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
 	postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
 	time_t current = time(NULL);
-	
+
 	if (postInfo->GetStage() != PostInfo::ptRenaming)
 	{
 		postInfo->SetStage(PostInfo::ptRenaming);
 		postInfo->SetStageTime(current);
 	}
-	
+
 	DownloadQueue::Unlock();
-	
+
 	CheckPauseState(postInfo);
 }
 

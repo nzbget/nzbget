@@ -57,7 +57,7 @@ protected:
 	virtual void			LogDebugInfo();
 
 public:
-							UrlCoordinator();                
+							UrlCoordinator();
 	virtual					~UrlCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();

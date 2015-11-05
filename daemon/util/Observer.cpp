@@ -53,10 +53,10 @@ void Subject::Detach(Observer* observer)
 void Subject::Notify(void* aspect)
 {
 	debug("Notifying observers");
-	
+
 	for (std::list<Observer*>::iterator it = m_observers.begin(); it != m_observers.end(); it++)
 	{
-        Observer* Observer = *it;
+		Observer* Observer = *it;
 		Observer->Update(this, aspect);
 	}
 }

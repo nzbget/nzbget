@@ -170,7 +170,7 @@ void ServerPool::InitConnections()
 			if (newsServer->GetActive())
 			{
 				int connections = 0;
-				
+
 				for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 				{
 					PooledConnection* connection = *it;
@@ -179,7 +179,7 @@ void ServerPool::InitConnections()
 						connections++;
 					}
 				}
-				
+
 				for (int i = connections; i < newsServer->GetMaxConnections(); i++)
 				{
 					PooledConnection* connection = new PooledConnection(newsServer);
@@ -215,7 +215,7 @@ NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Ser
 			PooledConnection* candidateConnection = *it;
 			NewsServer* candidateServer = candidateConnection->GetNewsServer();
 			if (!candidateConnection->GetInUse() && candidateServer->GetActive() &&
-				candidateServer->GetNormLevel() == level && 
+				candidateServer->GetNormLevel() == level &&
 				(!wantServer || candidateServer == wantServer ||
 				 (wantServer->GetGroup() > 0 && wantServer->GetGroup() == candidateServer->GetGroup())) &&
 				(candidateConnection->GetStatus() == Connection::csConnected ||

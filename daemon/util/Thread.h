@@ -31,7 +31,7 @@ class Mutex
 {
 private:
 	void*					m_mutexObj;
-	
+
 public:
 							Mutex();
 							~Mutex();

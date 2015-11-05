@@ -279,6 +279,6 @@ void NntpConnection::ReportErrorAnswer(const char* msgPrefix, const char* answer
 	char errStr[1024];
 	snprintf(errStr, 1024, msgPrefix, m_newsServer->GetName(), m_newsServer->GetHost(), answer);
 	errStr[1024-1] = '\0';
-	
+
 	ReportError(errStr, NULL, false, 0);
 }

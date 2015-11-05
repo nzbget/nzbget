@@ -95,15 +95,15 @@ void ColoredFrontend::PrintStatus()
 		downloadLimit[0] = 0;
 	}
 
-    char postStatus[128];
-    if (m_postJobCount > 0)
-    {
-        sprintf(postStatus, ", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
-    }
-    else
-    {
-        postStatus[0] = 0;
-    }
+	char postStatus[128];
+	if (m_postJobCount > 0)
+	{
+		sprintf(postStatus, ", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
+	}
+	else
+	{
+		postStatus[0] = 0;
+	}
 
 #ifdef WIN32
 	char* controlSeq = "";
@@ -122,7 +122,7 @@ void ColoredFrontend::PrintStatus()
 	tmp[1024-1] = '\0';
 	printf("%s", tmp);
 	m_needGoBack = true;
-} 
+}
 
 void ColoredFrontend::PrintMessage(Message * message)
 {
@@ -136,7 +136,7 @@ void ColoredFrontend::PrintMessage(Message * message)
 		case Message::mkError:
 			SetConsoleTextAttribute(m_console, 4);
 			printf("[ERROR]");
-			break; 
+			break;
 		case Message::mkWarning:
 			SetConsoleTextAttribute(m_console, 5);
 			printf("[WARNING]");

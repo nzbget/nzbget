@@ -60,15 +60,15 @@ bool DupeCoordinator::SameNameOrKey(const char* name1, const char* dupeKey1,
 
 /**
   Check if the title was already downloaded or is already queued:
-  - if there is a duplicate with exactly same content (via hash-check) 
-    in queue or in history - the new item is skipped;
+  - if there is a duplicate with exactly same content (via hash-check)
+	in queue or in history - the new item is skipped;
   - if there is a duplicate marked as good in history - the new item is skipped;
   - if there is a duplicate with success-status in dup-history but
-    there are no duplicates in recent history - the new item is skipped;
+	there are no duplicates in recent history - the new item is skipped;
   - if queue has a duplicate with the same or higher score - the new item
-    is moved to history as dupe-backup;
+	is moved to history as dupe-backup;
   - if queue has a duplicate with lower score - the existing item is moved
-    to history as dupe-backup (unless it is in post-processing stage) and
+	to history as dupe-backup (unless it is in post-processing stage) and
 	the new item is added to queue;
   - if queue doesn't have duplicates - the new item is added to queue.
 */
@@ -85,7 +85,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 			(nzbInfo->GetFilteredContentHash() > 0 &&
 			 nzbInfo->GetFilteredContentHash() == queuedNzbInfo->GetFilteredContentHash());
 
-		// if there is a duplicate with exactly same content (via hash-check) 
+		// if there is a duplicate with exactly same content (via hash-check)
 		// in queue - the new item is skipped
 		if (queuedNzbInfo != nzbInfo && sameContent && nzbInfo->GetKind() == NzbInfo::nkNzb)
 		{
@@ -328,7 +328,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 
 /**
   - if download of an item fails and there are duplicates in history -
-    return the best duplicate from history to queue for download;
+	return the best duplicate from history to queue for download;
   - if download of an item completes successfully - nothing extra needs to be done;
 */
 void DupeCoordinator::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
@@ -438,7 +438,7 @@ void DupeCoordinator::HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* his
 	char nzbName[1024];
 	historyInfo->GetName(nzbName, 1024);
 
-    const char* markStatusName[] = { "NONE", "bad", "good", "success" };
+	const char* markStatusName[] = { "NONE", "bad", "good", "success" };
 
 	info("Marking %s as %s", nzbName, markStatusName[markStatus]);
 

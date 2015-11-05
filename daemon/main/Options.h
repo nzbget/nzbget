@@ -117,7 +117,7 @@ public:
 		int				GetLineNo() { return m_lineNo; }
 		bool			Restricted();
 	};
-	
+
 	typedef std::vector<OptEntry*>  OptEntriesBase;
 
 	class OptEntries: public OptEntriesBase
@@ -148,7 +148,7 @@ public:
 		const char*		GetPostScript() { return m_postScript; }
 		NameList*		GetAliases() { return &m_aliases; }
 	};
-	
+
 	typedef std::vector<Category*>  CategoriesBase;
 
 	class Categories: public CategoriesBase

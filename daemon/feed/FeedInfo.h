@@ -132,7 +132,7 @@ public:
 		const char*		GetName() { return m_name; }
 		const char*		GetValue() { return m_value; }
 	};
-	
+
 	typedef std::deque<Attr*>  AttributesBase;
 
 	class Attributes: public AttributesBase

@@ -65,8 +65,8 @@ private:
 	const char*			m_inFilename;
 	const char*			m_sigFilename;
 	const char*			m_pubKeyFilename;
-    unsigned char		m_inHash[SHA256_DIGEST_LENGTH];
-    unsigned char		m_signature[256];
+	unsigned char		m_inHash[SHA256_DIGEST_LENGTH];
+	unsigned char		m_signature[256];
 	RSA*				m_pubKey;
 
 	bool				ReadSignature();
@@ -286,7 +286,7 @@ void UpdateScriptController::Run()
 	infoName[1024-1] = '\0';
 	SetInfoName(infoName);
 
-    const char* branchName[] = { "STABLE", "TESTING", "DEVEL" };
+	const char* branchName[] = { "STABLE", "TESTING", "DEVEL" };
 	SetEnvVar("NZBUP_BRANCH", branchName[m_branch]);
 
 	SetEnvVar("NZBUP_RUNMODE", g_CommandLineParser->GetDaemonMode() ? "DAEMON" : "SERVER");
@@ -416,26 +416,26 @@ Signature::~Signature()
 // Calculate SHA-256 for input file (m_szInFilename)
 bool Signature::ComputeInHash()
 {
-    FILE* infile = fopen(m_inFilename, FOPEN_RB);
-    if (!infile)
+	FILE* infile = fopen(m_inFilename, FOPEN_RB);
+	if (!infile)
 	{
 		return false;
 	}
-    SHA256_CTX sha256;
+	SHA256_CTX sha256;
 	SHA256_Init(&sha256);
-    const int bufSize = 32*1024;
-    char* buffer = (char*)malloc(bufSize);
-    while(int bytesRead = fread(buffer, 1, bufSize, infile))
-    {
-        SHA256_Update(&sha256, buffer, bytesRead);
-    }
-    SHA256_Final(m_inHash, &sha256);
-    free(buffer);
-    fclose(infile);
+	const int bufSize = 32*1024;
+	char* buffer = (char*)malloc(bufSize);
+	while(int bytesRead = fread(buffer, 1, bufSize, infile))
+	{
+		SHA256_Update(&sha256, buffer, bytesRead);
+	}
+	SHA256_Final(m_inHash, &sha256);
+	free(buffer);
+	fclose(infile);
 	return true;
 }
 
-// Read signature from file (m_szSigFilename) into memory 
+// Read signature from file (m_szSigFilename) into memory
 bool Signature::ReadSignature()
 {
 	char sigTitle[256];
@@ -443,7 +443,7 @@ bool Signature::ReadSignature()
 	sigTitle[256-1] = '\0';
 
 	FILE* infile = fopen(m_sigFilename, FOPEN_RB);
-    if (!infile)
+	if (!infile)
 	{
 		return false;
 	}

@@ -58,7 +58,7 @@ private:
 	};
 
 	typedef std::list<QueueItem*> Queue;
-	
+
 	Queue				m_queue;
 	Mutex				m_queueMutex;
 	QueueItem*			m_curItem;

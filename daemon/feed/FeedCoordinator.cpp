@@ -139,7 +139,7 @@ FeedCoordinator::~FeedCoordinator()
 		delete *it;
 	}
 	m_feeds.clear();
-	
+
 	debug("Deleting FeedCache");
 	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); it++)
 	{
@@ -293,7 +293,7 @@ void FeedCoordinator::ResetHangingDownloads()
 			continue;
 		}
 		it++;
-	}                                              
+	}
 
 	m_downloadsMutex.Unlock();
 }
@@ -443,8 +443,8 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 	}
 
 	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
-    {
-        FeedItemInfo* feedItemInfo = *it;
+	{
+		FeedItemInfo* feedItemInfo = *it;
 		feedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
 		feedItemInfo->SetMatchRule(0);
 		feedItemInfo->SetPauseNzb(feedInfo->GetPauseNzb());
@@ -458,7 +458,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 		{
 			feedFilter->Match(feedItemInfo);
 		}
-    }
+	}
 
 	delete feedFilter;
 }
@@ -472,9 +472,9 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 	bool firstFetch = feedInfo->GetLastUpdate() == 0;
 	int added = 0;
 
-    for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
-    {
-        FeedItemInfo* feedItemInfo = *it;
+	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
+	{
+		FeedItemInfo* feedItemInfo = *it;
 		if (feedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
 			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo->GetUrl());
@@ -500,7 +500,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 				m_feedHistory.Add(feedItemInfo->GetUrl(), status, time(NULL));
 			}
 		}
-    }
+	}
 
 	if (added)
 	{
@@ -557,7 +557,7 @@ bool FeedCoordinator::ViewFeed(int id, FeedItemInfos** ppFeedItemInfos)
 
 	FeedInfo* feedInfo = m_feeds.at(id - 1);
 
-	return PreviewFeed(feedInfo->GetId(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(), 
+	return PreviewFeed(feedInfo->GetId(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(),
 		feedInfo->GetBacklog(), feedInfo->GetPauseNzb(), feedInfo->GetCategory(),
 		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetFeedScript(), 0, NULL, ppFeedItemInfos);
 }
@@ -571,7 +571,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 	FeedInfo* feedInfo = new FeedInfo(id, name, url, backlog, interval,
 		filter, pauseNzb, category, priority, feedScript);
 	feedInfo->SetPreview(true);
-	
+
 	FeedItemInfos* feedItemInfos = NULL;
 	bool hasCache = false;
 	if (cacheTimeSec > 0 && *cacheId != '\0')
@@ -664,7 +664,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		m_feedCache.push_back(feedCacheItem);
 		m_downloadsMutex.Unlock();
 	}
-	
+
 	*ppFeedItemInfos = feedItemInfos;
 
 	return true;
@@ -775,9 +775,9 @@ void FeedCoordinator::CleanupHistory()
 void FeedCoordinator::CleanupCache()
 {
 	debug("CleanupCache");
-	
+
 	m_downloadsMutex.Lock();
-	
+
 	time_t curTime = time(NULL);
 	int i = 0;
 	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); )
@@ -797,6 +797,6 @@ void FeedCoordinator::CleanupCache()
 			i++;
 		}
 	}
-	
+
 	m_downloadsMutex.Unlock();
 }

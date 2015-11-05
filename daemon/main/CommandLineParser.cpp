@@ -24,7 +24,7 @@
 
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"					  
+#include "config.h"
 #endif
 
 #ifdef WIN32
@@ -55,33 +55,33 @@
 
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
-    {
-	    {"help", no_argument, 0, 'h'},
-	    {"configfile", required_argument, 0, 'c'},
-	    {"noconfigfile", no_argument, 0, 'n'},
-	    {"printconfig", no_argument, 0, 'p'},
-	    {"server", no_argument, 0, 's' },
-	    {"daemon", no_argument, 0, 'D' },
-	    {"version", no_argument, 0, 'v'},
-	    {"serverversion", no_argument, 0, 'V'},
-	    {"option", required_argument, 0, 'o'},
-	    {"append", no_argument, 0, 'A'},
-	    {"list", no_argument, 0, 'L'},
-	    {"pause", no_argument, 0, 'P'},
-	    {"unpause", no_argument, 0, 'U'},
-	    {"rate", required_argument, 0, 'R'},
-	    {"system", no_argument, 0, 'B'},
-	    {"log", required_argument, 0, 'G'},
-	    {"top", no_argument, 0, 'T'},
-	    {"edit", required_argument, 0, 'E'},
-	    {"connect", no_argument, 0, 'C'},
-	    {"quit", no_argument, 0, 'Q'},
-	    {"reload", no_argument, 0, 'O'},
-	    {"write", required_argument, 0, 'W'},
-	    {"category", required_argument, 0, 'K'},
-	    {"scan", no_argument, 0, 'S'},
-	    {0, 0, 0, 0}
-    };
+	{
+		{"help", no_argument, 0, 'h'},
+		{"configfile", required_argument, 0, 'c'},
+		{"noconfigfile", no_argument, 0, 'n'},
+		{"printconfig", no_argument, 0, 'p'},
+		{"server", no_argument, 0, 's' },
+		{"daemon", no_argument, 0, 'D' },
+		{"version", no_argument, 0, 'v'},
+		{"serverversion", no_argument, 0, 'V'},
+		{"option", required_argument, 0, 'o'},
+		{"append", no_argument, 0, 'A'},
+		{"list", no_argument, 0, 'L'},
+		{"pause", no_argument, 0, 'P'},
+		{"unpause", no_argument, 0, 'U'},
+		{"rate", required_argument, 0, 'R'},
+		{"system", no_argument, 0, 'B'},
+		{"log", required_argument, 0, 'G'},
+		{"top", no_argument, 0, 'T'},
+		{"edit", required_argument, 0, 'E'},
+		{"connect", no_argument, 0, 'C'},
+		{"quit", no_argument, 0, 'Q'},
+		{"reload", no_argument, 0, 'O'},
+		{"write", required_argument, 0, 'W'},
+		{"category", required_argument, 0, 'K'},
+		{"scan", no_argument, 0, 'S'},
+		{0, 0, 0, 0}
+	};
 #endif
 
 static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQOVW:";
@@ -537,7 +537,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					else if (!strcasecmp(optarg, "O"))
 					{
 						m_editQueueAction = DownloadQueue::eaHistorySetParameter;
-						
+
 						optind++;
 						if (optind > argc)
 						{
@@ -545,7 +545,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							return;
 						}
 						m_editQueueText = strdup(argv[optind-1]);
-						
+
 						if (!strchr(m_editQueueText, '='))
 						{
 							ReportError("Could not parse value of option 'E'");
@@ -795,8 +795,8 @@ void CommandLineParser::PrintUsage(const char* com)
 	printf("Usage:\n"
 		"  %s [switches]\n\n"
 		"Switches:\n"
-	    "  -h, --help                Print this help-message\n"
-	    "  -v, --version             Print version and exit\n"
+		"  -h, --help                Print this help-message\n"
+		"  -v, --version             Print version and exit\n"
 		"  -c, --configfile <file>   Filename of configuration-file\n"
 		"  -n, --noconfigfile        Prevent loading of configuration-file\n"
 		"                            (required options must be passed with --option)\n"
@@ -806,7 +806,7 @@ void CommandLineParser::PrintUsage(const char* com)
 #ifndef WIN32
 		"  -D, --daemon              Start nzbget as a server in daemon-mode\n"
 #endif
-	    "  -V, --serverversion       Print server's version and exit\n"
+		"  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
 		"  -O, --reload              Reload config and restart all services\n"
 		"  -A, --append [<options>] <nzb-file/url> Send file/url to server's\n"
@@ -903,8 +903,8 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 	{
 		// no nzb-file passed
 		if (!m_serverMode && !m_remoteClientMode &&
-		        (m_clientOperation == opClientNoOperation ||
-		         m_clientOperation == opClientRequestDownload ||
+				(m_clientOperation == opClientNoOperation ||
+				 m_clientOperation == opClientRequestDownload ||
 				 m_clientOperation == opClientRequestWriteLog))
 		{
 			if (m_clientOperation == opClientRequestWriteLog)
@@ -955,8 +955,8 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 #endif
 
 		if (m_serverMode || m_remoteClientMode ||
-		        !(m_clientOperation == opClientNoOperation ||
-		          m_clientOperation == opClientRequestDownload ||
+				!(m_clientOperation == opClientNoOperation ||
+				  m_clientOperation == opClientRequestDownload ||
 				  m_clientOperation == opClientRequestWriteLog))
 		{
 			ReportError("Too many arguments");

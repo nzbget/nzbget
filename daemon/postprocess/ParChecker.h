@@ -109,7 +109,7 @@ public:
 	typedef std::vector<bool>		ValidBlocks;
 
 	friend class Repairer;
-	
+
 private:
 	char*				m_infoName;
 	char*				m_destDir;

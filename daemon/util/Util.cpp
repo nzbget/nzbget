@@ -299,7 +299,7 @@ void StringBuilder::AppendFmtV(const char* format, va_list ap)
 #ifdef WIN32
 	if (m == -1)
 	{
-        m = _vscprintf(format, ap);
+		m = _vscprintf(format, ap);
 	}
 #endif
 	if (m + 1 > remainingSize)
@@ -351,9 +351,9 @@ char* Util::BaseFileName(const char* filename)
 
 void Util::NormalizePathSeparators(char* path)
 {
-	for (char* p = path; *p; p++) 
+	for (char* p = path; *p; p++)
 	{
-		if (*p == ALT_PATH_SEPARATOR) 
+		if (*p == ALT_PATH_SEPARATOR)
 		{
 			*p = PATH_SEPARATOR;
 		}
@@ -386,14 +386,14 @@ bool Util::ForceDirectories(const char* path, char* errBuf, int bufSize)
 		errBuf[bufSize-1] = 0;
 		return false;
 	}
-	
+
 	if (ok && !S_ISDIR(buffer.st_mode))
 	{
 		snprintf(errBuf, bufSize, "path %s is not a directory", normPath);
 		errBuf[bufSize-1] = 0;
 		return false;
 	}
-	
+
 	if (!ok
 #ifdef WIN32
 		&& strlen(normPath) > 2
@@ -421,21 +421,21 @@ bool Util::ForceDirectories(const char* path, char* errBuf, int bufSize)
 				return false;
 			}
 		}
-		
+
 		if (mkdir(normPath, S_DIRMODE) != 0 && errno != EEXIST)
 		{
 			snprintf(errBuf, bufSize, "could not create directory %s: %s", normPath, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
 			errBuf[bufSize-1] = 0;
 			return false;
 		}
-			
+
 		if (stat(normPath, &buffer) != 0)
 		{
 			snprintf(errBuf, bufSize, "could not read information for directory %s: %s", normPath, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
 			errBuf[bufSize-1] = 0;
 			return false;
 		}
-		
+
 		if (!S_ISDIR(buffer.st_mode))
 		{
 			snprintf(errBuf, bufSize, "path %s is not a directory", normPath);
@@ -480,46 +480,46 @@ bool Util::DirEmpty(const char* dirFilename)
 
 bool Util::LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength)
 {
-    FILE* file = fopen(fileName, FOPEN_RB);
-    if (!file)
-    {
-        return false;
-    }
+	FILE* file = fopen(fileName, FOPEN_RB);
+	if (!file)
+	{
+		return false;
+	}
 
-    // obtain file size.
-    fseek(file , 0 , SEEK_END);
-    int size  = (int)ftell(file);
-    rewind(file);
+	// obtain file size.
+	fseek(file , 0 , SEEK_END);
+	int size  = (int)ftell(file);
+	rewind(file);
 
-    // allocate memory to contain the whole file.
-    *buffer = (char*) malloc(size + 1);
-    if (!*buffer)
-    {
-        return false;
-    }
+	// allocate memory to contain the whole file.
+	*buffer = (char*) malloc(size + 1);
+	if (!*buffer)
+	{
+		return false;
+	}
 
-    // copy the file into the buffer.
-    fread(*buffer, 1, size, file);
+	// copy the file into the buffer.
+	fread(*buffer, 1, size, file);
 
-    fclose(file);
+	fclose(file);
 
-    (*buffer)[size] = 0;
+	(*buffer)[size] = 0;
 
-    *bufferLength = size + 1;
+	*bufferLength = size + 1;
 
-    return true;
+	return true;
 }
 
 bool Util::SaveBufferIntoFile(const char* fileName, const char* buffer, int bufLen)
 {
-    FILE* file = fopen(fileName, FOPEN_WB);
-    if (!file)
-    {
-        return false;
-    }
+	FILE* file = fopen(fileName, FOPEN_WB);
+	if (!file)
+	{
+		return false;
+	}
 
 	int writtenBytes = fwrite(buffer, 1, bufLen, file);
-    fclose(file);
+	fclose(file);
 
 	return writtenBytes == bufLen;
 }
@@ -615,7 +615,7 @@ void Util::MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashe
 
 	// remove trailing dots and spaces. they are not allowed in directory names on windows,
 	// but we remove them on posix also, in a case the directory is accessed from windows via samba.
-	for (int len = strlen(filename); len > 0 && (filename[len - 1] == '.' || filename[len - 1] == ' '); len--) 
+	for (int len = strlen(filename); len > 0 && (filename[len - 1] == '.' || filename[len - 1] == ' '); len--)
 	{
 		filename[len - 1] = '\0';
 	}
@@ -674,12 +674,12 @@ void Util::SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo)
 	*Lo = (unsigned long)(Int64 & 0xFFFFFFFF);
 }
 
-/* Base64 decryption is taken from 
+/* Base64 decryption is taken from
  *  Article "BASE 64 Decoding and Encoding Class 2003" by Jan Raddatz
  *  http://www.codeguru.com/cpp/cpp/algorithms/article.php/c5099/
  */
 
-const static char BASE64_DEALPHABET [128] = 
+const static char BASE64_DEALPHABET [128] =
 	{
 	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //   0 -   9
 	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  10 -  19
@@ -709,7 +709,7 @@ unsigned int DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
 			buffer = buffer << 14;
 
 			outputBuffer [0] = (char)(buffer >> 24);
-			
+
 			return 1;
 		}
 		else
@@ -721,7 +721,7 @@ unsigned int DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
 
 			outputBuffer [0] = (char)(buffer >> 24);
 			outputBuffer [1] = (char)(buffer >> 16);
-			
+
 			return 2;
 		}
 	}
@@ -730,7 +730,7 @@ unsigned int DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
 		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[0]]) << 6;
 		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[1]]) << 6;
 		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[2]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[3]]) << 6; 
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[3]]) << 6;
 		buffer = buffer << 2;
 
 		outputBuffer [0] = (char)(buffer >> 24);
@@ -917,7 +917,7 @@ long long Util::FreeDiskSize(const char* path)
 	}
 #else
 	struct statvfs diskdata;
-	if (!statvfs(path, &diskdata)) 
+	if (!statvfs(path, &diskdata))
 	{
 		return (long long)diskdata.f_frsize * (long long)diskdata.f_bavail;
 	}
@@ -998,7 +998,7 @@ bool Util::ExpandHomePath(const char* filename, char* buffer, int bufSize)
 		strncpy(buffer, filename ? filename : "", bufSize);
 		buffer[bufSize - 1] = '\0';
 	}
-	
+
 	return true;
 }
 #endif
@@ -1318,12 +1318,12 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 // register ub4  initval;    /* the previous hash, or an arbitrary value */
 {
 	register ub4 a,b,c,len;
-	
+
 	/* Set up the internal state */
 	len = length;
 	a = b = 0x9e3779b9;  /* the golden ratio; an arbitrary value */
 	c = initval;           /* the previous hash value */
-	
+
 	/*---------------------------------------- handle most of the key */
 	while (len >= 12)
 	{
@@ -1333,7 +1333,7 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 		mix(a,b,c);
 		k += 12; len -= 12;
 	}
-	
+
 	/*------------------------------------- handle the last 11 bytes */
 	c += length;
 	switch(len)              /* all the case statements fall through */
@@ -1404,8 +1404,8 @@ inline int days_from_1jan(int year,int month,int day)
 {
   static const int days[2][12] =
   {
-    { 0,31,59,90,120,151,181,212,243,273,304,334},
-    { 0,31,60,91,121,152,182,213,244,274,305,335}
+	{ 0,31,59,90,120,151,181,212,243,273,304,334},
+	{ 0,31,60,91,121,152,182,213,244,274,305,335}
   };
   return days[is_leap(year)][month-1] + day - 1;
 }
@@ -1416,14 +1416,14 @@ inline time_t internal_timegm(tm const *t)
   int month = t->tm_mon;
   if(month > 11)
   {
-    year += month/12;
-    month %= 12;
+	year += month/12;
+	month %= 12;
   }
   else if(month < 0)
   {
-    int years_diff = (-month + 11)/12;
-    year -= years_diff;
-    month+=12 * years_diff;
+	int years_diff = (-month + 11)/12;
+	year -= years_diff;
+	month+=12 * years_diff;
   }
   month++;
   int day = t->tm_mday;
@@ -1528,77 +1528,77 @@ unsigned long Util::Crc32(unsigned char *block, unsigned long length)
 
 unsigned long gf2_matrix_times(unsigned long *mat, unsigned long vec)
 {
-    unsigned long sum;
+	unsigned long sum;
 
-    sum = 0;
-    while (vec) {
-        if (vec & 1)
-            sum ^= *mat;
-        vec >>= 1;
-        mat++;
-    }
-    return sum;
+	sum = 0;
+	while (vec) {
+		if (vec & 1)
+			sum ^= *mat;
+		vec >>= 1;
+		mat++;
+	}
+	return sum;
 }
 
 void gf2_matrix_square(unsigned long *square, unsigned long *mat)
 {
-    int n;
+	int n;
 
-    for (n = 0; n < GF2_DIM; n++)
-        square[n] = gf2_matrix_times(mat, mat[n]);
+	for (n = 0; n < GF2_DIM; n++)
+		square[n] = gf2_matrix_times(mat, mat[n]);
 }
 
 unsigned long Util::Crc32Combine(unsigned long crc1, unsigned long crc2, unsigned long len2)
 {
-    int n;
-    unsigned long row;
-    unsigned long even[GF2_DIM];    /* even-power-of-two zeros operator */
-    unsigned long odd[GF2_DIM];     /* odd-power-of-two zeros operator */
+	int n;
+	unsigned long row;
+	unsigned long even[GF2_DIM];    /* even-power-of-two zeros operator */
+	unsigned long odd[GF2_DIM];     /* odd-power-of-two zeros operator */
 
-    /* degenerate case (also disallow negative lengths) */
-    if (len2 <= 0)
-        return crc1;
+	/* degenerate case (also disallow negative lengths) */
+	if (len2 <= 0)
+		return crc1;
 
-    /* put operator for one zero bit in odd */
-    odd[0] = 0xedb88320UL;          /* CRC-32 polynomial */
-    row = 1;
-    for (n = 1; n < GF2_DIM; n++) {
-        odd[n] = row;
-        row <<= 1;
-    }
+	/* put operator for one zero bit in odd */
+	odd[0] = 0xedb88320UL;          /* CRC-32 polynomial */
+	row = 1;
+	for (n = 1; n < GF2_DIM; n++) {
+		odd[n] = row;
+		row <<= 1;
+	}
 
-    /* put operator for two zero bits in even */
-    gf2_matrix_square(even, odd);
+	/* put operator for two zero bits in even */
+	gf2_matrix_square(even, odd);
 
-    /* put operator for four zero bits in odd */
-    gf2_matrix_square(odd, even);
+	/* put operator for four zero bits in odd */
+	gf2_matrix_square(odd, even);
 
-    /* apply len2 zeros to crc1 (first square will put the operator for one
-       zero byte, eight zero bits, in even) */
-    do {
-        /* apply zeros operator for this bit of len2 */
-        gf2_matrix_square(even, odd);
-        if (len2 & 1)
-            crc1 = gf2_matrix_times(even, crc1);
-        len2 >>= 1;
+	/* apply len2 zeros to crc1 (first square will put the operator for one
+	   zero byte, eight zero bits, in even) */
+	do {
+		/* apply zeros operator for this bit of len2 */
+		gf2_matrix_square(even, odd);
+		if (len2 & 1)
+			crc1 = gf2_matrix_times(even, crc1);
+		len2 >>= 1;
 
-        /* if no more bits set, then done */
-        if (len2 == 0)
-            break;
+		/* if no more bits set, then done */
+		if (len2 == 0)
+			break;
 
-        /* another iteration of the loop with odd and even swapped */
-        gf2_matrix_square(odd, even);
-        if (len2 & 1)
-            crc1 = gf2_matrix_times(odd, crc1);
-        len2 >>= 1;
+		/* another iteration of the loop with odd and even swapped */
+		gf2_matrix_square(odd, even);
+		if (len2 & 1)
+			crc1 = gf2_matrix_times(odd, crc1);
+		len2 >>= 1;
 
-        /* if no more bits set, then done */
-    } while (len2 != 0);
+		/* if no more bits set, then done */
+	} while (len2 != 0);
 
-    /* return combined crc */
-    crc1 ^= crc2;
+	/* return combined crc */
+	crc1 ^= crc2;
 
-    return crc1;
+	return crc1;
 }
 
 int Util::NumberOfCpuCores()
@@ -1625,18 +1625,18 @@ bool Util::FlushFileBuffers(int fileDescriptor, char* errBuf, int bufSize)
 	}
 	return ok;
 #else
-#ifdef HAVE_FULLFSYNC    
+#ifdef HAVE_FULLFSYNC
 	int ret = fcntl(fileDescriptor, F_FULLFSYNC) == -1 ? 1 : 0;
 #elif HAVE_FDATASYNC
-    int ret = fdatasync(fileDescriptor);
+	int ret = fdatasync(fileDescriptor);
 #else
-    int ret = fsync(fileDescriptor);
-#endif    
-    if (ret != 0)
-    {
+	int ret = fsync(fileDescriptor);
+#endif
+	if (ret != 0)
+	{
 		GetLastErrorMessage(errBuf, bufSize);
-    }
-    return ret == 0;
+	}
+	return ret == 0;
 #endif
 }
 
@@ -1651,7 +1651,7 @@ bool Util::FlushDirBuffers(const char* filename, char* errBuf, int bufSize)
 	char* p = (char*)strrchr(parentPath, PATH_SEPARATOR);
 	if (p)
 	{
-	    *p = '\0';
+		*p = '\0';
 	}
 	fileMode = FOPEN_RB;
 #endif
@@ -1700,16 +1700,16 @@ unsigned int WebUtil::DecodeBase64(char* inputBuffer, int inputBufferLength, cha
 		if ((inputBuffer [InputBufferIndex] >= 48 && inputBuffer [InputBufferIndex] <=  57) ||
 			(inputBuffer [InputBufferIndex] >= 65 && inputBuffer [InputBufferIndex] <=  90) ||
 			(inputBuffer [InputBufferIndex] >= 97 && inputBuffer [InputBufferIndex] <= 122) ||
-			inputBuffer [InputBufferIndex] == '+' || 
-			inputBuffer [InputBufferIndex] == '/' || 
+			inputBuffer [InputBufferIndex] == '+' ||
+			inputBuffer [InputBufferIndex] == '/' ||
 			inputBuffer [InputBufferIndex] == '=')
 		{
 			ByteQuartet [i] = inputBuffer [InputBufferIndex];
 			i++;
 		}
-		
+
 		InputBufferIndex++;
-		
+
 		if (i == 4) {
 			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, outputBuffer + OutputBufferIndex);
 			i = 0;
@@ -1817,7 +1817,7 @@ char* WebUtil::XmlEncode(const char* raw)
 					}
 
 					// accept only valid XML 1.0 characters
-					if (cp == 0x9 || cp == 0xA || cp == 0xD || 
+					if (cp == 0x9 || cp == 0xA || cp == 0xD ||
 						(0x20 <= cp && cp <= 0xD7FF) ||
 						(0xE000 <= cp && cp <= 0xFFFD) ||
 						(0x10000 <= cp && cp <= 0x10FFFF))
@@ -2024,7 +2024,7 @@ char* WebUtil::JsonEncode(const char* raw)
 			case '\r':
 			case '\t':
 				reqSize++;
-                break;
+				break;
 			default:
 				if (ch < 0x20 || ch >= 0x80)
 				{
@@ -2174,7 +2174,7 @@ void WebUtil::JsonDecode(char* raw)
 							break;
 					}
 					p++;
-                    break;
+					break;
 				}
 			default:
 				*output++ = *p++;
@@ -2287,7 +2287,7 @@ void WebUtil::UrlDecode(char* raw)
 						'a' <= c2 && c2 <= 'f' ? c2 - 'a' + 10 : 0;
 					unsigned char ch = (c1 << 4) + c2;
 					*output++ = (char)ch;
-                    break;
+					break;
 				}
 			default:
 				*output++ = *p++;
@@ -2371,7 +2371,7 @@ char* WebUtil::Latin1ToUtf8(const char* str)
 	while (*in)
 	{
 		if (*in < 128)
-		{	
+		{
 			*out++ = *in++;
 		}
 		else
@@ -2805,21 +2805,21 @@ unsigned int ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* ou
 	zstr.avail_in = inputBufferLength;
 	zstr.next_out = (Bytef*)outputBuffer;
 	zstr.avail_out = outputBufferLength;
-	
+
 	/* add 16 to MAX_WBITS to enforce gzip format */
 	if (Z_OK != deflateInit2(&zstr, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS + 16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))
 	{
 		return 0;
 	}
-	
+
 	unsigned int total_out = 0;
 	if (deflate(&zstr, Z_FINISH) == Z_STREAM_END)
 	{
 		total_out = (unsigned int)zstr.total_out;
 	}
-	
+
 	deflateEnd(&zstr);
-	
+
 	return total_out;
 }
 

@@ -64,7 +64,7 @@ public:
 		time_t			m_lastExecuted;
 
 	public:
-						Task(int id, int hours, int minutes, int weekDaysBits, ECommand command, 
+						Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
 							const char* param);
 						~Task();
 		friend class	Scheduler;

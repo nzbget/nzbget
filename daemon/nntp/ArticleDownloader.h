@@ -58,11 +58,11 @@ public:
 	private:
 		 ArticleDownloader*		m_owner;
 	protected:
-		virtual void	SetLastUpdateTimeNow() { m_owner->SetLastUpdateTimeNow(); } 
+		virtual void	SetLastUpdateTimeNow() { m_owner->SetLastUpdateTimeNow(); }
 	public:
 		void			SetOwner(ArticleDownloader* owner) { m_owner = owner; }
 	};
-			
+
 private:
 	FileInfo*			m_fileInfo;
 	ArticleInfo*		m_articleInfo;

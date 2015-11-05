@@ -71,7 +71,7 @@ Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len)
 	{
 		return efYenc;
 	}
-	
+
 	if ((len == 62 || len == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
 	{
 		return efUx;
@@ -141,7 +141,7 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 				m_expectedCRC = strtoul(pb, NULL, 16);
 			}
 			pb = strstr(buffer, " size=");
-			if (pb) 
+			if (pb)
 			{
 				pb += 6; //=strlen(" size=")
 				m_endSize = (long long)atoll(pb);
@@ -180,7 +180,7 @@ BreakLoop:
 		}
 		return optr - buffer;
 	}
-	else 
+	else
 	{
 		if (!m_part && !strncmp(buffer, "=ybegin ", 8))
 		{
@@ -197,7 +197,7 @@ BreakLoop:
 				m_articleFilename[pe - pb] = '\0';
 			}
 			pb = strstr(buffer, " size=");
-			if (pb) 
+			if (pb)
 			{
 				pb += 6; //=strlen(" size=")
 				m_size = (long long)atoll(pb);
@@ -215,13 +215,13 @@ BreakLoop:
 			m_part = true;
 			m_body = true;
 			char* pb = strstr(buffer, " begin=");
-			if (pb) 
+			if (pb)
 			{
 				pb += 7; //=strlen(" begin=")
 				m_beginPos = (long long)atoll(pb);
 			}
 			pb = strstr(buffer, " end=");
-			if (pb) 
+			if (pb)
 			{
 				pb += 5; //=strlen(" end=")
 				m_endPos = (long long)atoll(pb);
@@ -296,7 +296,7 @@ int UDecoder::DecodeBuffer(char* buffer, int len)
 			pb += 6; //strlen("begin ")
 
 			// skip file-permissions
-			for (; *pb != ' ' && *pb != '\0' && *pb != '\n' && *pb != '\r'; pb++) ; 
+			for (; *pb != ' ' && *pb != '\0' && *pb != '\n' && *pb != '\r'; pb++) ;
 			pb++;
 
 			// extracting filename
@@ -336,19 +336,19 @@ int UDecoder::DecodeBuffer(char* buffer, int len)
 		{
 			if (effLen >= 3)
 			{
-				*optr++ = UU_DECODE_CHAR (iptr[0]) << 2 | UU_DECODE_CHAR (iptr[1]) >> 4; 
-				*optr++ = UU_DECODE_CHAR (iptr[1]) << 4 | UU_DECODE_CHAR (iptr[2]) >> 2; 
+				*optr++ = UU_DECODE_CHAR (iptr[0]) << 2 | UU_DECODE_CHAR (iptr[1]) >> 4;
+				*optr++ = UU_DECODE_CHAR (iptr[1]) << 4 | UU_DECODE_CHAR (iptr[2]) >> 2;
 				*optr++ = UU_DECODE_CHAR (iptr[2]) << 6 | UU_DECODE_CHAR (iptr[3]);
 			}
 			else
 			{
 				if (effLen >= 1)
 				{
-					*optr++ = UU_DECODE_CHAR (iptr[0]) << 2 | UU_DECODE_CHAR (iptr[1]) >> 4; 
+					*optr++ = UU_DECODE_CHAR (iptr[0]) << 2 | UU_DECODE_CHAR (iptr[1]) >> 4;
 				}
 				if (effLen >= 2)
 				{
-					*optr++ = UU_DECODE_CHAR (iptr[1]) << 4 | UU_DECODE_CHAR (iptr[2]) >> 2; 
+					*optr++ = UU_DECODE_CHAR (iptr[1]) << 4 | UU_DECODE_CHAR (iptr[2]) >> 2;
 				}
 			}
 		}

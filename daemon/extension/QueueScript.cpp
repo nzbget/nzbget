@@ -184,7 +184,7 @@ void QueueScriptController::PrepareParams(const char* scriptName)
 
 	SetEnvVar("NZBNA_EVENT", QUEUE_EVENT_NAMES[m_event]);
 
-    const char* deleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
+	const char* deleteStatusName[] = { "NONE", "MANUAL", "HEALTH", "DUPE", "BAD", "GOOD", "COPY", "SCAN" };
 	SetEnvVar("NZBNA_DELETESTATUS", deleteStatusName[m_deleteStatus]);
 
 	const char* urlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };

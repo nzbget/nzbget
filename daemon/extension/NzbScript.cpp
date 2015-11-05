@@ -47,7 +47,7 @@
 #include "Log.h"
 #include "Util.h"
 
-		 
+
 /**
  * If szStripPrefix is not NULL, only pp-parameters, whose names start with the prefix
  * are processed. The prefix is then stripped from the names.
@@ -61,7 +61,7 @@ void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, con
 	{
 		NzbParameter* parameter = *it;
 		const char* value = parameter->GetValue();
-		
+
 #ifdef WIN32
 		char* ansiValue = strdup(value);
 		WebUtil::Utf8ToAnsi(ansiValue, strlen(ansiValue) + 1);

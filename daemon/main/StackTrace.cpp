@@ -217,7 +217,7 @@ void PrintBacktrace()
 {
 #ifdef HAVE_BACKTRACE
 	printf("Segmentation fault, tracing...\n");
-	
+
 	void *array[100];
 	size_t size;
 	char **strings;
@@ -293,8 +293,8 @@ void InstallErrorHandler()
 	signal(SIGSEGV, SignalProc);
 #endif
 #ifdef SIGCHLD_HANDLER
-    // it could be necessary on some systems to activate a handler for SIGCHLD
-    // however it make troubles on other systems and is deactivated by default
+	// it could be necessary on some systems to activate a handler for SIGCHLD
+	// however it make troubles on other systems and is deactivated by default
 	signal(SIGCHLD, SignalProc);
 #endif
 }

@@ -147,6 +147,6 @@ bool ParParser::ParseParFilename(const char* parFilename, int* baseNameLen, int*
 	{
 		*blocks = blockcnt;
 	}
-	
+
 	return true;
 }

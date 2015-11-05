@@ -40,7 +40,7 @@ extern void ExitProc();
 RunProc Run = NULL;
 
 char* strServiceName = "NZBGet";
-SERVICE_STATUS_HANDLE nServiceStatusHandle; 
+SERVICE_STATUS_HANDLE nServiceStatusHandle;
 DWORD nServiceCurrentStatus;
 
 BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWaitHint)
@@ -70,7 +70,7 @@ BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWaitHint)
 void ServiceCtrlHandler(DWORD nControlCode)
 {
 	switch(nControlCode)
-	{	
+	{
 	case SERVICE_CONTROL_SHUTDOWN:
 	case SERVICE_CONTROL_STOP:
 		nServiceCurrentStatus = SERVICE_STOP_PENDING;
@@ -103,7 +103,7 @@ void ServiceMain(DWORD argc, LPTSTR *argv)
 	{
 		return;
 	}
-	
+
 	Run();
 
 	UpdateServiceStatus(SERVICE_STOPPED, 0);
@@ -133,7 +133,7 @@ void InstallService(int argc, char *argv[])
 		printf("Could not install service\n");
 		return;
 	}
-	
+
 	char exeName[1024];
 	GetModuleFileName(NULL, exeName, 1024);
 	exeName[1024-1] = '\0';
@@ -168,7 +168,7 @@ void UnInstallService()
 		printf("Could not uninstall service\n");
 		return;
 	}
-	
+
 	SC_HANDLE hService = OpenService(scm, strServiceName, STANDARD_RIGHTS_REQUIRED);
 	if(!hService)
 	{

@@ -76,7 +76,7 @@ public:
 	public:
 						~Scripts();
 		void			Clear();
-		Script*			Find(const char* name);	
+		Script*			Find(const char* name);
 	};
 
 	class ConfigTemplate
@@ -93,7 +93,7 @@ public:
 		Script*			GetScript() { return m_script; }
 		const char*		GetTemplate() { return m_template; }
 	};
-	
+
 	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
 
 	class ConfigTemplates: public ConfigTemplatesBase

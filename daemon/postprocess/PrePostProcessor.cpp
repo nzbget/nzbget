@@ -118,7 +118,7 @@ void PrePostProcessor::Stop()
 
 	if (m_curJob && m_curJob->GetPostInfo() &&
 		(m_curJob->GetPostInfo()->GetStage() == PostInfo::ptUnpacking ||
-		 m_curJob->GetPostInfo()->GetStage() == PostInfo::ptExecutingScript) && 
+		 m_curJob->GetPostInfo()->GetStage() == PostInfo::ptExecutingScript) &&
 		m_curJob->GetPostInfo()->GetPostThread())
 	{
 		Thread* postThread = m_curJob->GetPostInfo()->GetPostThread();
@@ -360,7 +360,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 				remove(fullFilename);
 			}
 		}
-	
+
 		// delete old directory (if empty)
 		if (Util::DirEmpty(nzbInfo->GetDestDir()))
 		{
@@ -417,7 +417,7 @@ void PrePostProcessor::CheckPostQueue()
 					postInfo->SetStage(PostInfo::ptQueued);
 				}
 			}
-			
+
 #endif
 			if (postInfo->GetDeleted())
 			{
@@ -442,7 +442,7 @@ void PrePostProcessor::CheckPostQueue()
 			}
 		}
 	}
-	
+
 	DownloadQueue::Unlock();
 }
 
@@ -576,7 +576,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		  postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usPassword) ||
 		 (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
 		  postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psFailure) ||
-		 ((postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone || 
+		 ((postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone ||
 		   postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSkipped) &&
 		  (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psNone ||
 		   postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped) &&

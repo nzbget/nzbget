@@ -41,7 +41,7 @@ public:
 		psFailed,
 		psSuccess
 	};
-	
+
 	class FileHash
 	{
 	private:
@@ -60,7 +60,7 @@ public:
 
 	typedef std::deque<FileHash*>		FileHashList;
 	typedef std::deque<char*>			DirList;
-	
+
 private:
 	char*				m_infoName;
 	char*				m_destDir;

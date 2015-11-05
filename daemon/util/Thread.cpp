@@ -140,7 +140,7 @@ void Thread::Start()
 	debug("Starting Thread");
 
 	m_running = true;
-	
+
 	// NOTE: we must guarantee, that in a time we set m_bRunning
 	// to value returned from pthread_create, the thread-object still exists.
 	// This is not obviously!
@@ -171,7 +171,7 @@ void Thread::Stop()
 	debug("Stopping Thread");
 
 	m_stopped = true;
-} 
+}
 
 void Thread::Resume()
 {
@@ -217,9 +217,9 @@ void* Thread::thread_handler(void* object)
 	thread->Run();
 
 	debug("Thread-func exited");
-	
+
 	thread->m_running = false;
-	
+
 	if (thread->m_autoDestroy)
 	{
 		debug("Autodestroying Thread-object");

@@ -37,7 +37,7 @@
 #include "DupeMatcher.h"
 #endif
 
-class ParCoordinator 
+class ParCoordinator
 {
 private:
 #ifndef DISABLE_PARCHECK
@@ -86,7 +86,7 @@ private:
 	public:
 		PostInfo*		GetPostInfo() { return m_postInfo; }
 		void			SetPostInfo(PostInfo* postInfo) { m_postInfo = postInfo; }
-		
+
 		friend class ParCoordinator;
 	};
 
@@ -110,7 +110,7 @@ private:
 	};
 
 	typedef std::list<BlockInfo*> 	Blocks;
-	
+
 	enum EJobKind
 	{
 		jkParCheck,
@@ -139,7 +139,7 @@ public:
 
 #ifndef DISABLE_PARCHECK
 	bool				AddPar(FileInfo* fileInfo, bool deleted);
-	void				FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename, 
+	void				FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
 							Blocks* blocks, bool strictParName, bool exactParName, int* blockFound);
 	void				StartParCheckJob(PostInfo* postInfo);
 	void				StartParRenameJob(PostInfo* postInfo);

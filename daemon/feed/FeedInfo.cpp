@@ -405,18 +405,18 @@ FeedHistoryInfo* FeedHistory::Find(const char* url)
 FeedItemInfos::FeedItemInfos()
 {
 	debug("Creating FeedItemInfos");
-	
+
 	m_refCount = 0;
 }
 
 FeedItemInfos::~FeedItemInfos()
 {
 	debug("Destroing FeedItemInfos");
-	
+
 	for (iterator it = begin(); it != end(); it++)
-    {
-        delete *it;
-    }
+	{
+		delete *it;
+	}
 }
 
 void FeedItemInfos::Retain()

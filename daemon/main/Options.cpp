@@ -613,13 +613,13 @@ void Options::ConfigError(const char* msg, ...)
 void Options::ConfigWarn(const char* msg, ...)
 {
 	char tmp2[1024];
-	
+
 	va_list ap;
 	va_start(ap, msg);
 	vsnprintf(tmp2, 1024, msg, ap);
 	tmp2[1024-1] = '\0';
 	va_end(ap);
-	
+
 	printf("%s(%i): %s\n", Util::BaseFileName(m_configFilename), m_configLine, tmp2);
 	warn("%s(%i): %s", Util::BaseFileName(m_configFilename), m_configLine, tmp2);
 }
@@ -1228,7 +1228,7 @@ void Options::InitServers()
 
 		sprintf(optname, "Server%i.Group", n);
 		const char* ngroup = GetOption(optname);
-		
+
 		sprintf(optname, "Server%i.Host", n);
 		const char* nhost = GetOption(optname);
 
@@ -1355,7 +1355,7 @@ void Options::InitCategories()
 			m_categories.push_back(category);
 
 			free(destDir);
-			
+
 			// split Aliases into tokens and create items for each token
 			if (naliases)
 			{
@@ -1387,7 +1387,7 @@ void Options::InitFeeds()
 
 		sprintf(optname, "Feed%i.URL", n);
 		const char* nurl = GetOption(optname);
-		
+
 		sprintf(optname, "Feed%i.Filter", n);
 		const char* nfilter = GetOption(optname);
 
@@ -1543,11 +1543,11 @@ void Options::InitScheduler()
 			}
 		}
 
-		if ((taskCommand == scScript || 
-			 taskCommand == scProcess || 
+		if ((taskCommand == scScript ||
+			 taskCommand == scProcess ||
 			 taskCommand == scActivateServer ||
 			 taskCommand == scDeactivateServer ||
-			 taskCommand == scFetchFeed) && 
+			 taskCommand == scFetchFeed) &&
 			Util::EmptyStr(param))
 		{
 			ConfigError("Task definition not complete for \"Task%i\". Option \"Task%i.Param\" is missing", n, n);
@@ -1856,7 +1856,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 			return true;
 		}
 	}
-	
+
 	if (!strncasecmp(optname, "category", 8))
 	{
 		char* p = (char*)optname + 8;
@@ -1990,7 +1990,7 @@ void Options::ConvertOldOption(char *option, int optionBufLen, char *value, int 
 		int val = strtol(value, NULL, 10);
 		val = val == -1 ? 1024 : val / 1024;
 		snprintf(value, valueBufLen, "%i", val);
-	}	
+	}
 
 	if (!strcasecmp(option, "ConnectionTimeout"))
 	{

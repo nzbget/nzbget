@@ -48,7 +48,7 @@ public:
 		adConnectError,
 		adFatalError
 	};
-			
+
 private:
 	char*				m_url;
 	char*				m_outputFilename;
@@ -80,7 +80,7 @@ private:
 	void				SendHeaders(URL *url);
 	EStatus				DownloadHeaders();
 	EStatus				DownloadBody();
-	void				ParseRedirect(const char* location); 
+	void				ParseRedirect(const char* location);
 
 protected:
 	virtual void		ProcessHeader(const char* line);

@@ -82,7 +82,7 @@ private:
 	public:
 							QueueData(const char* filename, const char* nzbName, const char* category,
 								int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
-								NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo, 
+								NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
 								EAddStatus* addStatus, int* nzbId);
 							~QueueData();
 		const char*			GetFilename() { return m_filename; }

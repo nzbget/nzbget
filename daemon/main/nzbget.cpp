@@ -205,11 +205,11 @@ void RunMain()
 {
 	// we need to save and later restore current directory each time
 	// the program is reloaded (RPC-Method "reload") in order for
-	// config to properly load in a case relative paths are used 
+	// config to properly load in a case relative paths are used
 	// in command line
 	char curDir[MAX_PATH + 1];
 	Util::GetCurrentDirectory(curDir, sizeof(curDir));
-	
+
 	bool reload = false;
 	while (g_Reloading)
 	{
@@ -261,7 +261,7 @@ void Run(bool reload)
 		umask(g_Options->GetUMask());
 	}
 #endif
-	
+
 	g_Scanner->InitOptions();
 	g_QueueScriptCoordinator->InitOptions();
 
@@ -403,8 +403,8 @@ void Run(bool reload)
 		}
 
 		// enter main program-loop
-		while (g_QueueCoordinator->IsRunning() || 
-			g_UrlCoordinator->IsRunning() || 
+		while (g_QueueCoordinator->IsRunning() ||
+			g_UrlCoordinator->IsRunning() ||
 			g_PrePostProcessor->IsRunning() ||
 			g_FeedCoordinator->IsRunning() ||
 			g_ServiceCoordinator->IsRunning() ||
@@ -413,9 +413,9 @@ void Run(bool reload)
 #endif
 			g_ArticleCache->IsRunning())
 		{
-			if (!g_Options->GetServerMode() && 
-				!g_QueueCoordinator->HasMoreJobs() && 
-				!g_UrlCoordinator->HasMoreJobs() && 
+			if (!g_Options->GetServerMode() &&
+				!g_QueueCoordinator->HasMoreJobs() &&
+				!g_UrlCoordinator->HasMoreJobs() &&
 				!g_PrePostProcessor->HasMoreJobs())
 			{
 				// Standalone-mode: download completed
@@ -720,7 +720,7 @@ void ProcessSigVerify()
 	exit(ok ? 93 : 1);
 #else
 	printf("ERROR: Could not verify signature, the program was compiled without OpenSSL support\n");
-	exit(1);	
+	exit(1);
 #endif
 }
 

@@ -56,12 +56,12 @@ extern void ExitProc();
 extern void Reload();
 
 const char* g_MessageRequestNames[] =
-    { "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug", 
-		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan", 
+	{ "N/A", "Download", "Pause/Unpause", "List", "Set download rate", "Dump debug",
+		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan",
 		"Pause/Unpause postprocessor", "History" };
 
 const unsigned int g_MessageRequestSizes[] =
-    { 0,
+	{ 0,
 		sizeof(SNzbDownloadRequest),
 		sizeof(SNzbPauseUnpauseRequest),
 		sizeof(SNzbListRequest),
@@ -76,7 +76,7 @@ const unsigned int g_MessageRequestSizes[] =
 		sizeof(SNzbWriteLogRequest),
 		sizeof(SNzbScanRequest),
 		sizeof(SNzbHistoryRequest)
-    };
+	};
 
 
 
@@ -226,7 +226,7 @@ void BinRpcProcessor::Dispatch()
 			 g_MessageRequestSizes[ntohl(m_messageBase.m_type)], ntohl(m_messageBase.m_structSize));
 		return;
 	}
-	
+
 	BinCommand* command = NULL;
 
 	switch (ntohl(m_messageBase.m_type))
@@ -439,7 +439,7 @@ void DownloadBinCommand::Execute()
 		free(nzbContent);
 		return;
 	}
-	
+
 	int priority = ntohl(DownloadRequest.m_priority);
 	bool addPaused = ntohl(DownloadRequest.m_addPaused);
 	bool addTop = ntohl(DownloadRequest.m_addFirst);
@@ -871,7 +871,7 @@ void EditQueueBinCommand::Execute()
 	}
 
 	char* buf = (char*)malloc(bufLength);
-	
+
 	if (!m_connection->Recv(buf, bufLength))
 	{
 		error("invalid request");
@@ -1046,14 +1046,14 @@ void WriteLogBinCommand::Execute()
 	}
 
 	char* recvBuffer = (char*)malloc(ntohl(WriteLogRequest.m_trailingDataLength) + 1);
-	
+
 	if (!m_connection->Recv(recvBuffer, ntohl(WriteLogRequest.m_trailingDataLength)))
 	{
 		error("invalid request");
 		free(recvBuffer);
 		return;
 	}
-	
+
 	bool OK = true;
 	switch ((Message::EKind)ntohl(WriteLogRequest.m_kind))
 	{

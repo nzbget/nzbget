@@ -52,10 +52,10 @@ public:
 	enum EKind
 	{
 		mkInfo,
-	    mkWarning,
-	    mkError,
-	    mkDebug,
-	    mkDetail
+		mkWarning,
+		mkError,
+		mkDebug,
+		mkDetail
 	};
 
 private:
@@ -122,11 +122,11 @@ private:
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
 	friend void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...);
-#else	
+#else
 	friend void debug(const char* msg, ...);
 #endif
 #endif
-	
+
 public:
 	static void			Init();
 	static void			Final();

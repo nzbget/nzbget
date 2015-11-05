@@ -68,7 +68,7 @@
 // undefine macro "clear".
 void curses_clear()
 {
-    clear();
+	clear();
 }
 #undef clear
 #endif
@@ -118,32 +118,32 @@ static const int READKEY_EMPTY = ERR;
 
 NCursesFrontend::NCursesFrontend()
 {
-    m_screenHeight = 0;
-    m_screenWidth = 0;
-    m_inputNumberIndex = 0;
-    m_inputMode = normal;
-    m_summary = true;
-    m_fileList = true;
-    m_neededLogEntries = 0;
+	m_screenHeight = 0;
+	m_screenWidth = 0;
+	m_inputNumberIndex = 0;
+	m_inputMode = normal;
+	m_summary = true;
+	m_fileList = true;
+	m_neededLogEntries = 0;
 	m_queueWinTop = 0;
 	m_queueWinHeight = 0;
 	m_queueWinClientHeight = 0;
 	m_messagesWinTop = 0;
 	m_messagesWinHeight = 0;
 	m_messagesWinClientHeight = 0;
-    m_selectedQueueEntry = 0;
+	m_selectedQueueEntry = 0;
 	m_queueScrollOffset = 0;
 	m_showNzbname = g_Options->GetCursesNzbName();
 	m_showTimestamp = g_Options->GetCursesTime();
 	m_groupFiles = g_Options->GetCursesGroup();
 	m_queueWindowPercentage = 50;
 	m_dataUpdatePos = 0;
-    m_updateNextTime = false;
+	m_updateNextTime = false;
 	m_lastEditEntry = -1;
 	m_lastPausePars = false;
 	m_hint = NULL;
 
-    // Setup curses
+	// Setup curses
 #ifdef WIN32
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	m_screenBuffer = NULL;
@@ -165,38 +165,38 @@ NCursesFrontend::NCursesFrontend()
 
 	m_useColor = true;
 #else
-    m_window = initscr();
-    if (m_window == NULL)
-    {
-        printf("ERROR: m_pWindow == NULL\n");
-        exit(-1);
-    }
+	m_window = initscr();
+	if (m_window == NULL)
+	{
+		printf("ERROR: m_pWindow == NULL\n");
+		exit(-1);
+	}
 	keypad(stdscr, true);
-    nodelay((WINDOW*)m_window, true);
-    noecho();
-    curs_set(0);
-    m_useColor = has_colors();
+	nodelay((WINDOW*)m_window, true);
+	noecho();
+	curs_set(0);
+	m_useColor = has_colors();
 #endif
 
-    if (m_useColor)
-    {
+	if (m_useColor)
+	{
 #ifndef WIN32
-        start_color();
+		start_color();
 #endif
-        init_pair(0,							COLOR_WHITE,	COLOR_BLUE);
-        init_pair(NCURSES_COLORPAIR_TEXT,		COLOR_WHITE,	COLOR_BLACK);
-        init_pair(NCURSES_COLORPAIR_INFO,		COLOR_GREEN,	COLOR_BLACK);
-        init_pair(NCURSES_COLORPAIR_WARNING,	COLOR_MAGENTA,	COLOR_BLACK);
-        init_pair(NCURSES_COLORPAIR_ERROR,		COLOR_RED,		COLOR_BLACK);
-        init_pair(NCURSES_COLORPAIR_DEBUG,		COLOR_WHITE,	COLOR_BLACK);
-        init_pair(NCURSES_COLORPAIR_DETAIL,		COLOR_GREEN,	COLOR_BLACK);
-        init_pair(NCURSES_COLORPAIR_STATUS,		COLOR_BLUE,		COLOR_WHITE);
-        init_pair(NCURSES_COLORPAIR_KEYBAR,		COLOR_WHITE,	COLOR_BLUE);
-        init_pair(NCURSES_COLORPAIR_INFOLINE,	COLOR_WHITE,	COLOR_BLUE);
-        init_pair(NCURSES_COLORPAIR_TEXTHIGHL,	COLOR_BLACK,	COLOR_CYAN);
-        init_pair(NCURSES_COLORPAIR_CURSOR,		COLOR_BLACK,	COLOR_YELLOW);
-        init_pair(NCURSES_COLORPAIR_HINT,		COLOR_WHITE,	COLOR_RED);
-    }
+		init_pair(0,							COLOR_WHITE,	COLOR_BLUE);
+		init_pair(NCURSES_COLORPAIR_TEXT,		COLOR_WHITE,	COLOR_BLACK);
+		init_pair(NCURSES_COLORPAIR_INFO,		COLOR_GREEN,	COLOR_BLACK);
+		init_pair(NCURSES_COLORPAIR_WARNING,	COLOR_MAGENTA,	COLOR_BLACK);
+		init_pair(NCURSES_COLORPAIR_ERROR,		COLOR_RED,		COLOR_BLACK);
+		init_pair(NCURSES_COLORPAIR_DEBUG,		COLOR_WHITE,	COLOR_BLACK);
+		init_pair(NCURSES_COLORPAIR_DETAIL,		COLOR_GREEN,	COLOR_BLACK);
+		init_pair(NCURSES_COLORPAIR_STATUS,		COLOR_BLUE,		COLOR_WHITE);
+		init_pair(NCURSES_COLORPAIR_KEYBAR,		COLOR_WHITE,	COLOR_BLUE);
+		init_pair(NCURSES_COLORPAIR_INFOLINE,	COLOR_WHITE,	COLOR_BLUE);
+		init_pair(NCURSES_COLORPAIR_TEXTHIGHL,	COLOR_BLACK,	COLOR_CYAN);
+		init_pair(NCURSES_COLORPAIR_CURSOR,		COLOR_BLACK,	COLOR_YELLOW);
+		init_pair(NCURSES_COLORPAIR_HINT,		COLOR_WHITE,	COLOR_RED);
+	}
 }
 
 NCursesFrontend::~NCursesFrontend()
@@ -213,25 +213,25 @@ NCursesFrontend::~NCursesFrontend()
 	ConsoleCursorInfo.bVisible = true;
 	SetConsoleCursorInfo(hConsole, &ConsoleCursorInfo);
 #else
-    keypad(stdscr, false);
-    echo();
-    curs_set(1);
-    endwin();
+	keypad(stdscr, false);
+	echo();
+	curs_set(1);
+	endwin();
 #endif
-    printf("\n");
+	printf("\n");
 	SetHint(NULL);
 }
 
 void NCursesFrontend::Run()
 {
-    debug("Entering NCursesFrontend-loop");
+	debug("Entering NCursesFrontend-loop");
 
 	m_dataUpdatePos = 0;
 
-    while (!IsStopped())
-    {
-        // The data (queue and log) is updated each m_iUpdateInterval msec,
-        // but the window is updated more often for better reaction on user's input
+	while (!IsStopped())
+	{
+		// The data (queue and log) is updated each m_iUpdateInterval msec,
+		// but the window is updated more often for better reaction on user's input
 
 		bool updateNow = false;
 		int key = ReadConsoleKey();
@@ -241,20 +241,20 @@ void NCursesFrontend::Run()
 			// Update now and next if a key is pressed.
 			updateNow = true;
 			m_updateNextTime = true;
-		} 
+		}
 		else if (m_updateNextTime)
 		{
 			// Update due to key being pressed during previous call.
 			updateNow = true;
 			m_updateNextTime = false;
-		} 
-		else if (m_dataUpdatePos <= 0) 
+		}
+		else if (m_dataUpdatePos <= 0)
 		{
 			updateNow = true;
 			m_updateNextTime = false;
 		}
 
-		if (updateNow) 
+		if (updateNow)
 		{
 			Update(key);
 		}
@@ -266,11 +266,11 @@ void NCursesFrontend::Run()
 
 		usleep(10 * 1000);
 		m_dataUpdatePos -= 10;
-    }
+	}
 
-    FreeData();
-	
-    debug("Exiting NCursesFrontend-loop");
+	FreeData();
+
+	debug("Exiting NCursesFrontend-loop");
 }
 
 void NCursesFrontend::NeedUpdateData()
@@ -281,21 +281,21 @@ void NCursesFrontend::NeedUpdateData()
 
 void NCursesFrontend::Update(int key)
 {
-    // Figure out how big the screen is
+	// Figure out how big the screen is
 	CalcWindowSizes();
 
-    if (m_dataUpdatePos <= 0)
-    {
-        FreeData();
+	if (m_dataUpdatePos <= 0)
+	{
+		FreeData();
 		m_neededLogEntries = m_messagesWinClientHeight;
-        if (!PrepareData())
-        {
-            return;
-        }
+		if (!PrepareData())
+		{
+			return;
+		}
 
 		// recalculate frame sizes
 		CalcWindowSizes();
-    }
+	}
 
 	if (m_inputMode == editQueue)
 	{
@@ -307,34 +307,34 @@ void NCursesFrontend::Update(int key)
 		}
 	}
 
-    //------------------------------------------
-    // Print Current NZBInfoList
-    //------------------------------------------
+	//------------------------------------------
+	// Print Current NZBInfoList
+	//------------------------------------------
 	if (m_queueWinHeight > 0)
 	{
 		PrintQueue();
 	}
 
-    //------------------------------------------
-    // Print Messages
-    //------------------------------------------
+	//------------------------------------------
+	// Print Messages
+	//------------------------------------------
 	if (m_messagesWinHeight > 0)
 	{
 		PrintMessages();
 	}
 
-    PrintStatus();
+	PrintStatus();
 
 	PrintKeyInputBar();
 
-    UpdateInput(key);
+	UpdateInput(key);
 
 	RefreshScreen();
 }
 
 void NCursesFrontend::CalcWindowSizes()
 {
-    int nrRows, nrColumns;
+	int nrRows, nrColumns;
 #ifdef WIN32
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO BufInfo;
@@ -342,10 +342,10 @@ void NCursesFrontend::CalcWindowSizes()
 	nrRows = BufInfo.srWindow.Bottom - BufInfo.srWindow.Top + 1;
 	nrColumns = BufInfo.srWindow.Right - BufInfo.srWindow.Left + 1;
 #else
-    getmaxyx(stdscr, nrRows, nrColumns);
+	getmaxyx(stdscr, nrRows, nrColumns);
 #endif
-    if (nrRows != m_screenHeight || nrColumns != m_screenWidth)
-    {
+	if (nrRows != m_screenHeight || nrColumns != m_screenWidth)
+	{
 #ifdef WIN32
 		m_screenBufferSize = nrRows * nrColumns * sizeof(CHAR_INFO);
 		m_screenBuffer = (CHAR_INFO*)realloc(m_screenBuffer, m_screenBufferSize);
@@ -353,14 +353,14 @@ void NCursesFrontend::CalcWindowSizes()
 		m_oldScreenBuffer = (CHAR_INFO*)realloc(m_oldScreenBuffer, m_screenBufferSize);
 		memset(m_oldScreenBuffer, 0, m_screenBufferSize);
 #else
-        curses_clear();
+		curses_clear();
 #endif
-        m_screenHeight = nrRows;
-        m_screenWidth = nrColumns;
-    }
+		m_screenHeight = nrRows;
+		m_screenWidth = nrColumns;
+	}
 
-    int queueSize = CalcQueueSize();
-    
+	int queueSize = CalcQueueSize();
+
 	m_queueWinTop = 0;
 	m_queueWinHeight = (m_screenHeight - 2) * m_queueWindowPercentage / 100;
 	if (m_queueWinHeight - 1 > queueSize)
@@ -404,8 +404,8 @@ int NCursesFrontend::CalcQueueSize()
 
 void NCursesFrontend::PlotLine(const char * string, int row, int pos, int colorPair)
 {
-    char buffer[MAX_SCREEN_WIDTH];
-    snprintf(buffer, sizeof(buffer), "%-*s", m_screenWidth, string);
+	char buffer[MAX_SCREEN_WIDTH];
+	snprintf(buffer, sizeof(buffer), "%-*s", m_screenWidth, string);
 	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
 	int len = strlen(buffer);
 	if (len > m_screenWidth - pos && m_screenWidth - pos < MAX_SCREEN_WIDTH)
@@ -429,7 +429,7 @@ void NCursesFrontend::PlotText(const char * string, int row, int pos, int colorP
 		m_screenBuffer[bufPos + i].Attributes = m_colorAttr[colorPair];
 	}
 #else
-	if( m_useColor ) 
+	if( m_useColor )
 	{
 		attron(COLOR_PAIR(colorPair));
 		if (blink)
@@ -437,8 +437,8 @@ void NCursesFrontend::PlotText(const char * string, int row, int pos, int colorP
 			attron(A_BLINK);
 		}
 	}
-    mvaddstr(row, pos, (char*)string);
-	if( m_useColor ) 
+	mvaddstr(row, pos, (char*)string);
+	if( m_useColor )
 	{
 		attroff(COLOR_PAIR(colorPair));
 		if (blink)
@@ -475,11 +475,11 @@ void NCursesFrontend::RefreshScreen()
 		memcpy(m_oldScreenBuffer, m_screenBuffer, m_screenBufferSize);
 	}
 #else
-    // Cursor placement
-    wmove((WINDOW*)m_window, m_screenHeight, m_screenWidth);
+	// Cursor placement
+	wmove((WINDOW*)m_window, m_screenHeight, m_screenWidth);
 
-    // NCurses refresh
-    refresh();
+	// NCurses refresh
+	refresh();
 #endif
 }
 
@@ -498,25 +498,25 @@ void NCursesFrontend::PrintMessages()
 	char buffer[MAX_SCREEN_WIDTH];
 	snprintf(buffer, sizeof(buffer), "%s Messages", m_useColor ? "" : "*** ");
 	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
-    PlotLine(buffer, lineNr++, 0, NCURSES_COLORPAIR_INFOLINE);
-	
-    int line = lineNr + m_messagesWinClientHeight - 1;
+	PlotLine(buffer, lineNr++, 0, NCURSES_COLORPAIR_INFOLINE);
+
+	int line = lineNr + m_messagesWinClientHeight - 1;
 	int linesToPrint = m_messagesWinClientHeight;
 
-    MessageList* messages = LockMessages();
-    
+	MessageList* messages = LockMessages();
+
 	// print messages from bottom
 	for (int i = (int)messages->size() - 1; i >= 0 && linesToPrint > 0; i--)
-    {
-        int printedLines = PrintMessage((*messages)[i], line, linesToPrint);
+	{
+		int printedLines = PrintMessage((*messages)[i], line, linesToPrint);
 		line -= printedLines;
 		linesToPrint -= printedLines;
-    }
+	}
 
 	if (linesToPrint > 0)
 	{
 		// too few messages, print them again from top
-    	line = lineNr + m_messagesWinClientHeight - 1;
+		line = lineNr + m_messagesWinClientHeight - 1;
 		while (linesToPrint-- > 0)
 		{
 			PlotLine("", line--, 0, NCURSES_COLORPAIR_TEXT);
@@ -529,15 +529,15 @@ void NCursesFrontend::PrintMessages()
 			linesToPrint2 -= printedLines;
 		}
 	}
-	
-    UnlockMessages();
+
+	UnlockMessages();
 }
 
 int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 {
-    const char* messageType[] = { "INFO    ", "WARNING ", "ERROR   ", "DEBUG   ", "DETAIL  "};
-    const int messageTypeColor[] = { NCURSES_COLORPAIR_INFO, NCURSES_COLORPAIR_WARNING,
-    	NCURSES_COLORPAIR_ERROR, NCURSES_COLORPAIR_DEBUG, NCURSES_COLORPAIR_DETAIL };
+	const char* messageType[] = { "INFO    ", "WARNING ", "ERROR   ", "DEBUG   ", "DETAIL  "};
+	const int messageTypeColor[] = { NCURSES_COLORPAIR_INFO, NCURSES_COLORPAIR_WARNING,
+		NCURSES_COLORPAIR_ERROR, NCURSES_COLORPAIR_DEBUG, NCURSES_COLORPAIR_DETAIL };
 
 	char* text = (char*)Msg->GetText();
 
@@ -582,7 +582,7 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 	{
 		msgLines++;
 	}
-	
+
 	int lines = 0;
 	for (int i = msgLines - 1; i >= 0 && lines < maxLines; i--)
 	{
@@ -606,41 +606,41 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 
 void NCursesFrontend::PrintStatus()
 {
-    char tmp[MAX_SCREEN_WIDTH];
-    int statusRow = m_screenHeight - 2;
+	char tmp[MAX_SCREEN_WIDTH];
+	int statusRow = m_screenHeight - 2;
 
-    char timeString[100];
-    timeString[0] = '\0';
+	char timeString[100];
+	timeString[0] = '\0';
 
 	int currentDownloadSpeed = m_standBy ? 0 : m_currentDownloadSpeed;
-    if (currentDownloadSpeed > 0 && !m_pauseDownload)
-    {
-        long long remain_sec = (long long)(m_remainingSize / currentDownloadSpeed);
+	if (currentDownloadSpeed > 0 && !m_pauseDownload)
+	{
+		long long remain_sec = (long long)(m_remainingSize / currentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
 		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
-    }
+	}
 
-    char downloadLimit[128];
-    if (m_downloadLimit > 0)
-    {
-        sprintf(downloadLimit, ", Limit %i KB/s", m_downloadLimit / 1024);
-    }
-    else
-    {
-        downloadLimit[0] = 0;
-    }
+	char downloadLimit[128];
+	if (m_downloadLimit > 0)
+	{
+		sprintf(downloadLimit, ", Limit %i KB/s", m_downloadLimit / 1024);
+	}
+	else
+	{
+		downloadLimit[0] = 0;
+	}
 
-    char postStatus[128];
-    if (m_postJobCount > 0)
-    {
-        sprintf(postStatus, ", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
-    }
-    else
-    {
-        postStatus[0] = 0;
-    }
+	char postStatus[128];
+	if (m_postJobCount > 0)
+	{
+		sprintf(postStatus, ", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
+	}
+	else
+	{
+		postStatus[0] = 0;
+	}
 
 	char currentSpeedBuf[20];
 	char averageSpeedBuf[20];
@@ -653,14 +653,14 @@ void NCursesFrontend::PrintStatus()
 		timeString, postStatus, m_pauseDownload ? (m_standBy ? ", Paused" : ", Pausing") : "",
 		downloadLimit, Util::FormatSpeed(averageSpeedBuf, sizeof(averageSpeedBuf), averageSpeed));
 	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
-    PlotLine(tmp, statusRow, 0, NCURSES_COLORPAIR_STATUS);
+	PlotLine(tmp, statusRow, 0, NCURSES_COLORPAIR_STATUS);
 }
 
 void NCursesFrontend::PrintKeyInputBar()
 {
-    int queueSize = CalcQueueSize();
+	int queueSize = CalcQueueSize();
 	int inputBarRow = m_screenHeight - 1;
-	
+
 	if (m_hint)
 	{
 		time_t time = ::time(NULL);
@@ -675,20 +675,20 @@ void NCursesFrontend::PrintKeyInputBar()
 		}
 	}
 
-    switch (m_inputMode)
-    {
-    case normal:
+	switch (m_inputMode)
+	{
+	case normal:
 		if (m_groupFiles)
 		{
-	        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | (W)indow | (G)roup | (T)ime", inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+			PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | (W)indow | (G)roup | (T)ime", inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
 		}
 		else
 		{
-	        PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | (W)indow | (G)roup | (T)ime | n(Z)b", inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+			PlotLine("(Q)uit | (E)dit | (P)ause | (R)ate | (W)indow | (G)roup | (T)ime | n(Z)b", inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
 		}
-        break;
-    case editQueue:
-    {
+		break;
+	case editQueue:
+	{
 		const char* status = NULL;
 		if (m_selectedQueueEntry > 0 && queueSize > 1 && m_selectedQueueEntry == queueSize - 1)
 		{
@@ -708,17 +708,17 @@ void NCursesFrontend::PrintKeyInputBar()
 		}
 
 		PlotLine(status, inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
-        break;
-    }
-    case downloadRate:
-        char string[128];
-        snprintf(string, 128, "Download rate: %i", m_inputValue);
+		break;
+	}
+	case downloadRate:
+		char string[128];
+		snprintf(string, 128, "Download rate: %i", m_inputValue);
 		string[128-1] = '\0';
-        PlotLine(string, inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
-        // Print the cursor
+		PlotLine(string, inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+		// Print the cursor
 		PlotText(" ", inputBarRow, 15 + m_inputNumberIndex, NCURSES_COLORPAIR_CURSOR, true);
-        break;
-    }
+		break;
+	}
 }
 
 void NCursesFrontend::SetHint(const char* hint)
@@ -746,7 +746,7 @@ void NCursesFrontend::PrintQueue()
 
 void NCursesFrontend::PrintFileQueue()
 {
-    DownloadQueue* downloadQueue = LockQueue();
+	DownloadQueue* downloadQueue = LockQueue();
 
 	int lineNr = m_queueWinTop + 1;
 	long long remaining = 0;
@@ -780,14 +780,14 @@ void NCursesFrontend::PrintFileQueue()
 		char remainingBuf[20];
 		char unpausedBuf[20];
 		char buffer[MAX_SCREEN_WIDTH];
-		snprintf(buffer, sizeof(buffer), " %sFiles for downloading - %i / %i files in queue - %s / %s", 
+		snprintf(buffer, sizeof(buffer), " %sFiles for downloading - %i / %i files in queue - %s / %s",
 			m_useColor ? "" : "*** ", fileNum,
 			fileNum - pausedFiles,
 			Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining),
 			Util::FormatSize(unpausedBuf, sizeof(unpausedBuf), remaining - paused));
 		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(buffer, m_queueWinTop, true);
-    }
+	}
 	else
 	{
 		lineNr--;
@@ -795,10 +795,10 @@ void NCursesFrontend::PrintFileQueue()
 		snprintf(buffer, sizeof(buffer), "%s Files for downloading", m_useColor ? "" : "*** ");
 		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(buffer, lineNr++, true);
-        PlotLine("Ready to receive nzb-job", lineNr++, 0, NCURSES_COLORPAIR_TEXT);
+		PlotLine("Ready to receive nzb-job", lineNr++, 0, NCURSES_COLORPAIR_TEXT);
 	}
 
-    UnlockQueue();
+	UnlockQueue();
 }
 
 void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
@@ -866,8 +866,8 @@ void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
 
 void NCursesFrontend::PrintTopHeader(char* header, int lineNr, bool upTime)
 {
-    char buffer[MAX_SCREEN_WIDTH];
-    snprintf(buffer, sizeof(buffer), "%-*s", m_screenWidth, header);
+	char buffer[MAX_SCREEN_WIDTH];
+	snprintf(buffer, sizeof(buffer), "%-*s", m_screenWidth, header);
 	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
 	int headerLen = strlen(header);
 	int charsLeft = m_screenWidth - headerLen - 2;
@@ -887,7 +887,7 @@ void NCursesFrontend::PrintTopHeader(char* header, int lineNr, bool upTime)
 			snprintf(timeStr, 30, "%.2d:%.2d", h, m);
 		}
 	}
-	else 
+	else
 	{
 		snprintf(timeStr, 30, "%i %s %.2d:%.2d:%.2d", d, (d == 1 ? "day" : "days"), h, m, s);
 		if ((int)strlen(timeStr) > charsLeft)
@@ -921,65 +921,65 @@ void NCursesFrontend::PrintTopHeader(char* header, int lineNr, bool upTime)
 		snprintf(buffer + m_screenWidth - timeLen, MAX_SCREEN_WIDTH - (m_screenWidth - timeLen), "%s", timeStr);
 	}
 
-    PlotLine(buffer, lineNr, 0, NCURSES_COLORPAIR_INFOLINE);
+	PlotLine(buffer, lineNr, 0, NCURSES_COLORPAIR_INFOLINE);
 }
 
 void NCursesFrontend::PrintGroupQueue()
 {
 	int lineNr = m_queueWinTop;
 
-    DownloadQueue* downloadQueue = LockQueue();
+	DownloadQueue* downloadQueue = LockQueue();
 	if (downloadQueue->GetQueue()->empty())
-    {
+	{
 		char buffer[MAX_SCREEN_WIDTH];
 		snprintf(buffer, sizeof(buffer), "%s NZBs for downloading", m_useColor ? "" : "*** ");
 		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(buffer, lineNr++, false);
-        PlotLine("Ready to receive nzb-job", lineNr++, 0, NCURSES_COLORPAIR_TEXT);
-    }
-    else
-    {
+		PlotLine("Ready to receive nzb-job", lineNr++, 0, NCURSES_COLORPAIR_TEXT);
+	}
+	else
+	{
 		lineNr++;
 
 		ResetColWidths();
 		int calcLineNr = lineNr;
 		int i = 0;
-        for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
-        {
-            NzbInfo* nzbInfo = *it;
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
+		{
+			NzbInfo* nzbInfo = *it;
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
 				PrintGroupname(nzbInfo, calcLineNr++, false, true);
 			}
-        }
+		}
 
 		long long remaining = 0;
 		long long paused = 0;
 		i = 0;
-        for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
-        {
-            NzbInfo* nzbInfo = *it;
+		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
+		{
+			NzbInfo* nzbInfo = *it;
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
 				PrintGroupname(nzbInfo, lineNr++, i == m_selectedQueueEntry, false);
 			}
 			remaining += nzbInfo->GetRemainingSize();
 			paused += nzbInfo->GetPausedSize();
-        }
-		
+		}
+
 		char remainingBuf[20];
 		Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining);
 
 		char unpausedBuf[20];
 		Util::FormatSize(unpausedBuf, sizeof(unpausedBuf), remaining - paused);
-		
+
 		char buffer[MAX_SCREEN_WIDTH];
-		snprintf(buffer, sizeof(buffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s", 
+		snprintf(buffer, sizeof(buffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s",
 			m_useColor ? "" : "*** ", (int)downloadQueue->GetQueue()->size(), remainingBuf, unpausedBuf);
 		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
 		PrintTopHeader(buffer, m_queueWinTop, false);
-    }
-    UnlockQueue();
+	}
+	UnlockQueue();
 }
 
 void NCursesFrontend::ResetColWidths()
@@ -1045,12 +1045,12 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 		char files[20];
 		snprintf(files, 20, "%i/%i", (int)nzbInfo->GetFileList()->size(), nzbInfo->GetPausedFileCount());
 		files[20-1] = '\0';
-		
+
 		char total[20];
 		Util::FormatSize(total, sizeof(total), nzbInfo->GetSize());
 
 		char nameWithIds[1024];
-		snprintf(nameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, nzbInfo->GetId(), chBrace2, 
+		snprintf(nameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, nzbInfo->GetId(), chBrace2,
 			priority, downloading, nzbInfo->GetName());
 		nameWithIds[nameLen] = '\0';
 
@@ -1096,7 +1096,7 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 	}
 	else
 	{
-		snprintf(buffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, nzbInfo->GetId(), 
+		snprintf(buffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, nzbInfo->GetId(),
 			chBrace2, downloading, nzbInfo->GetName());
 	}
 
@@ -1143,11 +1143,11 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 		// map file-edit-actions to group-edit-actions
 		 DownloadQueue::EEditAction FileToGroupMap[] = {
 			(DownloadQueue::EEditAction)0,
-			DownloadQueue::eaGroupMoveOffset, 
-			DownloadQueue::eaGroupMoveTop, 
-			DownloadQueue::eaGroupMoveBottom, 
-			DownloadQueue::eaGroupPause, 
-			DownloadQueue::eaGroupResume, 
+			DownloadQueue::eaGroupMoveOffset,
+			DownloadQueue::eaGroupMoveTop,
+			DownloadQueue::eaGroupMoveBottom,
+			DownloadQueue::eaGroupPause,
+			DownloadQueue::eaGroupResume,
 			DownloadQueue::eaGroupDelete,
 			DownloadQueue::eaGroupPauseAllPars,
 			DownloadQueue::eaGroupPauseExtraPars };
@@ -1194,7 +1194,7 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 
 void NCursesFrontend::SetCurrentQueueEntry(int entry)
 {
-    int queueSize = CalcQueueSize();
+	int queueSize = CalcQueueSize();
 
 	if (entry < 0)
 	{
@@ -1218,7 +1218,7 @@ void NCursesFrontend::SetCurrentQueueEntry(int entry)
 	{
 		m_queueScrollOffset += m_queueWinClientHeight;
 	}
-	
+
 	if (m_queueScrollOffset > queueSize - m_queueWinClientHeight)
 	{
 		m_queueScrollOffset = queueSize - m_queueWinClientHeight;
@@ -1227,7 +1227,7 @@ void NCursesFrontend::SetCurrentQueueEntry(int entry)
 	{
 		m_queueScrollOffset = 0;
 	}
-	
+
 	m_selectedQueueEntry = entry;
 }
 
@@ -1240,7 +1240,7 @@ void NCursesFrontend::UpdateInput(int initialKey)
 {
 	int key = initialKey;
 	while (key != READKEY_EMPTY)
-    {
+	{
 		int queueSize = CalcQueueSize();
 
 		// Normal or edit queue mode
@@ -1266,7 +1266,7 @@ void NCursesFrontend::UpdateInput(int initialKey)
 				{
 					m_queueWindowPercentage = 0;
 				}
-				else 
+				else
 				{
 					m_queueWindowPercentage = 50;
 				}
@@ -1281,7 +1281,7 @@ void NCursesFrontend::UpdateInput(int initialKey)
 				break;
 			}
 		}
-		
+
 		// Normal mode
 		if (m_inputMode == normal)
 		{
@@ -1466,7 +1466,7 @@ int NCursesFrontend::ReadConsoleKey()
 		{
 			INPUT_RECORD InputRecord;
 			DWORD NumberOfEventsRead;
-			if (ReadConsoleInput(hConsole, &InputRecord, 1, &NumberOfEventsRead) && 
+			if (ReadConsoleInput(hConsole, &InputRecord, 1, &NumberOfEventsRead) &&
 				NumberOfEventsRead > 0 &&
 				InputRecord.EventType == KEY_EVENT &&
 				InputRecord.Event.KeyEvent.bKeyDown)

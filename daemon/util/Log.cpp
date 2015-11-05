@@ -82,11 +82,11 @@ void Log::LogDebugInfo()
 	info("--------------------------------------------");
 	info("Dumping debug info to log");
 	info("--------------------------------------------");
-	
+
 	m_debugMutex.Lock();
 	for (Debuggables::iterator it = m_debuggables.begin(); it != m_debuggables.end(); it++)
 	{
-        Debuggable* debuggable = *it;
+		Debuggable* debuggable = *it;
 		debuggable->LogDebugInfo();
 	}
 	m_debugMutex.Unlock();
@@ -110,7 +110,7 @@ void Log::Filelog(const char* msg, ...)
 	va_end(ap);
 
 	time_t rawtime = time(NULL) + g_Options->GetTimeCorrection();
-	
+
 	char time[50];
 #ifdef HAVE_CTIME_R_3
 	ctime_r(&rawtime, time, 50);

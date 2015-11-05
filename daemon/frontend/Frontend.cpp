@@ -245,7 +245,7 @@ bool Frontend::RequestMessages()
 	// Now listen for the returned log
 	SNzbLogResponse LogResponse;
 	bool read = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
-	if (!read || 
+	if (!read ||
 		(int)ntohl(LogResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(LogResponse.m_messageBase.m_structSize) != sizeof(LogResponse))
 	{
@@ -310,7 +310,7 @@ bool Frontend::RequestFileList()
 	// Now listen for the returned list
 	SNzbListResponse ListResponse;
 	bool read = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
-	if (!read || 
+	if (!read ||
 		(int)ntohl(ListResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(ListResponse.m_messageBase.m_structSize) != sizeof(ListResponse))
 	{
@@ -348,7 +348,7 @@ bool Frontend::RequestFileList()
 	{
 		RemoteClient client;
 		client.SetVerbose(false);
-		
+
 		DownloadQueue* downloadQueue = LockQueue();
 		client.BuildFileList(&ListResponse, buf, downloadQueue);
 		UnlockQueue();

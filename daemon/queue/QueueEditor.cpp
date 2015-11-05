@@ -419,7 +419,7 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameLis
 	return ok;
 }
 
-bool QueueEditor::InternEditList(ItemList* itemList, 
+bool QueueEditor::InternEditList(ItemList* itemList,
 	IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text)
 {
 	ItemList workItems;
@@ -433,7 +433,7 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 	{
 		case DownloadQueue::eaFilePauseAllPars:
 		case DownloadQueue::eaFilePauseExtraPars:
-			PauseParsInGroups(itemList, action == DownloadQueue::eaFilePauseExtraPars);	
+			PauseParsInGroups(itemList, action == DownloadQueue::eaFilePauseExtraPars);
 			break;
 
 		case DownloadQueue::eaGroupMerge:
@@ -448,7 +448,7 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 		case DownloadQueue::eaFileReorder:
 			ReorderFiles(itemList);
 			break;
-		
+
 		default:
 			for (ItemList::iterator it = itemList->begin(); it != itemList->end(); it++)
 			{
@@ -546,7 +546,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 	}
 
 	itemList->reserve(idList->size());
-	if ((offset != 0) && 
+	if ((offset != 0) &&
 		(action == DownloadQueue::eaFileMoveOffset || action == DownloadQueue::eaFileMoveTop || action == DownloadQueue::eaFileMoveBottom))
 	{
 		// add IDs to list in order they currently have in download queue
@@ -604,7 +604,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 			}
 		}
 	}
-	else if ((offset != 0) && 
+	else if ((offset != 0) &&
 		(action == DownloadQueue::eaGroupMoveOffset || action == DownloadQueue::eaGroupMoveTop || action == DownloadQueue::eaGroupMoveBottom))
 	{
 		// add IDs to list in order they currently have in download queue
@@ -696,7 +696,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 			}
 		}
 	}
-	else 
+	else
 	{
 		// check ID range
 		int maxId = 0;
@@ -835,7 +835,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 		nzbInfo->SetCleanupDisk(CanCleanupDisk(nzbInfo));
 	}
 
-	DownloadQueue::EEditAction GroupToFileMap[] = { 
+	DownloadQueue::EEditAction GroupToFileMap[] = {
 		(DownloadQueue::EEditAction)0,
 		DownloadQueue::eaFileMoveOffset,
 		DownloadQueue::eaFileMoveTop,
@@ -885,7 +885,7 @@ void QueueEditor::PauseParsInGroups(ItemList* itemList, bool extraParsOnly)
 		for (ItemList::iterator it = itemList->begin(); it != itemList->end(); )
 		{
 			EditItem* item = *it;
-			if (!firstFileInfo || 
+			if (!firstFileInfo ||
 				(firstFileInfo->GetNzbInfo() == item->m_fileInfo->GetNzbInfo()))
 			{
 				GroupFileList.push_back(item->m_fileInfo);
@@ -923,9 +923,9 @@ void QueueEditor::PauseParsInGroups(ItemList* itemList, bool extraParsOnly)
 void QueueEditor::PausePars(FileList* fileList, bool extraParsOnly)
 {
 	debug("QueueEditor: Pausing pars");
-	
+
 	FileList Pars, Vols;
-			
+
 	for (FileList::iterator it = fileList->begin(); it != fileList->end(); it++)
 	{
 		FileInfo* fileInfo = *it;
@@ -933,7 +933,7 @@ void QueueEditor::PausePars(FileList* fileList, bool extraParsOnly)
 		strncpy(loFileName, fileInfo->GetFilename(), 1024);
 		loFileName[1024-1] = '\0';
 		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-		
+
 		if (strstr(loFileName, ".par2"))
 		{
 			if (!extraParsOnly)
@@ -953,7 +953,7 @@ void QueueEditor::PausePars(FileList* fileList, bool extraParsOnly)
 			}
 		}
 	}
-	
+
 	if (extraParsOnly)
 	{
 		if (!Pars.empty())
@@ -980,7 +980,7 @@ void QueueEditor::PausePars(FileList* fileList, bool extraParsOnly)
 					smallest->SetPaused(true);
 					smallest = fileInfo;
 				}
-				else 
+				else
 				{
 					fileInfo->SetPaused(true);
 				}
@@ -1042,7 +1042,7 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 	{
 		nzbInfo->GetParameters()->SetParameter("*Unpack:", newUnpack ? "yes" : "no");
 	}
-	
+
 	if (strcasecmp(oldPostScript, newPostScript))
 	{
 		// add new params not existed in old category
@@ -1096,7 +1096,7 @@ void QueueEditor::SetNzbName(NzbInfo* nzbInfo, const char* name)
 
 /**
 * Check if deletion of already downloaded files is possible (when nzb id deleted from queue).
-* The deletion is most always possible, except the case if all remaining files in queue 
+* The deletion is most always possible, except the case if all remaining files in queue
 * (belonging to this nzb-file) are PARS.
 */
 bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
@@ -1106,9 +1106,9 @@ bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 		return true;
 	}
 
-    for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
-    {
-        FileInfo* fileInfo = *it;
+	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+	{
+		FileInfo* fileInfo = *it;
 		char loFileName[1024];
 		strncpy(loFileName, fileInfo->GetFilename(), 1024);
 		loFileName[1024-1] = '\0';
@@ -1204,7 +1204,7 @@ void QueueEditor::ReorderFiles(ItemList* itemList)
 		{
 			nzbInfo->GetFileList()->erase(it2);
 			nzbInfo->GetFileList()->insert(nzbInfo->GetFileList()->begin() + insertPos, fileInfo);
-			insertPos++;				
+			insertPos++;
 		}
 
 		delete item;
@@ -1236,7 +1236,7 @@ void QueueEditor::SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction a
 {
 	debug("QueueEditor: setting dupe parameter %i='%s' for '%s'", (int)action, text, nzbInfo->GetName());
 
-	switch (action) 
+	switch (action)
 	{
 		case DownloadQueue::eaGroupSetDupeKey:
 			nzbInfo->SetDupeKey(text);

@@ -59,7 +59,7 @@ void DiskService::ServiceWork()
 	m_interval++;
 	if (m_interval == 5)
 	{
-		if (!g_Options->GetPauseDownload() && 
+		if (!g_Options->GetPauseDownload() &&
 			g_Options->GetDiskSpace() > 0 && !g_StatMeter->GetStandBy())
 		{
 			// check free disk space every 1 second

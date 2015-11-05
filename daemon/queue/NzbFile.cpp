@@ -37,7 +37,7 @@
 #include <ctype.h>
 #ifdef WIN32
 #include <comutil.h>
-#import <msxml.tlb> named_guids 
+#import <msxml.tlb> named_guids
 using namespace MSXML;
 #else
 #include <libxml/parser.h>
@@ -56,9 +56,9 @@ using namespace MSXML;
 
 NzbFile::NzbFile(const char* fileName, const char* category)
 {
-    debug("Creating NZBFile");
+	debug("Creating NZBFile");
 
-    m_fileName = strdup(fileName);
+	m_fileName = strdup(fileName);
 	m_password = NULL;
 	m_nzbInfo = new NzbInfo();
 	m_nzbInfo->SetFilename(fileName);
@@ -76,11 +76,11 @@ NzbFile::NzbFile(const char* fileName, const char* category)
 
 NzbFile::~NzbFile()
 {
-    debug("Destroying NZBFile");
+	debug("Destroying NZBFile");
 
-    // Cleanup
-    free(m_fileName);
-    free(m_password);
+	// Cleanup
+	free(m_fileName);
+	free(m_password);
 
 #ifndef WIN32
 	delete m_fileInfo;
@@ -92,7 +92,7 @@ NzbFile::~NzbFile()
 
 void NzbFile::LogDebugInfo()
 {
-    info(" NZBFile %s", m_fileName);
+	info(" NZBFile %s", m_fileName);
 }
 
 void NzbFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
@@ -193,7 +193,7 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 
 	if (TryQuotes)
 	{
-		// try to use the filename in quatation marks 
+		// try to use the filename in quatation marks
 		char* p = subject;
 		char* start = strchr(p, '\"');
 		if (start)
@@ -217,7 +217,7 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 		}
 	}
 
-	// tokenize subject, considering spaces as separators and quotation 
+	// tokenize subject, considering spaces as separators and quotation
 	// marks as non separatable token delimiters.
 	// then take the last token containing dot (".") as a filename
 
@@ -304,8 +304,8 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 bool NzbFile::HasDuplicateFilenames()
 {
 	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
-    {
-        FileInfo* fileInfo1 = *it;
+	{
+		FileInfo* fileInfo1 = *it;
 		int dupe = 1;
 		for (FileList::iterator it2 = it + 1; it2 != m_nzbInfo->GetFileList()->end(); it2++)
 		{
@@ -319,15 +319,15 @@ bool NzbFile::HasDuplicateFilenames()
 
 		// If more than two files have the same parsed filename but different subjects,
 		// this means, that the parsing was not correct.
-		// in this case we take subjects as filenames to prevent 
+		// in this case we take subjects as filenames to prevent
 		// false "duplicate files"-alarm.
-		// It's Ok for just two files to have the same filename, this is 
+		// It's Ok for just two files to have the same filename, this is
 		// an often case by posting-errors to repost bad files
 		if (dupe > 2 || (dupe == 2 && m_nzbInfo->GetFileList()->size() == 2))
 		{
 			return true;
 		}
-    }
+	}
 
 	return false;
 }
@@ -338,13 +338,13 @@ bool NzbFile::HasDuplicateFilenames()
 void NzbFile::BuildFilenames()
 {
 	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
-    {
-        FileInfo* fileInfo = *it;
+	{
+		FileInfo* fileInfo = *it;
 		ParseSubject(fileInfo, true);
 	}
 
 	if (HasDuplicateFilenames())
-    {
+	{
 		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* fileInfo = *it;
@@ -353,14 +353,14 @@ void NzbFile::BuildFilenames()
 	}
 
 	if (HasDuplicateFilenames())
-    {
+	{
 		m_nzbInfo->SetManyDupeFiles(true);
 		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 		{
 			FileInfo* fileInfo = *it;
 			fileInfo->SetFilename(fileInfo->GetSubject());
 		}
-    }
+	}
 }
 
 bool CompareFileInfo(FileInfo* first, FileInfo* second)
@@ -472,30 +472,30 @@ void NzbFile::ProcessFiles()
  */
 void NzbFile::ReadPassword()
 {
-    FILE* file = fopen(m_fileName, FOPEN_RB);
-    if (!file)
-    {
-        return;
-    }
+	FILE* file = fopen(m_fileName, FOPEN_RB);
+	if (!file)
+	{
+		return;
+	}
 
-    // obtain file size.
-    fseek(file , 0 , SEEK_END);
-    int size  = (int)ftell(file);
-    rewind(file);
+	// obtain file size.
+	fseek(file , 0 , SEEK_END);
+	int size  = (int)ftell(file);
+	rewind(file);
 
 	// reading first 4KB of the file
 
-    // allocate memory to contain the whole file.
-    char* buf = (char*)malloc(4096);
+	// allocate memory to contain the whole file.
+	char* buf = (char*)malloc(4096);
 
 	size = size < 4096 ? size : 4096;
 
-    // copy the file into the buffer.
-    fread(buf, 1, size, file);
+	// copy the file into the buffer.
+	fread(buf, 1, size, file);
 
-    fclose(file);
+	fclose(file);
 
-    buf[size-1] = '\0';
+	buf[size-1] = '\0';
 
 	char* metaPassword = strstr(buf, "<meta type=\"password\">");
 	if (metaPassword)
@@ -517,18 +517,18 @@ void NzbFile::ReadPassword()
 #ifdef WIN32
 bool NzbFile::Parse()
 {
-    CoInitialize(NULL);
+	CoInitialize(NULL);
 
 	HRESULT hr;
 
 	MSXML::IXMLDOMDocumentPtr doc;
 	hr = doc.CreateInstance(MSXML::CLSID_DOMDocument);
-    if (FAILED(hr))
-    {
-        return false;
-    }
+	if (FAILED(hr))
+	{
+		return false;
+	}
 
-    // Load the XML document file...
+	// Load the XML document file...
 	doc->put_resolveExternals(VARIANT_FALSE);
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
@@ -561,7 +561,7 @@ bool NzbFile::Parse()
 		return false;
 	}
 
-    if (!ParseNzb(doc))
+	if (!ParseNzb(doc))
 	{
 		return false;
 	}
@@ -578,7 +578,7 @@ bool NzbFile::Parse()
 
 	ProcessFiles();
 
-    return true;
+	return true;
 }
 
 void NzbFile::EncodeUrl(const char* filename, char* url, int bufLen)
@@ -630,7 +630,7 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 		MSXML::IXMLDOMNodePtr attribute = node->Getattributes()->getNamedItem("subject");
 		if (!attribute) return false;
 		_bstr_t subject(attribute->Gettext());
-        FileInfo* fileInfo = new FileInfo();
+		FileInfo* fileInfo = new FileInfo();
 		fileInfo->SetSubject(subject);
 
 		attribute = node->Getattributes()->getNamedItem("date");
@@ -653,8 +653,8 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 		{
 			MSXML::IXMLDOMNodePtr node = segmentList->Getitem(g);
 			_bstr_t bid = node->Gettext();
-            char id[2048];
-            snprintf(id, 2048, "<%s>", (const char*)bid);
+			char id[2048];
+			snprintf(id, 2048, "<%s>", (const char*)bid);
 
 			MSXML::IXMLDOMNodePtr attribute = node->Getattributes()->getNamedItem("number");
 			if (!attribute) return false;
@@ -696,8 +696,8 @@ bool NzbFile::Parse()
 	m_ignoreNextError = false;
 
 	int ret = xmlSAXUserParseFile(&SAX_handler, this, m_fileName);
-    
-    if (ret != 0)
+
+	if (ret != 0)
 	{
 		char messageText[1024];
 		snprintf(messageText, 1024, "Error parsing nzb-file %s", Util::BaseFileName(m_fileName));
@@ -732,7 +732,7 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 		m_tagContent = NULL;
 		m_tagContentLen = 0;
 	}
-	
+
 	if (!strcmp("file", name))
 	{
 		m_fileInfo = new FileInfo();
@@ -740,14 +740,14 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 
 		if (!atts)
 		{
-	        m_nzbInfo->AddMessage(Message::mkWarning, tagAttrMessage);
+			m_nzbInfo->AddMessage(Message::mkWarning, tagAttrMessage);
 			return;
 		}
 
-    	for (int i = 0; atts[i]; i += 2)
-    	{
-    		const char* attrname = atts[i];
-    		const char* attrvalue = atts[i + 1];
+		for (int i = 0; atts[i]; i += 2)
+		{
+			const char* attrname = atts[i];
+			const char* attrvalue = atts[i + 1];
 			if (!strcmp("subject", attrname))
 			{
 				m_fileInfo->SetSubject(attrvalue);
@@ -775,10 +775,10 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 		long long lsize = -1;
 		int partNumber = -1;
 
-    	for (int i = 0; atts[i]; i += 2)
-    	{
-    		const char* attrname = atts[i];
-    		const char* attrvalue = atts[i + 1];
+		for (int i = 0; atts[i]; i += 2)
+		{
+			const char* attrname = atts[i];
+			const char* attrvalue = atts[i + 1];
 			if (!strcmp("bytes", attrname))
 			{
 				lsize = atol(attrvalue);
@@ -825,7 +825,7 @@ void NzbFile::Parse_EndElement(const char *name)
 			// error: bad nzb-file
 			return;
 		}
-		
+
 		m_fileInfo->GetGroups()->push_back(m_tagContent);
 		m_tagContent = NULL;
 		m_tagContentLen = 0;
@@ -871,7 +871,7 @@ void NzbFile::SAX_EndElement(NzbFile* file, const char *name)
 void NzbFile::SAX_characters(NzbFile* file, const char * xmlstr, int len)
 {
 	char* str = (char*)xmlstr;
-	
+
 	// trim starting blanks
 	int off = 0;
 	for (int i = 0; i < len; i++)
@@ -886,9 +886,9 @@ void NzbFile::SAX_characters(NzbFile* file, const char * xmlstr, int len)
 			break;
 		}
 	}
-	
+
 	int newlen = len - off;
-	
+
 	// trim ending blanks
 	for (int i = len - 1; i >= off; i--)
 	{
@@ -902,7 +902,7 @@ void NzbFile::SAX_characters(NzbFile* file, const char * xmlstr, int len)
 			break;
 		}
 	}
-	
+
 	if (newlen > 0)
 	{
 		// interpret tag content
@@ -929,13 +929,13 @@ void NzbFile::SAX_error(NzbFile* file, const char *msg, ...)
 		file->m_ignoreNextError = false;
 		return;
 	}
-	
-    va_list argp;
-    va_start(argp, msg);
-    char errMsg[1024];
-    vsnprintf(errMsg, sizeof(errMsg), msg, argp);
-    errMsg[1024-1] = '\0';
-    va_end(argp);
+
+	va_list argp;
+	va_start(argp, msg);
+	char errMsg[1024];
+	vsnprintf(errMsg, sizeof(errMsg), msg, argp);
+	errMsg[1024-1] = '\0';
+	va_end(argp);
 
 	// remove trailing CRLF
 	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';

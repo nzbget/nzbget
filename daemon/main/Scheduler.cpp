@@ -76,7 +76,7 @@ Scheduler::Scheduler()
 Scheduler::~Scheduler()
 {
 	debug("Destroying Scheduler");
-	
+
 	for (TaskList::iterator it = m_taskList.begin(); it != m_taskList.end(); it++)
 	{
 		delete *it;
@@ -92,7 +92,7 @@ void Scheduler::AddTask(Task* task)
 
 bool Scheduler::CompareTasks(Scheduler::Task* task1, Scheduler::Task* task2)
 {
-	return (task1->m_hours < task2->m_hours) || 
+	return (task1->m_hours < task2->m_hours) ||
 		((task1->m_hours == task2->m_hours) && (task1->m_minutes < task2->m_minutes));
 }
 
@@ -135,7 +135,7 @@ void Scheduler::CheckTasks()
 
 	if (!m_taskList.empty())
 	{
-		// Detect large step changes of system time 
+		// Detect large step changes of system time
 		time_t diff = current - m_lastCheck;
 		if (diff > 60*90 || diff < 0)
 		{

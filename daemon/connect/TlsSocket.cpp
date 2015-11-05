@@ -219,7 +219,7 @@ void TlsSocket::Init()
 	{
 		g_OpenSSLMutexes[i] = new Mutex();
 	}
-	
+
 	SSL_load_error_strings();
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
@@ -229,7 +229,7 @@ void TlsSocket::Init()
 	CRYPTO_set_dynlock_create_callback(openssl_dynlock_create);
 	CRYPTO_set_dynlock_destroy_callback(openssl_dynlock_destroy);
 	CRYPTO_set_dynlock_lock_callback(openssl_dynlock_lock);
-	
+
 #endif /* HAVE_OPENSSL */
 }
 
@@ -309,7 +309,7 @@ void TlsSocket::ReportError(const char* errMsg)
 		char errstr[1024];
 		ERR_error_string_n(errcode, errstr, sizeof(errstr));
 		errstr[1024-1] = '\0';
-		
+
 		if (m_suppressErrors)
 		{
 			debug("%s: %s", errMsg, errstr);
@@ -381,7 +381,7 @@ bool TlsSocket::Start()
 		return false;
 	}
 
-	m_retCode = gnutls_credentials_set((gnutls_session_t)m_session, GNUTLS_CRD_CERTIFICATE, 
+	m_retCode = gnutls_credentials_set((gnutls_session_t)m_session, GNUTLS_CRD_CERTIFICATE,
 		(gnutls_certificate_credentials_t*)m_context);
 	if (m_retCode != 0)
 	{
@@ -428,7 +428,7 @@ bool TlsSocket::Start()
 			return false;
 		}
 	}
-	
+
 	m_session = SSL_new((SSL_CTX*)m_context);
 	if (!m_session)
 	{

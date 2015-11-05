@@ -140,7 +140,7 @@ void WebProcessor::Execute()
 		// reading http body (request content)
 		m_request = (char*)malloc(m_contentLen + 1);
 		m_request[m_contentLen] = '\0';
-		
+
 		if (!m_connection->Recv(m_request, m_contentLen))
 		{
 			error("Invalid-request: could not read data");
@@ -148,7 +148,7 @@ void WebProcessor::Execute()
 		}
 		debug("Request=%s", m_request);
 	}
-	
+
 	debug("request received from %s", m_connection->GetRemoteAddr());
 
 	Dispatch();
@@ -230,7 +230,7 @@ void WebProcessor::ParseUrl()
 		char* pstart = m_url + 1;
 		int len = 0;
 		char* pend = strchr(pstart + 1, '/');
-		if (pend) 
+		if (pend)
 		{
 			len = (int)(pend - pstart < (int)sizeof(m_authInfo) - 1 ? pend - pstart : (int)sizeof(m_authInfo) - 1);
 		}
@@ -315,7 +315,7 @@ bool WebProcessor::IsAuthorizedIp(const char* remoteAddr)
 			break;
 		}
 	}
-	
+
 	return authorized;
 }
 
@@ -335,7 +335,7 @@ void WebProcessor::Dispatch()
 		processor.SetUserAccess((XmlRpcProcessor::EUserAccess)m_userAccess);
 		processor.SetUrl(m_url);
 		processor.Execute();
-		SendBodyResponse(processor.GetResponse(), strlen(processor.GetResponse()), processor.GetContentType()); 
+		SendBodyResponse(processor.GetResponse(), strlen(processor.GetResponse()), processor.GetContentType());
 		return;
 	}
 
@@ -344,13 +344,13 @@ void WebProcessor::Dispatch()
 		SendErrorResponse(ERR_HTTP_SERVICE_UNAVAILABLE);
 		return;
 	}
-	
+
 	if (m_httpMethod != hmGet)
 	{
 		SendErrorResponse(ERR_HTTP_BAD_REQUEST);
 		return;
 	}
-	
+
 	// for security reasons we allow only characters "0..9 A..Z a..z . - _ /" in the URLs
 	// we also don't allow ".." in the URLs
 	for (char *p = m_url; *p; p++)
@@ -389,7 +389,7 @@ void WebProcessor::SendAuthResponse()
 		"\r\n";
 	char responseHeader[1024];
 	snprintf(responseHeader, 1024, AUTH_RESPONSE_HEADER, Util::VersionRevision());
-	 
+
 	// Send the response answer
 	debug("ResponseHeader=%s", responseHeader);
 	m_connection->Send(responseHeader, strlen(responseHeader));
@@ -409,10 +409,10 @@ void WebProcessor::SendOptionsResponse()
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 	char responseHeader[1024];
-	snprintf(responseHeader, 1024, OPTIONS_RESPONSE_HEADER, 
+	snprintf(responseHeader, 1024, OPTIONS_RESPONSE_HEADER,
 		m_origin ? m_origin : "",
 		Util::VersionRevision());
-	 
+
 	// Send the response answer
 	debug("ResponseHeader=%s", responseHeader);
 	m_connection->Send(responseHeader, strlen(responseHeader));
@@ -420,7 +420,7 @@ void WebProcessor::SendOptionsResponse()
 
 void WebProcessor::SendErrorResponse(const char* errCode)
 {
-	const char* RESPONSE_HEADER = 
+	const char* RESPONSE_HEADER =
 		"HTTP/1.0 %s\r\n"
 		"Connection: close\r\n"
 		"Content-Length: %i\r\n"
@@ -452,7 +452,7 @@ void WebProcessor::SendRedirectResponse(const char* url)
 		"\r\n";
 	char responseHeader[1024];
 	snprintf(responseHeader, 1024, REDIRECT_RESPONSE_HEADER, url, Util::VersionRevision());
-	 
+
 	// Send the response answer
 	debug("ResponseHeader=%s", responseHeader);
 	m_connection->Send(responseHeader, strlen(responseHeader));
@@ -460,7 +460,7 @@ void WebProcessor::SendRedirectResponse(const char* url)
 
 void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* contentType)
 {
-	const char* RESPONSE_HEADER = 
+	const char* RESPONSE_HEADER =
 		"HTTP/1.1 200 OK\r\n"
 		"Connection: close\r\n"
 		"Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
@@ -474,7 +474,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"%s"					// Content-Encoding: gzip
 		"Server: nzbget-%s\r\n"
 		"\r\n";
-	
+
 #ifndef DISABLE_GZIP
 	char *gbuf = NULL;
 	bool gzip = m_gzip && bodyLen > MAX_UNCOMPRESSED_SIZE;
@@ -498,7 +498,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 #else
 	bool gzip = false;
 #endif
-	
+
 	char contentTypeHeader[1024];
 	if (contentType)
 	{
@@ -508,18 +508,18 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	{
 		contentTypeHeader[0] = '\0';
 	}
-	
+
 	char responseHeader[1024];
-	snprintf(responseHeader, 1024, RESPONSE_HEADER, 
+	snprintf(responseHeader, 1024, RESPONSE_HEADER,
 		m_origin ? m_origin : "",
 		m_serverAuthToken[m_userAccess], bodyLen, contentTypeHeader,
 		gzip ? "Content-Encoding: gzip\r\n" : "",
 		Util::VersionRevision());
-	
+
 	// Send the request answer
 	m_connection->Send(responseHeader, strlen(responseHeader));
 	m_connection->Send(body, bodyLen);
-	
+
 #ifndef DISABLE_GZIP
 	free(gbuf);
 #endif
@@ -536,10 +536,10 @@ void WebProcessor::SendFileResponse(const char* filename)
 		SendErrorResponse(ERR_HTTP_NOT_FOUND);
 		return;
 	}
-	
+
 	// "LoadFileIntoBuffer" adds a trailing NULL, which we don't need here
 	bodyLen--;
-	
+
 	SendBodyResponse(body, bodyLen, DetectContentType(filename));
 
 	free(body);

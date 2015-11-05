@@ -48,7 +48,7 @@ private:
 		fcClosingBrace,
 		fcOrOperator
 	};
-	
+
 	class Term
 	{
 	private:

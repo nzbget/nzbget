@@ -24,7 +24,7 @@
 
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>			 
+#include <config.h>
 #endif
 
 #define SKIP_DEFAULT_WINDOWS_HEADERS
@@ -125,9 +125,9 @@ void WinConsole::InitAppMode()
 	SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 
 	m_instance = (HINSTANCE)GetModuleHandle(0);
-    DWORD processId;
-    GetWindowThreadProcessId(GetConsoleWindow(), &processId);
-    m_appMode = false;
+	DWORD processId;
+	GetWindowThreadProcessId(GetConsoleWindow(), &processId);
+	m_appMode = false;
 
 	if (GetCurrentProcessId() == processId && g_ArgumentCount == 1)
 	{
@@ -358,7 +358,7 @@ void WinConsole::ShowMenu()
 {
 	POINT curPoint;
 	GetCursorPos(&curPoint);
-	SetForegroundWindow(m_trayWindow); 
+	SetForegroundWindow(m_trayWindow);
 
 	UINT itemId = TrackPopupMenu(m_menu, TPM_RETURNCMD | TPM_NONOTIFY, curPoint.x, curPoint.y, 0, m_trayWindow, NULL);
 
@@ -881,10 +881,10 @@ void WinConsole::BuildMenu()
 /*
 BOOL DeleteMenu(
 
-    HMENU hMenu,	// handle to menu
-    UINT uPosition,	// menu item identifier or position
-    UINT uFlags	// menu item flag
-   );	
+	HMENU hMenu,	// handle to menu
+	UINT uPosition,	// menu item identifier or position
+	UINT uFlags	// menu item flag
+   );
 */
 }
 
@@ -965,7 +965,7 @@ void WinConsole::SetupConfigFile()
 				fwrite(config, 1, p - config, outfile);
 				fwrite("MainDir=", 1, 8, outfile);
 				fwrite(appDataPath, 1, strlen(appDataPath), outfile);
-				
+
 				fwrite(p + strlen(SIGNATURE), 1, size - (p + strlen(SIGNATURE) - config) - 1, outfile);
 				fclose(outfile);
 			}

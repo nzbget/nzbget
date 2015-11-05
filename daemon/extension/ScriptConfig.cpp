@@ -24,7 +24,7 @@
 
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"					  
+#include "config.h"
 #endif
 
 #ifdef WIN32
@@ -219,8 +219,8 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	// write config file back to disk, replace old values of existing options with new values
 	rewind(infile);
 	for (std::vector<char*>::iterator it = config.begin(); it != config.end(); it++)
-    {
-        char* buf = *it;
+	{
+		char* buf = *it;
 
 		const char* eq = strchr(buf, '=');
 		if (eq && buf[0] != '#')
@@ -348,7 +348,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 		configTemplates->push_back(configTemplate);
 	}
 
-	// clearing the list without deleting of objects, which are in pConfigTemplates now 
+	// clearing the list without deleting of objects, which are in pConfigTemplates now
 	scriptList.clear();
 
 	return true;

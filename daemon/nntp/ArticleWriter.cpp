@@ -273,7 +273,7 @@ void ArticleWriter::Finish(bool success)
 			m_articleInfo->SetSegmentSize(m_articlePtr);
 		}
 	}
-	else 
+	else
 	{
 		// rawmode
 		if (!Util::MoveFile(m_tempFilename, m_resultFilename))
@@ -294,7 +294,7 @@ bool ArticleWriter::CreateOutputFile(long long size)
 		// keep existing old file from previous program session
 		return true;
 	}
-		
+
 	// delete eventually existing old file from previous program session
 	remove(m_outputFilename);
 
@@ -375,7 +375,7 @@ void ArticleWriter::CompleteFileParts()
 	DownloadQueue::Unlock();
 	nzbName[1024-1] = '\0';
 	nzbDestDir[1024-1] = '\0';
-	
+
 	char infoFilename[1024];
 	snprintf(infoFilename, 1024, "%s%c%s", nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
 	infoFilename[1024-1] = '\0';
@@ -567,7 +567,7 @@ void ArticleWriter::CompleteFileParts()
 
 		// if destination directory was changed delete the old directory (if empty)
 		int len = strlen(nzbDestDir);
-		if (!(!strncmp(nzbDestDir, m_outputFilename, len) && 
+		if (!(!strncmp(nzbDestDir, m_outputFilename, len) &&
 			(m_outputFilename[len] == PATH_SEPARATOR || m_outputFilename[len] == ALT_PATH_SEPARATOR)))
 		{
 			debug("Checking old dir for: %s", m_outputFilename);
@@ -771,7 +771,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 
 	// move already downloaded files to new destination
 	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
-    {
+	{
 		CompletedFile* completedFile = *it;
 
 		char oldFileName[1024];
@@ -796,7 +796,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 					oldFileName, newFileName, Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
 			}
 		}
-    }
+	}
 
 	// move brokenlog.txt
 	if (g_Options->GetBrokenLog())
@@ -845,7 +845,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 					nzbInfo->PrintMessage(Message::mkError, "Could not open file %s", brokenLogName);
 				}
 			}
-			else 
+			else
 			{
 				// move to new destination
 				if (!Util::MoveFile(oldBrokenLogName, brokenLogName))

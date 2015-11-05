@@ -133,7 +133,7 @@ NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 			return parameter;
 		}
 	}
-	
+
 	return NULL;
 }
 
@@ -144,7 +144,7 @@ void NzbParameterList::CopyFrom(NzbParameterList* sourceParameters)
 		NzbParameter* parameter = *it;
 		SetParameter(parameter->GetName(), parameter->GetValue());
 	}
-}									  
+}
 
 
 ScriptStatus::ScriptStatus(const char* name, EStatus status)
@@ -192,7 +192,7 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 			status = scriptStatus->GetStatus();
 		}
 	}
-	
+
 	return status;
 }
 
@@ -623,7 +623,7 @@ int NzbInfo::CalcCriticalHealth(bool allowEstimation)
 	{
 		// using empirical critical health 85%, to avoid false alarms for downloads with renamed par-files
 		criticalHealth = 850;
-	}		
+	}
 
 	return criticalHealth;
 }
@@ -635,8 +635,8 @@ void NzbInfo::UpdateMinMaxTime()
 
 	bool first = true;
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); it++)
-    {
-        FileInfo* fileInfo = *it;
+	{
+		FileInfo* fileInfo = *it;
 		if (first)
 		{
 			m_minTime = fileInfo->GetTime();

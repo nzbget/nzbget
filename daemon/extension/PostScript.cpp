@@ -129,7 +129,7 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	SetLogPrefix(NULL);
 	ScriptStatus::EStatus status = AnalyseExitCode(exitCode);
-	
+
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
 	m_postInfo->GetNzbInfo()->GetScriptStatuses()->Add(script->GetName(), status);
@@ -168,7 +168,7 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	if (detail) *detail = '\0';
 	SetEnvVar("NZBPP_TOTALSTATUS", status);
 
-    const char* scriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+	const char* scriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
 	SetEnvVar("NZBPP_SCRIPTSTATUS", scriptStatusName[m_postInfo->GetNzbInfo()->GetScriptStatuses()->CalcTotalStatus()]);
 
 	// deprecated
@@ -210,7 +210,7 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	}
 
 	PrepareEnvScript(m_postInfo->GetNzbInfo()->GetParameters(), scriptName);
-	
+
 	DownloadQueue::Unlock();
 }
 

@@ -112,7 +112,7 @@ protected:
 	virtual void			LogDebugInfo();
 
 public:
-							FeedCoordinator();                
+							FeedCoordinator();
 	virtual					~FeedCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();

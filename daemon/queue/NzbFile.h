@@ -50,7 +50,7 @@ private:
 	bool				HasDuplicateFilenames();
 	void				ReadPassword();
 #ifdef WIN32
-    bool 				ParseNzb(IUnknown* nzb);
+	bool 				ParseNzb(IUnknown* nzb);
 	static void			EncodeUrl(const char* filename, char* url, int bufLen);
 #else
 	FileInfo*			m_fileInfo;

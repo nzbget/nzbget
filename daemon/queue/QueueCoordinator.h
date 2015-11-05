@@ -38,7 +38,7 @@
 #include "Observer.h"
 #include "QueueEditor.h"
 #include "NntpConnection.h"
-                                            
+
 class QueueCoordinator : public Thread, public Observer, public Debuggable
 {
 public:
@@ -82,7 +82,7 @@ protected:
 	virtual void			LogDebugInfo();
 
 public:
-							QueueCoordinator();                
+							QueueCoordinator();
 	virtual					~QueueCoordinator();
 	virtual void			Run();
 	virtual void 			Stop();

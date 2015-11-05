@@ -175,7 +175,7 @@ public:
 	 * If revision number is not available only version is returned ("0.7.0").
 	 */
 	static const char* VersionRevision() { return VersionRevisionBuf; };
-	
+
 	static char VersionRevisionBuf[100];
 
 	static void Init();
@@ -361,7 +361,7 @@ public:
 	 * calculates the size required for output buffer
 	 */
 	static unsigned int GZipLen(int inputBufferLength);
-	
+
 	/*
 	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
 	 */

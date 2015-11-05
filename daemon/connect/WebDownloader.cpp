@@ -125,7 +125,7 @@ void WebDownloader::Run()
 		{
 			detail("Waiting %i sec to retry", g_Options->GetRetryInterval());
 			int msec = 0;
-			while (!IsStopped() && (msec < g_Options->GetRetryInterval() * 1000) && 
+			while (!IsStopped() && (msec < g_Options->GetRetryInterval() * 1000) &&
 				!(!m_force && g_Options->GetPauseDownload()))
 			{
 				usleep(100 * 1000);
@@ -518,7 +518,7 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 		// OK
 		return adRunning;
 	}
-	else 
+	else
 	{
 		// unknown error, no special handling
 		warn("URL %s failed: %s", m_infoName, response);
@@ -747,7 +747,7 @@ bool WebDownloader::Terminate()
 
 void WebDownloader::FreeConnection()
 {
-	if (m_connection)							
+	if (m_connection)
 	{
 		debug("Releasing connection");
 		m_connectionMutex.Lock();

@@ -99,7 +99,7 @@ ParRenamer::~ParRenamer()
 void ParRenamer::Cleanup()
 {
 	ClearHashList();
-	
+
 	for (DirList::iterator it = m_dirList.begin(); it != m_dirList.end(); it++)
 	{
 		free(*it);
@@ -197,14 +197,14 @@ void ParRenamer::BuildDirList(const char* destDir)
 
 	char* fullFilename = (char*)malloc(1024);
 	DirBrowser* dirBrowser = new DirBrowser(destDir);
-	
+
 	while (const char* filename = dirBrowser->Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && !m_cancelled)
 		{
 			snprintf(fullFilename, 1024, "%s%c%s", destDir, PATH_SEPARATOR, filename);
 			fullFilename[1024-1] = '\0';
-			
+
 			if (Util::DirectoryExists(fullFilename))
 			{
 				BuildDirList(fullFilename);
@@ -215,7 +215,7 @@ void ParRenamer::BuildDirList(const char* destDir)
 			}
 		}
 	}
-	
+
 	free(fullFilename);
 	delete dirBrowser;
 }
@@ -228,13 +228,13 @@ void ParRenamer::LoadParFiles(const char* destDir)
 	for (ParParser::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
 	{
 		char* parFilename = *it;
-		
+
 		char fullParFilename[1024];
 		snprintf(fullParFilename, 1024, "%s%c%s", destDir, PATH_SEPARATOR, parFilename);
 		fullParFilename[1024-1] = '\0';
-		
+
 		LoadParFile(fullParFilename);
-		
+
 		free(*it);
 	}
 }
@@ -256,7 +256,7 @@ void ParRenamer::LoadParFile(const char* parFilename)
 		{
 			break;
 		}
-		
+
 		Par2RepairerSourceFile* sourceFile = (*it).second;
 		if (!sourceFile || !sourceFile->GetDescriptionPacket())
 		{
@@ -289,7 +289,7 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 				m_stageProgress = m_curFile * 1000 / m_fileCount;
 				UpdateProgress();
 				m_curFile++;
-				
+
 				if (renamePars)
 				{
 					CheckParFile(destDir, fullFilename);
@@ -349,7 +349,7 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 	debug("Computing hash for %s", filename);
 
 	const int blockSize = 16*1024;
-	
+
 	FILE* file = fopen(filename, FOPEN_RB);
 	if (!file)
 	{
@@ -358,9 +358,9 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 	}
 
 	// load first 16K of the file into buffer
-	
+
 	void* buffer = malloc(blockSize);
-	
+
 	int readBytes = fread(buffer, 1, blockSize, file);
 	int error = ferror(file);
 	if (readBytes != blockSize && error)
@@ -368,18 +368,18 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 		PrintMessage(Message::mkError, "Could not read file %s", filename);
 		return;
 	}
-	
+
 	fclose(file);
-	
+
 	MD5Hash hash16k;
 	MD5Context context;
 	context.Update(buffer, readBytes);
 	context.Final(hash16k);
-	
+
 	free(buffer);
-	
+
 	debug("file: %s; hash16k: %s", Util::BaseFileName(filename), hash16k.print().c_str());
-	
+
 	for (FileHashList::iterator it = m_fileHashList.begin(); it != m_fileHashList.end(); it++)
 	{
 		FileHash* fileHash = *it;
@@ -396,7 +396,7 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 			{
 				RenameFile(filename, dstFilename);
 			}
-			
+
 			break;
 		}
 	}

@@ -95,7 +95,7 @@ void HistoryCoordinator::ServiceWork()
 				historyInfo->GetName(niceName, 1024);
 
 				downloadQueue->GetHistory()->erase(downloadQueue->GetHistory()->end() - 1 - index);
-				
+
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 				{
 					DeleteDiskFiles(historyInfo->GetNzbInfo());
@@ -142,7 +142,7 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 	// with "|"-character (for merged groups)
 	char* filename = strdup(nzbInfo->GetQueuedFilename());
 	char* end = filename - 1;
-	
+
 	while (end)
 	{
 		char* name1 = end + 1;
@@ -673,7 +673,7 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQ
 
 	if (historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		switch (action) 
+		switch (action)
 		{
 			case DownloadQueue::eaHistorySetDupeKey:
 				historyInfo->GetNzbInfo()->SetDupeKey(text);
@@ -710,7 +710,7 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQ
 	}
 	else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 	{
-		switch (action) 
+		switch (action)
 		{
 			case DownloadQueue::eaHistorySetDupeKey:
 				historyInfo->GetDupInfo()->SetDupeKey(text);

@@ -85,12 +85,12 @@ class StatMeter : public Debuggable
 {
 private:
 	// speed meter
-	static const int	SPEEDMETER_SLOTS = 30;	  
+	static const int	SPEEDMETER_SLOTS = 30;
 	static const int	SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
 	int					m_speedBytes[SPEEDMETER_SLOTS];
 	long long			m_speedTotalBytes;
 	int					m_speedTime[SPEEDMETER_SLOTS];
-	int					m_speedStartTime; 
+	int					m_speedStartTime;
 	time_t				m_speedCorrection;
 	int					m_speedBytesIndex;
 	int					m_curSecBytes;

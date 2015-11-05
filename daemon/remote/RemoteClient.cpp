@@ -133,7 +133,7 @@ bool RemoteClient::ReceiveBoolResponse()
 	memset(&BoolResponse, 0, sizeof(BoolResponse));
 
 	bool read = m_connection->Recv((char*)&BoolResponse, sizeof(BoolResponse));
-	if (!read || 
+	if (!read ||
 		(int)ntohl(BoolResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(BoolResponse.m_messageBase.m_structSize) != sizeof(BoolResponse))
 	{
@@ -250,13 +250,13 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 
 			const char* fileName = bufPtr + sizeof(SNzbListResponseNzbEntry);
 			const char* name = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen);
-			const char* destDir = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) + 
+			const char* destDir = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
 				ntohl(listAnswer->m_nameLen);
-			const char* category = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) + 
+			const char* category = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen);
-			const char* m_queuedFilename = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) + 
+			const char* m_queuedFilename = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) + ntohl(listAnswer->m_categoryLen);
-			
+
 			MatchedNzbInfo* nzbInfo = new MatchedNzbInfo();
 			nzbInfo->SetId(ntohl(listAnswer->m_id));
 			nzbInfo->SetKind((NzbInfo::EKind)ntohl(listAnswer->m_kind));
@@ -276,7 +276,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			downloadQueue->GetQueue()->push_back(nzbInfo);
 
 			bufPtr += sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
-				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) + 
+				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) +
 				ntohl(listAnswer->m_categoryLen) + ntohl(listAnswer->m_queuedFilenameLen);
 		}
 
@@ -302,7 +302,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 
 			const char* subject = bufPtr + sizeof(SNzbListResponseFileEntry);
 			const char* fileName = bufPtr + sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen);
-			
+
 			MatchedFileInfo* fileInfo = new MatchedFileInfo();
 			fileInfo->SetId(ntohl(listAnswer->m_id));
 			fileInfo->SetSize(Util::JoinInt64(ntohl(listAnswer->m_fileSizeHi), ntohl(listAnswer->m_fileSizeLo)));
@@ -318,7 +318,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			fileInfo->SetNzbInfo(nzbInfo);
 			nzbInfo->GetFileList()->push_back(fileInfo);
 
-			bufPtr += sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen) + 
+			bufPtr += sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen) +
 				ntohl(listAnswer->m_filenameLen);
 		}
 	}
@@ -351,7 +351,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 	// Now listen for the returned list
 	SNzbListResponse ListResponse;
 	bool read = m_connection->Recv((char*) &ListResponse, sizeof(ListResponse));
-	if (!read || 
+	if (!read ||
 		(int)ntohl(ListResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(ListResponse.m_messageBase.m_structSize) != sizeof(ListResponse))
 	{
@@ -573,7 +573,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 				if (!pattern || ((MatchedNzbInfo*)nzbInfo)->m_match)
 				{
-					printf("[%i] %s%s (%s, %s%s%s)%s%s\n", nzbInfo->GetId(), priority, 
+					printf("[%i] %s%s (%s, %s%s%s)%s%s\n", nzbInfo->GetId(), priority,
 						nzbInfo->GetName(), urlOrFile, remainingStr,
 						pausedStr, threads, category, parameters);
 					matches++;
@@ -622,17 +622,17 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 		printf("Remaining size: %s\n", Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining));
 	}
 
-    if (ntohl(ListResponse.m_downloadRate) > 0 && 
-		!ntohl(ListResponse.m_downloadPaused) && 
-		!ntohl(ListResponse.m_download2Paused) && 
+	if (ntohl(ListResponse.m_downloadRate) > 0 &&
+		!ntohl(ListResponse.m_downloadPaused) &&
+		!ntohl(ListResponse.m_download2Paused) &&
 		!ntohl(ListResponse.m_downloadStandBy))
-    {
-        long long remain_sec = (long long)(remaining / ntohl(ListResponse.m_downloadRate));
+	{
+		long long remain_sec = (long long)(remaining / ntohl(ListResponse.m_downloadRate));
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
 		printf("Remaining time: %.2d:%.2d:%.2d\n", h, m, s);
-    }
+	}
 
 	char speed[20];
 	printf("Current download rate: %s\n",
@@ -679,7 +679,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 	if (ntohl(ListResponse.m_downloadPaused) || ntohl(ListResponse.m_download2Paused))
 	{
-		snprintf(serverState, sizeof(serverState), "%s%s", 
+		snprintf(serverState, sizeof(serverState), "%s%s",
 			ntohl(ListResponse.m_downloadStandBy) ? "Paused" : "Pausing",
 			ntohl(ListResponse.m_downloadPaused) && ntohl(ListResponse.m_download2Paused) ?
 			" (+2)" : ntohl(ListResponse.m_download2Paused) ? " (2)" : "");
@@ -728,7 +728,7 @@ bool RemoteClient::RequestServerLog(int lines)
 	// Now listen for the returned log
 	SNzbLogResponse LogResponse;
 	bool read = m_connection->Recv((char*) &LogResponse, sizeof(LogResponse));
-	if (!read || 
+	if (!read ||
 		(int)ntohl(LogResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(LogResponse.m_messageBase.m_structSize) != sizeof(LogResponse))
 	{
@@ -909,12 +909,12 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	}
 
 	int32_t* ids = (int32_t*)(trailingData + textLen);
-	
+
 	for (int i = 0; i < idCount; i++)
 	{
 		ids[i] = htonl(idList[i]);
 	}
-	
+
 	if (nameCount > 0)
 	{
 		char *names = trailingData + textLen + idLength;
@@ -1026,7 +1026,7 @@ bool RemoteClient::RequestPostQueue()
 	// Now listen for the returned list
 	SNzbPostQueueResponse PostQueueResponse;
 	bool read = m_connection->Recv((char*) &PostQueueResponse, sizeof(PostQueueResponse));
-	if (!read || 
+	if (!read ||
 		(int)ntohl(PostQueueResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(PostQueueResponse.m_messageBase.m_structSize) != sizeof(PostQueueResponse))
 	{
@@ -1072,10 +1072,10 @@ bool RemoteClient::RequestPostQueue()
 
 			const char* postStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Unpacking", ", Executing postprocess-script", "" };
 			char* infoName = bufPtr + sizeof(SNzbPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen);
-			
+
 			printf("[%i] %s%s%s\n", ntohl(postQueueAnswer->m_id), infoName, postStageName[ntohl(postQueueAnswer->m_stage)], completed);
 
-			bufPtr += sizeof(SNzbPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen) + 
+			bufPtr += sizeof(SNzbPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen) +
 				ntohl(postQueueAnswer->m_infoNameLen) + ntohl(postQueueAnswer->m_destDirLen) +
 				ntohl(postQueueAnswer->m_progressLabelLen);
 		}
@@ -1152,7 +1152,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 	// Now listen for the returned list
 	SNzbHistoryResponse HistoryResponse;
 	bool read = m_connection->Recv((char*) &HistoryResponse, sizeof(HistoryResponse));
-	if (!read || 
+	if (!read ||
 		(int)ntohl(HistoryResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
 		ntohl(HistoryResponse.m_messageBase.m_structSize) != sizeof(HistoryResponse))
 	{
@@ -1206,9 +1206,9 @@ bool RemoteClient::RequestHistory(bool withHidden)
 				int parStatus = ntohl(listAnswer->m_parStatus);
 				int scriptStatus = ntohl(listAnswer->m_scriptStatus);
 
-				printf("[%i] %s (%s%s%s%s%s)\n", ntohl(listAnswer->m_id), nicename, 
+				printf("[%i] %s (%s%s%s%s%s)\n", ntohl(listAnswer->m_id), nicename,
 					(kind == HistoryInfo::hkDup ? "Hidden, " : ""),
-					(kind == HistoryInfo::hkDup ? "" : files), sizeStr, 
+					(kind == HistoryInfo::hkDup ? "" : files), sizeStr,
 					(kind == HistoryInfo::hkDup ? "" : parStatusText[parStatus]),
 					(kind == HistoryInfo::hkDup ? "" : scriptStatusText[scriptStatus]));
 			}
@@ -1216,7 +1216,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 			{
 				const char* urlStatusText[] = { "", "", "Url download successful", "Url download failed", "", "Nzb scan skipped", "Nzb scan failed" };
 
-				printf("[%i] %s (URL, %s)\n", ntohl(listAnswer->m_id), nicename, 
+				printf("[%i] %s (URL, %s)\n", ntohl(listAnswer->m_id), nicename,
 					urlStatusText[ntohl(listAnswer->m_urlStatus)]);
 			}
 

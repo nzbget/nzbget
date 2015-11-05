@@ -35,7 +35,7 @@ class EnvironmentStrings
 {
 private:
 	typedef std::vector<char*>		Strings;
-	
+
 	Strings				m_strings;
 
 public:
@@ -46,7 +46,7 @@ public:
 	void				Append(char* string);
 #ifdef WIN32
 	char*				GetStrings();
-#else	
+#else
 	char**				GetStrings();
 #endif
 };

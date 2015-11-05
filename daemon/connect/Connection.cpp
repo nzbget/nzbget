@@ -111,16 +111,16 @@ void Connection::Init()
 #ifdef WIN32
 	WSADATA wsaData;
 	int err = WSAStartup(MAKEWORD(2, 0), &wsaData);
-	if (err != 0) 
+	if (err != 0)
 	{
 		error("Could not initialize socket library");
 		return;
 	}
-	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE( wsaData.wVersion ) != 0) 
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE( wsaData.wVersion ) != 0)
 	{
 		error("Could not initialize socket library");
 		WSACleanup();
-		return; 
+		return;
 	}
 #endif
 
@@ -286,21 +286,21 @@ bool Connection::Bind()
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo addr_hints, *addr_list, *addr;
 	char portStr[sizeof(int) * 4 + 1]; // is enough to hold any converted int
-	
+
 	memset(&addr_hints, 0, sizeof(addr_hints));
 	addr_hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
 	addr_hints.ai_socktype = SOCK_STREAM,
 	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
-	
+
 	sprintf(portStr, "%d", m_port);
-	
+
 	int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
 	if (res != 0)
 	{
 		ReportError("Could not resolve hostname %s", m_host, false, 0);
 		return false;
 	}
-	
+
 	m_broken = false;
 	m_socket = INVALID_SOCKET;
 	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
@@ -324,11 +324,11 @@ bool Connection::Bind()
 			m_socket = INVALID_SOCKET;
 		}
 	}
-	
+
 	freeaddrinfo(addr_list);
-	
+
 #else
-	
+
 	struct sockaddr_in	sSocketAddress;
 	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
 	sSocketAddress.sin_family = AF_INET;
@@ -345,17 +345,17 @@ bool Connection::Bind()
 		}
 	}
 	sSocketAddress.sin_port = htons(m_port);
-	
+
 	m_socket = socket(PF_INET, SOCK_STREAM, 0);
 	if (m_socket == INVALID_SOCKET)
 	{
 		ReportError("Socket creation failed for %s", m_host, true, 0);
 		return false;
 	}
-	
+
 	int opt = 1;
 	setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
-	
+
 	int res = bind(m_socket, (struct sockaddr *) &sSocketAddress, sizeof(sSocketAddress));
 	if (res == -1)
 	{
@@ -364,19 +364,19 @@ bool Connection::Bind()
 		m_socket = INVALID_SOCKET;
 	}
 #endif
-	
+
 	if (m_socket == INVALID_SOCKET)
 	{
 		ReportError("Binding socket failed for %s", m_host, true, 0);
 		return false;
 	}
-	
+
 	if (listen(m_socket, 100) < 0)
 	{
 		ReportError("Listen on socket failed for %s", m_host, true, 0);
 		return false;
 	}
-	
+
 	m_status = csListening;
 
 	return true;
@@ -454,7 +454,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 			bufPtr = m_readBuf;
 			m_readBuf[bufAvail] = '\0';
 		}
-		
+
 		int len = 0;
 		char* p = (char*)memchr(bufPtr, '\n', bufAvail);
 		if (p)
@@ -465,29 +465,29 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 		{
 			len = bufAvail;
 		}
-		
+
 		if (len > size)
 		{
 			len = size;
 		}
-		
+
 		memcpy(inpBuffer, bufPtr, len);
 		inpBuffer += len;
 		bufPtr += len;
 		bufAvail -= len;
 		bytesRead += len;
 		size -= len;
-		
+
 		if (p)
 		{
 			break;
 		}
 	}
 	*inpBuffer = '\0';
-	
+
 	m_bufAvail = bufAvail > 0 ? bufAvail : 0; // copy back to member
 	m_bufPtr = bufPtr; // copy back to member
-	
+
 	if (bytesReadOut)
 	{
 		*bytesReadOut = bytesRead;
@@ -499,7 +499,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 	{
 		return NULL;
 	}
-	
+
 	return buffer;
 }
 
@@ -521,7 +521,7 @@ Connection* Connection::Accept()
 	{
 		return NULL;
 	}
-	
+
 	Connection* con = new Connection(socket, m_tls);
 
 	return con;
@@ -584,7 +584,7 @@ bool Connection::DoConnect()
 
 	m_socket = INVALID_SOCKET;
 	m_broken = false;
-	
+
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo addr_hints, *addr_list, *addr;
 	char portStr[sizeof(int) * 4 + 1]; //is enough to hold any converted int
@@ -650,7 +650,7 @@ bool Connection::DoConnect()
 	if (m_socket == INVALID_SOCKET)
 	{
 		return false;
-	} 
+	}
 
 #else
 
@@ -972,7 +972,7 @@ void Connection::CloseTls()
 int Connection::recv(SOCKET s, char* buf, int len, int flags)
 {
 	int received = 0;
-	
+
 	if (m_tlsSocket)
 	{
 		m_tlsError = false;
@@ -1028,17 +1028,17 @@ unsigned int Connection::ResolveHostAddr(const char* host)
 #ifdef HAVE_GETHOSTBYNAME_R_6
 		err = gethostbyname_r(host, &hinfobuf, strbuf, sizeof(strbuf), &hinfo, &h_errnop);
 		err = err || (hinfo == NULL); // error on null hinfo (means 'no entry')
-#endif			
+#endif
 #ifdef HAVE_GETHOSTBYNAME_R_5
 		hinfo = gethostbyname_r(host, &hinfobuf, strbuf, sizeof(strbuf), &h_errnop);
 		err = hinfo == NULL;
-#endif			
+#endif
 #ifdef HAVE_GETHOSTBYNAME_R_3
 		//NOTE: gethostbyname_r with three parameters were not tested
 		struct hostent_data hinfo_data;
 		hinfo = gethostbyname_r((char*)host, (struct hostent*)hinfobuf, &hinfo_data);
 		err = hinfo == NULL;
-#endif			
+#endif
 #else
 		m_mutexGetHostByName->Lock();
 		hinfo = gethostbyname(host);
@@ -1054,7 +1054,7 @@ unsigned int Connection::ResolveHostAddr(const char* host)
 		}
 
 		memcpy(&uaddr, hinfo->h_addr_list[0], sizeof(uaddr));
-		
+
 #ifndef HAVE_GETHOSTBYNAME_R
 		m_mutexGetHostByName->Unlock();
 #endif
@@ -1076,7 +1076,7 @@ const char* Connection::GetRemoteAddr()
 #endif
 	}
 	m_remoteAddr[sizeof(m_remoteAddr)-1] = '\0';
-	
+
 	return m_remoteAddr;
 }
 

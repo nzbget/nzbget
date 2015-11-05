@@ -78,7 +78,7 @@ Mutex ScriptController::m_runningMutex;
  *    the cild process assumed to hang and will be killed. Another attempt
  *    will be made.
  */
- 
+
 class ChildWatchDog : public Thread
 {
 private:
@@ -148,7 +148,7 @@ void EnvironmentStrings::Append(char* string)
 
 #ifdef WIN32
 /*
- * Returns environment block in format suitable for using with CreateProcess. 
+ * Returns environment block in format suitable for using with CreateProcess.
  * The allocated memory must be freed by caller using "free()".
  */
 char* EnvironmentStrings::GetStrings()
@@ -176,7 +176,7 @@ char* EnvironmentStrings::GetStrings()
 #else
 
 /*
- * Returns environment block in format suitable for using with execve 
+ * Returns environment block in format suitable for using with execve
  * The allocated memory must be freed by caller using "free()".
  */
 char** EnvironmentStrings::GetStrings()
@@ -230,13 +230,13 @@ ScriptController::~ScriptController()
 
 void ScriptController::UnregisterRunningScript()
 {
-    m_runningMutex.Lock();
-    RunningScripts::iterator it = std::find(m_runningScripts.begin(), m_runningScripts.end(), this);
-    if (it != m_runningScripts.end())
-    {
-        m_runningScripts.erase(it);
-    }
-    m_runningMutex.Unlock();
+	m_runningMutex.Lock();
+	RunningScripts::iterator it = std::find(m_runningScripts.begin(), m_runningScripts.end(), this);
+	if (it != m_runningScripts.end())
+	{
+		m_runningScripts.erase(it);
+	}
+	m_runningMutex.Unlock();
 }
 
 void ScriptController::ResetEnv()
@@ -275,7 +275,7 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
 		Options::OptEntry* optEntry = *it;
-		
+
 		if (stripPrefix && !strncmp(optEntry->GetName(), stripPrefix, prefixLen) && (int)strlen(optEntry->GetName()) > prefixLen)
 		{
 			SetEnvVarSpecial("NZBPO", optEntry->GetName() + prefixLen, optEntry->GetValue());
@@ -294,21 +294,21 @@ void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, co
 	char varname[1024];
 	snprintf(varname, sizeof(varname), "%s_%s", prefix, name);
 	varname[1024-1] = '\0';
-	
+
 	// Original name
 	SetEnvVar(varname, value);
-	
+
 	char normVarname[1024];
 	strncpy(normVarname, varname, sizeof(varname));
 	normVarname[1024-1] = '\0';
-	
+
 	// Replace special characters  with "_" and convert to upper case
 	for (char* ptr = normVarname; *ptr; ptr++)
 	{
 		if (strchr(".:*!\"$%&/()=`+~#'{}[]@- ", *ptr)) *ptr = '_';
 		*ptr = toupper(*ptr);
 	}
-	
+
 	// Another env var with normalized name (replaced special chars and converted to upper case)
 	if (strcmp(varname, normVarname))
 	{
@@ -333,17 +333,17 @@ void ScriptController::PrepareArgs()
 			{
 				command[bufLen] = '\0';
 				debug("Extension: %s", command);
-				
+
 				char regPath[512];
 				snprintf(regPath, 512, "%s\\shell\\open\\command", command);
 				regPath[512-1] = '\0';
-				
+
 				bufLen = 512-1;
 				if (Util::RegReadStr(HKEY_CLASSES_ROOT, regPath, NULL, command, &bufLen))
 				{
 					command[bufLen] = '\0';
 					debug("Command: %s", command);
-					
+
 					DWORD_PTR args[] = { (DWORD_PTR)GetScript(), (DWORD_PTR)0 };
 					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, command, 0, 0,
 									  m_cmdLine, sizeof(m_cmdLine), (va_list*)args))
@@ -400,7 +400,7 @@ int ScriptController::Execute()
 	{
 		cmdLine = m_cmdLine;
 	}
-	
+
 	// create pipes to write and read data
 	HANDLE readPipe, writePipe;
 	SECURITY_ATTRIBUTES securityAttributes;
@@ -490,14 +490,14 @@ int ScriptController::Execute()
 
 		// create new process group (see Terminate() where it is used)
 		setsid();
-			
+
 		// close up the "read" end
 		close(pipein);
-      			
+
 		// make the pipeout to be the same as stdout and stderr
 		dup2(pipeout, 1);
 		dup2(pipeout, 2);
-		
+
 		close(pipeout);
 
 #ifdef CHILD_WATCHDOG
@@ -543,7 +543,7 @@ int ScriptController::Execute()
 		PrintMessage(Message::mkError, "Could not open pipe to %s", m_infoName);
 		return -1;
 	}
-	
+
 #ifdef CHILD_WATCHDOG
 	debug("Creating child watchdog");
 	ChildWatchDog* watchDog = new ChildWatchDog();
@@ -551,7 +551,7 @@ int ScriptController::Execute()
 	watchDog->SetProcessId(pid);
 	watchDog->Start();
 #endif
-	
+
 	char* buf = (char*)malloc(10240);
 
 	debug("Entering pipe-loop");
@@ -592,7 +592,7 @@ int ScriptController::Execute()
 	}
 	delete watchDog;
 #endif
-	
+
 	free(buf);
 	if (m_readpipe)
 	{
@@ -626,11 +626,11 @@ int ScriptController::Execute()
 	}
 #endif
 	}
-	
+
 #ifdef CHILD_WATCHDOG
 	}	// while (!bChildConfirmed && !m_bTerminated)
 #endif
-	
+
 	debug("Exit code %i", exitCode);
 
 	return exitCode;
@@ -698,7 +698,7 @@ void ScriptController::Detach()
 	m_readpipe = NULL;
 	fclose(readpipe);
 }
-	
+
 void ScriptController::Resume()
 {
 	m_terminated = false;
@@ -743,7 +743,7 @@ void ScriptController::ProcessOutput(char* text)
 	{
 		PrintMessage(Message::mkDebug, "%s", text + 8);
 	}
-	else 
+	else
 	{
 		PrintMessage(Message::mkInfo, "%s", text);
 	}

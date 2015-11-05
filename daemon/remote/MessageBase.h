@@ -38,11 +38,11 @@ static const int NZBREQUESTPASSWORDSIZE = 32;
 /**
  * NZBGet communication protocol uses only two basic data types: integer and char.
  * Integer values are passed using network byte order (Big-Endian).
- * Use function "htonl" and "ntohl" to convert integers to/from machine 
+ * Use function "htonl" and "ntohl" to convert integers to/from machine
  * (host) byte order.
  * All char-strings ends with NULL-char.
  *
- * NOTE: 
+ * NOTE:
  * NZBGet communication protocol is intended for usage only by NZBGet itself.
  * The communication works only if server and client has the same version.
  * The compatibility with previous program versions is not provided.

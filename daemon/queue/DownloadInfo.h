@@ -66,7 +66,7 @@ public:
 		soAdd,
 		soSubtract
 	};
-	
+
 public:
 						~ServerStatList();
 	void				StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation);
@@ -84,7 +84,7 @@ public:
 		aiFinished,
 		aiFailed
 	};
-	
+
 private:
 	int					m_partNumber;
 	char*				m_messageId;
@@ -227,7 +227,7 @@ public:
 	void				SetPartialChanged(bool partialChanged) { m_partialChanged = partialChanged; }
 	ServerStatList*		GetServerStats() { return &m_serverStats; }
 };
-                              
+
 typedef std::deque<FileInfo*> FileListBase;
 
 class FileList : public FileListBase
@@ -314,7 +314,7 @@ private:
 	EStatus				m_status;
 
 	friend class ScriptStatusList;
-	
+
 public:
 						ScriptStatus(const char* name, EStatus status);
 						~ScriptStatus();
@@ -739,7 +739,7 @@ private:
 	time_t				m_startTime;
 	time_t				m_stageTime;
 	Thread*				m_postThread;
-	
+
 	ParredFiles			m_parredFiles;
 
 public:

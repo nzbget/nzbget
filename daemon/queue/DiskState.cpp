@@ -238,7 +238,7 @@ FILE* StateFile::BeginReadTransaction()
 int DiskState::fscanf(FILE* infile, const char* format, ...)
 {
 	char line[1024];
-	if (!fgets(line, sizeof(line), infile)) 
+	if (!fgets(line, sizeof(line), infile))
 	{
 		return 0;
 	}
@@ -268,7 +268,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue)
 
 	StateFile stateFile("queue", 55);
 
-	if (downloadQueue->GetQueue()->empty() && 
+	if (downloadQueue->GetQueue()->empty() &&
 		downloadQueue->GetHistory()->empty())
 	{
 		stateFile.Discard();
@@ -472,7 +472,7 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
 	fprintf(outfile, "%s\n", nzbInfo->GetQueuedFilename());
 	fprintf(outfile, "%s\n", nzbInfo->GetName());
 	fprintf(outfile, "%s\n", nzbInfo->GetCategory());
-	fprintf(outfile, "%i,%i,%i,%i,%i\n", (int)nzbInfo->GetPriority(), 
+	fprintf(outfile, "%i,%i,%i,%i,%i\n", (int)nzbInfo->GetPriority(),
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetStage() + 1 : 0,
 		(int)nzbInfo->GetDeletePaused(), (int)nzbInfo->GetManyDupeFiles(), nzbInfo->GetFeedId());
 	fprintf(outfile, "%i,%i,%i,%i,%i,%i,%i\n", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
@@ -483,7 +483,7 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
 	fprintf(outfile, "%i,%i,%i\n", nzbInfo->GetFileCount(), nzbInfo->GetParkedFileCount(),
 		nzbInfo->GetMessageCount());
 	fprintf(outfile, "%i,%i\n", (int)nzbInfo->GetMinTime(), (int)nzbInfo->GetMaxTime());
-	fprintf(outfile, "%i,%i,%i,%i\n", (int)nzbInfo->GetParFull(), 
+	fprintf(outfile, "%i,%i,%i,%i\n", (int)nzbInfo->GetParFull(),
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetForceParFull() : 0,
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetForceRepair() : 0,
 		nzbInfo->GetExtraParBlocks());
@@ -550,7 +550,7 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
 		FileInfo* fileInfo = *it;
 		if (!fileInfo->GetDeleted())
 		{
-			fprintf(outfile, "%i,%i,%i,%i\n", fileInfo->GetId(), (int)fileInfo->GetPaused(), 
+			fprintf(outfile, "%i,%i,%i,%i\n", fileInfo->GetId(), (int)fileInfo->GetPaused(),
 				(int)fileInfo->GetTime(), (int)fileInfo->GetExtraPriority());
 		}
 	}
@@ -775,7 +775,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 			if (fscanf(infile, "%i\n", &unpackCleanedUpDisk) != 1) goto error;
 			nzbInfo->SetUnpackCleanedUpDisk((bool)unpackCleanedUpDisk);
 		}
-		
+
 		int fileCount;
 		if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
 		nzbInfo->SetFileCount(fileCount);
@@ -853,7 +853,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
 		nzbInfo->SetSize(Util::JoinInt64(High, Low));
 	}
-	
+
 	if (formatVersion >= 30)
 	{
 		int totalArticles, successArticles, failedArticles;
@@ -966,7 +966,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		{
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-			
+
 			char* scriptName = strchr(buf, ',');
 			if (scriptName)
 			{
@@ -993,7 +993,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 			if (!fgets(buf, sizeof(buf), infile)) goto error;
 		}
 	}
-	
+
 	if (formatVersion < 26)
 	{
 		NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
@@ -1251,7 +1251,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 	{
 		goto error;
 	}
-	
+
 	if (formatVersion >= 2)
 	{
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
@@ -1270,7 +1270,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 		if (fscanf(infile, "%i\n", &filenameConfirmed) != 1) goto error;
 		if (fileSummary) fileInfo->SetFilenameConfirmed(filenameConfirmed);
 	}
-	
+
 	unsigned long High, Low;
 	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
 	if (fileSummary) fileInfo->SetSize(Util::JoinInt64(High, Low));
@@ -1294,7 +1294,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 		if (fileSummary) fileInfo->SetTotalArticles(totalArticles);
 		if (fileSummary) fileInfo->SetMissedArticles(missedArticles);
 	}
-	
+
 	int size;
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
@@ -1846,7 +1846,7 @@ bool DiskState::LoadDupInfo(DupInfo* dupInfo, FILE* infile, int formatVersion)
 	unsigned long High, Low;
 	unsigned int fullContentHash, filteredContentHash = 0;
 	int dupeScore, dupe = 0, dupeMode = 0;
-	
+
 	if (formatVersion >= 39)
 	{
 		if (fscanf(infile, "%i,%lu,%lu,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupeMode) != 7) goto error;
@@ -1924,7 +1924,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 		HistoryInfo::EKind kind = HistoryInfo::hkNzb;
 		int id = 0;
 		int time;
-	
+
 		if (formatVersion >= 33)
 		{
 			int kindval = 0;
@@ -1964,7 +1964,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 			}
 
 			historyInfo = new HistoryInfo(nzbInfo);
-			
+
 			if (formatVersion < 28 && nzbInfo->GetParStatus() == 0 &&
 				nzbInfo->GetUnpackStatus() == 0 && nzbInfo->GetMoveStatus() == 0)
 			{
@@ -2975,7 +2975,7 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 
 	time_t tm = time(NULL);
 	time_t rawtime = tm + g_Options->GetTimeCorrection();
-	
+
 	char time[50];
 #ifdef HAVE_CTIME_R_3
 	ctime_r(&rawtime, time, 50);
@@ -3048,7 +3048,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 		else if (!strncmp(kindStr, "DEBUG", 5))
 		{
 			kind = Message::mkDebug;
-		} 
+		}
 
 		// text
 		p = strchr(p + 1, '\t');

@@ -128,8 +128,8 @@ Scanner::~Scanner()
 	debug("Destroying Scanner");
 
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); it++)
-    {
-        delete *it;
+	{
+		delete *it;
 	}
 	m_fileList.clear();
 
@@ -146,8 +146,8 @@ void Scanner::InitOptions()
 void Scanner::ClearQueueList()
 {
 	for (QueueList::iterator it = m_queueList.begin(); it != m_queueList.end(); it++)
-    {
-        delete *it;
+	{
+		delete *it;
 	}
 	m_queueList.clear();
 }
@@ -161,8 +161,8 @@ void Scanner::ServiceWork()
 
 	m_scanMutex.Lock();
 
-	if (m_requestedNzbDirScan || 
-		(!g_Options->GetPauseScan() && g_Options->GetNzbDirInterval() > 0 && 
+	if (m_requestedNzbDirScan ||
+		(!g_Options->GetPauseScan() && g_Options->GetNzbDirInterval() > 0 &&
 		 m_nzbDirInterval >= g_Options->GetNzbDirInterval() * 1000))
 	{
 		// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
@@ -268,8 +268,8 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 	bool inList = false;
 
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); it++)
-    {
-        FileData* fileData = *it;
+	{
+		FileData* fileData = *it;
 		if (!strcmp(fileData->GetFilename(), fullFilename))
 		{
 			inList = true;
@@ -306,7 +306,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 /**
  * Remove old files from the list of monitored files.
  * Normally these files are deleted from the list when they are processed.
- * However if a file was detected by function "CanProcessFile" once but wasn't 
+ * However if a file was detected by function "CanProcessFile" once but wasn't
  * processed later (for example if the user deleted it), it will stay in the list,
  * until we remove it here.
  */
@@ -316,9 +316,9 @@ void Scanner::DropOldFiles()
 
 	int i = 0;
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); )
-    {
-        FileData* fileData = *it;
-		if ((current - fileData->GetLastChange() >= 
+	{
+		FileData* fileData = *it;
+		if ((current - fileData->GetLastChange() >=
 			(g_Options->GetNzbDirInterval() + g_Options->GetNzbDirFileAge()) * 2) ||
 			// can occur if the system clock was adjusted
 			current < fileData->GetLastChange())
@@ -361,7 +361,7 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 	int nzbId = 0;
 
 	for (QueueList::iterator it = m_queueList.begin(); it != m_queueList.end(); it++)
-    {
+	{
 		QueueData* queueData1 = *it;
 		if (Util::SameFilename(queueData1->GetFilename(), fullFilename))
 		{
@@ -388,7 +388,7 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 
 	if (m_scanScript && strcasecmp(extension, ".nzb_processed"))
 	{
-		ScanScriptController::ExecuteScripts(fullFilename, 
+		ScanScriptController::ExecuteScripts(fullFilename,
 			urlInfo ? urlInfo->GetUrl() : "", directory,
 			&nzbName, &nzbCategory, &priority, parameters, &addTop,
 			&addPaused, &dupeKey, &dupeScore, &dupeMode);
@@ -446,7 +446,7 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 {
 	bool unpack = g_Options->GetUnpack();
 	const char* postScript = g_Options->GetPostScript();
-	
+
 	if (!Util::EmptyStr(category))
 	{
 		Options::Category* categoryObj = g_Options->FindCategory(category, false);
@@ -473,7 +473,7 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 	}
 
 	parameters->SetParameter("*Unpack:", unpack ? "yes" : "no");
-	
+
 	if (!Util::EmptyStr(postScript))
 	{
 		// split szPostScript into tokens and create pp-parameter for each token
