@@ -415,7 +415,7 @@ bool TlsSocket::Start()
 
 	if (m_certFile && m_keyFile)
 	{
-		if (SSL_CTX_use_certificate_file((SSL_CTX*)m_context, m_certFile, SSL_FILETYPE_PEM) != 1)
+		if (SSL_CTX_use_certificate_chain_file((SSL_CTX*)m_context, m_certFile) != 1)
 		{
 			ReportError("Could not load certificate file");
 			Close();
