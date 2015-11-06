@@ -36,7 +36,7 @@
 #include "catch.h"
 
 #include "nzbget.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "Options.h"
 #include "TestUtil.h"
 
@@ -75,7 +75,7 @@ void TestNzb(std::string testFilename)
 	delete nzbFile;
 }
 
-TEST_CASE("Nzb parser", "[NZBFile][TestData]")
+TEST_CASE("Nzb parser", "[NzbFile][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("SaveQueue=no");
