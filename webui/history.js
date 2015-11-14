@@ -289,7 +289,7 @@ var History = (new function($)
 		{
 			case 'DELETE':
 				notification = '#Notif_History_Deleted';
-				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true);
+				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true, checkedCount);
 				break;
 
 			case 'REPROCESS':
@@ -311,7 +311,8 @@ var History = (new function($)
 				notification = '#Notif_History_Returned';
 				ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog',
 					function () { historyAction('HistoryRedownload') },
-					function () { HistoryUI.confirmMulti(checkedCount > 1); });
+					function () { HistoryUI.confirmMulti(checkedCount > 1); },
+					checkedCount);
 				break;
 
 			case 'MARKSUCCESS':
@@ -334,7 +335,8 @@ var History = (new function($)
 					function (_dialog) // init
 					{
 						HistoryUI.confirmMulti(checkedCount > 1);
-					}
+					},
+					checkedCount
 				);
 				break;
 		}
@@ -497,7 +499,7 @@ var HistoryUI = (new function($)
 		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 	
-	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi)
+	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
@@ -524,7 +526,7 @@ var HistoryUI = (new function($)
 			actionCallback(command);
 		}
 
-		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init);
+		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init, selCount);
 	}
 	
 	this.confirmMulti = function(multi)

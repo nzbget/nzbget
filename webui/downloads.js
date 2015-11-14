@@ -524,7 +524,7 @@ var Downloads = (new function($)
 			}
 		};
 
-		DownloadsUI.deleteConfirm(deleteGroups, true, hasNzb, hasUrl);
+		DownloadsUI.deleteConfirm(deleteGroups, true, hasNzb, hasUrl, downloadIDs.length);
 	}
 
 	this.moveClick = function(action)
@@ -856,7 +856,7 @@ var DownloadsUI = (new function($)
 		return categoryColumnWidth;
 	}
 
-	this.deleteConfirm = function(actionCallback, multi, hasNzb, hasUrl)
+	this.deleteConfirm = function(actionCallback, multi, hasNzb, hasUrl, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
@@ -895,6 +895,6 @@ var DownloadsUI = (new function($)
 			actionCallback(command);
 		}
 
-		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init);
+		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init, selCount);
 	}
 }(jQuery));

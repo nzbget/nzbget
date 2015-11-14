@@ -791,7 +791,7 @@ var ConfirmDialog = (new function($)
 		$('#ConfirmDialog_OK').click(click);
 	}
 
-	this.showModal = function(id, _actionCallback, initCallback)
+	this.showModal = function(id, _actionCallback, initCallback, selCount)
 	{
 		$('#ConfirmDialog_Title').html($('#' + id + '_Title').html());
 		$('#ConfirmDialog_Text').html($('#' + id + '_Text').html());
@@ -799,7 +799,14 @@ var ConfirmDialog = (new function($)
 		var helpId = $('#' + id + '_Help').html();
 		$('#ConfirmDialog_Help').attr('href', '#' + helpId);
 		Util.show('#ConfirmDialog_Help', helpId !== null);
-		
+
+        if (selCount > 1)
+        {
+            var html = $('#ConfirmDialog_Text').html();
+            html = html.replace(/selected/g, selCount + ' selected');
+            $('#ConfirmDialog_Text').html(html);
+        }
+
 		actionCallback = _actionCallback;
 		if (initCallback)
 		{
