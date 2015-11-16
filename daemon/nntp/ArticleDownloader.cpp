@@ -455,7 +455,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 		if (m_format == Decoder::efUnknown && g_Options->GetDecode())
 		{
-			m_format = Decoder::DetectFormat(line, len);
+			m_format = Decoder::DetectFormat(line, len, body);
 			if (m_format != Decoder::efUnknown)
 			{
 				// sometimes news servers misbehave and send article body without new line separator between headers and body
