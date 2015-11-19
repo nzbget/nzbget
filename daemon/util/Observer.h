@@ -27,8 +27,6 @@
 #ifndef OBSERVER_H
 #define OBSERVER_H
 
-#include <list>
-
 class Observer;
 
 class Subject

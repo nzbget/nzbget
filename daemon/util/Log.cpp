@@ -23,24 +23,6 @@
  *
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#else
-#include <pthread.h>
-#include <unistd.h>
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <stdarg.h>
-#include <stdio.h>
-
 #include "nzbget.h"
 #include "Options.h"
 #include "Log.h"

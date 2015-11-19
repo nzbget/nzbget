@@ -23,43 +23,8 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <errno.h>
-#include <ctype.h>
-#include <stdarg.h>
-#ifdef WIN32
-#include <io.h>
-#include <direct.h>
-#include <WinIoCtl.h>
-#else
-#include <unistd.h>
-#include <sys/statvfs.h>
-#include <sys/time.h>
-#include <pwd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#endif
-#ifdef HAVE_REGEX_H
-#include <regex.h>
-#endif
-#ifndef DISABLE_GZIP
-#include <zlib.h>
-#endif
-#include <time.h>
-
 #include "nzbget.h"
-#include "Util.h"
+#include "Util.h"			
 
 #ifndef WIN32
 // function "code_revision" is automatically generated in file "code_revision.cpp" on each build

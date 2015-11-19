@@ -23,26 +23,10 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
+#include "nzbget.h"
 
 #include "catch.h"
 
-#include "nzbget.h"
 #include "Options.h"
 #include "ParRenamer.h"
 #include "TestUtil.h"

@@ -26,8 +26,6 @@
 #ifndef FEEDFILE_H
 #define FEEDFILE_H
 
-#include <vector>
-
 #include "FeedInfo.h"
 
 class FeedFile

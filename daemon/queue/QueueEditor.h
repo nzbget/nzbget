@@ -26,8 +26,6 @@
 #ifndef QUEUEEDITOR_H
 #define QUEUEEDITOR_H
 
-#include <vector>
-
 #include "DownloadInfo.h"
 
 class QueueEditor

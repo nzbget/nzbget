@@ -26,10 +26,6 @@
 #ifndef SCRIPTCONFIG_H
 #define SCRIPTCONFIG_H
 
-#include <vector>
-#include <list>
-#include <time.h>
-
 #include "Options.h"
 
 class ScriptConfig

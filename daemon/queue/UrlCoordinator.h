@@ -26,10 +26,6 @@
 #ifndef URLCOORDINATOR_H
 #define URLCOORDINATOR_H
 
-#include <deque>
-#include <list>
-#include <time.h>
-
 #include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"

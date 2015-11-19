@@ -26,9 +26,6 @@
 #ifndef UNPACK_H
 #define UNPACK_H
 
-#include <deque>
-#include <vector>
-
 #include "Log.h"
 #include "Thread.h"
 #include "DownloadInfo.h"

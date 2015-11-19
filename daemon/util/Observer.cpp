@@ -23,15 +23,7 @@
  *
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
+#include "nzbget.h"
 #include "Observer.h"
 #include "Log.h"
 

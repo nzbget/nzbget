@@ -26,10 +26,6 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include <list>
-#include <vector>
-#include <time.h>
-
 #include "Thread.h"
 #include "Service.h"
 

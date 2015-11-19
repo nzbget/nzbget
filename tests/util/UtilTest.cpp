@@ -23,21 +23,10 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include "nzbget.h"
 
 #include "catch.h"
 
-#include "nzbget.h"
 #include "Util.h"
 
 TEST_CASE("WebUtil: XmlStripTags", "[Util][Quick]")

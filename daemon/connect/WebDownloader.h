@@ -26,8 +26,6 @@
 #ifndef WEBDOWNLOADER_H
 #define WEBDOWNLOADER_H
 
-#include <time.h>
-
 #include "Observer.h"
 #include "Thread.h"
 #include "Connection.h"

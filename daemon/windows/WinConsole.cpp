@@ -23,22 +23,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#define SKIP_DEFAULT_WINDOWS_HEADERS
-#include "win32.h"
-
-#include <windows.h>
-#include <wincon.h>
-#include <shellapi.h>
-#include <shlobj.h>
-#include <winreg.h>
-
-#include <string.h>
-#include <stdio.h>
-
 #include "nzbget.h"
 #include "Log.h"
 #include "Options.h"

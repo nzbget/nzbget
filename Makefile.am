@@ -231,9 +231,9 @@ EXTRA_DIST = \
 	$(testdata_FILES)
 
 windows_FILES = \
+	daemon/windows/StdAfx.cpp \
 	daemon/windows/WinService.cpp \
 	daemon/windows/WinService.h \
-	daemon/windows/win32.h \
 	daemon/windows/WinConsole.cpp \
 	daemon/windows/WinConsole.h \
 	nzbget.vcxproj \
@@ -421,6 +421,7 @@ code_revision.cpp: FORCE
 			( \
 			echo "/* $$V */" ;\
 			echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
+			echo "#include \"nzbget.h\"" ;\
 			echo "const char* code_revision(void)" ;\
 			echo "{" ;\
 			echo "	const char* revision = \"$$V\";" ;\
@@ -434,6 +435,7 @@ code_revision.cpp: FORCE
 		( \
 		echo "/*  */" ;\
 		echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
+		echo "#include \"nzbget.h\"" ;\
 		echo "const char* code_revision(void)" ;\
 		echo "{" ;\
 		echo "	const char* revision = \"\";" ;\

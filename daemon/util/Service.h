@@ -26,8 +26,6 @@
 #ifndef SERVICE_H
 #define SERVICE_H
 
-#include <vector>
-
 #include "Thread.h"
 
 class Service

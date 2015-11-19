@@ -27,8 +27,6 @@
 #ifndef ARTICLEDOWNLOADER_H
 #define ARTICLEDOWNLOADER_H
 
-#include <time.h>
-
 #include "Observer.h"
 #include "DownloadInfo.h"
 #include "Thread.h"

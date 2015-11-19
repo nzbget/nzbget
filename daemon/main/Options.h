@@ -27,10 +27,6 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include <vector>
-#include <list>
-#include <time.h>
-
 #include "Thread.h"
 #include "Util.h"
 

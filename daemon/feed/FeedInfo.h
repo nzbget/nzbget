@@ -26,9 +26,6 @@
 #ifndef FEEDINFO_H
 #define FEEDINFO_H
 
-#include <deque>
-#include <time.h>
-
 #include "Util.h"
 #include "DownloadInfo.h"
 

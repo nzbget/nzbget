@@ -27,9 +27,6 @@
 #ifndef NEWSSERVER_H
 #define NEWSSERVER_H
 
-#include <vector>
-#include <time.h>
-
 class NewsServer
 {
 private:

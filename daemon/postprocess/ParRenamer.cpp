@@ -23,29 +23,14 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
+#include "nzbget.h"
 
 #ifndef DISABLE_PARCHECK
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
 
 #include "par2cmdline.h"
 #include "par2repairer.h"
 #include "md5.h"
 
-#include "nzbget.h"
 #include "ParRenamer.h"
 #include "ParParser.h"
 #include "Log.h"

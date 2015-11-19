@@ -24,24 +24,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#endif
-
 #include "nzbget.h"
 #include "RemoteServer.h"
 #include "BinRpc.h"

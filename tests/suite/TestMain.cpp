@@ -23,20 +23,11 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdio.h>
+#include "nzbget.h"
 
 #define CATCH_CONFIG_RUNNER
 #include "catch.h"
 
-#include "nzbget.h"
 #include "Thread.h"
 #include "Log.h"
 #include "Util.h"

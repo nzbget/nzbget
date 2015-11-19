@@ -27,10 +27,6 @@
 #ifndef DOWNLOADINFO_H
 #define DOWNLOADINFO_H
 
-#include <vector>
-#include <deque>
-#include <time.h>
-
 #include "Observer.h"
 #include "Log.h"
 #include "Thread.h"

@@ -27,9 +27,6 @@
 #ifndef QUEUECOORDINATOR_H
 #define QUEUECOORDINATOR_H
 
-#include <deque>
-#include <list>
-
 #include "Log.h"
 #include "Thread.h"
 #include "NzbFile.h"

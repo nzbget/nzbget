@@ -23,31 +23,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#include <sys/wait.h>
-#include <signal.h>
-#else
-#include <io.h>
-#endif
-#include <sys/stat.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <algorithm>
-
 #include "nzbget.h"
 #include "Script.h"
 #include "Log.h"
@@ -60,10 +35,6 @@ extern char* (*g_EnvironmentVariables)[];
 
 ScriptController::RunningScripts ScriptController::m_runningScripts;
 Mutex ScriptController::m_runningMutex;
-
-#ifndef WIN32
-#define CHILD_WATCHDOG 1
-#endif
 
 #ifdef CHILD_WATCHDOG
 /**

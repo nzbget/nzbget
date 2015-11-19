@@ -27,8 +27,6 @@
 #ifndef NZBFILE_H
 #define NZBFILE_H
 
-#include <list>
-
 #include "DownloadInfo.h"
 
 class NzbFile

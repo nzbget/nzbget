@@ -23,25 +23,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <ctype.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
-
 #include "nzbget.h"
 #include "Util.h"
 #include "ParParser.h"

@@ -26,8 +26,6 @@
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
-#include <vector>
-
 #include "Thread.h"
 #include "Log.h"
 

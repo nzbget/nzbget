@@ -23,29 +23,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-#include <errno.h>
-
-#ifdef HAVE_OPENSSL
-#include <openssl/rsa.h>
-#include <openssl/sha.h>
-#include <openssl/pem.h>
-#endif /* HAVE_OPENSSL */
-
 #include "nzbget.h"
 #include "Log.h"
 #include "Util.h"

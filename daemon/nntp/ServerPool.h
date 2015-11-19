@@ -27,9 +27,6 @@
 #ifndef SERVERPOOL_H
 #define SERVERPOOL_H
 
-#include <vector>
-#include <time.h>
-
 #include "Log.h"
 #include "Thread.h"
 #include "NewsServer.h"

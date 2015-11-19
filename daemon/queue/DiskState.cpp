@@ -23,27 +23,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#else
-#include <pthread.h>
-#include <unistd.h>
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <time.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <deque>
-#include <algorithm>
-
 #include "nzbget.h"
 #include "DiskState.h"
 #include "Options.h"

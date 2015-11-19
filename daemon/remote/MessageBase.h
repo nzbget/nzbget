@@ -27,10 +27,6 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-#if (!(defined(WIN32) && _MSC_VER < 1600))
-#include <stdint.h>
-#endif
-
 static const int32_t NZBMESSAGE_SIGNATURE = 0x6E7A6228; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;

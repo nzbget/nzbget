@@ -26,12 +26,6 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#ifdef DIRBROWSER_SNAPSHOT
-#include <deque>
-#endif
-#include <time.h>
-#include <stdarg.h>
-
 #ifdef WIN32
 extern int optind, opterr;
 extern char *optarg;

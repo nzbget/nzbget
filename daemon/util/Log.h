@@ -27,10 +27,6 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include <deque>
-#include <list>
-#include <time.h>
-
 #include "Thread.h"
 
 void error(const char* msg, ...);

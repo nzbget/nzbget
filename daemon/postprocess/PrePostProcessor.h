@@ -26,8 +26,6 @@
 #ifndef PREPOSTPROCESSOR_H
 #define PREPOSTPROCESSOR_H
 
-#include <deque>
-
 #include "Thread.h"
 #include "Observer.h"
 #include "DownloadInfo.h"

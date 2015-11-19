@@ -24,15 +24,13 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
+#include "nzbget.h"
 
 #ifndef DISABLE_CURSES
+
+// "ncurses.h" contains many global defines such as for "OK" or "clear" which we sure don't want
+// everywhere in the project. For that reason we include "ncurses.h" directly here instead of
+// putting it into global header file "nzbget.h".
 
 #ifdef HAVE_NCURSES_H
 #include <ncurses.h>
@@ -41,25 +39,9 @@
 #include <ncurses/ncurses.h>
 #endif
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-
-#include "nzbget.h"
 #include "NCursesFrontend.h"
 #include "Options.h"
 #include "Util.h"
-
-#ifdef HAVE_CURSES_H
-// curses.h header must be included last to avoid problems on Solaris
-// (and possibly other systems, that uses curses.h (not ncurses.h)
-#include <curses.h>
-// "#undef erase" is neccessary on Solaris
-#undef erase
-#endif
 
 #ifndef WIN32
 // curses.h on Solaris declares "clear()" via DEFINE. That causes problems, because

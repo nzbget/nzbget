@@ -24,35 +24,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#ifdef WIN32
-#include <winsvc.h>
-#else
-#include <unistd.h>
-#include <pwd.h>
-#include <grp.h>
-#ifdef HAVE_SYS_PRCTL_H
-#include <sys/prctl.h>
-#endif
-#include <signal.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <fcntl.h>
-#ifndef DISABLE_PARCHECK
-#include <iostream>
-#endif
-
 #include "nzbget.h"
 #include "ServerPool.h"
 #include "Log.h"

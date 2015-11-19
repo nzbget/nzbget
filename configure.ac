@@ -311,20 +311,13 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	dnl PAR2 checks. 
 	dnl 
 	dnl Checks for header files.
-	AC_HEADER_DIRENT
-	AC_HEADER_STDBOOL
-	AC_HEADER_STDC
-	AC_CHECK_HEADERS([stdio.h] [endian.h] [getopt.h])
+	AC_CHECK_HEADERS([endian.h] [getopt.h])
 	dnl Checks for typedefs, structures, and compiler characteristics.
 	AC_TYPE_SIZE_T
 	AC_C_BIGENDIAN
-	AC_C_CONST
-	AC_C_INLINE
 	AC_FUNC_FSEEKO
 	dnl Checks for library functions.
-	AC_FUNC_MEMCMP
-	AC_CHECK_FUNCS([stricmp] [strcasecmp])
-	AC_CHECK_FUNCS([strchr] [memcpy])
+	AC_CHECK_FUNCS([stricmp])
 	AC_CHECK_FUNCS([getopt])
 	AM_CONDITIONAL(WITH_PAR2, true)
 else

@@ -26,8 +26,6 @@
 #ifndef QUEUESCRIPT_H
 #define QUEUESCRIPT_H
 
-#include <list>
-
 #include "DownloadInfo.h"
 #include "ScriptConfig.h"
 

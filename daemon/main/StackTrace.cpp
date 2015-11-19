@@ -23,32 +23,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
-#ifdef WIN32
-#include <dbghelp.h>
-#else
-#include <unistd.h>
-#include <sys/resource.h>
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_PRCTL_H
-#include <sys/prctl.h>
-#endif
-#ifdef HAVE_BACKTRACE
-#include <execinfo.h>
-#endif
-
 #include "nzbget.h"
 #include "Log.h"
 #include "Options.h"

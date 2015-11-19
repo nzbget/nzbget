@@ -17,6 +17,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "par2cmdline.h"
 
 MAGIC      packet_magic                = {{'P', 'A', 'R', '2', '\0','P', 'K', 'T'}};

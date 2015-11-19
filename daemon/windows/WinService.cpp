@@ -23,15 +23,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include "win32.h"
-
-#include <string.h>
-#include <stdio.h>
-
 #include "nzbget.h"
 #include "Log.h"
 #include "WinService.h"

@@ -26,8 +26,6 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include <deque>
-#include <time.h>
 #include "DownloadInfo.h"
 #include "Thread.h"
 #include "Service.h"

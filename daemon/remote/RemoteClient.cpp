@@ -24,26 +24,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#endif
-#include <stdarg.h>
-
 #include "nzbget.h"
 #include "RemoteClient.h"
 #include "DownloadInfo.h"

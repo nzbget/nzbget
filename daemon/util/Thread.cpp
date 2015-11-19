@@ -23,26 +23,7 @@
  *
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-
-#ifdef WIN32
-#include <process.h>
-#else
-#include <fcntl.h>
-#include <pthread.h>
-#endif
-
+#include "nzbget.h"
 #include "Log.h"
 #include "Thread.h"
 

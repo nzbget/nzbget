@@ -26,10 +26,6 @@
 #ifndef FEEDCOORDINATOR_H
 #define FEEDCOORDINATOR_H
 
-#include <deque>
-#include <list>
-#include <time.h>
-
 #include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"

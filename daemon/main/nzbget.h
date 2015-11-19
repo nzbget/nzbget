@@ -26,9 +26,222 @@
 #ifndef NZBGET_H
 #define NZBGET_H
 
+/***************** DEFINES FOR WINDOWS *****************/
 #ifdef WIN32
 
-// WIN32
+/* Define to 1 to not use curses */
+//#define DISABLE_CURSES
+
+/* Define to 1 to disable smart par-verification and restoration */
+//#define DISABLE_PARCHECK
+
+/* Define to 1 to disable TLS/SSL-support. */
+//#define DISABLE_TLS
+
+#ifndef DISABLE_TLS
+/* Define to 1 to use OpenSSL library for TLS/SSL-support */
+#define HAVE_OPENSSL
+/* Define to 1 to use GnuTLS library for TLS/SSL-support */
+//#define HAVE_LIBGNUTLS
+#endif
+
+/* Define to the name of macro which returns the name of function being
+   compiled */
+#define FUNCTION_MACRO_NAME __FUNCTION__
+
+/* Define to 1 if ctime_r takes 2 arguments */
+#undef HAVE_CTIME_R_2
+
+/* Define to 1 if ctime_r takes 3 arguments */
+#define HAVE_CTIME_R_3
+
+/* Define to 1 if getopt_long is supported */
+#undef HAVE_GETOPT_LONG
+
+/* Define to 1 if variadic macros are supported */
+#define HAVE_VARIADIC_MACROS
+
+/* Define to 1 if libpar2 supports cancelling (needs a special patch) */
+#define HAVE_PAR2_CANCEL
+
+/* Define to 1 if function GetAddrInfo is supported */
+#define HAVE_GETADDRINFO
+
+/* Determine what socket length (socklen_t) data type is */
+#define SOCKLEN_T socklen_t
+
+/* Define to 1 if you have the <regex.h> header file. */
+#define HAVE_REGEX_H 1
+
+/* Suppress warnings */
+#define _CRT_SECURE_NO_DEPRECATE
+
+/* Suppress warnings */
+#define _CRT_NONSTDC_NO_WARNINGS
+
+#define _USE_32BIT_TIME_T
+
+#if _WIN32_WINNT < 0x0501
+#undef _WIN32_WINNT
+#define _WIN32_WINNT   0x0501
+#endif
+
+#ifdef _DEBUG
+// detection of memory leaks
+#define _CRTDBG_MAP_ALLOC
+#endif
+
+#pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
+#pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
+
+#endif
+
+
+/***************** GLOBAL INCLUDES *****************/
+
+#ifdef WIN32
+
+// WINDOWS INCLUDES
+
+// Using "WIN32_LEAN_AND_MEAN" to disable including on many unneeded headers
+#define WIN32_LEAN_AND_MEAN
+
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#include <winsvc.h>
+#include <direct.h>
+#include <shlobj.h>
+#include <dbghelp.h>
+#include <mmsystem.h>
+#include <io.h>
+#include <process.h>
+#include <WinIoCtl.h>
+#include <wincon.h>
+#include <shellapi.h>
+#include <winreg.h>
+
+#include <comutil.h>
+#import <msxml.tlb> named_guids
+using namespace MSXML;
+
+#if _MSC_VER >= 1600
+#include <stdint.h>
+#endif
+
+#ifdef _DEBUG
+#include <crtdbg.h>
+#endif
+
+#else
+
+// POSIX INCLUDES
+
+#include "config.h"
+
+#include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
+#include <signal.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/statvfs.h>
+#include <sys/wait.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdint.h>
+#include <pwd.h>
+#include <dirent.h>
+
+#include <libxml/parser.h>
+#include <libxml/xmlreader.h>
+#include <libxml/xmlerror.h>
+#include <libxml/entities.h>
+
+#ifdef HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
+#endif
+
+#ifdef HAVE_BACKTRACE
+#include <execinfo.h>
+#endif
+
+#endif /* POSIX INCLUDES */
+
+// COMMON INCLUDES
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <time.h>
+#include <ctype.h>
+
+#include <string>
+#include <vector>
+#include <deque>
+#include <list>
+#include <set>
+#include <map>
+#include <algorithm>
+#include <iostream>
+#include <fstream>
+
+#ifdef HAVE_LIBGNUTLS
+#include <gnutls/gnutls.h>
+#if GNUTLS_VERSION_NUMBER <= 0x020b00
+#define NEED_GCRYPT_LOCKING
+#endif
+#ifdef NEED_GCRYPT_LOCKING
+#include <gcrypt.h>
+#endif /* NEED_GCRYPT_LOCKING */
+#endif /* HAVE_LIBGNUTLS */
+
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/rsa.h>
+#include <openssl/sha.h>
+#include <openssl/pem.h>
+#endif /* HAVE_OPENSSL */
+
+#ifdef HAVE_REGEX_H
+#include <regex.h>
+#endif
+
+#ifndef DISABLE_GZIP
+#include <zlib.h>
+#endif
+
+#ifndef DISABLE_PARCHECK
+#include <assert.h>
+#include <iomanip>
+#include <cassert>
+#ifdef HAVE_MEMORY_H
+#  include <memory.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
+#endif /* NOT DISABLE_PARCHECK */
+
+
+/***************** GLOBAL FUNCTION AND CONST OVERRIDES *****************/
+
+#ifdef WIN32
+
+// WINDOWS
 
 #define snprintf _snprintf
 #ifndef strdup
@@ -39,7 +252,7 @@
 #define gmtime_r(time, tm) gmtime_s(tm, time)
 #define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
 #define strerror_r(errnum, buffer, size) strerror_s(buffer, size, errnum)
-#if (_MSC_VER < 1600)
+#if _MSC_VER < 1600
 #define int32_t __int32
 #endif
 #define mkdir(dir, flags) _mkdir(dir)
@@ -62,7 +275,8 @@
 #define atoll _atoi64
 #define fseek _fseeki64
 #define ftell _ftelli64
-#if _MSC_VER < 1800 // va_copy is available in vc2013 and onwards
+// va_copy is available in vc2013 and onwards
+#if _MSC_VER < 1800
 #define va_copy(d,s) ((d) = (s))
 #endif
 #ifndef FSCTL_SET_SPARSE
@@ -79,9 +293,6 @@
 // redefine "exit" to avoid printing memory leaks report when terminated because of wrong command line switches
 #define exit(code) ExitProcess(code)
 #endif
-
-#pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
-#pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 
 #else
 
@@ -101,11 +312,13 @@
 #define FOPEN_WBP "wb+"
 #define FOPEN_AB "ab"
 #define FOPEN_ABP "ab+"
+#define CHILD_WATCHDOG 1
 
-#endif
+#endif /* POSIX */
 
+// COMMON DEFINES FOR ALL PLATFORMS
 #ifndef SHUT_RDWR
 #define SHUT_RDWR 2
 #endif
 
-#endif
+#endif /* NZBGET_H */

@@ -23,29 +23,11 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-#include <sys/stat.h>
-#include <stdio.h>
-
 #include "nzbget.h"
 #include "SchedulerScript.h"
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
-
 
 SchedulerScriptController::~SchedulerScriptController()
 {

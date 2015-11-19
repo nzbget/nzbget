@@ -26,9 +26,6 @@
 #ifndef PARCOORDINATOR_H
 #define PARCOORDINATOR_H
 
-#include <list>
-#include <deque>
-
 #include "DownloadInfo.h"
 
 #ifndef DISABLE_PARCHECK

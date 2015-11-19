@@ -26,9 +26,6 @@
 #ifndef COMMANDLINEPARSER_H
 #define COMMANDLINEPARSER_H
 
-#include <vector>
-#include <list>
-#include <time.h>
 
 class CommandLineParser
 {

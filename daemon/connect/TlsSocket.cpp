@@ -22,53 +22,10 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
-#ifdef WIN32
-#define SKIP_DEFAULT_WINDOWS_HEADERS
-#include "win32.h"
-#endif
+#include "nzbget.h"
 
 #ifndef DISABLE_TLS
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <strings.h>
-#endif
-#include <ctype.h>
-#include <limits.h>
-#include <time.h>
-#include <errno.h>
-#include <list>
-
-#ifdef WIN32
-#include "nzbget.h"
-#endif
-
-#ifdef HAVE_LIBGNUTLS
-#include <gnutls/gnutls.h>
-#if GNUTLS_VERSION_NUMBER <= 0x020b00
-#define NEED_GCRYPT_LOCKING
-#endif
-#ifdef NEED_GCRYPT_LOCKING
-#include <gcrypt.h>
-#endif /* NEED_GCRYPT_LOCKING */
-#endif /* HAVE_LIBGNUTLS */
-#ifdef HAVE_OPENSSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#endif /* HAVE_OPENSSL */
-
-#ifndef WIN32
-#include "nzbget.h"
-#endif
 
 #include "TlsSocket.h"
 #include "Thread.h"

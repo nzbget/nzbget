@@ -26,9 +26,6 @@
 #ifndef STATMETER_H
 #define STATMETER_H
 
-#include <vector>
-#include <time.h>
-
 #include "Log.h"
 #include "Thread.h"
 

@@ -24,28 +24,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <string.h>
-#include <list>
-#include <ctype.h>
-#ifdef WIN32
-#include <comutil.h>
-#import <msxml.tlb> named_guids
-using namespace MSXML;
-#else
-#include <libxml/parser.h>
-#include <libxml/xmlreader.h>
-#include <libxml/xmlerror.h>
-#include <libxml/entities.h>
-#endif
-
 #include "nzbget.h"
 #include "NzbFile.h"
 #include "Log.h"

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,18 +22,5 @@
  *
  */
 
-
-#ifndef PARPARSER_H
-#define PARPARSER_H
-
-class ParParser
-{
-public:
-	typedef std::deque<char*>		ParFileList;
-
-	static bool			FindMainPars(const char* path, ParFileList* fileList);
-	static bool			ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks);
-	static bool			SameParCollection(const char* filename1, const char* filename2);
-};
-
-#endif
+ 
+#include "nzbget.h"
