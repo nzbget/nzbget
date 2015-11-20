@@ -249,7 +249,7 @@ void WinConsole::CreateResources()
 	m_titleFont = CreateFont(height, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "Tahoma");
 	ReleaseDC(NULL, hdc);
 
-	m_handCursor = LoadCursor(NULL, MAKEINTRESOURCE(IDC_HAND));
+	m_handCursor = LoadCursor(NULL, IDC_HAND);
 	m_aboutIcon = (HICON)LoadImage(m_instance, MAKEINTRESOURCE(IDI_MAINICON), IMAGE_ICON, 64, 64, 0);
 	m_runningIcon = (HICON)LoadImage(m_instance, MAKEINTRESOURCE(IDI_MAINICON), IMAGE_ICON, 48, 48, 0);
 
