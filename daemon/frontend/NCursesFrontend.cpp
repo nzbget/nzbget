@@ -597,7 +597,7 @@ void NCursesFrontend::PrintStatus()
 	int currentDownloadSpeed = m_standBy ? 0 : m_currentDownloadSpeed;
 	if (currentDownloadSpeed > 0 && !m_pauseDownload)
 	{
-		long long remain_sec = (long long)(m_remainingSize / currentDownloadSpeed);
+		int64 remain_sec = (int64)(m_remainingSize / currentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
@@ -731,8 +731,8 @@ void NCursesFrontend::PrintFileQueue()
 	DownloadQueue* downloadQueue = LockQueue();
 
 	int lineNr = m_queueWinTop + 1;
-	long long remaining = 0;
-	long long paused = 0;
+	int64 remaining = 0;
+	int64 paused = 0;
 	int pausedFiles = 0;
 	int fileNum = 0;
 
@@ -935,8 +935,8 @@ void NCursesFrontend::PrintGroupQueue()
 			}
 		}
 
-		long long remaining = 0;
-		long long paused = 0;
+		int64 remaining = 0;
+		int64 paused = 0;
 		i = 0;
 		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
 		{
@@ -992,7 +992,7 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 		downloading = " *";
 	}
 
-	long long unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
+	int64 unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
 
 	char remaining[20];
 	Util::FormatSize(remaining, sizeof(remaining), unpausedRemainingSize);
@@ -1046,7 +1046,7 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 		}
 		else if (currentDownloadSpeed > 0 && !m_pauseDownload)
 		{
-			long long remain_sec = (long long)(unpausedRemainingSize / currentDownloadSpeed);
+			int64 remain_sec = (int64)(unpausedRemainingSize / currentDownloadSpeed);
 			int h = (int)(remain_sec / 3600);
 			int m = (int)((remain_sec % 3600) / 60);
 			int s = (int)(remain_sec % 60);

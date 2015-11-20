@@ -103,12 +103,12 @@ static void openssl_locking(int mode, int n, const char *file, int line)
 }
 
 /*
-static unsigned long openssl_thread_id(void)
+static uint32 openssl_thread_id(void)
 {
 #ifdef WIN32
-	return (unsigned long)GetCurrentThreadId();
+	return (uint32)GetCurrentThreadId();
 #else
-	return (unsigned long)pthread_self();
+	return (uint32)pthread_self();
 #endif
 }
 */

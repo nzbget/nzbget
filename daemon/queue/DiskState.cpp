@@ -469,16 +469,16 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
 
 	fprintf(outfile, "%u,%u\n", nzbInfo->GetFullContentHash(), nzbInfo->GetFilteredContentHash());
 
-	unsigned long High1, Low1, High2, Low2, High3, Low3;
+	uint32 High1, Low1, High2, Low2, High3, Low3;
 	Util::SplitInt64(nzbInfo->GetSize(), &High1, &Low1);
 	Util::SplitInt64(nzbInfo->GetSuccessSize(), &High2, &Low2);
 	Util::SplitInt64(nzbInfo->GetFailedSize(), &High3, &Low3);
-	fprintf(outfile, "%lu,%lu,%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2, High3, Low3);
+	fprintf(outfile, "%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
 
 	Util::SplitInt64(nzbInfo->GetParSize(), &High1, &Low1);
 	Util::SplitInt64(nzbInfo->GetParSuccessSize(), &High2, &Low2);
 	Util::SplitInt64(nzbInfo->GetParFailedSize(), &High3, &Low3);
-	fprintf(outfile, "%lu,%lu,%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2, High3, Low3);
+	fprintf(outfile, "%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
 
 	fprintf(outfile, "%i,%i,%i\n", nzbInfo->GetTotalArticles(), nzbInfo->GetSuccessArticles(), nzbInfo->GetFailedArticles());
 
@@ -486,14 +486,14 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
 	fprintf(outfile, "%i,%i\n", (int)nzbInfo->GetDupeMode(), nzbInfo->GetDupeScore());
 
 	Util::SplitInt64(nzbInfo->GetDownloadedSize(), &High1, &Low1);
-	fprintf(outfile, "%lu,%lu,%i,%i,%i,%i,%i\n", High1, Low1, nzbInfo->GetDownloadSec(), nzbInfo->GetPostTotalSec(),
+	fprintf(outfile, "%u,%u,%i,%i,%i,%i,%i\n", High1, Low1, nzbInfo->GetDownloadSec(), nzbInfo->GetPostTotalSec(),
 		nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec());
 
 	fprintf(outfile, "%i\n", (int)nzbInfo->GetCompletedFiles()->size());
 	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* completedFile = *it;
-		fprintf(outfile, "%i,%i,%lu,%s\n", completedFile->GetId(), (int)completedFile->GetStatus(),
+		fprintf(outfile, "%i,%i,%u,%s\n", completedFile->GetId(), (int)completedFile->GetStatus(),
 			completedFile->GetCrc(), completedFile->GetFileName());
 	}
 
@@ -796,7 +796,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 
 	if (true) // clang requires a block for goto to work
 	{
-		unsigned int fullContentHash = 0, filteredContentHash = 0;
+		uint32 fullContentHash = 0, filteredContentHash = 0;
 		if (formatVersion >= 34)
 		{
 			if (fscanf(infile, "%u,%u\n", &fullContentHash, &filteredContentHash) != 2) goto error;
@@ -811,15 +811,15 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 
 	if (formatVersion >= 28)
 	{
-		unsigned long High1, Low1, High2, Low2, High3, Low3;
-		if (fscanf(infile, "%lu,%lu,%lu,%lu,%lu,%lu\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
+		uint32 High1, Low1, High2, Low2, High3, Low3;
+		if (fscanf(infile, "%u,%u,%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
 		nzbInfo->SetSize(Util::JoinInt64(High1, Low1));
 		nzbInfo->SetSuccessSize(Util::JoinInt64(High2, Low2));
 		nzbInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
 		nzbInfo->SetCurrentSuccessSize(nzbInfo->GetSuccessSize());
 		nzbInfo->SetCurrentFailedSize(nzbInfo->GetFailedSize());
 
-		if (fscanf(infile, "%lu,%lu,%lu,%lu,%lu,%lu\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
+		if (fscanf(infile, "%u,%u,%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
 		nzbInfo->SetParSize(Util::JoinInt64(High1, Low1));
 		nzbInfo->SetParSuccessSize(Util::JoinInt64(High2, Low2));
 		nzbInfo->SetParFailedSize(Util::JoinInt64(High3, Low3));
@@ -828,8 +828,8 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 	}
 	else
 	{
-		unsigned long High, Low;
-		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
+		uint32 High, Low;
+		if (fscanf(infile, "%u,%u\n", &High, &Low) != 2) goto error;
 		nzbInfo->SetSize(Util::JoinInt64(High, Low));
 	}
 
@@ -870,8 +870,8 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 
 	if (formatVersion >= 48)
 	{
-		unsigned long High1, Low1, downloadSec, postTotalSec, parSec, repairSec, unpackSec;
-		if (fscanf(infile, "%lu,%lu,%i,%i,%i,%i,%i\n", &High1, &Low1, &downloadSec, &postTotalSec, &parSec, &repairSec, &unpackSec) != 7) goto error;
+		uint32 High1, Low1, downloadSec, postTotalSec, parSec, repairSec, unpackSec;
+		if (fscanf(infile, "%u,%u,%i,%i,%i,%i,%i\n", &High1, &Low1, &downloadSec, &postTotalSec, &parSec, &repairSec, &unpackSec) != 7) goto error;
 		nzbInfo->SetDownloadedSize(Util::JoinInt64(High1, Low1));
 		nzbInfo->SetDownloadSec(downloadSec);
 		nzbInfo->SetPostTotalSec(postTotalSec);
@@ -892,20 +892,20 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 			int id = 0;
 			char* fileName = buf;
 			int status = 0;
-			unsigned long crc = 0;
+			uint32 crc = 0;
 
 			if (formatVersion >= 49)
 			{
 				if (formatVersion >= 50)
 				{
-					if (sscanf(buf, "%i,%i,%lu", &id, &status, &crc) != 3) goto error;
+					if (sscanf(buf, "%i,%i,%u", &id, &status, &crc) != 3) goto error;
 					fileName = strchr(buf, ',');
 					if (fileName) fileName = strchr(fileName+1, ',');
 					if (fileName) fileName = strchr(fileName+1, ',');
 				}
 				else
 				{
-					if (sscanf(buf, "%i,%lu", &status, &crc) != 2) goto error;
+					if (sscanf(buf, "%i,%u", &status, &crc) != 2) goto error;
 					fileName = strchr(buf + 2, ',');
 				}
 				if (fileName)
@@ -988,7 +988,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
 		for (int i = 0; i < fileCount; i++)
 		{
-			unsigned int id, paused, time = 0;
+			uint32 id, paused, time = 0;
 			int priority = 0, extraPriority = 0;
 
 			if (formatVersion >= 44)
@@ -1041,8 +1041,8 @@ bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, FILE* infil
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		unsigned int id, nzbIndex, paused;
-		unsigned int time = 0;
+		uint32 id, nzbIndex, paused;
+		uint32 time = 0;
 		int priority = 0, extraPriority = 0;
 		if (formatVersion >= 17)
 		{
@@ -1165,12 +1165,12 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 	fprintf(outfile, "%s\n", fileInfo->GetSubject());
 	fprintf(outfile, "%s\n", fileInfo->GetFilename());
 
-	unsigned long High, Low;
+	uint32 High, Low;
 	Util::SplitInt64(fileInfo->GetSize(), &High, &Low);
-	fprintf(outfile, "%lu,%lu\n", High, Low);
+	fprintf(outfile, "%u,%u\n", High, Low);
 
 	Util::SplitInt64(fileInfo->GetMissedSize(), &High, &Low);
-	fprintf(outfile, "%lu,%lu\n", High, Low);
+	fprintf(outfile, "%u,%u\n", High, Low);
 
 	fprintf(outfile, "%i\n", (int)fileInfo->GetParFile());
 	fprintf(outfile, "%i,%i\n", fileInfo->GetTotalArticles(), fileInfo->GetMissedArticles());
@@ -1250,14 +1250,14 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 		if (fileSummary) fileInfo->SetFilenameConfirmed(filenameConfirmed);
 	}
 
-	unsigned long High, Low;
-	if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
+	uint32 High, Low;
+	if (fscanf(infile, "%u,%u\n", &High, &Low) != 2) goto error;
 	if (fileSummary) fileInfo->SetSize(Util::JoinInt64(High, Low));
 	if (fileSummary) fileInfo->SetRemainingSize(fileInfo->GetSize());
 
 	if (formatVersion >= 2)
 	{
-		if (fscanf(infile, "%lu,%lu\n", &High, &Low) != 2) goto error;
+		if (fscanf(infile, "%u,%u\n", &High, &Low) != 2) goto error;
 		if (fileSummary) fileInfo->SetMissedSize(Util::JoinInt64(High, Low));
 		if (fileSummary) fileInfo->SetRemainingSize(fileInfo->GetSize() - fileInfo->GetMissedSize());
 
@@ -1337,11 +1337,11 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 
 	fprintf(outfile, "%i,%i\n", fileInfo->GetSuccessArticles(), fileInfo->GetFailedArticles());
 
-	unsigned long High1, Low1, High2, Low2, High3, Low3;
+	uint32 High1, Low1, High2, Low2, High3, Low3;
 	Util::SplitInt64(fileInfo->GetRemainingSize(), &High1, &Low1);
 	Util::SplitInt64(fileInfo->GetSuccessSize(), &High2, &Low2);
 	Util::SplitInt64(fileInfo->GetFailedSize(), &High3, &Low3);
-	fprintf(outfile, "%lu,%lu,%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2, High3, Low3);
+	fprintf(outfile, "%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
 
 	SaveServerStats(fileInfo->GetServerStats(), outfile);
 
@@ -1349,8 +1349,8 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 	{
 		ArticleInfo* articleInfo = *it;
-		fprintf(outfile, "%i,%lu,%i,%lu\n", (int)articleInfo->GetStatus(), (unsigned long)articleInfo->GetSegmentOffset(),
-			articleInfo->GetSegmentSize(), (unsigned long)articleInfo->GetCrc());
+		fprintf(outfile, "%i,%u,%i,%u\n", (int)articleInfo->GetStatus(), (uint32)articleInfo->GetSegmentOffset(),
+			articleInfo->GetSegmentSize(), (uint32)articleInfo->GetCrc());
 	}
 
 	fclose(outfile);
@@ -1396,8 +1396,8 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	fileInfo->SetSuccessArticles(successArticles);
 	fileInfo->SetFailedArticles(failedArticles);
 
-	unsigned long High1, Low1, High2, Low2, High3, Low3;
-	if (fscanf(infile, "%lu,%lu,%lu,%lu,%lu,%lu\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
+	uint32 High1, Low1, High2, Low2, High3, Low3;
+	if (fscanf(infile, "%u,%u,%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
 	fileInfo->SetRemainingSize(Util::JoinInt64(High1, Low1));
 	fileInfo->SetSuccessSize(Util::JoinInt64(High2, Low3));
 	fileInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
@@ -1421,9 +1421,9 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 
 		if (formatVersion >= 2)
 		{
-			unsigned long segmentOffset, crc;
+			uint32 segmentOffset, crc;
 			int segmentSize;
-			if (fscanf(infile, "%i,%lu,%i,%lu\n", &statusInt, &segmentOffset, &segmentSize, &crc) != 4) goto error;
+			if (fscanf(infile, "%i,%u,%i,%u\n", &statusInt, &segmentOffset, &segmentSize, &crc) != 4) goto error;
 			pa->SetSegmentOffset(segmentOffset);
 			pa->SetSegmentSize(segmentSize);
 			pa->SetCrc(crc);
@@ -1512,7 +1512,7 @@ bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, 
 	{
 		PostInfo* postInfo = NULL;
 		int nzbId = 0;
-		unsigned int nzbIndex = 0, stage, dummy;
+		uint32 nzbIndex = 0, stage, dummy;
 		if (formatVersion < 19)
 		{
 			if (fscanf(infile, "%i,%i,%i,%i\n", &nzbIndex, &dummy, &dummy, &stage) != 4) goto error;
@@ -1808,9 +1808,9 @@ error:
 
 void DiskState::SaveDupInfo(DupInfo* dupInfo, FILE* outfile)
 {
-	unsigned long High, Low;
+	uint32 High, Low;
 	Util::SplitInt64(dupInfo->GetSize(), &High, &Low);
-	fprintf(outfile, "%i,%lu,%lu,%u,%u,%i,%i\n", (int)dupInfo->GetStatus(), High, Low,
+	fprintf(outfile, "%i,%u,%u,%u,%u,%i,%i\n", (int)dupInfo->GetStatus(), High, Low,
 		dupInfo->GetFullContentHash(), dupInfo->GetFilteredContentHash(),
 		dupInfo->GetDupeScore(), (int)dupInfo->GetDupeMode());
 	fprintf(outfile, "%s\n", dupInfo->GetName());
@@ -1822,29 +1822,29 @@ bool DiskState::LoadDupInfo(DupInfo* dupInfo, FILE* infile, int formatVersion)
 	char buf[1024];
 
 	int status;
-	unsigned long High, Low;
-	unsigned int fullContentHash, filteredContentHash = 0;
+	uint32 High, Low;
+	uint32 fullContentHash, filteredContentHash = 0;
 	int dupeScore, dupe = 0, dupeMode = 0;
 
 	if (formatVersion >= 39)
 	{
-		if (fscanf(infile, "%i,%lu,%lu,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupeMode) != 7) goto error;
+		if (fscanf(infile, "%i,%u,%u,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupeMode) != 7) goto error;
 	}
 	else if (formatVersion >= 38)
 	{
-		if (fscanf(infile, "%i,%lu,%lu,%u,%u,%i,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupe, &dupeMode) != 8) goto error;
+		if (fscanf(infile, "%i,%u,%u,%u,%u,%i,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupe, &dupeMode) != 8) goto error;
 	}
 	else if (formatVersion >= 37)
 	{
-		if (fscanf(infile, "%i,%lu,%lu,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupe) != 7) goto error;
+		if (fscanf(infile, "%i,%u,%u,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupe) != 7) goto error;
 	}
 	else if (formatVersion >= 34)
 	{
-		if (fscanf(infile, "%i,%lu,%lu,%u,%u,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore) != 6) goto error;
+		if (fscanf(infile, "%i,%u,%u,%u,%u,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore) != 6) goto error;
 	}
 	else
 	{
-		if (fscanf(infile, "%i,%lu,%lu,%u,%i\n", &status, &High, &Low, &fullContentHash, &dupeScore) != 5) goto error;
+		if (fscanf(infile, "%i,%u,%u,%u,%i\n", &status, &High, &Low, &fullContentHash, &dupeScore) != 5) goto error;
 	}
 
 	dupInfo->SetStatus((DupInfo::EStatus)status);
@@ -1931,7 +1931,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 
 			if (formatVersion < 43)
 			{
-				unsigned int nzbIndex;
+				uint32 nzbIndex;
 				if (fscanf(infile, "%i\n", &nzbIndex) != 1) goto error;
 				nzbInfo = nzbList->at(nzbIndex - 1);
 			}
@@ -2232,7 +2232,7 @@ bool DiskState::LoadFeedStatus(Feeds* feeds, FILE* infile, int formatVersion)
 			if (filter[0] != 0) filter[strlen(filter)-1] = 0; // remove traling '\n'
 		}
 
-		unsigned int filterHash = 0;
+		uint32 filterHash = 0;
 		if (formatVersion >= 3)
 		{
 			if (fscanf(infile, "%u\n", &filterHash) != 1) goto error;
@@ -2360,12 +2360,12 @@ void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 	int remainingParCount = 0;
 	int successArticles = 0;
 	int failedArticles = 0;
-	long long remainingSize = 0;
-	long long pausedSize = 0;
-	long long successSize = 0;
-	long long failedSize = 0;
-	long long parSuccessSize = 0;
-	long long parFailedSize = 0;
+	int64 remainingSize = 0;
+	int64 pausedSize = 0;
+	int64 successSize = 0;
+	int64 failedSize = 0;
+	int64 parSuccessSize = 0;
+	int64 parFailedSize = 0;
 
 	for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
 	{
@@ -2802,10 +2802,10 @@ bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, FILE* outfile)
 
 		fprintf(outfile, "%i,%i,%i\n", serverVolume->GetFirstDay(), (int)serverVolume->GetDataTime(), (int)serverVolume->GetCustomTime());
 
-		unsigned long High1, Low1, High2, Low2;
+		uint32 High1, Low1, High2, Low2;
 		Util::SplitInt64(serverVolume->GetTotalBytes(), &High1, &Low1);
 		Util::SplitInt64(serverVolume->GetCustomBytes(), &High2, &Low2);
-		fprintf(outfile, "%lu,%lu,%lu,%lu\n", High1, Low1, High2, Low2);
+		fprintf(outfile, "%u,%u,%u,%u\n", High1, Low1, High2, Low2);
 
 		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume->BytesPerSeconds(),
 			serverVolume->BytesPerMinutes(), serverVolume->BytesPerHours(), serverVolume->BytesPerDays() };
@@ -2816,9 +2816,9 @@ bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, FILE* outfile)
 			fprintf(outfile, "%i\n", (int)volumeArray->size());
 			for (ServerVolume::VolumeArray::iterator it2 = volumeArray->begin(); it2 != volumeArray->end(); it2++)
 			{
-				long long bytes = *it2;
+				int64 bytes = *it2;
 				Util::SplitInt64(bytes, &High1, &Low1);
-				fprintf(outfile, "%lu,%lu\n", High1, Low1);
+				fprintf(outfile, "%u,%u\n", High1, Low1);
 			}
 		}
 	}
@@ -2853,17 +2853,17 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, F
 		}
 
 		int firstDay, dataTime, customTime;
-		unsigned long High1, Low1, High2 = 0, Low2 = 0;
+		uint32 High1, Low1, High2 = 0, Low2 = 0;
 		if (formatVersion >= 3)
 		{
 			if (fscanf(infile, "%i,%i,%i\n", &firstDay, &dataTime,&customTime) != 3) goto error;
-			if (fscanf(infile, "%lu,%lu,%lu,%lu\n", &High1, &Low1, &High2, &Low2) != 4) goto error;
+			if (fscanf(infile, "%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2) != 4) goto error;
 			if (serverVolume) serverVolume->SetCustomTime((time_t)customTime);
 		}
 		else
 		{
 			if (fscanf(infile, "%i,%i\n", &firstDay, &dataTime) != 2) goto error;
-			if (fscanf(infile, "%lu,%lu\n", &High1, &Low1) != 2) goto error;
+			if (fscanf(infile, "%u,%u\n", &High1, &Low1) != 2) goto error;
 		}
 		if (serverVolume) serverVolume->SetFirstDay(firstDay);
 		if (serverVolume) serverVolume->SetDataTime((time_t)dataTime);
@@ -2884,7 +2884,7 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, F
 
 			for (int j = 0; j < arrSize; j++)
 			{
-				if (fscanf(infile, "%lu,%lu\n", &High1, &Low1) != 2) goto error;
+				if (fscanf(infile, "%u,%u\n", &High1, &Low1) != 2) goto error;
 				if (volumeArray) (*volumeArray)[j] = Util::JoinInt64(High1, Low1);
 			}
 		}

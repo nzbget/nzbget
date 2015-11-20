@@ -34,10 +34,10 @@
 class ParCheckerMock: public ParChecker
 {
 private:
-	unsigned long	CalcFileCrc(const char* filename);
+	uint32	CalcFileCrc(const char* filename);
 protected:
 	virtual bool	RequestMorePars(int blockNeeded, int* blockFound) { return false; }
-	virtual EFileStatus	FindFileCrc(const char* filename, unsigned long* crc, SegmentList* segments);
+	virtual EFileStatus	FindFileCrc(const char* filename, uint32* crc, SegmentList* segments);
 public:
 					ParCheckerMock();
 	void			Execute();
@@ -76,7 +76,7 @@ void ParCheckerMock::CorruptFile(const char* filename, int offset)
 	fclose(file);
 }
 
-ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* filename, unsigned long* crc, SegmentList* segments)
+ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* filename, uint32* crc, SegmentList* segments)
 {
 	std::ifstream sm((TestUtil::WorkingDir() + "/crc.txt").c_str());
 	std::string smfilename, smcrc;
@@ -86,21 +86,21 @@ ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* filename, un
 		if (smfilename == filename)
 		{
 			*crc = strtoul(smcrc.c_str(), NULL, 16);
-			unsigned long realCrc = CalcFileCrc((TestUtil::WorkingDir() + "/" + filename).c_str());
+			uint32 realCrc = CalcFileCrc((TestUtil::WorkingDir() + "/" + filename).c_str());
 			return *crc == realCrc ? ParChecker::fsSuccess : ParChecker::fsUnknown;
 		}
 	}
 	return ParChecker::fsUnknown;
 }
 
-unsigned long ParCheckerMock::CalcFileCrc(const char* filename)
+uint32 ParCheckerMock::CalcFileCrc(const char* filename)
 {
 	FILE* infile = fopen(filename, FOPEN_RB);
 	REQUIRE(infile);
 
 	static const int BUFFER_SIZE = 1024 * 64;
-	unsigned char* buffer = (unsigned char*)malloc(BUFFER_SIZE);
-	unsigned long downloadCrc = 0xFFFFFFFF;
+	uchar* buffer = (uchar*)malloc(BUFFER_SIZE);
+	uint32 downloadCrc = 0xFFFFFFFF;
 
 	int cnt = BUFFER_SIZE;
 	while (cnt == BUFFER_SIZE)

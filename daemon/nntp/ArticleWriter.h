@@ -40,7 +40,7 @@ private:
 	const char*			m_resultFilename;
 	Decoder::EFormat	m_format;
 	char*				m_articleData;
-	long long			m_articleOffset;
+	int64				m_articleOffset;
 	int					m_articleSize;
 	int					m_articlePtr;
 	bool				m_flushing;
@@ -48,7 +48,7 @@ private:
 	char*				m_infoName;
 
 	bool				PrepareFile(char* line);
-	bool				CreateOutputFile(long long size);
+	bool				CreateOutputFile(int64 size);
 	void				BuildOutputFilename();
 	bool				IsFileCached();
 	void				SetWriteBuffer(FILE* outFile, int recSize);
@@ -63,7 +63,7 @@ public:
 	void				SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
 	void				SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
 	void				Prepare();
-	bool				Start(Decoder::EFormat format, const char* filename, long long fileSize, long long articleOffset, int articleSize);
+	bool				Start(Decoder::EFormat format, const char* filename, int64 fileSize, int64 articleOffset, int articleSize);
 	bool				Write(char* bufffer, int len);
 	void				Finish(bool success);
 	bool				GetDuplicate() { return m_duplicate; }

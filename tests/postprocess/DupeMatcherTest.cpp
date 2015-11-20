@@ -59,7 +59,7 @@ TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 	remove((nondupe + "/testfile.dat").c_str());
 
 	// now test
-	long long expectedSize = Util::FileSize((dupe1 + "/testfile.dat").c_str());
+	int64 expectedSize = Util::FileSize((dupe1 + "/testfile.dat").c_str());
 
 	DupeMatcher dupe1Matcher(dupe1.c_str(), expectedSize);
 	CHECK(dupe1Matcher.Prepare());

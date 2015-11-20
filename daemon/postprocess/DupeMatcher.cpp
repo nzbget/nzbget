@@ -35,10 +35,10 @@ class RarLister : public Thread, public ScriptController
 {
 private:
 	DupeMatcher*		m_owner;
-	long long			m_maxSize;
+	int64			m_maxSize;
 	bool				m_compressed;
 	bool				m_lastSizeMax;
-	long long			m_expectedSize;
+	int64			m_expectedSize;
 	char*				m_filenameBuf;
 	int					m_filenameBufLen;
 	char				m_lastFilename[1024];
@@ -49,13 +49,13 @@ protected:
 public:
 	virtual void		Run();
 	static bool			FindLargestFile(DupeMatcher* owner, const char* directory,
-							char* filenameBuf, int filenameBufLen, long long expectedSize,
-							int timeoutSec, long long* maxSize, bool* compressed);
+							char* filenameBuf, int filenameBufLen, int64 expectedSize,
+							int timeoutSec, int64* maxSize, bool* compressed);
 };
 
 bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
-	char* filenameBuf, int filenameBufLen, long long expectedSize,
-	int timeoutSec, long long* maxSize, bool* compressed)
+	char* filenameBuf, int filenameBufLen, int64 expectedSize,
+	int timeoutSec, int64* maxSize, bool* compressed)
 {
 	RarLister unrar;
 	unrar.m_owner = owner;
@@ -136,7 +136,7 @@ void RarLister::AddMessage(Message::EKind kind, const char* text)
 	else if (!strncasecmp(text, "        Size: ", 14))
 	{
 		m_lastSizeMax = false;
-		long long size = atoll(text + 14);
+		int64 size = atoll(text + 14);
 		if (size > m_maxSize)
 		{
 			m_maxSize = size;
@@ -160,7 +160,7 @@ void RarLister::AddMessage(Message::EKind kind, const char* text)
 }
 
 
-DupeMatcher::DupeMatcher(const char* destDir, long long expectedSize)
+DupeMatcher::DupeMatcher(const char* destDir, int64 expectedSize)
 {
 	m_destDir = strdup(destDir);
 	m_expectedSize = expectedSize;
@@ -173,16 +173,16 @@ DupeMatcher::~DupeMatcher()
 	free(m_destDir);
 }
 
-bool DupeMatcher::SizeDiffOK(long long size1, long long size2, int maxDiffPercent)
+bool DupeMatcher::SizeDiffOK(int64 size1, int64 size2, int maxDiffPercent)
 {
 	if (size1 == 0 || size2 == 0)
 	{
 		return false;
 	}
 
-	long long diff = size1 - size2;
+	int64 diff = size1 - size2;
 	diff = diff > 0 ? diff : -diff;
-	long long max = size1 > size2 ? size1 : size2;
+	int64 max = size1 > size2 ? size1 : size2;
 	int diffPercent = (int)(diff * 100 / max);
 	return diffPercent < maxDiffPercent;
 }
@@ -199,7 +199,7 @@ bool DupeMatcher::Prepare()
 
 bool DupeMatcher::MatchDupeContent(const char* dupeDir)
 {
-	long long dupeMaxSize = 0;
+	int64 dupeMaxSize = 0;
 	bool dupeCompressed = false;
 	char filename[1024];
 	FindLargestFile(dupeDir, filename, sizeof(filename), &dupeMaxSize, &dupeCompressed);
@@ -210,7 +210,7 @@ bool DupeMatcher::MatchDupeContent(const char* dupeDir)
 }
 
 void DupeMatcher::FindLargestFile(const char* directory, char* filenameBuf, int bufLen,
-	long long* maxSize, bool* compressed)
+	int64* maxSize, bool* compressed)
 {
 	*maxSize = 0;
 	*compressed = false;
@@ -224,7 +224,7 @@ void DupeMatcher::FindLargestFile(const char* directory, char* filenameBuf, int 
 			snprintf(fullFilename, 1024, "%s%c%s", directory, PATH_SEPARATOR, filename);
 			fullFilename[1024-1] = '\0';
 
-			long long fileSize = Util::FileSize(fullFilename);
+			int64 fileSize = Util::FileSize(fullFilename);
 			if (fileSize > *maxSize)
 			{
 				*maxSize = fileSize;

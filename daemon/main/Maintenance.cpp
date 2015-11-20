@@ -42,8 +42,8 @@ private:
 	const char*			m_inFilename;
 	const char*			m_sigFilename;
 	const char*			m_pubKeyFilename;
-	unsigned char		m_inHash[SHA256_DIGEST_LENGTH];
-	unsigned char		m_signature[256];
+	uchar		m_inHash[SHA256_DIGEST_LENGTH];
+	uchar		m_signature[256];
 	RSA*				m_pubKey;
 
 	bool				ReadSignature();
@@ -428,7 +428,7 @@ bool Signature::ReadSignature()
 	bool ok = false;
 	int titLen = strlen(sigTitle);
 	char buf[1024];
-	unsigned char* output = m_signature;
+	uchar* output = m_signature;
 	while (fgets(buf, sizeof(buf) - 1, infile))
 	{
 		if (!strncmp(buf, sigTitle, titLen))
@@ -441,13 +441,13 @@ bool Signature::ReadSignature()
 			}
 			for (; *hexSig && *(hexSig+1);)
 			{
-				unsigned char c1 = *hexSig++;
-				unsigned char c2 = *hexSig++;
+				uchar c1 = *hexSig++;
+				uchar c2 = *hexSig++;
 				c1 = '0' <= c1 && c1 <= '9' ? c1 - '0' : 'A' <= c1 && c1 <= 'F' ? c1 - 'A' + 10 :
 					'a' <= c1 && c1 <= 'f' ? c1 - 'a' + 10 : 0;
 				c2 = '0' <= c2 && c2 <= '9' ? c2 - '0' : 'A' <= c2 && c2 <= 'F' ? c2 - 'A' + 10 :
 					'a' <= c2 && c2 <= 'f' ? c2 - 'a' + 10 : 0;
-				unsigned char ch = (c1 << 4) + c2;
+				uchar ch = (c1 << 4) + c2;
 				*output++ = (char)ch;
 			}
 			ok = output == m_signature + sizeof(m_signature);

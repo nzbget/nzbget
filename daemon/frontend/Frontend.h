@@ -44,20 +44,20 @@ private:
 protected:
 	bool				m_summary;
 	bool				m_fileList;
-	unsigned int		m_neededLogEntries;
-	unsigned int		m_neededLogFirstId;
+	uint32				m_neededLogEntries;
+	uint32				m_neededLogFirstId;
 	int					m_updateInterval;
 
 	// summary
 	int					m_currentDownloadSpeed;
-	long long 			m_remainingSize;
+	int64 				m_remainingSize;
 	bool				m_pauseDownload;
 	int					m_downloadLimit;
 	int					m_threadCount;
 	int					m_postJobCount;
 	int					m_upTimeSec;
 	int					m_dnTimeSec;
-	long long			m_allBytes;
+	int64				m_allBytes;
 	bool				m_standBy;
 
 	bool				PrepareData();

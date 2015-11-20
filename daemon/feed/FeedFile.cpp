@@ -247,7 +247,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			if (attr)
 			{
 				_bstr_t bsize(attr->Gettext());
-				long long size = atoll(bsize);
+				int64 size = atoll(bsize);
 				feedItemInfo->SetSize(size);
 			}
 		}
@@ -278,7 +278,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 				if (attr)
 				{
 					_bstr_t bsize(attr->Gettext());
-					long long size = atoll(bsize);
+					int64 size = atoll(bsize);
 					feedItemInfo->SetSize(size);
 				}
 			}
@@ -403,7 +403,7 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 			}
 			else if (!strcmp("length", atts[0]))
 			{
-				long long size = atoll(atts[1]);
+				int64 size = atoll(atts[1]);
 				m_feedItemInfo->SetSize(size);
 			}
 		}
@@ -418,7 +418,7 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 		if (m_feedItemInfo->GetSize() == 0 &&
 			!strcmp("size", atts[1]))
 		{
-			long long size = atoll(atts[3]);
+			int64 size = atoll(atts[3]);
 			m_feedItemInfo->SetSize(size);
 		}
 

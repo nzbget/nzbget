@@ -103,7 +103,7 @@ protected:
 	bool				InitSocketOpts();
 	bool				ConnectWithTimeout(void* address, int address_len);
 #ifndef HAVE_GETADDRINFO
-	unsigned int		ResolveHostAddr(const char* host);
+	in_addr_t			ResolveHostAddr(const char* host);
 #endif
 #ifndef DISABLE_TLS
 	int					recv(SOCKET s, char* buf, int len, int flags);

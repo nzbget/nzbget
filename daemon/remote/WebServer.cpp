@@ -465,7 +465,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	bool gzip = m_gzip && bodyLen > MAX_UNCOMPRESSED_SIZE;
 	if (gzip)
 	{
-		unsigned int outLen = ZLib::GZipLen(bodyLen);
+		uint32 outLen = ZLib::GZipLen(bodyLen);
 		gbuf = (char*)malloc(outLen);
 		int gzippedLen = ZLib::GZip(body, bodyLen, gbuf, outLen);
 		if (gzippedLen > 0 && gzippedLen < bodyLen)

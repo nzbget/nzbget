@@ -45,15 +45,15 @@ private:
 	{
 	private:
 		char*			m_filename;
-		long long		m_size;
+		int64			m_size;
 		time_t			m_lastChange;
 
 	public:
 						FileData(const char* filename);
 						~FileData();
 		const char*		GetFilename() { return m_filename; }
-		long long		GetSize() { return m_size; }
-		void			SetSize(long long size) { m_size = size; }
+		int64			GetSize() { return m_size; }
+		void			SetSize(int64 size) { m_size = size; }
 		time_t			GetLastChange() { return m_lastChange; }
 		void			SetLastChange(time_t lastChange) { m_lastChange = lastChange; }
 	};

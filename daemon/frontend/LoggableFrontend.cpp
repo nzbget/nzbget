@@ -74,7 +74,7 @@ void LoggableFrontend::Update()
 			PrintSkip();
 			start = 0;
 		}
-		for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
+		for (uint32 i = (uint32)start; i < messages->size(); i++)
 		{
 			PrintMessage((*messages)[i]);
 			m_neededLogFirstId = (*messages)[i]->GetId();

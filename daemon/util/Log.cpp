@@ -113,14 +113,14 @@ void Log::Filelog(const char* msg, ...)
 	if (file)
 	{
 #ifdef WIN32
-		unsigned long processId = GetCurrentProcessId();
-		unsigned long threadId = GetCurrentThreadId();
+		uint64 processId = GetCurrentProcessId();
+		uint64 threadId = GetCurrentThreadId();
 #else
-		unsigned long processId = (unsigned long)getpid();
-		unsigned long threadId = (unsigned long)pthread_self();
+		uint64 processId = (uint64)getpid();
+		uint64 threadId = (uint64)pthread_self();
 #endif
 #ifdef DEBUG
-		fprintf(file, "%s\t%lu\t%lu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
+		fprintf(file, "%s\t%llu\t%llu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
 #else
 		fprintf(file, "%s\t%s%s", time, tmp2, LINE_ENDING);
 #endif
@@ -287,7 +287,7 @@ void detail(const char* msg, ...)
 //************************************************************
 // Message
 
-Message::Message(unsigned int id, EKind kind, time_t time, const char* text)
+Message::Message(uint32 id, EKind kind, time_t time, const char* text)
 {
 	m_id = id;
 	m_kind = kind;
@@ -335,7 +335,7 @@ void Log::AddMessage(Message::EKind kind, const char * text)
 
 	if (m_optInit && g_Options)
 	{
-		while (m_messages.size() > (unsigned int)g_Options->GetLogBufferSize())
+		while (m_messages.size() > (uint32)g_Options->GetLogBufferSize())
 		{
 			Message* message = m_messages.front();
 			delete message;
@@ -464,7 +464,7 @@ void Log::InitOptions()
 
 	m_idGen = 0;
 
-	for (unsigned int i = 0; i < m_messages.size(); )
+	for (uint32 i = 0; i < m_messages.size(); )
 	{
 		Message* message = m_messages.at(i);
 		Options::EMessageTarget target = Options::mtNone;

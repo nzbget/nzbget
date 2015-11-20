@@ -63,7 +63,7 @@ void ColoredFrontend::PrintStatus()
 
 	if (currentDownloadSpeed > 0 && !m_pauseDownload)
 	{
-		long long remain_sec = (long long)(m_remainingSize / currentDownloadSpeed);
+		int64 remain_sec = (int64)(m_remainingSize / currentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);

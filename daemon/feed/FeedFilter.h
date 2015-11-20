@@ -56,19 +56,19 @@ private:
 		char*			m_field;
 		ETermCommand	m_command;
 		char*			m_param;
-		long long		m_intParam;
+		int64			m_intParam;
 		double			m_fFloatParam;
 		bool			m_float;
 		RegEx*			m_regEx;
 		RefValues*		m_refValues;
 
 		bool			GetFieldData(const char* field, FeedItemInfo* feedItemInfo,
-							const char** StrValue, long long* IntValue);
+							const char** StrValue, int64* IntValue);
 		bool			ParseParam(const char* field, const char* param);
 		bool			ParseSizeParam(const char* param);
 		bool			ParseAgeParam(const char* param);
 		bool			ParseNumericParam(const char* param);
-		bool			MatchValue(const char* strValue, long long intValue);
+		bool			MatchValue(const char* strValue, int64 intValue);
 		bool			MatchText(const char* strValue);
 		bool			MatchRegex(const char* strValue);
 		void			FillWildMaskRefValues(const char* strValue, WildMask* mask, int refOffset);

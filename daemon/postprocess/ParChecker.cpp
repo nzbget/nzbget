@@ -358,7 +358,7 @@ bool MissingFilesComparator::operator()(CommandLine::ExtraFile* file1, CommandLi
 }
 
 
-ParChecker::Segment::Segment(bool success, long long offset, int size, unsigned long crc)
+ParChecker::Segment::Segment(bool success, int64 offset, int size, uint32 crc)
 {
 	m_success = success;
 	m_offset = offset;
@@ -1459,7 +1459,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 	}
 
 	// find file status and CRC computed during download
-	unsigned long downloadCrc;
+	uint32 downloadCrc;
 	SegmentList segments;
 	EFileStatus	fileStatus = FindFileCrc(Util::BaseFileName(filename), &downloadCrc, &segments);
 	ValidBlocks validBlocks;
@@ -1480,7 +1480,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 	*availableBlocks = 0;
 	u64 blocksize = ((Repairer*)m_repairer)->mainpacket->BlockSize();
 	std::deque<const VerificationHashEntry*> undoList;
-	for (unsigned int i = 0; i < packet->BlockCount(); i++)
+	for (uint32 i = 0; i < packet->BlockCount(); i++)
 	{
 		if (fileStatus == fsSuccess || validBlocks.at(i))
 		{
@@ -1513,7 +1513,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 	return fileStatus;
 }
 
-bool ParChecker::VerifySuccessDataFile(void* diskfile, void* sourcefile, unsigned long downloadCrc)
+bool ParChecker::VerifySuccessDataFile(void* diskfile, void* sourcefile, uint32 downloadCrc)
 {
 	Par2RepairerSourceFile* sourceFile = (Par2RepairerSourceFile*)sourcefile;
 	u64 blocksize = ((Repairer*)m_repairer)->mainpacket->BlockSize();
@@ -1527,12 +1527,12 @@ bool ParChecker::VerifySuccessDataFile(void* diskfile, void* sourcefile, unsigne
 	debug("Download-CRC: %.8x", downloadCrc);
 
 	// compute file CRC using CRCs of blocks
-	unsigned long parCrc = 0;
-	for (unsigned int i = 0; i < packet->BlockCount(); i++)
+	uint32 parCrc = 0;
+	for (uint32 i = 0; i < packet->BlockCount(); i++)
 	{
 		const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
 		u32 blockCrc = entry->crc;
-		parCrc = i == 0 ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (unsigned long)blocksize);
+		parCrc = i == 0 ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (uint32)blocksize);
 	}
 	debug("Block-CRC: %x, filename: %s", parCrc, Util::BaseFileName(sourceFile->GetTargetFile()->FileName().c_str()));
 
@@ -1543,17 +1543,17 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 {
 	Par2RepairerSourceFile* sourceFile = (Par2RepairerSourceFile*)sourcefile;
 	VerificationPacket* packet = sourceFile->GetVerificationPacket();
-	long long blocksize = ((Repairer*)m_repairer)->mainpacket->BlockSize();
+	int64 blocksize = ((Repairer*)m_repairer)->mainpacket->BlockSize();
 	std::string filenameObj = sourceFile->GetTargetFile()->FileName();
 	const char* filename = filenameObj.c_str();
-	long long fileSize = sourceFile->GetTargetFile()->FileSize();
+	int64 fileSize = sourceFile->GetTargetFile()->FileSize();
 
 	// determine presumably valid and bad blocks based on article download status
 	validBlocks->resize(packet->BlockCount(), false);
 	for (int i = 0; i < (int)validBlocks->size(); i++)
 	{
-		long long blockStart = i * blocksize;
-		long long blockEnd = blockStart + blocksize < fileSize - 1 ? blockStart + blocksize : fileSize - 1;
+		int64 blockStart = i * blocksize;
+		int64 blockEnd = blockStart + blocksize < fileSize - 1 ? blockStart + blocksize : fileSize - 1;
 		bool blockOK = false;
 		bool blockEndFound = false;
 		u64 curOffset = 0;
@@ -1598,7 +1598,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 	//   overlap - read a little bit of data from the file and calculate its CRC;
 	// - compare two CRCs - they must match; if not - the file is more damaged than we thought -
 	//   let libpar2 do the full verification of the file in this case.
-	unsigned long parCrc = 0;
+	uint32 parCrc = 0;
 	int blockStart = -1;
 	validBlocks->push_back(false); // end marker
 	for (int i = 0; i < (int)validBlocks->size(); i++)
@@ -1612,16 +1612,16 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 			}
 			const FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
 			u32 blockCrc = entry->crc;
-			parCrc = blockStart == i ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (unsigned long)blocksize);
+			parCrc = blockStart == i ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (uint32)blocksize);
 		}
 		else
 		{
 			if (blockStart > -1)
 			{
 				int blockEnd = i - 1;
-				long long bytesStart = blockStart * blocksize;
-				long long bytesEnd = blockEnd * blocksize + blocksize - 1;
-				unsigned long downloadCrc = 0;
+				int64 bytesStart = blockStart * blocksize;
+				int64 bytesEnd = blockEnd * blocksize + blocksize - 1;
+				uint32 downloadCrc = 0;
 				bool ok = SmartCalcFileRangeCrc(infile, bytesStart,
 					bytesEnd < fileSize - 1 ? bytesEnd : fileSize - 1, segments, &downloadCrc);
 				if (ok && bytesEnd > fileSize - 1)
@@ -1649,10 +1649,10 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
  * Compute CRC of bytes range of file using CRCs of segments and reading some data directly
  * from file if necessary
  */
-bool ParChecker::SmartCalcFileRangeCrc(FILE* file, long long start, long long end, SegmentList* segments,
-	unsigned long* downloadCrcOut)
+bool ParChecker::SmartCalcFileRangeCrc(FILE* file, int64 start, int64 end, SegmentList* segments,
+	uint32* downloadCrcOut)
 {
-	unsigned long downloadCrc = 0;
+	uint32 downloadCrc = 0;
 	bool started = false;
 	for (SegmentList::iterator it = segments->begin(); it != segments->end(); it++)
 	{
@@ -1674,7 +1674,7 @@ bool ParChecker::SmartCalcFileRangeCrc(FILE* file, long long start, long long en
 
 		if (segment->GetOffset() >= start && segment->GetOffset() + segment->GetSize() <= end)
 		{
-			downloadCrc = !started ? segment->GetCrc() : Util::Crc32Combine(downloadCrc, segment->GetCrc(), (unsigned long)segment->GetSize());
+			downloadCrc = !started ? segment->GetCrc() : Util::Crc32Combine(downloadCrc, segment->GetCrc(), (uint32)segment->GetSize());
 			started = true;
 		}
 
@@ -1686,13 +1686,13 @@ bool ParChecker::SmartCalcFileRangeCrc(FILE* file, long long start, long long en
 		if (segment->GetOffset() + segment->GetSize() > end)
 		{
 			// read end of range from file
-			unsigned long partialCrc = 0;
+			uint32 partialCrc = 0;
 			if (!DumbCalcFileRangeCrc(file, segment->GetOffset(), end, &partialCrc))
 			{
 				return false;
 			}
 
-			downloadCrc = Util::Crc32Combine(downloadCrc, (unsigned long)partialCrc, (unsigned long)(end - segment->GetOffset() + 1));
+			downloadCrc = Util::Crc32Combine(downloadCrc, (uint32)partialCrc, (uint32)(end - segment->GetOffset() + 1));
 
 			break;
 		}
@@ -1705,7 +1705,7 @@ bool ParChecker::SmartCalcFileRangeCrc(FILE* file, long long start, long long en
 /*
  * Compute CRC of bytes range of file reading the data directly from file
  */
-bool ParChecker::DumbCalcFileRangeCrc(FILE* file, long long start, long long end, unsigned long* downloadCrcOut)
+bool ParChecker::DumbCalcFileRangeCrc(FILE* file, int64 start, int64 end, uint32* downloadCrcOut)
 {
 	if (fseek(file, start, SEEK_SET))
 	{
@@ -1713,8 +1713,8 @@ bool ParChecker::DumbCalcFileRangeCrc(FILE* file, long long start, long long end
 	}
 
 	static const int BUFFER_SIZE = 1024 * 64;
-	unsigned char* buffer = (unsigned char*)malloc(BUFFER_SIZE);
-	unsigned long downloadCrc = 0xFFFFFFFF;
+	uchar* buffer = (uchar*)malloc(BUFFER_SIZE);
+	uint32 downloadCrc = 0xFFFFFFFF;
 
 	int cnt = BUFFER_SIZE;
 	while (cnt == BUFFER_SIZE && start < end)

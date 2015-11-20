@@ -128,6 +128,7 @@ using namespace MSXML;
 
 #if _MSC_VER >= 1600
 #include <stdint.h>
+#define HAVE_STDINT_H
 #endif
 
 #ifdef _DEBUG
@@ -252,9 +253,6 @@ using namespace MSXML;
 #define gmtime_r(time, tm) gmtime_s(tm, time)
 #define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
 #define strerror_r(errnum, buffer, size) strerror_s(buffer, size, errnum)
-#if _MSC_VER < 1600
-#define int32_t __int32
-#endif
 #define mkdir(dir, flags) _mkdir(dir)
 #define rmdir _rmdir
 #define strcasecmp(a, b) _stricmp(a, b)
@@ -320,5 +318,21 @@ using namespace MSXML;
 #ifndef SHUT_RDWR
 #define SHUT_RDWR 2
 #endif
+
+#ifdef HAVE_STDINT_H
+typedef uint8_t uint8;
+typedef uint32_t int32;
+typedef uint32_t uint32;
+typedef int64_t int64;
+typedef uint64_t uint64;
+#else
+typedef unsigned char uint8;
+typedef signed int int32;
+typedef unsigned int uint32;
+typedef signed long long int64;
+typedef unsigned long long  uint64;
+#endif
+
+typedef unsigned char uchar;
 
 #endif /* NZBGET_H */

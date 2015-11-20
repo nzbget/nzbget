@@ -251,7 +251,7 @@ bool Frontend::RequestMessages()
 	if (ntohl(LogResponse.m_trailingDataLength) > 0)
 	{
 		char* bufPtr = (char*)buf;
-		for (unsigned int i = 0; i < ntohl(LogResponse.m_nrTrailingEntries); i++)
+		for (uint32 i = 0; i < ntohl(LogResponse.m_nrTrailingEntries); i++)
 		{
 			SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufPtr;
 

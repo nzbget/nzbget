@@ -91,9 +91,9 @@ void NzbFile::AddFileInfo(FileInfo* fileInfo)
 {
 	// calculate file size and delete empty articles
 
-	long long size = 0;
-	long long missedSize = 0;
-	long long oneSize = 0;
+	int64 size = 0;
+	int64 missedSize = 0;
+	int64 oneSize = 0;
 	int uncountedArticles = 0;
 	int missedArticles = 0;
 	FileInfo::Articles* articles = fileInfo->GetArticles();
@@ -357,8 +357,8 @@ void NzbFile::CalcHashes()
 
 	fileList.sort(CompareFileInfo);
 
-	unsigned int fullContentHash = 0;
-	unsigned int filteredContentHash = 0;
+	uint32 fullContentHash = 0;
+	uint32 filteredContentHash = 0;
 	int useForFilteredCount = 0;
 
 	for (TempFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
@@ -580,7 +580,7 @@ void NzbFile::EncodeUrl(const char* filename, char* url, int bufLen)
 		else
 		{
 			*url++ = '%';
-			int a = (unsigned char)ch >> 4;
+			int a = (uchar)ch >> 4;
 			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 			a = ch & 0xF;
 			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
@@ -750,7 +750,7 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 			return;
 		}
 
-		long long lsize = -1;
+		int64 lsize = -1;
 		int partNumber = -1;
 
 		for (int i = 0; atts[i]; i += 2)

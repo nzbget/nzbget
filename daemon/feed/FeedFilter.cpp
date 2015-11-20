@@ -51,7 +51,7 @@ FeedFilter::Term::~Term()
 bool FeedFilter::Term::Match(FeedItemInfo* feedItemInfo)
 {
 	const char* strValue = NULL;
-	long long intValue = 0;
+	int64 intValue = 0;
 
 	if (!GetFieldData(m_field, feedItemInfo, &strValue, &intValue))
 	{
@@ -68,7 +68,7 @@ bool FeedFilter::Term::Match(FeedItemInfo* feedItemInfo)
 	return true;
 }
 
-bool FeedFilter::Term::MatchValue(const char* strValue, long long intValue)
+bool FeedFilter::Term::MatchValue(const char* strValue, int64 intValue)
 {
 	double fFloatValue = (double)intValue;
 	char intBuf[100];
@@ -83,7 +83,7 @@ bool FeedFilter::Term::MatchValue(const char* strValue, long long intValue)
 	else if (m_command >= fcEqual && strValue)
 	{
 		fFloatValue = atof(strValue);
-		intValue = (long long)fFloatValue;
+		intValue = (int64)fFloatValue;
 	}
 
 	switch (m_command)
@@ -300,7 +300,7 @@ bool FeedFilter::Term::Compile(char* token)
 	debug("%s, Field: %s, Command: %i, Param: %s", (m_positive ? "Positive" : "Negative"), field, m_command, token);
 
 	const char* strValue;
-	long long intValue;
+	int64 intValue;
 	if (!GetFieldData(field, NULL, &strValue, &intValue))
 	{
 		return false;
@@ -321,7 +321,7 @@ bool FeedFilter::Term::Compile(char* token)
  * If pFeedItemInfo is NULL, only field name is validated
  */
 bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInfo,
-	const char** StrValue, long long* IntValue)
+	const char** StrValue, int64* IntValue)
 {
 	*StrValue = NULL;
 	*IntValue = 0;
@@ -442,15 +442,15 @@ bool FeedFilter::Term::ParseSizeParam(const char* param)
 	{
 		if (!strcasecmp(p, "K") || !strcasecmp(p, "KB"))
 		{
-			m_intParam = (long long)(fParam*1024);
+			m_intParam = (int64)(fParam*1024);
 		}
 		else if (!strcasecmp(p, "M") || !strcasecmp(p, "MB"))
 		{
-			m_intParam = (long long)(fParam*1024*1024);
+			m_intParam = (int64)(fParam*1024*1024);
 		}
 		else if (!strcasecmp(p, "G") || !strcasecmp(p, "GB"))
 		{
-			m_intParam = (long long)(fParam*1024*1024*1024);
+			m_intParam = (int64)(fParam*1024*1024*1024);
 		}
 		else
 		{
@@ -459,7 +459,7 @@ bool FeedFilter::Term::ParseSizeParam(const char* param)
 	}
 	else
 	{
-		m_intParam = (long long)fParam;
+		m_intParam = (int64)fParam;
 	}
 
 	return true;
@@ -476,17 +476,17 @@ bool FeedFilter::Term::ParseAgeParam(const char* param)
 		if (!strcasecmp(p, "m"))
 		{
 			// minutes
-			m_intParam = (long long)(fParam*60);
+			m_intParam = (int64)(fParam*60);
 		}
 		else if (!strcasecmp(p, "h"))
 		{
 			// hours
-			m_intParam = (long long)(fParam*60*60);
+			m_intParam = (int64)(fParam*60*60);
 		}
 		else if (!strcasecmp(p, "d"))
 		{
 			// days
-			m_intParam = (long long)(fParam*60*60*24);
+			m_intParam = (int64)(fParam*60*60*24);
 		}
 		else
 		{
@@ -496,7 +496,7 @@ bool FeedFilter::Term::ParseAgeParam(const char* param)
 	else
 	{
 		// days by default
-		m_intParam = (long long)(fParam*60*60*24);
+		m_intParam = (int64)(fParam*60*60*24);
 	}
 
 	return true;
@@ -505,7 +505,7 @@ bool FeedFilter::Term::ParseAgeParam(const char* param)
 bool FeedFilter::Term::ParseNumericParam(const char* param)
 {
 	m_fFloatParam = atof(param);
-	m_intParam = (long long)m_fFloatParam;
+	m_intParam = (int64)m_fFloatParam;
 	m_float = strchr(param, '.');
 
 	const char* p;

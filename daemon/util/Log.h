@@ -55,7 +55,7 @@ public:
 	};
 
 private:
-	unsigned int		m_id;
+	uint32				m_id;
 	EKind				m_kind;
 	time_t				m_time;
 	char*				m_text;
@@ -63,9 +63,9 @@ private:
 	friend class Log;
 
 public:
-						Message(unsigned int id, EKind kind, time_t time, const char* text);
+						Message(uint32 id, EKind kind, time_t time, const char* text);
 						~Message();
-	unsigned int		GetId() { return m_id; }
+	uint32				GetId() { return m_id; }
 	EKind				GetKind() { return m_kind; }
 	time_t				GetTime() { return m_time; }
 	const char*			GetText() { return m_text; }
@@ -98,7 +98,7 @@ private:
 	Debuggables			m_debuggables;
 	Mutex				m_debugMutex;
 	char*				m_logFilename;
-	unsigned int		m_idGen;
+	uint32				m_idGen;
 	time_t				m_lastWritten;
 	bool				m_optInit;
 #ifdef DEBUG

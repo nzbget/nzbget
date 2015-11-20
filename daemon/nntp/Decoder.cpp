@@ -129,7 +129,7 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 			if (pb)
 			{
 				pb += 6; //=strlen(" size=")
-				m_endSize = (long long)atoll(pb);
+				m_endSize = (int64)atoll(pb);
 			}
 			return 0;
 		}
@@ -161,7 +161,7 @@ BreakLoop:
 
 		if (m_crcCheck)
 		{
-			m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (unsigned char *)buffer, (unsigned int)(optr - buffer));
+			m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (uchar *)buffer, (uint32)(optr - buffer));
 		}
 		return optr - buffer;
 	}
@@ -185,7 +185,7 @@ BreakLoop:
 			if (pb)
 			{
 				pb += 6; //=strlen(" size=")
-				m_size = (long long)atoll(pb);
+				m_size = (int64)atoll(pb);
 			}
 			m_part = strstr(buffer, " part=");
 			if (!m_part)
@@ -203,13 +203,13 @@ BreakLoop:
 			if (pb)
 			{
 				pb += 7; //=strlen(" begin=")
-				m_beginPos = (long long)atoll(pb);
+				m_beginPos = (int64)atoll(pb);
 			}
 			pb = strstr(buffer, " end=");
 			if (pb)
 			{
 				pb += 5; //=strlen(" end=")
-				m_endPos = (long long)atoll(pb);
+				m_endPos = (int64)atoll(pb);
 			}
 		}
 	}

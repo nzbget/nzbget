@@ -316,7 +316,7 @@ void StatMeter::EnterLeaveStandBy(bool enter)
 	m_statMutex.Unlock();
 }
 
-void StatMeter::CalcTotalStat(int* upTimeSec, int* dnTimeSec, long long* allBytes, bool* standBy)
+void StatMeter::CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy)
 {
 	m_statMutex.Lock();
 	if (m_startServer > 0)
@@ -391,7 +391,7 @@ void StatMeter::AddSpeedReading(int bytes)
 			m_speedBytesIndex = 0;
 		}
 		//Adjust counters with outgoing information.
-		m_speedTotalBytes = m_speedTotalBytes - (long long)m_speedBytes[m_speedBytesIndex];
+		m_speedTotalBytes = m_speedTotalBytes - (int64)m_speedBytes[m_speedBytesIndex];
 
 		//Note we should really use the start time of the next slot
 		//but its easier to just use the outgoing slot time. This
@@ -406,7 +406,7 @@ void StatMeter::AddSpeedReading(int bytes)
 	// Once per second recalculate summary field "m_iSpeedTotalBytes" to recover from possible synchronisation errors
 	if (curTime > m_speedCorrection)
 	{
-		long long speedTotalBytes = 0;
+		int64 speedTotalBytes = 0;
 		for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 		{
 			speedTotalBytes += m_speedBytes[i];

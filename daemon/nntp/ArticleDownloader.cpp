@@ -521,8 +521,8 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response
 bool ArticleDownloader::Write(char* line, int len)
 {
 	const char* articleFilename = NULL;
-	long long articleFileSize = 0;
-	long long articleOffset = 0;
+	int64 articleFileSize = 0;
+	int64 articleOffset = 0;
 	int articleSize = 0;
 
 	if (g_Options->GetDecode())

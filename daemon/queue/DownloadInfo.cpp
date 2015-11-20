@@ -591,7 +591,7 @@ int NzbInfo::CalcCriticalHealth(bool allowEstimation)
 		return 0;
 	}
 
-	long long goodParSize = m_parSize - m_parCurrentFailedSize;
+	int64 goodParSize = m_parSize - m_parCurrentFailedSize;
 	int criticalHealth = (int)((m_size - goodParSize*2) * 1000 / (m_size - goodParSize));
 
 	if (goodParSize*2 > m_size)
@@ -687,7 +687,7 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 		m_messageCount++;
 	}
 
-	while (m_messages.size() > (unsigned int)g_Options->GetLogBufferSize())
+	while (m_messages.size() > (uint32)g_Options->GetLogBufferSize())
 	{
 		Message* message = m_messages.front();
 		delete message;
@@ -1035,7 +1035,7 @@ void ArticleInfo::SetResultFilename(const char * v)
 	m_resultFilename = strdup(v);
 }
 
-void ArticleInfo::AttachSegment(char* content, long long offset, int size)
+void ArticleInfo::AttachSegment(char* content, int64 offset, int size)
 {
 	DiscardSegment();
 	m_segmentContent = content;
@@ -1218,7 +1218,7 @@ void FileList::Remove(FileInfo* fileInfo)
 	erase(std::find(begin(), end(), fileInfo));
 }
 
-CompletedFile::CompletedFile(int id, const char* fileName, EStatus status, unsigned long crc)
+CompletedFile::CompletedFile(int id, const char* fileName, EStatus status, uint32 crc)
 {
 	m_id = id;
 
@@ -1417,10 +1417,10 @@ void DownloadQueue::Unlock()
 	g_DownloadQueue->m_lockMutex.Unlock();
 }
 
-void DownloadQueue::CalcRemainingSize(long long* remaining, long long* remainingForced)
+void DownloadQueue::CalcRemainingSize(int64* remaining, int64* remainingForced)
 {
-	long long remainingSize = 0;
-	long long remainingForcedSize = 0;
+	int64 remainingSize = 0;
+	int64 remainingForcedSize = 0;
 
 	for (NzbList::iterator it = m_queue.begin(); it != m_queue.end(); it++)
 	{

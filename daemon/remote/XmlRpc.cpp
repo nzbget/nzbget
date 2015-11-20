@@ -1348,20 +1348,20 @@ void StatusXmlCommand::Execute()
 		postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 		urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
 	}
-	long long remainingSize, forcedSize;
+	int64 remainingSize, forcedSize;
 	downloadQueue->CalcRemainingSize(&remainingSize, &forcedSize);
 	DownloadQueue::Unlock();
 
-	unsigned long remainingSizeHi, remainingSizeLo;
+	uint32 remainingSizeHi, remainingSizeLo;
 	Util::SplitInt64(remainingSize, &remainingSizeHi, &remainingSizeLo);
 	int remainingMBytes = (int)(remainingSize / 1024 / 1024);
 
-	unsigned long forcedSizeHi, forcedSizeLo;
+	uint32 forcedSizeHi, forcedSizeLo;
 	Util::SplitInt64(forcedSize, &forcedSizeHi, &forcedSizeLo);
 	int forcedMBytes = (int)(forcedSize / 1024 / 1024);
 
-	long long articleCache = g_ArticleCache->GetAllocated();
-	unsigned long articleCacheHi, articleCacheLo;
+	int64 articleCache = g_ArticleCache->GetAllocated();
+	uint32 articleCacheHi, articleCacheLo;
 	Util::SplitInt64(articleCache, &articleCacheHi, &articleCacheLo);
 	int articleCacheMBytes = (int)(articleCache / 1024 / 1024);
 
@@ -1372,16 +1372,16 @@ void StatusXmlCommand::Execute()
 	bool scanPaused = g_Options->GetPauseScan();
 	int threadCount = Thread::GetThreadCount() - 1; // not counting itself
 
-	unsigned long downloadedSizeHi, downloadedSizeLo;
+	uint32 downloadedSizeHi, downloadedSizeLo;
 	int upTimeSec, downloadTimeSec;
-	long long allBytes;
+	int64 allBytes;
 	bool serverStandBy;
 	g_StatMeter->CalcTotalStat(&upTimeSec, &downloadTimeSec, &allBytes, &serverStandBy);
 	int downloadedMBytes = (int)(allBytes / 1024 / 1024);
 	Util::SplitInt64(allBytes, &downloadedSizeHi, &downloadedSizeLo);
 	int averageDownloadRate = (int)(downloadTimeSec > 0 ? allBytes / downloadTimeSec : 0);
-	unsigned long freeDiskSpaceHi, freeDiskSpaceLo;
-	long long freeDiskSpace = Util::FreeDiskSize(g_Options->GetDestDir());
+	uint32 freeDiskSpaceHi, freeDiskSpaceLo;
+	int64 freeDiskSpace = Util::FreeDiskSize(g_Options->GetDestDir());
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
 	int serverTime = time(NULL);
@@ -1469,7 +1469,7 @@ void LogXmlCommand::Execute()
 
 	int index = 0;
 
-	for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
+	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
 		Message* message = (*messages)[i];
 
@@ -1582,8 +1582,8 @@ void ListFilesXmlCommand::Execute()
 			if ((nzbId > 0 && nzbId == fileInfo->GetNzbInfo()->GetId()) ||
 				(nzbId == 0 && (idStart == 0 || (idStart <= fileInfo->GetId() && fileInfo->GetId() <= idEnd))))
 			{
-				unsigned long fileSizeHi, fileSizeLo;
-				unsigned long remainingSizeLo, remainingSizeHi;
+				uint32 fileSizeHi, fileSizeLo;
+				uint32 remainingSizeLo, remainingSizeHi;
 				Util::SplitInt64(fileInfo->GetSize(), &fileSizeHi, &fileSizeLo);
 				Util::SplitInt64(fileInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
 				char* xmlNzbFilename = EncodeStr(fileInfo->GetNzbInfo()->GetFilename());
@@ -1780,11 +1780,11 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	const char* urlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
 	const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
 
-	unsigned long fileSizeHi, fileSizeLo, fileSizeMB;
+	uint32 fileSizeHi, fileSizeLo, fileSizeMB;
 	Util::SplitInt64(nzbInfo->GetSize(), &fileSizeHi, &fileSizeLo);
 	fileSizeMB = (int)(nzbInfo->GetSize() / 1024 / 1024);
 
-	unsigned long downloadedSizeHi, downloadedSizeLo, downloadedSizeMB;
+	uint32 downloadedSizeHi, downloadedSizeLo, downloadedSizeMB;
 	Util::SplitInt64(nzbInfo->GetDownloadedSize(), &downloadedSizeHi, &downloadedSizeLo);
 	downloadedSizeMB = (int)(nzbInfo->GetDownloadedSize() / 1024 / 1024);
 
@@ -1963,7 +1963,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 			int start = messages->size() - logEntries;
 
 			int index = 0;
-			for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
+			for (uint32 i = (uint32)start; i < messages->size(); i++)
 			{
 				Message* message = (*messages)[i];
 
@@ -2038,8 +2038,8 @@ void ListGroupsXmlCommand::Execute()
 	{
 		NzbInfo* nzbInfo = *it;
 
-		unsigned long remainingSizeLo, remainingSizeHi, remainingSizeMB;
-		unsigned long pausedSizeLo, pausedSizeHi, pausedSizeMB;
+		uint32 remainingSizeLo, remainingSizeHi, remainingSizeMB;
+		uint32 pausedSizeLo, pausedSizeHi, pausedSizeMB;
 		Util::SplitInt64(nzbInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
 		remainingSizeMB = (int)(nzbInfo->GetRemainingSize() / 1024 / 1024);
 		Util::SplitInt64(nzbInfo->GetPausedSize(), &pausedSizeHi, &pausedSizeLo);
@@ -2631,7 +2631,7 @@ void HistoryXmlCommand::Execute()
 		{
 			DupInfo* dupInfo = historyInfo->GetDupInfo();
 
-			unsigned long fileSizeHi, fileSizeLo, fileSizeMB;
+			uint32 fileSizeHi, fileSizeLo, fileSizeMB;
 			Util::SplitInt64(dupInfo->GetSize(), &fileSizeHi, &fileSizeLo);
 			fileSizeMB = (int)(dupInfo->GetSize() / 1024 / 1024);
 
@@ -3068,7 +3068,7 @@ void ViewFeedXmlCommand::Execute()
 
 		if (includeNonMatching || feedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
-			unsigned long sizeHi, sizeLo;
+			uint32 sizeHi, sizeLo;
 			Util::SplitInt64(feedItemInfo->GetSize(), &sizeHi, &sizeLo);
 			int sizeMB = (int)(feedItemInfo->GetSize() / 1024 / 1024);
 
@@ -3382,11 +3382,11 @@ void ServerVolumesXmlCommand::Execute()
 	{
 		ServerVolume* serverVolume = *it;
 
-		unsigned long totalSizeHi, totalSizeLo, totalSizeMB;
+		uint32 totalSizeHi, totalSizeLo, totalSizeMB;
 		Util::SplitInt64(serverVolume->GetTotalBytes(), &totalSizeHi, &totalSizeLo);
 		totalSizeMB = (int)(serverVolume->GetTotalBytes() / 1024 / 1024);
 
-		unsigned long customSizeHi, customSizeLo, customSizeMB;
+		uint32 customSizeHi, customSizeLo, customSizeMB;
 		Util::SplitInt64(serverVolume->GetCustomBytes(), &customSizeHi, &customSizeLo);
 		customSizeMB = (int)(serverVolume->GetCustomBytes() / 1024 / 1024);
 
@@ -3411,8 +3411,8 @@ void ServerVolumesXmlCommand::Execute()
 			int index2 = 0;
 			for (ServerVolume::VolumeArray::iterator it2 = volumeArray->begin(); it2 != volumeArray->end(); it2++)
 			{
-				long long bytes = *it2;
-				unsigned long sizeHi, sizeLo, sizeMB;
+				int64 bytes = *it2;
+				uint32 sizeHi, sizeLo, sizeMB;
 				Util::SplitInt64(bytes, &sizeHi, &sizeLo);
 				sizeMB = (int)(bytes / 1024 / 1024);
 

@@ -244,7 +244,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 		return true;
 	}
 
-	long long size = Util::FileSize(fullFilename);
+	int64 size = Util::FileSize(fullFilename);
 	time_t current = time(NULL);
 	bool canProcess = false;
 	bool inList = false;

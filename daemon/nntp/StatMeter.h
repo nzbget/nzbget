@@ -32,7 +32,7 @@
 class ServerVolume
 {
 public:
-	typedef std::vector<long long>	VolumeArray;
+	typedef std::vector<int64>	VolumeArray;
 
 private:
 	VolumeArray			m_bytesPerSeconds;
@@ -40,8 +40,8 @@ private:
 	VolumeArray			m_bytesPerHours;
 	VolumeArray			m_bytesPerDays;
 	int					m_firstDay;
-	long long			m_totalBytes;
-	long long			m_customBytes;
+	int64				m_totalBytes;
+	int64				m_customBytes;
 	time_t				m_dataTime;
 	time_t				m_customTime;
 	int					m_secSlot;
@@ -57,10 +57,10 @@ public:
 	VolumeArray*		BytesPerDays() { return &m_bytesPerDays; }
 	void				SetFirstDay(int firstDay) { m_firstDay = firstDay; }
 	int					GetFirstDay() { return m_firstDay; }
-	void				SetTotalBytes(long long totalBytes) { m_totalBytes = totalBytes; }
-	long long			GetTotalBytes() { return m_totalBytes; }
-	void				SetCustomBytes(long long customBytes) { m_customBytes = customBytes; }
-	long long			GetCustomBytes() { return m_customBytes; }
+	void				SetTotalBytes(int64 totalBytes) { m_totalBytes = totalBytes; }
+	int64				GetTotalBytes() { return m_totalBytes; }
+	void				SetCustomBytes(int64 customBytes) { m_customBytes = customBytes; }
+	int64				GetCustomBytes() { return m_customBytes; }
 	int					GetSecSlot() { return m_secSlot; }
 	int					GetMinSlot() { return m_minSlot; }
 	int					GetHourSlot() { return m_hourSlot; }
@@ -85,7 +85,7 @@ private:
 	static const int	SPEEDMETER_SLOTS = 30;
 	static const int	SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
 	int					m_speedBytes[SPEEDMETER_SLOTS];
-	long long			m_speedTotalBytes;
+	int64				m_speedTotalBytes;
 	int					m_speedTime[SPEEDMETER_SLOTS];
 	int					m_speedStartTime;
 	time_t				m_speedCorrection;
@@ -95,7 +95,7 @@ private:
 	Mutex				m_speedMutex;
 
 	// time
-	long long			m_allBytes;
+	int64				m_allBytes;
 	time_t				m_startServer;
 	time_t				m_lastCheck;
 	time_t				m_lastTimeOffset;
@@ -123,7 +123,7 @@ public:
 	int					CalcMomentaryDownloadSpeed();
 	void				AddSpeedReading(int bytes);
 	void				AddServerData(int bytes, int serverId);
-	void				CalcTotalStat(int* upTimeSec, int* dnTimeSec, long long* allBytes, bool* standBy);
+	void				CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy);
 	bool				GetStandBy() { return m_standBy; }
 	void				IntervalCheck();
 	void				EnterLeaveStandBy(bool enter);

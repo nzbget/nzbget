@@ -53,7 +53,7 @@ private:
 		virtual void	PrintMessage(Message::EKind kind, const char* format, ...);
 		virtual void	RegisterParredFile(const char* filename);
 		virtual bool	IsParredFile(const char* filename);
-		virtual EFileStatus	FindFileCrc(const char* filename, unsigned long* crc, SegmentList* segments);
+		virtual EFileStatus	FindFileCrc(const char* filename, uint32* crc, SegmentList* segments);
 		virtual void	RequestDupeSources(DupeSourceList* dupeSourceList);
 		virtual void	StatDupeSources(DupeSourceList* dupeSourceList);
 	public:

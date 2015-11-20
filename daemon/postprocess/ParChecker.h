@@ -62,16 +62,16 @@ public:
 	{
 	private:
 		bool				m_success;
-		long long			m_offset;
+		int64				m_offset;
 		int					m_size;
-		unsigned long		m_crc;
+		uint32				m_crc;
 
 	public:
-							Segment(bool success, long long offset, int size, unsigned long crc);
+							Segment(bool success, int64 offset, int size, uint32 crc);
 		bool 				GetSuccess() { return m_success; }
-		long long			GetOffset() { return m_offset; }
+		int64				GetOffset() { return m_offset; }
 		int 				GetSize() { return m_size; }
-		unsigned long		GetCrc() { return m_crc; }
+		uint32				GetCrc() { return m_crc; }
 	};
 
 	typedef std::deque<Segment*>	SegmentListBase;
@@ -158,11 +158,11 @@ private:
 	// declared as void* to prevent the including of libpar2-headers into this header-file
 	// DiskFile* pDiskfile, Par2RepairerSourceFile* pSourcefile
 	EFileStatus			VerifyDataFile(void* diskfile, void* sourcefile, int* availableBlocks);
-	bool				VerifySuccessDataFile(void* diskfile, void* sourcefile, unsigned long downloadCrc);
+	bool				VerifySuccessDataFile(void* diskfile, void* sourcefile, uint32 downloadCrc);
 	bool				VerifyPartialDataFile(void* diskfile, void* sourcefile, SegmentList* segments, ValidBlocks* validBlocks);
-	bool				SmartCalcFileRangeCrc(FILE* file, long long start, long long end, SegmentList* segments,
-							unsigned long* downloadCrc);
-	bool				DumbCalcFileRangeCrc(FILE* file, long long start, long long end, unsigned long* downloadCrc);
+	bool				SmartCalcFileRangeCrc(FILE* file, int64 start, int64 end, SegmentList* segments,
+							uint32* downloadCrc);
+	bool				DumbCalcFileRangeCrc(FILE* file, int64 start, int64 end, uint32* downloadCrc);
 	void				CheckEmptyFiles();
 
 protected:
@@ -177,7 +177,7 @@ protected:
 	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) {}
 	virtual void		RegisterParredFile(const char* filename) {}
 	virtual bool		IsParredFile(const char* filename) { return false; }
-	virtual EFileStatus	FindFileCrc(const char* filename, unsigned long* crc, SegmentList* segments) { return fsUnknown; }
+	virtual EFileStatus	FindFileCrc(const char* filename, uint32* crc, SegmentList* segments) { return fsUnknown; }
 	virtual void		RequestDupeSources(DupeSourceList* dupeSourceList) {}
 	virtual void		StatDupeSources(DupeSourceList* dupeSourceList) {}
 	EStage				GetStage() { return m_stage; }

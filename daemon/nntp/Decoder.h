@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,12 +69,12 @@ protected:
 	bool					m_body;
 	bool					m_end;
 	bool					m_crc;
-	unsigned long			m_expectedCRC;
-	unsigned long			m_calculatedCRC;
-	long long				m_beginPos;
-	long long				m_endPos;
-	long long				m_size;
-	long long				m_endSize;
+	uint32					m_expectedCRC;
+	uint32					m_calculatedCRC;
+	int64					m_beginPos;
+	int64					m_endPos;
+	int64					m_size;
+	int64					m_endSize;
 	bool					m_crcCheck;
 
 public:
@@ -83,11 +83,11 @@ public:
 	virtual void			Clear();
 	virtual int				DecodeBuffer(char* buffer, int len);
 	void					SetCrcCheck(bool crcCheck) { m_crcCheck = crcCheck; }
-	long long				GetBegin() { return m_beginPos; }
-	long long				GetEnd() { return m_endPos; }
-	long long				GetSize() { return m_size; }
-	unsigned long			GetExpectedCrc() { return m_expectedCRC; }
-	unsigned long			GetCalculatedCrc() { return m_calculatedCRC; }
+	int64					GetBegin() { return m_beginPos; }
+	int64					GetEnd() { return m_endPos; }
+	int64					GetSize() { return m_size; }
+	uint32					GetExpectedCrc() { return m_expectedCRC; }
+	uint32					GetCalculatedCrc() { return m_calculatedCRC; }
 };
 
 class UDecoder: public Decoder

@@ -90,7 +90,7 @@ public:
 	static void NormalizePathSeparators(char* path);
 	static bool LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength);
 	static bool SaveBufferIntoFile(const char* fileName, const char* buffer, int bufLen);
-	static bool CreateSparseFile(const char* filename, long long size, char* errBuf, int bufSize);
+	static bool CreateSparseFile(const char* filename, int64 size, char* errBuf, int bufSize);
 	static bool TruncateFile(const char* filename, int size);
 	static void MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes);
 	static bool MakeUniqueFilename(char* destBufFilename, int destBufSize, const char* destDir, const char* basename);
@@ -105,8 +105,8 @@ public:
 	static bool ForceDirectories(const char* path, char* errBuf, int bufSize);
 	static bool GetCurrentDirectory(char* buffer, int bufSize);
 	static bool SetCurrentDirectory(const char* dirFilename);
-	static long long FileSize(const char* filename);
-	static long long FreeDiskSize(const char* path);
+	static int64 FileSize(const char* filename);
+	static int64 FreeDiskSize(const char* path);
 	static bool DirEmpty(const char* dirFilename);
 	static bool RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, char* newNameBuf, int newNameBufSize);
 #ifndef WIN32
@@ -116,11 +116,11 @@ public:
 	static void ExpandFileName(const char* filename, char* buffer, int bufSize);
 	static void GetExeFileName(const char* argv0, char* buffer, int bufSize);
 	static char* FormatSpeed(char* buffer, int bufSize, int bytesPerSecond);
-	static char* FormatSize(char* buffer, int bufLen, long long fileSize);
+	static char* FormatSize(char* buffer, int bufLen, int64 fileSize);
 	static bool SameFilename(const char* filename1, const char* filename2);
 	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
 	static char* GetLastErrorMessage(char* buffer, int bufLen);
-	static long long GetCurrentTicks();
+	static int64 GetCurrentTicks();
 
 	/* Flush disk buffers for file with given descriptor */
 	static bool FlushFileBuffers(int fileDescriptor, char* errBuf, int bufSize);
@@ -142,8 +142,8 @@ public:
 	 */
 	static bool SplitCommandLine(const char* commandLine, char*** argv);
 
-	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
-	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);
+	static int64 JoinInt64(uint32 Hi, uint32 Lo);
+	static void SplitInt64(int64 Int64, uint32* Hi, uint32* Lo);
 
 	static void TrimRight(char* str);
 	static char* Trim(char* str);
@@ -153,7 +153,7 @@ public:
 	static char* ReduceStr(char* str, const char* from, const char* to);
 
 	/* Calculate Hash using Bob Jenkins (1996) algorithm */
-	static unsigned int HashBJ96(const char* buffer, int bufSize, unsigned int initValue);
+	static uint32 HashBJ96(const char* buffer, int bufSize, uint32 initValue);
 
 #ifdef WIN32
 	static bool RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, char* buffer, int* bufLen);
@@ -174,9 +174,9 @@ public:
 
 	static void Init();
 
-	static unsigned long Crc32(unsigned char *block, unsigned long length);
-	static unsigned long Crc32m(unsigned long startCrc, unsigned char *block, unsigned long length);
-	static unsigned long Crc32Combine(unsigned long crc1, unsigned long crc2, unsigned long len2);
+	static uint32 Crc32(uchar *block, uint32 length);
+	static uint32 Crc32m(uint32 startCrc, uchar *block, uint32 length);
+	static uint32 Crc32Combine(uint32 crc1, uint32 crc2, uint32 len2);
 
 	/*
 	 * Returns number of available CPU cores or -1 if it could not be determined
@@ -187,7 +187,7 @@ public:
 class WebUtil
 {
 public:
-	static unsigned int DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer);
+	static uint32 DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer);
 
 	/*
 	 * Encodes string to be used as content of xml-tag.
@@ -354,12 +354,12 @@ public:
 	/*
 	 * calculates the size required for output buffer
 	 */
-	static unsigned int GZipLen(int inputBufferLength);
+	static uint32 GZipLen(int inputBufferLength);
 
 	/*
 	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
 	 */
-	static unsigned int GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength);
+	static uint32 GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength);
 };
 
 class GUnzipStream

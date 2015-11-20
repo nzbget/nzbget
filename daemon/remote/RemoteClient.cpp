@@ -224,7 +224,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 		const char* bufPtr = trailingData;
 
 		// read nzb entries
-		for (unsigned int i = 0; i < ntohl(listResponse->m_nrTrailingNzbEntries); i++)
+		for (uint32 i = 0; i < ntohl(listResponse->m_nrTrailingNzbEntries); i++)
 		{
 			SNzbListResponseNzbEntry* listAnswer = (SNzbListResponseNzbEntry*) bufPtr;
 
@@ -261,7 +261,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 		}
 
 		//read ppp entries
-		for (unsigned int i = 0; i < ntohl(listResponse->m_nrTrailingPPPEntries); i++)
+		for (uint32 i = 0; i < ntohl(listResponse->m_nrTrailingPPPEntries); i++)
 		{
 			SNzbListResponsePPPEntry* listAnswer = (SNzbListResponsePPPEntry*) bufPtr;
 
@@ -276,7 +276,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 		}
 
 		//read file entries
-		for (unsigned int i = 0; i < ntohl(listResponse->m_nrTrailingFileEntries); i++)
+		for (uint32 i = 0; i < ntohl(listResponse->m_nrTrailingFileEntries); i++)
 		{
 			SNzbListResponseFileEntry* listAnswer = (SNzbListResponseFileEntry*) bufPtr;
 
@@ -373,8 +373,8 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
 			BuildFileList(&ListResponse, buf, downloadQueue);
 
-			long long remaining = 0;
-			long long paused = 0;
+			int64 remaining = 0;
+			int64 paused = 0;
 			int matches = 0;
 			int nrFileEntries = 0;
 
@@ -469,8 +469,8 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
 			BuildFileList(&ListResponse, buf, downloadQueue);
 
-			long long remaining = 0;
-			long long paused = 0;
+			int64 remaining = 0;
+			int64 paused = 0;
 			int matches = 0;
 			int nrFileEntries = 0;
 
@@ -480,7 +480,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 				nrFileEntries += nzbInfo->GetFileList()->size();
 
-				long long unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
+				int64 unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
 				remaining += unpausedRemainingSize;
 
 				char remainingStr[20];
@@ -594,7 +594,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 	free(buf);
 
-	long long remaining = Util::JoinInt64(ntohl(ListResponse.m_remainingSizeHi), ntohl(ListResponse.m_remainingSizeLo));
+	int64 remaining = Util::JoinInt64(ntohl(ListResponse.m_remainingSizeHi), ntohl(ListResponse.m_remainingSizeLo));
 
 	if (!files && !groups)
 	{
@@ -607,7 +607,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 		!ntohl(ListResponse.m_download2Paused) &&
 		!ntohl(ListResponse.m_downloadStandBy))
 	{
-		long long remain_sec = (long long)(remaining / ntohl(ListResponse.m_downloadRate));
+		int64 remain_sec = (int64)(remaining / ntohl(ListResponse.m_downloadRate));
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
@@ -618,7 +618,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 	printf("Current download rate: %s\n",
 		Util::FormatSpeed(speed, sizeof(speed), ntohl(ListResponse.m_downloadRate)));
 
-	long long allBytes = Util::JoinInt64(ntohl(ListResponse.m_downloadedBytesHi), ntohl(ListResponse.m_downloadedBytesLo));
+	int64 allBytes = Util::JoinInt64(ntohl(ListResponse.m_downloadedBytesHi), ntohl(ListResponse.m_downloadedBytesLo));
 	int averageSpeed = (int)(ntohl(ListResponse.m_downloadTimeSec) > 0 ? allBytes / ntohl(ListResponse.m_downloadTimeSec) : 0);
 	printf("Session download rate: %s\n", Util::FormatSpeed(speed, sizeof(speed), averageSpeed));
 
@@ -739,7 +739,7 @@ bool RemoteClient::RequestServerLog(int lines)
 		printf("-----------------------------------\n");
 
 		char* bufPtr = (char*)buf;
-		for (unsigned int i = 0; i < ntohl(LogResponse.m_nrTrailingEntries); i++)
+		for (uint32 i = 0; i < ntohl(LogResponse.m_nrTrailingEntries); i++)
 		{
 			SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufPtr;
 
@@ -848,7 +848,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 
 	if (!InitConnection()) return false;
 
-	int idLength = sizeof(int32_t) * idCount;
+	int idLength = sizeof(int32) * idCount;
 
 	int nameCount = 0;
 	int nameLength = 0;
@@ -888,7 +888,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 		strcpy(trailingData, text);
 	}
 
-	int32_t* ids = (int32_t*)(trailingData + textLen);
+	int32* ids = (int32*)(trailingData + textLen);
 
 	for (int i = 0; i < idCount; i++)
 	{
@@ -1037,7 +1037,7 @@ bool RemoteClient::RequestPostQueue()
 		printf("-----------------------------------\n");
 
 		char* bufPtr = (char*)buf;
-		for (unsigned int i = 0; i < ntohl(PostQueueResponse.m_nrTrailingEntries); i++)
+		for (uint32 i = 0; i < ntohl(PostQueueResponse.m_nrTrailingEntries); i++)
 		{
 			SNzbPostQueueResponseEntry* postQueueAnswer = (SNzbPostQueueResponseEntry*) bufPtr;
 
@@ -1163,7 +1163,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 		printf("-----------------------------------\n");
 
 		char* bufPtr = (char*)buf;
-		for (unsigned int i = 0; i < ntohl(HistoryResponse.m_nrTrailingEntries); i++)
+		for (uint32 i = 0; i < ntohl(HistoryResponse.m_nrTrailingEntries); i++)
 		{
 			SNzbHistoryResponseEntry* listAnswer = (SNzbHistoryResponseEntry*) bufPtr;
 
@@ -1176,7 +1176,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 				snprintf(files, sizeof(files), "%i files, ", ntohl(listAnswer->m_fileCount));
 				files[20 - 1] = '\0';
 
-				long long size = Util::JoinInt64(ntohl(listAnswer->m_sizeHi), ntohl(listAnswer->m_sizeLo));
+				int64 size = Util::JoinInt64(ntohl(listAnswer->m_sizeHi), ntohl(listAnswer->m_sizeLo));
 
 				char sizeStr[20];
 				Util::FormatSize(sizeStr, sizeof(sizeStr), size);

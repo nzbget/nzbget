@@ -51,7 +51,7 @@ void closesocket_gracefully(SOCKET socket)
 
 	// Set non-blocking mode
 #ifdef WIN32
-	unsigned long on = 1;
+	u_long on = 1;
 	ioctlsocket(socket, FIONBIO, &on);
 #else
 	int flags;
@@ -308,7 +308,7 @@ bool Connection::Bind()
 	else
 	{
 		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_host);
-		if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+		if (sSocketAddress.sin_addr.s_addr == INADDR_NONE)
 		{
 			return false;
 		}
@@ -628,7 +628,7 @@ bool Connection::DoConnect()
 	sSocketAddress.sin_family = AF_INET;
 	sSocketAddress.sin_port = htons(m_port);
 	sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_host);
-	if (sSocketAddress.sin_addr.s_addr == (unsigned int)-1)
+	if (sSocketAddress.sin_addr.s_addr == INADDR_NONE)
 	{
 		return false;
 	}
@@ -983,10 +983,10 @@ int Connection::send(SOCKET s, const char* buf, int len, int flags)
 #endif
 
 #ifndef HAVE_GETADDRINFO
-unsigned int Connection::ResolveHostAddr(const char* host)
+in_addr_t Connection::ResolveHostAddr(const char* host)
 {
-	unsigned int uaddr = inet_addr(host);
-	if (uaddr == (unsigned int)-1)
+	in_addr_t uaddr = inet_addr(host);
+	if (uaddr == INADDR_NONE)
 	{
 		struct hostent* hinfo;
 		bool err = false;
@@ -1019,7 +1019,7 @@ unsigned int Connection::ResolveHostAddr(const char* host)
 			m_mutexGetHostByName->Unlock();
 #endif
 			ReportError("Could not resolve hostname %s", host, true, h_errnop);
-			return (unsigned int)-1;
+			return INADDR_NONE;
 		}
 
 		memcpy(&uaddr, hinfo->h_addr_list[0], sizeof(uaddr));

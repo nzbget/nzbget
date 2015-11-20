@@ -85,8 +85,8 @@ void ArticleWriter::Prepare()
 	m_resultFilename = m_articleInfo->GetResultFilename();
 }
 
-bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, long long fileSize,
-	long long articleOffset, int articleSize)
+bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 fileSize,
+	int64 articleOffset, int articleSize)
 {
 	char errBuf[256];
 	m_outFile = NULL;
@@ -265,7 +265,7 @@ void ArticleWriter::Finish(bool success)
 }
 
 /* creates output file and subdirectores */
-bool ArticleWriter::CreateOutputFile(long long size)
+bool ArticleWriter::CreateOutputFile(int64 size)
 {
 	if (g_Options->GetDirectWrite() && Util::FileExists(m_outputFilename) &&
 		Util::FileSize(m_outputFilename) == size)
@@ -442,7 +442,7 @@ void ArticleWriter::CompleteFileParts()
 	static const int BUFFER_SIZE = 1024 * 64;
 	char* buffer = NULL;
 	bool firstArticle = true;
-	unsigned long crc = 0;
+	uint32 crc = 0;
 
 	if (g_Options->GetDecode() && !directWrite)
 	{
@@ -630,7 +630,7 @@ void ArticleWriter::FlushCache()
 	char destFile[1024];
 	char errBuf[256];
 	int flushedArticles = 0;
-	long long flushedSize = 0;
+	int64 flushedSize = 0;
 
 	g_ArticleCache->LockFlush();
 

@@ -199,8 +199,8 @@ bool GroupSorter::operator()(NzbInfo* nzbInfo1, NzbInfo* nzbInfo2) const
 void GroupSorter::AlignSelectedGroups()
 {
 	NzbInfo* lastNzbInfo = NULL;
-	unsigned int lastNum = 0;
-	unsigned int num = 0;
+	uint32 lastNum = 0;
+	uint32 num = 0;
 	while (num < m_nzbList->size())
 	{
 		NzbInfo* nzbInfo = m_nzbList->at(num);
@@ -1170,7 +1170,7 @@ void QueueEditor::ReorderFiles(ItemList* itemList)
 
 	EditItem* firstItem = itemList->front();
 	NzbInfo* nzbInfo = firstItem->m_fileInfo->GetNzbInfo();
-	unsigned int insertPos = 0;
+	uint32 insertPos = 0;
 
 	// now can reorder
 	for (ItemList::iterator it = itemList->begin(); it != itemList->end(); it++)

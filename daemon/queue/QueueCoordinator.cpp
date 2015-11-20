@@ -894,7 +894,7 @@ void QueueCoordinator::LogDebugInfo()
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	info("   ---------- Queue");
-	long long remaining, remainingForced;
+	int64 remaining, remainingForced;
 	downloadQueue->CalcRemainingSize(&remaining, &remainingForced);
 	info("     Remaining: %.1f MB, Forced: %.1f MB", remaining / 1024.0 / 1024.0, remainingForced / 1024.0 / 1024.0);
 	info("     Download: %s, Post-process: %s, Scan: %s",

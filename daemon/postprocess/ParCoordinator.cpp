@@ -74,7 +74,7 @@ bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
 }
 
 ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* filename,
-	unsigned long* crc, SegmentList* segments)
+	uint32* crc, SegmentList* segments)
 {
 	CompletedFile* completedFile = NULL;
 

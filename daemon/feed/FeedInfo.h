@@ -47,7 +47,7 @@ private:
 	char*				m_url;
 	int					m_interval;
 	char*				m_filter;
-	unsigned int		m_filterHash;
+	uint32				m_filterHash;
 	bool				m_pauseNzb;
 	char*				m_category;
 	char*				m_feedScript;
@@ -70,7 +70,7 @@ public:
 	const char*			GetUrl() { return m_url; }
 	int					GetInterval() { return m_interval; }
 	const char*			GetFilter() { return m_filter; }
-	unsigned int		GetFilterHash() { return m_filterHash; }
+	uint32				GetFilterHash() { return m_filterHash; }
 	bool				GetPauseNzb() { return m_pauseNzb; }
 	const char*			GetCategory() { return m_category; }
 	int					GetPriority() { return m_priority; }
@@ -145,7 +145,7 @@ private:
 	char*				m_filename;
 	char*				m_url;
 	time_t				m_time;
-	long long			m_size;
+	int64				m_size;
 	char*				m_category;
 	int					m_imdbId;
 	int					m_rageId;
@@ -181,8 +181,8 @@ public:
 	void				SetFilename(const char* filename);
 	const char*			GetUrl() { return m_url; }
 	void				SetUrl(const char* url);
-	long long			GetSize() { return m_size; }
-	void				SetSize(long long size) { m_size = size; }
+	int64				GetSize() { return m_size; }
+	void				SetSize(int64 size) { m_size = size; }
 	const char*			GetCategory() { return m_category; }
 	void				SetCategory(const char* category);
 	int					GetImdbId() { return m_imdbId; }

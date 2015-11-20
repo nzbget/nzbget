@@ -86,11 +86,11 @@ private:
 	char*				m_messageId;
 	int					m_size;
 	char*				m_segmentContent;
-	long long			m_segmentOffset;
+	int64				m_segmentOffset;
 	int					m_segmentSize;
 	EStatus				m_status;
 	char*				m_resultFilename;
-	unsigned long		m_crc;
+	uint32				m_crc;
 
 public:
 						ArticleInfo();
@@ -101,19 +101,19 @@ public:
 	void 				SetMessageId(const char* messageId);
 	void 				SetSize(int size) { m_size = size; }
 	int 				GetSize() { return m_size; }
-	void				AttachSegment(char* content, long long offset, int size);
+	void				AttachSegment(char* content, int64 offset, int size);
 	void				DiscardSegment();
 	const char* 		GetSegmentContent() { return m_segmentContent; }
-	void				SetSegmentOffset(long long segmentOffset) { m_segmentOffset = segmentOffset; }
-	long long			GetSegmentOffset() { return m_segmentOffset; }
+	void				SetSegmentOffset(int64 segmentOffset) { m_segmentOffset = segmentOffset; }
+	int64				GetSegmentOffset() { return m_segmentOffset; }
 	void 				SetSegmentSize(int segmentSize) { m_segmentSize = segmentSize; }
 	int 				GetSegmentSize() { return m_segmentSize; }
 	EStatus				GetStatus() { return m_status; }
 	void				SetStatus(EStatus Status) { m_status = Status; }
 	const char*			GetResultFilename() { return m_resultFilename; }
 	void 				SetResultFilename(const char* v);
-	unsigned long		GetCrc() { return m_crc; }
-	void				SetCrc(unsigned long crc) { m_crc = crc; }
+	uint32				GetCrc() { return m_crc; }
+	void				SetCrc(uint32 crc) { m_crc = crc; }
 };
 
 class FileInfo
@@ -130,11 +130,11 @@ private:
 	ServerStatList		m_serverStats;
 	char* 				m_subject;
 	char*				m_filename;
-	long long 			m_size;
-	long long 			m_remainingSize;
-	long long			m_successSize;
-	long long			m_failedSize;
-	long long			m_missedSize;
+	int64 				m_size;
+	int64 				m_remainingSize;
+	int64				m_successSize;
+	int64				m_failedSize;
+	int64				m_missedSize;
 	int					m_totalArticles;
 	int					m_missedArticles;
 	int					m_failedArticles;
@@ -176,16 +176,16 @@ public:
 	void				MakeValidFilename();
 	bool				GetFilenameConfirmed() { return m_filenameConfirmed; }
 	void				SetFilenameConfirmed(bool filenameConfirmed) { m_filenameConfirmed = filenameConfirmed; }
-	void 				SetSize(long long size) { m_size = size; m_remainingSize = size; }
-	long long 			GetSize() { return m_size; }
-	long long 			GetRemainingSize() { return m_remainingSize; }
-	void 				SetRemainingSize(long long remainingSize) { m_remainingSize = remainingSize; }
-	long long			GetMissedSize() { return m_missedSize; }
-	void 				SetMissedSize(long long missedSize) { m_missedSize = missedSize; }
-	long long			GetSuccessSize() { return m_successSize; }
-	void 				SetSuccessSize(long long successSize) { m_successSize = successSize; }
-	long long			GetFailedSize() { return m_failedSize; }
-	void 				SetFailedSize(long long failedSize) { m_failedSize = failedSize; }
+	void 				SetSize(int64 size) { m_size = size; m_remainingSize = size; }
+	int64 				GetSize() { return m_size; }
+	int64 				GetRemainingSize() { return m_remainingSize; }
+	void 				SetRemainingSize(int64 remainingSize) { m_remainingSize = remainingSize; }
+	int64				GetMissedSize() { return m_missedSize; }
+	void 				SetMissedSize(int64 missedSize) { m_missedSize = missedSize; }
+	int64				GetSuccessSize() { return m_successSize; }
+	void 				SetSuccessSize(int64 successSize) { m_successSize = successSize; }
+	int64				GetFailedSize() { return m_failedSize; }
+	void 				SetFailedSize(int64 failedSize) { m_failedSize = failedSize; }
 	int					GetTotalArticles() { return m_totalArticles; }
 	void 				SetTotalArticles(int totalArticles) { m_totalArticles = totalArticles; }
 	int					GetMissedArticles() { return m_missedArticles; }
@@ -252,16 +252,16 @@ private:
 	int					m_id;
 	char*				m_fileName;
 	EStatus				m_status;
-	unsigned long		m_crc;
+	uint32				m_crc;
 
 public:
-						CompletedFile(int id, const char* fileName, EStatus status, unsigned long crc);
+						CompletedFile(int id, const char* fileName, EStatus status, uint32 crc);
 						~CompletedFile();
 	int					GetId() { return m_id; }
 	void				SetFileName(const char* fileName);
 	const char*			GetFileName() { return m_fileName; }
 	EStatus				GetStatus() { return m_status; }
-	unsigned long		GetCrc() { return m_crc; }
+	uint32				GetCrc() { return m_crc; }
 };
 
 typedef std::deque<CompletedFile*>	CompletedFiles;
@@ -433,21 +433,21 @@ private:
 	char* 				m_category;
 	int		 			m_fileCount;
 	int		 			m_parkedFileCount;
-	long long 			m_size;
-	long long 			m_remainingSize;
+	int64 				m_size;
+	int64 				m_remainingSize;
 	int					m_pausedFileCount;
-	long long 			m_pausedSize;
+	int64 				m_pausedSize;
 	int					m_remainingParCount;
 	int					m_activeDownloads;
-	long long			m_successSize;
-	long long			m_failedSize;
-	long long			m_currentSuccessSize;
-	long long			m_currentFailedSize;
-	long long			m_parSize;
-	long long			m_parSuccessSize;
-	long long			m_parFailedSize;
-	long long			m_parCurrentSuccessSize;
-	long long			m_parCurrentFailedSize;
+	int64				m_successSize;
+	int64				m_failedSize;
+	int64				m_currentSuccessSize;
+	int64				m_currentFailedSize;
+	int64				m_parSize;
+	int64				m_parSuccessSize;
+	int64				m_parFailedSize;
+	int64				m_parCurrentSuccessSize;
+	int64				m_parCurrentFailedSize;
 	int					m_totalArticles;
 	int					m_successArticles;
 	int					m_failedArticles;
@@ -480,8 +480,8 @@ private:
 	char*				m_dupeKey;
 	int					m_dupeScore;
 	EDupeMode			m_dupeMode;
-	unsigned int		m_fullContentHash;
-	unsigned int		m_filteredContentHash;
+	uint32				m_fullContentHash;
+	uint32				m_filteredContentHash;
 	FileList			m_fileList;
 	NzbParameterList	m_ppParameters;
 	ScriptStatusList	m_scriptStatuses;
@@ -491,7 +491,7 @@ private:
 	MessageList			m_messages;
 	int					m_idMessageGen;
 	PostInfo*			m_postInfo;
-	long long 			m_downloadedSize;
+	int64 				m_downloadedSize;
 	time_t				m_downloadStartTime;
 	int					m_downloadSec;
 	int					m_postTotalSec;
@@ -537,36 +537,36 @@ public:
 	void 				SetFileCount(int fileCount) { m_fileCount = fileCount; }
 	int					GetParkedFileCount() { return m_parkedFileCount; }
 	void 				SetParkedFileCount(int parkedFileCount) { m_parkedFileCount = parkedFileCount; }
-	long long 			GetSize() { return m_size; }
-	void 				SetSize(long long size) { m_size = size; }
-	long long 			GetRemainingSize() { return m_remainingSize; }
-	void	 			SetRemainingSize(long long remainingSize) { m_remainingSize = remainingSize; }
-	long long 			GetPausedSize() { return m_pausedSize; }
-	void	 			SetPausedSize(long long pausedSize) { m_pausedSize = pausedSize; }
+	int64 				GetSize() { return m_size; }
+	void 				SetSize(int64 size) { m_size = size; }
+	int64 				GetRemainingSize() { return m_remainingSize; }
+	void	 			SetRemainingSize(int64 remainingSize) { m_remainingSize = remainingSize; }
+	int64 				GetPausedSize() { return m_pausedSize; }
+	void	 			SetPausedSize(int64 pausedSize) { m_pausedSize = pausedSize; }
 	int					GetPausedFileCount() { return m_pausedFileCount; }
 	void 				SetPausedFileCount(int pausedFileCount) { m_pausedFileCount = pausedFileCount; }
 	int					GetRemainingParCount() { return m_remainingParCount; }
 	void 				SetRemainingParCount(int remainingParCount) { m_remainingParCount = remainingParCount; }
 	int					GetActiveDownloads() { return m_activeDownloads; }
 	void				SetActiveDownloads(int activeDownloads);
-	long long			GetSuccessSize() { return m_successSize; }
-	void 				SetSuccessSize(long long successSize) { m_successSize = successSize; }
-	long long			GetFailedSize() { return m_failedSize; }
-	void 				SetFailedSize(long long failedSize) { m_failedSize = failedSize; }
-	long long			GetCurrentSuccessSize() { return m_currentSuccessSize; }
-	void 				SetCurrentSuccessSize(long long currentSuccessSize) { m_currentSuccessSize = currentSuccessSize; }
-	long long			GetCurrentFailedSize() { return m_currentFailedSize; }
-	void 				SetCurrentFailedSize(long long currentFailedSize) { m_currentFailedSize = currentFailedSize; }
-	long long			GetParSize() { return m_parSize; }
-	void 				SetParSize(long long parSize) { m_parSize = parSize; }
-	long long			GetParSuccessSize() { return m_parSuccessSize; }
-	void 				SetParSuccessSize(long long parSuccessSize) { m_parSuccessSize = parSuccessSize; }
-	long long			GetParFailedSize() { return m_parFailedSize; }
-	void 				SetParFailedSize(long long parFailedSize) { m_parFailedSize = parFailedSize; }
-	long long			GetParCurrentSuccessSize() { return m_parCurrentSuccessSize; }
-	void 				SetParCurrentSuccessSize(long long parCurrentSuccessSize) { m_parCurrentSuccessSize = parCurrentSuccessSize; }
-	long long			GetParCurrentFailedSize() { return m_parCurrentFailedSize; }
-	void 				SetParCurrentFailedSize(long long parCurrentFailedSize) { m_parCurrentFailedSize = parCurrentFailedSize; }
+	int64				GetSuccessSize() { return m_successSize; }
+	void 				SetSuccessSize(int64 successSize) { m_successSize = successSize; }
+	int64				GetFailedSize() { return m_failedSize; }
+	void 				SetFailedSize(int64 failedSize) { m_failedSize = failedSize; }
+	int64				GetCurrentSuccessSize() { return m_currentSuccessSize; }
+	void 				SetCurrentSuccessSize(int64 currentSuccessSize) { m_currentSuccessSize = currentSuccessSize; }
+	int64				GetCurrentFailedSize() { return m_currentFailedSize; }
+	void 				SetCurrentFailedSize(int64 currentFailedSize) { m_currentFailedSize = currentFailedSize; }
+	int64				GetParSize() { return m_parSize; }
+	void 				SetParSize(int64 parSize) { m_parSize = parSize; }
+	int64				GetParSuccessSize() { return m_parSuccessSize; }
+	void 				SetParSuccessSize(int64 parSuccessSize) { m_parSuccessSize = parSuccessSize; }
+	int64				GetParFailedSize() { return m_parFailedSize; }
+	void 				SetParFailedSize(int64 parFailedSize) { m_parFailedSize = parFailedSize; }
+	int64				GetParCurrentSuccessSize() { return m_parCurrentSuccessSize; }
+	void 				SetParCurrentSuccessSize(int64 parCurrentSuccessSize) { m_parCurrentSuccessSize = parCurrentSuccessSize; }
+	int64				GetParCurrentFailedSize() { return m_parCurrentFailedSize; }
+	void 				SetParCurrentFailedSize(int64 parCurrentFailedSize) { m_parCurrentFailedSize = parCurrentFailedSize; }
 	int					GetTotalArticles() { return m_totalArticles; }
 	void 				SetTotalArticles(int totalArticles) { m_totalArticles = totalArticles; }
 	int					GetSuccessArticles() { return m_successArticles; }
@@ -639,12 +639,12 @@ public:
 	void				SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
 	EDupeMode			GetDupeMode() { return m_dupeMode; }
 	void				SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
-	unsigned int		GetFullContentHash() { return m_fullContentHash; }
-	void				SetFullContentHash(unsigned int fullContentHash) { m_fullContentHash = fullContentHash; }
-	unsigned int		GetFilteredContentHash() { return m_filteredContentHash; }
-	void				SetFilteredContentHash(unsigned int filteredContentHash) { m_filteredContentHash = filteredContentHash; }
-	long long 			GetDownloadedSize() { return m_downloadedSize; }
-	void 				SetDownloadedSize(long long downloadedSize) { m_downloadedSize = downloadedSize; }
+	uint32				GetFullContentHash() { return m_fullContentHash; }
+	void				SetFullContentHash(uint32 fullContentHash) { m_fullContentHash = fullContentHash; }
+	uint32				GetFilteredContentHash() { return m_filteredContentHash; }
+	void				SetFilteredContentHash(uint32 filteredContentHash) { m_filteredContentHash = filteredContentHash; }
+	int64 				GetDownloadedSize() { return m_downloadedSize; }
+	void 				SetDownloadedSize(int64 downloadedSize) { m_downloadedSize = downloadedSize; }
 	int					GetDownloadSec() { return m_downloadSec; }
 	void 				SetDownloadSec(int downloadSec) { m_downloadSec = downloadSec; }
 	int					GetPostTotalSec() { return m_postTotalSec; }
@@ -802,9 +802,9 @@ private:
 	char*				m_dupeKey;
 	int					m_dupeScore;
 	EDupeMode			m_dupeMode;
-	long long 			m_size;
-	unsigned int		m_fullContentHash;
-	unsigned int		m_filteredContentHash;
+	int64 				m_size;
+	uint32				m_fullContentHash;
+	uint32				m_filteredContentHash;
 	EStatus				m_status;
 
 public:
@@ -820,12 +820,12 @@ public:
 	void				SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
 	EDupeMode			GetDupeMode() { return m_dupeMode; }
 	void				SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
-	long long			GetSize() { return m_size; }
-	void 				SetSize(long long size) { m_size = size; }
-	unsigned int		GetFullContentHash() { return m_fullContentHash; }
-	void				SetFullContentHash(unsigned int fullContentHash) { m_fullContentHash = fullContentHash; }
-	unsigned int		GetFilteredContentHash() { return m_filteredContentHash; }
-	void				SetFilteredContentHash(unsigned int filteredContentHash) { m_filteredContentHash = filteredContentHash; }
+	int64				GetSize() { return m_size; }
+	void 				SetSize(int64 size) { m_size = size; }
+	uint32				GetFullContentHash() { return m_fullContentHash; }
+	void				SetFullContentHash(uint32 fullContentHash) { m_fullContentHash = fullContentHash; }
+	uint32				GetFilteredContentHash() { return m_filteredContentHash; }
+	void				SetFilteredContentHash(uint32 filteredContentHash) { m_filteredContentHash = filteredContentHash; }
 	EStatus				GetStatus() { return m_status; }
 	void				SetStatus(EStatus Status) { m_status = Status; }
 };
@@ -970,7 +970,7 @@ public:
 	virtual bool			EditEntry(int ID, EEditAction action, int offset, const char* text) = 0;
 	virtual bool			EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text) = 0;
 	virtual void			Save() = 0;
-	void					CalcRemainingSize(long long* remaining, long long* remainingForced);
+	void					CalcRemainingSize(int64* remaining, int64* remainingForced);
 };
 
 #endif

@@ -42,7 +42,7 @@ const char* g_MessageRequestNames[] =
 		"Edit queue", "Log", "Quit", "Reload", "Version", "Post-queue", "Write log", "Scan",
 		"Pause/Unpause postprocessor", "History" };
 
-const unsigned int g_MessageRequestSizes[] =
+const uint32 g_MessageRequestSizes[] =
 	{ 0,
 		sizeof(SNzbDownloadRequest),
 		sizeof(SNzbPauseUnpauseRequest),
@@ -557,7 +557,7 @@ void ListBinCommand::Execute()
 
 			SNzbListResponseNzbEntry* listAnswer = (SNzbListResponseNzbEntry*) bufptr;
 
-			unsigned long sizeHi, sizeLo, remainingSizeHi, remainingSizeLo, pausedSizeHi, pausedSizeLo;
+			uint32 sizeHi, sizeLo, remainingSizeHi, remainingSizeLo, pausedSizeHi, pausedSizeLo;
 			Util::SplitInt64(nzbInfo->GetSize(), &sizeHi, &sizeLo);
 			Util::SplitInt64(nzbInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
 			Util::SplitInt64(nzbInfo->GetPausedSize(), &pausedSizeHi, &pausedSizeLo);
@@ -634,12 +634,12 @@ void ListBinCommand::Execute()
 			{
 				FileInfo* fileInfo = *it2;
 
-				unsigned long sizeHi, sizeLo;
+				uint32 sizeHi, sizeLo;
 				SNzbListResponseFileEntry* listAnswer = (SNzbListResponseFileEntry*) bufptr;
 				listAnswer->m_id = htonl(fileInfo->GetId());
 
 				int nzbIndex = 0;
-				for (unsigned int i = 0; i < downloadQueue->GetQueue()->size(); i++)
+				for (uint32 i = 0; i < downloadQueue->GetQueue()->size(); i++)
 				{
 					nzbIndex++;
 					if (downloadQueue->GetQueue()->at(i) == fileInfo->GetNzbInfo())
@@ -701,11 +701,11 @@ void ListBinCommand::Execute()
 			NzbInfo* nzbInfo = *it;
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 		}
-		long long remainingSize;
+		int64 remainingSize;
 		downloadQueue->CalcRemainingSize(&remainingSize, NULL);
 		DownloadQueue::Unlock();
 
-		unsigned long sizeHi, sizeLo;
+		uint32 sizeHi, sizeLo;
 		ListResponse.m_downloadRate = htonl(g_StatMeter->CalcCurrentDownloadSpeed());
 		Util::SplitInt64(remainingSize, &sizeHi, &sizeLo);
 		ListResponse.m_remainingSizeHi = htonl(sizeHi);
@@ -718,7 +718,7 @@ void ListBinCommand::Execute()
 		ListResponse.m_postJobCount = htonl(postJobCount);
 
 		int upTimeSec, dnTimeSec;
-		long long allBytes;
+		int64 allBytes;
 		bool standBy;
 		g_StatMeter->CalcTotalStat(&upTimeSec, &dnTimeSec, &allBytes, &standBy);
 		ListResponse.m_upTimeSec = htonl(upTimeSec);
@@ -752,7 +752,7 @@ void LogBinCommand::Execute()
 	MessageList* messages = g_Log->LockMessages();
 
 	int nrEntries = ntohl(LogRequest.m_lines);
-	unsigned int idFrom = ntohl(LogRequest.m_idFrom);
+	uint32 idFrom = ntohl(LogRequest.m_idFrom);
 	int start = messages->size();
 	if (nrEntries > 0)
 	{
@@ -778,7 +778,7 @@ void LogBinCommand::Execute()
 
 	// calculate required buffer size
 	int bufsize = nrEntries * sizeof(SNzbLogResponseEntry);
-	for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
+	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
 		Message* message = (*messages)[i];
 		bufsize += strlen(message->GetText()) + 1;
@@ -788,7 +788,7 @@ void LogBinCommand::Execute()
 
 	char* buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
-	for (unsigned int i = (unsigned int)start; i < messages->size(); i++)
+	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
 		Message* message = (*messages)[i];
 		SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufptr;
@@ -844,9 +844,9 @@ void EditQueueBinCommand::Execute()
 	int matchMode = ntohl(EditQueueRequest.m_matchMode);
 	int offset = ntohl(EditQueueRequest.m_offset);
 	int textLen = ntohl(EditQueueRequest.m_textLen);
-	unsigned int bufLength = ntohl(EditQueueRequest.m_trailingDataLength);
+	uint32 bufLength = ntohl(EditQueueRequest.m_trailingDataLength);
 
-	if (nrIdEntries * sizeof(int32_t) + textLen + nameEntriesLen != bufLength)
+	if (nrIdEntries * sizeof(int32) + textLen + nameEntriesLen != bufLength)
 	{
 		error("Invalid struct size");
 		return;
@@ -868,8 +868,8 @@ void EditQueueBinCommand::Execute()
 	}
 
 	char* text = textLen > 0 ? buf : NULL;
-	int32_t* ids = (int32_t*)(buf + textLen);
-	char* names = (buf + textLen + nrIdEntries * sizeof(int32_t));
+	int32* ids = (int32*)(buf + textLen);
+	char* names = (buf + textLen + nrIdEntries * sizeof(int32));
 
 	IdList cIdList;
 	NameList cNameList;
@@ -1143,7 +1143,7 @@ void HistoryBinCommand::Execute()
 			if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 			{
 				NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
-				unsigned long sizeHi, sizeLo;
+				uint32 sizeHi, sizeLo;
 				Util::SplitInt64(nzbInfo->GetSize(), &sizeHi, &sizeLo);
 				listAnswer->m_sizeLo				= htonl(sizeLo);
 				listAnswer->m_sizeHi				= htonl(sizeHi);
@@ -1154,7 +1154,7 @@ void HistoryBinCommand::Execute()
 			else if (historyInfo->GetKind() == HistoryInfo::hkDup && showHidden)
 			{
 				DupInfo* dupInfo = historyInfo->GetDupInfo();
-				unsigned long sizeHi, sizeLo;
+				uint32 sizeHi, sizeLo;
 				Util::SplitInt64(dupInfo->GetSize(), &sizeHi, &sizeLo);
 				listAnswer->m_sizeLo				= htonl(sizeLo);
 				listAnswer->m_sizeHi				= htonl(sizeHi);

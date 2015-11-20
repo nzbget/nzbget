@@ -489,7 +489,7 @@ bool Util::SaveBufferIntoFile(const char* fileName, const char* buffer, int bufL
 	return writtenBytes == bufLen;
 }
 
-bool Util::CreateSparseFile(const char* filename, long long size, char* errBuf, int bufSize)
+bool Util::CreateSparseFile(const char* filename, int64 size, char* errBuf, int bufSize)
 {
 	*errBuf = '\0';
 	bool ok = false;
@@ -628,15 +628,15 @@ bool Util::MakeUniqueFilename(char* destBufFilename, int destBufSize, const char
 	return dupeNumber > 0;
 }
 
-long long Util::JoinInt64(unsigned long Hi, unsigned long Lo)
+int64 Util::JoinInt64(uint32 Hi, uint32 Lo)
 {
-	return (((long long)Hi) << 32) + Lo;
+	return (((int64)Hi) << 32) + Lo;
 }
 
-void Util::SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo)
+void Util::SplitInt64(int64 Int64, uint32* Hi, uint32* Lo)
 {
-	*Hi = (unsigned long)(Int64 >> 32);
-	*Lo = (unsigned long)(Int64 & 0xFFFFFFFF);
+	*Hi = (uint32)(Int64 >> 32);
+	*Lo = (uint32)(Int64 & 0xFFFFFFFF);
 }
 
 /* Base64 decryption is taken from
@@ -661,9 +661,9 @@ const static char BASE64_DEALPHABET [128] =
 	49, 50, 51,  0,  0,  0,  0,  0			// 120 - 127
 	};
 
-unsigned int DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
+uint32 DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
 {
-	unsigned int buffer = 0;
+	uint32 buffer = 0;
 
 	if (inputBuffer[3] == '=')
 	{
@@ -860,7 +860,7 @@ bool Util::DeleteDirectoryWithContent(const char* dirFilename, char* errBuf, int
 	return ok;
 }
 
-long long Util::FileSize(const char* filename)
+int64 Util::FileSize(const char* filename)
 {
 #ifdef WIN32
 	struct _stat32i64 buffer;
@@ -872,7 +872,7 @@ long long Util::FileSize(const char* filename)
 	return buffer.st_size;
 }
 
-long long Util::FreeDiskSize(const char* path)
+int64 Util::FreeDiskSize(const char* path)
 {
 #ifdef WIN32
 	ULARGE_INTEGER free, dummy;
@@ -884,7 +884,7 @@ long long Util::FreeDiskSize(const char* path)
 	struct statvfs diskdata;
 	if (!statvfs(path, &diskdata))
 	{
-		return (long long)diskdata.f_frsize * (long long)diskdata.f_bavail;
+		return (int64)diskdata.f_frsize * (int64)diskdata.f_bavail;
 	}
 #endif
 	return -1;
@@ -1016,7 +1016,7 @@ void Util::GetExeFileName(const char* argv0, char* buffer, int bufSize)
 #endif
 }
 
-char* Util::FormatSize(char * buffer, int bufLen, long long fileSize)
+char* Util::FormatSize(char * buffer, int bufLen, int64 fileSize)
 {
 	if (fileSize > 1024 * 1024 * 1000)
 	{
@@ -1142,7 +1142,7 @@ bool Util::SplitCommandLine(const char* commandLine, char*** argv)
 	int argCount = 0;
 	char buf[1024];
 	char* pszArgList[100];
-	unsigned int len = 0;
+	uint32 len = 0;
 	bool escaping = false;
 	bool space = true;
 	for (const char* p = commandLine; ; p++)
@@ -1258,10 +1258,8 @@ char* Util::ReduceStr(char* str, const char* from, const char* to)
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */
-typedef  unsigned int  ub4;   /* unsigned 4-byte quantities */
-typedef  unsigned char ub1;
 
-#define hashsize(n) ((ub4)1<<(n))
+#define hashsize(n) ((uint32)1<<(n))
 #define hashmask(n) (hashsize(n)-1)
 
 #define mix(a,b,c) \
@@ -1277,12 +1275,12 @@ b -= c; b -= a; b ^= (a<<10); \
 c -= a; c -= b; c ^= (b>>15); \
 }
 
-ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
-// register ub1 *k;        /* the key */
-// register ub4  length;   /* the length of the key */
-// register ub4  initval;    /* the previous hash, or an arbitrary value */
+uint32 hash(register uint8 *k, register uint32  length, register uint32  initval)
+// register uint8 *k;        /* the key */
+// register uint32  length;   /* the length of the key */
+// register uint32  initval;    /* the previous hash, or an arbitrary value */
 {
-	register ub4 a,b,c,len;
+	register uint32 a,b,c,len;
 
 	/* Set up the internal state */
 	len = length;
@@ -1292,9 +1290,9 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 	/*---------------------------------------- handle most of the key */
 	while (len >= 12)
 	{
-		a += (k[0] +((ub4)k[1]<<8) +((ub4)k[2]<<16) +((ub4)k[3]<<24));
-		b += (k[4] +((ub4)k[5]<<8) +((ub4)k[6]<<16) +((ub4)k[7]<<24));
-		c += (k[8] +((ub4)k[9]<<8) +((ub4)k[10]<<16)+((ub4)k[11]<<24));
+		a += (k[0] +((uint32)k[1]<<8) +((uint32)k[2]<<16) +((uint32)k[3]<<24));
+		b += (k[4] +((uint32)k[5]<<8) +((uint32)k[6]<<16) +((uint32)k[7]<<24));
+		c += (k[8] +((uint32)k[9]<<8) +((uint32)k[10]<<16)+((uint32)k[11]<<24));
 		mix(a,b,c);
 		k += 12; len -= 12;
 	}
@@ -1303,17 +1301,17 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 	c += length;
 	switch(len)              /* all the case statements fall through */
 	{
-		case 11: c+=((ub4)k[10]<<24);
-		case 10: c+=((ub4)k[9]<<16);
-		case 9 : c+=((ub4)k[8]<<8);
+		case 11: c+=((uint32)k[10]<<24);
+		case 10: c+=((uint32)k[9]<<16);
+		case 9 : c+=((uint32)k[8]<<8);
 			/* the first byte of c is reserved for the length */
-		case 8 : b+=((ub4)k[7]<<24);
-		case 7 : b+=((ub4)k[6]<<16);
-		case 6 : b+=((ub4)k[5]<<8);
+		case 8 : b+=((uint32)k[7]<<24);
+		case 7 : b+=((uint32)k[6]<<16);
+		case 6 : b+=((uint32)k[5]<<8);
 		case 5 : b+=k[4];
-		case 4 : a+=((ub4)k[3]<<24);
-		case 3 : a+=((ub4)k[2]<<16);
-		case 2 : a+=((ub4)k[1]<<8);
+		case 4 : a+=((uint32)k[3]<<24);
+		case 3 : a+=((uint32)k[2]<<16);
+		case 2 : a+=((uint32)k[1]<<8);
 		case 1 : a+=k[0];
 			/* case 0: nothing left to add */
 	}
@@ -1322,9 +1320,9 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 	return c;
 }
 
-unsigned int Util::HashBJ96(const char* buffer, int bufSize, unsigned int initValue)
+uint32 Util::HashBJ96(const char* buffer, int bufSize, uint32 initValue)
 {
-	return (unsigned int)hash((ub1*)buffer, (ub4)bufSize, (ub4)initValue);
+	return (uint32)hash((uint8*)buffer, (uint32)bufSize, (uint32)initValue);
 }
 
 #ifdef WIN32
@@ -1414,7 +1412,7 @@ void Util::SetStandByMode(bool standBy)
 #endif
 }
 
-static unsigned long crc32_tab[] = {
+static uint32 crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
 	0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -1470,17 +1468,17 @@ static unsigned long crc32_tab[] = {
  *				reached. the crc32-checksum will be
  *				the result.
  */
-unsigned long Util::Crc32m(unsigned long startCrc, unsigned char *block, unsigned long length)
+uint32 Util::Crc32m(uint32 startCrc, uchar *block, uint32 length)
 {
-	register unsigned long crc = startCrc;
-	for (unsigned long i = 0; i < length; i++)
+	register uint32 crc = startCrc;
+	for (uint32 i = 0; i < length; i++)
 	{
 		crc = ((crc >> 8) & 0x00FFFFFF) ^ crc32_tab[(crc ^ *block++) & 0xFF];
 	}
 	return crc;
 }
 
-unsigned long Util::Crc32(unsigned char *block, unsigned long length)
+uint32 Util::Crc32(uchar *block, uint32 length)
 {
 	return Util::Crc32m(0xFFFFFFFF, block, length) ^ 0xFFFFFFFF;
 }
@@ -1491,9 +1489,9 @@ unsigned long Util::Crc32(unsigned char *block, unsigned long length)
 
 #define GF2_DIM 32      /* dimension of GF(2) vectors (length of CRC) */
 
-unsigned long gf2_matrix_times(unsigned long *mat, unsigned long vec)
+uint32 gf2_matrix_times(uint32 *mat, uint32 vec)
 {
-	unsigned long sum;
+	uint32 sum;
 
 	sum = 0;
 	while (vec) {
@@ -1505,7 +1503,7 @@ unsigned long gf2_matrix_times(unsigned long *mat, unsigned long vec)
 	return sum;
 }
 
-void gf2_matrix_square(unsigned long *square, unsigned long *mat)
+void gf2_matrix_square(uint32 *square, uint32 *mat)
 {
 	int n;
 
@@ -1513,12 +1511,12 @@ void gf2_matrix_square(unsigned long *square, unsigned long *mat)
 		square[n] = gf2_matrix_times(mat, mat[n]);
 }
 
-unsigned long Util::Crc32Combine(unsigned long crc1, unsigned long crc2, unsigned long len2)
+uint32 Util::Crc32Combine(uint32 crc1, uint32 crc2, uint32 len2)
 {
 	int n;
-	unsigned long row;
-	unsigned long even[GF2_DIM];    /* even-power-of-two zeros operator */
-	unsigned long odd[GF2_DIM];     /* odd-power-of-two zeros operator */
+	uint32 row;
+	uint32 even[GF2_DIM];    /* even-power-of-two zeros operator */
+	uint32 odd[GF2_DIM];     /* odd-power-of-two zeros operator */
 
 	/* degenerate case (also disallow negative lengths) */
 	if (len2 <= 0)
@@ -1632,30 +1630,30 @@ bool Util::FlushDirBuffers(const char* filename, char* errBuf, int bufSize)
 	return ok;
 }
 
-long long Util::GetCurrentTicks()
+int64 Util::GetCurrentTicks()
 {
 #ifdef WIN32
-	static long long hz=0, hzo=0;
+	static int64 hz=0, hzo=0;
 	if (!hz)
 	{
 		QueryPerformanceFrequency((LARGE_INTEGER*)&hz);
 		QueryPerformanceCounter((LARGE_INTEGER*)&hzo);
 	}
-	long long t;
+	int64 t;
 	QueryPerformanceCounter((LARGE_INTEGER*)&t);
 	return ((t-hzo)*1000000)/hz;
 #else
 	timeval t;
 	gettimeofday(&t, NULL);
-	return (long long)(t.tv_sec) * 1000000ll + (long long)(t.tv_usec);
+	return (int64)(t.tv_sec) * 1000000ll + (int64)(t.tv_usec);
 #endif
 }
 
-unsigned int WebUtil::DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer)
+uint32 WebUtil::DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer)
 {
-	unsigned int InputBufferIndex  = 0;
-	unsigned int OutputBufferIndex = 0;
-	unsigned int InputBufferLength = inputBufferLength > 0 ? inputBufferLength : strlen(inputBuffer);
+	uint32 InputBufferIndex  = 0;
+	uint32 OutputBufferIndex = 0;
+	uint32 InputBufferLength = inputBufferLength > 0 ? inputBufferLength : strlen(inputBuffer);
 
 	char ByteQuartet [4];
 	int i = 0;
@@ -1696,7 +1694,7 @@ char* WebUtil::XmlEncode(const char* raw)
 	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '>':
@@ -1725,7 +1723,7 @@ char* WebUtil::XmlEncode(const char* raw)
 	char* output = result;
 	for (const char* p = raw; ; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\0':
@@ -1753,7 +1751,7 @@ char* WebUtil::XmlEncode(const char* raw)
 			default:
 				if (ch < 0x20 || ch > 0x80)
 				{
-					unsigned int cp = ch;
+					uint32 cp = ch;
 
 					// decode utf8
 					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
@@ -1977,7 +1975,7 @@ char* WebUtil::JsonEncode(const char* raw)
 	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\"':
@@ -2005,7 +2003,7 @@ char* WebUtil::JsonEncode(const char* raw)
 	char* output = result;
 	for (const char* p = raw; ; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\0':
@@ -2045,7 +2043,7 @@ char* WebUtil::JsonEncode(const char* raw)
 			default:
 				if (ch < 0x20 || ch > 0x80)
 				{
-					unsigned int cp = ch;
+					uint32 cp = ch;
 
 					// decode utf8
 					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
@@ -2244,13 +2242,13 @@ void WebUtil::UrlDecode(char* raw)
 			case '%':
 				{
 					p++;
-					unsigned char c1 = *p++;
-					unsigned char c2 = *p++;
+					uchar c1 = *p++;
+					uchar c2 = *p++;
 					c1 = '0' <= c1 && c1 <= '9' ? c1 - '0' : 'A' <= c1 && c1 <= 'F' ? c1 - 'A' + 10 :
 						'a' <= c1 && c1 <= 'f' ? c1 - 'a' + 10 : 0;
 					c2 = '0' <= c2 && c2 <= '9' ? c2 - '0' : 'A' <= c2 && c2 <= 'F' ? c2 - 'A' + 10 :
 						'a' <= c2 && c2 <= 'f' ? c2 - 'a' + 10 : 0;
-					unsigned char ch = (c1 << 4) + c2;
+					uchar ch = (c1 << 4) + c2;
 					*output++ = (char)ch;
 					break;
 				}
@@ -2282,7 +2280,7 @@ char* WebUtil::UrlEncode(const char* raw)
 	char* output = result;
 	for (const char* p = raw; ; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\0':
@@ -2331,8 +2329,8 @@ bool WebUtil::AnsiToUtf8(char* buffer, int bufLen)
 char* WebUtil::Latin1ToUtf8(const char* str)
 {
 	char *res = (char*)malloc(strlen(str) * 2 + 1);
-	const unsigned char *in = (const unsigned char*)str;
-	unsigned char *out = (unsigned char*)res;
+	const uchar *in = (const uchar*)str;
+	uchar *out = (uchar*)res;
 	while (*in)
 	{
 		if (*in < 128)
@@ -2753,14 +2751,14 @@ bool WildMask::Match(const char* text)
 
 
 #ifndef DISABLE_GZIP
-unsigned int ZLib::GZipLen(int inputBufferLength)
+uint32 ZLib::GZipLen(int inputBufferLength)
 {
 	z_stream zstr;
 	memset(&zstr, 0, sizeof(zstr));
-	return (unsigned int)deflateBound(&zstr, inputBufferLength);
+	return (uint32)deflateBound(&zstr, inputBufferLength);
 }
 
-unsigned int ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength)
+uint32 ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength)
 {
 	z_stream zstr;
 	zstr.zalloc = Z_NULL;
@@ -2777,10 +2775,10 @@ unsigned int ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* ou
 		return 0;
 	}
 
-	unsigned int total_out = 0;
+	uint32 total_out = 0;
 	if (deflate(&zstr, Z_FINISH) == Z_STREAM_END)
 	{
-		total_out = (unsigned int)zstr.total_out;
+		total_out = (uint32)zstr.total_out;
 	}
 
 	deflateEnd(&zstr);

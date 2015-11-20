@@ -486,8 +486,8 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	char fullFilename[1024];
 	snprintf(fullFilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, fragBaseName);
 	fullFilename[1024-1] = '\0';
-	long long firstSegmentSize = Util::FileSize(fullFilename);
-	long long difSegmentSize = 0;
+	int64 firstSegmentSize = Util::FileSize(fullFilename);
+	int64 difSegmentSize = 0;
 
 	// Validate joinable file:
 	//  - fragments have continuous numbers (no holes);
@@ -516,7 +516,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 			min = segNum < min || min == -1 ? segNum : min;
 			max = segNum > max ? segNum : max;
 
-			long long segmentSize = Util::FileSize(fullFilename);
+			int64 segmentSize = Util::FileSize(fullFilename);
 			if (segmentSize != firstSegmentSize)
 			{
 				difSizeCount++;
@@ -555,8 +555,8 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 		setvbuf(outFile, NULL, _IOFBF, g_Options->GetWriteBuffer() * 1024);
 	}
 
-	long long totalSize = firstSegmentSize * (count - 1) + difSegmentSize;
-	long long written = 0;
+	int64 totalSize = firstSegmentSize * (count - 1) + difSegmentSize;
+	int64 written = 0;
 
 	static const int BUFFER_SIZE = 1024 * 50;
 	char* buffer = (char*)malloc(BUFFER_SIZE);
