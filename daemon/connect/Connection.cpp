@@ -584,6 +584,11 @@ bool Connection::DoConnect()
 		}
 		triedAddr.push_back(sa);
 
+		if (m_socket != INVALID_SOCKET)
+		{
+			closesocket(m_socket);
+		}
+
 		m_socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 #ifdef WIN32
 		SetHandleInformation((HANDLE)m_socket, HANDLE_FLAG_INHERIT, 0);
