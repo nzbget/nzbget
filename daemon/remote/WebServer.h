@@ -61,7 +61,7 @@ private:
 	void				Dispatch();
 	void				SendAuthResponse();
 	void				SendOptionsResponse();
-	void				SendErrorResponse(const char* errCode);
+	void				SendErrorResponse(const char* errCode, bool printWarning);
 	void				SendFileResponse(const char* filename);
 	void				SendBodyResponse(const char* body, int bodyLen, const char* contentType);
 	void				SendRedirectResponse(const char* url);

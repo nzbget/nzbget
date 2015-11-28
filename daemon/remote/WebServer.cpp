@@ -308,7 +308,7 @@ void WebProcessor::Dispatch()
 {
 	if (*m_url != '/')
 	{
-		SendErrorResponse(ERR_HTTP_BAD_REQUEST);
+		SendErrorResponse(ERR_HTTP_BAD_REQUEST, true);
 		return;
 	}
 
@@ -326,13 +326,13 @@ void WebProcessor::Dispatch()
 
 	if (Util::EmptyStr(g_Options->GetWebDir()))
 	{
-		SendErrorResponse(ERR_HTTP_SERVICE_UNAVAILABLE);
+		SendErrorResponse(ERR_HTTP_SERVICE_UNAVAILABLE, true);
 		return;
 	}
 
 	if (m_httpMethod != hmGet)
 	{
-		SendErrorResponse(ERR_HTTP_BAD_REQUEST);
+		SendErrorResponse(ERR_HTTP_BAD_REQUEST, true);
 		return;
 	}
 
@@ -343,7 +343,7 @@ void WebProcessor::Dispatch()
 		if (!((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') ||
 			*p == '.' || *p == '-' || *p == '_' || *p == '/') || (*p == '.' && p[1] == '.'))
 		{
-			SendErrorResponse(ERR_HTTP_NOT_FOUND);
+			SendErrorResponse(ERR_HTTP_NOT_FOUND, true);
 			return;
 		}
 	}
@@ -403,7 +403,7 @@ void WebProcessor::SendOptionsResponse()
 	m_connection->Send(responseHeader, strlen(responseHeader));
 }
 
-void WebProcessor::SendErrorResponse(const char* errCode)
+void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
 {
 	const char* RESPONSE_HEADER =
 		"HTTP/1.0 %s\r\n"
@@ -413,7 +413,10 @@ void WebProcessor::SendErrorResponse(const char* errCode)
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 
-	warn("Web-Server: %s, Resource: %s", errCode, m_url);
+	if (printWarning)
+	{
+		warn("Web-Server: %s, Resource: %s", errCode, m_url);
+	}
 
 	char responseBody[1024];
 	snprintf(responseBody, 1024, "<html><head><title>%s</title></head><body>Error: %s</body></html>", errCode, errCode);
@@ -518,7 +521,12 @@ void WebProcessor::SendFileResponse(const char* filename)
 	int bodyLen;
 	if (!Util::LoadFileIntoBuffer(filename, &body, &bodyLen))
 	{
-		SendErrorResponse(ERR_HTTP_NOT_FOUND);
+		// do not print warnings "404 not found" for certain files
+		bool ignorable = !strcmp(filename, "package-info.json") ||
+			!strcmp(filename, "favicon.ico") ||
+			!strncmp(filename, "apple-touch-icon", 16);
+
+		SendErrorResponse(ERR_HTTP_NOT_FOUND, ignorable);
 		return;
 	}
 
