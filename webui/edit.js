@@ -1099,6 +1099,9 @@ var LogTab = (new function($)
 {
 	'use strict'
 
+	var curLog;
+	var curItem;
+
 	this.init = function(name)
 	{
 		var recordsPerPage = UISettings.read('ItemLogRecordsPerPage', 10);
@@ -1128,8 +1131,12 @@ var LogTab = (new function($)
 
 	this.fill = function(name, item)
 	{
+		curItem = item;
+
 		function logLoaded(log)
 		{
+		curLog = log;
+
 			$('#' + name + 'EditDialog .loading-block').hide();
 			var $LogTable = $('#' + name + 'Edit_LogTable');
 			var data = [];
@@ -1189,7 +1196,7 @@ var LogTab = (new function($)
 			cell.width = '65px';
 		}
 	}
-	
+
 	this.recordsPerPageChange = function(name)
 	{
 		var val = $('#' + name + 'LogRecordsPerPage').val();
@@ -1197,7 +1204,28 @@ var LogTab = (new function($)
 		var $LogTable = $('#' + name + 'Edit_LogTable');
 		$LogTable.fasttable('setPageSize', val);
 	}
-	
+
+	this.export = function()
+	{
+		var filename = curItem.NZBName + '.log';
+		var logstr = '';
+
+		for (var i=0; i < curLog.length; i++)
+		{
+			var message = curLog[i];
+			var time = Util.formatDateTime(message.Time + UISettings.timeZoneCorrection*60*60);
+			logstr += time + '\t' + message.Kind + '\t' + message.Text + '\n';
+		}
+
+		if (!Util.saveToLocalFile(logstr, "text/plain;charset=utf-8", filename))
+		{
+			var queueDir = Options.option('QueueDir');
+			var pathSeparator = queueDir.indexOf('\\') > -1 ? '\\' : '/';
+			alert('Unfortunately your browser doesn\'t support access to local file system.\n\n' +
+				'The log of this nzb can be found in file "' +
+				queueDir + pathSeparator + 'n' + curItem.NZBID + '.log"');
+		}
+	}
 }(jQuery));
 
 

@@ -1120,7 +1120,10 @@
 					<img src="img/transmit.gif"></img>
 				</div>
 				<div>
-					<div class="form-inline clearfix modal-toolbox">
+					<div class="btn-toolbar form-inline clearfix modal-toolbox">
+						<div class="pull-left btn-group">
+							<button class="btn" onclick="LogTab.export()" title="Save log into file"><i class="icon-save"></i><span class="btn-caption"> Save To File</span></button>
+						</div>
 						<div id="DownloadsLogRecordsPerPageBlock" class="pull-left toolbox-length">
 							<select size="1" id="DownloadsLogRecordsPerPage" onchange="LogTab.recordsPerPageChange('Downloads')">
 								<option value="5">5</option>
@@ -1444,7 +1447,10 @@
 					<img src="img/transmit.gif"></img>
 				</div>
 				<div>
-					<div class="form-inline clearfix modal-toolbox">
+					<div class="btn-toolbar form-inline clearfix modal-toolbox">
+    					<div class="pull-left btn-group">
+							<button class="btn" onclick="LogTab.export()" title="Save log into file"><i class="icon-save"></i><span class="btn-caption"> Save To File</span></button>
+						</div>
 						<div id="HistoryLogRecordsPerPageBlock" class="pull-left toolbox-length">
 							<select size="1" id="HistoryLogRecordsPerPage" onchange="LogTab.recordsPerPageChange('History')">
 								<option value="5">5</option>

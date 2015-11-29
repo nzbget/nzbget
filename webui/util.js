@@ -286,6 +286,36 @@ var Util = (new function($)
 		return valueList;
 	}
 
+	this.saveToLocalFile = function(content, type, filename)
+	{
+		if (!window.Blob)
+		{
+			return false;
+		}
+		
+		var blob = new Blob([content], {type: type});
+
+		if (navigator.msSaveBlob)
+		{
+			navigator.msSaveBlob(blob, filename);
+		}
+		else
+		{
+			var URL = window.URL || window.webkitURL || window;
+			var object_url = URL.createObjectURL(blob);
+
+			var save_link = document.createElement('a');
+			save_link.href = object_url;
+			save_link.download = filename;
+
+			var event = document.createEvent('MouseEvents');
+			event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+			save_link.dispatchEvent(event);
+		}
+
+		return true;
+	}
+
 }(jQuery));
 
 

@@ -635,6 +635,10 @@ ul.dropdown-menu > li > a > i {
 	background-position: -304px -48px;
 }
 
+.icon-save {
+	background-position: -464px -80px;
+}
+
 .icon-rss {
 	background-position: -304px -112px;
 }
@@ -770,6 +774,10 @@ table.datatable > tbody > tr > td {
 /* top toolbox (length-combo and pager) for tables */
 .toolbox-top {
 	margin-bottom: 8px;
+}
+
+div.btn-group + div.toolbox-length {
+	margin-left: 10px;
 }
 
 /* combobox with page length for tables */
@@ -2217,6 +2225,10 @@ body.phone,
 
 .phone div.toolbox-length {
 	margin-top: 10px;
+}
+
+.phone .modal-toolbox div.toolbox-length {
+	margin-top: 0;
 }
 
 .phone .pagination {

@@ -2240,29 +2240,7 @@ var ConfigBackupRestore = (new function($)
 
 		var filename = 'nzbget-' + datestr + '.conf';
 
-		if (window.Blob)
-		{
-			var blob = new Blob([settings], {type: "text/plain;charset=utf-8"});
-
-			if (navigator.msSaveBlob)
-			{
-				navigator.msSaveBlob(blob, filename);
-			}
-			else
-			{
-				var URL = window.URL || window.webkitURL || window;
-				var object_url = URL.createObjectURL(blob);
-
-				var save_link = document.createElement('a');
-				save_link.href = object_url;
-				save_link.download = filename;
-
-				var event = document.createEvent('MouseEvents');
-				event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-				save_link.dispatchEvent(event);
-			}
-		}
-		else
+		if (!Util.saveToLocalFile(settings, "text/plain;charset=utf-8", filename))
 		{
 			alert('Unfortunately your browser doesn\'t support access to local file system.\n\n'+
 				'To backup settings you can manually save file "nzbget.conf" (' +
