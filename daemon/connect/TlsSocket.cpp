@@ -463,17 +463,15 @@ void TlsSocket::Close()
 
 int TlsSocket::Send(const char* buffer, int size)
 {
-	int ret;
-
 #ifdef HAVE_LIBGNUTLS
-	ret = gnutls_record_send((gnutls_session_t)m_session, buffer, size);
+	m_retCode = gnutls_record_send((gnutls_session_t)m_session, buffer, size);
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	ret = SSL_write((SSL*)m_session, buffer, size);
+	m_retCode = SSL_write((SSL*)m_session, buffer, size);
 #endif /* HAVE_OPENSSL */
 
-	if (ret < 0)
+	if (m_retCode < 0)
 	{
 #ifdef HAVE_OPENSSL
 		if (ERR_peek_error() == 0)
@@ -486,22 +484,20 @@ int TlsSocket::Send(const char* buffer, int size)
 		return -1;
 	}
 
-	return ret;
+	return m_retCode;
 }
 
 int TlsSocket::Recv(char* buffer, int size)
 {
-	int ret;
-
 #ifdef HAVE_LIBGNUTLS
-	ret = gnutls_record_recv((gnutls_session_t)m_session, buffer, size);
+	m_retCode = gnutls_record_recv((gnutls_session_t)m_session, buffer, size);
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	ret = SSL_read((SSL*)m_session, buffer, size);
+	m_retCode = SSL_read((SSL*)m_session, buffer, size);
 #endif /* HAVE_OPENSSL */
 
-	if (ret < 0)
+	if (m_retCode < 0)
 	{
 #ifdef HAVE_OPENSSL
 		if (ERR_peek_error() == 0)
@@ -516,7 +512,7 @@ int TlsSocket::Recv(char* buffer, int size)
 		return -1;
 	}
 
-	return ret;
+	return m_retCode;
 }
 
 #endif
