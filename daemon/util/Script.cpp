@@ -449,6 +449,22 @@ int ScriptController::Execute()
 	return exitCode;
 }
 
+#ifdef WIN32
+void ScriptController::BuildCommandLine(char* cmdLineBuf, int bufSize)
+{
+	int usedLen = 0;
+	for (const char** argPtr = m_args; *argPtr; argPtr++)
+	{
+		const char* arg = *argPtr;
+		int len = strlen(arg);
+		bool endsWithBackslash = arg[len - 1] == '\\';
+		snprintf(cmdLineBuf + usedLen, bufSize - usedLen, endsWithBackslash ? "\"%s\\\" " : "\"%s\" ", arg);
+		usedLen += len + 3 + (endsWithBackslash ? 1 : 0);
+	}
+	cmdLineBuf[usedLen < bufSize ? usedLen - 1 : bufSize - 1] = '\0';
+}
+#endif
+
 /*
 * Returns file descriptor of the read-pipe of -1 on error.
 */
@@ -459,13 +475,7 @@ int ScriptController::StartProcess()
 	char cmdLineBuf[2048];
 	if (m_args)
 	{
-		int usedLen = 0;
-		for (const char** argPtr = m_args; *argPtr; argPtr++)
-		{
-			snprintf(cmdLineBuf + usedLen, 2048 - usedLen, "\"%s\" ", *argPtr);
-			usedLen += strlen(*argPtr) + 3;
-		}
-		cmdLineBuf[usedLen < 2048 ? usedLen - 1 : 2048 - 1] = '\0';
+		BuildCommandLine(cmdLineBuf, sizeof(cmdLineBuf));
 		cmdLine = cmdLineBuf;
 	}
 

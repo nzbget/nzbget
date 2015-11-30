@@ -85,6 +85,9 @@ protected:
 	void				PrepareArgs();
 	int					StartProcess();
 	int					WaitProcess();
+#ifdef WIN32
+	void				BuildCommandLine(char* cmdLineBuf, int bufSize);
+#endif
 	void				UnregisterRunningScript();
 
 public:
