@@ -36,6 +36,8 @@ extern char* (*g_EnvironmentVariables)[];
 ScriptController::RunningScripts ScriptController::m_runningScripts;
 Mutex ScriptController::m_runningMutex;
 
+const int FORK_ERROR_EXIT_CODE = 254;
+
 #ifdef CHILD_WATCHDOG
 /**
  * Sometimes the forked child process doesn't start properly and hangs
@@ -343,7 +345,6 @@ int ScriptController::Execute()
 	PrepareArgs();
 
 	int exitCode = 0;
-	int pipein;
 
 #ifdef CHILD_WATCHDOG
 	bool childConfirmed = false;
@@ -351,167 +352,18 @@ int ScriptController::Execute()
 	{
 #endif
 
-#ifdef WIN32
-	// build command line
-
-	char* cmdLine = NULL;
-	if (m_args)
+	int pipein = StartProcess();
+	if (pipein == -1)
 	{
-		char cmdLineBuf[2048];
-		int usedLen = 0;
-		for (const char** argPtr = m_args; *argPtr; argPtr++)
-		{
-			snprintf(cmdLineBuf + usedLen, 2048 - usedLen, "\"%s\" ", *argPtr);
-			usedLen += strlen(*argPtr) + 3;
-		}
-		cmdLineBuf[usedLen < 2048 ? usedLen - 1 : 2048 - 1] = '\0';
-		cmdLine = cmdLineBuf;
-	}
-	else
-	{
-		cmdLine = m_cmdLine;
-	}
-
-	// create pipes to write and read data
-	HANDLE readPipe, writePipe;
-	SECURITY_ATTRIBUTES securityAttributes;
-	memset(&securityAttributes, 0, sizeof(securityAttributes));
-	securityAttributes.nLength = sizeof(securityAttributes);
-	securityAttributes.bInheritHandle = TRUE;
-
-	CreatePipe(&readPipe, &writePipe, &securityAttributes, 0);
-
-	SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
-
-	STARTUPINFO startupInfo;
-	memset(&startupInfo, 0, sizeof(startupInfo));
-	startupInfo.cb = sizeof(startupInfo);
-	startupInfo.dwFlags = STARTF_USESTDHANDLES;
-	startupInfo.hStdInput = 0;
-	startupInfo.hStdOutput = writePipe;
-	startupInfo.hStdError = writePipe;
-
-	PROCESS_INFORMATION processInfo;
-	memset(&processInfo, 0, sizeof(processInfo));
-
-	char* environmentStrings = m_environmentStrings.GetStrings();
-
-	BOOL ok = CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, environmentStrings, m_workingDir, &startupInfo, &processInfo);
-	if (!ok)
-	{
-		DWORD errCode = GetLastError();
-		char errMsg[255];
-		errMsg[255-1] = '\0';
-		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errCode, 0, errMsg, 255, NULL))
-		{
-			PrintMessage(Message::mkError, "Could not start %s: %s", m_infoName, errMsg);
-		}
-		else
-		{
-			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, errCode);
-		}
-		if (!Util::FileExists(m_script))
-		{
-			PrintMessage(Message::mkError, "Could not find file %s", m_script);
-		}
-		free(environmentStrings);
 		return -1;
 	}
-
-	free(environmentStrings);
-
-	debug("Child Process-ID: %i", (int)processInfo.dwProcessId);
-
-	m_processId = processInfo.hProcess;
-
-	// close unused "write" end
-	CloseHandle(writePipe);
-
-	pipein = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
-
-#else
-
-	int p[2];
-	int pipeout;
-
-	// create the pipe
-	if (pipe(p))
-	{
-		PrintMessage(Message::mkError, "Could not open pipe: errno %i", errno);
-		return -1;
-	}
-
-	char** environmentStrings = m_environmentStrings.GetStrings();
-
-	pipein = p[0];
-	pipeout = p[1];
-
-	debug("forking");
-	pid_t pid = fork();
-
-	if (pid == -1)
-	{
-		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_infoName, errno);
-		free(environmentStrings);
-		return -1;
-	}
-	else if (pid == 0)
-	{
-		// here goes the second instance
-
-		// create new process group (see Terminate() where it is used)
-		setsid();
-
-		// close up the "read" end
-		close(pipein);
-
-		// make the pipeout to be the same as stdout and stderr
-		dup2(pipeout, 1);
-		dup2(pipeout, 2);
-
-		close(pipeout);
-
-#ifdef CHILD_WATCHDOG
-		fwrite("\n", 1, 1, stdout);
-		fflush(stdout);
-#endif
-
-		chdir(m_workingDir);
-		environ = environmentStrings;
-		execvp(m_script, (char* const*)m_args);
-
-		if (errno == EACCES)
-		{
-			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_script);
-			fflush(stdout);
-			Util::FixExecPermission(m_script);
-			execvp(m_script, (char* const*)m_args);
-		}
-
-		// NOTE: the text "[ERROR] Could not start " is checked later,
-		// by changing adjust the dependent code below.
-		fprintf(stdout, "[ERROR] Could not start %s: %s", m_script, strerror(errno));
-		fflush(stdout);
-		_exit(254);
-	}
-
-	// continue the first instance
-	debug("forked");
-	debug("Child Process-ID: %i", (int)pid);
-
-	free(environmentStrings);
-
-	m_processId = pid;
-
-	// close unused "write" end
-	close(pipeout);
-#endif
 
 	// open the read end
 	m_readpipe = fdopen(pipein, "r");
 	if (!m_readpipe)
 	{
 		PrintMessage(Message::mkError, "Could not open pipe to %s", m_infoName);
+		close(pipein);
 		return -1;
 	}
 
@@ -519,7 +371,7 @@ int ScriptController::Execute()
 	debug("Creating child watchdog");
 	ChildWatchDog* watchDog = new ChildWatchDog();
 	watchDog->SetAutoDestroy(false);
-	watchDog->SetProcessId(pid);
+	watchDog->SetProcessId(m_processId);
 	watchDog->Start();
 #endif
 
@@ -579,22 +431,12 @@ int ScriptController::Execute()
 
 	if (!m_terminated && !m_detached)
 	{
-#ifdef WIN32
-	WaitForSingleObject(m_processId, INFINITE);
-	DWORD exitCode = 0;
-	GetExitCodeProcess(m_processId, &exitCode);
-	exitCode = exitCode;
-#else
-	int status = 0;
-	waitpid(m_processId, &status, 0);
-	if (WIFEXITED(status))
-	{
-		exitCode = WEXITSTATUS(status);
-		if (exitCode == 254 && startError)
+		exitCode = WaitProcess();
+#ifndef WIN32
+		if (exitCode == FORK_ERROR_EXIT_CODE && startError)
 		{
 			exitCode = -1;
 		}
-	}
 #endif
 	}
 
@@ -605,6 +447,189 @@ int ScriptController::Execute()
 	debug("Exit code %i", exitCode);
 
 	return exitCode;
+}
+
+/*
+* Returns file descriptor of the read-pipe of -1 on error.
+*/
+int ScriptController::StartProcess()
+{
+#ifdef WIN32
+	char* cmdLine = m_cmdLine;
+	char cmdLineBuf[2048];
+	if (m_args)
+	{
+		int usedLen = 0;
+		for (const char** argPtr = m_args; *argPtr; argPtr++)
+		{
+			snprintf(cmdLineBuf + usedLen, 2048 - usedLen, "\"%s\" ", *argPtr);
+			usedLen += strlen(*argPtr) + 3;
+		}
+		cmdLineBuf[usedLen < 2048 ? usedLen - 1 : 2048 - 1] = '\0';
+		cmdLine = cmdLineBuf;
+	}
+
+	// create pipes to write and read data
+	HANDLE readPipe, writePipe;
+	SECURITY_ATTRIBUTES securityAttributes;
+	memset(&securityAttributes, 0, sizeof(securityAttributes));
+	securityAttributes.nLength = sizeof(securityAttributes);
+	securityAttributes.bInheritHandle = TRUE;
+
+	CreatePipe(&readPipe, &writePipe, &securityAttributes, 0);
+
+	SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
+
+	STARTUPINFO startupInfo;
+	memset(&startupInfo, 0, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	startupInfo.dwFlags = STARTF_USESTDHANDLES;
+	startupInfo.hStdInput = 0;
+	startupInfo.hStdOutput = writePipe;
+	startupInfo.hStdError = writePipe;
+
+	PROCESS_INFORMATION processInfo;
+	memset(&processInfo, 0, sizeof(processInfo));
+
+	char* environmentStrings = m_environmentStrings.GetStrings();
+
+	BOOL ok = CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, environmentStrings, m_workingDir, &startupInfo, &processInfo);
+	if (!ok)
+	{
+		DWORD errCode = GetLastError();
+		char errMsg[255];
+		errMsg[255 - 1] = '\0';
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errCode, 0, errMsg, 255, NULL))
+		{
+			PrintMessage(Message::mkError, "Could not start %s: %s", m_infoName, errMsg);
+		}
+		else
+		{
+			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, errCode);
+		}
+		if (!Util::FileExists(m_script))
+		{
+			PrintMessage(Message::mkError, "Could not find file %s", m_script);
+		}
+		free(environmentStrings);
+		CloseHandle(readPipe);
+		CloseHandle(writePipe);
+		return -1;
+	}
+
+	free(environmentStrings);
+
+	debug("Child Process-ID: %i", (int)processInfo.dwProcessId);
+
+	m_processId = processInfo.hProcess;
+
+	// close unused "write" end
+	CloseHandle(writePipe);
+
+	int pipein = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
+	return pipein;
+
+#else
+
+	int p[2];
+	int pipein;
+	int pipeout;
+
+	// create the pipe
+	if (pipe(p))
+	{
+		PrintMessage(Message::mkError, "Could not open pipe: errno %i", errno);
+		return -1;
+	}
+
+	char** environmentStrings = m_environmentStrings.GetStrings();
+
+	pipein = p[0];
+	pipeout = p[1];
+
+	debug("forking");
+	pid_t pid = fork();
+
+	if (pid == -1)
+	{
+		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_infoName, errno);
+		free(environmentStrings);
+		close(pipein);
+		close(pipeout);
+		return -1;
+	}
+	else if (pid == 0)
+	{
+		// here goes the second instance
+
+		// create new process group (see Terminate() where it is used)
+		setsid();
+
+		// close up the "read" end
+		close(pipein);
+
+		// make the pipeout to be the same as stdout and stderr
+		dup2(pipeout, 1);
+		dup2(pipeout, 2);
+
+		close(pipeout);
+
+#ifdef CHILD_WATCHDOG
+		fwrite("\n", 1, 1, stdout);
+		fflush(stdout);
+#endif
+
+		chdir(m_workingDir);
+		environ = environmentStrings;
+		execvp(m_script, (char* const*)m_args);
+
+		if (errno == EACCES)
+		{
+			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_script);
+			fflush(stdout);
+			Util::FixExecPermission(m_script);
+			execvp(m_script, (char* const*)m_args);
+		}
+
+		// NOTE: the text "[ERROR] Could not start " is checked later,
+		// by changing adjust the dependent code below.
+		fprintf(stdout, "[ERROR] Could not start %s: %s", m_script, strerror(errno));
+		fflush(stdout);
+		_exit(FORK_ERROR_EXIT_CODE);
+	}
+
+	// continue the first instance
+	debug("forked");
+	debug("Child Process-ID: %i", (int)pid);
+
+	free(environmentStrings);
+
+	m_processId = pid;
+
+	// close unused "write" end
+	close(pipeout);
+#endif
+
+	return pipein;
+}
+
+int ScriptController::WaitProcess()
+{
+#ifdef WIN32
+	WaitForSingleObject(m_processId, INFINITE);
+	DWORD exitCode = 0;
+	GetExitCodeProcess(m_processId, &exitCode);
+	return exitCode;
+#else
+	int status = 0;
+	waitpid(m_processId, &status, 0);
+	if (WIFEXITED(status))
+	{
+		int exitCode = WEXITSTATUS(status);
+		return exitCode;
+	}
+	return 0;
+#endif
 }
 
 void ScriptController::Terminate()

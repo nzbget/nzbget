@@ -83,6 +83,8 @@ protected:
 	void				ResetEnv();
 	void				PrepareEnvOptions(const char* stripPrefix);
 	void				PrepareArgs();
+	int					StartProcess();
+	int					WaitProcess();
 	void				UnregisterRunningScript();
 
 public:
