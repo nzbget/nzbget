@@ -1,3 +1,7 @@
+nzbget-16.4:
+  - fixed resource (socket) leak which may cause "too many open files"
+    errors with a possible crash.
+
 nzbget-16.3:
   - fixed: certain downloads may fail due to a bug in the workaround
     implemented in v16.2.

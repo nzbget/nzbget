@@ -23,7 +23,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(nzbget, 16.3, hugbug@users.sourceforge.net)
+AC_INIT(nzbget, 16.4, hugbug@users.sourceforge.net)
 AC_CONFIG_AUX_DIR(posix)
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
