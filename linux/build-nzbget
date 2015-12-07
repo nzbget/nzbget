@@ -29,13 +29,14 @@ set -o errexit
 # Uncomment next line for debuging
 #set -x
 
-ALLTARGETS="dist i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500"
+ALLTARGETS="dist i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500 x86_64-bsd"
 ROOT=`pwd`
 ROOTPATH=$PATH
 OUTPUTDIR=$ROOT/output
 
 # Configuration
 BUILD=no
+PLATFORMS=""
 TARGETS=""
 OUTPUTS=""
 REVISION=""
@@ -130,11 +131,24 @@ ParseCommandLine()
     if [ "$CONFIGS" == "" ]; then
         CONFIGS="release debug"
     fi
+
+    for TARGET in $TARGETS
+    do
+        if [[ $TARGET == *-bsd ]]; then
+            PLATFORM="freebsd"
+        else
+            PLATFORM="linux"
+        fi
+        if [[ " $PLATFORMS " != *" $PLATFORM "* ]]; then
+              PLATFORMS=`echo "$PLATFORMS $PLATFORM" | xargs`
+        fi
+    done
 }
 
 PrintConfig()
 {
     echo "Active configuration:"
+    echo "  platforms: $PLATFORMS"
     echo "  targets  : $TARGETS"
     echo "  outputs  : $OUTPUTS"
     echo "  revision : $REVISION"
@@ -163,9 +177,9 @@ UpdateFromRepository()
         echo "Updating to $REVISION"
         git pull
         git checkout $BRANCH
-	    if [ $REVISION != "head" ]; then
-	        git checkout $REVISION
-	    fi
+        if [ $REVISION != "head" ]; then
+            git checkout $REVISION
+        fi
         touch Makefile.in configure config.h.in
     fi
 }
@@ -179,16 +193,16 @@ DetectVersionRevision()
     B=`git branch | sed -n -e 's/^\* \(.*\)/\1/p' | sed 's/ /-/g' | sed 's/(//g' | sed 's/)//g'`
     M=`git status --porcelain`
     if [ "$M" != "" ]; then
-	    M="M"
+        M="M"
     fi
     if [ "$B" == "master" ]; then
-	    REVISION="$M"
+        REVISION="$M"
     elif [ "$B" == "develop" ]; then
-	    REVISION=`git rev-list HEAD | wc -l | xargs`
-	    REVISION="${REVISION}$M"
+        REVISION=`git rev-list HEAD | wc -l | xargs`
+        REVISION="${REVISION}$M"
     else
-	    REVISION=`git rev-list HEAD | wc -l | xargs`
-	    REVISION="${REVISION}$M-($B)"
+        REVISION=`git rev-list HEAD | wc -l | xargs`
+        REVISION="${REVISION}$M-($B)"
     fi
 }
 
@@ -216,31 +230,48 @@ ConstructSuffix()
             SUFFIX="-nostrip"
             ;;
     esac
+
+    if [ $PLATFORM == "freebsd" ]; then
+        PLATSUFF="-bsd"
+    else
+        PLATSUFF=""
+    fi
 }
 
 ConstructArchParams()
 {
     ARCH=$TARGET
-    ARCHSUFF=""
     case $TARGET in
         mipseb)
             ARCH=mips
             ;;
         armhf)
             ARCH=arm
-            ARCHSUFF="gnueabihf"
             ;;
         arm*)
             ARCH=arm
-            ARCHSUFF="gnueabi"
             ;;
         ppc500)
             ARCH=powerpc
-            ARCHSUFF="spe"
             ;;
         ppc*)
             ARCH=powerpc
             ;;
+    esac
+
+    TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET$PLATSUFF
+    TOOLPATH=$TOOLCHAIN_ROOT/output/host/usr/bin
+    PATH=$TOOLPATH:$ROOTPATH
+    STAGING="$TOOLCHAIN_ROOT/output/staging/usr"
+    case $PLATFORM in
+        linux)
+            TOOLKIND=buildroot
+            TOOLNAME=linux
+        ;;
+        freebsd)
+            TOOLKIND=crossgcc
+            TOOLNAME=pc-freebsd9
+        ;;
     esac
 }
 
@@ -251,16 +282,29 @@ ConfigureTarget()
         STRIP="-s"
     fi
 
-    case $CONFIG in
-        debug|debug-strip)
-            LIBPREF="$TOOLCHAIN_ROOT/output/staging/usr" LDFLAGS="-static $STRIP" \
-                LIBS="-lcrypto -ldl -lz -lubacktrace" CXXFLAGS="-g -fasynchronous-unwind-tables" \
-                ./configure --disable-dependency-tracking --host=$ARCH-linux --enable-debug
+    case "$TOOLKIND-$CONFIG" in
+        buildroot-debug|buildroot-debug-strip)
+            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
+                CXXFLAGS="-g -fasynchronous-unwind-tables" \
+                LIBS="-lcrypto -ldl -lz -lubacktrace" \
+                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
             ;;
-        release|release-nostrip)
-            LIBPREF="$TOOLCHAIN_ROOT/output/staging/usr" LDFLAGS="-static $STRIP" \
-                LIBS="-lcrypto -ldl -lz" ./configure --disable-dependency-tracking --host=$ARCH-linux
+        buildroot-release|buildroot-release-nostrip)
+            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
+                LIBS="-lcrypto -ldl -lz" \
+                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
             ;;
+        crossgcc-debug|crossgcc-debug-strip)
+            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
+                CXXFLAGS="-g -fasynchronous-unwind-tables" \
+                PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" \
+                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
+                ;;
+        crossgcc-release|crossgcc-release-nostrip)
+            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
+                PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" \
+                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
+                ;;
     esac
 }
 
@@ -273,7 +317,9 @@ PrecompileHeaders()
             OPTIM="-O2"
         fi
 
-        $ARCH-linux-g++ -DHAVE_CONFIG_H -I. -I$TOOLCHAIN_ROOT/output/host/usr/$ARCH-buildroot-linux-uclibc$ARCHSUFF/sysroot/usr/include/libxml2 -I$TOOLCHAIN_ROOT/output/staging/usr/include -I$TOOLCHAIN_ROOT/output/host/usr/$ARCH-buildroot-linux-uclibc$ARCHSUFF/sysroot/usr/include -g $OPTIM daemon/main/nzbget.h -o nzbget.h.gch
+        $ARCH-$TOOLNAME-g++ -DHAVE_CONFIG_H \
+            -I. -I$STAGING/include -I$STAGING/include/libxml2 \
+            -g $OPTIM daemon/main/nzbget.h -o nzbget.h.gch
     fi
 }
 
@@ -305,22 +351,18 @@ PackTarget()
     sed 's:^ConfigTemplate=.*:ConfigTemplate=${AppDir}/webui/nzbget.conf.template:' -i $CONFTEMPLATE
     sed 's:^AuthorizedIP=.*:AuthorizedIP=127.0.0.1:' -i $CONFTEMPLATE
 
-    tar -czf $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz nzbget
+    tar -czf $BASENAME-bin-$PLATFORM-$TARGET$SUFFIX.tar.gz nzbget
 
     rm -r -f nzbget
 }
 
 BuildTarget()
 {
-    echo "Building $TARGET ($CONFIG)"
+    echo "Building $TARGET ($PLATFORM $CONFIG)"
 
     cd $BUILDDIR
 
     ConstructArchParams
-
-    PATH=:$ROOTPATH
-    TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET
-    PATH=$TOOLCHAIN_ROOT/output/host/usr/bin:$PATH
 
     ConfigureTarget
 
@@ -337,7 +379,7 @@ BuildTarget()
 
 BuildInstaller()
 {
-    echo "Creating installer for $CONFIG..."
+    echo "Creating installer for $PLATFORM $CONFIG..."
 
     cd $OUTPUTDIR
 
@@ -346,8 +388,8 @@ BuildInstaller()
     do
         ALLEXISTS="yes"
         if [ $TARGET != "dist" ]; then
-            if [ ! -f $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz ]; then
-                echo "Could not find $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz"
+            if [ ! -f $BASENAME-bin-$PLATFORM-$TARGET$SUFFIX.tar.gz ]; then
+                echo "Could not find $BASENAME-bin-$PLATFORM-$TARGET$SUFFIX.tar.gz"
                 ALLEXISTS="no"
             fi
         fi
@@ -363,10 +405,10 @@ BuildInstaller()
     do
         ALLEXISTS="yes"
         if [ "$TARGET" != "dist" ]; then
-            tar -xzf $BASENAME-bin-linux-$TARGET$SUFFIX.tar.gz
+            tar -xzf $BASENAME-bin-$PLATFORM-$TARGET$SUFFIX.tar.gz
             mv nzbget/nzbget nzbget/nzbget-$TARGET
-            cp ../setup/unrar-$TARGET nzbget
-            cp ../setup/7za-$TARGET nzbget
+            cp ../setup/unrar-$TARGET$PLATSUFF nzbget/unrar-$TARGET
+            cp ../setup/7za-$TARGET$PLATSUFF nzbget/7za-$TARGET
         fi
     done
 
@@ -374,7 +416,7 @@ BuildInstaller()
     sed 's:^UnrarCmd=unrar:UnrarCmd=${AppDir}/unrar:' -i nzbget/webui/nzbget.conf.template
     sed 's:^SevenZipCmd=7z:SevenZipCmd=${AppDir}/7za:' -i nzbget/webui/nzbget.conf.template
 
-    INSTFILE=$BASENAME-bin-linux$SUFFIX.run
+    INSTFILE=$BASENAME-bin-$PLATFORM$SUFFIX.run
 
     echo "Building installer package..."
     cp $BUILDDIR/linux/installer.sh $INSTFILE
@@ -384,6 +426,10 @@ BuildInstaller()
     cp ../setup/license-unrar.txt nzbget
     cp ../setup/license-7zip.txt nzbget
 
+    # adjusting update config file
+    sed "s:linux:$PLATFORM:" -i nzbget/webui/package-info.json
+    sed "s:linux:$PLATFORM:" -i nzbget/install-update.sh
+
     # creating payload
     cd nzbget
     tar czf - * > ../$INSTFILE.data
@@ -391,6 +437,7 @@ BuildInstaller()
 
     # creating installer script
     sed "s:^TITLE=$:TITLE=\"$BASENAME$SUFFIX\":" -i $INSTFILE
+    sed "s:^PLATFORM=$:PLATFORM=\"$PLATFORM\":" -i $INSTFILE
     DISTTARGETS="${TARGETS/dist/}"
     DISTTARGETS=`echo "$DISTTARGETS" | xargs`
     sed "s:^DISTARCHS=$:DISTARCHS=\"$DISTTARGETS\":" -i $INSTFILE
@@ -453,6 +500,23 @@ BuildConfig()
     done
 }
 
+FilterTargets()
+{
+    TARGETS=""
+    for TARGET in $BUILDTARGETS
+    do
+        if [[ $TARGET == *-bsd ]]; then
+            PLAT="freebsd"
+            TARGET="${TARGET%-bsd}"
+        else
+            PLAT="linux"
+        fi
+        if [ $PLATFORM == $PLAT ]; then
+              TARGETS=`echo "$TARGETS $TARGET" | xargs`
+        fi
+    done
+}
+
 CleanupIfNecessary()
 {
     if [ $CLEAN == "yes" ]; then
@@ -478,6 +542,12 @@ ConstructOutputFilename
 mkdir -p $OUTPUTDIR
 CleanupIfNecessary
 
-for CONFIG in $CONFIGS; do
-    BuildConfig
+BUILDTARGETS=$TARGETS
+
+for PLATFORM in $PLATFORMS; do
+    FilterTargets
+    for CONFIG in $CONFIGS; do
+        BuildConfig
+    done
 done
+
