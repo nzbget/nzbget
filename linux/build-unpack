@@ -29,7 +29,7 @@ set -o errexit
 # Uncomment next line for debuging
 #set -x
 
-ALLTARGETS="i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500"
+ALLTARGETS="i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500 x86_64-bsd"
 ROOT=`pwd`
 OUTPUTDIR=$ROOT/setup
 BUILDDIR=temp
@@ -45,6 +45,7 @@ echo
 TARGETS=""
 CLEAN=no
 UNPACKERS=""
+COREX="1"
 
 for PARAM in "$@"
 do
@@ -55,6 +56,9 @@ do
         unrar|7zip)
             # using xargs to trim spaces
             UNPACKERS=`echo "$UNPACKERS $PARAM" | xargs`
+            ;;
+        core[1-9])
+            COREX="${PARAM:4}"
             ;;
         *)
             if [ -d toolchain/$PARAM ]; then
@@ -80,6 +84,7 @@ echo "Active configuration:"
 echo "  targets   : $TARGETS"
 echo "  unpackers : $UNPACKERS"
 echo "  cleanup   : $CLEAN"
+echo "  cores     : $COREX"
 echo 
 
 
@@ -103,6 +108,18 @@ fi
 
 for TARGET in $TARGETS; do
 
+    TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET
+    TOOLPATH=$TOOLCHAIN_ROOT/output/host/usr/bin
+
+    if [[ $TARGET == *-bsd ]]; then
+        TARGET="${TARGET%-bsd}"
+        TOOLNAME=pc-freebsd9
+        PLATSUFF="-bsd"
+    else
+        TOOLNAME=linux
+        PLATSUFF=""
+    fi
+
     case $TARGET in
         mipsel|i?86|x86_64)
             ARCH=$TARGET
@@ -122,7 +139,6 @@ for TARGET in $TARGETS; do
             ;;
     esac
 
-    TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET
     rm -rf "$ROOT/$BUILDDIR/$UNPACKER"
     cd $ROOT/$BUILDDIR
 
@@ -164,17 +180,17 @@ for TARGET in $TARGETS; do
 
     make clean
 
-    CXX=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-g++ \
-        CC=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-gcc \
-        STRIP=$TOOLCHAIN_ROOT/output/host/usr/bin/$ARCH-linux-strip \
+    CXX=$TOOLPATH/$ARCH-$TOOLNAME-g++ \
+        CC=$TOOLPATH/$ARCH-$TOOLNAME-gcc \
+        STRIP=$TOOLPATH/$ARCH-$TOOLNAME-strip \
         CXXFLAGS=-O2 \
         LDFLAGS=-static \
-        make $BUILDTARGET
+        make -j $COREX $BUILDTARGET
 
-    cp $EXEDIR$EXENAME ../../setup/$EXENAME-$TARGET
+    cp $EXEDIR$EXENAME ../../setup/$EXENAME-$TARGET$PLATSUFF
     cp $LICENSE ../../setup/license-$UNPACKER.txt
 
-    echo "Completed build for $TARGET ($UNPACKER)"
+    echo "Completed build for $TARGET$PLATSUFF ($UNPACKER)"
 done
 done
 
