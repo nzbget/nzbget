@@ -136,7 +136,7 @@ if test "$?" != "0"; then
 fi
 while true
 do
-    RUNNING=`ps $PSOPT | sed -n "s/^\s*$NZBUP_PROCESSID\s.*/&/p"` 
+    RUNNING=`ps $PSOPT | sed -n "s/^[\s ]*$NZBUP_PROCESSID[\s ].*/&/p"` 
     if test "$RUNNING" = ""; then
         break
     fi
