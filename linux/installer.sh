@@ -33,6 +33,8 @@ TOTAL=
 MD5=
 # List of included CPU architecture binaries
 DISTARCHS=
+# Target platform
+PLATFORM=
 
 SILENT=no
 ALLARCHS="$DISTARCHS all"
@@ -79,7 +81,12 @@ PrintHelp()
         Info "Installer for $TITLE"
         Info ""
     fi
-    Info "This installer supports Linux kernel 2.6 or newer and the following CPU architectures:"
+    if test "$PLATFORM" = "linux"; then
+        Info "This installer supports Linux kernel 2.6 or newer and the following CPU architectures:"
+    fi
+    if test "$PLATFORM" = "freebsd"; then
+        Info "This installer supports FreeBSD 9.1 or newer and the following CPU architectures:"
+    fi
     PrintArch "i686"     "    i686     - x86, 32 or 64 Bit"
     PrintArch "x86_64"   "    x86_64   - x86, 64 Bit"
     PrintArch "armel"    "    armel    - ARMv5/v6 (ARM9 and ARM11 families)"
@@ -131,7 +138,7 @@ Verify()
     fi
     
     # Checking checksum (MD5) of package payload, only if command 'md5sum' is available
-    ACTMD5=`dd "if=$0" bs=$HEADER skip=1 2>/dev/null | md5sum 2>/dev/null | cut -b-32 2>/dev/null | cat`
+    ACTMD5=`dd "if=$0" bs=$HEADER skip=1 2>/dev/null | /bin/sh -c md5sum 2>/dev/null | cut -b-32 2>/dev/null | cat`
     LEN=${#ACTMD5}
     if test "$LEN" = "32" -a "$MD5" != "$ACTMD5"; then
         Error "Corrupted installer package detected: checksum mismatch."
@@ -154,7 +161,8 @@ DetectEndianness()
 DetectArch()
 {
     OS=`uname -s`
-    if test "$OS" != "Linux"; then
+    if test "(" "$PLATFORM" = "linux" -a "$OS" != "Linux" ")" -o \
+            "(" "$PLATFORM" = "freebsd" -a "$OS" != "FreeBSD" ")" ; then
         PrintHelp
         Error "Operating system ($OS) isn't supported by this installer."
     fi
@@ -170,7 +178,7 @@ DetectArch()
             i386|i686)
                 ARCH=i686
                 ;;
-            x86_64)
+            x86_64|amd64)
                 ARCH=x86_64
                 ;;
             mips)
@@ -188,28 +196,30 @@ DetectArch()
         esac
     fi
 
-    if test "$ARCH" = ""; then
-        MIPS=`cat /proc/cpuinfo | sed -n 's/.*:.*\(mips\).*/&/p'`
-        if test "$MIPS" != ""; then
-            ARCH=mipsx
+    if test "$PLATFORM" = "linux"; then
+        if test "$ARCH" = ""; then
+            MIPS=`cat /proc/cpuinfo | sed -n 's/.*:.*\(mips\).*/&/p'`
+            if test "$MIPS" != ""; then
+                ARCH=mipsx
+            fi
         fi
-    fi
 
-    if test "$ARCH" = "mipsx"; then
-        DetectEndianness
-        if test "$ENDIAN" = "big"; then
-            ARCH=mipseb
-        else
-            ARCH=mipsel
+        if test "$ARCH" = "mipsx"; then
+            DetectEndianness
+            if test "$ENDIAN" = "big"; then
+                ARCH=mipseb
+            else
+                ARCH=mipsel
+            fi
         fi
-    fi
 
-    if test "$ARCH" = "ppcx"; then
-        E500=`cat /proc/cpuinfo | sed -n 's/.*:.*\(e500\).*/&/p'`
-        if test "$E500" != ""; then
-            ARCH=ppc500
-        else
-            ARCH=ppc6xx
+        if test "$ARCH" = "ppcx"; then
+            E500=`cat /proc/cpuinfo | sed -n 's/.*:.*\(e500\).*/&/p'`
+            if test "$E500" != ""; then
+                ARCH=ppc500
+            else
+                ARCH=ppc6xx
+            fi
         fi
     fi
 
@@ -243,7 +253,7 @@ Unpack()
     fi
 
     # Unpack (skip ignorable files)
-    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -c -d | ( cd "$OUTDIR"; tar x $EXARCHS 2>&1 ) || { Error "Unpacking failed."; rm -f "$OUTDIR/installer.tmp"; kill -15 $$; }
+    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -c -d | ( cd "$OUTDIR"; tar xf - $EXARCHS 2>&1 ) || { Error "Unpacking failed."; rm -f "$OUTDIR/installer.tmp"; kill -15 $$; }
 
     if test "$EXARCHS" != ""; then
         rm -f "$OUTDIR/installer.tmp"
@@ -267,7 +277,7 @@ Unpack()
 
 TAR()
 {
-    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -c -d | tar "$ARG" $@
+    dd "if=$0" bs=$HEADER skip=1 2> /dev/null | gzip -c -d | tar ${ARG}f - $@
     exit $?
 }
 
@@ -307,6 +317,74 @@ Expr()
     echo "$RET"
 }
 
+ConfigureLinux()
+{
+    # Adjusting config file to current system
+
+    MEMFREE=`cat /proc/meminfo | sed -n 's/^MemFree: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
+    MEMCACHED=`cat /proc/meminfo | sed -n 's/^Cached: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
+    if test "$MEMFREE" != "" -a "$MEMCACHED" != ""; then
+        TOTALFREE=$(Expr $MEMFREE + $MEMCACHED)
+        # Expression evaluation with "Expr" may fail, check the result
+        TOTALFREE=$(Expr "$TOTALFREE" / 1024)
+        if test "$TOTALFREE" != ""; then
+            Info "  Free memory detected: $TOTALFREE MB"
+        else
+            Info "  Free memory detected: $MEMFREE KB + $MEMCACHED KB"
+            TOTALFREE=0
+        fi
+        if test $TOTALFREE -gt 250000 -o $MEMFREE -gt 250000 -o $MEMCACHED -gt 250000; then
+            Info "  Activating article cache (ArticleCache=100)"
+            sed 's:^ArticleCache=.*:ArticleCache=100:' -i nzbget.conf
+            Info "  Increasing write buffer (WriteBuffer=1024)"
+            sed 's:^WriteBuffer=.*:WriteBuffer=1024:' -i nzbget.conf
+            Info "  Increasing par repair buffer (ParBuffer=100)"
+            sed 's:^ParBuffer=.*:ParBuffer=100:' -i nzbget.conf
+        elif test $TOTALFREE -gt 25000 -o $MEMFREE -gt 25000 -o $MEMCACHED -gt 25000; then
+            Info "  Increasing write buffer (WriteBuffer=256)"
+            sed 's:^WriteBuffer=.*:WriteBuffer=256:' -i nzbget.conf
+        fi
+    fi
+
+    BOGOLIST=`cat /proc/cpuinfo | sed -n 's/^bogomips\s*:\s\([0-9]*\).*/\1/pI' 2>/dev/null | cat`
+    if test "$BOGOLIST" != ""; then
+        BOGOMIPS=0
+        for CPU1 in $BOGOLIST
+        do
+            BOGOMIPS=$(Expr $BOGOMIPS + $CPU1)
+            if test "$BOGOMIPS" = ""; then
+                # Expression evaluation with "Expr" failed, using BogoMIPS for first core
+                BOGOMIPS=$CPU1
+            fi
+        done
+        Info "  CPU speed detected: $BOGOMIPS BogoMIPS"
+        if test $BOGOMIPS -lt 4000; then
+            Info "  Disabling download during par check/repair (ParPauseQueue=yes)"
+            sed 's:^ParPauseQueue=.*:ParPauseQueue=yes:' -i nzbget.conf
+            Info "  Disabling download during unpack (UnpackPauseQueue=yes)"
+            sed 's:^UnpackPauseQueue=.*:UnpackPauseQueue=yes:' -i nzbget.conf
+            Info "  Disabling download during post-processing (ScriptPauseQueue=yes)"
+            sed 's:^ScriptPauseQueue=.*:ScriptPauseQueue=yes:' -i nzbget.conf
+        else
+            Info "  Simultaneous download and post-processing is on"
+        fi
+    fi
+}
+
+ConfigureFreeBSD()
+{
+    # Adjusting config file to current system
+    
+    # No memory check, assuming all supported FreeBSD machines have enough memory
+
+    Info "  Activating article cache (ArticleCache=100)"
+    sed -i '' 's:^ArticleCache=.*:ArticleCache=100:' nzbget.conf
+    Info "  Increasing write buffer (WriteBuffer=1024)"
+    sed -i '' 's:^WriteBuffer=.*:WriteBuffer=1024:' nzbget.conf
+    Info "  Increasing par repair buffer (ParBuffer=100)"
+    sed -i '' 's:^ParBuffer=.*:ParBuffer=100:' nzbget.conf
+}
+
 Configure()
 {
     cd "$OUTDIR"
@@ -314,58 +392,15 @@ Configure()
 
     if test ! -f nzbget.conf; then
         cp ./webui/nzbget.conf.template nzbget.conf
+
+        if test "$PLATFORM" = "linux"; then
+            ConfigureLinux
+        fi
+
+        if test "$PLATFORM" = "freebsd"; then
+            ConfigureFreeBSD
+        fi
         
-        # Adjusting config file to current system
-
-        MEMFREE=`cat /proc/meminfo | sed -n 's/^MemFree: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
-        MEMCACHED=`cat /proc/meminfo | sed -n 's/^Cached: *\([0-9]*\).*/\1/p' 2>/dev/null | cat`
-        if test "$MEMFREE" != "" -a "$MEMCACHED" != ""; then
-            TOTALFREE=$(Expr $MEMFREE + $MEMCACHED)
-            # Expression evaluation with "Expr" may fail, check the result
-            TOTALFREE=$(Expr "$TOTALFREE" / 1024)
-            if test "$TOTALFREE" != ""; then
-                Info "  Free memory detected: $TOTALFREE MB"
-            else
-                Info "  Free memory detected: $MEMFREE KB + $MEMCACHED KB"
-                TOTALFREE=0
-            fi
-            if test $TOTALFREE -gt 250000 -o $MEMFREE -gt 250000 -o $MEMCACHED -gt 250000; then
-                Info "  Activating article cache (ArticleCache=100)"
-                sed 's:^ArticleCache=.*:ArticleCache=100:' -i nzbget.conf
-                Info "  Increasing write buffer (WriteBuffer=1024)"
-                sed 's:^WriteBuffer=.*:WriteBuffer=1024:' -i nzbget.conf
-                Info "  Increasing par repair buffer (ParBuffer=100)"
-                sed 's:^ParBuffer=.*:ParBuffer=100:' -i nzbget.conf
-            elif test $TOTALFREE -gt 25000 -o $MEMFREE -gt 25000 -o $MEMCACHED -gt 25000; then
-                Info "  Increasing write buffer (WriteBuffer=256)"
-                sed 's:^WriteBuffer=.*:WriteBuffer=256:' -i nzbget.conf
-            fi
-        fi
-
-        BOGOLIST=`cat /proc/cpuinfo | sed -n 's/^bogomips\s*:\s\([0-9]*\).*/\1/pI' 2>/dev/null | cat`
-        if test "$BOGOLIST" != ""; then
-            BOGOMIPS=0
-            for CPU1 in $BOGOLIST
-            do
-                BOGOMIPS=$(Expr $BOGOMIPS + $CPU1)
-                if test "$BOGOMIPS" = ""; then
-                    # Expression evaluation with "Expr" failed, using BogoMIPS for first core
-                    BOGOMIPS=$CPU1
-                fi
-            done
-            Info "  CPU speed detected: $BOGOMIPS BogoMIPS"
-            if test $BOGOMIPS -lt 4000; then
-                Info "  Disabling download during par check/repair (ParPauseQueue=yes)"
-                sed 's:^ParPauseQueue=.*:ParPauseQueue=yes:' -i nzbget.conf
-                Info "  Disabling download during unpack (UnpackPauseQueue=yes)"
-                sed 's:^UnpackPauseQueue=.*:UnpackPauseQueue=yes:' -i nzbget.conf
-                Info "  Disabling download during post-processing (ScriptPauseQueue=yes)"
-                sed 's:^ScriptPauseQueue=.*:ScriptPauseQueue=yes:' -i nzbget.conf
-            else
-                Info "  Simultaneous download and post-processing is on"
-            fi
-        fi
-
         QUICKHELP=yes
     fi
 }
