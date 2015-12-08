@@ -288,7 +288,9 @@ linux_FILES = \
 	linux/package-info.json \
 	linux/build-info.txt \
 	linux/build-nzbget \
-	linux/build-unpack
+	linux/build-unpack \
+	linux/build-toolchain-freebsd
+
 
 doc_FILES = \
 	lib/par2/AUTHORS \
