@@ -1,16 +1,22 @@
 About
 -----
 "build-nzbget" is a bash script which is used to build universal installer
-for Linux. The script compiles NZBGet for each supported CPU-architecture
-and then packs all produced files into an installer package.
+for Linux and installer for FreeBSD. The script compiles NZBGet for each
+supported platform and CPU-architecture and then packs all produced files
+into two installer packages: one for Linux and another for FreeBSD. In
+addition the packages with debug binaries are created too.
 
 Prerequisites
 -------------
 To use the script you need a Linux (virtual) machine.
 
-Building
---------
-This script was written to work with toolchain from uClibc's Buildroot-project.
+Script 'build-nzbget' supports two kind of toolchains:
+  - toolchain from uClibc's Buildroot-project;
+  - cross-compiling toolchain built with GCC.
+
+
+Building toolchains
+-------------------
 
 1. Create directory where you want to keep your files to compile NZBGet. Choose
    the path wisely because it cannot be changed later without rebuilding all
@@ -24,7 +30,7 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
     output    - to store the results of build script;
     setup     - for extra files required for installer;
 
-4. Build toolchain for one CPU-architecture (see below);
+4. Build buildroot-toolchain for one CPU-architecture (see below);
 	4.1. Download Buildroot distribution archive from http://buildroot.uclibc.org/download.html
 	     (currently using version "buildroot-2015.08.01");
 	4.2. Unpack the tarball into 'toolchain'-directory;
@@ -98,15 +104,30 @@ This script was written to work with toolchain from uClibc's Buildroot-project.
 
 8. Repeat step for each CPU-Architecture you intend to build the installer for;
 
-9. To build installer for all CPU-Architectures listed in variable 'ALLTARGETS'
-   of the script run the script without choosing CPU-Architecture:
+9. To build installer for FreeBSD we need a cross-compiling toolhcain:
+    9.1. Create directory 'x86_64-bsd' inside your toolchain-directory;
+    9.2. Copy file 'build-toolchain-freebsd' into that directory;
+    9.3. Execute the script build script:
 
-       ./build-nzbget release installer
+         ./build-toolchain-freebsd
 
-10. When the script is run without any parameters:
-   10.1. NZBGet is compiled twice for each CPU-Architecture listed in
+         The script downloads and build the full cross-compiling toolchain.
+
+    9.4 To test the FreeBSD toolchain start 'build-nzbget' with following parameters:
+
+        ./build-nzbget x86_64-bsd release
+
+10. To build installer for all CPU-Architectures listed in variable 'ALLTARGETS'
+    of the script run the script without choosing CPU-Architecture:
+
+       ./build-nzbget release
+
+11. When the script is run without any parameters:
+   11.1. NZBGet is compiled twice for each CPU-Architecture listed in
          'ALLTARGETS': once in release mode and once in debug mode;
-   10.2. Two installers are built: one for release and another for debug.
+   11.2. Four installers are built: one for release and another for debug for
+         each supported platform - Linux and FreeBSD.
+
 
 Special functions
 -----------------
@@ -122,4 +143,10 @@ To build on certain history point pass commit SHA to the script, for example
 
        ./build-nzbget release bin 13f5ab738880671a8d8381ef0fabc625e269eeef
 
-To cleanup the output directory before building pass parameter 'cleanup'.
+To cleanup the output directory before building pass parameter 'cleanup':
+
+       ./build-nzbget release cleanup
+
+To improve compilation speed activate pre-compiled headers and multicore make:
+
+       ./build-nzbget release pch core4
