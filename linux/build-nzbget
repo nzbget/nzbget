@@ -285,23 +285,25 @@ ConfigureTarget()
     case "$TOOLKIND-$CONFIG" in
         buildroot-debug|buildroot-debug-strip)
             LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-g -fasynchronous-unwind-tables" \
+                CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
                 LIBS="-lcrypto -ldl -lz -lubacktrace" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
             ;;
         buildroot-release|buildroot-release-nostrip)
             LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
+                CXXFLAGS="-std=c++14" \
                 LIBS="-lcrypto -ldl -lz" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
             ;;
         crossgcc-debug|crossgcc-debug-strip)
             LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-g -fasynchronous-unwind-tables" \
+                CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
                 PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
                 ;;
         crossgcc-release|crossgcc-release-nostrip)
             LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
+                CXXFLAGS="-std=c++14" \
                 PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
                 ;;
@@ -317,7 +319,7 @@ PrecompileHeaders()
             OPTIM="-O2"
         fi
 
-        $ARCH-$TOOLNAME-g++ -DHAVE_CONFIG_H \
+        $ARCH-$TOOLNAME-g++ -std=c++14 -DHAVE_CONFIG_H \
             -I. -I$STAGING/include -I$STAGING/include/libxml2 \
             -g $OPTIM daemon/main/nzbget.h -o nzbget.h.gch
     fi
