@@ -26,6 +26,7 @@
 #ifndef XMLRPC_H
 #define XMLRPC_H
 
+#include "NString.h"
 #include "Connection.h"
 #include "Util.h"
 
@@ -61,7 +62,7 @@ private:
 	ERpcProtocol		m_protocol;
 	EHttpMethod			m_httpMethod;
 	EUserAccess			m_userAccess;
-	char*				m_url;
+	CString				m_url;
 	StringBuilder		m_response;
 
 	void				Dispatch();
@@ -71,7 +72,6 @@ private:
 
 public:
 						XmlRpcProcessor();
-						~XmlRpcProcessor();
 	void				Execute();
 	void				SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
 	void				SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }

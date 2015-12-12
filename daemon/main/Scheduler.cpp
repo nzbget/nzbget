@@ -40,13 +40,8 @@ Scheduler::Task::Task(int id, int hours, int minutes, int weekDaysBits, ECommand
 	m_minutes = minutes;
 	m_weekDaysBits = weekDaysBits;
 	m_command = command;
-	m_param = param ? strdup(param) : NULL;
+	m_param = param;
 	m_lastExecuted = 0;
-}
-
-Scheduler::Task::~Task()
-{
-	free(m_param);
 }
 
 
@@ -208,7 +203,7 @@ void Scheduler::ExecuteTask(Task* task)
 	switch (task->m_command)
 	{
 		case scDownloadRate:
-			if (!Util::EmptyStr(task->m_param))
+			if (!task->m_param.Empty())
 			{
 				g_Options->SetDownloadRate(atoi(task->m_param) * 1024);
 				m_downloadRateChanged = true;

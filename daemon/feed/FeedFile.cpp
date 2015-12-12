@@ -34,7 +34,7 @@ FeedFile::FeedFile(const char* fileName)
 {
 	debug("Creating FeedFile");
 
-	m_fileName = strdup(fileName);
+	m_fileName = fileName;
 	m_feedItemInfos = new FeedItemInfos();
 	m_feedItemInfos->Retain();
 
@@ -50,7 +50,6 @@ FeedFile::~FeedFile()
 	debug("Destroying FeedFile");
 
 	// Cleanup
-	free(m_fileName);
 	m_feedItemInfos->Release();
 
 #ifndef WIN32
@@ -61,7 +60,7 @@ FeedFile::~FeedFile()
 
 void FeedFile::LogDebugInfo()
 {
-	info(" FeedFile %s", m_fileName);
+	info(" FeedFile %s", *m_fileName);
 }
 
 void FeedFile::AddItem(FeedItemInfo* feedItemInfo)

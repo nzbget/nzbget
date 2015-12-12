@@ -29,6 +29,7 @@
 
 #ifndef DISABLE_CURSES
 
+#include "NString.h"
 #include "Frontend.h"
 #include "Log.h"
 #include "DownloadInfo.h"
@@ -59,7 +60,7 @@ private:
 	int					m_lastEditEntry;
 	bool				m_lastPausePars;
 	int					m_queueScrollOffset;
-	char*				m_hint;
+	CString				m_hint;
 	time_t				m_startHint;
 	int					m_colWidthFiles;
 	int					m_colWidthTotal;

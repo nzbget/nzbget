@@ -27,24 +27,26 @@
 #ifndef NEWSSERVER_H
 #define NEWSSERVER_H
 
+#include "NString.h"
+
 class NewsServer
 {
 private:
 	int				m_id;
 	int				m_stateId;
 	bool			m_active;
-	char*			m_name;
+	CString			m_name;
 	int				m_group;
-	char*			m_host;
+	CString			m_host;
 	int				m_port;
-	char*			m_user;
-	char*			m_password;
+	CString			m_user;
+	CString			m_password;
 	int				m_maxConnections;
 	int				m_level;
 	int				m_normLevel;
 	bool			m_joinGroup;
 	bool			m_tls;
-	char*			m_cipher;
+	CString			m_cipher;
 	int				m_retention;
 	time_t			m_blockTime;
 
@@ -53,7 +55,6 @@ public:
 						const char* user, const char* pass, bool joinGroup,
 						bool tls, const char* cipher, int maxConnections, int retention,
 						int level, int group);
-					~NewsServer();
 	int				GetId() { return m_id; }
 	int				GetStateId() { return m_stateId; }
 	void			SetStateId(int stateId) { m_stateId = stateId; }

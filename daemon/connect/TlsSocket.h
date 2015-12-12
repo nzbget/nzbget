@@ -27,13 +27,15 @@
 
 #ifndef DISABLE_TLS
 
+#include "NString.h"
+
 class TlsSocket
 {
 private:
 	bool				m_isClient;
-	char*				m_certFile;
-	char*				m_keyFile;
-	char*				m_cipher;
+	CString				m_certFile;
+	CString				m_keyFile;
+	CString				m_cipher;
 	SOCKET				m_socket;
 	bool				m_suppressErrors;
 	int					m_retCode;

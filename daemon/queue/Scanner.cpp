@@ -34,14 +34,9 @@
 
 Scanner::FileData::FileData(const char* filename)
 {
-	m_filename = strdup(filename);
+	m_filename = filename;
 	m_size = 0;
 	m_lastChange = 0;
-}
-
-Scanner::FileData::~FileData()
-{
-	free(m_filename);
 }
 
 
@@ -50,11 +45,11 @@ Scanner::QueueData::QueueData(const char* filename, const char* nzbName, const c
 	NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
 	EAddStatus* addStatus, int* nzbId)
 {
-	m_filename = strdup(filename);
-	m_nzbName = strdup(nzbName);
-	m_category = strdup(category ? category : "");
+	m_filename = filename;
+	m_nzbName = nzbName;
+	m_category = category ? category : "";
 	m_priority = priority;
-	m_dupeKey = strdup(dupeKey ? dupeKey : "");
+	m_dupeKey = dupeKey ? dupeKey : "";
 	m_dupeScore = dupeScore;
 	m_dupeMode = dupeMode;
 	m_addTop = addTop;
@@ -67,14 +62,6 @@ Scanner::QueueData::QueueData(const char* filename, const char* nzbName, const c
 	{
 		m_parameters.CopyFrom(parameters);
 	}
-}
-
-Scanner::QueueData::~QueueData()
-{
-	free(m_filename);
-	free(m_nzbName);
-	free(m_category);
-	free(m_dupeKey);
 }
 
 void Scanner::QueueData::SetAddStatus(EAddStatus addStatus)

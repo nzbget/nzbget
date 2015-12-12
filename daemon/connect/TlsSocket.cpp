@@ -221,9 +221,9 @@ TlsSocket::TlsSocket(SOCKET socket, bool isClient, const char* certFile, const c
 {
 	m_socket = socket;
 	m_isClient = isClient;
-	m_certFile = certFile ? strdup(certFile) : NULL;
-	m_keyFile = keyFile ? strdup(keyFile) : NULL;
-	m_cipher = cipher && strlen(cipher) > 0 ? strdup(cipher) : NULL;
+	m_certFile = certFile;
+	m_keyFile = keyFile;
+	m_cipher = cipher;
 	m_context = NULL;
 	m_session = NULL;
 	m_suppressErrors = false;
@@ -233,9 +233,6 @@ TlsSocket::TlsSocket(SOCKET socket, bool isClient, const char* certFile, const c
 
 TlsSocket::~TlsSocket()
 {
-	free(m_certFile);
-	free(m_keyFile);
-	free(m_cipher);
 	Close();
 }
 
@@ -328,7 +325,7 @@ bool TlsSocket::Start()
 
 	m_initialized = true;
 
-	const char* priority = m_cipher ? m_cipher : "NORMAL";
+	const char* priority = !m_cipher.Empty() ? m_cipher : "NORMAL";
 
 	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, NULL);
 	if (m_retCode != 0)
@@ -394,7 +391,7 @@ bool TlsSocket::Start()
 		return false;
 	}
 
-	if (m_cipher && !SSL_set_cipher_list((SSL*)m_session, m_cipher))
+	if (!m_cipher.Empty() && !SSL_set_cipher_list((SSL*)m_session, m_cipher))
 	{
 		ReportError("Could not select cipher for TLS");
 		Close();

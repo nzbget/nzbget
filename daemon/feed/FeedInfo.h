@@ -26,9 +26,9 @@
 #ifndef FEEDINFO_H
 #define FEEDINFO_H
 
+#include "NString.h"
 #include "Util.h"
 #include "DownloadInfo.h"
-
 
 class FeedInfo
 {
@@ -43,19 +43,19 @@ public:
 
 private:
 	int					m_id;
-	char*				m_name;
-	char*				m_url;
+	CString				m_name;
+	CString				m_url;
 	int					m_interval;
-	char*				m_filter;
+	CString				m_filter;
 	uint32				m_filterHash;
 	bool				m_pauseNzb;
-	char*				m_category;
-	char*				m_feedScript;
+	CString				m_category;
+	CString				m_feedScript;
 	int					m_priority;
 	time_t				m_lastUpdate;
 	bool				m_preview;
 	EStatus				m_status;
-	char*				m_outputFilename;
+	CString				m_outputFilename;
 	bool				m_fetch;
 	bool				m_force;
 	bool				m_backlog;
@@ -64,7 +64,6 @@ public:
 						FeedInfo(int id, const char* name, const char* url, bool backlog, int interval,
 							const char* filter, bool pauseNzb, const char* category, int priority,
 							const char* feedScript);
-						~FeedInfo();
 	int					GetId() { return m_id; }
 	const char*			GetName() { return m_name; }
 	const char*			GetUrl() { return m_url; }
@@ -82,7 +81,7 @@ public:
 	EStatus				GetStatus() { return m_status; }
 	void				SetStatus(EStatus Status) { m_status = Status; }
 	const char*			GetOutputFilename() { return m_outputFilename; }
-	void 				SetOutputFilename(const char* outputFilename);
+	void 				SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
 	bool				GetFetch() { return m_fetch; }
 	void				SetFetch(bool fetch) { m_fetch = fetch; }
 	bool				GetForce() { return m_force; }
@@ -121,11 +120,10 @@ public:
 	class Attr
 	{
 	private:
-		char*			m_name;
-		char*			m_value;
+		CString			m_name;
+		CString			m_value;
 	public:
 						Attr(const char* name, const char* value);
-						~Attr();
 		const char*		GetName() { return m_name; }
 		const char*		GetValue() { return m_value; }
 	};
@@ -141,30 +139,30 @@ public:
 	};
 
 private:
-	char*				m_title;
-	char*				m_filename;
-	char*				m_url;
+	CString				m_title;
+	CString				m_filename;
+	CString				m_url;
 	time_t				m_time;
 	int64				m_size;
-	char*				m_category;
+	CString				m_category;
 	int					m_imdbId;
 	int					m_rageId;
-	char*				m_description;
-	char*				m_season;
-	char*				m_episode;
+	CString				m_description;
+	CString				m_season;
+	CString				m_episode;
 	int					m_seasonNum;
 	int					m_episodeNum;
 	bool				m_seasonEpisodeParsed;
-	char*				m_addCategory;
+	CString				m_addCategory;
 	bool				m_pauseNzb;
 	int					m_priority;
 	EStatus				m_status;
 	EMatchStatus		m_matchStatus;
 	int					m_matchRule;
-	char*				m_dupeKey;
+	CString				m_dupeKey;
 	int					m_dupeScore;
 	EDupeMode			m_dupeMode;
-	char*				m_dupeStatus;
+	CString				m_dupeStatus;
 	FeedFilterHelper*	m_feedFilterHelper;
 	Attributes			m_attributes;
 
@@ -173,24 +171,23 @@ private:
 
 public:
 						FeedItemInfo();
-						~FeedItemInfo();
 	void				SetFeedFilterHelper(FeedFilterHelper* feedFilterHelper) { m_feedFilterHelper = feedFilterHelper; }
 	const char*			GetTitle() { return m_title; }
-	void				SetTitle(const char* title);
+	void				SetTitle(const char* title) { m_title = title; }
 	const char*			GetFilename() { return m_filename; }
-	void				SetFilename(const char* filename);
+	void				SetFilename(const char* filename) { m_filename = filename; }
 	const char*			GetUrl() { return m_url; }
-	void				SetUrl(const char* url);
+	void				SetUrl(const char* url) { m_url = url; }
 	int64				GetSize() { return m_size; }
 	void				SetSize(int64 size) { m_size = size; }
 	const char*			GetCategory() { return m_category; }
-	void				SetCategory(const char* category);
+	void				SetCategory(const char* category) { m_category = category; }
 	int					GetImdbId() { return m_imdbId; }
 	void				SetImdbId(int imdbId) { m_imdbId = imdbId; }
 	int					GetRageId() { return m_rageId; }
 	void				SetRageId(int rageId) { m_rageId = rageId; }
 	const char*			GetDescription() { return m_description; }
-	void				SetDescription(const char* description);
+	void				SetDescription(const char* description) { m_description = description ? description: ""; }
 	const char*			GetSeason() { return m_season; }
 	void				SetSeason(const char* season);
 	const char*			GetEpisode() { return m_episode; }
@@ -198,7 +195,7 @@ public:
 	int					GetSeasonNum();
 	int					GetEpisodeNum();
 	const char*			GetAddCategory() { return m_addCategory; }
-	void				SetAddCategory(const char* addCategory);
+	void				SetAddCategory(const char* addCategory) { m_addCategory = addCategory ? addCategory : ""; }
 	bool				GetPauseNzb() { return m_pauseNzb; }
 	void				SetPauseNzb(bool pauseNzb) { m_pauseNzb = pauseNzb; }
 	int					GetPriority() { return m_priority; }
@@ -212,7 +209,7 @@ public:
 	int					GetMatchRule() { return m_matchRule; }
 	void				SetMatchRule(int matchRule) { m_matchRule = matchRule; }
 	const char*			GetDupeKey() { return m_dupeKey; }
-	void				SetDupeKey(const char* dupeKey);
+	void				SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey ? dupeKey : ""; }
 	void				AppendDupeKey(const char* extraDupeKey);
 	void				BuildDupeKey(const char* rageId, const char* series);
 	int					GetDupeScore() { return m_dupeScore; }
@@ -249,13 +246,12 @@ public:
 	};
 
 private:
-	char*				m_url;
+	CString				m_url;
 	EStatus				m_status;
 	time_t				m_lastSeen;
 
 public:
 						FeedHistoryInfo(const char* url, EStatus status, time_t lastSeen);
-						~FeedHistoryInfo();
 	const char*			GetUrl() { return m_url; }
 	EStatus				GetStatus() { return m_status; }
 	void				SetStatus(EStatus Status) { m_status = Status; }

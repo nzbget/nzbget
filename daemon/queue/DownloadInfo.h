@@ -27,6 +27,7 @@
 #ifndef DOWNLOADINFO_H
 #define DOWNLOADINFO_H
 
+#include "NString.h"
 #include "Observer.h"
 #include "Log.h"
 #include "Thread.h"
@@ -83,13 +84,13 @@ public:
 
 private:
 	int					m_partNumber;
-	char*				m_messageId;
+	CString				m_messageId;
 	int					m_size;
-	char*				m_segmentContent;
+	CString				m_segmentContent;
 	int64				m_segmentOffset;
 	int					m_segmentSize;
 	EStatus				m_status;
-	char*				m_resultFilename;
+	CString				m_resultFilename;
 	uint32				m_crc;
 
 public:
@@ -98,7 +99,7 @@ public:
 	void 				SetPartNumber(int s) { m_partNumber = s; }
 	int 				GetPartNumber() { return m_partNumber; }
 	const char* 		GetMessageId() { return m_messageId; }
-	void 				SetMessageId(const char* messageId);
+	void 				SetMessageId(const char* messageId) { m_messageId = messageId; }
 	void 				SetSize(int size) { m_size = size; }
 	int 				GetSize() { return m_size; }
 	void				AttachSegment(char* content, int64 offset, int size);
@@ -111,7 +112,7 @@ public:
 	EStatus				GetStatus() { return m_status; }
 	void				SetStatus(EStatus Status) { m_status = Status; }
 	const char*			GetResultFilename() { return m_resultFilename; }
-	void 				SetResultFilename(const char* v);
+	void 				SetResultFilename(const char* resultFilename) { m_resultFilename = resultFilename; }
 	uint32				GetCrc() { return m_crc; }
 	void				SetCrc(uint32 crc) { m_crc = crc; }
 };
@@ -120,7 +121,7 @@ class FileInfo
 {
 public:
 	typedef std::vector<ArticleInfo*>	Articles;
-	typedef std::vector<char*>			Groups;
+	typedef std::vector<CString>		Groups;
 
 private:
 	int					m_id;
@@ -128,8 +129,8 @@ private:
 	Articles			m_articles;
 	Groups				m_groups;
 	ServerStatList		m_serverStats;
-	char* 				m_subject;
-	char*				m_filename;
+	CString				m_subject;
+	CString				m_filename;
 	int64 				m_size;
 	int64 				m_remainingSize;
 	int64				m_successSize;
@@ -146,7 +147,7 @@ private:
 	bool				m_parFile;
 	int					m_completedArticles;
 	bool				m_outputInitialized;
-	char*				m_outputFilename;
+	CString				m_outputFilename;
 	Mutex*				m_mutexOutputFile;
 	bool				m_extraPriority;
 	int					m_activeDownloads;
@@ -170,9 +171,9 @@ public:
 	Articles* 			GetArticles() { return &m_articles; }
 	Groups* 			GetGroups() { return &m_groups; }
 	const char*			GetSubject() { return m_subject; }
-	void 				SetSubject(const char* subject);
+	void 				SetSubject(const char* subject) { m_subject = subject; }
 	const char*			GetFilename() { return m_filename; }
-	void 				SetFilename(const char* filename);
+	void 				SetFilename(const char* filename) { m_filename = filename; }
 	void				MakeValidFilename();
 	bool				GetFilenameConfirmed() { return m_filenameConfirmed; }
 	void				SetFilenameConfirmed(bool filenameConfirmed) { m_filenameConfirmed = filenameConfirmed; }
@@ -208,7 +209,7 @@ public:
 	void				LockOutputFile();
 	void				UnlockOutputFile();
 	const char*			GetOutputFilename() { return m_outputFilename; }
-	void 				SetOutputFilename(const char* outputFilename);
+	void 				SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
 	bool				GetOutputInitialized() { return m_outputInitialized; }
 	void				SetOutputInitialized(bool outputInitialized) { m_outputInitialized = outputInitialized; }
 	bool				GetExtraPriority() { return m_extraPriority; }
@@ -250,15 +251,14 @@ public:
 
 private:
 	int					m_id;
-	char*				m_fileName;
+	CString				m_fileName;
 	EStatus				m_status;
 	uint32				m_crc;
 
 public:
 						CompletedFile(int id, const char* fileName, EStatus status, uint32 crc);
-						~CompletedFile();
 	int					GetId() { return m_id; }
-	void				SetFileName(const char* fileName);
+	void				SetFileName(const char* fileName) { m_fileName = fileName; }
 	const char*			GetFileName() { return m_fileName; }
 	EStatus				GetStatus() { return m_status; }
 	uint32				GetCrc() { return m_crc; }
@@ -269,16 +269,15 @@ typedef std::deque<CompletedFile*>	CompletedFiles;
 class NzbParameter
 {
 private:
-	char* 				m_name;
-	char* 				m_value;
+	CString				m_name;
+	CString				m_value;
 
-	void				SetValue(const char* value);
+	void				SetValue(const char* value) { m_value = value; }
 
 	friend class NzbParameterList;
 
 public:
-						NzbParameter(const char* name);
-						~NzbParameter();
+						NzbParameter(const char* name) : m_name(name) {}
 	const char*			GetName() { return m_name; }
 	const char*			GetValue() { return m_value; }
 };
@@ -306,14 +305,14 @@ public:
 	};
 
 private:
-	char* 				m_name;
+	CString				m_name;
 	EStatus				m_status;
 
 	friend class ScriptStatusList;
 
 public:
-						ScriptStatus(const char* name, EStatus status);
-						~ScriptStatus();
+						ScriptStatus(const char* name, EStatus status)
+							: m_name(name), m_status(status) {}
 	const char*			GetName() { return m_name; }
 	EStatus				GetStatus() { return m_status; }
 };
@@ -425,12 +424,12 @@ public:
 private:
 	int					m_id;
 	EKind				m_kind;
-	char*				m_url;
-	char* 				m_filename;
-	char*				m_name;
-	char* 				m_destDir;
-	char* 				m_finalDir;
-	char* 				m_category;
+	CString				m_url;
+	CString				m_filename;
+	CString				m_name;
+	CString				m_destDir;
+	CString				m_finalDir;
+	CString				m_category;
 	int		 			m_fileCount;
 	int		 			m_parkedFileCount;
 	int64 				m_size;
@@ -469,7 +468,7 @@ private:
 	bool				m_addUrlPaused;
 	bool				m_deletePaused;
 	bool				m_manyDupeFiles;
-	char*				m_queuedFilename;
+	CString				m_queuedFilename;
 	bool				m_deleting;
 	bool				m_avoidHistory;
 	bool				m_healthPaused;
@@ -477,7 +476,7 @@ private:
 	bool				m_parManual;
 	bool				m_cleanupDisk;
 	bool				m_unpackCleanedUpDisk;
-	char*				m_dupeKey;
+	CString				m_dupeKey;
 	int					m_dupeScore;
 	EDupeMode			m_dupeMode;
 	uint32				m_fullContentHash;
@@ -519,20 +518,20 @@ public:
 	static int			GenerateId();
 	EKind				GetKind() { return m_kind; }
 	void				SetKind(EKind kind) { m_kind = kind; }
-	const char*			GetUrl() { return m_url; }			// needs locking (for shared objects)
-	void				SetUrl(const char* url);				// needs locking (for shared objects)
+	const char*			GetUrl() { return m_url; }
+	void				SetUrl(const char* url);
 	const char*			GetFilename() { return m_filename; }
 	void				SetFilename(const char* filename);
 	static void			MakeNiceNzbName(const char* nzbFilename, char* buffer, int size, bool removeExt);
 	static void			MakeNiceUrlName(const char* url, const char* nzbFilename, char* buffer, int size);
-	const char*			GetDestDir() { return m_destDir; }   // needs locking (for shared objects)
-	void				SetDestDir(const char* destDir);     // needs locking (for shared objects)
-	const char*			GetFinalDir() { return m_finalDir; }   // needs locking (for shared objects)
-	void				SetFinalDir(const char* finalDir);     // needs locking (for shared objects)
-	const char*			GetCategory() { return m_category; } // needs locking (for shared objects)
-	void				SetCategory(const char* category);   // needs locking (for shared objects)
-	const char*			GetName() { return m_name; } 	   // needs locking (for shared objects)
-	void				SetName(const char* name);	   // needs locking (for shared objects)
+	const char*			GetDestDir() { return m_destDir; }
+	void				SetDestDir(const char* destDir) { m_destDir = destDir; }
+	const char*			GetFinalDir() { return m_finalDir; }
+	void				SetFinalDir(const char* finalDir) { m_finalDir = finalDir; }
+	const char*			GetCategory() { return m_category; }
+	void				SetCategory(const char* category) { m_category = category; }
+	const char*			GetName() { return m_name; }
+	void				SetName(const char* name) { m_name = name; }
 	int					GetFileCount() { return m_fileCount; }
 	void 				SetFileCount(int fileCount) { m_fileCount = fileCount; }
 	int					GetParkedFileCount() { return m_parkedFileCount; }
@@ -586,7 +585,7 @@ public:
 	void				SetMaxTime(time_t maxTime) { m_maxTime = maxTime; }
 	void				BuildDestDirName();
 	void				BuildFinalDirName(char* finalDirBuf, int bufSize);
-	CompletedFiles*		GetCompletedFiles() { return &m_completedFiles; }		// needs locking (for shared objects)
+	CompletedFiles*		GetCompletedFiles() { return &m_completedFiles; }
 	void				ClearCompletedFiles();
 	ERenameStatus		GetRenameStatus() { return m_renameStatus; }
 	void				SetRenameStatus(ERenameStatus renameStatus) { m_renameStatus = renameStatus; }
@@ -607,7 +606,7 @@ public:
 	void				SetExtraParBlocks(int extraParBlocks) { m_extraParBlocks = extraParBlocks; }
 	void				SetUrlStatus(EUrlStatus urlStatus) { m_urlStatus = urlStatus; }
 	const char*			GetQueuedFilename() { return m_queuedFilename; }
-	void				SetQueuedFilename(const char* queuedFilename);
+	void				SetQueuedFilename(const char* queuedFilename) { m_queuedFilename = queuedFilename; }
 	bool				GetDeleting() { return m_deleting; }
 	void				SetDeleting(bool deleting) { m_deleting = deleting; }
 	bool				GetDeletePaused() { return m_deletePaused; }
@@ -626,15 +625,15 @@ public:
 	void				SetUnpackCleanedUpDisk(bool unpackCleanedUpDisk) { m_unpackCleanedUpDisk = unpackCleanedUpDisk; }
 	bool				GetAddUrlPaused() { return m_addUrlPaused; }
 	void				SetAddUrlPaused(bool addUrlPaused) { m_addUrlPaused = addUrlPaused; }
-	FileList*			GetFileList() { return &m_fileList; }					// needs locking (for shared objects)
-	NzbParameterList*	GetParameters() { return &m_ppParameters; }				// needs locking (for shared objects)
-	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }        // needs locking (for shared objects)
+	FileList*			GetFileList() { return &m_fileList; }
+	NzbParameterList*	GetParameters() { return &m_ppParameters; }
+	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }
 	ServerStatList*		GetServerStats() { return &m_serverStats; }
 	ServerStatList*		GetCurrentServerStats() { return &m_currentServerStats; }
 	int					CalcHealth();
 	int					CalcCriticalHealth(bool allowEstimation);
-	const char*			GetDupeKey() { return m_dupeKey; }					// needs locking (for shared objects)
-	void				SetDupeKey(const char* dupeKey);						// needs locking (for shared objects)
+	const char*			GetDupeKey() { return m_dupeKey; }
+	void				SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey ? dupeKey : ""; }
 	int					GetDupeScore() { return m_dupeScore; }
 	void				SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
 	EDupeMode			GetDupeMode() { return m_dupeMode; }
@@ -715,7 +714,7 @@ public:
 		ptFinished
 	};
 
-	typedef std::vector<char*>		ParredFiles;
+	typedef std::vector<CString>		ParredFiles;
 
 private:
 	NzbInfo*			m_nzbInfo;
@@ -729,7 +728,7 @@ private:
 	bool				m_passListTried;
 	int					m_lastUnpackStatus;
 	EStage				m_stage;
-	char*				m_progressLabel;
+	CString				m_progressLabel;
 	int					m_fileProgress;
 	int					m_stageProgress;
 	time_t				m_startTime;
@@ -745,7 +744,7 @@ public:
 	void				SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
 	EStage				GetStage() { return m_stage; }
 	void				SetStage(EStage stage) { m_stage = stage; }
-	void				SetProgressLabel(const char* progressLabel);
+	void				SetProgressLabel(const char* progressLabel) { m_progressLabel = progressLabel; }
 	const char*			GetProgressLabel() { return m_progressLabel; }
 	int					GetFileProgress() { return m_fileProgress; }
 	void				SetFileProgress(int fileProgress) { m_fileProgress = fileProgress; }
@@ -798,8 +797,8 @@ public:
 
 private:
 	int					m_id;
-	char*				m_name;
-	char*				m_dupeKey;
+	CString				m_name;
+	CString				m_dupeKey;
 	int					m_dupeScore;
 	EDupeMode			m_dupeMode;
 	int64 				m_size;
@@ -809,13 +808,12 @@ private:
 
 public:
 						DupInfo();
-						~DupInfo();
 	int					GetId() { return m_id; }
 	void				SetId(int id);
-	const char*			GetName() { return m_name; }			// needs locking (for shared objects)
-	void				SetName(const char* name);			// needs locking (for shared objects)
-	const char*			GetDupeKey() { return m_dupeKey; }	// needs locking (for shared objects)
-	void				SetDupeKey(const char* dupeKey);		// needs locking (for shared objects)
+	const char*			GetName() { return m_name; }
+	void				SetName(const char* name) { m_name = name; }
+	const char*			GetDupeKey() { return m_dupeKey; }
+	void				SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey; }
 	int					GetDupeScore() { return m_dupeScore; }
 	void				SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
 	EDupeMode			GetDupeMode() { return m_dupeMode; }

@@ -67,7 +67,6 @@ static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQOVW:";
 CommandLineParser::CommandLineParser(int argc, const char* argv[])
 {
 	m_noConfig = false;
-	m_configFilename = NULL;
 	m_errors = false;
 	m_printVersion = false;
 	m_printUsage = false;
@@ -76,29 +75,20 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 	m_editQueueIdList = NULL;
 	m_editQueueIdCount = 0;
 	m_editQueueOffset = 0;
-	m_editQueueText = NULL;
-	m_argFilename = NULL;
-	m_lastArg = NULL;
-	m_addCategory = NULL;
 	m_addPriority = 0;
-	m_addNzbFilename = NULL;
 	m_addPaused = false;
 	m_serverMode = false;
 	m_daemonMode = false;
 	m_remoteClientMode = false;
 	m_printOptions = false;
 	m_addTop = false;
-	m_addDupeKey = NULL;
 	m_addDupeScore = 0;
 	m_addDupeMode = 0;
 	m_logLines = 0;
 	m_writeLogKind = 0;
 	m_testBacktrace = false;
 	m_webGet = false;
-	m_webGetFilename = NULL;
 	m_sigVerify = false;
-	m_pubKeyFilename = NULL;
-	m_sigFilename = NULL;
 	m_matchMode = mmId;
 	m_pauseDownload = false;
 
@@ -118,17 +108,7 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 
 CommandLineParser::~CommandLineParser()
 {
-	free(m_configFilename);
-	free(m_argFilename);
-	free(m_addCategory);
-	free(m_editQueueText);
-	free(m_lastArg);
 	free(m_editQueueIdList);
-	free(m_addNzbFilename);
-	free(m_addDupeKey);
-	free(m_webGetFilename);
-	free(m_pubKeyFilename);
-	free(m_sigFilename);
 
 	for (NameList::iterator it = m_editQueueNameList.begin(); it != m_editQueueNameList.end(); it++)
 	{
@@ -172,7 +152,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 		switch (c)
 		{
 			case 'c':
-				m_configFilename = strdup(optarg);
+				m_configFilename = optarg;
 				break;
 			case 'n':
 				m_configFilename = NULL;
@@ -234,8 +214,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						free(m_addCategory);
-						m_addCategory = strdup(argv[optind-1]);
+						m_addCategory = argv[optind-1];
 					}
 					else if (optarg && !strcasecmp(optarg, "N"))
 					{
@@ -245,8 +224,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						free(m_addNzbFilename);
-						m_addNzbFilename = strdup(argv[optind-1]);
+						m_addNzbFilename = argv[optind-1];
 					}
 					else if (optarg && !strcasecmp(optarg, "DK"))
 					{
@@ -256,8 +234,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						free(m_addDupeKey);
-						m_addDupeKey = strdup(argv[optind-1]);
+						m_addDupeKey = argv[optind-1];
 					}
 					else if (optarg && !strcasecmp(optarg, "DS"))
 					{
@@ -352,7 +329,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						ReportError("Could not parse value of option 'L'");
 						return;
 					}
-					m_editQueueText = strdup(argv[optind-1]);
+					m_editQueueText = argv[optind-1];
 				}
 				break;
 			case 'P':
@@ -405,7 +382,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						return;
 					}
 					optarg = argv[optind-1];
-					m_webGetFilename = strdup(optarg);
+					m_webGetFilename = optarg;
 				}
 				else if (!strcasecmp(optarg, "verify"))
 				{
@@ -417,7 +394,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						return;
 					}
 					optarg = argv[optind-1];
-					m_pubKeyFilename = strdup(optarg);
+					m_pubKeyFilename = optarg;
 
 					optind++;
 					if (optind > argc)
@@ -426,7 +403,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						return;
 					}
 					optarg = argv[optind-1];
-					m_sigFilename = strdup(optarg);
+					m_sigFilename = optarg;
 				}
 				else
 				{
@@ -521,7 +498,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = strdup(argv[optind-1]);
+						m_editQueueText = argv[optind-1];
 
 						if (!strchr(m_editQueueText, '='))
 						{
@@ -594,7 +571,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = strdup(argv[optind-1]);
+						m_editQueueText = argv[optind-1];
 					}
 					else if (!strcasecmp(optarg, "N"))
 					{
@@ -611,7 +588,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = strdup(argv[optind-1]);
+						m_editQueueText = argv[optind-1];
 					}
 					else if (!strcasecmp(optarg, "M"))
 					{
@@ -632,7 +609,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = strdup(argv[optind-1]);
+						m_editQueueText = argv[optind-1];
 					}
 					else if (!strcasecmp(optarg, "O"))
 					{
@@ -649,7 +626,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = strdup(argv[optind-1]);
+						m_editQueueText = argv[optind-1];
 
 						if (!strchr(m_editQueueText, '='))
 						{
@@ -672,7 +649,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = strdup(argv[optind-1]);
+						m_editQueueText = argv[optind-1];
 
 						if (atoi(m_editQueueText) == 0 && strcmp("0", m_editQueueText))
 						{
@@ -727,8 +704,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				break;
 			case 'K':
 				// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
-				free(m_addCategory);
-				m_addCategory = strdup(optarg);
+				m_addCategory = optarg;
 				break;
 			case 'S':
 				optind++;
@@ -907,18 +883,18 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 	}
 	else
 	{
-		m_lastArg = strdup(argv[optind]);
+		m_lastArg = argv[optind];
 
 		// Check if the file-name is a relative path or an absolute path
 		// If the path starts with '/' its an absolute, else relative
 		const char* fileName = argv[optind];
 
 #ifdef WIN32
-			m_argFilename = strdup(fileName);
+			m_argFilename = fileName;
 #else
 		if (fileName[0] == '/' || !strncasecmp(fileName, "http://", 6) || !strncasecmp(fileName, "https://", 7))
 		{
-			m_argFilename = strdup(fileName);
+			m_argFilename = fileName;
 		}
 		else
 		{
@@ -927,7 +903,7 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 			getcwd(fileNameWithPath, 1024);
 			strcat(fileNameWithPath, "/");
 			strcat(fileNameWithPath, fileName);
-			m_argFilename = strdup(fileNameWithPath);
+			m_argFilename = fileNameWithPath;
 		}
 #endif
 

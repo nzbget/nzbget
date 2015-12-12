@@ -27,6 +27,7 @@
 #ifndef ARTICLEDOWNLOADER_H
 #define ARTICLEDOWNLOADER_H
 
+#include "NString.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
 #include "Thread.h"
@@ -67,9 +68,9 @@ private:
 	NntpConnection* 	m_connection;
 	EStatus				m_status;
 	Mutex			 	m_connectionMutex;
-	char*				m_infoName;
-	char				m_connectionName[250];
-	char*				m_articleFilename;
+	CString				m_infoName;
+	CString				m_connectionName;
+	CString				m_articleFilename;
 	time_t				m_lastUpdateTime;
 	Decoder::EFormat	m_format;
 	YDecoder			m_yDecoder;

@@ -33,28 +33,17 @@
 #include "DiskState.h"
 #include "QueueScript.h"
 
-UrlDownloader::UrlDownloader() : WebDownloader()
-{
-	m_category = NULL;
-}
-
-UrlDownloader::~UrlDownloader()
-{
-	free(m_category);
-}
-
 void UrlDownloader::ProcessHeader(const char* line)
 {
 	WebDownloader::ProcessHeader(line);
 
 	if (!strncmp(line, "X-DNZB-Category:", 16))
 	{
-		free(m_category);
 		char* category = strdup(line + 16);
-		m_category = strdup(Util::Trim(category));
+		m_category = Util::Trim(category);
 		free(category);
 
-		debug("Category: %s", m_category);
+		debug("Category: %s", *m_category);
 	}
 	else if (!strncmp(line, "X-DNZB-", 7))
 	{

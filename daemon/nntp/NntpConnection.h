@@ -27,6 +27,7 @@
 #ifndef NNTPCONNECTION_H
 #define NNTPCONNECTION_H
 
+#include "NString.h"
 #include "NewsServer.h"
 #include "Connection.h"
 
@@ -34,7 +35,7 @@ class NntpConnection : public Connection
 {
 private:
 	NewsServer*			m_newsServer;
-	char* 				m_activeGroup;
+	CString				m_activeGroup;
 	char*				m_lineBuf;
 	bool				m_authError;
 

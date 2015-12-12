@@ -26,12 +26,13 @@
 #ifndef SCHEDULERSCRIPT_H
 #define SCHEDULERSCRIPT_H
 
+#include "NString.h"
 #include "NzbScript.h"
 
 class SchedulerScriptController : public Thread, public NzbScriptController
 {
 private:
-	char*				m_script;
+	CString				m_script;
 	bool				m_externalProcess;
 	int					m_taskId;
 
@@ -42,7 +43,6 @@ protected:
 	virtual void		ExecuteScript(ScriptConfig::Script* script);
 
 public:
-	virtual				~SchedulerScriptController();
 	virtual void		Run();
 	static void			StartScript(const char* param, bool externalProcess, int taskId);
 };

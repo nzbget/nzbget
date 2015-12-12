@@ -32,8 +32,6 @@
 
 FeedFilter::Term::Term()
 {
-	m_field = NULL;
-	m_param = NULL;
 	m_float = false;
 	m_intParam = 0;
 	m_fFloatParam = 0.0;
@@ -43,8 +41,6 @@ FeedFilter::Term::Term()
 
 FeedFilter::Term::~Term()
 {
-	free(m_field);
-	free(m_param);
 	delete m_regEx;
 }
 
@@ -176,7 +172,7 @@ bool FeedFilter::Term::MatchText(const char* strValue)
 
 		int patlen = strlen(m_param) + 2 + 1;
 		char* pattern = (char*)malloc(patlen);
-		snprintf(pattern, patlen, format, m_param);
+		snprintf(pattern, patlen, format, *m_param);
 		pattern[patlen-1] = '\0';
 
 		WildMask mask(pattern, m_refValues != NULL);
@@ -311,8 +307,8 @@ bool FeedFilter::Term::Compile(char* token)
 		return false;
 	}
 
-	m_field = field ? strdup(field) : NULL;
-	m_param = strdup(token);
+	m_field = field;
+	m_param = token;
 
 	return true;
 }
@@ -559,17 +555,12 @@ FeedFilter::Rule::Rule()
 {
 	m_command = frAccept;
 	m_isValid = false;
-	m_category = NULL;
 	m_priority = 0;
 	m_addPriority = 0;
 	m_pause = false;
-	m_dupeKey = NULL;
-	m_addDupeKey = NULL;
 	m_dupeScore = 0;
 	m_addDupeScore = 0;
 	m_dupeMode = dmScore;
-	m_rageId = NULL;
-	m_series = NULL;
 	m_hasCategory = false;
 	m_hasPriority = false;
 	m_hasAddPriority = false;
@@ -584,22 +575,10 @@ FeedFilter::Rule::Rule()
 	m_hasPatCategory = false;
 	m_hasPatDupeKey = false;
 	m_hasPatAddDupeKey = false;
-	m_patCategory = NULL;
-	m_patDupeKey = NULL;
-	m_patAddDupeKey = NULL;
 }
 
 FeedFilter::Rule::~Rule()
 {
-	free(m_category);
-	free(m_dupeKey);
-	free(m_addDupeKey);
-	free(m_rageId);
-	free(m_series);
-	free(m_patCategory);
-	free(m_patDupeKey);
-	free(m_patAddDupeKey);
-
 	for (TermList::iterator it = m_terms.begin(); it != m_terms.end(); it++)
 	{
 		delete *it;
@@ -649,18 +628,15 @@ void FeedFilter::Rule::Compile(char* rule)
 
 	if (m_isValid && m_hasPatCategory)
 	{
-		m_patCategory = m_category;
-		m_category = NULL;
+		m_patCategory.Bind(m_category.Unbind());
 	}
 	if (m_isValid && m_hasPatDupeKey)
 	{
-		m_patDupeKey = m_dupeKey;
-		m_dupeKey = NULL;
+		m_patDupeKey.Bind(m_dupeKey.Unbind());
 	}
 	if (m_isValid && m_hasPatAddDupeKey)
 	{
-		m_patAddDupeKey = m_addDupeKey;
-		m_addDupeKey = NULL;
+		m_patAddDupeKey.Bind(m_addDupeKey.Unbind());
 	}
 }
 
@@ -734,8 +710,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 		if (!strcasecmp(option, "category") || !strcasecmp(option, "cat") || !strcasecmp(option, "c"))
 		{
 			m_hasCategory = true;
-			free(m_category);
-			m_category = strdup(value);
+			m_category = value;
 			m_hasPatCategory = strstr(value, "${");
 		}
 		else if (!strcasecmp(option, "pause") || !strcasecmp(option, "p"))
@@ -791,15 +766,13 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 		else if (!strcasecmp(option, "dupekey") || !strcasecmp(option, "dk") || !strcasecmp(option, "k"))
 		{
 			m_hasDupeKey = true;
-			free(m_dupeKey);
-			m_dupeKey = strdup(value);
+			m_dupeKey = value;
 			m_hasPatDupeKey = strstr(value, "${");
 		}
 		else if (!strcasecmp(option, "dupekey+") || !strcasecmp(option, "dk+") || !strcasecmp(option, "k+"))
 		{
 			m_hasAddDupeKey = true;
-			free(m_addDupeKey);
-			m_addDupeKey = strdup(value);
+			m_addDupeKey = value;
 			m_hasPatAddDupeKey = strstr(value, "${");
 		}
 		else if (!strcasecmp(option, "dupemode") || !strcasecmp(option, "dm") || !strcasecmp(option, "m"))
@@ -826,14 +799,12 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 		else if (!strcasecmp(option, "rageid"))
 		{
 			m_hasRageId = true;
-			free(m_rageId);
-			m_rageId = strdup(value);
+			m_rageId = value;
 		}
 		else if (!strcasecmp(option, "series"))
 		{
 			m_hasSeries = true;
-			free(m_series);
-			m_series = strdup(value);
+			m_series = value;
 		}
 
 		// for compatibility with older version we support old commands too
@@ -850,8 +821,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 		else
 		{
 			m_hasCategory = true;
-			free(m_category);
-			m_category = strdup(option);
+			m_category = option;
 		}
 	}
 
@@ -964,12 +934,9 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* feedItemInfo)
 	return match;
 }
 
-void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, char** destStr, char* patStr)
+void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, char* patStr)
 {
-	free(*destStr);
-
-	*destStr = strdup(patStr);
-	char* curvalue = *destStr;
+	char* curvalue = strdup(patStr);
 
 	int attempts = 0;
 	while (char* dollar = strstr(curvalue, "${"))
@@ -1005,8 +972,9 @@ void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, char** destSt
 		strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
 		free(curvalue);
 		curvalue = newvalue;
-		*destStr = curvalue;
 	}
+
+	destStr->Bind(curvalue);
 }
 
 const char* FeedFilter::Rule::GetRefValue(FeedItemInfo* feedItemInfo, const char* varName)

@@ -24,6 +24,7 @@
 
 
 #include "nzbget.h"
+#include "NString.h"
 #include "DiskState.h"
 #include "Options.h"
 #include "Log.h"
@@ -1178,7 +1179,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 	fprintf(outfile, "%i\n", (int)fileInfo->GetGroups()->size());
 	for (FileInfo::Groups::iterator it = fileInfo->GetGroups()->begin(); it != fileInfo->GetGroups()->end(); it++)
 	{
-		fprintf(outfile, "%s\n", *it);
+		fprintf(outfile, "%s\n", **it);
 	}
 
 	fprintf(outfile, "%i\n", (int)fileInfo->GetArticles()->size());
@@ -1280,7 +1281,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 	{
 		if (!fgets(buf, sizeof(buf), infile)) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		if (fileSummary) fileInfo->GetGroups()->push_back(strdup(buf));
+		if (fileSummary) fileInfo->GetGroups()->push_back(buf);
 	}
 
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
@@ -2578,14 +2579,13 @@ class ServerRef
 {
 public:
 	int				m_stateId;
-	char*			m_name;
-	char*			m_host;
+	CString			m_name;
+	CString			m_host;
 	int				m_port;
-	char*			m_user;
+	CString			m_user;
 	bool			m_matched;
 	bool			m_perfect;
 
-					~ServerRef();
 	int				GetStateId() { return m_stateId; }
 	const char*		GetName() { return m_name; }
 	const char*		GetHost() { return m_host; }
@@ -2598,13 +2598,6 @@ public:
 };
 
 typedef std::deque<ServerRef*> ServerRefList;
-
-ServerRef::~ServerRef()
-{
-	free(m_name);
-	free(m_host);
-	free(m_user);
-}
 
 enum ECriteria
 {
@@ -2748,10 +2741,10 @@ bool DiskState::LoadServerInfo(Servers* servers, FILE* infile, int formatVersion
 
 		ServerRef* ref = new ServerRef();
 		ref->m_stateId = i + 1;
-		ref->m_name = strdup(name);
-		ref->m_host = strdup(host);
+		ref->m_name = name;
+		ref->m_host = host;
 		ref->m_port = port;
-		ref->m_user = strdup(user);
+		ref->m_user = user;
 		ref->m_matched = false;
 		ref->m_perfect = false;
 		serverRefs.push_back(ref);

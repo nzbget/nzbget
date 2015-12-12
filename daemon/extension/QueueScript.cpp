@@ -24,6 +24,7 @@
 
 
 #include "nzbget.h"
+#include "NString.h"
 #include "QueueScript.h"
 #include "NzbScript.h"
 #include "Options.h"
@@ -35,14 +36,14 @@ static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "URL_COMPLETED", "
 class QueueScriptController : public Thread, public NzbScriptController
 {
 private:
-	char*				m_nzbName;
-	char*				m_nzbFilename;
-	char*				m_url;
-	char*				m_category;
-	char*				m_destDir;
+	CString				m_nzbName;
+	CString				m_nzbFilename;
+	CString				m_url;
+	CString				m_category;
+	CString				m_destDir;
 	int					m_id;
 	int					m_priority;
-	char*				m_dupeKey;
+	CString				m_dupeKey;
 	EDupeMode			m_dupeMode;
 	int					m_dupeScore;
 	NzbParameterList	m_parameters;
@@ -60,34 +61,23 @@ protected:
 	virtual void		AddMessage(Message::EKind kind, const char* text);
 
 public:
-	virtual				~QueueScriptController();
 	virtual void		Run();
 	static void			StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* script, QueueScriptCoordinator::EEvent event);
 };
 
 
-QueueScriptController::~QueueScriptController()
-{
-	free(m_nzbName);
-	free(m_nzbFilename);
-	free(m_url);
-	free(m_category);
-	free(m_destDir);
-	free(m_dupeKey);
-}
-
 void QueueScriptController::StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* script, QueueScriptCoordinator::EEvent event)
 {
 	QueueScriptController* scriptController = new QueueScriptController();
 
-	scriptController->m_nzbName = strdup(nzbInfo->GetName());
-	scriptController->m_nzbFilename = strdup(nzbInfo->GetFilename());
-	scriptController->m_url = strdup(nzbInfo->GetUrl());
-	scriptController->m_category = strdup(nzbInfo->GetCategory());
-	scriptController->m_destDir = strdup(nzbInfo->GetDestDir());
+	scriptController->m_nzbName = nzbInfo->GetName();
+	scriptController->m_nzbFilename = nzbInfo->GetFilename();
+	scriptController->m_url = nzbInfo->GetUrl();
+	scriptController->m_category = nzbInfo->GetCategory();
+	scriptController->m_destDir = nzbInfo->GetDestDir();
 	scriptController->m_id = nzbInfo->GetId();
 	scriptController->m_priority = nzbInfo->GetPriority();
-	scriptController->m_dupeKey = strdup(nzbInfo->GetDupeKey());
+	scriptController->m_dupeKey = nzbInfo->GetDupeKey();
 	scriptController->m_dupeMode = nzbInfo->GetDupeMode();
 	scriptController->m_dupeScore = nzbInfo->GetDupeScore();
 	scriptController->m_parameters.CopyFrom(nzbInfo->GetParameters());
@@ -114,7 +104,7 @@ void QueueScriptController::Run()
 		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
 		if (nzbInfo)
 		{
-			PrintMessage(Message::mkWarning, "Cancelling download and deleting %s", m_nzbName);
+			PrintMessage(Message::mkWarning, "Cancelling download and deleting %s", *m_nzbName);
 			nzbInfo->SetDeleteStatus(NzbInfo::dsBad);
 			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, 0, NULL);
 		}
@@ -212,7 +202,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 			if (nzbInfo)
 			{
 				SetLogPrefix(NULL);
-				PrintMessage(Message::mkWarning, "Marking %s as bad", m_nzbName);
+				PrintMessage(Message::mkWarning, "Marking %s as bad", *m_nzbName);
 				SetLogPrefix(m_script->GetDisplayName());
 				nzbInfo->SetMarkStatus(NzbInfo::ksBad);
 			}

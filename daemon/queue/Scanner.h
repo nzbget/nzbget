@@ -26,6 +26,7 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
+#include "NString.h"
 #include "DownloadInfo.h"
 #include "Thread.h"
 #include "Service.h"
@@ -44,13 +45,12 @@ private:
 	class FileData
 	{
 	private:
-		char*			m_filename;
+		CString			m_filename;
 		int64			m_size;
 		time_t			m_lastChange;
 
 	public:
 						FileData(const char* filename);
-						~FileData();
 		const char*		GetFilename() { return m_filename; }
 		int64			GetSize() { return m_size; }
 		void			SetSize(int64 size) { m_size = size; }
@@ -63,11 +63,11 @@ private:
 	class QueueData
 	{
 	private:
-		char*				m_filename;
-		char*				m_nzbName;
-		char*				m_category;
+		CString				m_filename;
+		CString				m_nzbName;
+		CString				m_category;
 		int					m_priority;
-		char*				m_dupeKey;
+		CString				m_dupeKey;
 		int					m_dupeScore;
 		EDupeMode			m_dupeMode;
 		NzbParameterList	m_parameters;
@@ -82,7 +82,6 @@ private:
 								int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
 								NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
 								EAddStatus* addStatus, int* nzbId);
-							~QueueData();
 		const char*			GetFilename() { return m_filename; }
 		const char*			GetNzbName() { return m_nzbName; }
 		const char*			GetCategory() { return m_category; }

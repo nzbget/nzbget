@@ -27,6 +27,7 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include "NString.h"
 #include "Thread.h"
 
 void error(const char* msg, ...);
@@ -58,13 +59,12 @@ private:
 	uint32				m_id;
 	EKind				m_kind;
 	time_t				m_time;
-	char*				m_text;
+	CString				m_text;
 
 	friend class Log;
 
 public:
 						Message(uint32 id, EKind kind, time_t time, const char* text);
-						~Message();
 	uint32				GetId() { return m_id; }
 	EKind				GetKind() { return m_kind; }
 	time_t				GetTime() { return m_time; }
@@ -97,7 +97,7 @@ private:
 	MessageList			m_messages;
 	Debuggables			m_debuggables;
 	Mutex				m_debugMutex;
-	char*				m_logFilename;
+	CString				m_logFilename;
 	uint32				m_idGen;
 	time_t				m_lastWritten;
 	bool				m_optInit;

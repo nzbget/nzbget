@@ -43,7 +43,6 @@ NntpConnection::NntpConnection(NewsServer* newsServer) : Connection(newsServer->
 
 NntpConnection::~NntpConnection()
 {
-	free(m_activeGroup);
 	free(m_lineBuf);
 }
 
@@ -179,7 +178,7 @@ bool NntpConnection::AuthInfoPass(int recur)
 
 const char* NntpConnection::JoinGroup(const char* grp)
 {
-	if (m_activeGroup && !strcmp(m_activeGroup, grp))
+	if (!m_activeGroup.Empty() && !strcmp(m_activeGroup, grp))
 	{
 		// already in group
 		strcpy(m_lineBuf, "211 ");
@@ -195,8 +194,7 @@ const char* NntpConnection::JoinGroup(const char* grp)
 	if (answer && !strncmp(answer, "2", 1))
 	{
 		debug("Changed group to %s on %s", grp, GetHost());
-		free(m_activeGroup);
-		m_activeGroup = strdup(grp);
+		m_activeGroup = grp;
 	}
 	else
 	{
@@ -255,7 +253,6 @@ bool NntpConnection::Disconnect()
 		{
 			Request("quit\r\n");
 		}
-		free(m_activeGroup);
 		m_activeGroup = NULL;
 	}
 	return Connection::Disconnect();

@@ -190,7 +190,7 @@ void Repairer::BeginRepair()
 	int threads = maxThreads > (int)missingblockcount ? (int)missingblockcount : maxThreads;
 
 	m_owner->PrintMessage(Message::mkInfo, "Using %i of max %i thread(s) to repair %i block(s) for %s",
-		threads, maxThreads, (int)missingblockcount, m_owner->m_nzbName);
+		threads, maxThreads, (int)missingblockcount, *m_owner->m_nzbName);
 
 	m_parallel = threads > 1;
 
@@ -378,13 +378,8 @@ ParChecker::SegmentList::~SegmentList()
 ParChecker::DupeSource::DupeSource(int id, const char* directory)
 {
 	m_id = id;
-	m_directory = strdup(directory);
+	m_directory = directory;
 	m_usedBlocks = 0;
-}
-
-ParChecker::DupeSource::~DupeSource()
-{
-	free(m_directory);
 }
 
 
@@ -393,12 +388,7 @@ ParChecker::ParChecker()
 	debug("Creating ParChecker");
 
 	m_status = psFailed;
-	m_destDir = NULL;
-	m_nzbName = NULL;
 	m_parFilename = NULL;
-	m_infoName = NULL;
-	m_errMsg = NULL;
-	m_progressLabel = (char*)malloc(1024);
 	m_repairer = NULL;
 	m_fileProgress = 0;
 	m_stageProgress = 0;
@@ -415,11 +405,6 @@ ParChecker::ParChecker()
 ParChecker::~ParChecker()
 {
 	debug("Destroying ParChecker");
-
-	free(m_destDir);
-	free(m_nzbName);
-	free(m_infoName);
-	free(m_progressLabel);
 
 	Cleanup();
 }
@@ -449,26 +434,7 @@ void ParChecker::Cleanup()
 	}
 	m_dupeSources.clear();
 
-	free(m_errMsg);
 	m_errMsg = NULL;
-}
-
-void ParChecker::SetDestDir(const char * destDir)
-{
-	free(m_destDir);
-	m_destDir = strdup(destDir);
-}
-
-void ParChecker::SetNzbName(const char * nzbName)
-{
-	free(m_nzbName);
-	m_nzbName = strdup(nzbName);
-}
-
-void ParChecker::SetInfoName(const char * infoName)
-{
-	free(m_infoName);
-	m_infoName = strdup(infoName);
 }
 
 void ParChecker::Run()
@@ -477,7 +443,7 @@ void ParChecker::Run()
 
 	if (m_status == psRepairNotNeeded && m_parQuick && m_forceRepair && !m_cancelled)
 	{
-		PrintMessage(Message::mkInfo, "Performing full par-check for %s", m_nzbName);
+		PrintMessage(Message::mkInfo, "Performing full par-check for %s", *m_nzbName);
 		m_parQuick = false;
 		m_status = RunParCheckAll();
 	}
@@ -490,7 +456,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 	ParParser::ParFileList fileList;
 	if (!ParParser::FindMainPars(m_destDir, &fileList))
 	{
-		PrintMessage(Message::mkError, "Could not start par-check for %s. Could not find any par-files", m_nzbName);
+		PrintMessage(Message::mkError, "Could not start par-check for %s. Could not find any par-files", *m_nzbName);
 		return psFailed;
 	}
 
@@ -506,7 +472,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 		if (!IsStopped() && !m_cancelled)
 		{
 			char fullParFilename[1024];
-			snprintf(fullParFilename, 1024, "%s%c%s", m_destDir, (int)PATH_SEPARATOR, parFilename);
+			snprintf(fullParFilename, 1024, "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, parFilename);
 			fullParFilename[1024-1] = '\0';
 
 			char infoName[1024];
@@ -517,7 +483,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 			infoName[maxlen] = '\0';
 
 			char parInfoName[1024];
-			snprintf(parInfoName, 1024, "%s%c%s", m_nzbName, (int)PATH_SEPARATOR, infoName);
+			snprintf(parInfoName, 1024, "%s%c%s", *m_nzbName, (int)PATH_SEPARATOR, infoName);
 			parInfoName[1024-1] = '\0';
 
 			SetInfoName(parInfoName);
@@ -554,12 +520,11 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 	m_hasDamagedFiles = false;
 	EStatus status = psFailed;
 
-	PrintMessage(Message::mkInfo, "Verifying %s", m_infoName);
+	PrintMessage(Message::mkInfo, "Verifying %s", *m_infoName);
 
 	debug("par: %s", m_parFilename);
 
-	snprintf(m_progressLabel, 1024, "Verifying %s", m_infoName);
-	m_progressLabel[1024-1] = '\0';
+	m_progressLabel.Format("Verifying %s", *m_infoName);
 	m_fileProgress = 0;
 	m_stageProgress = 0;
 	UpdateProgress();
@@ -629,7 +594,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 
 	if (res == eSuccess || !m_hasDamagedFiles)
 	{
-		PrintMessage(Message::mkInfo, "Repair not needed for %s", m_infoName);
+		PrintMessage(Message::mkInfo, "Repair not needed for %s", *m_infoName);
 		status = psRepairNotNeeded;
 	}
 	else if (res == eRepairPossible)
@@ -637,11 +602,10 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 		status = psRepairPossible;
 		if (g_Options->GetParRepair())
 		{
-			PrintMessage(Message::mkInfo, "Repairing %s", m_infoName);
+			PrintMessage(Message::mkInfo, "Repairing %s", *m_infoName);
 
 			SaveSourceList();
-			snprintf(m_progressLabel, 1024, "Repairing %s", m_infoName);
-			m_progressLabel[1024-1] = '\0';
+			m_progressLabel.Format("Repairing %s", *m_infoName);
 			m_fileProgress = 0;
 			m_stageProgress = 0;
 			m_processedCount = 0;
@@ -652,7 +616,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 			res = repairer->Process(true);
 			if (res == eSuccess)
 			{
-				PrintMessage(Message::mkInfo, "Successfully repaired %s", m_infoName);
+				PrintMessage(Message::mkInfo, "Successfully repaired %s", *m_infoName);
 				status = psRepaired;
 				StatDupeSources(&m_dupeSources);
 				DeleteLeftovers();
@@ -660,7 +624,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 		}
 		else
 		{
-			PrintMessage(Message::mkInfo, "Repair possible for %s", m_infoName);
+			PrintMessage(Message::mkInfo, "Repair possible for %s", *m_infoName);
 		}
 	}
 
@@ -668,14 +632,14 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 	{
 		if (m_stage >= ptRepairing)
 		{
-			PrintMessage(Message::mkWarning, "Repair cancelled for %s", m_infoName);
-			m_errMsg = strdup("repair cancelled");
+			PrintMessage(Message::mkWarning, "Repair cancelled for %s", *m_infoName);
+			m_errMsg = "repair cancelled";
 			status = psRepairPossible;
 		}
 		else
 		{
-			PrintMessage(Message::mkWarning, "Par-check cancelled for %s", m_infoName);
-			m_errMsg = strdup("par-check cancelled");
+			PrintMessage(Message::mkWarning, "Par-check cancelled for %s", *m_infoName);
+			m_errMsg = "par-check cancelled";
 			status = psFailed;
 		}
 	}
@@ -683,9 +647,9 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 	{
 		if (!m_errMsg && (int)res >= 0 && (int)res <= 8)
 		{
-			m_errMsg = strdup(Par2CmdLineErrStr[res]);
+			m_errMsg = Par2CmdLineErrStr[res];
 		}
-		PrintMessage(Message::mkError, "Repair failed for %s: %s", m_infoName, m_errMsg ? m_errMsg : "");
+		PrintMessage(Message::mkError, "Repair failed for %s: %s", *m_infoName, m_errMsg ? *m_errMsg : "");
 	}
 
 	Cleanup();
@@ -707,22 +671,22 @@ int ParChecker::PreProcessPar()
 
 		if (IsStopped())
 		{
-			PrintMessage(Message::mkError, "Could not verify %s: stopping", m_infoName);
-			m_errMsg = strdup("par-check was stopped");
+			PrintMessage(Message::mkError, "Could not verify %s: stopping", *m_infoName);
+			m_errMsg = "par-check was stopped";
 			return eRepairFailed;
 		}
 
 		if (res == eInvalidCommandLineArguments)
 		{
-			PrintMessage(Message::mkError, "Could not start par-check for %s. Par-file: %s", m_infoName, m_parFilename);
-			m_errMsg = strdup("Command line could not be parsed");
+			PrintMessage(Message::mkError, "Could not start par-check for %s. Par-file: %s", *m_infoName, m_parFilename);
+			m_errMsg = "Command line could not be parsed";
 			return res;
 		}
 
 		if (res != eSuccess)
 		{
-			PrintMessage(Message::mkWarning, "Could not verify %s: par2-file could not be processed", m_infoName);
-			PrintMessage(Message::mkInfo, "Requesting more par2-files for %s", m_infoName);
+			PrintMessage(Message::mkWarning, "Could not verify %s: par2-file could not be processed", *m_infoName);
+			PrintMessage(Message::mkInfo, "Requesting more par2-files for %s", *m_infoName);
 			bool hasMorePars = LoadMainParBak();
 			if (!hasMorePars)
 			{
@@ -734,8 +698,8 @@ int ParChecker::PreProcessPar()
 
 	if (res != eSuccess)
 	{
-		PrintMessage(Message::mkError, "Could not verify %s: par2-file could not be processed", m_infoName);
-		m_errMsg = strdup("par2-file could not be processed");
+		PrintMessage(Message::mkError, "Could not verify %s: par2-file could not be processed", *m_infoName);
+		m_errMsg = "par2-file could not be processed";
 		return res;
 	}
 
@@ -764,8 +728,7 @@ bool ParChecker::LoadMainParBak()
 		bool requested = RequestMorePars(1, &blockFound);
 		if (requested)
 		{
-			strncpy(m_progressLabel, "Awaiting additional par-files", 1024);
-			m_progressLabel[1024-1] = '\0';
+			m_progressLabel = "Awaiting additional par-files";
 			m_fileProgress = 0;
 			UpdateProgress();
 		}
@@ -813,7 +776,7 @@ int ParChecker::ProcessMorePars()
 
 		if (moreFilesLoaded)
 		{
-			PrintMessage(Message::mkInfo, "Need more %i par-block(s) for %s", missingblockcount, m_infoName);
+			PrintMessage(Message::mkInfo, "Need more %i par-block(s) for %s", missingblockcount, *m_infoName);
 		}
 
 		m_queuedParFilesMutex.Lock();
@@ -826,8 +789,7 @@ int ParChecker::ProcessMorePars()
 			bool requested = RequestMorePars(missingblockcount, &blockFound);
 			if (requested)
 			{
-				strncpy(m_progressLabel, "Awaiting additional par-files", 1024);
-				m_progressLabel[1024-1] = '\0';
+				m_progressLabel = "Awaiting additional par-files";
 				m_fileProgress = 0;
 				UpdateProgress();
 			}
@@ -839,9 +801,7 @@ int ParChecker::ProcessMorePars()
 
 			if (!requested && !hasMorePars)
 			{
-				m_errMsg = (char*)malloc(1024);
-				snprintf(m_errMsg, 1024, "not enough par-blocks, %i block(s) needed, but %i block(s) available", missingblockcount, blockFound);
-				m_errMsg[1024-1] = '\0';
+				m_errMsg.Format("not enough par-blocks, %i block(s) needed, but %i block(s) available", missingblockcount, blockFound);
 				break;
 			}
 
@@ -889,11 +849,11 @@ bool ParChecker::LoadMorePars()
 		bool loadedOK = ((Repairer*)m_repairer)->LoadPacketsFromFile(parFilename);
 		if (loadedOK)
 		{
-			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", Util::BaseFileName(parFilename), m_infoName);
+			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", Util::BaseFileName(parFilename), *m_infoName);
 		}
 		else
 		{
-			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", Util::BaseFileName(parFilename), m_infoName);
+			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", Util::BaseFileName(parFilename), *m_infoName);
 		}
 		free(parFilename);
 	}
@@ -947,7 +907,7 @@ bool ParChecker::AddSplittedFragments()
 							debug("Found splitted fragment %s", filename);
 
 							char fullfilename[1024];
-							snprintf(fullfilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, filename);
+							snprintf(fullfilename, 1024, "%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 							fullfilename[1024-1] = '\0';
 
 							CommandLine::ExtraFile extrafile(fullfilename, Util::FileSize(fullfilename));
@@ -965,7 +925,7 @@ bool ParChecker::AddSplittedFragments()
 	{
 		m_extraFiles += extrafiles.size();
 		m_verifyingExtraFiles = true;
-		PrintMessage(Message::mkInfo, "Found %i splitted fragments for %s", (int)extrafiles.size(), m_infoName);
+		PrintMessage(Message::mkInfo, "Found %i splitted fragments for %s", (int)extrafiles.size(), *m_infoName);
 		fragmentsAdded = ((Repairer*)m_repairer)->VerifyExtraFiles(extrafiles);
 		((Repairer*)m_repairer)->UpdateVerificationResults();
 		m_verifyingExtraFiles = false;
@@ -1028,11 +988,11 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 {
 	if (externalDir)
 	{
-		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", m_infoName, Util::BaseFileName(directory));
+		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", *m_infoName, Util::BaseFileName(directory));
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", m_infoName);
+		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", *m_infoName);
 	}
 
 	std::list<CommandLine::ExtraFile*> extrafiles;
@@ -1166,8 +1126,7 @@ void ParChecker::signal_filename(std::string str)
 		m_processedFiles.push_back(strdup(str.c_str()));
 	}
 
-	snprintf(m_progressLabel, 1024, "%s %s", stageMessage[m_stage], str.c_str());
-	m_progressLabel[1024-1] = '\0';
+	m_progressLabel.Format("%s %s", stageMessage[m_stage], str.c_str());
 	m_fileProgress = 0;
 	UpdateProgress();
 }
@@ -1319,7 +1278,7 @@ void ParChecker::Cancel()
 void ParChecker::WriteBrokenLog(EStatus status)
 {
 	char brokenLogName[1024];
-	snprintf(brokenLogName, 1024, "%s%c_brokenlog.txt", m_destDir, (int)PATH_SEPARATOR);
+	snprintf(brokenLogName, 1024, "%s%c_brokenlog.txt", *m_destDir, (int)PATH_SEPARATOR);
 	brokenLogName[1024-1] = '\0';
 
 	if (status != psRepairNotNeeded || Util::FileExists(brokenLogName))
@@ -1331,24 +1290,24 @@ void ParChecker::WriteBrokenLog(EStatus status)
 			{
 				if (m_cancelled)
 				{
-					fprintf(file, "Repair cancelled for %s\n", m_infoName);
+					fprintf(file, "Repair cancelled for %s\n", *m_infoName);
 				}
 				else
 				{
-					fprintf(file, "Repair failed for %s: %s\n", m_infoName, m_errMsg ? m_errMsg : "");
+					fprintf(file, "Repair failed for %s: %s\n", *m_infoName, m_errMsg ? *m_errMsg : "");
 				}
 			}
 			else if (status == psRepairPossible)
 			{
-				fprintf(file, "Repair possible for %s\n", m_infoName);
+				fprintf(file, "Repair possible for %s\n", *m_infoName);
 			}
 			else if (status == psRepaired)
 			{
-				fprintf(file, "Successfully repaired %s\n", m_infoName);
+				fprintf(file, "Successfully repaired %s\n", *m_infoName);
 			}
 			else if (status == psRepairNotNeeded)
 			{
-				fprintf(file, "Repair not needed for %s\n", m_infoName);
+				fprintf(file, "Repair not needed for %s\n", *m_infoName);
 			}
 			fclose(file);
 		}

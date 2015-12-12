@@ -26,6 +26,7 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+#include "NString.h"
 #include "Thread.h"
 #include "Service.h"
 
@@ -56,13 +57,12 @@ public:
 		int				m_minutes;
 		int				m_weekDaysBits;
 		ECommand		m_command;
-		char*			m_param;
+		CString			m_param;
 		time_t			m_lastExecuted;
 
 	public:
 						Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
 							const char* param);
-						~Task();
 		friend class	Scheduler;
 	};
 

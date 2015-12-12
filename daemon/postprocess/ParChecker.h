@@ -28,6 +28,7 @@
 
 #ifndef DISABLE_PARCHECK
 
+#include "NString.h"
 #include "Thread.h"
 #include "Log.h"
 
@@ -86,12 +87,11 @@ public:
 	{
 	private:
 		int					m_id;
-		char*				m_directory;
+		CString				m_directory;
 		int					m_usedBlocks;
 
 	public:
 							DupeSource(int id, const char* directory);
-							~DupeSource();
 		int					GetId() { return m_id; }
 		const char*			GetDirectory() { return m_directory; }
 		int					GetUsedBlocks() { return m_usedBlocks; }
@@ -107,15 +107,15 @@ public:
 	friend class Repairer;
 
 private:
-	char*				m_infoName;
-	char*				m_destDir;
-	char*				m_nzbName;
+	CString				m_infoName;
+	CString				m_destDir;
+	CString				m_nzbName;
 	const char*			m_parFilename;
 	EStatus				m_status;
 	EStage				m_stage;
 	// declared as void* to prevent the including of libpar2-headers into this header-file
 	void*				m_repairer;
-	char*				m_errMsg;
+	CString				m_errMsg;
 	FileList			m_queuedParFiles;
 	Mutex			 	m_queuedParFilesMutex;
 	bool				m_queuedParFilesChanged;
@@ -125,7 +125,7 @@ private:
 	int					m_extraFiles;
 	int					m_quickFiles;
 	bool				m_verifyingExtraFiles;
-	char*				m_progressLabel;
+	CString				m_progressLabel;
 	int					m_fileProgress;
 	int					m_stageProgress;
 	bool				m_cancelled;
@@ -189,11 +189,11 @@ public:
 						ParChecker();
 	virtual				~ParChecker();
 	virtual void		Run();
-	void				SetDestDir(const char* destDir);
+	void				SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char*			GetParFilename() { return m_parFilename; }
 	const char*			GetInfoName() { return m_infoName; }
-	void				SetInfoName(const char* infoName);
-	void				SetNzbName(const char* nzbName);
+	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
+	void				SetNzbName(const char* nzbName) { m_nzbName = nzbName; }
 	void				SetParQuick(bool parQuick) { m_parQuick = parQuick; }
 	bool				GetParQuick() { return m_parQuick; }
 	void				SetForceRepair(bool forceRepair) { m_forceRepair = forceRepair; }

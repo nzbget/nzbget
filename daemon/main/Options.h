@@ -27,6 +27,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include "NString.h"
 #include "Thread.h"
 #include "Util.h"
 
@@ -92,9 +93,9 @@ public:
 	class OptEntry
 	{
 	private:
-		char*			m_name;
-		char*			m_value;
-		char*			m_defValue;
+		CString			m_name;
+		CString			m_value;
+		CString			m_defValue;
 		int				m_lineNo;
 
 		void			SetLineNo(int lineNo) { m_lineNo = lineNo; }
@@ -104,8 +105,7 @@ public:
 	public:
 						OptEntry();
 						OptEntry(const char* name, const char* value);
-						~OptEntry();
-		void			SetName(const char* name);
+		void			SetName(const char* name) { m_name = name; }
 		const char*		GetName() { return m_name; }
 		void			SetValue(const char* value);
 		const char*		GetValue() { return m_value; }
@@ -123,21 +123,20 @@ public:
 		OptEntry*		FindOption(const char* name);
 	};
 
-	typedef std::vector<char*>  NameList;
+	typedef std::vector<CString>  NameList;
 	typedef std::vector<const char*>  CmdOptList;
 
 	class Category
 	{
 	private:
-		char*			m_name;
-		char*			m_destDir;
+		CString			m_name;
+		CString			m_destDir;
 		bool			m_unpack;
-		char*			m_postScript;
+		CString			m_postScript;
 		NameList		m_aliases;
 
 	public:
 						Category(const char* name, const char* destDir, bool unpack, const char* postScript);
-						~Category();
 		const char*		GetName() { return m_name; }
 		const char*		GetDestDir() { return m_destDir; }
 		bool			GetUnpack() { return m_unpack; }
@@ -180,17 +179,17 @@ private:
 	// Options
 	bool				m_configErrors;
 	int					m_configLine;
-	char*				m_appDir;
-	char*				m_configFilename;
-	char*				m_destDir;
-	char*				m_interDir;
-	char*				m_tempDir;
-	char*				m_queueDir;
-	char*				m_nzbDir;
-	char*				m_webDir;
-	char*				m_configTemplate;
-	char*				m_scriptDir;
-	char*				m_requiredDir;
+	CString				m_appDir;
+	CString				m_configFilename;
+	CString				m_destDir;
+	CString				m_interDir;
+	CString				m_tempDir;
+	CString				m_queueDir;
+	CString				m_nzbDir;
+	CString				m_webDir;
+	CString				m_configTemplate;
+	CString				m_scriptDir;
+	CString				m_requiredDir;
 	EMessageTarget		m_infoTarget;
 	EMessageTarget		m_warningTarget;
 	EMessageTarget		m_errorTarget;
@@ -209,28 +208,28 @@ private:
 	bool				m_saveQueue;
 	bool				m_flushQueue;
 	bool				m_dupeCheck;
-	char*				m_controlIp;
-	char*				m_controlUsername;
-	char*				m_controlPassword;
-	char*				m_restrictedUsername;
-	char*				m_restrictedPassword;
-	char*				m_addUsername;
-	char*				m_addPassword;
+	CString				m_controlIp;
+	CString				m_controlUsername;
+	CString				m_controlPassword;
+	CString				m_restrictedUsername;
+	CString				m_restrictedPassword;
+	CString				m_addUsername;
+	CString				m_addPassword;
 	int					m_controlPort;
 	bool				m_secureControl;
 	int					m_securePort;
-	char*				m_secureCert;
-	char*				m_secureKey;
-	char*				m_authorizedIp;
-	char*				m_lockFile;
-	char*				m_daemonUsername;
+	CString				m_secureCert;
+	CString				m_secureKey;
+	CString				m_authorizedIp;
+	CString				m_lockFile;
+	CString				m_daemonUsername;
 	EOutputMode			m_outputMode;
 	bool				m_reloadQueue;
 	int					m_urlConnections;
 	int					m_logBufferSize;
 	EWriteLog			m_writeLog;
 	int					m_rotateLog;
-	char*				m_logFile;
+	CString				m_logFile;
 	EParCheck			m_parCheck;
 	bool				m_parRepair;
 	EParScan			m_parScan;
@@ -239,11 +238,11 @@ private:
 	int					m_parBuffer;
 	int					m_parThreads;
 	EHealthCheck		m_healthCheck;
-	char*				m_postScript;
-	char*				m_scriptOrder;
-	char*				m_scanScript;
-	char*				m_queueScript;
-	char*				m_feedScript;
+	CString				m_postScript;
+	CString				m_scriptOrder;
+	CString				m_scanScript;
+	CString				m_queueScript;
+	CString				m_feedScript;
 	bool				m_noConfig;
 	int					m_umask;
 	int					m_updateInterval;
@@ -268,12 +267,12 @@ private:
 	bool				m_accurateRate;
 	bool				m_unpack;
 	bool				m_unpackCleanupDisk;
-	char*				m_unrarCmd;
-	char*				m_sevenZipCmd;
-	char*				m_unpackPassFile;
+	CString				m_unrarCmd;
+	CString				m_sevenZipCmd;
+	CString				m_unpackPassFile;
 	bool				m_unpackPauseQueue;
-	char*				m_extCleanupDisk;
-	char*				m_parIgnoreExt;
+	CString				m_extCleanupDisk;
+	CString				m_parIgnoreExt;
 	int					m_feedHistory;
 	bool				m_urlForce;
 	int					m_timeCorrection;
@@ -313,7 +312,7 @@ private:
 	bool				SetOptionString(const char* option);
 	bool				ValidateOptionName(const char* optname, const char* optvalue);
 	void				LoadConfigFile();
-	void				CheckDir(char** dir, const char* optionName, const char* parentDir,
+	void				CheckDir(CString* dir, const char* optionName, const char* parentDir,
 							bool allowEmpty, bool create);
 	bool				ParseTime(const char* time, int* hours, int* minutes);
 	bool				ParseWeekDays(const char* weekDays, int* weekDaysBits);

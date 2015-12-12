@@ -38,25 +38,6 @@ int NzbInfo::m_idMax = 0;
 DownloadQueue* DownloadQueue::g_DownloadQueue = NULL;
 bool DownloadQueue::g_Loaded = false;
 
-NzbParameter::NzbParameter(const char* name)
-{
-	m_name = strdup(name);
-	m_value = NULL;
-}
-
-NzbParameter::~NzbParameter()
-{
-	free(m_name);
-	free(m_value);
-}
-
-void NzbParameter::SetValue(const char* value)
-{
-	free(m_value);
-	m_value = strdup(value);
-}
-
-
 NzbParameterList::~NzbParameterList()
 {
 	Clear();
@@ -128,18 +109,6 @@ void NzbParameterList::CopyFrom(NzbParameterList* sourceParameters)
 		NzbParameter* parameter = *it;
 		SetParameter(parameter->GetName(), parameter->GetValue());
 	}
-}
-
-
-ScriptStatus::ScriptStatus(const char* name, EStatus status)
-{
-	m_name = strdup(name);
-	m_status = status;
-}
-
-ScriptStatus::~ScriptStatus()
-{
-	free(m_name);
 }
 
 
@@ -256,11 +225,11 @@ NzbInfo::NzbInfo() : m_fileList(true)
 	debug("Creating NZBInfo");
 
 	m_kind = nkNzb;
-	m_url = strdup("");
-	m_filename = strdup("");
-	m_destDir = strdup("");
-	m_finalDir = strdup("");
-	m_category = strdup("");
+	m_url = "";
+	m_filename = "";
+	m_destDir = "";
+	m_finalDir = "";
+	m_category = "";
 	m_name = NULL;
 	m_fileCount = 0;
 	m_parkedFileCount = 0;
@@ -297,8 +266,8 @@ NzbInfo::NzbInfo() : m_fileList(true)
 	m_parCleanup = false;
 	m_cleanupDisk = false;
 	m_unpackCleanedUpDisk = false;
-	m_queuedFilename = strdup("");
-	m_dupeKey = strdup("");
+	m_queuedFilename = "";
+	m_dupeKey = "";
 	m_dupeScore = 0;
 	m_dupeMode = dmScore;
 	m_fullContentHash = 0;
@@ -334,14 +303,6 @@ NzbInfo::~NzbInfo()
 {
 	debug("Destroying NZBInfo");
 
-	free(m_url);
-	free(m_filename);
-	free(m_destDir);
-	free(m_finalDir);
-	free(m_category);
-	free(m_name);
-	free(m_queuedFilename);
-	free(m_dupeKey);
 	delete m_postInfo;
 
 	ClearCompletedFiles();
@@ -385,22 +346,9 @@ void NzbInfo::ClearCompletedFiles()
 	m_completedFiles.clear();
 }
 
-void NzbInfo::SetDestDir(const char* destDir)
-{
-	free(m_destDir);
-	m_destDir = strdup(destDir);
-}
-
-void NzbInfo::SetFinalDir(const char* finalDir)
-{
-	free(m_finalDir);
-	m_finalDir = strdup(finalDir);
-}
-
 void NzbInfo::SetUrl(const char* url)
 {
-	free(m_url);
-	m_url = strdup(url);
+	m_url = url;
 
 	if (!m_name)
 	{
@@ -418,8 +366,7 @@ void NzbInfo::SetFilename(const char* filename)
 {
 	bool hadFilename = !Util::EmptyStr(m_filename);
 
-	free(m_filename);
-	m_filename = strdup(filename);
+	m_filename = filename;
 
 	if ((!m_name || !hadFilename) && !Util::EmptyStr(filename))
 	{
@@ -431,30 +378,6 @@ void NzbInfo::SetFilename(const char* filename)
 #endif
 		SetName(nzbNicename);
 	}
-}
-
-void NzbInfo::SetName(const char* name)
-{
-	free(m_name);
-	m_name = name ? strdup(name) : NULL;
-}
-
-void NzbInfo::SetCategory(const char* category)
-{
-	free(m_category);
-	m_category = strdup(category);
-}
-
-void NzbInfo::SetQueuedFilename(const char * queuedFilename)
-{
-	free(m_queuedFilename);
-	m_queuedFilename = strdup(queuedFilename);
-}
-
-void NzbInfo::SetDupeKey(const char* dupeKey)
-{
-	free(m_dupeKey);
-	m_dupeKey = strdup(dupeKey ? dupeKey : "");
 }
 
 void NzbInfo::MakeNiceNzbName(const char * nzbFilename, char * buffer, int size, bool removeExt)
@@ -1005,13 +928,10 @@ NzbInfo* NzbList::Find(int id)
 ArticleInfo::ArticleInfo()
 {
 	//debug("Creating ArticleInfo");
-	m_messageId = NULL;
 	m_size = 0;
-	m_segmentContent = NULL;
 	m_segmentOffset = 0;
 	m_segmentSize = 0;
 	m_status = aiUndefined;
-	m_resultFilename = NULL;
 	m_crc = 0;
 }
 
@@ -1019,20 +939,6 @@ ArticleInfo::~ ArticleInfo()
 {
 	//debug("Destroying ArticleInfo");
 	DiscardSegment();
-	free(m_messageId);
-	free(m_resultFilename);
-}
-
-void ArticleInfo::SetMessageId(const char * messageId)
-{
-	free(m_messageId);
-	m_messageId = strdup(messageId);
-}
-
-void ArticleInfo::SetResultFilename(const char * v)
-{
-	free(m_resultFilename);
-	m_resultFilename = strdup(v);
 }
 
 void ArticleInfo::AttachSegment(char* content, int64 offset, int size)
@@ -1047,7 +953,6 @@ void ArticleInfo::DiscardSegment()
 {
 	if (m_segmentContent)
 	{
-		free(m_segmentContent);
 		m_segmentContent = NULL;
 		g_ArticleCache->Free(m_segmentSize);
 	}
@@ -1058,11 +963,6 @@ FileInfo::FileInfo(int id)
 {
 	debug("Creating FileInfo");
 
-	m_articles.clear();
-	m_groups.clear();
-	m_subject = NULL;
-	m_filename = NULL;
-	m_outputFilename = NULL;
 	m_mutexOutputFile = NULL;
 	m_filenameConfirmed = false;
 	m_size = 0;
@@ -1093,16 +993,7 @@ FileInfo::~ FileInfo()
 {
 	debug("Destroying FileInfo");
 
-	free(m_subject);
-	free(m_filename);
-	free(m_outputFilename);
 	delete m_mutexOutputFile;
-
-	for (Groups::iterator it = m_groups.begin(); it != m_groups.end() ;it++)
-	{
-		free(*it);
-	}
-	m_groups.clear();
 
 	ClearArticles();
 }
@@ -1148,17 +1039,6 @@ void FileInfo::SetPaused(bool paused)
 	m_paused = paused;
 }
 
-void FileInfo::SetSubject(const char* subject)
-{
-	m_subject = strdup(subject);
-}
-
-void FileInfo::SetFilename(const char* filename)
-{
-	free(m_filename);
-	m_filename = strdup(filename);
-}
-
 void FileInfo::MakeValidFilename()
 {
 	Util::MakeValidFilename(m_filename, '_', false);
@@ -1172,12 +1052,6 @@ void FileInfo::LockOutputFile()
 void FileInfo::UnlockOutputFile()
 {
 	m_mutexOutputFile->Unlock();
-}
-
-void FileInfo::SetOutputFilename(const char* outputFilename)
-{
-	free(m_outputFilename);
-	m_outputFilename = strdup(outputFilename);
 }
 
 void FileInfo::SetActiveDownloads(int activeDownloads)
@@ -1218,6 +1092,7 @@ void FileList::Remove(FileInfo* fileInfo)
 	erase(std::find(begin(), end(), fileInfo));
 }
 
+
 CompletedFile::CompletedFile(int id, const char* fileName, EStatus status, uint32 crc)
 {
 	m_id = id;
@@ -1227,21 +1102,11 @@ CompletedFile::CompletedFile(int id, const char* fileName, EStatus status, uint3
 		FileInfo::m_idMax = m_id;
 	}
 
-	m_fileName = strdup(fileName);
+	m_fileName = fileName;
 	m_status = status;
 	m_crc = crc;
 }
 
-void CompletedFile::SetFileName(const char* fileName)
-{
-	free(m_fileName);
-	m_fileName = strdup(fileName);
-}
-
-CompletedFile::~CompletedFile()
-{
-	free(m_fileName);
-}
 
 PostInfo::PostInfo()
 {
@@ -1257,7 +1122,7 @@ PostInfo::PostInfo()
 	m_unpackTried = false;
 	m_passListTried = false;
 	m_lastUnpackStatus = 0;
-	m_progressLabel = strdup("");
+	m_progressLabel = "";
 	m_fileProgress = 0;
 	m_stageProgress = 0;
 	m_startTime = 0;
@@ -1269,39 +1134,18 @@ PostInfo::PostInfo()
 PostInfo::~ PostInfo()
 {
 	debug("Destroying PostInfo");
-
-	free(m_progressLabel);
-
-	for (ParredFiles::iterator it = m_parredFiles.begin(); it != m_parredFiles.end(); it++)
-	{
-		free(*it);
-	}
-}
-
-void PostInfo::SetProgressLabel(const char* progressLabel)
-{
-	free(m_progressLabel);
-	m_progressLabel = strdup(progressLabel);
 }
 
 
 DupInfo::DupInfo()
 {
 	m_id = 0;
-	m_name = NULL;
-	m_dupeKey = NULL;
 	m_dupeScore = 0;
 	m_dupeMode = dmScore;
 	m_size = 0;
 	m_fullContentHash = 0;
 	m_filteredContentHash = 0;
 	m_status = dsUndefined;
-}
-
-DupInfo::~DupInfo()
-{
-	free(m_name);
-	free(m_dupeKey);
 }
 
 void DupInfo::SetId(int id)
@@ -1311,18 +1155,6 @@ void DupInfo::SetId(int id)
 	{
 		NzbInfo::m_idMax = m_id;
 	}
-}
-
-void DupInfo::SetName(const char* name)
-{
-	free(m_name);
-	m_name = strdup(name);
-}
-
-void DupInfo::SetDupeKey(const char* dupeKey)
-{
-	free(m_dupeKey);
-	m_dupeKey = strdup(dupeKey);
 }
 
 

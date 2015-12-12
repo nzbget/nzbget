@@ -33,42 +33,17 @@ WebDownloader::WebDownloader()
 {
 	debug("Creating WebDownloader");
 
-	m_url	= NULL;
-	m_outputFilename	= NULL;
 	m_connection = NULL;
-	m_infoName = NULL;
 	m_confirmedLength = false;
 	m_status = adUndefined;
-	m_originalFilename = NULL;
 	m_force = false;
 	m_retry = true;
 	SetLastUpdateTimeNow();
 }
 
-WebDownloader::~WebDownloader()
+void WebDownloader::SetUrl(const char* url)
 {
-	debug("Destroying WebDownloader");
-
-	free(m_url);
-	free(m_infoName);
-	free(m_outputFilename);
-	free(m_originalFilename);
-}
-
-void WebDownloader::SetOutputFilename(const char* v)
-{
-	m_outputFilename = strdup(v);
-}
-
-void WebDownloader::SetInfoName(const char* v)
-{
-	m_infoName = strdup(v);
-}
-
-void WebDownloader::SetUrl(const char * url)
-{
-	free(m_url);
-	m_url = WebUtil::UrlEncode(url);
+	m_url.Bind(WebUtil::UrlEncode(url));
 }
 
 void WebDownloader::SetStatus(EStatus status)
@@ -143,17 +118,17 @@ void WebDownloader::Run()
 	{
 		if (IsStopped())
 		{
-			detail("Download %s cancelled", m_infoName);
+			detail("Download %s cancelled", *m_infoName);
 		}
 		else
 		{
-			error("Download %s failed", m_infoName);
+			error("Download %s failed", *m_infoName);
 		}
 	}
 
 	if (Status == adFinished)
 	{
-		detail("Download %s completed", m_infoName);
+		detail("Download %s completed", *m_infoName);
 	}
 
 	SetStatus(Status);
@@ -185,7 +160,7 @@ WebDownloader::EStatus WebDownloader::Download()
 	}
 
 	// Okay, we got a Connection. Now start downloading.
-	detail("Downloading %s", m_infoName);
+	detail("Downloading %s", *m_infoName);
 
 	SendHeaders(&url);
 
@@ -224,7 +199,7 @@ WebDownloader::EStatus WebDownloader::DownloadWithRedirects(int maxRedirects)
 
 	if (status == adRedirect && maxRedirects < 0)
 	{
-		warn("Too many redirects for %s", m_infoName);
+		warn("Too many redirects for %s", *m_infoName);
 		status = adFailed;
 	}
 
@@ -339,7 +314,7 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 		{
 			if (!IsStopped())
 			{
-				warn("URL %s failed: Unexpected end of file", m_infoName);
+				warn("URL %s failed: Unexpected end of file", *m_infoName);
 			}
 			Status = adFailed;
 			break;
@@ -411,7 +386,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 
 			if (!IsStopped())
 			{
-				warn("URL %s failed: Unexpected end of file", m_infoName);
+				warn("URL %s failed: Unexpected end of file", *m_infoName);
 			}
 			Status = adFailed;
 			break;
@@ -446,7 +421,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 
 	if (!end && Status == adRunning && !IsStopped())
 	{
-		warn("URL %s failed: file incomplete", m_infoName);
+		warn("URL %s failed: file incomplete", *m_infoName);
 		Status = adFailed;
 	}
 
@@ -464,7 +439,7 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 	{
 		if (!IsStopped())
 		{
-			warn("URL %s: Connection closed by remote host", m_infoName);
+			warn("URL %s: Connection closed by remote host", *m_infoName);
 		}
 		return adConnectError;
 	}
@@ -472,7 +447,7 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 	const char* hTTPResponse = strchr(response, ' ');
 	if (strncmp(response, "HTTP", 4) || !hTTPResponse)
 	{
-		warn("URL %s failed: %s", m_infoName, response);
+		warn("URL %s failed: %s", *m_infoName, response);
 		return adFailed;
 	}
 
@@ -480,12 +455,12 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 
 	if (!strncmp(hTTPResponse, "400", 3) || !strncmp(hTTPResponse, "499", 3))
 	{
-		warn("URL %s failed: %s", m_infoName, hTTPResponse);
+		warn("URL %s failed: %s", *m_infoName, hTTPResponse);
 		return adConnectError;
 	}
 	else if (!strncmp(hTTPResponse, "404", 3))
 	{
-		warn("URL %s failed: %s", m_infoName, hTTPResponse);
+		warn("URL %s failed: %s", *m_infoName, hTTPResponse);
 		return adNotFound;
 	}
 	else if (!strncmp(hTTPResponse, "301", 3) || !strncmp(hTTPResponse, "302", 3))
@@ -501,7 +476,7 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 	else
 	{
 		// unknown error, no special handling
-		warn("URL %s failed: %s", m_infoName, response);
+		warn("URL %s failed: %s", *m_infoName, response);
 		return adFailed;
 	}
 }
@@ -562,10 +537,9 @@ void WebDownloader::ParseFilename(const char* contentDisposition)
 
 	WebUtil::HttpUnquote(fname);
 
-	free(m_originalFilename);
-	m_originalFilename = strdup(Util::BaseFileName(fname));
+	m_originalFilename = Util::BaseFileName(fname);
 
-	debug("OriginalFilename: %s", m_originalFilename);
+	debug("OriginalFilename: %s", *m_originalFilename);
 }
 
 void WebDownloader::ParseRedirect(const char* location)
@@ -619,7 +593,7 @@ void WebDownloader::ParseRedirect(const char* location)
 		urlBuf[1024-1] = '\0';
 		newLocation = urlBuf;
 	}
-	detail("URL %s redirected to %s", m_url, newLocation);
+	detail("URL %s redirected to %s", *m_url, newLocation);
 	SetUrl(newLocation);
 }
 
@@ -642,7 +616,7 @@ bool WebDownloader::Write(void* buffer, int len)
 
 			if (gZStatus == GUnzipStream::zlError)
 			{
-				error("URL %s: GUnzip failed", m_infoName);
+				error("URL %s: GUnzip failed", *m_infoName);
 				return false;
 			}
 

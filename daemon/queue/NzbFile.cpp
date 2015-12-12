@@ -36,8 +36,7 @@ NzbFile::NzbFile(const char* fileName, const char* category)
 {
 	debug("Creating NZBFile");
 
-	m_fileName = strdup(fileName);
-	m_password = NULL;
+	m_fileName = fileName;
 	m_nzbInfo = new NzbInfo();
 	m_nzbInfo->SetFilename(fileName);
 	m_nzbInfo->SetCategory(category);
@@ -56,10 +55,6 @@ NzbFile::~NzbFile()
 {
 	debug("Destroying NZBFile");
 
-	// Cleanup
-	free(m_fileName);
-	free(m_password);
-
 #ifndef WIN32
 	delete m_fileInfo;
 	free(m_tagContent);
@@ -70,7 +65,7 @@ NzbFile::~NzbFile()
 
 void NzbFile::LogDebugInfo()
 {
-	info(" NZBFile %s", m_fileName);
+	info(" NZBFile %s", *m_fileName);
 }
 
 void NzbFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
@@ -484,8 +479,7 @@ void NzbFile::ReadPassword()
 		{
 			*end = '\0';
 			WebUtil::XmlDecode(metaPassword);
-			free(m_password);
-			m_password = strdup(metaPassword);
+			m_password = metaPassword;
 		}
 	}
 
@@ -511,7 +505,7 @@ bool NzbFile::Parse()
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
 
-	_variant_t vFilename(m_fileName);
+	_variant_t vFilename(*m_fileName);
 
 	// 1. first trying to load via filename without URL-encoding (certain charaters doesn't work when encoded)
 	VARIANT_BOOL success = doc->load(vFilename);
@@ -598,7 +592,7 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 	if (node)
 	{
 		_bstr_t password(node->Gettext());
-		m_password = strdup(password);
+		m_password = password;
 	}
 
 	MSXML::IXMLDOMNodeListPtr fileList = root->selectNodes("/nzb/file");
@@ -623,7 +617,7 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 		{
 			MSXML::IXMLDOMNodePtr node = groupList->Getitem(g);
 			_bstr_t group = node->Gettext();
-			fileInfo->GetGroups()->push_back(strdup((const char*)group));
+			fileInfo->GetGroups()->push_back((const char*)group);
 		}
 
 		MSXML::IXMLDOMNodeListPtr segmentList = node->selectNodes("segments/segment");
@@ -824,7 +818,7 @@ void NzbFile::Parse_EndElement(const char *name)
 	}
 	else if (!strcmp("meta", name) && m_hasPassword)
 	{
-		m_password = strdup(m_tagContent);
+		m_password = m_tagContent;
 	}
 }
 

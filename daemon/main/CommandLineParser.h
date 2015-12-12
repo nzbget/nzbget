@@ -26,6 +26,7 @@
 #ifndef COMMANDLINEPARSER_H
 #define COMMANDLINEPARSER_H
 
+#include "NString.h"
 
 class CommandLineParser
 {
@@ -68,7 +69,7 @@ public:
 
 private:
 	bool				m_noConfig;
-	char*				m_configFilename;
+	CString				m_configFilename;
 
 	// Parsed command-line parameters
 	bool				m_errors;
@@ -85,16 +86,16 @@ private:
 	int					m_editQueueIdCount;
 	NameList			m_editQueueNameList;
 	EMatchMode			m_matchMode;
-	char*				m_editQueueText;
-	char*				m_argFilename;
-	char*				m_addCategory;
+	CString				m_editQueueText;
+	CString				m_argFilename;
+	CString				m_addCategory;
 	int					m_addPriority;
 	bool				m_addPaused;
-	char*				m_addNzbFilename;
-	char*				m_lastArg;
+	CString				m_addNzbFilename;
+	CString				m_lastArg;
 	bool				m_printOptions;
 	bool				m_addTop;
-	char*				m_addDupeKey;
+	CString				m_addDupeKey;
 	int					m_addDupeScore;
 	int					m_addDupeMode;
 	int					m_setRate;
@@ -102,17 +103,16 @@ private:
 	int					m_writeLogKind;
 	bool				m_testBacktrace;
 	bool				m_webGet;
-	char*				m_webGetFilename;
+	CString				m_webGetFilename;
 	bool				m_sigVerify;
-	char*				m_pubKeyFilename;
-	char*				m_sigFilename;
+	CString				m_pubKeyFilename;
+	CString				m_sigFilename;
 	bool				m_pauseDownload;
 
 	void				InitCommandLine(int argc, const char* argv[]);
 	void				InitFileArg(int argc, const char* argv[]);
 	void				ParseFileIdList(int argc, const char* argv[], int optind);
 	void				ParseFileNameList(int argc, const char* argv[], int optind);
-	bool				ParseTime(const char* time, int* hours, int* minutes);
 	void				ReportError(const char* errMessage);
 
 public:

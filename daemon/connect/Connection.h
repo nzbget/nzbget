@@ -27,6 +27,8 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
+#include "NString.h"
+
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
 #include "Thread.h"
@@ -48,11 +50,11 @@ public:
 	};
 
 protected:
-	char*				m_host;
+	CString				m_host;
 	int					m_port;
 	SOCKET				m_socket;
 	bool				m_tls;
-	char*				m_cipher;
+	CString				m_cipher;
 	char*				m_readBuf;
 	int					m_bufAvail;
 	char*				m_bufPtr;
@@ -131,7 +133,7 @@ public:
 	int					GetPort() { return m_port; }
 	bool				GetTls() { return m_tls; }
 	const char*			GetCipher() { return m_cipher; }
-	void				SetCipher(const char* cipher);
+	void				SetCipher(const char* cipher) { m_cipher = cipher; }
 	void				SetTimeout(int timeout) { m_timeout = timeout; }
 	EStatus				GetStatus() { return m_status; }
 	void				SetSuppressErrors(bool suppressErrors);

@@ -127,10 +127,9 @@ Connection::Connection(const char* host, int port, bool tls)
 {
 	debug("Creating Connection");
 
-	m_host = NULL;
+	m_host = host;
 	m_port = port;
 	m_tls = tls;
-	m_cipher = NULL;
 	m_status = csDisconnected;
 	m_socket = INVALID_SOCKET;
 	m_bufAvail = 0;
@@ -144,21 +143,14 @@ Connection::Connection(const char* host, int port, bool tls)
 	m_tlsSocket = NULL;
 	m_tlsError = false;
 #endif
-
-	if (host)
-	{
-		m_host = strdup(host);
-	}
 }
 
 Connection::Connection(SOCKET socket, bool tls)
 {
 	debug("Creating Connection");
 
-	m_host			= NULL;
 	m_port				= 0;
 	m_tls				= tls;
-	m_cipher			= NULL;
 	m_status			= csConnected;
 	m_socket			= socket;
 	m_bufAvail			= 0;
@@ -177,8 +169,6 @@ Connection::~Connection()
 
 	Disconnect();
 
-	free(m_host);
-	free(m_cipher);
 	free(m_readBuf);
 #ifndef DISABLE_TLS
 	delete m_tlsSocket;
@@ -194,12 +184,6 @@ void Connection::SetSuppressErrors(bool suppressErrors)
 		m_tlsSocket->SetSuppressErrors(suppressErrors);
 	}
 #endif
-}
-
-void Connection::SetCipher(const char* cipher)
-{
-	free(m_cipher);
-	m_cipher = cipher ? strdup(cipher) : NULL;
 }
 
 bool Connection::Connect()
@@ -1044,7 +1028,7 @@ const char* Connection::GetRemoteAddr()
 	if (getpeername(m_socket, (struct sockaddr*)&PeerName, (SOCKLEN_T*) &peerNameLength) >= 0)
 	{
 #ifdef WIN32
-		 strncpy(m_remoteAddr, inet_ntoa(PeerName.sin_addr), sizeof(m_remoteAddr));
+		strncpy(m_remoteAddr, inet_ntoa(PeerName.sin_addr), sizeof(m_remoteAddr));
 #else
 		inet_ntop(AF_INET, &PeerName.sin_addr, m_remoteAddr, sizeof(m_remoteAddr));
 #endif

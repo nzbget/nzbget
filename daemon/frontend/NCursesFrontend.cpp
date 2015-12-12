@@ -123,7 +123,6 @@ NCursesFrontend::NCursesFrontend()
 	m_updateNextTime = false;
 	m_lastEditEntry = -1;
 	m_lastPausePars = false;
-	m_hint = NULL;
 
 	// Setup curses
 #ifdef WIN32
@@ -643,7 +642,7 @@ void NCursesFrontend::PrintKeyInputBar()
 	int queueSize = CalcQueueSize();
 	int inputBarRow = m_screenHeight - 1;
 
-	if (m_hint)
+	if (!m_hint.Empty())
 	{
 		time_t time = ::time(NULL);
 		if (time - m_startHint < 5)
@@ -705,11 +704,9 @@ void NCursesFrontend::PrintKeyInputBar()
 
 void NCursesFrontend::SetHint(const char* hint)
 {
-	free(m_hint);
-	m_hint = NULL;
-	if (hint)
+	m_hint = hint;
+	if (!m_hint.Empty())
 	{
-		m_hint = strdup(hint);
 		m_startHint = time(NULL);
 	}
 }

@@ -26,6 +26,7 @@
 #ifndef FEEDCOORDINATOR_H
 #define FEEDCOORDINATOR_H
 
+#include "NString.h"
 #include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"
@@ -50,9 +51,9 @@ private:
 	class FeedCacheItem
 	{
 	private:
-		char*				m_url;
+		CString				m_url;
 		int					m_cacheTimeSec;
-		char*				m_cacheId;
+		CString				m_cacheId;
 		time_t				m_lastUsage;
 		FeedItemInfos*		m_feedItemInfos;
 

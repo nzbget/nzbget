@@ -29,11 +29,6 @@
 #include "Log.h"
 #include "Util.h"
 
-SchedulerScriptController::~SchedulerScriptController()
-{
-	free(m_script);
-}
-
 void SchedulerScriptController::StartScript(const char* param, bool externalProcess, int taskId)
 {
 	char** argv = NULL;
@@ -46,7 +41,7 @@ void SchedulerScriptController::StartScript(const char* param, bool externalProc
 	SchedulerScriptController* scriptController = new SchedulerScriptController();
 
 	scriptController->m_externalProcess = externalProcess;
-	scriptController->m_script = strdup(param);
+	scriptController->m_script = param;
 	scriptController->m_taskId = taskId;
 
 	if (externalProcess)

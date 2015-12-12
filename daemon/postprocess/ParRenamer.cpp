@@ -45,15 +45,9 @@ public:
 
 ParRenamer::FileHash::FileHash(const char* filename, const char* hash)
 {
-	m_filename = strdup(filename);
-	m_hash = strdup(hash);
+	m_filename = filename;
+	m_hash = hash;
 	m_fileExists = false;
-}
-
-ParRenamer::FileHash::~FileHash()
-{
-	free(m_filename);
-	free(m_hash);
 }
 
 ParRenamer::ParRenamer()
@@ -61,9 +55,6 @@ ParRenamer::ParRenamer()
 	debug("Creating ParRenamer");
 
 	m_status = psFailed;
-	m_destDir = NULL;
-	m_infoName = NULL;
-	m_progressLabel = (char*)malloc(1024);
 	m_stageProgress = 0;
 	m_cancelled = false;
 	m_hasMissedFiles = false;
@@ -73,10 +64,6 @@ ParRenamer::ParRenamer()
 ParRenamer::~ParRenamer()
 {
 	debug("Destroying ParRenamer");
-
-	free(m_destDir);
-	free(m_infoName);
-	free(m_progressLabel);
 
 	Cleanup();
 }
@@ -101,18 +88,6 @@ void ParRenamer::ClearHashList()
 	m_fileHashList.clear();
 }
 
-void ParRenamer::SetDestDir(const char * destDir)
-{
-	free(m_destDir);
-	m_destDir = strdup(destDir);
-}
-
-void ParRenamer::SetInfoName(const char * infoName)
-{
-	free(m_infoName);
-	m_infoName = strdup(infoName);
-}
-
 void ParRenamer::Cancel()
 {
 	m_cancelled = true;
@@ -128,8 +103,7 @@ void ParRenamer::Run()
 	m_hasMissedFiles = false;
 	m_status = psFailed;
 
-	snprintf(m_progressLabel, 1024, "Checking renamed files for %s", m_infoName);
-	m_progressLabel[1024-1] = '\0';
+	m_progressLabel.Format("Checking renamed files for %s", *m_infoName);
 	m_stageProgress = 0;
 	UpdateProgress();
 
@@ -160,16 +134,16 @@ void ParRenamer::Run()
 
 	if (m_cancelled)
 	{
-		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", m_infoName);
+		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", *m_infoName);
 	}
 	else if (m_renamedCount > 0)
 	{
-		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_renamedCount, m_infoName);
+		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_renamedCount, *m_infoName);
 		m_status = psSuccess;
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, "No renamed files found for %s", m_infoName);
+		PrintMessage(Message::mkInfo, "No renamed files found for %s", *m_infoName);
 	}
 
 	Cleanup();
@@ -269,8 +243,7 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 
 			if (!Util::DirectoryExists(fullFilename))
 			{
-				snprintf(m_progressLabel, 1024, "Checking file %s", filename);
-				m_progressLabel[1024-1] = '\0';
+				m_progressLabel.Format("Checking file %s", filename);
 				m_stageProgress = m_curFile * 1000 / m_fileCount;
 				UpdateProgress();
 				m_curFile++;

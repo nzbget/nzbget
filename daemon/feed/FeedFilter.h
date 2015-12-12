@@ -26,6 +26,7 @@
 #ifndef FEEDFILTER_H
 #define FEEDFILTER_H
 
+#include "NString.h"
 #include "DownloadInfo.h"
 #include "FeedInfo.h"
 #include "Util.h"
@@ -53,9 +54,9 @@ private:
 	{
 	private:
 		bool			m_positive;
-		char*			m_field;
+		CString			m_field;
 		ETermCommand	m_command;
-		char*			m_param;
+		CString			m_param;
 		int64			m_intParam;
 		double			m_fFloatParam;
 		bool			m_float;
@@ -99,17 +100,17 @@ private:
 	private:
 		bool			m_isValid;
 		ERuleCommand	m_command;
-		char*			m_category;
+		CString			m_category;
 		int				m_priority;
 		int				m_addPriority;
 		bool			m_pause;
 		int				m_dupeScore;
 		int				m_addDupeScore;
-		char*			m_dupeKey;
-		char*			m_addDupeKey;
+		CString			m_dupeKey;
+		CString			m_addDupeKey;
 		EDupeMode		m_dupeMode;
-		char*			m_series;
-		char*			m_rageId;
+		CString			m_series;
+		CString			m_rageId;
 		bool			m_hasCategory;
 		bool			m_hasPriority;
 		bool			m_hasAddPriority;
@@ -124,9 +125,9 @@ private:
 		bool			m_hasPatAddDupeKey;
 		bool			m_hasSeries;
 		bool			m_hasRageId;
-		char*			m_patCategory;
-		char*			m_patDupeKey;
-		char*			m_patAddDupeKey;
+		CString			m_patCategory;
+		CString			m_patDupeKey;
+		CString			m_patAddDupeKey;
 		TermList		m_terms;
 		RefValues		m_refValues;
 
@@ -164,7 +165,7 @@ private:
 		bool			HasRageId() { return m_hasRageId; }
 		bool			HasSeries() { return m_hasSeries; }
 		bool			Match(FeedItemInfo* feedItemInfo);
-		void			ExpandRefValues(FeedItemInfo* feedItemInfo, char** destStr, char* patStr);
+		void			ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, char* patStr);
 		const char*		GetRefValue(FeedItemInfo* feedItemInfo, const char* varName);
 	};
 

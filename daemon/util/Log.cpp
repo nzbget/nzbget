@@ -46,7 +46,6 @@ Log::Log()
 	m_messages.clear();
 	m_idGen = 0;
 	m_optInit = false;
-	m_logFilename = NULL;
 	m_lastWritten = 0;
 #ifdef DEBUG
 	m_extraDebug = Util::FileExists("extradebug");
@@ -56,7 +55,6 @@ Log::Log()
 Log::~Log()
 {
 	Clear();
-	free(m_logFilename);
 }
 
 void Log::LogDebugInfo()
@@ -78,7 +76,7 @@ void Log::LogDebugInfo()
 
 void Log::Filelog(const char* msg, ...)
 {
-	if (!m_logFilename)
+	if (m_logFilename.Empty())
 	{
 		return;
 	}
@@ -292,19 +290,7 @@ Message::Message(uint32 id, EKind kind, time_t time, const char* text)
 	m_id = id;
 	m_kind = kind;
 	m_time = time;
-	if (text)
-	{
-		m_text = strdup(text);
-	}
-	else
-	{
-		m_text = NULL;
-	}
-}
-
-Message::~ Message()
-{
-	free(m_text);
+	m_text = text;
 }
 
 MessageList::~MessageList()
@@ -429,8 +415,7 @@ void Log::RotateLog()
 		baseName, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, baseExt);
 	fullFilename[1024-1] = '\0';
 
-	free(m_logFilename);
-	m_logFilename = strdup(fullFilename);
+	m_logFilename = fullFilename;
 #ifdef WIN32
 	WebUtil::Utf8ToAnsi(m_logFilename, strlen(m_logFilename) + 1);
 #endif
@@ -451,7 +436,7 @@ void Log::InitOptions()
 
 	if (g_Options->GetWriteLog() != Options::wlNone && g_Options->GetLogFile())
 	{
-		m_logFilename = strdup(g_Options->GetLogFile());
+		m_logFilename = g_Options->GetLogFile();
 #ifdef WIN32
 		WebUtil::Utf8ToAnsi(m_logFilename, strlen(m_logFilename) + 1);
 #endif

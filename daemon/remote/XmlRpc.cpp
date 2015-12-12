@@ -319,18 +319,12 @@ XmlRpcProcessor::XmlRpcProcessor()
 	m_request = NULL;
 	m_protocol = rpUndefined;
 	m_httpMethod = hmPost;
-	m_url = NULL;
 	m_contentType = NULL;
-}
-
-XmlRpcProcessor::~XmlRpcProcessor()
-{
-	free(m_url);
 }
 
 void XmlRpcProcessor::SetUrl(const char* url)
 {
-	m_url = strdup(url);
+	m_url = url;
 	WebUtil::UrlDecode(m_url);
 }
 
@@ -359,7 +353,7 @@ void XmlRpcProcessor::Execute()
 	}
 	else
 	{
-		error("internal error: invalid rpc-request: %s", m_url);
+		error("internal error: invalid rpc-request: %s", *m_url);
 		return;
 	}
 

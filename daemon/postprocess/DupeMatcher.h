@@ -26,12 +26,13 @@
 #ifndef DUPEMATCHER_H
 #define DUPEMATCHER_H
 
+#include "NString.h"
 #include "Log.h"
 
 class DupeMatcher
 {
 private:
-	char*				m_destDir;
+	CString				m_destDir;
 	int64				m_expectedSize;
 	int64				m_maxSize;
 	bool				m_compressed;
@@ -46,7 +47,6 @@ protected:
 
 public:
 						DupeMatcher(const char* destDir, int64 expectedSize);
-						~DupeMatcher();
 	bool				Prepare();
 	bool				MatchDupeContent(const char* dupeDir);
 	static bool			SizeDiffOK(int64 size1, int64 size2, int maxDiffPercent);

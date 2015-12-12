@@ -26,6 +26,7 @@
 #ifndef SCRIPTCONFIG_H
 #define SCRIPTCONFIG_H
 
+#include "NString.h"
 #include "Options.h"
 
 class ScriptConfig
@@ -34,22 +35,21 @@ public:
 	class Script
 	{
 	private:
-		char*			m_name;
-		char*			m_location;
-		char*			m_displayName;
+		CString			m_name;
+		CString			m_location;
+		CString			m_displayName;
 		bool			m_postScript;
 		bool			m_scanScript;
 		bool			m_queueScript;
 		bool			m_schedulerScript;
 		bool			m_feedScript;
-		char*			m_queueEvents;
+		CString			m_queueEvents;
 
 	public:
 						Script(const char* name, const char* location);
-						~Script();
 		const char*		GetName() { return m_name; }
 		const char*		GetLocation() { return m_location; }
-		void			SetDisplayName(const char* displayName);
+		void			SetDisplayName(const char* displayName) { m_displayName = displayName; }
 		const char*		GetDisplayName() { return m_displayName; }
 		bool			GetPostScript() { return m_postScript; }
 		void			SetPostScript(bool postScript) { m_postScript = postScript; }
@@ -61,7 +61,7 @@ public:
 		void			SetSchedulerScript(bool schedulerScript) { m_schedulerScript = schedulerScript; }
 		bool			GetFeedScript() { return m_feedScript; }
 		void			SetFeedScript(bool feedScript) { m_feedScript = feedScript; }
-		void			SetQueueEvents(const char* queueEvents);
+		void			SetQueueEvents(const char* queueEvents) { m_queueEvents = queueEvents; }
 		const char*		GetQueueEvents() { return m_queueEvents; }
 	};
 
@@ -79,7 +79,7 @@ public:
 	{
 	private:
 		Script*			m_script;
-		char*			m_template;
+		CString			m_template;
 
 		friend class Options;
 

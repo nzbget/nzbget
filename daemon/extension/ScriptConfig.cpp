@@ -44,13 +44,12 @@ ScriptConfig* g_ScriptConfig = NULL;
 ScriptConfig::ConfigTemplate::ConfigTemplate(Script* script, const char* templ)
 {
 	m_script = script;
-	m_template = strdup(templ ? templ : "");
+	m_template = templ ? templ : "";
 }
 
 ScriptConfig::ConfigTemplate::~ConfigTemplate()
 {
 	delete m_script;
-	free(m_template);
 }
 
 ScriptConfig::ConfigTemplates::~ConfigTemplates()
@@ -64,35 +63,14 @@ ScriptConfig::ConfigTemplates::~ConfigTemplates()
 
 ScriptConfig::Script::Script(const char* name, const char* location)
 {
-	m_name = strdup(name);
-	m_location = strdup(location);
-	m_displayName = strdup(name);
+	m_name = name;
+	m_location = location;
+	m_displayName = name;
 	m_postScript = false;
 	m_scanScript = false;
 	m_queueScript = false;
 	m_schedulerScript = false;
 	m_feedScript = false;
-	m_queueEvents = NULL;
-}
-
-ScriptConfig::Script::~Script()
-{
-	free(m_name);
-	free(m_location);
-	free(m_displayName);
-	free(m_queueEvents);
-}
-
-void ScriptConfig::Script::SetDisplayName(const char* displayName)
-{
-	free(m_displayName);
-	m_displayName = strdup(displayName);
-}
-
-void ScriptConfig::Script::SetQueueEvents(const char* queueEvents)
-{
-	free(m_queueEvents);
-	m_queueEvents = queueEvents ? strdup(queueEvents) : NULL;
 }
 
 

@@ -27,6 +27,7 @@
 #ifndef NZBFILE_H
 #define NZBFILE_H
 
+#include "NString.h"
 #include "DownloadInfo.h"
 
 class NzbFile
@@ -36,8 +37,8 @@ public:
 
 private:
 	NzbInfo*			m_nzbInfo;
-	char*				m_fileName;
-	char*				m_password;
+	CString				m_fileName;
+	CString				m_password;
 
 	void				AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo);
 	void				AddFileInfo(FileInfo* fileInfo);

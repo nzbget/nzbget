@@ -26,6 +26,7 @@
 #ifndef URLCOORDINATOR_H
 #define URLCOORDINATOR_H
 
+#include "NString.h"
 #include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"
@@ -71,14 +72,12 @@ class UrlDownloader : public WebDownloader
 {
 private:
 	NzbInfo*				m_nzbInfo;
-	char*					m_category;
+	CString					m_category;
 
 protected:
 	virtual void			ProcessHeader(const char* line);
 
 public:
-							UrlDownloader();
-							~UrlDownloader();
 	void					SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
 	NzbInfo*				GetNzbInfo() { return m_nzbInfo; }
 	const char*				GetCategory() { return m_category; }

@@ -76,14 +76,12 @@ WebProcessor::WebProcessor()
 	m_connection = NULL;
 	m_request = NULL;
 	m_url = NULL;
-	m_origin = NULL;
 }
 
 WebProcessor::~WebProcessor()
 {
 	free(m_request);
 	free(m_url);
-	free(m_origin);
 }
 
 void WebProcessor::SetUrl(const char* url)
@@ -168,7 +166,7 @@ void WebProcessor::ParseHeaders()
 		}
 		if (!strncasecmp(p, "Origin: ", 8))
 		{
-			m_origin = strdup(p + 8);
+			m_origin = p + 8;
 		}
 		if (!strncasecmp(p, "X-Auth-Token: ", 14))
 		{
@@ -395,7 +393,7 @@ void WebProcessor::SendOptionsResponse()
 		"\r\n";
 	char responseHeader[1024];
 	snprintf(responseHeader, 1024, OPTIONS_RESPONSE_HEADER,
-		m_origin ? m_origin : "",
+		m_origin.Str(),
 		Util::VersionRevision());
 
 	// Send the response answer
@@ -499,7 +497,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 
 	char responseHeader[1024];
 	snprintf(responseHeader, 1024, RESPONSE_HEADER,
-		m_origin ? m_origin : "",
+		m_origin.Str(),
 		m_serverAuthToken[m_userAccess], bodyLen, contentTypeHeader,
 		gzip ? "Content-Encoding: gzip\r\n" : "",
 		Util::VersionRevision());

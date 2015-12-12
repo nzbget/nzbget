@@ -38,12 +38,9 @@ ArticleDownloader::ArticleDownloader()
 {
 	debug("Creating ArticleDownloader");
 
-	m_infoName = NULL;
-	m_connectionName[0] = '\0';
 	m_connection = NULL;
 	m_status = adUndefined;
 	m_format = Decoder::efUnknown;
-	m_articleFilename = NULL;
 	m_downloadedSize = 0;
 	m_articleWriter.SetOwner(this);
 	SetLastUpdateTimeNow();
@@ -52,14 +49,11 @@ ArticleDownloader::ArticleDownloader()
 ArticleDownloader::~ArticleDownloader()
 {
 	debug("Destroying ArticleDownloader");
-
-	free(m_infoName);
-	free(m_articleFilename);
 }
 
 void ArticleDownloader::SetInfoName(const char* infoName)
 {
-	m_infoName = strdup(infoName);
+	m_infoName = infoName;
 	m_articleWriter.SetInfoName(m_infoName);
 }
 
@@ -130,9 +124,8 @@ void ArticleDownloader::Run()
 
 		m_connection->SetSuppressErrors(false);
 
-		snprintf(m_connectionName, sizeof(m_connectionName), "%s (%s)",
+		m_connectionName.Format("%s (%s)",
 			m_connection->GetNewsServer()->GetName(), m_connection->GetHost());
-		m_connectionName[sizeof(m_connectionName) - 1] = '\0';
 
 		// check server retention
 		bool retentionFailure = m_connection->GetNewsServer()->GetRetention() > 0 &&
@@ -140,7 +133,7 @@ void ArticleDownloader::Run()
 		if (retentionFailure)
 		{
 			detail("Article %s @ %s failed: out of server retention (file age: %i, configured retention: %i)",
-				m_infoName, m_connectionName,
+				*m_infoName, *m_connectionName,
 				(time(NULL) - m_fileInfo->GetTime()) / 86400,
 				m_connection->GetNewsServer()->GetRetention());
 			status = adFailed;
@@ -149,7 +142,7 @@ void ArticleDownloader::Run()
 
 		if (m_connection && !IsStopped())
 		{
-			detail("Downloading %s @ %s", m_infoName, m_connectionName);
+			detail("Downloading %s @ %s", *m_infoName, *m_connectionName);
 		}
 
 		// test connection
@@ -174,7 +167,7 @@ void ArticleDownloader::Run()
 
 		if (!connected && m_connection)
 		{
-			detail("Article %s @ %s failed: could not establish connection", m_infoName, m_connectionName);
+			detail("Article %s @ %s failed: could not establish connection", *m_infoName, *m_connectionName);
 		}
 
 		if (status == adConnectError)
@@ -256,12 +249,12 @@ void ArticleDownloader::Run()
 			{
 				if (level < g_ServerPool->GetMaxNormLevel())
 				{
-					detail("Article %s @ all level %i servers failed, increasing level", m_infoName, level);
+					detail("Article %s @ all level %i servers failed, increasing level", *m_infoName, level);
 					level++;
 				}
 				else
 				{
-					detail("Article %s @ all servers failed", m_infoName);
+					detail("Article %s @ all servers failed", *m_infoName);
 					status = adFailed;
 					break;
 				}
@@ -285,13 +278,13 @@ void ArticleDownloader::Run()
 
 	if (IsStopped())
 	{
-		detail("Download %s cancelled", m_infoName);
+		detail("Download %s cancelled", *m_infoName);
 		status = adRetry;
 	}
 
 	if (status == adFailed)
 	{
-		detail("Download %s failed", m_infoName);
+		detail("Download %s failed", *m_infoName);
 	}
 
 	SetStatus(status);
@@ -391,7 +384,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			if (!IsStopped())
 			{
-				detail("Article %s @ %s failed: Unexpected end of article", m_infoName, m_connectionName);
+				detail("Article %s @ %s failed: Unexpected end of article", *m_infoName, *m_connectionName);
 			}
 			status = adFailed;
 			break;
@@ -425,8 +418,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 				if (strncmp(p, m_articleInfo->GetMessageId(), strlen(m_articleInfo->GetMessageId())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_infoName,
-						m_connectionName, m_articleInfo->GetMessageId(), p);
+					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", *m_infoName,
+						*m_connectionName, m_articleInfo->GetMessageId(), p);
 					status = adFailed;
 					break;
 				}
@@ -456,7 +449,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!end && status == adRunning && !IsStopped())
 	{
-		detail("Article %s @ %s failed: article incomplete", m_infoName, m_connectionName);
+		detail("Article %s @ %s failed: article incomplete", *m_infoName, *m_connectionName);
 		status = adFailed;
 	}
 
@@ -478,7 +471,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (status == adFinished)
 	{
-		detail("Successfully downloaded %s", m_infoName);
+		detail("Successfully downloaded %s", *m_infoName);
 	}
 
 	return status;
@@ -491,18 +484,18 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response
 		if (!IsStopped())
 		{
 			detail("Article %s @ %s failed, %s: Connection closed by remote host",
-				m_infoName, m_connectionName, comment);
+				*m_infoName, *m_connectionName, comment);
 		}
 		return adConnectError;
 	}
 	else if (m_connection->GetAuthError() || !strncmp(response, "400", 3) || !strncmp(response, "499", 3))
 	{
-		detail("Article %s @ %s failed, %s: %s", m_infoName, m_connectionName, comment, response);
+		detail("Article %s @ %s failed, %s: %s", *m_infoName, *m_connectionName, comment, response);
 		return adConnectError;
 	}
 	else if (!strncmp(response, "41", 2) || !strncmp(response, "42", 2) || !strncmp(response, "43", 2))
 	{
-		detail("Article %s @ %s failed, %s: %s", m_infoName, m_connectionName, comment, response);
+		detail("Article %s @ %s failed, %s: %s", *m_infoName, *m_connectionName, comment, response);
 		return adNotFound;
 	}
 	else if (!strncmp(response, "2", 1))
@@ -513,7 +506,7 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response
 	else
 	{
 		// unknown error, no special handling
-		detail("Article %s @ %s failed, %s: %s", m_infoName, m_connectionName, comment, response);
+		detail("Article %s @ %s failed, %s: %s", *m_infoName, *m_connectionName, comment, response);
 		return adFailed;
 	}
 }
@@ -540,7 +533,7 @@ bool ArticleDownloader::Write(char* line, int len)
 		}
 		else
 		{
-			detail("Decoding %s failed: unsupported encoding", m_infoName);
+			detail("Decoding %s failed: unsupported encoding", *m_infoName);
 			return false;
 		}
 
@@ -584,7 +577,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		}
 		else
 		{
-			detail("Decoding %s failed: no binary data or unsupported encoding format", m_infoName);
+			detail("Decoding %s failed: no binary data or unsupported encoding format", *m_infoName);
 			return adFailed;
 		}
 
@@ -594,8 +587,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		{
 			if (decoder->GetArticleFilename())
 			{
-				free(m_articleFilename);
-				m_articleFilename = strdup(decoder->GetArticleFilename());
+				m_articleFilename = decoder->GetArticleFilename();
 			}
 
 			if (m_format == Decoder::efYenc)
@@ -608,27 +600,27 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 		}
 		else if (status == Decoder::dsCrcError)
 		{
-			detail("Decoding %s failed: CRC-Error", m_infoName);
+			detail("Decoding %s failed: CRC-Error", *m_infoName);
 			return adCrcError;
 		}
 		else if (status == Decoder::dsArticleIncomplete)
 		{
-			detail("Decoding %s failed: article incomplete", m_infoName);
+			detail("Decoding %s failed: article incomplete", *m_infoName);
 			return adFailed;
 		}
 		else if (status == Decoder::dsInvalidSize)
 		{
-			detail("Decoding %s failed: size mismatch", m_infoName);
+			detail("Decoding %s failed: size mismatch", *m_infoName);
 			return adFailed;
 		}
 		else if (status == Decoder::dsNoBinaryData)
 		{
-			detail("Decoding %s failed: no binary data found", m_infoName);
+			detail("Decoding %s failed: no binary data found", *m_infoName);
 			return adFailed;
 		}
 		else
 		{
-			detail("Decoding %s failed", m_infoName);
+			detail("Decoding %s failed", *m_infoName);
 			return adFailed;
 		}
 	}
@@ -646,7 +638,7 @@ void ArticleDownloader::LogDebugInfo()
 #else
 		ctime_r(&m_lastUpdateTime, time);
 #endif
-	info("      Download: status=%i, LastUpdateTime=%s, InfoName=%s", m_status, time, m_infoName);
+	info("      Download: status=%i, LastUpdateTime=%s, InfoName=%s", m_status, time, *m_infoName);
 }
 
 void ArticleDownloader::Stop()

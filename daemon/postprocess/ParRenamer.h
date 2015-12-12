@@ -28,6 +28,7 @@
 
 #ifndef DISABLE_PARCHECK
 
+#include "NString.h"
 #include "Thread.h"
 #include "Log.h"
 
@@ -43,13 +44,12 @@ public:
 	class FileHash
 	{
 	private:
-		char*			m_filename;
-		char*			m_hash;
+		CString			m_filename;
+		CString			m_hash;
 		bool			m_fileExists;
 
 	public:
 						FileHash(const char* filename, const char* hash);
-						~FileHash();
 		const char*		GetFilename() { return m_filename; }
 		const char*		GetHash() { return m_hash; }
 		bool			GetFileExists() { return m_fileExists; }
@@ -60,10 +60,10 @@ public:
 	typedef std::deque<char*>			DirList;
 
 private:
-	char*				m_infoName;
-	char*				m_destDir;
+	CString				m_infoName;
+	CString				m_destDir;
 	EStatus				m_status;
-	char*				m_progressLabel;
+	CString				m_progressLabel;
 	int					m_stageProgress;
 	bool				m_cancelled;
 	DirList				m_dirList;
@@ -100,9 +100,9 @@ public:
 						ParRenamer();
 	virtual				~ParRenamer();
 	virtual void		Run();
-	void				SetDestDir(const char* destDir);
+	void				SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char*			GetInfoName() { return m_infoName; }
-	void				SetInfoName(const char* infoName);
+	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
 	void				SetStatus(EStatus status);
 	EStatus				GetStatus() { return m_status; }
 	void				Cancel();

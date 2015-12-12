@@ -183,33 +183,17 @@ Options::OptEntry::OptEntry()
 
 Options::OptEntry::OptEntry(const char* name, const char* value)
 {
-	m_name = strdup(name);
-	m_value = strdup(value);
-	m_defValue = NULL;
+	m_name = name;
+	m_value = value;
 	m_lineNo = 0;
-}
-
-Options::OptEntry::~OptEntry()
-{
-	free(m_name);
-	free(m_value);
-	free(m_defValue);
-}
-
-void Options::OptEntry::SetName(const char* name)
-{
-	free(m_name);
-	m_name = strdup(name);
 }
 
 void Options::OptEntry::SetValue(const char* value)
 {
-	free(m_value);
-	m_value = strdup(value);
-
+	m_value = value;
 	if (!m_defValue)
 	{
-		m_defValue = strdup(value);
+		m_defValue = value;
 	}
 }
 
@@ -266,23 +250,12 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* name)
 
 Options::Category::Category(const char* name, const char* destDir, bool unpack, const char* postScript)
 {
-	m_name = strdup(name);
-	m_destDir = destDir ? strdup(destDir) : NULL;
+	m_name = name;
+	m_destDir = destDir;
 	m_unpack = unpack;
-	m_postScript = postScript ? strdup(postScript) : NULL;
+	m_postScript = postScript;
 }
 
-Options::Category::~Category()
-{
-	free(m_name);
-	free(m_destDir);
-	free(m_postScript);
-
-	for (NameList::iterator it = m_aliases.begin(); it != m_aliases.end(); it++)
-	{
-		free(*it);
-	}
-}
 
 Options::Categories::~Categories()
 {
@@ -354,17 +327,6 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_fatalError = false;
 
 	// initialize options with default values
-	m_configFilename = NULL;
-	m_appDir = NULL;
-	m_destDir = NULL;
-	m_interDir = NULL;
-	m_tempDir = NULL;
-	m_queueDir = NULL;
-	m_nzbDir = NULL;
-	m_webDir = NULL;
-	m_configTemplate = NULL;
-	m_scriptDir = NULL;
-	m_requiredDir = NULL;
 	m_infoTarget = mtScreen;
 	m_warningTarget = mtScreen;
 	m_errorTarget = mtScreen;
@@ -390,27 +352,14 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_retries = 0;
 	m_retryInterval = 0;
 	m_controlPort = 0;
-	m_controlIp = NULL;
-	m_controlUsername = NULL;
-	m_controlPassword = NULL;
-	m_restrictedUsername = NULL;
-	m_restrictedPassword = NULL;
-	m_addUsername = NULL;
-	m_addPassword = NULL;
 	m_secureControl = false;
 	m_securePort = 0;
-	m_secureCert = NULL;
-	m_secureKey = NULL;
-	m_authorizedIp = NULL;
-	m_lockFile = NULL;
-	m_daemonUsername = NULL;
 	m_outputMode = omLoggable;
 	m_reloadQueue = false;
 	m_urlConnections = 0;
 	m_logBufferSize = 0;
 	m_writeLog = wlAppend;
 	m_rotateLog = 0;
-	m_logFile = NULL;
 	m_parCheck = pcManual;
 	m_parRepair = false;
 	m_parScan = psLimited;
@@ -419,11 +368,6 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_parBuffer = 0;
 	m_parThreads = 0;
 	m_healthCheck = hcNone;
-	m_scriptOrder = NULL;
-	m_postScript = NULL;
-	m_scanScript = NULL;
-	m_queueScript = NULL;
-	m_feedScript = NULL;
 	m_umask = 0;
 	m_updateInterval = 0;
 	m_cursesNzbName = false;
@@ -448,12 +392,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_resumeTime = 0;
 	m_unpack = false;
 	m_unpackCleanupDisk = false;
-	m_unrarCmd = NULL;
-	m_sevenZipCmd = NULL;
-	m_unpackPassFile = NULL;
 	m_unpackPauseQueue = false;
-	m_extCleanupDisk = NULL;
-	m_parIgnoreExt = NULL;
 	m_feedHistory = 0;
 	m_urlForce = false;
 	m_timeCorrection = 0;
@@ -464,7 +403,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 
 	m_noDiskAccess = noDiskAccess;
 
-	m_configFilename = configFilename ? strdup(configFilename) : NULL;
+	m_configFilename = configFilename;
 	SetOption(OPTION_CONFIGFILE, "");
 
 	char filename[MAX_PATH + 1];
@@ -482,7 +421,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';
 	SetOption(OPTION_APPDIR, filename);
-	m_appDir = strdup(filename);
+	m_appDir = filename;
 
 	SetOption(OPTION_VERSION, Util::VersionRevision());
 
@@ -528,40 +467,6 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 Options::~Options()
 {
 	g_Options = NULL;
-	free(m_configFilename);
-	free(m_appDir);
-	free(m_destDir);
-	free(m_interDir);
-	free(m_tempDir);
-	free(m_queueDir);
-	free(m_nzbDir);
-	free(m_webDir);
-	free(m_configTemplate);
-	free(m_scriptDir);
-	free(m_requiredDir);
-	free(m_controlIp);
-	free(m_controlUsername);
-	free(m_controlPassword);
-	free(m_restrictedUsername);
-	free(m_restrictedPassword);
-	free(m_addUsername);
-	free(m_addPassword);
-	free(m_secureCert);
-	free(m_secureKey);
-	free(m_authorizedIp);
-	free(m_logFile);
-	free(m_lockFile);
-	free(m_daemonUsername);
-	free(m_scriptOrder);
-	free(m_postScript);
-	free(m_scanScript);
-	free(m_queueScript);
-	free(m_feedScript);
-	free(m_unrarCmd);
-	free(m_sevenZipCmd);
-	free(m_unpackPassFile);
-	free(m_extCleanupDisk);
-	free(m_parIgnoreExt);
 }
 
 void Options::Dump()
@@ -736,7 +641,7 @@ void Options::InitOptFile()
 		// search for config file in default locations
 #ifdef WIN32
 		char filename[MAX_PATH + 20];
-		snprintf(filename, sizeof(filename), "%s\\nzbget.conf", m_appDir);
+		snprintf(filename, sizeof(filename), "%s\\nzbget.conf", *m_appDir);
 
 		if (!Util::FileExists(filename))
 		{
@@ -753,17 +658,17 @@ void Options::InitOptFile()
 
 		if (Util::FileExists(filename))
 		{
-			m_configFilename = strdup(filename);
+			m_configFilename = filename;
 		}
 #else
 		// look in the exe-directory first
 		char filename[1024];
-		snprintf(filename, sizeof(filename), "%s/nzbget.conf", m_appDir);
+		snprintf(filename, sizeof(filename), "%s/nzbget.conf", *m_appDir);
 		filename[1024-1] = '\0';
 
 		if (Util::FileExists(filename))
 		{
-			m_configFilename = strdup(filename);
+			m_configFilename = filename;
 		}
 		else
 		{
@@ -779,7 +684,7 @@ void Options::InitOptFile()
 
 				if (Util::FileExists(filename))
 				{
-					m_configFilename = strdup(filename);
+					m_configFilename = filename;
 					break;
 				}
 			}
@@ -803,15 +708,14 @@ void Options::InitOptFile()
 		}
 #endif
 
-		free(m_configFilename);
-		m_configFilename = strdup(filename);
+		m_configFilename = filename;
 
 		SetOption(OPTION_CONFIGFILE, m_configFilename);
 		LoadConfigFile();
 	}
 }
 
-void Options::CheckDir(char** dir, const char* optionName,
+void Options::CheckDir(CString* dir, const char* optionName,
 	const char* parentDir, bool allowEmpty, bool create)
 {
 	char* usedir = NULL;
@@ -819,7 +723,7 @@ void Options::CheckDir(char** dir, const char* optionName,
 
 	if (m_noDiskAccess)
 	{
-		*dir = strdup(tempdir);
+		*dir = tempdir;
 		return;
 	}
 
@@ -829,7 +733,7 @@ void Options::CheckDir(char** dir, const char* optionName,
 		{
 			ConfigError("Invalid value for option \"%s\": <empty>", optionName);
 		}
-		*dir = strdup("");
+		*dir = "";
 		return;
 	}
 
@@ -879,6 +783,7 @@ void Options::CheckDir(char** dir, const char* optionName,
 		ConfigError("Invalid value for option \"%s\" (%s): %s", optionName, usedir, errBuf);
 	}
 	*dir = usedir;
+	free(usedir);
 }
 
 void Options::InitOptions()
@@ -893,32 +798,32 @@ void Options::InitOptions()
 	CheckDir(&m_scriptDir, OPTION_SCRIPTDIR, mainDir, true, false);
 	CheckDir(&m_nzbDir, OPTION_NZBDIR, mainDir, false, true);
 
-	m_requiredDir = strdup(GetOption(OPTION_REQUIREDDIR));
+	m_requiredDir = GetOption(OPTION_REQUIREDDIR);
 
-	m_configTemplate		= strdup(GetOption(OPTION_CONFIGTEMPLATE));
-	m_scriptOrder			= strdup(GetOption(OPTION_SCRIPTORDER));
-	m_postScript			= strdup(GetOption(OPTION_POSTSCRIPT));
-	m_scanScript			= strdup(GetOption(OPTION_SCANSCRIPT));
-	m_queueScript			= strdup(GetOption(OPTION_QUEUESCRIPT));
-	m_feedScript			= strdup(GetOption(OPTION_FEEDSCRIPT));
-	m_controlIp				= strdup(GetOption(OPTION_CONTROLIP));
-	m_controlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
-	m_controlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
-	m_restrictedUsername	= strdup(GetOption(OPTION_RESTRICTEDUSERNAME));
-	m_restrictedPassword	= strdup(GetOption(OPTION_RESTRICTEDPASSWORD));
-	m_addUsername			= strdup(GetOption(OPTION_ADDUSERNAME));
-	m_addPassword			= strdup(GetOption(OPTION_ADDPASSWORD));
-	m_secureCert			= strdup(GetOption(OPTION_SECURECERT));
-	m_secureKey				= strdup(GetOption(OPTION_SECUREKEY));
-	m_authorizedIp			= strdup(GetOption(OPTION_AUTHORIZEDIP));
-	m_lockFile				= strdup(GetOption(OPTION_LOCKFILE));
-	m_daemonUsername		= strdup(GetOption(OPTION_DAEMONUSERNAME));
-	m_logFile				= strdup(GetOption(OPTION_LOGFILE));
-	m_unrarCmd				= strdup(GetOption(OPTION_UNRARCMD));
-	m_sevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
-	m_unpackPassFile		= strdup(GetOption(OPTION_UNPACKPASSFILE));
-	m_extCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
-	m_parIgnoreExt			= strdup(GetOption(OPTION_PARIGNOREEXT));
+	m_configTemplate		= GetOption(OPTION_CONFIGTEMPLATE);
+	m_scriptOrder			= GetOption(OPTION_SCRIPTORDER);
+	m_postScript			= GetOption(OPTION_POSTSCRIPT);
+	m_scanScript			= GetOption(OPTION_SCANSCRIPT);
+	m_queueScript			= GetOption(OPTION_QUEUESCRIPT);
+	m_feedScript			= GetOption(OPTION_FEEDSCRIPT);
+	m_controlIp				= GetOption(OPTION_CONTROLIP);
+	m_controlUsername		= GetOption(OPTION_CONTROLUSERNAME);
+	m_controlPassword		= GetOption(OPTION_CONTROLPASSWORD);
+	m_restrictedUsername	= GetOption(OPTION_RESTRICTEDUSERNAME);
+	m_restrictedPassword	= GetOption(OPTION_RESTRICTEDPASSWORD);
+	m_addUsername			= GetOption(OPTION_ADDUSERNAME);
+	m_addPassword			= GetOption(OPTION_ADDPASSWORD);
+	m_secureCert			= GetOption(OPTION_SECURECERT);
+	m_secureKey				= GetOption(OPTION_SECUREKEY);
+	m_authorizedIp			= GetOption(OPTION_AUTHORIZEDIP);
+	m_lockFile				= GetOption(OPTION_LOCKFILE);
+	m_daemonUsername		= GetOption(OPTION_DAEMONUSERNAME);
+	m_logFile				= GetOption(OPTION_LOGFILE);
+	m_unrarCmd				= GetOption(OPTION_UNRARCMD);
+	m_sevenZipCmd			= GetOption(OPTION_SEVENZIPCMD);
+	m_unpackPassFile		= GetOption(OPTION_UNPACKPASSFILE);
+	m_extCleanupDisk		= GetOption(OPTION_EXTCLEANUPDISK);
+	m_parIgnoreExt			= GetOption(OPTION_PARIGNOREEXT);
 
 	m_downloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10) * 1024;
 	m_articleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
@@ -1324,7 +1229,7 @@ void Options::InitCategories()
 
 		if (completed)
 		{
-			char* destDir = NULL;
+			CString destDir;
 			if (ndestdir && ndestdir[0] != '\0')
 			{
 				CheckDir(&destDir, destdiroptname, m_destDir, false, false);
@@ -1333,15 +1238,13 @@ void Options::InitCategories()
 			Category* category = new Category(nname, destDir, unpack, npostscript);
 			m_categories.push_back(category);
 
-			free(destDir);
-
 			// split Aliases into tokens and create items for each token
 			if (naliases)
 			{
 				Tokenizer tok(naliases, ",;");
 				while (const char* aliasName = tok.Next())
 				{
-					category->GetAliases()->push_back(strdup(aliasName));
+					category->GetAliases()->push_back(aliasName);
 				}
 			}
 		}
@@ -1674,7 +1577,7 @@ void Options::LoadConfigFile()
 
 	if (!infile)
 	{
-		ConfigError("Could not open file %s", m_configFilename);
+		ConfigError("Could not open file %s", *m_configFilename);
 		m_fatalError = true;
 		return;
 	}
@@ -2023,17 +1926,12 @@ void Options::CheckOptions()
 
 	// if option "ConfigTemplate" is not set, use "WebDir" as default location for template
 	// (for compatibility with versions 9 and 10).
-	if (Util::EmptyStr(m_configTemplate) && !m_noDiskAccess)
+	if (m_configTemplate.Empty() && !m_noDiskAccess)
 	{
-		free(m_configTemplate);
-		int len = strlen(m_webDir) + 15;
-		m_configTemplate = (char*)malloc(len);
-		snprintf(m_configTemplate, len, "%s%s", m_webDir, "nzbget.conf");
-		m_configTemplate[len-1] = '\0';
+		m_configTemplate.Format("%s%s", *m_webDir, "nzbget.conf");
 		if (!Util::FileExists(m_configTemplate))
 		{
-			free(m_configTemplate);
-			m_configTemplate = strdup("");
+			m_configTemplate = "";
 		}
 	}
 
@@ -2059,9 +1957,9 @@ void Options::CheckOptions()
 		m_parBuffer = 400;
 	}
 
-	if (!Util::EmptyStr(m_unpackPassFile) && !Util::FileExists(m_unpackPassFile))
+	if (!m_unpackPassFile.Empty() && !Util::FileExists(m_unpackPassFile))
 	{
-		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", m_unpackPassFile);
+		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", *m_unpackPassFile);
 	}
 }
 

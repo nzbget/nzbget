@@ -34,10 +34,7 @@ ArticleWriter::ArticleWriter()
 {
 	debug("Creating ArticleWriter");
 
-	m_tempFilename = NULL;
-	m_outputFilename = NULL;
 	m_resultFilename = NULL;
-	m_infoName = NULL;
 	m_format = Decoder::efUnknown;
 	m_articleData = NULL;
 	m_duplicate = false;
@@ -47,10 +44,6 @@ ArticleWriter::ArticleWriter()
 ArticleWriter::~ArticleWriter()
 {
 	debug("Destroying ArticleWriter");
-
-	free(m_outputFilename);
-	free(m_tempFilename);
-	free(m_infoName);
 
 	if (m_articleData)
 	{
@@ -62,11 +55,6 @@ ArticleWriter::~ArticleWriter()
 	{
 		g_ArticleCache->UnlockFlush();
 	}
-}
-
-void ArticleWriter::SetInfoName(const char* infoName)
-{
-	m_infoName = strdup(infoName);
 }
 
 void ArticleWriter::SetWriteBuffer(FILE* outFile, int recSize)
@@ -153,7 +141,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 
 		if (!m_articleData)
 		{
-			detail("Article cache is full, using disk for %s", m_infoName);
+			detail("Article cache is full, using disk for %s", *m_infoName);
 		}
 	}
 
@@ -191,7 +179,7 @@ bool ArticleWriter::Write(char* bufffer, int len)
 	{
 		if (m_articlePtr > m_articleSize)
 		{
-			detail("Decoding %s failed: article size mismatch", m_infoName);
+			detail("Decoding %s failed: article size mismatch", *m_infoName);
 			return false;
 		}
 		memcpy(m_articleData + m_articlePtr - len, bufffer, len);
@@ -227,7 +215,7 @@ void ArticleWriter::Finish(bool success)
 			if (!Util::MoveFile(m_tempFilename, m_resultFilename))
 			{
 				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-					"Could not rename file %s to %s: %s", m_tempFilename, m_resultFilename,
+					"Could not rename file %s to %s: %s", *m_tempFilename, m_resultFilename,
 					Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
 			}
 		}
@@ -258,7 +246,7 @@ void ArticleWriter::Finish(bool success)
 		if (!Util::MoveFile(m_tempFilename, m_resultFilename))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-				"Could not move file %s to %s: %s", m_tempFilename, m_resultFilename,
+				"Could not move file %s to %s: %s", *m_tempFilename, m_resultFilename,
 				Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
 		}
 	}
@@ -295,7 +283,7 @@ bool ArticleWriter::CreateOutputFile(int64 size)
 	if (!Util::CreateSparseFile(m_outputFilename, size, errBuf, sizeof(errBuf)))
 	{
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-			"Could not create file %s: %s", m_outputFilename, errBuf);
+			"Could not create file %s: %s", *m_outputFilename, errBuf);
 		return false;
 	}
 
@@ -313,7 +301,7 @@ void ArticleWriter::BuildOutputFilename()
 	char tmpname[1024];
 	snprintf(tmpname, 1024, "%s.tmp", filename);
 	tmpname[1024-1] = '\0';
-	m_tempFilename = strdup(tmpname);
+	m_tempFilename = tmpname;
 
 	if (g_Options->GetDirectWrite())
 	{
@@ -333,7 +321,7 @@ void ArticleWriter::BuildOutputFilename()
 
 		m_fileInfo->UnlockOutputFile();
 
-		m_outputFilename = strdup(filename);
+		m_outputFilename = filename;
 	}
 }
 
@@ -411,7 +399,7 @@ void ArticleWriter::CompleteFileParts()
 		if (!outfile)
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-				"Could not open file %s: %s", m_outputFilename, Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
+				"Could not open file %s: %s", *m_outputFilename, Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
 			return;
 		}
 		strncpy(tmpdestfile, m_outputFilename, 1024);
@@ -540,7 +528,7 @@ void ArticleWriter::CompleteFileParts()
 		if (!Util::MoveFile(m_outputFilename, ofn))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-				"Could not move file %s to %s: %s", m_outputFilename, ofn,
+				"Could not move file %s to %s: %s", *m_outputFilename, ofn,
 				Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
 		}
 
@@ -549,7 +537,7 @@ void ArticleWriter::CompleteFileParts()
 		if (!(!strncmp(nzbDestDir, m_outputFilename, len) &&
 			(m_outputFilename[len] == PATH_SEPARATOR || m_outputFilename[len] == ALT_PATH_SEPARATOR)))
 		{
-			debug("Checking old dir for: %s", m_outputFilename);
+			debug("Checking old dir for: %s", *m_outputFilename);
 			char oldDestDir[1024];
 			int maxlen = Util::BaseFileName(m_outputFilename) - m_outputFilename;
 			if (maxlen > 1024-1) maxlen = 1024-1;
@@ -622,7 +610,7 @@ void ArticleWriter::CompleteFileParts()
 
 void ArticleWriter::FlushCache()
 {
-	detail("Flushing cache for %s", m_infoName);
+	detail("Flushing cache for %s", *m_infoName);
 
 	bool directWrite = g_Options->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
 	FILE* outfile = NULL;
@@ -730,7 +718,8 @@ void ArticleWriter::FlushCache()
 
 	g_ArticleCache->UnlockFlush();
 
-	detail("Saved %i articles (%.2f MB) from cache into disk for %s", flushedArticles, (float)(flushedSize / 1024.0 / 1024.0), m_infoName);
+	detail("Saved %i articles (%.2f MB) from cache into disk for %s", flushedArticles,
+		(float)(flushedSize / 1024.0 / 1024.0), *m_infoName);
 }
 
 bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)

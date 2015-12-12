@@ -37,9 +37,9 @@
 FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* url, int cacheTimeSec,const char* cacheId,
 	time_t lastUsage, FeedItemInfos* feedItemInfos)
 {
-	m_url = strdup(url);
+	m_url = url;
 	m_cacheTimeSec = cacheTimeSec;
-	m_cacheId = strdup(cacheId);
+	m_cacheId = cacheId;
 	m_lastUsage = lastUsage;
 	m_feedItemInfos = feedItemInfos;
 	m_feedItemInfos->Retain();
@@ -47,8 +47,6 @@ FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* url, int cacheTimeSec,
 
 FeedCoordinator::FeedCacheItem::~FeedCacheItem()
 {
-	free(m_url);
-	free(m_cacheId);
 	m_feedItemInfos->Release();
 }
 

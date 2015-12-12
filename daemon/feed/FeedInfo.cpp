@@ -31,51 +31,28 @@ FeedInfo::FeedInfo(int id, const char* name, const char* url, bool backlog, int 
 	const char* filter, bool pauseNzb, const char* category, int priority, const char* feedScript)
 {
 	m_id = id;
-	m_name = strdup(name ? name : "");
-	m_url = strdup(url ? url : "");
-	m_filter = strdup(filter ? filter : "");
+	m_name = name ? name : "";
+	m_url = url ? url : "";
+	m_filter = filter ? filter : "";
 	m_backlog = backlog;
 	m_filterHash = Util::HashBJ96(m_filter, strlen(m_filter), 0);
-	m_category = strdup(category ? category : "");
+	m_category = category ? category : "";
 	m_interval = interval;
-	m_feedScript = strdup(feedScript ? feedScript : "");
+	m_feedScript = feedScript ? feedScript : "";
 	m_pauseNzb = pauseNzb;
 	m_priority = priority;
 	m_lastUpdate = 0;
 	m_preview = false;
 	m_status = fsUndefined;
-	m_outputFilename = NULL;
 	m_fetch = false;
 	m_force = false;
-}
-
-FeedInfo::~FeedInfo()
-{
-	free(m_name);
-	free(m_url);
-	free(m_filter);
-	free(m_category);
-	free(m_outputFilename);
-	free(m_feedScript);
-}
-
-void FeedInfo::SetOutputFilename(const char* outputFilename)
-{
-	free(m_outputFilename);
-	m_outputFilename = strdup(outputFilename);
 }
 
 
 FeedItemInfo::Attr::Attr(const char* name, const char* value)
 {
-	m_name = strdup(name ? name : "");
-	m_value = strdup(value ? value : "");
-}
-
-FeedItemInfo::Attr::~Attr()
-{
-	free(m_name);
-	free(m_value);
+	m_name = name ? name : "";
+	m_value = value ? value : "";
 }
 
 
@@ -110,87 +87,34 @@ FeedItemInfo::Attr* FeedItemInfo::Attributes::Find(const char* name)
 FeedItemInfo::FeedItemInfo()
 {
 	m_feedFilterHelper = NULL;
-	m_title = NULL;
-	m_filename = NULL;
-	m_url = NULL;
-	m_category = strdup("");
+	m_category = "";
 	m_size = 0;
 	m_time = 0;
 	m_imdbId = 0;
 	m_rageId = 0;
-	m_description = strdup("");
-	m_season = NULL;
-	m_episode = NULL;
+	m_description = "";
 	m_seasonNum = 0;
 	m_episodeNum = 0;
 	m_seasonEpisodeParsed = false;
-	m_addCategory = strdup("");
+	m_addCategory = "";
 	m_pauseNzb = false;
 	m_priority = 0;
 	m_status = isUnknown;
 	m_matchStatus = msIgnored;
 	m_matchRule = 0;
-	m_dupeKey = NULL;
 	m_dupeScore = 0;
 	m_dupeMode = dmScore;
-	m_dupeStatus = NULL;
-}
-
-FeedItemInfo::~FeedItemInfo()
-{
-	free(m_title);
-	free(m_filename);
-	free(m_url);
-	free(m_category);
-	free(m_description);
-	free(m_season);
-	free(m_episode);
-	free(m_addCategory);
-	free(m_dupeKey);
-	free(m_dupeStatus);
-}
-
-void FeedItemInfo::SetTitle(const char* title)
-{
-	free(m_title);
-	m_title = title ? strdup(title) : NULL;
-}
-
-void FeedItemInfo::SetFilename(const char* filename)
-{
-	free(m_filename);
-	m_filename = filename ? strdup(filename) : NULL;
-}
-
-void FeedItemInfo::SetUrl(const char* url)
-{
-	free(m_url);
-	m_url = url ? strdup(url) : NULL;
-}
-
-void FeedItemInfo::SetCategory(const char* category)
-{
-	free(m_category);
-	m_category = strdup(category ? category: "");
-}
-
-void FeedItemInfo::SetDescription(const char* description)
-{
-	free(m_description);
-	m_description = strdup(description ? description: "");
 }
 
 void FeedItemInfo::SetSeason(const char* season)
 {
-	free(m_season);
-	m_season = season ? strdup(season) : NULL;
+	m_season = season;
 	m_seasonNum = season ? ParsePrefixedInt(season) : 0;
 }
 
 void FeedItemInfo::SetEpisode(const char* episode)
 {
-	free(m_episode);
-	m_episode = episode ? strdup(episode) : NULL;
+	m_episode = episode;
 	m_episodeNum = episode ? ParsePrefixedInt(episode) : 0;
 }
 
@@ -204,31 +128,18 @@ int FeedItemInfo::ParsePrefixedInt(const char *value)
 	return atoi(val);
 }
 
-void FeedItemInfo::SetAddCategory(const char* addCategory)
-{
-	free(m_addCategory);
-	m_addCategory = strdup(addCategory ? addCategory : "");
-}
-
-void FeedItemInfo::SetDupeKey(const char* dupeKey)
-{
-	free(m_dupeKey);
-	m_dupeKey = strdup(dupeKey ? dupeKey : "");
-}
-
 void FeedItemInfo::AppendDupeKey(const char* extraDupeKey)
 {
-	if (!m_dupeKey || *m_dupeKey == '\0' || !extraDupeKey || *extraDupeKey == '\0')
+	if (m_dupeKey.Empty() || Util::EmptyStr(extraDupeKey))
 	{
 		return;
 	}
 
-	int len = (m_dupeKey ? strlen(m_dupeKey) : 0) + 1 + strlen(extraDupeKey) + 1;
+	int len = m_dupeKey.Length() + 1 + strlen(extraDupeKey) + 1;
 	char* newKey = (char*)malloc(len);
-	snprintf(newKey, len, "%s-%s", m_dupeKey, extraDupeKey);
+	snprintf(newKey, len, "%s-%s", *m_dupeKey, extraDupeKey);
 	newKey[len - 1] = '\0';
 
-	free(m_dupeKey);
 	m_dupeKey = newKey;
 }
 
@@ -236,29 +147,21 @@ void FeedItemInfo::BuildDupeKey(const char* rageId, const char* series)
 {
 	int rageIdVal = rageId && *rageId ? atoi(rageId) : m_rageId;
 
-	free(m_dupeKey);
-
 	if (m_imdbId != 0)
 	{
-		m_dupeKey = (char*)malloc(20);
-		snprintf(m_dupeKey, 20, "imdb=%i", m_imdbId);
+		m_dupeKey.Format("imdb=%i", m_imdbId);
 	}
 	else if (series && *series && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
 	{
-		int len = strlen(series) + 50;
-		m_dupeKey = (char*)malloc(len);
-		snprintf(m_dupeKey, len, "series=%s-%s-%s", series, m_season, m_episode);
-		m_dupeKey[len-1] = '\0';
+		m_dupeKey.Format("series=%s-%s-%s", series, *m_season, *m_episode);
 	}
 	else if (rageIdVal != 0 && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
 	{
-		m_dupeKey = (char*)malloc(100);
-		snprintf(m_dupeKey, 100, "rageid=%i-%s-%s", rageIdVal, m_season, m_episode);
-		m_dupeKey[100-1] = '\0';
+		m_dupeKey.Format("rageid=%i-%s-%s", rageIdVal, *m_season, *m_episode);
 	}
 	else
 	{
-		m_dupeKey = strdup("");
+		m_dupeKey = "";
 	}
 }
 
@@ -329,14 +232,9 @@ const char* FeedItemInfo::GetDupeStatus()
 
 FeedHistoryInfo::FeedHistoryInfo(const char* url, FeedHistoryInfo::EStatus status, time_t lastSeen)
 {
-	m_url = url ? strdup(url) : NULL;
+	m_url = url;
 	m_status = status;
 	m_lastSeen = lastSeen;
-}
-
-FeedHistoryInfo::~FeedHistoryInfo()
-{
-	free(m_url);
 }
 
 

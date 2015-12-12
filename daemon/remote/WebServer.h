@@ -26,6 +26,7 @@
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
+#include "NString.h"
 #include "Connection.h"
 
 class WebProcessor
@@ -52,7 +53,7 @@ private:
 	EHttpMethod			m_httpMethod;
 	EUserAccess			m_userAccess;
 	bool				m_gzip;
-	char*				m_origin;
+	CString				m_origin;
 	int					m_contentLen;
 	char				m_authInfo[256+1];
 	char				m_authToken[48+1];

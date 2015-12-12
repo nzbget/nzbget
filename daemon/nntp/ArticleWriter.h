@@ -26,6 +26,7 @@
 #ifndef ARTICLEWRITER_H
 #define ARTICLEWRITER_H
 
+#include "NString.h"
 #include "DownloadInfo.h"
 #include "Decoder.h"
 
@@ -35,8 +36,8 @@ private:
 	FileInfo*			m_fileInfo;
 	ArticleInfo*		m_articleInfo;
 	FILE*				m_outFile;
-	char*				m_tempFilename;
-	char*				m_outputFilename;
+	CString				m_tempFilename;
+	CString				m_outputFilename;
 	const char*			m_resultFilename;
 	Decoder::EFormat	m_format;
 	char*				m_articleData;
@@ -45,12 +46,10 @@ private:
 	int					m_articlePtr;
 	bool				m_flushing;
 	bool				m_duplicate;
-	char*				m_infoName;
+	CString				m_infoName;
 
-	bool				PrepareFile(char* line);
 	bool				CreateOutputFile(int64 size);
 	void				BuildOutputFilename();
-	bool				IsFileCached();
 	void				SetWriteBuffer(FILE* outFile, int recSize);
 
 protected:
@@ -59,7 +58,7 @@ protected:
 public:
 						ArticleWriter();
 						~ArticleWriter();
-	void				SetInfoName(const char* infoName);
+	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
 	void				SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
 	void				SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
 	void				Prepare();

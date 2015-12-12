@@ -26,13 +26,14 @@
 #ifndef FEEDFILE_H
 #define FEEDFILE_H
 
+#include "NString.h"
 #include "FeedInfo.h"
 
 class FeedFile
 {
 private:
 	FeedItemInfos*		m_feedItemInfos;
-	char*				m_fileName;
+	CString				m_fileName;
 
 						FeedFile(const char* fileName);
 	void				AddItem(FeedItemInfo* feedItemInfo);

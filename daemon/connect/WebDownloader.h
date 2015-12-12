@@ -26,6 +26,7 @@
 #ifndef WEBDOWNLOADER_H
 #define WEBDOWNLOADER_H
 
+#include "NString.h"
 #include "Observer.h"
 #include "Thread.h"
 #include "Connection.h"
@@ -48,17 +49,17 @@ public:
 	};
 
 private:
-	char*				m_url;
-	char*				m_outputFilename;
+	CString				m_url;
+	CString				m_outputFilename;
 	Connection* 		m_connection;
 	Mutex			 	m_connectionMutex;
 	EStatus				m_status;
 	time_t				m_lastUpdateTime;
-	char*				m_infoName;
+	CString				m_infoName;
 	FILE*				m_outFile;
 	int					m_contentLen;
 	bool				m_confirmedLength;
-	char*				m_originalFilename;
+	CString				m_originalFilename;
 	bool				m_force;
 	bool				m_redirecting;
 	bool				m_redirected;
@@ -85,18 +86,17 @@ protected:
 
 public:
 						WebDownloader();
-	virtual				~WebDownloader();
 	EStatus				GetStatus() { return m_status; }
 	virtual void		Run();
 	virtual void		Stop();
 	EStatus				Download();
 	EStatus				DownloadWithRedirects(int maxRedirects);
 	bool				Terminate();
-	void				SetInfoName(const char* v);
+	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
 	const char*			GetInfoName() { return m_infoName; }
 	void 				SetUrl(const char* url);
 	const char*			GetOutputFilename() { return m_outputFilename; }
-	void 				SetOutputFilename(const char* v);
+	void 				SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
 	time_t				GetLastUpdateTime() { return m_lastUpdateTime; }
 	void				SetLastUpdateTimeNow() { m_lastUpdateTime = ::time(NULL); }
 	bool				GetConfirmedLength() { return m_confirmedLength; }

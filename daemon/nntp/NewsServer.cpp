@@ -41,30 +41,16 @@ NewsServer::NewsServer(int id, bool active, const char* name, const char* host, 
 	m_maxConnections = maxConnections;
 	m_joinGroup = joinGroup;
 	m_tls = tls;
-	m_host = strdup(host ? host : "");
-	m_user = strdup(user ? user : "");
-	m_password = strdup(pass ? pass : "");
-	m_cipher = strdup(cipher ? cipher : "");
+	m_name = name;
+	m_host = host ? host : "";
+	m_user = user ? user : "";
+	m_password = pass ? pass : "";
+	m_cipher = cipher ? cipher : "";
 	m_retention = retention;
 	m_blockTime = 0;
 
-	if (name && strlen(name) > 0)
+	if (m_name.Empty())
 	{
-		m_name = strdup(name);
+		m_name.Format("server%i", id);
 	}
-	else
-	{
-		m_name = (char*)malloc(20);
-		snprintf(m_name, 20, "server%i", id);
-		m_name[20-1] = '\0';
-	}
-}
-
-NewsServer::~NewsServer()
-{
-	free(m_name);
-	free(m_host);
-	free(m_user);
-	free(m_password);
-	free(m_cipher);
 }
