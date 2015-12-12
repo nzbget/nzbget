@@ -133,6 +133,8 @@ nzbget_SOURCES = \
 	daemon/remote/XmlRpc.h \
 	daemon/util/Log.cpp \
 	daemon/util/Log.h \
+	daemon/util/NString.cpp \
+	daemon/util/NString.h \
 	daemon/util/Observer.cpp \
 	daemon/util/Observer.h \
 	daemon/util/Script.cpp \
@@ -217,6 +219,7 @@ nzbget_SOURCES += \
 	tests/postprocess/ParCheckerTest.cpp \
 	tests/postprocess/ParRenamerTest.cpp \
 	tests/queue/NzbFileTest.cpp \
+	tests/util/NStringTest.cpp
 	tests/util/UtilTest.cpp
 
 AM_CPPFLAGS += \
