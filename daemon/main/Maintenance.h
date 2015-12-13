@@ -25,6 +25,7 @@
 #ifndef MAINTENANCE_H
 #define MAINTENANCE_H
 
+#include "NString.h"
 #include "Thread.h"
 #include "Script.h"
 #include "Log.h"
@@ -83,7 +84,7 @@ class UpdateInfoScriptController : public ScriptController
 {
 private:
 	int					m_prefixLen;
-	StringBuilder		m_updateInfo;
+	CString				m_updateInfo;
 
 protected:
 	virtual void		AddMessage(Message::EKind kind, const char* text);

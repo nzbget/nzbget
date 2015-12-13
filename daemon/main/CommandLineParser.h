@@ -141,7 +141,7 @@ public:
 	bool				GetAddPaused() { return m_addPaused; }
 	const char*			GetLastArg() { return m_lastArg; }
 	int					GetAddPriority() { return m_addPriority; }
-	char*				GetAddNzbFilename() { return m_addNzbFilename; }
+	const char*			GetAddNzbFilename() { return m_addNzbFilename; }
 	bool				GetAddTop() { return m_addTop; }
 	const char*			GetAddDupeKey() { return m_addDupeKey; }
 	int					GetAddDupeScore() { return m_addDupeScore; }

@@ -325,9 +325,8 @@ XmlRpcProcessor::XmlRpcProcessor()
 void XmlRpcProcessor::SetUrl(const char* url)
 {
 	m_url = url;
-	WebUtil::UrlDecode(m_url);
+	WebUtil::UrlDecode((char*)m_url);
 }
-
 
 bool XmlRpcProcessor::IsRpcRequest(const char* url)
 {
@@ -372,7 +371,7 @@ void XmlRpcProcessor::Dispatch()
 
 	if (m_httpMethod == hmGet)
 	{
-		request = m_url + 1;
+		request = (char*)m_url + 1;
 		char* pstart = strchr(request, '/');
 		if (pstart)
 		{
@@ -437,9 +436,9 @@ void XmlRpcProcessor::Dispatch()
 void XmlRpcProcessor::MutliCall()
 {
 	bool error = false;
-	StringBuilder stringBuilder;
+	CString response;
 
-	stringBuilder.Append("<array><data>");
+	response.Append("<array><data>");
 
 	char* requestPtr = m_request;
 	char* callEnd = strstr(requestPtr, "</struct>");
@@ -469,14 +468,14 @@ void XmlRpcProcessor::MutliCall()
 		bool array = !fault && !strncmp(command->GetResponse(), "<array>", 7);
 		if (!fault && !array)
 		{
-			stringBuilder.Append("<array><data>");
+			response.Append("<array><data>");
 		}
-		stringBuilder.Append("<value>");
-		stringBuilder.Append(command->GetResponse());
-		stringBuilder.Append("</value>");
+		response.Append("<value>");
+		response.Append(command->GetResponse());
+		response.Append("</value>");
 		if (!fault && !array)
 		{
-			stringBuilder.Append("</data></array>");
+			response.Append("</data></array>");
 		}
 
 		delete command;
@@ -497,8 +496,8 @@ void XmlRpcProcessor::MutliCall()
 	}
 	else
 	{
-		stringBuilder.Append("</data></array>");
-		BuildResponse(stringBuilder.GetBuffer(), "", false, NULL);
+		response.Append("</data></array>");
+		BuildResponse(response, "", false, NULL);
 	}
 }
 
@@ -753,7 +752,7 @@ XmlCommand::XmlCommand()
 	m_callbackFunc = NULL;
 	m_fault = false;
 	m_protocol = XmlRpcProcessor::rpUndefined;
-	m_stringBuilder.SetGrowSize(1024 * 10);
+	m_response.Reserve(1024 * 10);
 }
 
 bool XmlCommand::IsJson()
@@ -763,14 +762,14 @@ bool XmlCommand::IsJson()
 
 void XmlCommand::AppendResponse(const char* part)
 {
-	m_stringBuilder.Append(part);
+	m_response.Append(part);
 }
 
 void XmlCommand::AppendFmtResponse(const char* format, ...)
 {
 	va_list args;
 	va_start(args, format);
-	m_stringBuilder.AppendFmtV(format, args);
+	m_response.AppendFmtV(format, args);
 	va_end(args);
 }
 
@@ -778,17 +777,7 @@ void XmlCommand::AppendCondResponse(const char* part, bool cond)
 {
 	if (cond)
 	{
-		m_stringBuilder.Append(part);
-	}
-}
-
-void XmlCommand::OptimizeResponse(int recordCount)
-{
-	// Reduce the number of memory allocations when building response buffer
-	int growSize = recordCount * m_stringBuilder.GetUsedSize() / 10;
-	if (growSize > 1024 * 10)
-	{
-		m_stringBuilder.SetGrowSize(growSize);
+		m_response.Append(part);
 	}
 }
 
@@ -2052,11 +2041,6 @@ void ListGroupsXmlCommand::Execute()
 		AppendPostInfoFields(nzbInfo->GetPostInfo(), nrEntries, false);
 
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
-
-		if (it == downloadQueue->GetQueue()->begin())
-		{
-			OptimizeResponse(downloadQueue->GetQueue()->size());
-		}
 	}
 
 	DownloadQueue::Unlock();
@@ -2648,11 +2632,6 @@ void HistoryXmlCommand::Execute()
 		}
 
 		AppendResponse(IsJson() ? JSON_HISTORY_ITEM_END : XML_HISTORY_ITEM_END);
-
-		if (it == downloadQueue->GetHistory()->begin())
-		{
-			OptimizeResponse(downloadQueue->GetHistory()->size());
-		}
 	}
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");

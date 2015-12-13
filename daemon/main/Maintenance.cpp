@@ -343,12 +343,9 @@ void UpdateInfoScriptController::ExecuteScript(const char* script, char** update
 
 	scriptController->Execute();
 
-	if (scriptController->m_updateInfo.GetBuffer())
+	if (!scriptController->m_updateInfo.Empty())
 	{
-		int len = strlen(scriptController->m_updateInfo.GetBuffer());
-		*updateInfo = (char*)malloc(len + 1);
-		strncpy(*updateInfo, scriptController->m_updateInfo.GetBuffer(), len);
-		(*updateInfo)[len] = '\0';
+		*updateInfo = strdup(scriptController->m_updateInfo);
 	}
 
 	delete scriptController;

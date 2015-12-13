@@ -165,7 +165,7 @@ private:
 		bool			HasRageId() { return m_hasRageId; }
 		bool			HasSeries() { return m_hasSeries; }
 		bool			Match(FeedItemInfo* feedItemInfo);
-		void			ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, char* patStr);
+		void			ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, const char* patStr);
 		const char*		GetRefValue(FeedItemInfo* feedItemInfo, const char* varName);
 	};
 

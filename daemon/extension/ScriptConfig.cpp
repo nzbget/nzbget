@@ -275,7 +275,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 			continue;
 		}
 
-		StringBuilder stringBuilder;
+		CString templ;
 		char buf[1024];
 		bool inConfig = false;
 
@@ -301,13 +301,13 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 
 			if (inConfig && !skip)
 			{
-				stringBuilder.Append(buf);
+				templ.Append(buf);
 			}
 		}
 
 		fclose(infile);
 
-		ConfigTemplate* configTemplate = new ConfigTemplate(script, stringBuilder.GetBuffer());
+		ConfigTemplate* configTemplate = new ConfigTemplate(script, templ);
 		configTemplates->push_back(configTemplate);
 	}
 

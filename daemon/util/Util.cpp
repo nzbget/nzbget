@@ -216,81 +216,6 @@ const char* DirBrowser::Next()
 #endif
 
 
-StringBuilder::StringBuilder()
-{
-	m_buffer = NULL;
-	m_bufferSize = 0;
-	m_usedSize = 0;
-	m_growSize = 10240;
-}
-
-StringBuilder::~StringBuilder()
-{
-	free(m_buffer);
-}
-
-void StringBuilder::Clear()
-{
-	free(m_buffer);
-	m_buffer = NULL;
-	m_bufferSize = 0;
-	m_usedSize = 0;
-}
-
-void StringBuilder::Append(const char* str)
-{
-	int partLen = strlen(str);
-	Reserve(partLen + 1);
-	strcpy(m_buffer + m_usedSize, str);
-	m_usedSize += partLen;
-	m_buffer[m_usedSize] = '\0';
-}
-
-void StringBuilder::AppendFmt(const char* format, ...)
-{
-	va_list args;
-	va_start(args, format);
-	AppendFmtV(format, args);
-	va_end(args);
-}
-
-void StringBuilder::AppendFmtV(const char* format, va_list ap)
-{
-	va_list ap2;
-	va_copy(ap2, ap);
-
-	int remainingSize = m_bufferSize - m_usedSize;
-	int m = vsnprintf(m_buffer + m_usedSize, remainingSize, format, ap);
-#ifdef WIN32
-	if (m == -1)
-	{
-		m = _vscprintf(format, ap);
-	}
-#endif
-	if (m + 1 > remainingSize)
-	{
-		Reserve(m - remainingSize + m_growSize);
-		remainingSize = m_bufferSize - m_usedSize;
-		m = vsnprintf(m_buffer + m_usedSize, remainingSize, format, ap2);
-	}
-	if (m >= 0)
-	{
-		m_buffer[m_usedSize += m] = '\0';
-	}
-
-	va_end(ap2);
-}
-
-void StringBuilder::Reserve(int size)
-{
-	if (m_usedSize + size > m_bufferSize)
-	{
-		m_bufferSize += size + m_growSize;
-		m_buffer = (char*)realloc(m_buffer, m_bufferSize);
-	}
-}
-
-
 char Util::VersionRevisionBuf[100];
 
 char* Util::BaseFileName(const char* filename)
@@ -1280,7 +1205,7 @@ uint32 hash(register uint8 *k, register uint32  length, register uint32  initval
 // register uint32  length;   /* the length of the key */
 // register uint32  initval;    /* the previous hash, or an arbitrary value */
 {
-	register uint32 a,b,c,len;
+	uint32 a,b,c,len;
 
 	/* Set up the internal state */
 	len = length;
@@ -1470,7 +1395,7 @@ static uint32 crc32_tab[] = {
  */
 uint32 Util::Crc32m(uint32 startCrc, uchar *block, uint32 length)
 {
-	register uint32 crc = startCrc;
+	uint32 crc = startCrc;
 	for (uint32 i = 0; i < length; i++)
 	{
 		crc = ((crc >> 8) & 0x00FFFFFF) ^ crc32_tab[(crc ^ *block++) & 0xFF];

@@ -156,42 +156,34 @@ void ServerVolume::LogDebugInfo()
 {
 	info("   ---------- ServerVolume");
 
-	StringBuilder msg;
+	CString msg;
 
 	for (int i = 0; i < 60; i++)
 	{
-		char num[30];
-		snprintf(num, 30, "[%i]=%lli ", i, m_bytesPerSeconds[i]);
-		msg.Append(num);
+		msg.AppendFmt("[%i]=%lli ", i, m_bytesPerSeconds[i]);
 	}
-	info("Secs: %s", msg.GetBuffer());
+	info("Secs: %s", *msg);
 
 	msg.Clear();
 	for (int i = 0; i < 60; i++)
 	{
-		char num[30];
-		snprintf(num, 30, "[%i]=%lli ", i, m_bytesPerMinutes[i]);
-		msg.Append(num);
+		msg.AppendFmt("[%i]=%lli ", i, m_bytesPerMinutes[i]);
 	}
-	info("Mins: %s", msg.GetBuffer());
+	info("Mins: %s", *msg);
 
 	msg.Clear();
 	for (int i = 0; i < 24; i++)
 	{
-		char num[30];
-		snprintf(num, 30, "[%i]=%lli ", i, m_bytesPerHours[i]);
-		msg.Append(num);
+		msg.AppendFmt("[%i]=%lli ", i, m_bytesPerHours[i]);
 	}
-	info("Hours: %s", msg.GetBuffer());
+	info("Hours: %s", *msg);
 
 	msg.Clear();
 	for (int i = 0; i < (int)m_bytesPerDays.size(); i++)
 	{
-		char num[30];
-		snprintf(num, 30, "[%i]=%lli ", m_firstDay + i, m_bytesPerDays[i]);
-		msg.Append(num);
+		msg.AppendFmt("[%i]=%lli ", m_firstDay + i, m_bytesPerDays[i]);
 	}
-	info("Days: %s", msg.GetBuffer());
+	info("Days: %s", *msg);
 }
 
 StatMeter::StatMeter()

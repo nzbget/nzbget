@@ -61,28 +61,6 @@ public:
 	const char*			Next();
 };
 
-class StringBuilder
-{
-private:
-	char*				m_buffer;
-	int					m_bufferSize;
-	int					m_usedSize;
-	int					m_growSize;
-
-	void				Reserve(int size);
-
-public:
-						StringBuilder();
-						~StringBuilder();
-	void				Append(const char* str);
-	void				AppendFmt(const char* format, ...);
-	void				AppendFmtV(const char* format, va_list ap);
-	const char*			GetBuffer() { return m_buffer; }
-	void				SetGrowSize(int growSize) { m_growSize = growSize; }
-	int					GetUsedSize() { return m_usedSize; }
-	void				Clear();
-};
-
 class Util
 {
 public:

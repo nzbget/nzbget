@@ -63,7 +63,7 @@ private:
 	EHttpMethod			m_httpMethod;
 	EUserAccess			m_userAccess;
 	CString				m_url;
-	StringBuilder		m_response;
+	CString				m_response;
 
 	void				Dispatch();
 	XmlCommand*			CreateCommand(const char* methodName);
@@ -77,7 +77,7 @@ public:
 	void				SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
 	void				SetUrl(const char* url);
 	void				SetRequest(char* request) { m_request = request; }
-	const char*			GetResponse() { return m_response.GetBuffer(); }
+	const char*			GetResponse() { return m_response; }
 	const char*			GetContentType() { return m_contentType; }
 	static bool			IsRpcRequest(const char* url);
 };
@@ -88,7 +88,7 @@ protected:
 	char*				m_request;
 	char*				m_requestPtr;
 	char*				m_callbackFunc;
-	StringBuilder		m_stringBuilder;
+	CString				m_response;
 	bool				m_fault;
 	XmlRpcProcessor::ERpcProtocol	m_protocol;
 	XmlRpcProcessor::EHttpMethod	m_httpMethod;
@@ -100,7 +100,6 @@ protected:
 	void				AppendResponse(const char* part);
 	void				AppendFmtResponse(const char* format, ...);
 	void				AppendCondResponse(const char* part, bool cond);
-	void				OptimizeResponse(int recordCount);
 	bool				IsJson();
 	bool				CheckSafeMethod();
 	bool				NextParamAsInt(int* value);
@@ -120,7 +119,7 @@ public:
 	void				SetProtocol(XmlRpcProcessor::ERpcProtocol protocol) { m_protocol = protocol; }
 	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
 	void				SetUserAccess(XmlRpcProcessor::EUserAccess userAccess) { m_userAccess = userAccess; }
-	const char*			GetResponse() { return m_stringBuilder.GetBuffer(); }
+	const char*			GetResponse() { return m_response; }
 	const char*			GetCallbackFunc() { return m_callbackFunc; }
 	bool				GetFault() { return m_fault; }
 };

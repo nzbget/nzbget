@@ -934,7 +934,7 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* feedItemInfo)
 	return match;
 }
 
-void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, char* patStr)
+void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, const char* patStr)
 {
 	char* curvalue = strdup(patStr);
 

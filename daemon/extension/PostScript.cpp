@@ -49,7 +49,7 @@ void PostScriptController::StartJob(PostInfo* postInfo)
 
 void PostScriptController::Run()
 {
-	StringBuilder scriptCommaList;
+	CString scriptCommaList;
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
@@ -70,7 +70,7 @@ void PostScriptController::Run()
 	m_postInfo->GetNzbInfo()->GetScriptStatuses()->Clear();
 	DownloadQueue::Unlock();
 
-	ExecuteScriptList(scriptCommaList.GetBuffer());
+	ExecuteScriptList(scriptCommaList);
 
 	m_postInfo->SetStage(PostInfo::ptFinished);
 	m_postInfo->SetWorking(false);

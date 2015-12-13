@@ -25,6 +25,41 @@
 #include "nzbget.h"
 #include "NString.h"
 
+void NString::Append(const char* str)
+{
+	size_t addLen = strlen(str);
+
+	size_t curLen = Length();
+	size_t capacity = Grow(curLen + addLen, true);
+	size_t avail = capacity - curLen;
+
+	char* buf = Data();
+	strncpy(buf + curLen, str, avail);
+	buf[capacity] = '\0';
+
+	Resync(addLen <= avail ? curLen + addLen : capacity);
+}
+
+void NString::AppendFmtV(const char* format, va_list ap)
+{
+	va_list ap2;
+	va_copy(ap2, ap);
+
+	int addLen = vsnprintf(nullptr, 0, format, ap);
+
+	size_t curLen = Length();
+	size_t capacity = Grow(curLen + addLen, true);
+	size_t avail = capacity - curLen;
+
+	char* buf = Data();
+	vsnprintf(buf + curLen, avail + 1, format, ap2);
+	buf[capacity] = '\0';
+
+	Resync(addLen <= avail ? curLen + addLen : capacity);
+
+	va_end(ap2);
+}
+
 void NString::Format(const char* format, ...)
 {
 	va_list args;
@@ -35,26 +70,108 @@ void NString::Format(const char* format, ...)
 
 void NString::FormatV(const char* format, va_list ap)
 {
-	vsnprintf(Data(), Capacity(), format, ap);
+	Clear();
+	AppendFmtV(format, ap);
+}
+void NString::AppendFmt(const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	AppendFmtV(format, args);
+	va_end(args);
 }
 
-void CString::FormatV(const char* format, va_list ap)
+
+void CString::Clear()
 {
-	va_list ap2;
-	va_copy(ap2, ap);
+	free(m_data);
+	m_data = nullptr;
+	m_capacity = 0;
+	m_length = 0;
+}
 
-	int m = vsnprintf(m_data, 0, format, ap);
-#ifdef WIN32
-	if (m == -1)
+size_t CString::Capacity() const
+{
+	if (m_capacity == Unknown_Size)
 	{
-		m = _vscprintf(format, ap);
+		m_capacity = Length();
 	}
-#endif
+	return m_capacity;
+}
 
+size_t CString::Grow(size_t capacity, bool factor)
+{
+	size_t oldCapacity = Capacity();
+	if (capacity > oldCapacity)
+	{
+		char* oldData = m_data;
+
+		// we may grow more than requested
+		size_t smartCapacity = factor ? (size_t)(oldCapacity * Grow_Factor) : 0;
+
+		m_capacity = smartCapacity > capacity ? smartCapacity : capacity;
+
+		m_data = (char*)realloc(m_data, m_capacity + 1);
+		m_data[m_capacity] = '\0';
+		if (!oldData)
+		{
+			m_data[0] = '\0';
+		}
+	}
+	else if (!m_data)
+	{
+		m_capacity = Min_Grow_Capacity;
+		m_data = (char*)malloc(m_capacity + 1);
+		m_data[m_capacity] = '\0';
+		m_data[0] = '\0';
+	}
+	return m_capacity;
+}
+
+CString& CString::operator=(const char* str)
+{
+	if (str)
+	{
+		m_capacity = strlen(str);
+		char* newstr = (char*)malloc(m_capacity + 1);
+		strncpy(newstr, str, m_capacity + 1);
+		free(m_data);
+		m_data = newstr;
+		m_length = m_capacity;
+	}
+	else
+	{
+		free(m_data);
+		m_data = nullptr;
+		m_capacity = 0;
+		m_length = 0;
+	}
+	return *this;
+}
+
+void CString::Bind(char* str)
+{
+	free(m_data);
+	m_data = str;
+	m_capacity = Unknown_Size;
+	m_length = Unknown_Size;
+}
+
+char* CString::Unbind()
+{
 	char* olddata = m_data;
-	m_data = (char*)malloc(m + 1);
-	vsnprintf(m_data, m + 1, format, ap2);
-	free(olddata);
+	m_data = nullptr;
+	m_capacity = 0;
+	m_length = 0;
+	return olddata;
+}
 
-	va_end(ap2);
+
+size_t CString::Length() const
+{
+	if (m_length == Unknown_Size)
+	{
+		m_length = m_data ? strlen(m_data) : 0;
+	}
+	return m_length;
 }

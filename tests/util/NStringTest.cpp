@@ -38,7 +38,6 @@ TEST_CASE("CString", "[NString][Quick]")
 	REQUIRE(!str.Empty());
 	REQUIRE(str);
 	REQUIRE(!strcmp(str, "Hello, world"));
-	REQUIRE_FALSE(str.Buffered());
 
 	str.Format("Hi, %s%c: %i", "World", '!', 21);
 	REQUIRE(!strcmp(str, "Hi, World!: 21"));
@@ -46,6 +45,8 @@ TEST_CASE("CString", "[NString][Quick]")
 	char* tmp = strdup("Hello there");
 	CString str2;
 	str2.Bind(tmp);
+	const char* tmp3 = *str2;
+	REQUIRE(tmp == tmp3);
 	REQUIRE(!strcmp(str2, "Hello there"));
 	REQUIRE(tmp == *str2);
 	free(tmp);
@@ -66,6 +67,35 @@ TEST_CASE("CString", "[NString][Quick]")
 	REQUIRE((const char*)str4 == NULL);
 	REQUIRE(str4.Str() != NULL);
 	REQUIRE(*str4.Str() == '\0');
+
+	CString str5;
+	REQUIRE(str5.Capacity() == 0);
+	str5.Reserve(5);
+	REQUIRE(str5.Capacity() >= 5);
+	strncpy((char*)str5, "Hello, World!", 5);
+	REQUIRE(str5.Length() == 0);
+	str5.Resync();
+	REQUIRE(str5.Length() == 5);
+	REQUIRE(!strcmp(str5, "Hello"));
+	((char*)str5)[1] = 'a';
+	REQUIRE(!strcmp(str5, "Hallo"));
+	((char*)str5)[2] = '\0';
+	REQUIRE(!strcmp(str5, "Ha"));
+	str5.Resync();
+	str5.Append(", World");
+	REQUIRE(!strcmp(str5, "Ha, World"));
+
+	CString str6;
+	str6.Append("");
+	str6.Append("Hello, World");
+	str6.Append("String5String5");
+	str6.Append("67");
+	REQUIRE(!strcmp(str6, "Hello, WorldString5String567"));
+
+	std::vector<CString> vec1;
+	vec1.push_back("Hello, there");
+	CString& str7 = vec1.back();
+	REQUIRE(!strcmp(str7, "Hello, there"));
 }
 
 TEST_CASE("BString", "[NString][Quick]")
@@ -77,7 +107,6 @@ TEST_CASE("BString", "[NString][Quick]")
 	REQUIRE(!str.Empty());
 	REQUIRE(str);
 	REQUIRE(!strcmp(str, "Hello, world"));
-	REQUIRE(str.Buffered());
 
 	str.Format("Hi, %s%c: %i", "World", '!', 21);
 	REQUIRE(!strcmp(str, "Hi, World!: 21"));
@@ -87,7 +116,7 @@ TEST_CASE("BString", "[NString][Quick]")
 	REQUIRE(!strcmp(str2, "Hell"));
 
 	str2.Format("Hi, %s%c: %i", "World", '!', 21);
-	REQUIRE(!strcmp(str2, "Hi, "));
+	REQUIRE(!strcmp(str2, "Hi, W"));
 
 	BString<5> str3;
 	strncpy(str3, "Hello, world", str3.Capacity());
@@ -101,4 +130,10 @@ TEST_CASE("BString", "[NString][Quick]")
 
 	BString<20> str5(0, "Hi, %s%c: %i", "World", '!', 21);
 	REQUIRE(!strcmp(str5, "Hi, World!: 21"));
+
+	BString<20> str6;
+	str6.Append("Hello, World");
+	str6.Append("String5String5");
+	str6.Append("67");
+	REQUIRE(!strcmp(str6, "Hello, WorldString5S"));
 }

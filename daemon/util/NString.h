@@ -26,41 +26,60 @@
 #ifndef NSTRING_H
 #define NSTRING_H
 
+/* Abstract base string class.
+ */
 class NString
 {
+protected:
+	virtual size_t Grow(size_t capacity, bool factor) = 0;
+	virtual void Resync(size_t newLength = Unknown_Size) {}
+
 public:
+	const static size_t Unknown_Size = (size_t)-1;
+
 	virtual size_t Capacity() const = 0;
-	virtual bool Buffered() const = 0;
+	size_t Reserve(size_t capacity) { return Grow(capacity, false); }
 	virtual char* Data() const = 0;
-	operator char*() const { return Data(); }
-	char* operator*() const { return Data(); }
-	size_t Length() const { char* buf = Data(); return buf ? strlen(Data()) : 0; }
+	virtual void Clear() = 0;
+	virtual size_t Length() const { char* buf = Data(); return buf ? strlen(Data()) : 0; }
 	bool Empty() const { char* buf = Data(); return !buf || !*buf; }
 	const char* Str() const { const char* buf = Data(); return buf ? buf : ""; }
+	void Append(const char* str);
+	void AppendFmt(const char* format, ...);
+	void AppendFmtV(const char* format, va_list ap);
 	void Format(const char* format, ...);
-	virtual void FormatV(const char* format, va_list ap);
+	void FormatV(const char* format, va_list ap);
 };
 
+/* Dynamic string class, whose content may grow.
+ */
 class CString : public NString
 {
 private:
 	char* m_data;
+	mutable size_t m_capacity;
+	mutable size_t m_length;
 
 	CString(const CString& that) = delete;
 
-public:
-	CString() : m_data(NULL) {}
+	virtual size_t Grow(size_t capacity, bool factor) override;
 
-	CString(const char* str)
+public:
+	const static size_t Min_Grow_Capacity = 15;
+	constexpr static double Grow_Factor = 1.5;
+
+	CString() : m_data(nullptr), m_capacity(0), m_length(0) {}
+
+	CString(const char* str) : m_data(nullptr), m_capacity(0), m_length(0)
 	{
-		m_data = NULL;
 		operator=(str);
 	}
 
-	CString(CString&& other)
+	CString(CString&& other) : m_data(other.m_data), m_capacity(other.m_capacity), m_length(other.m_length)
 	{
-		m_data = other.m_data;
-		other.m_data = NULL;
+		other.m_data = nullptr;
+		other.m_capacity = 0;
+		other.m_length = 0;
 	}
 
 	~CString()
@@ -68,33 +87,23 @@ public:
 		free(m_data);
 	}
 
-	CString& operator=(const char* str)
-	{
-		char* newstr = str ? strdup(str) : NULL;
-		free(m_data);
-		m_data = newstr;
-		return *this;
-	}
-
-	void Bind(char* str)
-	{
-		free(m_data);
-		m_data = str;
-	}
-
-	char* Unbind()
-	{
-		char* olddata = m_data;
-		m_data = NULL;
-		return olddata;
-	}
-
-	virtual size_t Capacity() const { return Length(); }
-	virtual bool Buffered() const { return false; }
-	virtual char* Data() const { return m_data; }
-	virtual void FormatV(const char* format, va_list ap);
+	virtual void Clear() override;
+	virtual size_t Length() const override;
+	virtual void Resync(size_t newLength = Unknown_Size) override { m_length = newLength; }
+	bool Empty() const { return !m_data || !*m_data; }
+	CString& operator=(const char* str);
+	virtual size_t Capacity() const override;
+	virtual char* Data() const override{ return m_data; }
+	operator const char*() const { return m_data; }
+	explicit operator char*() const { return m_data; }
+	const char* operator*() const { return m_data; }
+	void Bind(char* str);
+	char* Unbind();
 };
 
+/* String class with statically allocated buffer of specified length.
+   Best suitable as replacement for char-arrays allocated on stack.
+ */
 template <size_t size>
 class BString : public NString
 {
@@ -102,6 +111,9 @@ private:
 	char m_data[size + 1];
 
 	BString(const BString& that) = delete;
+
+protected:
+	virtual size_t Grow(size_t capacity, bool factor) override { return size; }
 
 public:
 	BString()
@@ -135,14 +147,16 @@ public:
 		return *this;
 	}
 
-	virtual size_t Capacity() const { return size; }
-	virtual bool Buffered() const { return true; }
-	virtual char* Data() const { return const_cast<char*>(m_data); }
+	virtual void Clear() override { m_data[0] = '\0'; }
+	virtual size_t Capacity() const override { return size; }
+	virtual char* Data() const override { return const_cast<char*>(m_data); }
+	operator char*() const { return const_cast<char*>(m_data); }
+	char* operator*() const { return m_data; }
 };
 
-#if DEBUG
-// helper declaration to identify incorrect calls to "free(CString)" at compile time
+#ifdef DEBUG
 #ifdef WIN32
+// helper declaration to identify incorrect calls to "free(CString)" at compile time
 void _free_dbg(CString str, int ignore);
 #else
 void free(CString str);
