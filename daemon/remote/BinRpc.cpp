@@ -1040,19 +1040,19 @@ void WriteLogBinCommand::Execute()
 	switch ((Message::EKind)ntohl(WriteLogRequest.m_kind))
 	{
 		case Message::mkDetail:
-			detail(recvBuffer);
+			detail("%s", recvBuffer);
 			break;
 		case Message::mkInfo:
-			info(recvBuffer);
+			info("%s", recvBuffer);
 			break;
 		case Message::mkWarning:
-			warn(recvBuffer);
+			warn("%s", recvBuffer);
 			break;
 		case Message::mkError:
-			error(recvBuffer);
+			error("%s", recvBuffer);
 			break;
 		case Message::mkDebug:
-			debug(recvBuffer);
+			debug("%s", recvBuffer);
 			break;
 		default:
 			OK = false;

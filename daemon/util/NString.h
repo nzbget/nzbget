@@ -45,9 +45,9 @@ public:
 	bool Empty() const { char* buf = Data(); return !buf || !*buf; }
 	const char* Str() const { const char* buf = Data(); return buf ? buf : ""; }
 	void Append(const char* str);
-	void AppendFmt(const char* format, ...);
+	void AppendFmt(const char* format, ...) PRINTF_SYNTAX(2);
 	void AppendFmtV(const char* format, va_list ap);
-	void Format(const char* format, ...);
+	void Format(const char* format, ...) PRINTF_SYNTAX(2);
 	void FormatV(const char* format, va_list ap);
 };
 

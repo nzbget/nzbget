@@ -50,7 +50,7 @@ private:
 		virtual bool	RequestMorePars(int blockNeeded, int* blockFound);
 		virtual void	UpdateProgress();
 		virtual void	Completed() { m_owner->ParCheckCompleted(); }
-		virtual void	PrintMessage(Message::EKind kind, const char* format, ...);
+		virtual void	PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 		virtual void	RegisterParredFile(const char* filename);
 		virtual bool	IsParredFile(const char* filename);
 		virtual EFileStatus	FindFileCrc(const char* filename, uint32* crc, SegmentList* segments);
@@ -77,7 +77,7 @@ private:
 	protected:
 		virtual void	UpdateProgress();
 		virtual void	Completed() { m_owner->ParRenameCompleted(); }
-		virtual void	PrintMessage(Message::EKind kind, const char* format, ...);
+		virtual void	PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 		virtual void	RegisterParredFile(const char* filename);
 		virtual void	RegisterRenamedFile(const char* oldFilename, const char* newFileName);
 	public:
@@ -92,7 +92,7 @@ private:
 	private:
 		PostInfo*		m_postInfo;
 	protected:
-		virtual void	PrintMessage(Message::EKind kind, const char* format, ...);
+		virtual void	PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 	public:
 		PostDupeMatcher(PostInfo* postInfo):
 			DupeMatcher(postInfo->GetNzbInfo()->GetDestDir(),

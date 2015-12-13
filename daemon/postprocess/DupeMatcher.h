@@ -43,7 +43,7 @@ private:
 	friend class RarLister;
 
 protected:
-	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) {}
+	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 
 public:
 						DupeMatcher(const char* destDir, int64 expectedSize);

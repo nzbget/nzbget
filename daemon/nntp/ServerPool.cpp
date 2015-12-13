@@ -391,17 +391,17 @@ void ServerPool::LogDebugInfo()
 
 	time_t curTime = time(NULL);
 
-	info("    Servers: %i", m_servers.size());
+	info("    Servers: %i", (int)m_servers.size());
 	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)
 	{
 		NewsServer*  newsServer = *it;
 		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", newsServer->GetId(), newsServer->GetName(),
 			newsServer->GetHost(), newsServer->GetLevel(), newsServer->GetNormLevel(),
 			newsServer->GetBlockTime() && newsServer->GetBlockTime() + m_retryInterval > curTime ?
-				newsServer->GetBlockTime() + m_retryInterval - curTime : 0);
+				(int)(newsServer->GetBlockTime() + m_retryInterval - curTime) : 0);
 	}
 
-	info("    Levels: %i", m_levels.size());
+	info("    Levels: %i", (int)m_levels.size());
 	int index = 0;
 	for (Levels::iterator it = m_levels.begin(); it != m_levels.end(); it++, index++)
 	{
@@ -409,7 +409,7 @@ void ServerPool::LogDebugInfo()
 		info("      %i: Free connections=%i", index, size);
 	}
 
-	info("    Connections: %i", m_connections.size());
+	info("    Connections: %i", (int)m_connections.size());
 	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
 	{
 		PooledConnection*  connection = *it;

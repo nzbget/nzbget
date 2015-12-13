@@ -217,7 +217,7 @@ void UrlCoordinator::LogDebugInfo()
 	info("   ---------- UrlCoordinator");
 
 	DownloadQueue::Lock();
-	info("    Active Downloads: %i", m_activeDownloads.size());
+	info("    Active Downloads: %i", (int)m_activeDownloads.size());
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
 	{
 		UrlDownloader* urlDownloader = *it;

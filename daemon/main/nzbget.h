@@ -335,4 +335,10 @@ typedef unsigned long long  uint64;
 
 typedef unsigned char uchar;
 
+#ifdef __GNUC__
+#define PRINTF_SYNTAX(strindex) __attribute__ ((format (printf, strindex, strindex+1)))
+#else
+#define PRINTF_SYNTAX(strindex)
+#endif
+
 #endif /* NZBGET_H */

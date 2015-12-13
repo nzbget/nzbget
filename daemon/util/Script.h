@@ -77,7 +77,7 @@ private:
 protected:
 	void				ProcessOutput(char* text);
 	virtual bool		ReadLine(char* buf, int bufSize, FILE* stream);
-	void				PrintMessage(Message::EKind kind, const char* format, ...);
+	void				PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 	virtual void		AddMessage(Message::EKind kind, const char* text);
 	bool				GetTerminated() { return m_terminated; }
 	void				ResetEnv();

@@ -174,7 +174,7 @@ protected:
 	virtual bool		RequestMorePars(int blockNeeded, int* blockFound) = 0;
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
-	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) {}
+	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 	virtual void		RegisterParredFile(const char* filename) {}
 	virtual bool		IsParredFile(const char* filename) { return false; }
 	virtual EFileStatus	FindFileCrc(const char* filename, uint32* crc, SegmentList* segments) { return fsUnknown; }

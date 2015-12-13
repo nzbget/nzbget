@@ -90,7 +90,7 @@ private:
 protected:
 	virtual void		UpdateProgress() {}
 	virtual void		Completed() {}
-	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) {}
+	virtual void		PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 	virtual void		RegisterParredFile(const char* filename) {}
 	virtual void		RegisterRenamedFile(const char* oldFilename, const char* newFileName) {}
 	const char*			GetProgressLabel() { return m_progressLabel; }

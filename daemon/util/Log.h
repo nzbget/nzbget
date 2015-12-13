@@ -30,16 +30,16 @@
 #include "NString.h"
 #include "Thread.h"
 
-void error(const char* msg, ...);
-void warn(const char* msg, ...);
-void info(const char* msg, ...);
-void detail(const char* msg, ...);
+void error(const char* msg, ...) PRINTF_SYNTAX(1);
+void warn(const char* msg, ...) PRINTF_SYNTAX(1);
+void info(const char* msg, ...) PRINTF_SYNTAX(1);
+void detail(const char* msg, ...) PRINTF_SYNTAX(1);
 
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
-	void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...);
+	void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...) PRINTF_SYNTAX(4);
 #else
-	void debug(const char* msg, ...);
+	void debug(const char* msg, ...) PRINTF_SYNTAX(1);
 #endif
 #endif
 
@@ -107,7 +107,7 @@ private:
 
 						Log();
 						~Log();
-	void				Filelog(const char* msg, ...);
+	void				Filelog(const char* msg, ...) PRINTF_SYNTAX(2);
 	void				AddMessage(Message::EKind kind, const char* text);
 	void				RotateLog();
 
@@ -119,7 +119,7 @@ private:
 #ifdef HAVE_VARIADIC_MACROS
 	friend void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...);
 #else
-	friend void debug(const char* msg, ...);
+	friend void debug(const char* msg, ...) PRINTF_SYNTAX(2);
 #endif
 #endif
 

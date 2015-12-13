@@ -903,7 +903,7 @@ void QueueCoordinator::LogDebugInfo()
 		 (g_Options->GetPauseScan() ? "paused" : "active"));
 
 	info("   ---------- QueueCoordinator");
-	info("    Active Downloads: %i, Limit: %i", m_activeDownloads.size(), m_downloadsLimit);
+	info("    Active Downloads: %i, Limit: %i", (int)m_activeDownloads.size(), m_downloadsLimit);
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
 	{
 		ArticleDownloader* articleDownloader = *it;

@@ -518,12 +518,18 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		  postInfo->GetNzbInfo()->CalcHealth() == 0) &&
 		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), NULL))
 	{
-		postInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
-			postInfo->GetNzbInfo()->CalcHealth() == 0 ?
-				"Skipping par-check for %s due to health 0%%" :
+		if (postInfo->GetNzbInfo()->CalcHealth() == 0)
+		{
+			postInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
+				"Skipping par-check for %s due to health 0%%", postInfo->GetNzbInfo()->GetName());
+		}
+		else
+		{
+			postInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
 				"Skipping par-check for %s due to health %.1f%% below critical %.1f%%",
-			postInfo->GetNzbInfo()->GetName(),
-			postInfo->GetNzbInfo()->CalcHealth() / 10.0, postInfo->GetNzbInfo()->CalcCriticalHealth(false) / 10.0);
+				postInfo->GetNzbInfo()->GetName(),
+				postInfo->GetNzbInfo()->CalcHealth() / 10.0, postInfo->GetNzbInfo()->CalcCriticalHealth(false) / 10.0);
+		}
 		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psFailure);
 		return;
 	}

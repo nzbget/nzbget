@@ -891,7 +891,7 @@ void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool Pri
 	{
 		if (m_suppressErrors)
 		{
-			debug(errPrefix);
+			debug("%s", errPrefix);
 		}
 		else
 		{

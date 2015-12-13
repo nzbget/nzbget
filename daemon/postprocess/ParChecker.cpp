@@ -849,11 +849,11 @@ bool ParChecker::LoadMorePars()
 		bool loadedOK = ((Repairer*)m_repairer)->LoadPacketsFromFile(parFilename);
 		if (loadedOK)
 		{
-			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", Util::BaseFileName(parFilename), *m_infoName);
+			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", Util::BaseFileName(parFilename));
 		}
 		else
 		{
-			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", Util::BaseFileName(parFilename), *m_infoName);
+			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", Util::BaseFileName(parFilename));
 		}
 		free(parFilename);
 	}

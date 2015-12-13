@@ -2452,23 +2452,23 @@ void WriteLogXmlCommand::Execute()
 
 	if (!strcmp(kind, "INFO"))
 	{
-		info(text);
+		info("%s", text);
 	}
 	else if (!strcmp(kind, "WARNING"))
 	{
-		warn(text);
+		warn("%s", text);
 	}
 	else if (!strcmp(kind, "ERROR"))
 	{
-		error(text);
+		error("%s", text);
 	}
 	else if (!strcmp(kind, "DETAIL"))
 	{
-		detail(text);
+		detail("%s", text);
 	}
 	else if (!strcmp(kind, "DEBUG"))
 	{
-		debug(text);
+		debug("%s", text);
 	}
 	else
 	{

@@ -134,7 +134,7 @@ void ArticleDownloader::Run()
 		{
 			detail("Article %s @ %s failed: out of server retention (file age: %i, configured retention: %i)",
 				*m_infoName, *m_connectionName,
-				(time(NULL) - m_fileInfo->GetTime()) / 86400,
+				(int)(time(NULL) - m_fileInfo->GetTime()) / 86400,
 				m_connection->GetNewsServer()->GetRetention());
 			status = adFailed;
 			FreeConnection(true);

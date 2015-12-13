@@ -284,7 +284,7 @@ void FeedCoordinator::LogDebugInfo()
 	info("   ---------- FeedCoordinator");
 
 	m_downloadsMutex.Lock();
-	info("    Active Downloads: %i", m_activeDownloads.size());
+	info("    Active Downloads: %i", (int)m_activeDownloads.size());
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
 	{
 		FeedDownloader* feedDownloader = *it;

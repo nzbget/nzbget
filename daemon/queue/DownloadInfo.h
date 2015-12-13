@@ -674,7 +674,7 @@ public:
 	const char*			MakeTextStatus(bool ignoreScriptStatus);
 
 	void				AddMessage(Message::EKind kind, const char* text);
-	void				PrintMessage(Message::EKind kind, const char* format, ...);
+	void				PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 	int					GetMessageCount() { return m_messageCount; }
 	void				SetMessageCount(int messageCount) { m_messageCount = messageCount; }
 	int					GetCachedMessageCount() { return m_cachedMessageCount; }
