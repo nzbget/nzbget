@@ -417,7 +417,7 @@ void Log::RotateLog()
 
 	m_logFilename = fullFilename;
 #ifdef WIN32
-	WebUtil::Utf8ToAnsi(m_logFilename, strlen(m_logFilename) + 1);
+	WebUtil::Utf8ToAnsi((char*)m_logFilename, strlen(m_logFilename) + 1);
 #endif
 }
 
@@ -438,7 +438,7 @@ void Log::InitOptions()
 	{
 		m_logFilename = g_Options->GetLogFile();
 #ifdef WIN32
-		WebUtil::Utf8ToAnsi(m_logFilename, strlen(m_logFilename) + 1);
+		WebUtil::Utf8ToAnsi((char*)m_logFilename, strlen(m_logFilename) + 1);
 #endif
 
 		if (g_Options->GetServerMode() && g_Options->GetWriteLog() == Options::wlReset)

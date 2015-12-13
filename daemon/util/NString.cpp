@@ -37,7 +37,7 @@ void NString::Append(const char* str)
 	strncpy(buf + curLen, str, avail);
 	buf[capacity] = '\0';
 
-	Resync(addLen <= avail ? curLen + addLen : capacity);
+	Resync(addLen <= (int)avail ? curLen + addLen : capacity);
 }
 
 void NString::AppendFmtV(const char* format, va_list ap)
@@ -55,7 +55,7 @@ void NString::AppendFmtV(const char* format, va_list ap)
 	vsnprintf(buf + curLen, avail + 1, format, ap2);
 	buf[capacity] = '\0';
 
-	Resync(addLen <= avail ? curLen + addLen : capacity);
+	Resync(addLen <= (int)avail ? curLen + addLen : capacity);
 
 	va_end(ap2);
 }
