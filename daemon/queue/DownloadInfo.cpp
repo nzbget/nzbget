@@ -929,6 +929,7 @@ ArticleInfo::ArticleInfo()
 {
 	//debug("Creating ArticleInfo");
 	m_size = 0;
+	m_segmentContent = NULL;
 	m_segmentOffset = 0;
 	m_segmentSize = 0;
 	m_status = aiUndefined;
@@ -953,6 +954,7 @@ void ArticleInfo::DiscardSegment()
 {
 	if (m_segmentContent)
 	{
+		free(m_segmentContent);
 		m_segmentContent = NULL;
 		g_ArticleCache->Free(m_segmentSize);
 	}

@@ -86,7 +86,7 @@ private:
 	int					m_partNumber;
 	CString				m_messageId;
 	int					m_size;
-	CString				m_segmentContent;
+	char*				m_segmentContent;
 	int64				m_segmentOffset;
 	int					m_segmentSize;
 	EStatus				m_status;
