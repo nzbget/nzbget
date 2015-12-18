@@ -25,153 +25,332 @@
 #include "nzbget.h"
 #include "NString.h"
 
-void NString::Append(const char* str)
+template <int size>
+BString<size>::BString(const char* format, ...)
 {
-	size_t addLen = strlen(str);
-
-	size_t curLen = Length();
-	size_t capacity = Grow(curLen + addLen, true);
-	size_t avail = capacity - curLen;
-
-	char* buf = Data();
-	strncpy(buf + curLen, str, avail);
-	buf[capacity] = '\0';
-
-	Resync(addLen <= (int)avail ? curLen + addLen : capacity);
+	va_list ap;
+	va_start(ap, format);
+	FormatV(format, ap);
+	va_end(ap);
 }
 
-void NString::AppendFmtV(const char* format, va_list ap)
+template <int size>
+void BString<size>::Set(const char* str, int len)
 {
-	va_list ap2;
-	va_copy(ap2, ap);
-
-	int addLen = vsnprintf(nullptr, 0, format, ap);
-
-	size_t curLen = Length();
-	size_t capacity = Grow(curLen + addLen, true);
-	size_t avail = capacity - curLen;
-
-	char* buf = Data();
-	vsnprintf(buf + curLen, avail + 1, format, ap2);
-	buf[capacity] = '\0';
-
-	Resync(addLen <= (int)avail ? curLen + addLen : capacity);
-
-	va_end(ap2);
+	m_data[0] = '\0';
+	int addLen = len > 0 ? std::min(size - 1, len) : size - 1;
+	strncpy(m_data, str, addLen);
+	m_data[addLen] = '\0';
 }
 
-void NString::Format(const char* format, ...)
+template <int size>
+void BString<size>::Append(const char* str, int len)
 {
-	va_list args;
-	va_start(args, format);
-	FormatV(format, args);
-	va_end(args);
+	if (len == 0)
+	{
+		len = strlen(str);
+	}
+	int curLen = strlen(m_data);
+	int avail = size - curLen - 1;
+	int addLen = std::min(avail, len);
+	if (addLen > 0)
+	{
+		strncpy(m_data + curLen, str, addLen);
+		m_data[curLen + addLen] = '\0';
+	}
 }
 
-void NString::FormatV(const char* format, va_list ap)
+template <int size>
+void BString<size>::AppendFmt(const char* format, ...)
 {
-	Clear();
+	va_list ap;
+	va_start(ap, format);
 	AppendFmtV(format, ap);
-}
-void NString::AppendFmt(const char* format, ...)
-{
-	va_list args;
-	va_start(args, format);
-	AppendFmtV(format, args);
-	va_end(args);
+	va_end(ap);
 }
 
-
-void CString::Clear()
+template <int size>
+void BString<size>::AppendFmtV(const char* format, va_list ap)
 {
-	free(m_data);
-	m_data = nullptr;
-	m_capacity = 0;
-	m_length = 0;
-}
-
-size_t CString::Capacity() const
-{
-	if (m_capacity == Unknown_Size)
+	int curLen = strlen(m_data);
+	int avail = size - curLen;
+	if (avail > 0)
 	{
-		m_capacity = Length();
+		vsnprintf(m_data + curLen, avail, format, ap);
 	}
-	return m_capacity;
 }
 
-size_t CString::Grow(size_t capacity, bool factor)
+template <int size>
+void BString<size>::Format(const char* format, ...)
 {
-	size_t oldCapacity = Capacity();
-	if (capacity > oldCapacity)
-	{
-		char* oldData = m_data;
-
-		// we may grow more than requested
-		size_t smartCapacity = factor ? (size_t)(oldCapacity * Grow_Factor) : 0;
-
-		m_capacity = smartCapacity > capacity ? smartCapacity : capacity;
-
-		m_data = (char*)realloc(m_data, m_capacity + 1);
-		m_data[m_capacity] = '\0';
-		if (!oldData)
-		{
-			m_data[0] = '\0';
-		}
-	}
-	else if (!m_data)
-	{
-		m_capacity = Min_Grow_Capacity;
-		m_data = (char*)malloc(m_capacity + 1);
-		m_data[m_capacity] = '\0';
-		m_data[0] = '\0';
-	}
-	return m_capacity;
+	va_list ap;
+	va_start(ap, format);
+	FormatV(format, ap);
+	va_end(ap);
 }
 
-CString& CString::operator=(const char* str)
+template <int size>
+void BString<size>::FormatV(const char* format, va_list ap)
+{
+	vsnprintf(m_data, size, format, ap);
+}
+
+
+void CString::Set(const char* str, int len)
 {
 	if (str)
 	{
-		m_capacity = strlen(str);
-		char* newstr = (char*)malloc(m_capacity + 1);
-		strncpy(newstr, str, m_capacity + 1);
-		free(m_data);
-		m_data = newstr;
-		m_length = m_capacity;
+		if (len == 0)
+		{
+			len = strlen(str);
+		}
+		m_data = (char*)realloc(m_data, len + 1);
+		strncpy(m_data, str, len);
+		m_data[len] = '\0';
 	}
 	else
 	{
 		free(m_data);
 		m_data = nullptr;
-		m_capacity = 0;
-		m_length = 0;
 	}
-	return *this;
+}
+
+void CString::Append(const char* str, int len)
+{
+	if (len == 0)
+	{
+		len = strlen(str);
+	}
+	int curLen = Length();
+	int newLen = curLen + len;
+	m_data = (char*)realloc(m_data, newLen + 1);
+	strncpy(m_data + curLen, str, len);
+	m_data[curLen + len] = '\0';
+}
+
+void CString::AppendFmt(const char* format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	AppendFmtV(format, ap);
+	va_end(ap);
+}
+
+void CString::AppendFmtV(const char* format, va_list ap)
+{
+	va_list ap2;
+	va_copy(ap2, ap);
+
+	int addLen = vsnprintf(nullptr, 0, format, ap);
+	if (addLen < 0) return; // error
+
+	int curLen = Length();
+	int newLen = curLen + addLen;
+	m_data = (char*)realloc(m_data, newLen + 1);
+
+	vsnprintf(m_data + curLen, newLen + 1, format, ap2);
+
+	va_end(ap2);
+}
+
+void CString::Format(const char* format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	FormatV(format, ap);
+	va_end(ap);
+}
+
+void CString::FormatV(const char* format, va_list ap)
+{
+	va_list ap2;
+	va_copy(ap2, ap);
+
+	int newLen = vsnprintf(nullptr, 0, format, ap);
+	if (newLen < 0) return; // bad argument
+
+	m_data = (char*)realloc(m_data, newLen + 1);
+	vsnprintf(m_data, newLen + 1, format, ap2);
+
+	va_end(ap2);
+}
+
+int CString::Find(const char* str, int pos)
+{
+	if (pos != 0 && pos >= Length())
+	{
+		return -1;
+	}
+	char* res = strstr(m_data + pos, str);
+	return res ? (int)(res - m_data) : -1;
+}
+
+void CString::Replace(int pos, int len, const char* str, int strLen)
+{
+	int addLen = strlen(str);
+	if (strLen > 0)
+	{
+		addLen = std::min(addLen, strLen);
+	}
+	int curLen = Length();
+	int delLen = pos + len <= curLen ? len : curLen - pos;
+	int newLen = curLen - delLen + addLen;
+
+	if (pos > curLen) return; // bad argument
+
+	char* newvalue = (char*)malloc(newLen + 1);
+	strncpy(newvalue, m_data, pos);
+	strncpy(newvalue + pos, str, addLen);
+	strcpy(newvalue + pos + addLen, m_data + pos + len);
+
+	free(m_data);
+	m_data = newvalue;
+}
+
+void CString::Replace(const char* from, const char* to)
+{
+	int fromLen = strlen(from);
+	int toLen = strlen(to);
+	int pos = 0;
+	while ((pos = Find(from, pos)) != -1)
+	{
+		Replace(pos, fromLen, to);
+		pos += toLen;
+	}
 }
 
 void CString::Bind(char* str)
 {
 	free(m_data);
 	m_data = str;
-	m_capacity = Unknown_Size;
-	m_length = Unknown_Size;
 }
 
 char* CString::Unbind()
 {
 	char* olddata = m_data;
 	m_data = nullptr;
-	m_capacity = 0;
-	m_length = 0;
 	return olddata;
 }
 
-
-size_t CString::Length() const
+void CString::Reserve(int capacity)
 {
-	if (m_length == Unknown_Size)
+	int curLen = Length();
+	if (capacity > curLen)
 	{
-		m_length = m_data ? strlen(m_data) : 0;
+		m_data = (char*)realloc(m_data, capacity + 1);
 	}
-	return m_length;
 }
+
+CString CString::FormatStr(const char* format, ...)
+{
+	CString result;
+	va_list ap;
+	va_start(ap, format);
+	result.FormatV(format, ap);
+	va_end(ap);
+	return result;
+}
+
+void CString::TrimRight()
+{
+	int len = Length();
+
+	if (len == 0)
+	{
+		return;
+	}
+
+	char* end = m_data + len - 1;
+	while (end >= m_data && (*end == '\n' || *end == '\r' || *end == ' ' || *end == '\t'))
+	{
+		*end = '\0';
+		end--;
+	}
+}
+
+
+void StringBuilder::Clear()
+{
+	free(m_data);
+	m_data = nullptr;
+	m_length = 0;
+	m_capacity = 0;
+}
+
+char* StringBuilder::Unbind()
+{
+	char* olddata = m_data;
+	m_data = nullptr;
+	m_length = 0;
+	m_capacity = 0;
+	return olddata;
+}
+
+void StringBuilder::Reserve(int capacity, bool exact)
+{
+	int oldCapacity = Capacity();
+	if (capacity > oldCapacity || oldCapacity == 0)
+	{
+		char* oldData = m_data;
+
+		// we may grow more than requested
+		int smartCapacity = exact ? 0 : (int)(oldCapacity * 1.5);
+
+		m_capacity = smartCapacity > capacity ? smartCapacity : capacity;
+
+		m_data = (char*)realloc(m_data, m_capacity + 1);
+		if (!oldData)
+		{
+			m_data[0] = '\0';
+		}
+	}
+}
+
+void StringBuilder::Append(const char* str, int len)
+{
+	if (len == 0)
+	{
+		len = strlen(str);
+	}
+	int curLen = Length();
+	int newLen = curLen + len;
+
+	Reserve(newLen, false);
+
+	strncpy(m_data + curLen, str, len);
+	m_data[curLen + len] = '\0';
+	m_length = newLen;
+}
+
+void StringBuilder::AppendFmt(const char* format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	AppendFmtV(format, ap);
+	va_end(ap);
+}
+
+void StringBuilder::AppendFmtV(const char* format, va_list ap)
+{
+	va_list ap2;
+	va_copy(ap2, ap);
+
+	int addLen = vsnprintf(nullptr, 0, format, ap);
+	if (addLen < 0) return; // error
+
+	int curLen = Length();
+	int newLen = curLen + addLen;
+
+	Reserve(newLen, false);
+
+	vsnprintf(m_data + curLen, newLen + 1, format, ap2);
+	m_length = newLen;
+
+	va_end(ap2);
+}
+
+
+// Instantiate all classes used in our project
+template class BString<1024>;
+template class BString<100>;
+template class BString<20>;
