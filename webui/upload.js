@@ -301,6 +301,7 @@ var Upload = (new function($)
 		failure_message = null;
 		index = 0;
 		url = $('#AddDialog_URL').val();
+		url = url.trim();
 
 	/*
 		setTimeout(function(){
