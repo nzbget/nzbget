@@ -30,20 +30,11 @@
 #include "ParParser.h"
 #include "Options.h"
 
-void UnpackController::FileList::Clear()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		free(*it);
-	}
-	clear();
-}
-
 bool UnpackController::FileList::Exists(const char* filename)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		char* filename1 = *it;
+		const char* filename1 = *it;
 		if (!strcmp(filename1, filename))
 		{
 			return true;
@@ -93,15 +84,9 @@ void UnpackController::Run()
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
 
-	strncpy(m_destDir, m_postInfo->GetNzbInfo()->GetDestDir(), 1024);
-	m_destDir[1024-1] = '\0';
-
-	strncpy(m_name, m_postInfo->GetNzbInfo()->GetName(), 1024);
-	m_name[1024-1] = '\0';
-
+	m_destDir = m_postInfo->GetNzbInfo()->GetDestDir();
+	m_name = m_postInfo->GetNzbInfo()->GetName();
 	m_cleanedUpDisk = false;
-	m_password[0] = '\0';
-	m_finalDir[0] = '\0';
 	m_finalDirCreated = false;
 	m_unpackOk = true;
 	m_unpackStartError = false;
@@ -117,17 +102,13 @@ void UnpackController::Run()
 	parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:Password", false);
 	if (parameter)
 	{
-		strncpy(m_password, parameter->GetValue(), 1024-1);
-		m_password[1024-1] = '\0';
+		m_password = parameter->GetValue();
 	}
 
 	DownloadQueue::Unlock();
 
-	snprintf(m_infoName, 1024, "unpack for %s", m_name);
-	m_infoName[1024-1] = '\0';
-
-	snprintf(m_infoNameUp, 1024, "Unpack for %s", m_name); // first letter in upper case
-	m_infoNameUp[1024-1] = '\0';
+	m_infoName.Format("unpack for %s", *m_name);
+	m_infoNameUp.Format("Unpack for %s", *m_name); // first letter in upper case
 
 	m_hasParFiles = ParParser::FindMainPars(m_destDir, NULL);
 
@@ -145,19 +126,19 @@ void UnpackController::Run()
 	bool hasFiles = m_hasRarFiles || m_hasNonStdRarFiles || m_hasSevenZipFiles || m_hasSevenZipMultiFiles || m_hasSplittedFiles;
 
 	if (m_postInfo->GetUnpackTried() && !m_postInfo->GetParRepaired() &&
-		(!Util::EmptyStr(m_password) || Util::EmptyStr(g_Options->GetUnpackPassFile()) || m_postInfo->GetPassListTried()))
+		(!m_password.Empty() || Util::EmptyStr(g_Options->GetUnpackPassFile()) || m_postInfo->GetPassListTried()))
 	{
-		PrintMessage(Message::mkInfo, "Second unpack attempt skipped for %s due to par-check not repaired anything", m_name);
+		PrintMessage(Message::mkInfo, "Second unpack attempt skipped for %s due to par-check not repaired anything", *m_name);
 		PrintMessage(Message::mkError,
 			m_postInfo->GetLastUnpackStatus() == (int)NzbInfo::usPassword ?
 				 "%s failed: checksum error in the encrypted file. Corrupt file or wrong password." : "%s failed.",
-			m_infoNameUp);
+			*m_infoNameUp);
 		m_postInfo->GetNzbInfo()->SetUnpackStatus((NzbInfo::EUnpackStatus)m_postInfo->GetLastUnpackStatus());
 		m_postInfo->SetStage(PostInfo::ptQueued);
 	}
 	else if (unpack && hasFiles)
 	{
-		PrintMessage(Message::mkInfo, "Unpacking %s", m_name);
+		PrintMessage(Message::mkInfo, "Unpacking %s", *m_name);
 
 		CreateUnpackDir();
 
@@ -183,11 +164,11 @@ void UnpackController::Run()
 
 		Completed();
 
-		m_joinedFiles.Clear();
+		m_joinedFiles.clear();
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, (unpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), m_name);
+		PrintMessage(Message::mkInfo, (unpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), *m_name);
 
 #ifndef DISABLE_PARCHECK
 		if (unpack && m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
@@ -230,7 +211,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 	if (!m_unpackOk && !m_unpackStartError && !m_unpackSpaceError &&
 		(m_unpackDecryptError || m_unpackPasswordError) &&
 		(!GetTerminated() || m_autoTerminated) &&
-		Util::EmptyStr(m_password) && !Util::EmptyStr(g_Options->GetUnpackPassFile()))
+		m_password.Empty() && !Util::EmptyStr(g_Options->GetUnpackPassFile()))
 	{
 		FILE* infile = fopen(g_Options->GetUnpackPassFile(), FOPEN_RB);
 		if (!infile)
@@ -258,7 +239,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 				m_unpackDecryptError = false;
 				m_unpackPasswordError = false;
 				m_autoTerminated = false;
-				PrintMessage(Message::mkInfo, "Trying password %s for %s", password, m_name);
+				PrintMessage(Message::mkInfo, "Trying password %s for %s", password, *m_name);
 				ExecuteUnpack(unpacker, password, multiVolumes);
 			}
 		}
@@ -302,10 +283,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 
 	if (!Util::EmptyStr(password))
 	{
-		char passwordParam[1024];
-		snprintf(passwordParam, 1024, "-p%s", password);
-		passwordParam[1024-1] = '\0';
-		params.push_back(strdup(passwordParam));
+		params.push_back(strdup(BString<1024>("-p%s", password)));
 	}
 	else
 	{
@@ -318,12 +296,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 	}
 
 	params.push_back(strdup(m_hasNonStdRarFiles ? "*.*" : "*.rar"));
-
-	char unpackDirParam[1024];
-	snprintf(unpackDirParam, 1024, "%s%c", m_unpackDir, PATH_SEPARATOR);
-	unpackDirParam[1024-1] = '\0';
-	params.push_back(strdup(unpackDirParam));
-
+	params.push_back(strdup(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR)));
 	params.push_back(NULL);
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
@@ -371,23 +344,15 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 
 	if (!Util::EmptyStr(password))
 	{
-		char passwordParam[1024];
-		snprintf(passwordParam, 1024, "-p%s", password);
-		passwordParam[1024-1] = '\0';
-		params.push_back(strdup(passwordParam));
+		params.push_back(strdup(BString<1024>("-p%s", password)));
 	}
 	else
 	{
 		params.push_back(strdup("-p-"));
 	}
 
-	char unpackDirParam[1024];
-	snprintf(unpackDirParam, 1024, "-o%s", m_unpackDir);
-	unpackDirParam[1024-1] = '\0';
-	params.push_back(strdup(unpackDirParam));
-
+	params.push_back(strdup(BString<1024>("-o%s", *m_unpackDir)));
 	params.push_back(strdup(multiVolumes ? "*.7z.001" : "*.7z"));
-
 	params.push_back(NULL);
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
@@ -452,9 +417,7 @@ void UnpackController::JoinSplittedFiles()
 	DirBrowser dir(m_destDir);
 	while (const char* filename = dir.Next())
 	{
-		char fullFilename[1024];
-		snprintf(fullFilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, filename);
-		fullFilename[1024-1] = '\0';
+		BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
 		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(fullFilename))
 		{
@@ -475,17 +438,14 @@ void UnpackController::JoinSplittedFiles()
 
 bool UnpackController::JoinFile(const char* fragBaseName)
 {
-	char destBaseName[1024];
-	strncpy(destBaseName, fragBaseName, 1024);
-	destBaseName[1024-1] = '\0';
+	BString<1024> destBaseName;
+	destBaseName.Set(fragBaseName);
 
 	// trim extension
 	char* extension = strrchr(destBaseName, '.');
 	*extension = '\0';
 
-	char fullFilename[1024];
-	snprintf(fullFilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, fragBaseName);
-	fullFilename[1024-1] = '\0';
+	BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, fragBaseName);
 	int64 firstSegmentSize = Util::FileSize(fullFilename);
 	int64 difSegmentSize = 0;
 
@@ -504,8 +464,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	DirBrowser dir(m_destDir);
 	while (const char* filename = dir.Next())
 	{
-		snprintf(fullFilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, filename);
-		fullFilename[1024-1] = '\0';
+		fullFilename.Format("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
 		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(fullFilename) &&
 			regExSplitExt.Match(filename))
@@ -531,23 +490,21 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 		((difSizeMin != correctedCount || difSizeMin > max) &&
 		 m_postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psSuccess))
 	{
-		PrintMessage(Message::mkWarning, "Could not join splitted file %s: missing fragments detected", destBaseName);
+		PrintMessage(Message::mkWarning, "Could not join splitted file %s: missing fragments detected", *destBaseName);
 		return false;
 	}
 
 	// Now can join
-	PrintMessage(Message::mkInfo, "Joining splitted file %s", destBaseName);
+	PrintMessage(Message::mkInfo, "Joining splitted file %s", *destBaseName);
 	m_postInfo->SetStageProgress(0);
 
-	char errBuf[256];
-	char destFilename[1024];
-	snprintf(destFilename, 1024, "%s%c%s", m_unpackDir, PATH_SEPARATOR, destBaseName);
-	destFilename[1024-1] = '\0';
+	BString<1024> destFilename("%s%c%s", *m_unpackDir, PATH_SEPARATOR, *destBaseName);
 
 	FILE* outFile = fopen(destFilename, FOPEN_WBP);
 	if (!outFile)
 	{
-		PrintMessage(Message::mkError, "Could not create file %s: %s", destFilename, Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
+		PrintMessage(Message::mkError, "Could not create file %s: %s", *destFilename,
+			*Util::GetLastErrorMessage());
 		return false;
 	}
 	if (g_Options->GetWriteBuffer() > 0)
@@ -564,16 +521,10 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	bool ok = true;
 	for (int i = min; i <= max; i++)
 	{
-		PrintMessage(Message::mkInfo, "Joining from %s.%.3i", destBaseName, i);
+		PrintMessage(Message::mkInfo, "Joining from %s.%.3i", *destBaseName, i);
+		SetProgressLabel(BString<1024>("Joining from %s.%.3i", *destBaseName, i));
 
-		char message[1024];
-		snprintf(message, 1024, "Joining from %s.%.3i", destBaseName, i);
-		message[1024-1] = '\0';
-		SetProgressLabel(message);
-
-		char fragFilename[1024];
-		snprintf(fragFilename, 1024, "%s%c%s.%.3i", m_destDir, PATH_SEPARATOR, destBaseName, i);
-		fragFilename[1024-1] = '\0';
+		BString<1024> fragFilename("%s%c%s.%.3i", *m_destDir, PATH_SEPARATOR, *destBaseName, i);
 		if (!Util::FileExists(fragFilename))
 		{
 			break;
@@ -592,14 +543,13 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 			}
 			fclose(inFile);
 
-			char fragFilename[1024];
-			snprintf(fragFilename, 1024, "%s.%.3i", destBaseName, i);
-			fragFilename[1024-1] = '\0';
-			m_joinedFiles.push_back(strdup(fragFilename));
+			CString fragFilename;
+			fragFilename.Format("%s.%.3i", *destBaseName, i);
+			m_joinedFiles.push_back(std::move(fragFilename));
 		}
 		else
 		{
-			PrintMessage(Message::mkError, "Could not open file %s", fragFilename);
+			PrintMessage(Message::mkError, "Could not open file %s", *fragFilename);
 			ok = false;
 			break;
 		}
@@ -617,7 +567,7 @@ void UnpackController::Completed()
 
 	if (m_unpackOk && cleanupSuccess)
 	{
-		PrintMessage(Message::mkInfo, "%s %s", m_infoNameUp, "successful");
+		PrintMessage(Message::mkInfo, "%s %s", *m_infoNameUp, "successful");
 		m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSuccess);
 		m_postInfo->GetNzbInfo()->SetUnpackCleanedUpDisk(m_cleanedUpDisk);
 		if (g_Options->GetParRename())
@@ -636,7 +586,7 @@ void UnpackController::Completed()
 			!m_unpackStartError && !m_unpackSpaceError && !m_unpackPasswordError &&
 			(!GetTerminated() || m_autoTerminated) && m_hasParFiles)
 		{
-			RequestParCheck(!Util::EmptyStr(m_password) ||
+			RequestParCheck(!m_password.Empty() ||
 				Util::EmptyStr(g_Options->GetUnpackPassFile()) || m_passListTried ||
 				!(m_unpackDecryptError || m_unpackPasswordError) ||
 				m_postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
@@ -644,7 +594,7 @@ void UnpackController::Completed()
 		else
 #endif
 		{
-			PrintMessage(Message::mkError, "%s failed", m_infoNameUp);
+			PrintMessage(Message::mkError, "%s failed", *m_infoNameUp);
 			m_postInfo->GetNzbInfo()->SetUnpackStatus(
 				m_unpackSpaceError ? NzbInfo::usSpace :
 				m_unpackPasswordError || m_unpackDecryptError ? NzbInfo::usPassword :
@@ -657,7 +607,7 @@ void UnpackController::Completed()
 #ifndef DISABLE_PARCHECK
 void UnpackController::RequestParCheck(bool forceRepair)
 {
-	PrintMessage(Message::mkInfo, "%s requested %s", m_infoNameUp, forceRepair ? "par-check with forced repair" : "par-check/repair");
+	PrintMessage(Message::mkInfo, "%s requested %s", *m_infoNameUp, forceRepair ? "par-check with forced repair" : "par-check/repair");
 	m_postInfo->SetRequestParCheck(true);
 	m_postInfo->SetForceRepair(forceRepair);
 	m_postInfo->SetStage(PostInfo::ptFinished);
@@ -675,21 +625,21 @@ void UnpackController::CreateUnpackDir()
 		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
 	if (m_interDir)
 	{
-		m_postInfo->GetNzbInfo()->BuildFinalDirName(m_finalDir, 1024);
-		m_finalDir[1024-1] = '\0';
-		snprintf(m_unpackDir, 1024, "%s%c%s", m_finalDir, PATH_SEPARATOR, "_unpack");
+		BString<1024> finalDir;
+		m_postInfo->GetNzbInfo()->BuildFinalDirName(finalDir, finalDir.Capacity());
+		m_finalDir = finalDir;
+		m_unpackDir.Format("%s%c%s", *m_finalDir, PATH_SEPARATOR, "_unpack");
 		m_finalDirCreated = !Util::DirectoryExists(m_finalDir);
 	}
 	else
 	{
-		snprintf(m_unpackDir, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, "_unpack");
+		m_unpackDir.Format("%s%c%s", *m_destDir, PATH_SEPARATOR, "_unpack");
 	}
-	m_unpackDir[1024-1] = '\0';
 
-	char errBuf[1024];
-	if (!Util::ForceDirectories(m_unpackDir, errBuf, sizeof(errBuf)))
+	CString errmsg;
+	if (!Util::ForceDirectories(m_unpackDir, errmsg))
 	{
-		PrintMessage(Message::mkError, "Could not create directory %s: %s", m_unpackDir, errBuf);
+		PrintMessage(Message::mkError, "Could not create directory %s: %s", *m_unpackDir, *errmsg);
 	}
 }
 
@@ -712,9 +662,7 @@ void UnpackController::CheckArchiveFiles(bool scanNonStdFiles)
 	DirBrowser dir(m_destDir);
 	while (const char* filename = dir.Next())
 	{
-		char fullFilename[1024];
-		snprintf(fullFilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, filename);
-		fullFilename[1024-1] = '\0';
+		BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
 		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(fullFilename))
 		{
@@ -789,13 +737,8 @@ bool UnpackController::Cleanup()
 		{
 			if (strcmp(filename, ".") && strcmp(filename, ".."))
 			{
-				char srcFile[1024];
-				snprintf(srcFile, 1024, "%s%c%s", m_unpackDir, PATH_SEPARATOR, filename);
-				srcFile[1024-1] = '\0';
-
-				char dstFile[1024];
-				snprintf(dstFile, 1024, "%s%c%s", m_finalDir[0] != '\0' ? m_finalDir : m_destDir, PATH_SEPARATOR, filename);
-				dstFile[1024-1] = '\0';
+				BString<1024> srcFile("%s%c%s", *m_unpackDir, PATH_SEPARATOR, filename);
+				BString<1024> dstFile("%s%c%s", !m_finalDir.Empty() ? *m_finalDir : *m_destDir, PATH_SEPARATOR, filename);
 
 				// silently overwrite existing files
 				remove(dstFile);
@@ -804,21 +747,20 @@ bool UnpackController::Cleanup()
 
 				if (!Util::MoveFile(srcFile, dstFile) && !hiddenFile)
 				{
-					char errBuf[256];
-					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", srcFile, dstFile,
-						Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
+					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", *srcFile, *dstFile,
+						*Util::GetLastErrorMessage());
 					ok = false;
 				}
 
-				extractedFiles.push_back(strdup(filename));
+				extractedFiles.push_back(filename);
 			}
 		}
 	}
 
-	char errBuf[256];
-	if (ok && !Util::DeleteDirectoryWithContent(m_unpackDir, errBuf, sizeof(errBuf)))
+	CString errmsg;
+	if (ok && !Util::DeleteDirectoryWithContent(m_unpackDir, errmsg))
 	{
-		PrintMessage(Message::mkError, "Could not delete temporary directory %s: %s", m_unpackDir, errBuf);
+		PrintMessage(Message::mkError, "Could not delete temporary directory %s: %s", *m_unpackDir, *errmsg);
 	}
 
 	if (!m_unpackOk && m_finalDirCreated)
@@ -839,9 +781,7 @@ bool UnpackController::Cleanup()
 		DirBrowser dir(m_destDir);
 		while (const char* filename = dir.Next())
 		{
-			char fullFilename[1024];
-			snprintf(fullFilename, 1024, "%s%c%s", m_destDir, PATH_SEPARATOR, filename);
-			fullFilename[1024-1] = '\0';
+			BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
 			if (strcmp(filename, ".") && strcmp(filename, "..") &&
 				!Util::DirectoryExists(fullFilename) &&
@@ -855,16 +795,14 @@ bool UnpackController::Cleanup()
 
 				if (remove(fullFilename) != 0)
 				{
-					char errBuf[256];
-					PrintMessage(Message::mkError, "Could not delete file %s: %s", fullFilename, Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
+					PrintMessage(Message::mkError, "Could not delete file %s: %s", *fullFilename,
+						*Util::GetLastErrorMessage());
 				}
 			}
 		}
 
 		m_cleanedUpDisk = true;
 	}
-
-	extractedFiles.Clear();
 
 	return ok;
 }
@@ -934,9 +872,8 @@ bool UnpackController::ReadLine(char* buf, int bufSize, FILE* stream)
 
 void UnpackController::AddMessage(Message::EKind kind, const char* text)
 {
-	char msgText[1024];
-	strncpy(msgText, text, 1024);
-	msgText[1024-1] = '\0';
+	BString<1024> msgText;
+	msgText.Set(text);
 	int len = strlen(text);
 
 	// Modify unrar messages for better readability:
@@ -944,8 +881,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 	if (m_unpacker == upUnrar && !strncmp(text, "Unrar: Extracting  ", 19) &&
 		!strncmp(text + 19, m_unpackDir, strlen(m_unpackDir)))
 	{
-		snprintf(msgText, 1024, "Unrar: Extracting %s", text + 19 + strlen(m_unpackDir) + 1);
-		msgText[1024-1] = '\0';
+		msgText.Format("Unrar: Extracting %s", text + 19 + strlen(m_unpackDir) + 1);
 	}
 
 	m_postInfo->GetNzbInfo()->AddMessage(kind, msgText);
@@ -995,10 +931,8 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 		(len > 18 && !strncmp(text + len - 18, " - checksum failed", 18)) ||
 		!strncmp(text, "Unrar: WARNING: You need to start extraction from a previous volume", 67)))
 	{
-		char msgText[1024];
-		snprintf(msgText, 1024, "Cancelling %s due to errors", m_infoName);
-		msgText[1024-1] = '\0';
-		m_postInfo->GetNzbInfo()->AddMessage(Message::mkWarning, msgText);
+		m_postInfo->GetNzbInfo()->AddMessage(Message::mkWarning,
+			BString<1024>("Cancelling %s due to errors", *m_infoName));
 		m_autoTerminated = true;
 		Stop();
 	}

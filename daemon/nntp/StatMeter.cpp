@@ -156,7 +156,7 @@ void ServerVolume::LogDebugInfo()
 {
 	info("   ---------- ServerVolume");
 
-	CString msg;
+	StringBuilder msg;
 
 	for (int i = 0; i < 60; i++)
 	{
@@ -444,9 +444,9 @@ void StatMeter::LogDebugInfo()
 	int timeDiff = (int)time(NULL) - m_speedStartTime * SPEEDMETER_SLOTSIZE;
 	info("      Speed: %i", speed);
 	info("      SpeedStartTime: %i", m_speedStartTime);
-	info("      SpeedTotalBytes: %i", m_speedTotalBytes);
+	info("      SpeedTotalBytes: %lli", m_speedTotalBytes);
 	info("      SpeedBytesIndex: %i", m_speedBytesIndex);
-	info("      AllBytes: %i", m_allBytes);
+	info("      AllBytes: %lli", m_allBytes);
 	info("      Time: %i", (int)time(NULL));
 	info("      TimeDiff: %i", timeDiff);
 	for (int i=0; i < SPEEDMETER_SLOTS; i++)

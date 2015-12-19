@@ -223,12 +223,11 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		{
 			_bstr_t bdescription(tag->Gettext());
 			// cleanup CDATA
-			char* description = strdup((const char*)bdescription);
+			CString description = (const char*)bdescription;
 			WebUtil::XmlStripTags(description);
 			WebUtil::XmlDecode(description);
 			WebUtil::XmlRemoveEntities(description);
 			feedItemInfo->SetDescription(description);
-			free(description);
 		}
 
 		//<enclosure url="http://myindexer.com/fetch/9eeb264aecce961a6e0d" length="150263340" type="application/x-nzb" />
@@ -395,10 +394,9 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 		{
 			if (!strcmp("url", atts[0]))
 			{
-				char* url = strdup(atts[1]);
+				CString url = atts[1];
 				WebUtil::XmlDecode(url);
 				m_feedItemInfo->SetUrl(url);
-				free(url);
 			}
 			else if (!strcmp("length", atts[0]))
 			{
@@ -477,12 +475,11 @@ void FeedFile::Parse_EndElement(const char *name)
 	else if (!strcmp("description", name) && m_feedItemInfo)
 	{
 		// cleanup CDATA
-		char* description = strdup(m_tagContent);
+		CString description = m_tagContent;
 		WebUtil::XmlStripTags(description);
 		WebUtil::XmlDecode(description);
 		WebUtil::XmlRemoveEntities(description);
 		m_feedItemInfo->SetDescription(description);
-		free(description);
 		ResetTagContent();
 	}
 	else if (!strcmp("pubDate", name) && m_feedItemInfo)

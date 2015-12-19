@@ -312,7 +312,7 @@ private:
 	bool				SetOptionString(const char* option);
 	bool				ValidateOptionName(const char* optname, const char* optvalue);
 	void				LoadConfigFile();
-	void				CheckDir(CString* dir, const char* optionName, const char* parentDir,
+	void				CheckDir(CString& dir, const char* optionName, const char* parentDir,
 							bool allowEmpty, bool create);
 	bool				ParseTime(const char* time, int* hours, int* minutes);
 	bool				ParseWeekDays(const char* weekDays, int* weekDaysBits);

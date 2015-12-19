@@ -84,7 +84,7 @@ class UpdateInfoScriptController : public ScriptController
 {
 private:
 	int					m_prefixLen;
-	CString				m_updateInfo;
+	StringBuilder		m_updateInfo;
 
 protected:
 	virtual void		AddMessage(Message::EKind kind, const char* text);

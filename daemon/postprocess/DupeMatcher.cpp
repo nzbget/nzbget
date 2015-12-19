@@ -215,9 +215,7 @@ void DupeMatcher::FindLargestFile(const char* directory, char* filenameBuf, int 
 	{
 		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
-			char fullFilename[1024];
-			snprintf(fullFilename, 1024, "%s%c%s", directory, PATH_SEPARATOR, filename);
-			fullFilename[1024-1] = '\0';
+			BString<1024> fullFilename("%s%c%s", directory, PATH_SEPARATOR, filename);
 
 			int64 fileSize = Util::FileSize(fullFilename);
 			if (fileSize > *maxSize)

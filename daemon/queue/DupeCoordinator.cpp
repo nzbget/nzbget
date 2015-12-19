@@ -70,21 +70,20 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		// in queue - the new item is skipped
 		if (queuedNzbInfo != nzbInfo && sameContent && nzbInfo->GetKind() == NzbInfo::nkNzb)
 		{
-			char message[1024];
+			BString<1024> message;
 			if (!strcmp(nzbInfo->GetName(), queuedNzbInfo->GetName()))
 			{
-				snprintf(message, 1024, "Skipping duplicate %s, already queued", nzbInfo->GetName());
+				message.Format("Skipping duplicate %s, already queued", nzbInfo->GetName());
 			}
 			else
 			{
-				snprintf(message, 1024, "Skipping duplicate %s, already queued as %s",
+				message.Format("Skipping duplicate %s, already queued as %s",
 					nzbInfo->GetName(), queuedNzbInfo->GetName());
 			}
-			message[1024-1] = '\0';
 
 			if (nzbInfo->GetFeedId())
 			{
-				warn("%s", message);
+				warn("%s", *message);
 				// Flag saying QueueCoordinator to skip nzb-file
 				nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
 				g_HistoryCoordinator->DeleteDiskFiles(nzbInfo);
@@ -235,23 +234,22 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 
 	if (skip)
 	{
-		char message[1024];
+		BString<1024> message;
 		if (!strcmp(nzbInfo->GetName(), dupeName))
 		{
-			snprintf(message, 1024, "Skipping duplicate %s, found in history with %s", nzbInfo->GetName(),
+			message.Format("Skipping duplicate %s, found in history with %s", nzbInfo->GetName(),
 				sameContent ? "exactly same content" : good ? "good status" : "success status");
 		}
 		else
 		{
-			snprintf(message, 1024, "Skipping duplicate %s, found in history %s with %s",
+			message.Format("Skipping duplicate %s, found in history %s with %s",
 				nzbInfo->GetName(), dupeName,
 				sameContent ? "exactly same content" : good ? "good status" : "success status");
 		}
-		message[1024-1] = '\0';
 
 		if (nzbInfo->GetFeedId())
 		{
-			warn("%s", message);
+			warn("%s", *message);
 			// Flag saying QueueCoordinator to skip nzb-file
 			nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
 			g_HistoryCoordinator->DeleteDiskFiles(nzbInfo);

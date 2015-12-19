@@ -67,12 +67,11 @@ bool FeedFilter::Term::Match(FeedItemInfo* feedItemInfo)
 bool FeedFilter::Term::MatchValue(const char* strValue, int64 intValue)
 {
 	double fFloatValue = (double)intValue;
-	char intBuf[100];
+	BString<100> intBuf;
 
 	if (m_command < fcEqual && !strValue)
 	{
-		snprintf(intBuf, 100, "%lld", intValue);
-		intBuf[100-1] = '\0';
+		intBuf.Format("%lld", intValue);
 		strValue = intBuf;
 	}
 
@@ -170,20 +169,13 @@ bool FeedFilter::Term::MatchText(const char* strValue)
 			format = "*%s";
 		}
 
-		int patlen = strlen(m_param) + 2 + 1;
-		char* pattern = (char*)malloc(patlen);
-		snprintf(pattern, patlen, format, *m_param);
-		pattern[patlen-1] = '\0';
-
-		WildMask mask(pattern, m_refValues != NULL);
+		WildMask mask(CString::FormatStr(format, *m_param), m_refValues != NULL);
 		match = mask.Match(strValue);
 
 		if (match)
 		{
 			FillWildMaskRefValues(strValue, &mask, refOffset);
 		}
-
-		free(pattern);
 	}
 
 	return match;
@@ -936,10 +928,10 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* feedItemInfo)
 
 void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, const char* patStr)
 {
-	char* curvalue = strdup(patStr);
+	CString curvalue = patStr;
 
 	int attempts = 0;
-	while (char* dollar = strstr(curvalue, "${"))
+	while (const char* dollar = strstr(curvalue, "${"))
 	{
 		attempts++;
 		if (attempts > 100)
@@ -947,34 +939,25 @@ void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, CString* dest
 			break; // error
 		}
 
-		char* end = strchr(dollar, '}');
+		const char* end = strchr(dollar, '}');
 		if (!end)
 		{
 			break; // error
 		}
 
 		int varlen = (int)(end - dollar - 2);
-		char variable[101];
-		int maxlen = varlen < 100 ? varlen : 100;
-		strncpy(variable, dollar + 2, maxlen);
-		variable[maxlen] = '\0';
-
+		BString<100> variable;
+		variable.Set(dollar + 2, varlen);
 		const char* varvalue = GetRefValue(feedItemInfo, variable);
 		if (!varvalue)
 		{
 			break; // error
 		}
 
-		int newlen = strlen(varvalue);
-		char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
-		strncpy(newvalue, curvalue, dollar - curvalue);
-		strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
-		strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
-		free(curvalue);
-		curvalue = newvalue;
+		curvalue.Replace(dollar - curvalue, 2 + varlen + 1, varvalue);
 	}
 
-	destStr->Bind(curvalue);
+	*destStr = std::move(curvalue);
 }
 
 const char* FeedFilter::Rule::GetRefValue(FeedItemInfo* feedItemInfo, const char* varName)
@@ -1016,7 +999,7 @@ void FeedFilter::Compile(const char* filter)
 {
 	debug("Compiling filter: %s", filter);
 
-	char* filter2 = strdup(filter);
+	CString filter2 = filter;
 	char* rule = filter2;
 
 	for (char* p = rule; *p; p++)
@@ -1031,8 +1014,6 @@ void FeedFilter::Compile(const char* filter)
 	}
 
 	CompileRule(rule);
-
-	free(filter2);
 }
 
 void FeedFilter::CompileRule(char* rulestr)

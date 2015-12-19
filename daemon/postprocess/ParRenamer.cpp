@@ -71,12 +71,6 @@ ParRenamer::~ParRenamer()
 void ParRenamer::Cleanup()
 {
 	ClearHashList();
-
-	for (DirList::iterator it = m_dirList.begin(); it != m_dirList.end(); it++)
-	{
-		free(*it);
-	}
-	m_dirList.clear();
 }
 
 void ParRenamer::ClearHashList()
@@ -111,8 +105,8 @@ void ParRenamer::Run()
 
 	for (DirList::iterator it = m_dirList.begin(); it != m_dirList.end(); it++)
 	{
-		char* destDir = *it;
-		debug("Checking %s", destDir);
+		CString& destDir = *it;
+		debug("Checking %s", *destDir);
 		ClearHashList();
 		LoadParFiles(destDir);
 
@@ -152,18 +146,15 @@ void ParRenamer::Run()
 
 void ParRenamer::BuildDirList(const char* destDir)
 {
-	m_dirList.push_back(strdup(destDir));
+	m_dirList.push_back(destDir);
 
-	char* fullFilename = (char*)malloc(1024);
 	DirBrowser* dirBrowser = new DirBrowser(destDir);
 
 	while (const char* filename = dirBrowser->Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && !m_cancelled)
 		{
-			snprintf(fullFilename, 1024, "%s%c%s", destDir, PATH_SEPARATOR, filename);
-			fullFilename[1024-1] = '\0';
-
+			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 			if (Util::DirectoryExists(fullFilename))
 			{
 				BuildDirList(fullFilename);
@@ -175,7 +166,6 @@ void ParRenamer::BuildDirList(const char* destDir)
 		}
 	}
 
-	free(fullFilename);
 	delete dirBrowser;
 }
 
@@ -187,11 +177,7 @@ void ParRenamer::LoadParFiles(const char* destDir)
 	for (ParParser::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
 	{
 		char* parFilename = *it;
-
-		char fullParFilename[1024];
-		snprintf(fullParFilename, 1024, "%s%c%s", destDir, PATH_SEPARATOR, parFilename);
-		fullParFilename[1024-1] = '\0';
-
+		BString<1024> fullParFilename("%s%c%s", destDir, PATH_SEPARATOR, parFilename);
 		LoadParFile(fullParFilename);
 
 		free(*it);
@@ -237,9 +223,7 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 	{
 		if (strcmp(filename, ".") && strcmp(filename, "..") && !m_cancelled)
 		{
-			char fullFilename[1024];
-			snprintf(fullFilename, 1024, "%s%c%s", destDir, PATH_SEPARATOR, filename);
-			fullFilename[1024-1] = '\0';
+			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 
 			if (!Util::DirectoryExists(fullFilename))
 			{
@@ -346,9 +330,7 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 			debug("Found correct filename: %s", fileHash->GetFilename());
 			fileHash->SetFileExists(true);
 
-			char dstFilename[1024];
-			snprintf(dstFilename, 1024, "%s%c%s", destDir, PATH_SEPARATOR, fileHash->GetFilename());
-			dstFilename[1024-1] = '\0';
+			BString<1024> dstFilename("%s%c%s", destDir, PATH_SEPARATOR, fileHash->GetFilename());
 
 			if (!Util::FileExists(dstFilename) && !IsSplittedFragment(filename, fileHash->GetFilename()))
 			{
@@ -413,12 +395,11 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 
 	debug("Renaming: %s; setid: %s", Util::BaseFileName(filename), setId);
 
-	char destFileName[1024];
+	BString<1024> destFileName;
 	int num = 1;
 	while (num == 1 || Util::FileExists(destFileName))
 	{
-		snprintf(destFileName, 1024, "%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, setId, num);
-		destFileName[1024-1] = '\0';
+		destFileName.Format("%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, setId, num);
 		num++;
 	}
 
@@ -430,9 +411,8 @@ void ParRenamer::RenameFile(const char* srcFilename, const char* destFileName)
 	PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(srcFilename), Util::BaseFileName(destFileName));
 	if (!Util::MoveFile(srcFilename, destFileName))
 	{
-		char errBuf[256];
 		PrintMessage(Message::mkError, "Could not rename %s to %s: %s", srcFilename, destFileName,
-			Util::GetLastErrorMessage(errBuf, sizeof(errBuf)));
+			*Util::GetLastErrorMessage());
 		return;
 	}
 

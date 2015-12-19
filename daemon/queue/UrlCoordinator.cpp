@@ -59,9 +59,7 @@ void UrlDownloader::ProcessHeader(const char* line)
 			debug("X-DNZB: %s", modLine);
 			debug("Value: %s", value);
 
-			char paramName[100];
-			snprintf(paramName, 100, "*DNZB:%s", modLine + 7);
-			paramName[100-1] = '\0';
+			BString<100> paramName("*DNZB:%s", modLine + 7);
 
 			char* val = WebUtil::Latin1ToUtf8(value);
 			m_nzbInfo->GetParameters()->SetParameter(paramName, val);
@@ -285,9 +283,8 @@ void UrlCoordinator::StartUrlDownload(NzbInfo* nzbInfo)
 	nzbInfo->MakeNiceUrlName(nzbInfo->GetUrl(), nzbInfo->GetFilename(), tmp, 1024);
 	urlDownloader->SetInfoName(tmp);
 
-	snprintf(tmp, 1024, "%surl-%i.tmp", g_Options->GetTempDir(), nzbInfo->GetId());
-	tmp[1024-1] = '\0';
-	urlDownloader->SetOutputFilename(tmp);
+	BString<1024> outFlename("%surl-%i.tmp", g_Options->GetTempDir(), nzbInfo->GetId());
+	urlDownloader->SetOutputFilename(outFlename);
 
 	nzbInfo->SetUrlStatus(NzbInfo::lsRunning);
 

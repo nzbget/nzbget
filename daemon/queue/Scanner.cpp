@@ -184,21 +184,18 @@ void Scanner::CheckIncomingNzbs(const char* directory, const char* category, boo
 	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
-		char fullfilename[1023 + 1]; // one char reserved for the trailing slash (if needed)
-		snprintf(fullfilename, 1023, "%s%s", directory, filename);
-		fullfilename[1023 - 1] = '\0';
+		BString<1024> fullfilename("%s%s", directory, filename);
 		bool isDirectory = Util::DirectoryExists(fullfilename);
 		// check subfolders
 		if (isDirectory && strcmp(filename, ".") && strcmp(filename, ".."))
 		{
 			fullfilename[strlen(fullfilename) + 1] = '\0';
-			fullfilename[strlen(fullfilename)] = PATH_SEPARATOR;
+			fullfilename.AppendFmt("%c", PATH_SEPARATOR);
 			const char* useCategory = filename;
-			char subCategory[1024];
+			BString<1024> subCategory;
 			if (strlen(category) > 0)
 			{
-				snprintf(subCategory, 1023, "%s%c%s", category, PATH_SEPARATOR, filename);
-				subCategory[1024 - 1] = '\0';
+				subCategory.Format("%s%c%s", category, PATH_SEPARATOR, filename);
 				useCategory = subCategory;
 			}
 			CheckIncomingNzbs(fullfilename, useCategory, checkStat);
@@ -368,8 +365,8 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 			bool renameOK = Util::RenameBak(fullFilename, "processed", false, bakname2, 1024);
 			if (!renameOK)
 			{
-				char sysErrStr[256];
-				error("Could not rename file %s to %s: %s", fullFilename, bakname2, Util::GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+				error("Could not rename file %s to %s: %s", fullFilename, bakname2,
+					*Util::GetLastErrorMessage());
 			}
 		}
 	}
@@ -386,8 +383,8 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 		}
 		else
 		{
-			char sysErrStr[256];
-			error("Could not rename file %s to %s: %s", fullFilename, renamedName, Util::GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+			error("Could not rename file %s to %s: %s", fullFilename, renamedName,
+				*Util::GetLastErrorMessage());
 			addStatus = asFailed;
 		}
 	}
@@ -434,10 +431,7 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 		for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 		{
 			ScriptConfig::Script* script = *it;
-			char param[1024];
-			snprintf(param, 1024, "%s:", script->GetName());
-			param[1024-1] = '\0';
-			parameters->SetParameter(param, NULL);
+			parameters->SetParameter(BString<1024>("%s:", script->GetName()), NULL);
 		}
 	}
 
@@ -449,10 +443,7 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 		Tokenizer tok(postScript, ",;");
 		while (const char* scriptName = tok.Next())
 		{
-			char param[1024];
-			snprintf(param, 1024, "%s:", scriptName);
-			param[1024-1] = '\0';
-			parameters->SetParameter(param, "yes");
+			parameters->SetParameter(BString<1024>("%s:", scriptName), "yes");
 		}
 	}
 }
@@ -476,8 +467,8 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 	if (!Util::RenameBak(filename, nzbFile ? "queued" : "error", false, bakname2, 1024))
 	{
 		ok = false;
-		char sysErrStr[256];
-		error("Could not rename file %s to %s: %s", filename, bakname2, Util::GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+		error("Could not rename file %s to %s: %s", filename, bakname2,
+			*Util::GetLastErrorMessage());
 	}
 
 	NzbInfo* nzbInfo = nzbFile->GetNzbInfo();
@@ -560,39 +551,36 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	const char* fileName, const char* buffer, int bufSize, int* nzbId)
 {
 	bool nzb = false;
-	char tempFileName[1024];
+	BString<1024> tempFileName;
 
 	if (fileName)
 	{
-		strncpy(tempFileName, fileName, 1024);
-		tempFileName[1024-1] = '\0';
+		tempFileName = fileName;
 	}
 	else
 	{
 		int num = 1;
 		while (num == 1 || Util::FileExists(tempFileName))
 		{
-			snprintf(tempFileName, 1024, "%snzb-%i.tmp", g_Options->GetTempDir(), num);
-			tempFileName[1024-1] = '\0';
+			tempFileName.Format("%snzb-%i.tmp", g_Options->GetTempDir(), num);
 			num++;
 		}
 
 		if (!Util::SaveBufferIntoFile(tempFileName, buffer, bufSize))
 		{
-			error("Could not create file %s", tempFileName);
+			error("Could not create file %s", *tempFileName);
 			return asFailed;
 		}
 
-		char buf[1024];
-		strncpy(buf, buffer, 1024);
-		buf[1024-1] = '\0';
+		// "buffer" doesn't end with NULL, therefore we can't search in it with "strstr"
+		BString<1024> buf;
+		buf.Set(buffer, bufSize);
 		nzb = !strncmp(buf, "<?xml", 5) && strstr(buf, "<nzb");
 	}
 
 	// move file into NzbDir, make sure the file name is unique
-	char validNzbName[1024];
-	strncpy(validNzbName, Util::BaseFileName(nzbName), 1024);
-	validNzbName[1024-1] = '\0';
+	BString<1024> validNzbName;
+	validNzbName.Set(Util::BaseFileName(nzbName));
 	Util::MakeValidFilename(validNzbName, '_', false);
 
 #ifdef WIN32
@@ -602,11 +590,10 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	const char* extension = strrchr(nzbName, '.');
 	if (nzb && (!extension || strcasecmp(extension, ".nzb")))
 	{
-		strncat(validNzbName, ".nzb", 1024 - strlen(validNzbName) - 1);
+		validNzbName.Append(".nzb");
 	}
 
-	char scanFileName[1024];
-	snprintf(scanFileName, 1024, "%s%s", g_Options->GetNzbDir(), validNzbName);
+	BString<1024> scanFileName("%s%s", g_Options->GetNzbDir(), *validNzbName);
 
 	char *ext = strrchr(validNzbName, '.');
 	if (ext)
@@ -620,13 +607,12 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	{
 		if (ext)
 		{
-			snprintf(scanFileName, 1024, "%s%s_%i.%s", g_Options->GetNzbDir(), validNzbName, num, ext);
+			scanFileName.Format("%s%s_%i.%s", g_Options->GetNzbDir(), *validNzbName, num, ext);
 		}
 		else
 		{
-			snprintf(scanFileName, 1024, "%s%s_%i", g_Options->GetNzbDir(), validNzbName, num);
+			scanFileName.Format("%s%s_%i", g_Options->GetNzbDir(), *validNzbName, num);
 		}
-		scanFileName[1024-1] = '\0';
 		num++;
 	}
 
@@ -634,27 +620,25 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 
 	if (!Util::MoveFile(tempFileName, scanFileName))
 	{
-		char sysErrStr[256];
-		error("Could not move file %s to %s: %s", tempFileName, scanFileName, Util::GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+		error("Could not move file %s to %s: %s", *tempFileName, *scanFileName,
+			*Util::GetLastErrorMessage());
 		remove(tempFileName);
 		m_scanMutex.Unlock(); // UNLOCK
 		return asFailed;
 	}
 
-	char* useCategory = strdup(category ? category : "");
+	CString useCategory = category ? category : "";
 	Options::Category* categoryObj = g_Options->FindCategory(useCategory, true);
 	if (categoryObj && strcmp(useCategory, categoryObj->GetName()))
 	{
-		free(useCategory);
-		useCategory = strdup(categoryObj->GetName());
-		detail("Category %s matched to %s for %s", category, useCategory, nzbName);
+		useCategory = categoryObj->GetName();
+		detail("Category %s matched to %s for %s", category, *useCategory, nzbName);
 	}
 
 	EAddStatus addStatus = asSkipped;
 	QueueData* queueData = new QueueData(scanFileName, nzbName, useCategory, priority,
 		dupeKey, dupeScore, dupeMode, parameters, addTop, addPaused, urlInfo,
 		&addStatus, nzbId);
-	free(useCategory);
 	m_queueList.push_back(queueData);
 
 	m_scanMutex.Unlock();

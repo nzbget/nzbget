@@ -314,11 +314,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 		for (CompletedFiles::reverse_iterator it = nzbInfo->GetCompletedFiles()->rbegin(); it != nzbInfo->GetCompletedFiles()->rend(); it++)
 		{
 			CompletedFile* completedFile = *it;
-
-			char fullFileName[1024];
-			snprintf(fullFileName, 1024, "%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile->GetFileName());
-			fullFileName[1024-1] = '\0';
-
+			BString<1024> fullFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile->GetFileName());
 			if (Util::FileExists(fullFileName))
 			{
 				detail("Deleting file %s", completedFile->GetFileName());
@@ -333,10 +329,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 			int len = strlen(filename);
 			if ((len > 8 && !strcmp(filename + len - 8, ".out.tmp")) || !strcmp(filename, "_brokenlog.txt"))
 			{
-				char fullFilename[1024];
-				snprintf(fullFilename, 1024, "%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, filename);
-				fullFilename[1024-1] = '\0';
-
+				BString<1024> fullFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, filename);
 				detail("Deleting file %s", filename);
 				remove(fullFilename);
 			}

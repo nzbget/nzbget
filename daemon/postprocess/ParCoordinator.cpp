@@ -57,7 +57,7 @@ void ParCoordinator::PostParChecker::PrintMessage(Message::EKind kind, const cha
 
 void ParCoordinator::PostParChecker::RegisterParredFile(const char* filename)
 {
-	m_postInfo->GetParredFiles()->push_back(strdup(filename));
+	m_postInfo->GetParredFiles()->push_back(filename);
 }
 
 bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
@@ -208,7 +208,7 @@ void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind kind, const cha
 
 void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
 {
-	m_postInfo->GetParredFiles()->push_back(strdup(filename));
+	m_postInfo->GetParredFiles()->push_back(filename);
 }
 
 /**
@@ -367,9 +367,7 @@ bool ParCoordinator::AddPar(FileInfo* fileInfo, bool deleted)
 		fileInfo->GetNzbInfo() == m_parChecker.GetPostInfo()->GetNzbInfo();
 	if (sameCollection && !deleted)
 	{
-		char fullFilename[1024];
-		snprintf(fullFilename, 1024, "%s%c%s", fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename());
-		fullFilename[1024-1] = '\0';
+		BString<1024> fullFilename("%s%c%s", fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename());
 		m_parChecker.AddParFile(fullFilename);
 	}
 	else
@@ -573,13 +571,10 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 				loFileName[1024-1] = '\0';
 				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-				char candidateFileName[1024];
-				snprintf(candidateFileName, 1024, "%s.par2", mainBaseFilename);
-				candidateFileName[1024-1] = '\0';
+				BString<1024> candidateFileName("%s.par2", mainBaseFilename);
 				if (!strstr(loFileName, candidateFileName))
 				{
-					snprintf(candidateFileName, 1024, "%s.vol", mainBaseFilename);
-					candidateFileName[1024-1] = '\0';
+					candidateFileName.Format("%s.vol", mainBaseFilename);
 					useFile = strstr(loFileName, candidateFileName);
 				}
 			}

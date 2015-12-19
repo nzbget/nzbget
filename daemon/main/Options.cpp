@@ -640,15 +640,13 @@ void Options::InitOptFile()
 	{
 		// search for config file in default locations
 #ifdef WIN32
-		char filename[MAX_PATH + 20];
-		snprintf(filename, sizeof(filename), "%s\\nzbget.conf", *m_appDir);
+		BString<1024> filename("%s\\nzbget.conf", *m_appDir);
 
 		if (!Util::FileExists(filename))
 		{
 			char appDataPath[MAX_PATH];
 			SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appDataPath);
-			snprintf(filename, sizeof(filename), "%s\\NZBGet\\nzbget.conf", appDataPath);
-			filename[sizeof(filename)-1] = '\0';
+			filename.Format("%s\\NZBGet\\nzbget.conf", appDataPath);
 
 			if (m_extender && !Util::FileExists(filename))
 			{
@@ -662,9 +660,7 @@ void Options::InitOptFile()
 		}
 #else
 		// look in the exe-directory first
-		char filename[1024];
-		snprintf(filename, sizeof(filename), "%s/nzbget.conf", *m_appDir);
-		filename[1024-1] = '\0';
+		BString<1024> filename("%s/nzbget.conf", *m_appDir);
 
 		if (Util::FileExists(filename))
 		{
@@ -715,15 +711,14 @@ void Options::InitOptFile()
 	}
 }
 
-void Options::CheckDir(CString* dir, const char* optionName,
+void Options::CheckDir(CString& dir, const char* optionName,
 	const char* parentDir, bool allowEmpty, bool create)
 {
-	char* usedir = NULL;
 	const char* tempdir = GetOption(optionName);
 
 	if (m_noDiskAccess)
 	{
-		*dir = tempdir;
+		dir = tempdir;
 		return;
 	}
 
@@ -733,70 +728,60 @@ void Options::CheckDir(CString* dir, const char* optionName,
 		{
 			ConfigError("Invalid value for option \"%s\": <empty>", optionName);
 		}
-		*dir = "";
+		dir = "";
 		return;
 	}
 
-	int len = strlen(tempdir);
-	usedir = (char*)malloc(len + 2);
-	strcpy(usedir, tempdir);
-	char ch = usedir[len-1];
-	Util::NormalizePathSeparators(usedir);
-	if (ch != PATH_SEPARATOR)
+	dir = tempdir;
+	Util::NormalizePathSeparators((char*)dir);
+	if (dir[dir.Length() - 1] != PATH_SEPARATOR)
 	{
-		usedir[len] = PATH_SEPARATOR;
-		usedir[len + 1] = '\0';
+		dir.AppendFmt("%c", (int)PATH_SEPARATOR);
 	}
 
-	if (!(usedir[0] == PATH_SEPARATOR || usedir[0] == ALT_PATH_SEPARATOR ||
-		(usedir[0] && usedir[1] == ':')) &&
+	if (!(dir[0] == PATH_SEPARATOR || dir[0] == ALT_PATH_SEPARATOR ||
+		(dir[0] && dir[1] == ':')) &&
 		!Util::EmptyStr(parentDir))
 	{
 		// convert relative path to absolute path
 		int plen = strlen(parentDir);
-		int len2 = len + plen + 4;
-		char* usedir2 = (char*)malloc(len2);
+
+		BString<1024> usedir2;
 		if (parentDir[plen-1] == PATH_SEPARATOR || parentDir[plen-1] == ALT_PATH_SEPARATOR)
 		{
-			snprintf(usedir2, len2, "%s%s", parentDir, usedir);
+			usedir2.Format("%s%s", parentDir, *dir);
 		}
 		else
 		{
-			snprintf(usedir2, len2, "%s%c%s", parentDir, PATH_SEPARATOR, usedir);
+			usedir2.Format("%s%c%s", parentDir, PATH_SEPARATOR, *dir);
 		}
-		usedir2[len2-1] = '\0';
-		free(usedir);
 
-		usedir = usedir2;
-		Util::NormalizePathSeparators(usedir);
+		Util::NormalizePathSeparators((char*)usedir2);
+		dir = usedir2;
 
-		int ulen = strlen(usedir);
-		usedir[ulen-1] = '\0';
-		SetOption(optionName, usedir);
-		usedir[ulen-1] = PATH_SEPARATOR;
+		usedir2[usedir2.Length() - 1] = '\0';
+		SetOption(optionName, usedir2);
 	}
 
 	// Ensure the dir is created
-	char errBuf[1024];
-	if (create && !Util::ForceDirectories(usedir, errBuf, sizeof(errBuf)))
+	CString errmsg;
+	if (create && !Util::ForceDirectories(dir, errmsg))
 	{
-		ConfigError("Invalid value for option \"%s\" (%s): %s", optionName, usedir, errBuf);
+		ConfigError("Invalid value for option \"%s\" (%s): %s", optionName, *dir, *errmsg);
 	}
-	*dir = usedir;
-	free(usedir);
 }
 
 void Options::InitOptions()
 {
 	const char* mainDir = GetOption(OPTION_MAINDIR);
 
-	CheckDir(&m_destDir, OPTION_DESTDIR, mainDir, false, false);
-	CheckDir(&m_interDir, OPTION_INTERDIR, mainDir, true, false);
-	CheckDir(&m_tempDir, OPTION_TEMPDIR, mainDir, false, true);
-	CheckDir(&m_queueDir, OPTION_QUEUEDIR, mainDir, false, true);
-	CheckDir(&m_webDir, OPTION_WEBDIR, NULL, true, false);
-	CheckDir(&m_scriptDir, OPTION_SCRIPTDIR, mainDir, true, false);
-	CheckDir(&m_nzbDir, OPTION_NZBDIR, mainDir, false, true);
+	CheckDir(m_destDir, OPTION_DESTDIR, mainDir, false, false);
+	CheckDir(m_interDir, OPTION_INTERDIR, mainDir, true, false);
+	CheckDir(m_tempDir, OPTION_TEMPDIR, mainDir, false, true);
+	CheckDir(m_queueDir, OPTION_QUEUEDIR, mainDir, false, true);
+	CheckDir(m_webDir, OPTION_WEBDIR, NULL, true, false);
+	CheckDir(m_scriptDir, OPTION_SCRIPTDIR, mainDir, true, false);
+	CheckDir(m_nzbDir, OPTION_NZBDIR, mainDir, false, true);
 
 	m_requiredDir = GetOption(OPTION_REQUIREDDIR);
 
@@ -998,53 +983,43 @@ void Options::SetOption(const char* optname, const char* value)
 		m_optEntries.push_back(optEntry);
 	}
 
-	char* curvalue = NULL;
+	CString curvalue;
 
 #ifndef WIN32
 	if (value && (value[0] == '~') && (value[1] == '/'))
 	{
-		char expandedPath[1024];
+		curvalue.Reserve(MAX_PATH);
 		if (m_noDiskAccess)
 		{
-			strncpy(expandedPath, value, 1024);
-			expandedPath[1024-1] = '\0';
+			curvalue = value;
 		}
-		else if (!Util::ExpandHomePath(value, expandedPath, sizeof(expandedPath)))
+		else if (!Util::ExpandHomePath(value, (char*)curvalue, curvalue.Capacity()))
 		{
 			ConfigError("Invalid value for option\"%s\": unable to determine home-directory", optname);
-			expandedPath[0] = '\0';
+			curvalue = "";
 		}
-		curvalue = strdup(expandedPath);
 	}
 	else
 #endif
 	{
-		curvalue = strdup(value);
+		curvalue = value;
 	}
 
 	optEntry->SetLineNo(m_configLine);
 
 	// expand variables
-	while (char* dollar = strstr(curvalue, "${"))
+	while (const char* dollar = strstr(curvalue, "${"))
 	{
-		char* end = strchr(dollar, '}');
+		const char* end = strchr(dollar, '}');
 		if (end)
 		{
 			int varlen = (int)(end - dollar - 2);
-			char variable[101];
-			int maxlen = varlen < 100 ? varlen : 100;
-			strncpy(variable, dollar + 2, maxlen);
-			variable[maxlen] = '\0';
+			BString<100> variable;
+			variable.Set(dollar + 2, varlen);
 			const char* varvalue = GetOption(variable);
 			if (varvalue)
 			{
-				int newlen = strlen(varvalue);
-				char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
-				strncpy(newvalue, curvalue, dollar - curvalue);
-				strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
-				strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
-				free(curvalue);
-				curvalue = newvalue;
+				curvalue.Replace(dollar - curvalue, 2 + varlen + 1, varvalue);
 			}
 			else
 			{
@@ -1058,8 +1033,6 @@ void Options::SetOption(const char* optname, const char* value)
 	}
 
 	optEntry->SetValue(curvalue);
-
-	free(curvalue);
 }
 
 Options::OptEntry* Options::FindOption(const char* optname)
@@ -1094,51 +1067,33 @@ void Options::InitServers()
 	int n = 1;
 	while (true)
 	{
-		char optname[128];
-
-		sprintf(optname, "Server%i.Active", n);
-		const char* nactive = GetOption(optname);
+		const char* nactive = GetOption(BString<100>("Server%i.Active", n));
 		bool active = true;
 		if (nactive)
 		{
-			active = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+			active = (bool)ParseEnumValue(BString<100>("Server%i.Active", n), BoolCount, BoolNames, BoolValues);
 		}
 
-		sprintf(optname, "Server%i.Name", n);
-		const char* nname = GetOption(optname);
+		const char* nname = GetOption(BString<100>("Server%i.Name", n));
+		const char* nlevel = GetOption(BString<100>("Server%i.Level", n));
+		const char* ngroup = GetOption(BString<100>("Server%i.Group", n));
+		const char* nhost = GetOption(BString<100>("Server%i.Host", n));
+		const char* nport = GetOption(BString<100>("Server%i.Port", n));
+		const char* nusername = GetOption(BString<100>("Server%i.Username", n));
+		const char* npassword = GetOption(BString<100>("Server%i.Password", n));
 
-		sprintf(optname, "Server%i.Level", n);
-		const char* nlevel = GetOption(optname);
-
-		sprintf(optname, "Server%i.Group", n);
-		const char* ngroup = GetOption(optname);
-
-		sprintf(optname, "Server%i.Host", n);
-		const char* nhost = GetOption(optname);
-
-		sprintf(optname, "Server%i.Port", n);
-		const char* nport = GetOption(optname);
-
-		sprintf(optname, "Server%i.Username", n);
-		const char* nusername = GetOption(optname);
-
-		sprintf(optname, "Server%i.Password", n);
-		const char* npassword = GetOption(optname);
-
-		sprintf(optname, "Server%i.JoinGroup", n);
-		const char* njoingroup = GetOption(optname);
+		const char* njoingroup = GetOption(BString<100>("Server%i.JoinGroup", n));
 		bool joinGroup = false;
 		if (njoingroup)
 		{
-			joinGroup = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+			joinGroup = (bool)ParseEnumValue(BString<100>("Server%i.JoinGroup", n), BoolCount, BoolNames, BoolValues);
 		}
 
-		sprintf(optname, "Server%i.Encryption", n);
-		const char* ntls = GetOption(optname);
+		const char* ntls = GetOption(BString<100>("Server%i.Encryption", n));
 		bool tls = false;
 		if (ntls)
 		{
-			tls = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+			tls = (bool)ParseEnumValue(BString<100>("Server%i.Encryption", n), BoolCount, BoolNames, BoolValues);
 #ifdef DISABLE_TLS
 			if (tls)
 			{
@@ -1149,14 +1104,9 @@ void Options::InitServers()
 			m_tls |= tls;
 		}
 
-		sprintf(optname, "Server%i.Cipher", n);
-		const char* ncipher = GetOption(optname);
-
-		sprintf(optname, "Server%i.Connections", n);
-		const char* nconnections = GetOption(optname);
-
-		sprintf(optname, "Server%i.Retention", n);
-		const char* nretention = GetOption(optname);
+		const char* ncipher = GetOption(BString<100>("Server%i.Cipher", n));
+		const char* nconnections = GetOption(BString<100>("Server%i.Connections", n));
+		const char* nretention = GetOption(BString<100>("Server%i.Retention", n));
 
 		bool definition = nactive || nname || nlevel || ngroup || nhost || nport ||
 			nusername || npassword || nconnections || njoingroup || ntls || ncipher || nretention;
@@ -1196,28 +1146,18 @@ void Options::InitCategories()
 	int n = 1;
 	while (true)
 	{
-		char optname[128];
+		const char* nname = GetOption(BString<100>("Category%i.Name", n));
+		const char* ndestdir = GetOption(BString<100>("Category%i.DestDir", n));
 
-		sprintf(optname, "Category%i.Name", n);
-		const char* nname = GetOption(optname);
-
-		char destdiroptname[128];
-		sprintf(destdiroptname, "Category%i.DestDir", n);
-		const char* ndestdir = GetOption(destdiroptname);
-
-		sprintf(optname, "Category%i.Unpack", n);
-		const char* nunpack = GetOption(optname);
+		const char* nunpack = GetOption(BString<100>("Category%i.Unpack", n));
 		bool unpack = true;
 		if (nunpack)
 		{
-			unpack = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+			unpack = (bool)ParseEnumValue(BString<100>("Category%i.Unpack", n), BoolCount, BoolNames, BoolValues);
 		}
 
-		sprintf(optname, "Category%i.PostScript", n);
-		const char* npostscript = GetOption(optname);
-
-		sprintf(optname, "Category%i.Aliases", n);
-		const char* naliases = GetOption(optname);
+		const char* npostscript = GetOption(BString<100>("Category%i.PostScript", n));
+		const char* naliases = GetOption(BString<100>("Category%i.Aliases", n));
 
 		bool definition = nname || ndestdir || nunpack || npostscript || naliases;
 		bool completed = nname && strlen(nname) > 0;
@@ -1232,7 +1172,7 @@ void Options::InitCategories()
 			CString destDir;
 			if (ndestdir && ndestdir[0] != '\0')
 			{
-				CheckDir(&destDir, destdiroptname, m_destDir, false, false);
+				CheckDir(destDir, BString<100>("Category%i.DestDir", n), m_destDir, false, false);
 			}
 
 			Category* category = new Category(nname, destDir, unpack, npostscript);
@@ -1262,44 +1202,28 @@ void Options::InitFeeds()
 	int n = 1;
 	while (true)
 	{
-		char optname[128];
+		const char* nname = GetOption(BString<100>("Feed%i.Name", n));
+		const char* nurl = GetOption(BString<100>("Feed%i.URL", n));
+		const char* nfilter = GetOption(BString<100>("Feed%i.Filter", n));
+		const char* ncategory = GetOption(BString<100>("Feed%i.Category", n));
+		const char* nfeedscript = GetOption(BString<100>("Feed%i.FeedScript", n));
 
-		sprintf(optname, "Feed%i.Name", n);
-		const char* nname = GetOption(optname);
-
-		sprintf(optname, "Feed%i.URL", n);
-		const char* nurl = GetOption(optname);
-
-		sprintf(optname, "Feed%i.Filter", n);
-		const char* nfilter = GetOption(optname);
-
-		sprintf(optname, "Feed%i.Category", n);
-		const char* ncategory = GetOption(optname);
-
-		sprintf(optname, "Feed%i.FeedScript", n);
-		const char* nfeedscript = GetOption(optname);
-
-		sprintf(optname, "Feed%i.Backlog", n);
-		const char* nbacklog = GetOption(optname);
+		const char* nbacklog = GetOption(BString<100>("Feed%i.Backlog", n));
 		bool backlog = true;
 		if (nbacklog)
 		{
-			backlog = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+			backlog = (bool)ParseEnumValue(BString<100>("Feed%i.Backlog", n), BoolCount, BoolNames, BoolValues);
 		}
 
-		sprintf(optname, "Feed%i.PauseNzb", n);
-		const char* npausenzb = GetOption(optname);
+		const char* npausenzb = GetOption(BString<100>("Feed%i.PauseNzb", n));
 		bool pauseNzb = false;
 		if (npausenzb)
 		{
-			pauseNzb = (bool)ParseEnumValue(optname, BoolCount, BoolNames, BoolValues);
+			pauseNzb = (bool)ParseEnumValue(BString<100>("Feed%i.PauseNzb", n), BoolCount, BoolNames, BoolValues);
 		}
 
-		sprintf(optname, "Feed%i.Interval", n);
-		const char* ninterval = GetOption(optname);
-
-		sprintf(optname, "Feed%i.Priority", n);
-		const char* npriority = GetOption(optname);
+		const char* ninterval = GetOption(BString<100>("Feed%i.Interval", n));
+		const char* npriority = GetOption(BString<100>("Feed%i.Priority", n));
 
 		bool definition = nname || nurl || nfilter || ncategory || nbacklog || npausenzb ||
 			ninterval || npriority || nfeedscript;
@@ -1331,25 +1255,12 @@ void Options::InitScheduler()
 {
 	for (int n = 1; ; n++)
 	{
-		char optname[128];
-
-		sprintf(optname, "Task%i.Time", n);
-		const char* time = GetOption(optname);
-
-		sprintf(optname, "Task%i.WeekDays", n);
-		const char* weekDays = GetOption(optname);
-
-		sprintf(optname, "Task%i.Command", n);
-		const char* command = GetOption(optname);
-
-		sprintf(optname, "Task%i.DownloadRate", n);
-		const char* downloadRate = GetOption(optname);
-
-		sprintf(optname, "Task%i.Process", n);
-		const char* process = GetOption(optname);
-
-		sprintf(optname, "Task%i.Param", n);
-		const char* param = GetOption(optname);
+		const char* time = GetOption(BString<100>("Task%i.Time", n));
+		const char* weekDays = GetOption(BString<100>("Task%i.WeekDays", n));
+		const char* command = GetOption(BString<100>("Task%i.Command", n));
+		const char* downloadRate = GetOption(BString<100>("Task%i.DownloadRate", n));
+		const char* process = GetOption(BString<100>("Task%i.Process", n));
+		const char* param = GetOption(BString<100>("Task%i.Param", n));
 
 		if (Util::EmptyStr(param) && !Util::EmptyStr(process))
 		{
@@ -1374,9 +1285,6 @@ void Options::InitScheduler()
 			continue;
 		}
 
-		snprintf(optname, sizeof(optname), "Task%i.Command", n);
-		optname[sizeof(optname)-1] = '\0';
-
 		const char* CommandNames[] = { "pausedownload", "pause", "unpausedownload", "resumedownload", "unpause", "resume",
 			"pausepostprocess", "unpausepostprocess", "resumepostprocess", "pausepost", "unpausepost", "resumepost",
 			"downloadrate", "setdownloadrate", "rate", "speed", "script", "process", "pausescan", "unpausescan", "resumescan",
@@ -1390,7 +1298,8 @@ void Options::InitScheduler()
 			scActivateServer, scActivateServer, scDeactivateServer,
 			scDeactivateServer, scFetchFeed, scFetchFeed };
 		const int CommandCount = 27;
-		ESchedulerCommand taskCommand = (ESchedulerCommand)ParseEnumValue(optname, CommandCount, CommandNames, CommandValues);
+		ESchedulerCommand taskCommand = (ESchedulerCommand)ParseEnumValue(
+			BString<100>("Task%i.Command", n), CommandCount, CommandNames, CommandValues);
 
 		if (param && strlen(param) > 0 && taskCommand == scProcess &&
 			!Util::SplitCommandLine(param, NULL))

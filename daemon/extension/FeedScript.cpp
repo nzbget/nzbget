@@ -53,11 +53,7 @@ void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "feed-script %s for Feed%i", script->GetName(), m_feedId);
-	infoName[1024-1] = '\0';
-	SetInfoName(infoName);
-
+	SetInfoName(BString<1024>("feed-script %s for Feed%i", script->GetName(), m_feedId));
 	SetLogPrefix(script->GetDisplayName());
 	PrepareParams(script->GetName());
 

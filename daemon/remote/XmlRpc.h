@@ -63,7 +63,7 @@ private:
 	EHttpMethod			m_httpMethod;
 	EUserAccess			m_userAccess;
 	CString				m_url;
-	CString				m_response;
+	StringBuilder		m_response;
 
 	void				Dispatch();
 	XmlCommand*			CreateCommand(const char* methodName);
@@ -88,7 +88,7 @@ protected:
 	char*				m_request;
 	char*				m_requestPtr;
 	char*				m_callbackFunc;
-	CString				m_response;
+	StringBuilder		m_response;
 	bool				m_fault;
 	XmlRpcProcessor::ERpcProtocol	m_protocol;
 	XmlRpcProcessor::EHttpMethod	m_httpMethod;

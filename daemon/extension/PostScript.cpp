@@ -49,7 +49,7 @@ void PostScriptController::StartJob(PostInfo* postInfo)
 
 void PostScriptController::Run()
 {
-	CString scriptCommaList;
+	StringBuilder scriptCommaList;
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
@@ -60,11 +60,10 @@ void PostScriptController::Run()
 		if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
 			(!strcasecmp(parameter->GetValue(), "yes") || !strcasecmp(parameter->GetValue(), "on") || !strcasecmp(parameter->GetValue(), "1")))
 		{
-			char* scriptName = strdup(varname);
+			CString scriptName(varname);
 			scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
 			scriptCommaList.Append(scriptName);
 			scriptCommaList.Append(",");
-			free(scriptName);
 		}
 	}
 	m_postInfo->GetNzbInfo()->GetScriptStatuses()->Clear();
@@ -86,9 +85,7 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", script->GetName(), m_postInfo->GetNzbInfo()->GetName());
 
-	char progressLabel[1024];
-	snprintf(progressLabel, 1024, "Executing post-process-script %s", script->GetName());
-	progressLabel[1024-1] = '\0';
+	BString<1024> progressLabel("Executing post-process-script %s", script->GetName());
 
 	DownloadQueue::Lock();
 	m_postInfo->SetProgressLabel(progressLabel);
@@ -97,9 +94,7 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "post-process-script %s for %s", script->GetName(), m_postInfo->GetNzbInfo()->GetName());
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("post-process-script %s for %s", script->GetName(), m_postInfo->GetNzbInfo()->GetName());
 	SetInfoName(infoName);
 
 	m_script = script;
@@ -143,9 +138,8 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	SetEnvVar("NZBPP_DUPEMODE", dupeModeName[m_postInfo->GetNzbInfo()->GetDupeMode()]);
 
-	char status[256];
-	strncpy(status, m_postInfo->GetNzbInfo()->MakeTextStatus(true), sizeof(status));
-	status[256-1] = '\0';
+	BString<1024> status;
+	status.Set(m_postInfo->GetNzbInfo()->MakeTextStatus(true));
 	SetEnvVar("NZBPP_STATUS", status);
 
 	char* detail = strchr(status, '/');
@@ -182,15 +176,11 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	{
 		ServerStat* serverStat = *it;
 
-		char name[50];
+		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_SUCCESSARTICLES", serverStat->GetServerId()),
+			serverStat->GetSuccessArticles());
 
-		snprintf(name, 50, "NZBPP_SERVER%i_SUCCESSARTICLES", serverStat->GetServerId());
-		name[50-1] = '\0';
-		SetIntEnvVar(name, serverStat->GetSuccessArticles());
-
-		snprintf(name, 50, "NZBPP_SERVER%i_FAILEDARTICLES", serverStat->GetServerId());
-		name[50-1] = '\0';
-		SetIntEnvVar(name, serverStat->GetFailedArticles());
+		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_FAILEDARTICLES", serverStat->GetServerId()),
+			serverStat->GetFailedArticles());
 	}
 
 	PrepareEnvScript(m_postInfo->GetNzbInfo()->GetParameters(), scriptName);
@@ -262,7 +252,7 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 		}
 		else if (!strncmp(msgText + 6, "NZBPR_", 6))
 		{
-			char* param = strdup(msgText + 6 + 6);
+			CString param = msgText + 6 + 6;
 			char* value = strchr(param, '=');
 			if (value)
 			{
@@ -276,7 +266,6 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 				m_postInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 					"Invalid command \"%s\" received from %s", msgText, GetInfoName());
 			}
-			free(param);
 		}
 		else if (!strncmp(msgText + 6, "MARK=BAD", 8))
 		{

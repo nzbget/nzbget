@@ -582,9 +582,7 @@ void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* art
 	articleDownloader->SetArticleInfo(articleInfo);
 	articleDownloader->SetConnection(connection);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "%s%c%s [%i/%i]", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("%s%c%s [%i/%i]", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
 	articleDownloader->SetInfoName(infoName);
 
 	articleInfo->SetStatus(ArticleInfo::aiRunning);
@@ -1033,16 +1031,13 @@ bool QueueCoordinator::SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* 
 
 	if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 	{
-		char filename[1024];
-		snprintf(filename, 1024, "%s.nzb", nzbNicename);
-		filename[1024-1] = '\0';
+		BString<1024> filename("%s.nzb", nzbNicename);
 		nzbInfo->SetFilename(filename);
 		return true;
 	}
 
-	char oldDestDir[1024];
-	strncpy(oldDestDir, nzbInfo->GetDestDir(), 1024);
-	oldDestDir[1024-1] = '\0';
+	BString<1024> oldDestDir;
+	oldDestDir.Set(nzbInfo->GetDestDir());
 
 	nzbInfo->BuildDestDirName();
 
@@ -1128,12 +1123,9 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 	srcNzbInfo->GetCompletedFiles()->clear();
 
 	// concatenate QueuedFilenames using character '|' as separator
-	int len = strlen(destNzbInfo->GetQueuedFilename()) + strlen(srcNzbInfo->GetQueuedFilename()) + 1;
-	char* queuedFilename = (char*)malloc(len);
-	snprintf(queuedFilename, len, "%s|%s", destNzbInfo->GetQueuedFilename(), srcNzbInfo->GetQueuedFilename());
-	queuedFilename[len - 1] = '\0';
+	CString queuedFilename;
+	queuedFilename.Format("%s|%s", destNzbInfo->GetQueuedFilename(), srcNzbInfo->GetQueuedFilename());
 	destNzbInfo->SetQueuedFilename(queuedFilename);
-	free(queuedFilename);
 
 	downloadQueue->GetQueue()->Remove(srcNzbInfo);
 	g_DiskState->DiscardFiles(srcNzbInfo);

@@ -40,11 +40,10 @@ private:
 		upSevenZip
 	};
 
-	typedef std::deque<char*>		FileListBase;
+	typedef std::deque<CString>		FileListBase;
 	class FileList : public FileListBase
 	{
 	public:
-		void			Clear();
 		bool			Exists(const char* filename);
 	};
 
@@ -58,13 +57,13 @@ private:
 
 private:
 	PostInfo*			m_postInfo;
-	char				m_name[1024];
-	char				m_infoName[1024];
-	char				m_infoNameUp[1024];
-	char				m_destDir[1024];
-	char				m_finalDir[1024];
-	char				m_unpackDir[1024];
-	char				m_password[1024];
+	CString				m_name;
+	CString				m_infoName;
+	CString				m_infoNameUp;
+	CString				m_destDir;
+	CString				m_finalDir;
+	CString				m_unpackDir;
+	CString				m_password;
 	bool				m_interDir;
 	bool				m_allOkMessageReceived;
 	bool				m_noFilesMessageReceived;

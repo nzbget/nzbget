@@ -56,9 +56,7 @@ void ColoredFrontend::BeforePrint()
 
 void ColoredFrontend::PrintStatus()
 {
-	char tmp[1024];
-	char timeString[100];
-	timeString[0] = '\0';
+	BString<100> timeString;
 	int currentDownloadSpeed = m_standBy ? 0 : m_currentDownloadSpeed;
 
 	if (currentDownloadSpeed > 0 && !m_pauseDownload)
@@ -67,45 +65,34 @@ void ColoredFrontend::PrintStatus()
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
-		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
+		timeString.Format(" (~ %.2d:%.2d:%.2d)", h, m, s);
 	}
 
-	char downloadLimit[128];
+	BString<100> downloadLimit;
 	if (m_downloadLimit > 0)
 	{
-		sprintf(downloadLimit, ", Limit %i KB/s", m_downloadLimit / 1024);
-	}
-	else
-	{
-		downloadLimit[0] = 0;
+		downloadLimit.Format(", Limit %i KB/s", m_downloadLimit / 1024);
 	}
 
-	char postStatus[128];
+	BString<100> postStatus;
 	if (m_postJobCount > 0)
 	{
-		sprintf(postStatus, ", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
-	}
-	else
-	{
-		postStatus[0] = 0;
+		postStatus.Format(", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
 	}
 
 #ifdef WIN32
-	char* controlSeq = "";
+	const char* controlSeq = "";
 #else
 	printf("\033[s");
 	const char* controlSeq = "\033[K";
 #endif
 
-	char fileSize[20];
-	char currendSpeed[20];
-	snprintf(tmp, 1024, " %d threads, %s, %s remaining%s%s%s%s%s\n",
-		m_threadCount, Util::FormatSpeed(currendSpeed, sizeof(currendSpeed), currentDownloadSpeed),
-		Util::FormatSize(fileSize, sizeof(fileSize), m_remainingSize),
-		timeString, postStatus, m_pauseDownload ? (m_standBy ? ", Paused" : ", Pausing") : "",
-		downloadLimit, controlSeq);
-	tmp[1024-1] = '\0';
-	printf("%s", tmp);
+	BString<1024> status(" %d threads, %s, %s remaining%s%s%s%s%s\n",
+		m_threadCount, *Util::FormatSpeed(currentDownloadSpeed),
+		*Util::FormatSize(m_remainingSize), *timeString, *postStatus,
+		m_pauseDownload ? (m_standBy ? ", Paused" : ", Pausing") : "",
+		*downloadLimit, controlSeq);
+	printf("%s", *status);
 	m_needGoBack = true;
 }
 

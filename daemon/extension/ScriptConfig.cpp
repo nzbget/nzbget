@@ -167,29 +167,30 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 		return false;
 	}
 
-	std::vector<char*> config;
+	std::vector<CString> config;
 	std::set<Options::OptEntry*> writtenOptions;
 
 	// read config file into memory array
-	int bufLen = (int)Util::FileSize(g_Options->GetConfigFilename()) + 1;
-	char* buf = (char*)malloc(bufLen);
-	while (fgets(buf, bufLen - 1, infile))
+	int fileLen = (int)Util::FileSize(g_Options->GetConfigFilename());
+	CString content;
+	content.Reserve(fileLen);
+	while (fgets(content, fileLen, infile))
 	{
-		config.push_back(strdup(buf));
+		config.push_back(*content);
 	}
-	free(buf);
+	content.Clear();
 
 	// write config file back to disk, replace old values of existing options with new values
 	rewind(infile);
-	for (std::vector<char*>::iterator it = config.begin(); it != config.end(); it++)
+	for (std::vector<CString>::iterator it = config.begin(); it != config.end(); it++)
 	{
-		char* buf = *it;
+		CString& buf = *it;
 
 		const char* eq = strchr(buf, '=');
 		if (eq && buf[0] != '#')
 		{
 			// remove trailing '\n' and '\r' and spaces
-			Util::TrimRight(buf);
+			buf.TrimRight();
 
 			char* optname;
 			char* optvalue;
@@ -213,8 +214,6 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 		{
 			fputs(buf, infile);
 		}
-
-		free(buf);
 	}
 
 	// write new options
@@ -275,7 +274,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 			continue;
 		}
 
-		CString templ;
+		StringBuilder templ;
 		char buf[1024];
 		bool inConfig = false;
 
@@ -381,9 +380,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 	{
 		if (filename[0] != '.' && filename[0] != '_')
 		{
-			char fullFilename[1024];
-			snprintf(fullFilename, 1024, "%s%s", directory, filename);
-			fullFilename[1024-1] = '\0';
+			BString<1024> fullFilename("%s%s", directory, filename);
 
 			if (!Util::DirectoryExists(fullFilename))
 			{
@@ -410,12 +407,11 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 							bool feedScript = strstr(line, FEED_SCRIPT_SIGNATURE);
 							if (postScript || scanScript || queueScript || schedulerScript || feedScript)
 							{
-								char scriptName[1024];
+								BString<1024> scriptName;
 								if (isSubDir)
 								{
-									char directory2[1024];
-									snprintf(directory2, 1024, "%s", directory);
-									directory2[1024-1] = '\0';
+									BString<1024> directory2;
+									directory2.Set(directory);
 									int len = strlen(directory2);
 									if (directory2[len-1] == PATH_SEPARATOR || directory2[len-1] == ALT_PATH_SEPARATOR)
 									{
@@ -423,13 +419,12 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 										directory2[len-1] = '\0';
 									}
 
-									snprintf(scriptName, 1024, "%s%c%s", Util::BaseFileName(directory2), PATH_SEPARATOR, filename);
+									scriptName.Format("%s%c%s", Util::BaseFileName(directory2), PATH_SEPARATOR, filename);
 								}
 								else
 								{
-									snprintf(scriptName, 1024, "%s", filename);
+									scriptName.Set(filename);
 								}
-								scriptName[1024-1] = '\0';
 
 								char* queueEvents = NULL;
 								if (queueScript)
@@ -460,9 +455,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 			}
 			else if (!isSubDir)
 			{
-				snprintf(fullFilename, 1024, "%s%s%c", directory, filename, PATH_SEPARATOR);
-				fullFilename[1024-1] = '\0';
-
+				fullFilename.Format("%s%s%c", directory, filename, PATH_SEPARATOR);
 				LoadScriptDir(scripts, fullFilename, true);
 			}
 		}
@@ -485,9 +478,8 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 	{
 		Script* script = *it;
 
-		char shortName[256];
-		strncpy(shortName, script->GetName(), 256);
-		shortName[256-1] = '\0';
+		BString<1024> shortName;
+		shortName.Set(script->GetName());
 		if (char* ext = strrchr(shortName, '.')) *ext = '\0'; // strip file extension
 
 		const char* displayName = Util::BaseFileName(shortName);
@@ -496,9 +488,8 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 		{
 			Script* script2 = *it2;
 
-			char shortName2[256];
-			strncpy(shortName2, script2->GetName(), 256);
-			shortName2[256-1] = '\0';
+			BString<1024> shortName2;
+			shortName2.Set(script2->GetName());
 			if (char* ext = strrchr(shortName2, '.')) *ext = '\0'; // strip file extension
 
 			const char* displayName2 = Util::BaseFileName(shortName2);
@@ -507,11 +498,11 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 			{
 				if (!strcmp(shortName, shortName2))
 				{
-					displayName =	script->GetName();
+					displayName = script->GetName();
 				}
 				else
 				{
-					displayName =	shortName;
+					displayName = shortName;
 				}
 				break;
 			}

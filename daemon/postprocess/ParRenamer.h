@@ -57,7 +57,7 @@ public:
 	};
 
 	typedef std::deque<FileHash*>		FileHashList;
-	typedef std::deque<char*>			DirList;
+	typedef std::deque<CString>			DirList;
 
 private:
 	CString				m_infoName;

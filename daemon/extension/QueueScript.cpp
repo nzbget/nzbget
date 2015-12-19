@@ -122,9 +122,7 @@ void QueueScriptController::ExecuteScript(ScriptConfig::Script* script)
 	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "queue-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbName));
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("queue-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbName));
 	SetInfoName(infoName);
 
 	SetLogPrefix(script->GetDisplayName());
@@ -175,7 +173,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 		debug("Command %s detected", msgText + 6);
 		if (!strncmp(msgText + 6, "NZBPR_", 6))
 		{
-			char* param = strdup(msgText + 6 + 6);
+			CString param = msgText + 6 + 6;
 			char* value = strchr(param, '=');
 			if (value)
 			{
@@ -192,7 +190,6 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 			{
 				error("Invalid command \"%s\" received from %s", msgText, GetInfoName());
 			}
-			free(param);
 		}
 		else if (!strncmp(msgText + 6, "MARK=BAD", 8))
 		{
@@ -331,9 +328,8 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 					 !strcasecmp(parameter->GetValue(), "on") ||
 					 !strcasecmp(parameter->GetValue(), "1")))
 				{
-					char scriptName[1024];
-					strncpy(scriptName, varname, 1024);
-					scriptName[1024-1] = '\0';
+					BString<1024> scriptName;
+					scriptName.Set(varname);
 					scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
 					if (Util::SameFilename(scriptName, script->GetName()))
 					{

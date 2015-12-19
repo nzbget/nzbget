@@ -105,6 +105,7 @@
 
 // Using "WIN32_LEAN_AND_MEAN" to disable including on many unneeded headers
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 
 #include <windows.h>
 #include <winsock2.h>

@@ -146,26 +146,25 @@ void debug(const char* msg, ...)
 	tmp1[1024-1] = '\0';
 	va_end(ap);
 
-	char tmp2[1024];
+	BString<1024> tmp2;
 #ifdef HAVE_VARIADIC_MACROS
 	if (funcname)
 	{
-		snprintf(tmp2, 1024, "%s (%s:%i:%s)", tmp1, Util::BaseFileName(filename), lineNr, funcname);
+		tmp2.Format("%s (%s:%i:%s)", tmp1, Util::BaseFileName(filename), lineNr, funcname);
 	}
 	else
 	{
-		snprintf(tmp2, 1024, "%s (%s:%i)", tmp1, Util::BaseFileName(filename), lineNr);
+		tmp2.Format("%s (%s:%i)", tmp1, Util::BaseFileName(filename), lineNr);
 	}
 #else
-	snprintf(tmp2, 1024, "%s", tmp1);
+	tmp2.Format("%s", tmp1);
 #endif
-	tmp2[1024-1] = '\0';
 
 	g_Log->m_logMutex.Lock();
 
 	if (!g_Options && g_Log->m_extraDebug)
 	{
-		printf("%s\n", tmp2);
+		printf("%s\n", *tmp2);
 	}
 
 	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetDebugTarget() : Options::mtScreen;
@@ -175,7 +174,7 @@ void debug(const char* msg, ...)
 	}
 	if (messageTarget == Options::mtLog || messageTarget == Options::mtBoth)
 	{
-		g_Log->Filelog("DEBUG\t%s", tmp2);
+		g_Log->Filelog("DEBUG\t%s", *tmp2);
 	}
 
 	g_Log->m_logMutex.Unlock();
@@ -372,13 +371,11 @@ void Log::RotateLog()
 		baseExt[0] = '\0';
 	}
 
-	char fileMask[1024];
-	snprintf(fileMask, 1024, "%s-####-##-##%s", baseName, baseExt);
-	fileMask[1024-1] = '\0';
+	BString<1024> fileMask("%s-####-##-##%s", baseName, baseExt);
 
 	time_t curTime = time(NULL) + g_Options->GetTimeCorrection();
 	int curDay = (int)curTime / 86400;
-	char fullFilename[1024];
+	BString<1024> fullFilename;
 
 	WildMask mask(fileMask, true);
 	DirBrowser dir(directory);
@@ -386,8 +383,7 @@ void Log::RotateLog()
 	{
 		if (mask.Match(filename))
 		{
-			snprintf(fullFilename, 1024, "%s%c%s", directory, PATH_SEPARATOR, filename);
-			fullFilename[1024-1] = '\0';
+			fullFilename.Format("%s%c%s", directory, PATH_SEPARATOR, filename);
 
 			struct tm tm;
 			memset(&tm, 0, sizeof(tm));
@@ -399,9 +395,7 @@ void Log::RotateLog()
 
 			if (fileDay <= curDay - g_Options->GetRotateLog())
 			{
-				char message[1024];
-				snprintf(message, 1024, "Deleting old log-file %s\n", filename);
-				message[1024-1] = '\0';
+				BString<1024> message("Deleting old log-file %s\n", filename);
 				g_Log->AddMessage(Message::mkInfo, message);
 
 				remove(fullFilename);
@@ -411,9 +405,8 @@ void Log::RotateLog()
 
 	struct tm tm;
 	gmtime_r(&curTime, &tm);
-	snprintf(fullFilename, 1024, "%s%c%s-%i-%.2i-%.2i%s", directory, PATH_SEPARATOR,
+	fullFilename.Format("%s%c%s-%i-%.2i-%.2i%s", directory, PATH_SEPARATOR,
 		baseName, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, baseExt);
-	fullFilename[1024-1] = '\0';
 
 	m_logFilename = fullFilename;
 #ifdef WIN32

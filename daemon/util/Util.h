@@ -26,6 +26,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "NString.h"
+
 #ifdef WIN32
 extern int optind, opterr;
 extern char *optarg;
@@ -68,7 +70,7 @@ public:
 	static void NormalizePathSeparators(char* path);
 	static bool LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength);
 	static bool SaveBufferIntoFile(const char* fileName, const char* buffer, int bufLen);
-	static bool CreateSparseFile(const char* filename, int64 size, char* errBuf, int bufSize);
+	static bool CreateSparseFile(const char* filename, int64 size, CString& errmsg);
 	static bool TruncateFile(const char* filename, int size);
 	static void MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes);
 	static bool MakeUniqueFilename(char* destBufFilename, int destBufSize, const char* destDir, const char* basename);
@@ -79,8 +81,8 @@ public:
 	static bool DirectoryExists(const char* dirFilename);
 	static bool CreateDirectory(const char* dirFilename);
 	static bool RemoveDirectory(const char* dirFilename);
-	static bool DeleteDirectoryWithContent(const char* dirFilename, char* errBuf, int bufSize);
-	static bool ForceDirectories(const char* path, char* errBuf, int bufSize);
+	static bool DeleteDirectoryWithContent(const char* dirFilename, CString& errmsg);
+	static bool ForceDirectories(const char* path, CString& errmsg);
 	static bool GetCurrentDirectory(char* buffer, int bufSize);
 	static bool SetCurrentDirectory(const char* dirFilename);
 	static int64 FileSize(const char* filename);
@@ -93,18 +95,18 @@ public:
 #endif
 	static void ExpandFileName(const char* filename, char* buffer, int bufSize);
 	static void GetExeFileName(const char* argv0, char* buffer, int bufSize);
-	static char* FormatSpeed(char* buffer, int bufSize, int bytesPerSecond);
-	static char* FormatSize(char* buffer, int bufLen, int64 fileSize);
+	static CString FormatSpeed(int bytesPerSecond);
+	static CString FormatSize(int64 fileSize);
 	static bool SameFilename(const char* filename1, const char* filename2);
 	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
-	static char* GetLastErrorMessage(char* buffer, int bufLen);
+	static CString GetLastErrorMessage();
 	static int64 GetCurrentTicks();
 
 	/* Flush disk buffers for file with given descriptor */
-	static bool FlushFileBuffers(int fileDescriptor, char* errBuf, int bufSize);
+	static bool FlushFileBuffers(int fileDescriptor, CString& errmsg);
 
 	/* Flush disk buffers for file metadata (after file renaming) */
-	static bool FlushDirBuffers(const char* filename, char* errBuf, int bufSize);
+	static bool FlushDirBuffers(const char* filename, CString& errmsg);
 
 	/*
 	 * Split command line int arguments.

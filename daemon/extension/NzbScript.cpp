@@ -71,9 +71,7 @@ void NzbScriptController::PrepareEnvScript(NzbParameterList* parameters, const c
 		PrepareEnvParameters(parameters, NULL);
 	}
 
-	char paramPrefix[1024];
-	snprintf(paramPrefix, 1024, "%s:", scriptName);
-	paramPrefix[1024-1] = '\0';
+	BString<1024> paramPrefix("%s:", scriptName);
 
 	if (parameters)
 	{

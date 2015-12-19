@@ -387,39 +387,34 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 					nrFileEntries++;
 
-					char completed[100];
-					completed[0] = '\0';
+					BString<100> completed;
 					if (fileInfo->GetRemainingSize() < fileInfo->GetSize())
 					{
-						sprintf(completed, ", %i%s", (int)(100 - fileInfo->GetRemainingSize() * 100 / fileInfo->GetSize()), "%");
+						completed.Format(", %i%s", (int)(100 - fileInfo->GetRemainingSize() * 100 / fileInfo->GetSize()), "%");
 					}
 
-					char threads[100];
-					threads[0] = '\0';
+					BString<100> threads;
 					if (fileInfo->GetActiveDownloads() > 0)
 					{
-						sprintf(threads, ", %i thread%s", fileInfo->GetActiveDownloads(), (fileInfo->GetActiveDownloads() > 1 ? "s" : ""));
+						threads.Format(", %i thread%s", fileInfo->GetActiveDownloads(), (fileInfo->GetActiveDownloads() > 1 ? "s" : ""));
 					}
 
-					char status[100];
+					BString<100> status;
 					if (fileInfo->GetPaused())
 					{
-						sprintf(status, " (paused)");
+						status = " (paused)";
 						paused += fileInfo->GetRemainingSize();
 					}
 					else
 					{
-						status[0] = '\0';
 						remaining += fileInfo->GetRemainingSize();
 					}
 
 					if (!pattern || ((MatchedFileInfo*)fileInfo)->m_match)
 					{
-						char size[20];
 						printf("[%i] %s/%s (%s%s%s)%s\n", fileInfo->GetId(), fileInfo->GetNzbInfo()->GetName(),
-							fileInfo->GetFilename(),
-							Util::FormatSize(size, sizeof(size), fileInfo->GetSize()),
-							completed, threads, status);
+							fileInfo->GetFilename(), *Util::FormatSize(fileInfo->GetSize()),
+							*completed, *threads, *status);
 						matches++;
 					}
 				}
@@ -441,16 +436,12 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 			if (paused > 0)
 			{
-				char remainingBuf[20];
-				char pausedSizeBuf[20];
 				printf("Remaining size: %s (+%s paused)\n",
-					Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining),
-					Util::FormatSize(pausedSizeBuf, sizeof(pausedSizeBuf), paused));
+					*Util::FormatSize(remaining), *Util::FormatSize(paused));
 			}
 			else
 			{
-				char remainingBuf[20];
-				printf("Remaining size: %s\n", Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining));
+				printf("Remaining size: %s\n", *Util::FormatSize(remaining));
 			}
 		}
 	}
@@ -483,79 +474,61 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 				int64 unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
 				remaining += unpausedRemainingSize;
 
-				char remainingStr[20];
-				Util::FormatSize(remainingStr, sizeof(remainingStr), unpausedRemainingSize);
+				CString remainingStr = Util::FormatSize(unpausedRemainingSize);
 
-				char priority[100];
-				priority[0] = '\0';
+				BString<100> priority;
 				if (nzbInfo->GetPriority() != 0)
 				{
-					sprintf(priority, "[%+i] ", nzbInfo->GetPriority());
+					priority.Format( "[%+i] ", nzbInfo->GetPriority());
 				}
 
-				char pausedStr[20];
-				pausedStr[0] = '\0';
+				BString<100> pausedStr;
 				if (nzbInfo->GetPausedSize() > 0)
 				{
-					char pausedSize[20];
-					Util::FormatSize(pausedSize, sizeof(pausedSize), nzbInfo->GetPausedSize());
-					sprintf(pausedStr, " + %s paused", pausedSize);
+					pausedStr.Format(" + %s paused", *Util::FormatSize(nzbInfo->GetPausedSize()));
 					paused += nzbInfo->GetPausedSize();
 				}
 
-				char category[1024];
-				category[0] = '\0';
+				BString<1024> category;
 				if (nzbInfo->GetCategory() && strlen(nzbInfo->GetCategory()) > 0)
 				{
-					sprintf(category, " (%s)", nzbInfo->GetCategory());
+					category.Format(" (%s)", nzbInfo->GetCategory());
 				}
 
-				char threads[100];
-				threads[0] = '\0';
+				BString<100> threads;
 				if (nzbInfo->GetActiveDownloads() > 0)
 				{
-					sprintf(threads, ", %i thread%s", nzbInfo->GetActiveDownloads(), (nzbInfo->GetActiveDownloads() > 1 ? "s" : ""));
+					threads.Format(", %i thread%s", nzbInfo->GetActiveDownloads(), (nzbInfo->GetActiveDownloads() > 1 ? "s" : ""));
 				}
 
-				char parameters[1024];
-				parameters[0] = '\0';
+				BString<1024> parameters;
 				for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 				{
-					if (parameters[0] == '\0')
-					{
-						strncat(parameters, " (", sizeof(parameters) - strlen(parameters) - 1);
-					}
-					else
-					{
-						strncat(parameters, ", ", sizeof(parameters) - strlen(parameters) - 1);
-					}
+					parameters.Append(parameters.Empty() ? " (" : ", ");
 					NzbParameter* nzbParameter = *it;
-					strncat(parameters, nzbParameter->GetName(), sizeof(parameters) - strlen(parameters) - 1);
-					strncat(parameters, "=", sizeof(parameters) - strlen(parameters) - 1);
-					strncat(parameters, nzbParameter->GetValue(), sizeof(parameters) - strlen(parameters) - 1);
+					parameters.AppendFmt("%s=%s", nzbParameter->GetName(), nzbParameter->GetValue());
 				}
-				if (parameters[0] != '\0')
+				if (!parameters.Empty())
 				{
-					strncat(parameters, ")", sizeof(parameters) - strlen(parameters) - 1);
+					parameters.Append(")");
 				}
 
-				char urlOrFile[100];
+				BString<100> urlOrFile;
 				if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 				{
-					strncpy(urlOrFile, "URL", sizeof(urlOrFile));
+					urlOrFile = "URL";
 				}
 				else
 				{
-					snprintf(urlOrFile, sizeof(urlOrFile), "%i file%s", (int)nzbInfo->GetFileList()->size(),
+					urlOrFile.Format("%i file%s", (int)nzbInfo->GetFileList()->size(),
 						nzbInfo->GetFileList()->size() > 1 ? "s" : "");
-					urlOrFile[100-1] = '\0';
 				}
 
 				if (!pattern || ((MatchedNzbInfo*)nzbInfo)->m_match)
 				{
-					printf("[%i] %s%s (%s, %s%s%s)%s%s\n", nzbInfo->GetId(), priority,
-						nzbInfo->GetName(), urlOrFile, remainingStr,
-						pausedStr, threads, category, parameters);
+					printf("[%i] %s%s (%s, %s%s%s)%s%s\n", nzbInfo->GetId(), *priority,
+						nzbInfo->GetName(), *urlOrFile, *remainingStr,
+						*pausedStr, *threads, *category, *parameters);
 					matches++;
 				}
 			}
@@ -575,17 +548,12 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 			if (paused > 0)
 			{
-				char remainingBuf[20];
-				char pausedSizeBuf[20];
 				printf("Remaining size: %s (+%s paused)\n",
-					Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining),
-					Util::FormatSize(pausedSizeBuf, sizeof(pausedSizeBuf), paused));
+					*Util::FormatSize(remaining), *Util::FormatSize(paused));
 			}
 			else
 			{
-				char remainingBuf[20];
-				printf("Remaining size: %s\n",
-					Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining));
+				printf("Remaining size: %s\n", *Util::FormatSize(remaining));
 			}
 
 			DownloadQueue::Unlock();
@@ -598,8 +566,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 
 	if (!files && !groups)
 	{
-		char remainingBuf[20];
-		printf("Remaining size: %s\n", Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining));
+		printf("Remaining size: %s\n", *Util::FormatSize(remaining));
 	}
 
 	if (ntohl(ListResponse.m_downloadRate) > 0 &&
@@ -614,18 +581,15 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 		printf("Remaining time: %.2d:%.2d:%.2d\n", h, m, s);
 	}
 
-	char speed[20];
-	printf("Current download rate: %s\n",
-		Util::FormatSpeed(speed, sizeof(speed), ntohl(ListResponse.m_downloadRate)));
+	printf("Current download rate: %s\n", *Util::FormatSpeed(ntohl(ListResponse.m_downloadRate)));
 
 	int64 allBytes = Util::JoinInt64(ntohl(ListResponse.m_downloadedBytesHi), ntohl(ListResponse.m_downloadedBytesLo));
 	int averageSpeed = (int)(ntohl(ListResponse.m_downloadTimeSec) > 0 ? allBytes / ntohl(ListResponse.m_downloadTimeSec) : 0);
-	printf("Session download rate: %s\n", Util::FormatSpeed(speed, sizeof(speed), averageSpeed));
+	printf("Session download rate: %s\n", *Util::FormatSpeed(averageSpeed));
 
 	if (ntohl(ListResponse.m_downloadLimit) > 0)
 	{
-		printf("Speed limit: %s\n",
-			Util::FormatSpeed(speed, sizeof(speed), ntohl(ListResponse.m_downloadLimit)));
+		printf("Speed limit: %s\n", *Util::FormatSpeed(ntohl(ListResponse.m_downloadLimit)));
 	}
 
 	int sec = ntohl(ListResponse.m_upTimeSec);
@@ -640,9 +604,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 	s = sec % 60;
 	printf("Download time: %.2d:%.2d:%.2d\n", h, m, s);
 
-	char size[20];
-	printf("Downloaded: %s\n", Util::FormatSize(size, sizeof(size), allBytes));
-
+	printf("Downloaded: %s\n", *Util::FormatSize(allBytes));
 	printf("Threads running: %i\n", ntohl(ListResponse.m_threadCount));
 
 	if (ntohl(ListResponse.m_postJobCount) > 0)
@@ -655,35 +617,35 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 		printf("Scan state: Paused\n");
 	}
 
-	char serverState[50];
+	BString<100> serverState;
 
 	if (ntohl(ListResponse.m_downloadPaused) || ntohl(ListResponse.m_download2Paused))
 	{
-		snprintf(serverState, sizeof(serverState), "%s%s",
+		serverState.Format("%s%s",
 			ntohl(ListResponse.m_downloadStandBy) ? "Paused" : "Pausing",
 			ntohl(ListResponse.m_downloadPaused) && ntohl(ListResponse.m_download2Paused) ?
 			" (+2)" : ntohl(ListResponse.m_download2Paused) ? " (2)" : "");
 	}
 	else
 	{
-		snprintf(serverState, sizeof(serverState), "%s", ntohl(ListResponse.m_downloadStandBy) ? "" : "Downloading");
+		serverState.Format("%s", ntohl(ListResponse.m_downloadStandBy) ? "" : "Downloading");
 	}
 
 	if (ntohl(ListResponse.m_postJobCount) > 0 || ntohl(ListResponse.m_postPaused))
 	{
-		strncat(serverState, strlen(serverState) > 0 ? ", Post-Processing" : "Post-Processing", sizeof(serverState) - strlen(serverState) - 1);
+		serverState.Append(serverState.Length() > 0 ? ", Post-Processing" : "Post-Processing");
 		if (ntohl(ListResponse.m_postPaused))
 		{
-			strncat(serverState, " paused", sizeof(serverState) - strlen(serverState) - 1);
+			serverState.Append(" paused");
 		}
 	}
 
-	if (strlen(serverState) == 0)
+	if (serverState.Empty())
 	{
-		strncpy(serverState, "Stand-By", sizeof(serverState));
+		serverState = "Stand-By";
 	}
 
-	printf("Server state: %s\n", serverState);
+	printf("Server state: %s\n", *serverState);
 
 	return true;
 }
@@ -1043,17 +1005,16 @@ bool RemoteClient::RequestPostQueue()
 
 			int stageProgress = ntohl(postQueueAnswer->m_stageProgress);
 
-			char completed[100];
-			completed[0] = '\0';
+			BString<100> completed;
 			if (stageProgress > 0 && (int)ntohl(postQueueAnswer->m_stage) != (int)PostInfo::ptExecutingScript)
 			{
-				sprintf(completed, ", %i%s", (int)(stageProgress / 10), "%");
+				completed.Format(", %i%s", (int)(stageProgress / 10), "%");
 			}
 
 			const char* postStageName[] = { "", ", Loading Pars", ", Verifying source files", ", Repairing", ", Verifying repaired files", ", Unpacking", ", Executing postprocess-script", "" };
 			char* infoName = bufPtr + sizeof(SNzbPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen);
 
-			printf("[%i] %s%s%s\n", ntohl(postQueueAnswer->m_id), infoName, postStageName[ntohl(postQueueAnswer->m_stage)], completed);
+			printf("[%i] %s%s%s\n", ntohl(postQueueAnswer->m_id), infoName, postStageName[ntohl(postQueueAnswer->m_stage)], *completed);
 
 			bufPtr += sizeof(SNzbPostQueueResponseEntry) + ntohl(postQueueAnswer->m_nzbFilenameLen) +
 				ntohl(postQueueAnswer->m_infoNameLen) + ntohl(postQueueAnswer->m_destDirLen) +
@@ -1172,14 +1133,8 @@ bool RemoteClient::RequestHistory(bool withHidden)
 
 			if (kind == HistoryInfo::hkNzb || kind == HistoryInfo::hkDup)
 			{
-				char files[20];
-				snprintf(files, sizeof(files), "%i files, ", ntohl(listAnswer->m_fileCount));
-				files[20 - 1] = '\0';
-
+				BString<100> files("%i files, ", ntohl(listAnswer->m_fileCount));
 				int64 size = Util::JoinInt64(ntohl(listAnswer->m_sizeHi), ntohl(listAnswer->m_sizeLo));
-
-				char sizeStr[20];
-				Util::FormatSize(sizeStr, sizeof(sizeStr), size);
 
 				const char* parStatusText[] = { "", "", ", Par failed", ", Par successful", ", Repair possible", ", Repair needed" };
 				const char* scriptStatusText[] = { "", ", Script status unknown", ", Script failed", ", Script successful" };
@@ -1188,7 +1143,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 
 				printf("[%i] %s (%s%s%s%s%s)\n", ntohl(listAnswer->m_id), nicename,
 					(kind == HistoryInfo::hkDup ? "Hidden, " : ""),
-					(kind == HistoryInfo::hkDup ? "" : files), sizeStr,
+					(kind == HistoryInfo::hkDup ? "" : *files), *Util::FormatSize(size),
 					(kind == HistoryInfo::hkDup ? "" : parStatusText[parStatus]),
 					(kind == HistoryInfo::hkDup ? "" : scriptStatusText[scriptStatus]));
 			}

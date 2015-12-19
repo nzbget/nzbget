@@ -100,7 +100,7 @@ public:
 
 	typedef std::deque<DupeSource*>	DupeSourceList;
 
-	typedef std::deque<char*>		FileList;
+	typedef std::deque<CString>		FileList;
 	typedef std::deque<void*>		SourceList;
 	typedef std::vector<bool>		ValidBlocks;
 

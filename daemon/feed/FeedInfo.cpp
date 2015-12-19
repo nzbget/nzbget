@@ -130,17 +130,10 @@ int FeedItemInfo::ParsePrefixedInt(const char *value)
 
 void FeedItemInfo::AppendDupeKey(const char* extraDupeKey)
 {
-	if (m_dupeKey.Empty() || Util::EmptyStr(extraDupeKey))
+	if (!m_dupeKey.Empty() && !Util::EmptyStr(extraDupeKey))
 	{
-		return;
+		m_dupeKey.AppendFmt("-%s", extraDupeKey);
 	}
-
-	int len = m_dupeKey.Length() + 1 + strlen(extraDupeKey) + 1;
-	char* newKey = (char*)malloc(len);
-	snprintf(newKey, len, "%s-%s", *m_dupeKey, extraDupeKey);
-	newKey[len - 1] = '\0';
-
-	m_dupeKey = newKey;
 }
 
 void FeedItemInfo::BuildDupeKey(const char* rageId, const char* series)
@@ -197,22 +190,15 @@ void FeedItemInfo::ParseSeasonEpisode()
 
 	if ((*ppRegEx)->Match(m_title))
 	{
-		char regValue[100];
-		char value[100];
+		SetSeason(BString<100>("S%02d", atoi(m_title + (*ppRegEx)->GetMatchStart(1))));
 
-		snprintf(value, 100, "S%02d", atoi(m_title + (*ppRegEx)->GetMatchStart(1)));
-		value[100-1] = '\0';
-		SetSeason(value);
+		BString<100> regValue;
+		regValue.Set(m_title + (*ppRegEx)->GetMatchStart(2), (*ppRegEx)->GetMatchLen(2));
 
-		int len = (*ppRegEx)->GetMatchLen(2);
-		len = len < 99 ? len : 99;
-		strncpy(regValue, m_title + (*ppRegEx)->GetMatchStart(2), (*ppRegEx)->GetMatchLen(2));
-		regValue[len] = '\0';
-		snprintf(value, 100, "E%s", regValue);
-		value[100-1] = '\0';
-		Util::ReduceStr(value, "-", "");
-		for (char* p = value; *p; p++) *p = toupper(*p); // convert string to uppercase e02 -> E02
-		SetEpisode(value);
+		BString<100> episode("E%s", *regValue);
+		Util::ReduceStr(episode, "-", "");
+		for (char* p = episode; *p; p++) *p = toupper(*p); // convert string to uppercase e02 -> E02
+		SetEpisode(episode);
 	}
 }
 
@@ -220,10 +206,9 @@ const char* FeedItemInfo::GetDupeStatus()
 {
 	if (!m_dupeStatus)
 	{
-		char statuses[200];
-		statuses[0] = '\0';
-		m_feedFilterHelper->CalcDupeStatus(m_title, m_dupeKey, statuses, sizeof(statuses));
-		m_dupeStatus = strdup(statuses);
+		BString<1024> statuses;
+		m_feedFilterHelper->CalcDupeStatus(m_title, m_dupeKey, statuses, statuses.Capacity());
+		m_dupeStatus = statuses;
 	}
 
 	return m_dupeStatus;

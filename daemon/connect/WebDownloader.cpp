@@ -247,28 +247,19 @@ WebDownloader::EStatus WebDownloader::CreateConnection(URL *url)
 
 void WebDownloader::SendHeaders(URL *url)
 {
-	char tmp[1024];
-
 	// retrieve file
-	snprintf(tmp, 1024, "GET %s HTTP/1.0\r\n", url->GetResource());
-	tmp[1024-1] = '\0';
-	m_connection->WriteLine(tmp);
-
-	snprintf(tmp, 1024, "User-Agent: nzbget/%s\r\n", Util::VersionRevision());
-	tmp[1024-1] = '\0';
-	m_connection->WriteLine(tmp);
+	m_connection->WriteLine(BString<1024>("GET %s HTTP/1.0\r\n", url->GetResource()));
+	m_connection->WriteLine(BString<1024>("User-Agent: nzbget/%s\r\n", Util::VersionRevision()));
 
 	if ((!strcasecmp(url->GetProtocol(), "http") && (url->GetPort() == 80 || url->GetPort() == 0)) ||
 		(!strcasecmp(url->GetProtocol(), "https") && (url->GetPort() == 443 || url->GetPort() == 0)))
 	{
-		snprintf(tmp, 1024, "Host: %s\r\n", url->GetHost());
+		m_connection->WriteLine(BString<1024>("Host: %s\r\n", url->GetHost()));
 	}
 	else
 	{
-		snprintf(tmp, 1024, "Host: %s:%i\r\n", url->GetHost(), url->GetPort());
+		m_connection->WriteLine(BString<1024>("Host: %s:%i\r\n", url->GetHost(), url->GetPort()));
 	}
-	tmp[1024-1] = '\0';
-	m_connection->WriteLine(tmp);
 
 	m_connection->WriteLine("Accept: */*\r\n");
 #ifndef DISABLE_GZIP
@@ -525,9 +516,8 @@ void WebDownloader::ParseFilename(const char* contentDisposition)
 
 	while (*p == ' ') p++;
 
-	char fname[1024];
-	strncpy(fname, p, 1024);
-	fname[1024-1] = '\0';
+	BString<1024> fname;
+	fname.Set(p);
 
 	char *pe = fname + strlen(fname) - 1;
 	while ((*pe == ' ' || *pe == '\n' || *pe == '\r' || *pe == ';') && pe > fname) {
@@ -545,26 +535,24 @@ void WebDownloader::ParseFilename(const char* contentDisposition)
 void WebDownloader::ParseRedirect(const char* location)
 {
 	const char* newLocation = location;
-	char urlBuf[1024];
+	BString<1024> urlBuf;
 	URL newUrl(newLocation);
 	if (!newUrl.IsValid())
 	{
 		// redirect within host
 
-		char resource[1024];
+		BString<1024> resource;
 		URL oldUrl(m_url);
 
 		if (*location == '/')
 		{
 			// absolute path within host
-			strncpy(resource, location, 1024);
-			resource[1024-1] = '\0';
+			resource = location;
 		}
 		else
 		{
 			// relative path within host
-			strncpy(resource, oldUrl.GetResource(), 1024);
-			resource[1024-1] = '\0';
+			resource = oldUrl.GetResource();
 
 			char* p = strchr(resource, '?');
 			if (p)
@@ -578,19 +566,17 @@ void WebDownloader::ParseRedirect(const char* location)
 				p[1] = '\0';
 			}
 
-			strncat(resource, location, 1024 - strlen(resource));
-			resource[1024-1] = '\0';
+			resource.Append(location);
 		}
 
 		if (oldUrl.GetPort() > 0)
 		{
-			snprintf(urlBuf, 1024, "%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), resource);
+			urlBuf.Format("%s://%s:%i%s", oldUrl.GetProtocol(), oldUrl.GetHost(), oldUrl.GetPort(), *resource);
 		}
 		else
 		{
-			snprintf(urlBuf, 1024, "%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), resource);
+			urlBuf.Format("%s://%s%s", oldUrl.GetProtocol(), oldUrl.GetHost(), *resource);
 		}
-		urlBuf[1024-1] = '\0';
 		newLocation = urlBuf;
 	}
 	detail("URL %s redirected to %s", *m_url, newLocation);

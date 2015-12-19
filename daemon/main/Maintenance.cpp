@@ -144,10 +144,8 @@ bool Maintenance::StartUpdate(EBranch branch)
 #endif
 		)
 	{
-		char filename[MAX_PATH + 100];
-		snprintf(filename, sizeof(filename), "%s%c%s", g_Options->GetAppDir(), PATH_SEPARATOR, m_updateScript);
 		free(m_updateScript);
-		m_updateScript = strdup(filename);
+		m_updateScript = strdup(BString<1024>("%s%c%s", g_Options->GetAppDir(), PATH_SEPARATOR, m_updateScript));
 	}
 
 	m_messages.Clear();
@@ -180,26 +178,22 @@ bool Maintenance::CheckUpdates(char** updateInfo)
 
 bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 {
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%cpackage-info.json", g_Options->GetWebDir(), PATH_SEPARATOR);
-	fileName[1024-1] = '\0';
+	BString<1024> fileName("%s%cpackage-info.json", g_Options->GetWebDir(), PATH_SEPARATOR);
 
 	char* packageInfo;
 	int packageInfoLen;
 	if (!Util::LoadFileIntoBuffer(fileName, &packageInfo, &packageInfoLen))
 	{
-		error("Could not load file %s", fileName);
+		error("Could not load file %s", *fileName);
 		return false;
 	}
 
-	char keyStr[100];
-	snprintf(keyStr, 100, "\"%s\"", key);
-	keyStr[100-1] = '\0';
+	BString<100> keyStr("\"%s\"", key);
 
 	char* p = strstr(packageInfo, keyStr);
 	if (!p)
 	{
-		error("Could not parse file %s", fileName);
+		error("Could not parse file %s", *fileName);
 		free(packageInfo);
 		return false;
 	}
@@ -207,7 +201,7 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	p = strchr(p + strlen(keyStr), '"');
 	if (!p)
 	{
-		error("Could not parse file %s", fileName);
+		error("Could not parse file %s", *fileName);
 		free(packageInfo);
 		return false;
 	}
@@ -216,7 +210,7 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	char* pend = strchr(p, '"');
 	if (!pend)
 	{
-		error("Could not parse file %s", fileName);
+		error("Could not parse file %s", *fileName);
 		free(packageInfo);
 		return false;
 	}
@@ -224,7 +218,7 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	int len = pend - p;
 	if (len >= sizeof(fileName))
 	{
-		error("Could not parse file %s", fileName);
+		error("Could not parse file %s", *fileName);
 		free(packageInfo);
 		return false;
 	}
@@ -258,9 +252,7 @@ void UpdateScriptController::Run()
 	m_prefixLen = 0;
 	PrintMessage(Message::mkInfo, "Executing update-script %s", GetScript());
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "update-script %s", Util::BaseFileName(GetScript()));
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("update-script %s", Util::BaseFileName(GetScript()));
 	SetInfoName(infoName);
 
 	const char* branchName[] = { "STABLE", "TESTING", "DEVEL" };
@@ -270,25 +262,20 @@ void UpdateScriptController::Run()
 
 	for (int i = 0; i < g_ArgumentCount; i++)
 	{
-		char envName[40];
-		snprintf(envName, 40, "NZBUP_CMDLINE%i", i);
-		infoName[40-1] = '\0';
+		BString<100> envName("NZBUP_CMDLINE%i", i);
 		SetEnvVar(envName, (*g_Arguments)[i]);
 	}
 
-	char processId[20];
 #ifdef WIN32
 	int pid = (int)GetCurrentProcessId();
 #else
 	int pid = (int)getpid();
 #endif
-	snprintf(processId, 20, "%i", pid);
-	processId[20-1] = '\0';
-	SetEnvVar("NZBUP_PROCESSID", processId);
 
-	char logPrefix[100];
-	strncpy(logPrefix, Util::BaseFileName(GetScript()), 100);
-	logPrefix[100-1] = '\0';
+	SetEnvVar("NZBUP_PROCESSID", BString<100>("%i", pid));
+
+	BString<100> logPrefix;
+	logPrefix.Set(Util::BaseFileName(GetScript()));
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(logPrefix);
 	m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
@@ -329,14 +316,11 @@ void UpdateInfoScriptController::ExecuteScript(const char* script, char** update
 	UpdateInfoScriptController* scriptController = new UpdateInfoScriptController();
 	scriptController->SetScript(script);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "update-info-script %s", Util::BaseFileName(script));
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("update-info-script %s", Util::BaseFileName(script));
 	scriptController->SetInfoName(infoName);
 
-	char logPrefix[1024];
-	strncpy(logPrefix, Util::BaseFileName(script), 1024);
-	logPrefix[1024-1] = '\0';
+	BString<1024> logPrefix;
+	logPrefix.Set(Util::BaseFileName(script));
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	scriptController->SetLogPrefix(logPrefix);
 	scriptController->m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
@@ -412,9 +396,7 @@ bool Signature::ComputeInHash()
 // Read signature from file (m_szSigFilename) into memory
 bool Signature::ReadSignature()
 {
-	char sigTitle[256];
-	snprintf(sigTitle, sizeof(sigTitle), "\"RSA-SHA256(%s)\" : \"", Util::BaseFileName(m_inFilename));
-	sigTitle[256-1] = '\0';
+	BString<1024> sigTitle("\"RSA-SHA256(%s)\" : \"", Util::BaseFileName(m_inFilename));
 
 	FILE* infile = fopen(m_sigFilename, FOPEN_RB);
 	if (!infile)

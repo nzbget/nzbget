@@ -429,9 +429,7 @@ void WinConsole::ShowWebUI()
 		iP = "127.0.0.1";
 	}
 
-	char url[1024];
-	snprintf(url, 1024, "http://%s:%i", iP, g_Options->GetControlPort());
-	url[1024-1] = '\0';
+	BString<1024> url("http://%s:%i", iP, g_Options->GetControlPort());
 	ShellExecute(0, "open", url, NULL, NULL, SW_SHOWNORMAL);
 }
 
@@ -445,9 +443,7 @@ void WinConsole::ShowInExplorer(const char* filename)
 
 	if (!Util::FileExists(fileName2) && !Util::DirectoryExists(fileName2))
 	{
-		char message[400];
-		snprintf(message, 400, "Directory or file %s doesn't exist (yet).", fileName2);
-		message[400-1] = '\0';
+		BString<1024> message("Directory or file %s doesn't exist (yet).", fileName2);
 		MessageBox(m_trayWindow, message, "Information", MB_ICONINFORMATION);
 		return;
 	}
@@ -483,16 +479,10 @@ BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 	{
 		case WM_INITDIALOG:
 			SendDlgItemMessage(hwndDlg, IDC_ABOUT_NAME, WM_SETFONT, (WPARAM)m_nameFont, 0);
-
-			char version[100];
-			snprintf(version, 100, "Version %s", Util::VersionRevision());
-			SetDlgItemText(hwndDlg, IDC_ABOUT_VERSION, version);
-
+			SetDlgItemText(hwndDlg, IDC_ABOUT_VERSION, BString<100>("Version %s", Util::VersionRevision()));
 			SendDlgItemMessage(hwndDlg, IDC_ABOUT_ICON, STM_SETICON, (WPARAM)m_aboutIcon, 0);
-
 			SendDlgItemMessage(hwndDlg, IDC_ABOUT_HOMEPAGE, WM_SETFONT, (WPARAM)m_linkFont, 0);
 			SendDlgItemMessage(hwndDlg, IDC_ABOUT_GPL, WM_SETFONT, (WPARAM)m_linkFont, 0);
-
 			return FALSE;
 
 		case WM_CLOSE:
@@ -630,10 +620,8 @@ void WinConsole::SavePrefs()
 	{
 		char filename[MAX_PATH + 1];
 		GetModuleFileName(NULL, filename, sizeof(filename));
-		char startCommand[1024];
-		snprintf(startCommand, sizeof(startCommand), "\"%s\" -s -app -auto", filename);
-		startCommand[1024-1] = '\0';
-		RegSetValueEx(hKey, "NZBGet", 0, REG_SZ, (BYTE*)startCommand, strlen(startCommand) + 1);
+		BString<1024> startCommand("\"%s\" -s -app -auto", filename);
+		RegSetValueEx(hKey, "NZBGet", 0, REG_SZ, (BYTE*)(char*)startCommand, strlen(startCommand) + 1);
 	}
 	else
 	{
@@ -792,11 +780,7 @@ void WinConsole::UpdateTrayIcon()
 	else if (!g_StatMeter->GetStandBy())
 	{
 		m_iconData->hIcon = m_workingIcon;
-		char speed[100];
-		Util::FormatSpeed(speed, sizeof(speed), g_StatMeter->CalcCurrentDownloadSpeed());
-		char tip[200];
-		snprintf(tip, sizeof(tip), "NZBGet - downloading at %s", speed);
-		tip[200-1] = '\0';
+		BString<100> tip("NZBGet - downloading at %s", *Util::FormatSpeed(g_StatMeter->CalcCurrentDownloadSpeed()));
 		strncpy(m_iconData->szTip, tip, sizeof(m_iconData->szTip));
 	}
 	else
@@ -847,9 +831,7 @@ void WinConsole::BuildMenu()
 	{
 		Options::Category* category = *it;
 
-		char caption[250];
-		snprintf(caption, 250, "Category %i: %s", index + 1, category->GetName());
-		caption[250 - 1] = '\0';
+		BString<1024> caption("Category %i: %s", index + 1, category->GetName());
 
 		MENUITEMINFO item;
 		ZeroMemory(&item, sizeof(MENUITEMINFO));
@@ -876,22 +858,19 @@ void WinConsole::ShowCategoryDir(int catIndex)
 {
 	Options::Category* category = g_Options->GetCategories()->at(catIndex);
 
-	char destDir[1024];
+	BString<1024> destDir;
 
 	if (!Util::EmptyStr(category->GetDestDir()))
 	{
-		snprintf(destDir, 1024, "%s", category->GetDestDir());
-		destDir[1024-1] = '\0';
+		destDir.Format("%s", category->GetDestDir());
 	}
 	else
 	{
-		char categoryDir[1024];
-		strncpy(categoryDir, category->GetName(), 1024);
-		categoryDir[1024 - 1] = '\0';
+		BString<1024> categoryDir;
+		categoryDir.Set(category->GetName());
 		Util::MakeValidFilename(categoryDir, '_', true);
 
-		snprintf(destDir, 1024, "%s%s", g_Options->GetDestDir(), categoryDir);
-		destDir[1024-1] = '\0';
+		destDir.Format("%s%s", g_Options->GetDestDir(), *categoryDir);
 	}
 
 	ShowInExplorer(destDir);
@@ -899,10 +878,7 @@ void WinConsole::ShowCategoryDir(int catIndex)
 
 void WinConsole::OpenConfigFileInTextEdit()
 {
-	char lParam[MAX_PATH + 3];
-	snprintf(lParam, sizeof(lParam), "\"%s\"", g_Options->GetConfigFilename());
-	lParam[sizeof(lParam)-1] = '\0';
-	ShellExecute(0, "open", "notepad.exe", lParam, NULL, SW_SHOWNORMAL);
+	ShellExecute(0, "open", "notepad.exe", BString<1024>("\"%s\"", g_Options->GetConfigFilename()), NULL, SW_SHOWNORMAL);
 }
 
 void WinConsole::SetupFirstStart()
@@ -915,23 +891,15 @@ void WinConsole::SetupConfigFile()
 {
 	// create new config-file from config template
 
-	char filename[MAX_PATH + 30];
-
 	char commonAppDataPath[MAX_PATH];
 	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, commonAppDataPath);
 
-	snprintf(filename, sizeof(filename), "%s\\NZBGet\\nzbget.conf", commonAppDataPath);
-	filename[sizeof(filename)-1] = '\0';
+	BString<1024> filename("%s\\NZBGet\\nzbget.conf", commonAppDataPath);
 
-	char appDataPath[MAX_PATH + 1];
-	snprintf(appDataPath, sizeof(appDataPath), "%s\\NZBGet", commonAppDataPath);
-	appDataPath[sizeof(appDataPath)-1] = '\0';
+	BString<1024> appDataPath("%s\\NZBGet", commonAppDataPath);
 	Util::CreateDirectory(appDataPath);
 
-	char confTemplateFilename[MAX_PATH + 30];
-	snprintf(confTemplateFilename, sizeof(confTemplateFilename), "%s\\nzbget.conf.template", g_Options->GetAppDir());
-	confTemplateFilename[sizeof(confTemplateFilename)-1] = '\0';
-
+	BString<1024> confTemplateFilename("%s\\nzbget.conf.template", g_Options->GetAppDir());
 	CopyFile(confTemplateFilename, filename, FALSE);
 
 	// set MainDir in the config-file
@@ -958,9 +926,8 @@ void WinConsole::SetupConfigFile()
 	}
 
 	// create default destination directory (which is not created on start automatically)
-	snprintf(filename, sizeof(filename), "%s\\NZBGet\\complete", commonAppDataPath);
-	filename[sizeof(filename)-1] = '\0';
-	Util::CreateDirectory(filename);
+	BString<1024> completeDir("%s\\NZBGet\\complete", commonAppDataPath);
+	Util::CreateDirectory(completeDir);
 }
 
 void WinConsole::SetupScripts()
@@ -970,28 +937,18 @@ void WinConsole::SetupScripts()
 	char appDataPath[MAX_PATH];
 	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appDataPath);
 
-	char destDir[MAX_PATH + 1];
-	snprintf(destDir, sizeof(destDir), "%s\\NZBGet\\scripts", appDataPath);
-	destDir[sizeof(destDir)-1] = '\0';
+	BString<1024> destDir("%s\\NZBGet\\scripts", appDataPath);
 	Util::CreateDirectory(destDir);
 
-	char srcDir[MAX_PATH + 30];
-	snprintf(srcDir, sizeof(srcDir), "%s\\scripts", g_Options->GetAppDir());
-	srcDir[sizeof(srcDir)-1] = '\0';
+	BString<1024> srcDir("%s\\scripts", g_Options->GetAppDir());
 
 	DirBrowser dir(srcDir);
 	while (const char* filename = dir.Next())
 	{
 		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
-			char srcFullFilename[1024];
-			snprintf(srcFullFilename, 1024, "%s\\%s", srcDir, filename);
-			srcFullFilename[1024-1] = '\0';
-
-			char dstFullFilename[1024];
-			snprintf(dstFullFilename, 1024, "%s\\%s", destDir, filename);
-			dstFullFilename[1024-1] = '\0';
-
+			BString<1024> srcFullFilename("%s\\%s", srcDir, filename);
+			BString<1024> dstFullFilename("%s\\%s", destDir, filename);
 			CopyFile(srcFullFilename, dstFullFilename, FALSE);
 		}
 	}
@@ -1041,9 +998,8 @@ BOOL WinConsole::FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 
 void WinConsole::ResetFactoryDefaults()
 {
-	char path[MAX_PATH + 100];
-	char message[1024];
-	char errBuf[200];
+	BString<1024> path;
+	CString errmsg;
 
 	g_Options->SetPauseDownload(true);
 	g_Options->SetPausePostProcess(true);
@@ -1055,13 +1011,12 @@ void WinConsole::ResetFactoryDefaults()
 	const char* DefDirs[] = {"nzb", "tmp", "queue", "scripts"};
 	for (int i=0; i < 4; i++)
 	{
-		snprintf(path, sizeof(path), "%s\\NZBGet\\%s", commonAppDataPath, DefDirs[i]);
-		path[sizeof(path)-1] = '\0';
+		path.Format("%s\\NZBGet\\%s", commonAppDataPath, DefDirs[i]);
 
 		// try to delete the directory
 		int retry = 10;
 		while (retry > 0 && Util::DirectoryExists(path) &&
-			!Util::DeleteDirectoryWithContent(path, errBuf, sizeof(errBuf)))
+			!Util::DeleteDirectoryWithContent(path, errmsg))
 		{
 			usleep(200 * 1000);
 			retry--;
@@ -1069,58 +1024,51 @@ void WinConsole::ResetFactoryDefaults()
 
 		if (Util::DirectoryExists(path))
 		{
-			snprintf(message, 1024, "Could not delete directory %s:\n%s.\nPlease delete the directory manually and try again.", path, errBuf);
-			message[1024-1] = '\0';
-			MessageBox(m_trayWindow, message, "NZBGet", MB_ICONERROR);
+			MessageBox(m_trayWindow,
+				BString<1024>("Could not delete directory %s:\n%s.\nPlease delete the directory manually and try again.", *path, *errmsg),
+				"NZBGet", MB_ICONERROR);
 			return;
 		}
 	}
 
 	// delete old config file in the program's directory
-	snprintf(path, sizeof(path), "%s\\nzbget.conf", g_Options->GetAppDir());
+	path.Format("%s\\nzbget.conf", g_Options->GetAppDir());
 
 	remove(path);
-	Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
+	errmsg = Util::GetLastErrorMessage();
 
 	if (Util::FileExists(path))
 	{
-		snprintf(message, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", path, errBuf);
-		message[1024-1] = '\0';
-		MessageBox(m_trayWindow, message, "NZBGet", MB_ICONERROR);
+		MessageBox(m_trayWindow,
+			BString<1024>("Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", *path, *errmsg),
+			"NZBGet", MB_ICONERROR);
 		return;
 	}
 
 	// delete config file in default directory
-	snprintf(path, sizeof(path), "%s\\NZBGet\\nzbget.conf", commonAppDataPath);
-	path[sizeof(path)-1] = '\0';
+	path.Format("%s\\NZBGet\\nzbget.conf", commonAppDataPath);
 
 	remove(path);
-	Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
-
+	errmsg = Util::GetLastErrorMessage();
 
 	if (Util::FileExists(path))
 	{
-		snprintf(message, 1024, "Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", path, errBuf);
-		message[1024-1] = '\0';
-		MessageBox(m_trayWindow, message, "NZBGet", MB_ICONERROR);
+		MessageBox(m_trayWindow,
+			BString<1024>("Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", *path, *errmsg),
+			"NZBGet", MB_ICONERROR);
 		return;
 	}
 
 	// delete log files in default directory
-	snprintf(path, sizeof(path), "%s\\NZBGet", commonAppDataPath);
-	path[sizeof(path)-1] = '\0';
+	path.Format("%s\\NZBGet", commonAppDataPath);
 
 	DirBrowser dir(path);
 	while (const char* filename = dir.Next())
 	{
 		if (Util::MatchFileExt(filename, ".log", ","))
 		{
-			char fullFilename[1024];
-			snprintf(fullFilename, 1024, "%s%c%s", path, PATH_SEPARATOR, filename);
-			fullFilename[1024-1] = '\0';
-
+			BString<1024> fullFilename("%s%c%s", *path, PATH_SEPARATOR, filename);
 			remove(fullFilename);
-
 			// ignore errors
 		}
 	}

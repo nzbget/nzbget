@@ -458,12 +458,9 @@ void DownloadBinCommand::Execute()
 			NULL, NULL, nzbContent, bufLen, NULL) != Scanner::asFailed;
 	}
 
-	char tmp[1024];
-	snprintf(tmp, 1024, ok ? "Collection %s added to queue" : "Download Request failed for %s",
-		Util::BaseFileName(DownloadRequest.m_nzbFilename));
-	tmp[1024-1] = '\0';
-
-	SendBoolResponse(ok, tmp);
+	SendBoolResponse(ok, BString<1024>(ok ? "Collection %s added to queue" :
+		"Download Request failed for %s",
+		Util::BaseFileName(DownloadRequest.m_nzbFilename)));
 
 	free(nzbContent);
 }
@@ -651,8 +648,8 @@ void ListBinCommand::Execute()
 
 				if (regEx && !matchGroup)
 				{
-					char filename[MAX_PATH];
-					snprintf(filename, sizeof(filename) - 1, "%s/%s", fileInfo->GetNzbInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
+					BString<1024> filename("%s/%s", fileInfo->GetNzbInfo()->GetName(),
+						Util::BaseFileName(fileInfo->GetFilename()));
 					listAnswer->m_match = htonl(regEx->Match(filename));
 				}
 

@@ -63,8 +63,8 @@ int ParseFormatVersion(const char* formatSignature)
 class StateFile
 {
 private:
-	char			m_destFilename[1024];
-	char			m_tempFilename[1024];
+	BString<1024>	m_destFilename;
+	BString<1024>	m_tempFilename;
 	int				m_formatVersion;
 	int				m_fileVersion;
 	FILE*			m_file;
@@ -85,14 +85,9 @@ public:
 StateFile::StateFile(const char* filename, int formatVersion)
 {
 	m_file = NULL;
-
 	m_formatVersion = formatVersion;
-
-	snprintf(m_destFilename, 1024, "%s%s", g_Options->GetQueueDir(), filename);
-	m_destFilename[1024-1] = '\0';
-
-	snprintf(m_tempFilename, 1024, "%s%s.new", g_Options->GetQueueDir(), filename);
-	m_tempFilename[1024-1] = '\0';
+	m_destFilename.Format("%s%s", g_Options->GetQueueDir(), filename);
+	m_tempFilename.Format("%s%s.new", g_Options->GetQueueDir(), filename);
 }
 
 StateFile::~StateFile()
@@ -119,9 +114,8 @@ FILE* StateFile::BeginWriteTransaction()
 
 	if (!m_file)
 	{
-		char errBuf[256];
-		Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
-		error("Error saving diskstate: Could not create file %s: %s", m_tempFilename, errBuf);
+		error("Error saving diskstate: Could not create file %s: %s", *m_tempFilename,
+			*Util::GetLastErrorMessage());
 		return NULL;
 	}
 
@@ -132,16 +126,15 @@ FILE* StateFile::BeginWriteTransaction()
 
 bool StateFile::FinishWriteTransaction()
 {
-	char errBuf[256];
-
 	// flush file content before renaming
 	if (g_Options->GetFlushQueue())
 	{
 		debug("Flushing data for file %s", Util::BaseFileName(m_tempFilename));
 		fflush(m_file);
-		if (!Util::FlushFileBuffers(fileno(m_file), errBuf, sizeof(errBuf)))
+		CString errmsg;
+		if (!Util::FlushFileBuffers(fileno(m_file), errmsg))
 		{
-			warn("Could not flush file %s into disk: %s", m_tempFilename, errBuf);
+			warn("Could not flush file %s into disk: %s", *m_tempFilename, *errmsg);
 		}
 	}
 
@@ -152,9 +145,8 @@ bool StateFile::FinishWriteTransaction()
 	remove(m_destFilename);
 	if (rename(m_tempFilename, m_destFilename))
 	{
-		Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
 		error("Error saving diskstate: Could not rename file %s to %s: %s",
-			m_tempFilename, m_destFilename, errBuf);
+			*m_tempFilename, *m_destFilename, *Util::GetLastErrorMessage());
 		return false;
 	}
 
@@ -162,9 +154,10 @@ bool StateFile::FinishWriteTransaction()
 	if (g_Options->GetFlushQueue())
 	{
 		debug("Flushing directory for file %s", Util::BaseFileName(m_destFilename));
-		if (!Util::FlushDirBuffers(m_destFilename, errBuf, sizeof(errBuf)))
+		CString errmsg;
+		if (!Util::FlushDirBuffers(m_destFilename, errmsg))
 		{
-			warn("Could not flush directory buffers for file %s into disk: %s", m_destFilename, errBuf);
+			warn("Could not flush directory buffers for file %s into disk: %s", *m_destFilename, *errmsg);
 		}
 	}
 
@@ -179,10 +172,8 @@ FILE* StateFile::BeginReadTransaction()
 		warn("Restoring diskstate file %s from %s", Util::BaseFileName(m_destFilename), Util::BaseFileName(m_tempFilename));
 		if (rename(m_tempFilename, m_destFilename))
 		{
-			char errBuf[256];
-			Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
 			error("Error restoring diskstate: Could not rename file %s to %s: %s",
-				m_tempFilename, m_destFilename, errBuf);
+				*m_tempFilename, *m_destFilename, *Util::GetLastErrorMessage());
 			return NULL;
 		}
 	}
@@ -191,9 +182,8 @@ FILE* StateFile::BeginReadTransaction()
 
 	if (!m_file)
 	{
-		char errBuf[256];
-		Util::GetLastErrorMessage(errBuf, sizeof(errBuf));
-		error("Error reading diskstate: could not open file %s: %s", m_destFilename, errBuf);
+		error("Error reading diskstate: could not open file %s: %s", *m_destFilename,
+			*Util::GetLastErrorMessage());
 		return NULL;
 	}
 
@@ -1002,9 +992,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 				nzbInfo->SetPriority(priority);
 			}
 
-			char fileName[1024];
-			snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), id);
-			fileName[1024-1] = '\0';
+			BString<1024> fileName("%s%i", g_Options->GetQueueDir(), id);
 			FileInfo* fileInfo = new FileInfo();
 			bool res = LoadFileInfo(fileInfo, fileName, true, false);
 			if (res)
@@ -1063,9 +1051,7 @@ bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, FILE* infil
 		}
 		if (nzbIndex > nzbList->size()) goto error;
 
-		char fileName[1024];
-		snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), id);
-		fileName[1024-1] = '\0';
+		BString<1024> fileName("%s%i", g_Options->GetQueueDir(), id);
 		FileInfo* fileInfo = new FileInfo();
 		bool res = LoadFileInfo(fileInfo, fileName, true, false);
 		if (res)
@@ -1143,9 +1129,7 @@ error:
 
 bool DiskState::SaveFile(FileInfo* fileInfo)
 {
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
-	fileName[1024-1] = '\0';
+	BString<1024> fileName("%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
 	return SaveFileInfo(fileInfo, fileName);
 }
 
@@ -1196,9 +1180,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 
 bool DiskState::LoadArticles(FileInfo* fileInfo)
 {
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
-	fileName[1024-1] = '\0';
+	BString<1024> fileName("%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
 	return LoadFileInfo(fileInfo, fileName, false, true);
 }
 
@@ -1322,15 +1304,12 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 {
 	debug("Saving FileState to disk");
 
-	char filename[1024];
-	snprintf(filename, 1024, "%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
-	filename[1024-1] = '\0';
-
+	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	FILE* outfile = fopen(filename, FOPEN_WB);
 
 	if (!outfile)
 	{
-		error("Error saving diskstate: could not create file %s", filename);
+		error("Error saving diskstate: could not create file %s", *filename);
 		return false;
 	}
 
@@ -1360,17 +1339,14 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 
 bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed)
 {
-	char filename[1024];
-	snprintf(filename, 1024, "%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
-	filename[1024-1] = '\0';
-
 	bool hasArticles = !fileInfo->GetArticles()->empty();
 
+	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	FILE* infile = fopen(filename, FOPEN_RB);
 
 	if (!infile)
 	{
-		error("Error reading diskstate: could not open file %s", filename);
+		error("Error reading diskstate: could not open file %s", *filename);
 		return false;
 	}
 
@@ -1462,7 +1438,7 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 
 error:
 	fclose(infile);
-	error("Error reading diskstate for file %s", filename);
+	error("Error reading diskstate for file %s", *filename);
 	return false;
 }
 
@@ -1474,29 +1450,25 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 		DiscardFile(fileInfo, true, true, true);
 	}
 
-	char filename[1024];
+	BString<1024> filename;
 
 	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* completedFile = *it;
 		if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
 		{
-			snprintf(filename, 1024, "%s%i", g_Options->GetQueueDir(), completedFile->GetId());
-			filename[1024-1] = '\0';
+			filename.Format("%s%i", g_Options->GetQueueDir(), completedFile->GetId());
 			remove(filename);
 
-			snprintf(filename, 1024, "%s%is", g_Options->GetQueueDir(), completedFile->GetId());
-			filename[1024-1] = '\0';
+			filename.Format("%s%is", g_Options->GetQueueDir(), completedFile->GetId());
 			remove(filename);
 
-			snprintf(filename, 1024, "%s%ic", g_Options->GetQueueDir(), completedFile->GetId());
-			filename[1024-1] = '\0';
+			filename.Format("%s%ic", g_Options->GetQueueDir(), completedFile->GetId());
 			remove(filename);
 		}
 	}
 
-	snprintf(filename, 1024, "%sn%i.log", g_Options->GetQueueDir(), nzbInfo->GetId());
-	filename[1024-1] = '\0';
+	filename.Format("%sn%i.log", g_Options->GetQueueDir(), nzbInfo->GetId());
 	remove(filename);
 }
 
@@ -1577,9 +1549,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 {
 	debug("Loading post-queue from disk");
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_Options->GetQueueDir(), "postq");
-	fileName[1024-1] = '\0';
+	BString<1024> fileName("%s%s", g_Options->GetQueueDir(), "postq");
 
 	if (!Util::FileExists(fileName))
 	{
@@ -1590,7 +1560,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 
 	if (!infile)
 	{
-		error("Error reading diskstate: could not open file %s", fileName);
+		error("Error reading diskstate: could not open file %s", *fileName);
 		return false;
 	}
 
@@ -1728,7 +1698,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 
 error:
 	fclose(infile);
-	error("Error reading diskstate for file %s", fileName);
+	error("Error reading diskstate for file %s", *fileName);
 	return false;
 }
 
@@ -2033,9 +2003,7 @@ void DiskState::DiscardDownloadQueue()
 {
 	debug("Discarding queue");
 
-	char fullFilename[1024];
-	snprintf(fullFilename, 1024, "%s%s", g_Options->GetQueueDir(), "queue");
-	fullFilename[1024-1] = '\0';
+	BString<1024> fullFilename("%s%s", g_Options->GetQueueDir(), "queue");
 	remove(fullFilename);
 
 	DirBrowser dir(g_Options->GetQueueDir());
@@ -2053,18 +2021,15 @@ void DiskState::DiscardDownloadQueue()
 		}
 		if (onlyNums)
 		{
-			snprintf(fullFilename, 1024, "%s%s", g_Options->GetQueueDir(), filename);
-			fullFilename[1024-1] = '\0';
+			fullFilename.Format("%s%s", g_Options->GetQueueDir(), filename);
 			remove(fullFilename);
 
 			// delete file state file
-			snprintf(fullFilename, 1024, "%s%ss", g_Options->GetQueueDir(), filename);
-			fullFilename[1024-1] = '\0';
+			fullFilename.Format("%s%ss", g_Options->GetQueueDir(), filename);
 			remove(fullFilename);
 
 			// delete failed info file
-			snprintf(fullFilename, 1024, "%s%sc", g_Options->GetQueueDir(), filename);
-			fullFilename[1024-1] = '\0';
+			fullFilename.Format("%s%sc", g_Options->GetQueueDir(), filename);
 			remove(fullFilename);
 		}
 	}
@@ -2074,37 +2039,32 @@ bool DiskState::DownloadQueueExists()
 {
 	debug("Checking if a saved queue exists on disk");
 
-	char fileName[1024];
-	snprintf(fileName, 1024, "%s%s", g_Options->GetQueueDir(), "queue");
-	fileName[1024-1] = '\0';
+	BString<1024> fileName("%s%s", g_Options->GetQueueDir(), "queue");
 	return Util::FileExists(fileName);
 }
 
 void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState)
 {
-	char fileName[1024];
+	BString<1024> fileName;
 
 	// info and articles file
 	if (deleteData)
 	{
-		snprintf(fileName, 1024, "%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
-		fileName[1024-1] = '\0';
+		fileName.Format("%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
 		remove(fileName);
 	}
 
 	// partial state file
 	if (deletePartialState)
 	{
-		snprintf(fileName, 1024, "%s%is", g_Options->GetQueueDir(), fileInfo->GetId());
-		fileName[1024-1] = '\0';
+		fileName.Format("%s%is", g_Options->GetQueueDir(), fileInfo->GetId());
 		remove(fileName);
 	}
 
 	// completed state file
 	if (deleteCompletedState)
 	{
-		snprintf(fileName, 1024, "%s%ic", g_Options->GetQueueDir(), fileInfo->GetId());
-		fileName[1024-1] = '\0';
+		fileName.Format("%s%ic", g_Options->GetQueueDir(), fileInfo->GetId());
 		remove(fileName);
 	}
 }
@@ -2118,9 +2078,7 @@ void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 		if (strstr(filename, ".tmp") || strstr(filename, ".dec") ||
 			(sscanf(filename, "%i.%i", &id, &part) == 2))
 		{
-			char fullFilename[1024];
-			snprintf(fullFilename, 1024, "%s%s", g_Options->GetTempDir(), filename);
-			fullFilename[1024-1] = '\0';
+			BString<1024> fullFilename("%s%s", g_Options->GetTempDir(), filename);
 			remove(fullFilename);
 		}
 	}
@@ -2413,10 +2371,7 @@ void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 
 bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers)
 {
-	char cacheFlagFilename[1024];
-	snprintf(cacheFlagFilename, 1024, "%s%s", g_Options->GetQueueDir(), "acache");
-	cacheFlagFilename[1024-1] = '\0';
-
+	BString<1024> cacheFlagFilename("%s%s", g_Options->GetQueueDir(), "acache");
 	bool cacheWasActive = Util::FileExists(cacheFlagFilename);
 
 	DirBrowser dir(g_Options->GetQueueDir());
@@ -2444,9 +2399,7 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 			}
 			else
 			{
-				char fullFilename[1024];
-				snprintf(fullFilename, 1024, "%s%s", g_Options->GetQueueDir(), filename);
-				fullFilename[1024-1] = '\0';
+				BString<1024> fullFilename("%s%s", g_Options->GetQueueDir(), filename);
 				remove(fullFilename);
 			}
 		}
@@ -2893,14 +2846,12 @@ error:
 
 void DiskState::WriteCacheFlag()
 {
-	char flagFilename[1024];
-	snprintf(flagFilename, 1024, "%s%s", g_Options->GetQueueDir(), "acache");
-	flagFilename[1024-1] = '\0';
+	BString<1024> flagFilename("%s%s", g_Options->GetQueueDir(), "acache");
 
 	FILE* outfile = fopen(flagFilename, FOPEN_WB);
 	if (!outfile)
 	{
-		error("Error saving diskstate: Could not create file %s", flagFilename);
+		error("Error saving diskstate: Could not create file %s", *flagFilename);
 		return;
 	}
 
@@ -2909,23 +2860,18 @@ void DiskState::WriteCacheFlag()
 
 void DiskState::DeleteCacheFlag()
 {
-	char flagFilename[1024];
-	snprintf(flagFilename, 1024, "%s%s", g_Options->GetQueueDir(), "acache");
-	flagFilename[1024-1] = '\0';
-
+	BString<1024> flagFilename("%s%s", g_Options->GetQueueDir(), "acache");
 	remove(flagFilename);
 }
 
 void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* text)
 {
-	char logFilename[1024];
-	snprintf(logFilename, 1024, "%sn%i.log", g_Options->GetQueueDir(), nzbId);
-	logFilename[1024-1] = '\0';
+	BString<1024> logFilename("%sn%i.log", g_Options->GetQueueDir(), nzbId);
 
 	FILE* outfile = fopen(logFilename, FOPEN_ABP);
 	if (!outfile)
 	{
-		error("Error saving log: Could not create file %s", logFilename);
+		error("Error saving log: Could not create file %s", *logFilename);
 		return;
 	}
 
@@ -2968,9 +2914,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 	//   - Other threads may be writing into the log-file at any time;
 	//   - The log-file may also be deleted from another thread;
 
-	char logFilename[1024];
-	snprintf(logFilename, 1024, "%sn%i.log", g_Options->GetQueueDir(), nzbId);
-	logFilename[1024-1] = '\0';
+	BString<1024> logFilename("%sn%i.log", g_Options->GetQueueDir(), nzbId);
 
 	if (!Util::FileExists(logFilename))
 	{
@@ -2980,7 +2924,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 	FILE* infile = fopen(logFilename, FOPEN_RB);
 	if (!infile)
 	{
-		error("Error reading log: could not open file %s", logFilename);
+		error("Error reading log: could not open file %s", *logFilename);
 		return;
 	}
 

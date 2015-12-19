@@ -238,8 +238,6 @@ TlsSocket::~TlsSocket()
 
 void TlsSocket::ReportError(const char* errMsg)
 {
-	char message[1024];
-
 #ifdef HAVE_LIBGNUTLS
 	const char* errstr = gnutls_strerror(m_retCode);
 	if (m_suppressErrors)
@@ -248,9 +246,7 @@ void TlsSocket::ReportError(const char* errMsg)
 	}
 	else
 	{
-		snprintf(message, sizeof(message), "%s: %s", errMsg, errstr);
-		message[sizeof(message) - 1] = '\0';
-		PrintError(message);
+		PrintError(BString<1024>("%s: %s", errMsg, errstr));
 	}
 #endif /* HAVE_LIBGNUTLS */
 
@@ -270,9 +266,7 @@ void TlsSocket::ReportError(const char* errMsg)
 		}
 		else if (errcode != 0)
 		{
-			snprintf(message, sizeof(message), "%s: %s", errMsg, errstr);
-			message[sizeof(message) - 1] = '\0';
-			PrintError(message);
+			PrintError(BString<1024>("%s: %s", errMsg, errstr));
 		}
 		else
 		{

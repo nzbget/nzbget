@@ -524,12 +524,8 @@ bool NzbFile::Parse()
 	{
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* errMsg = r;
-
-		char messageText[1024];
-		snprintf(messageText, 1024, "Error parsing nzb-file %s: %s", Util::BaseFileName(m_fileName), errMsg);
-		messageText[1024-1] = '\0';
-		m_nzbInfo->AddMessage(Message::mkError, messageText);
-
+		m_nzbInfo->AddMessage(Message::mkError, BString<1024>("Error parsing nzb-file %s: %s",
+			Util::BaseFileName(m_fileName), errMsg));
 		return false;
 	}
 
@@ -540,11 +536,8 @@ bool NzbFile::Parse()
 
 	if (GetNzbInfo()->GetFileList()->empty())
 	{
-		char messageText[1024];
-		snprintf(messageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName));
-		messageText[1024-1] = '\0';
-		m_nzbInfo->AddMessage(Message::mkError, messageText);
-
+		m_nzbInfo->AddMessage(Message::mkError, BString<1024>(
+			"Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName)));
 		return false;
 	}
 
@@ -625,8 +618,7 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 		{
 			MSXML::IXMLDOMNodePtr node = segmentList->Getitem(g);
 			_bstr_t bid = node->Gettext();
-			char id[2048];
-			snprintf(id, 2048, "<%s>", (const char*)bid);
+			BString<1024> id("<%s>", (const char*)bid);
 
 			MSXML::IXMLDOMNodePtr attribute = node->Getattributes()->getNamedItem("number");
 			if (!attribute) return false;
@@ -671,19 +663,15 @@ bool NzbFile::Parse()
 
 	if (ret != 0)
 	{
-		char messageText[1024];
-		snprintf(messageText, 1024, "Error parsing nzb-file %s", Util::BaseFileName(m_fileName));
-		messageText[1024-1] = '\0';
-		m_nzbInfo->AddMessage(Message::mkError, messageText);
+		m_nzbInfo->AddMessage(Message::mkError, BString<1024>(
+			"Error parsing nzb-file %s", Util::BaseFileName(m_fileName)));
 		return false;
 	}
 
 	if (m_nzbInfo->GetFileList()->empty())
 	{
-		char messageText[1024];
-		snprintf(messageText, 1024, "Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName));
-		messageText[1024-1] = '\0';
-		m_nzbInfo->AddMessage(Message::mkError, messageText);
+		m_nzbInfo->AddMessage(Message::mkError, BString<1024>(
+			"Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName)));
 		return false;
 	}
 
@@ -694,9 +682,7 @@ bool NzbFile::Parse()
 
 void NzbFile::Parse_StartElement(const char *name, const char **atts)
 {
-	char tagAttrMessage[1024];
-	snprintf(tagAttrMessage, 1024, "Malformed nzb-file, tag <%s> must have attributes", name);
-	tagAttrMessage[1024-1] = '\0';
+	BString<1024> tagAttrMessage("Malformed nzb-file, tag <%s> must have attributes", name);
 
 	if (m_tagContent)
 	{
@@ -811,9 +797,8 @@ void NzbFile::Parse_EndElement(const char *name)
 		}
 
 		// Get the #text part
-		char ID[2048];
-		snprintf(ID, 2048, "<%s>", m_tagContent);
-		m_article->SetMessageId(ID);
+		BString<1024> id("<%s>", m_tagContent);
+		m_article->SetMessageId(id);
 		m_article = NULL;
 	}
 	else if (!strcmp("meta", name) && m_hasPassword)
@@ -912,9 +897,6 @@ void NzbFile::SAX_error(NzbFile* file, const char *msg, ...)
 	// remove trailing CRLF
 	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
 
-	char textMessage[1024];
-	snprintf(textMessage, 1024, "Error parsing nzb-file: %s", errMsg);
-	textMessage[1024-1] = '\0';
-	file->GetNzbInfo()->AddMessage(Message::mkError, textMessage);
+	file->GetNzbInfo()->AddMessage(Message::mkError, BString<1024>("Error parsing nzb-file: %s", errMsg));
 }
 #endif

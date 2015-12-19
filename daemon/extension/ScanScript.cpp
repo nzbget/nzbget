@@ -68,9 +68,7 @@ void ScanScriptController::ExecuteScript(ScriptConfig::Script* script)
 	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "scan-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbFilename));
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("scan-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbFilename));
 	SetInfoName(infoName);
 
 	SetLogPrefix(script->GetDisplayName());
@@ -100,9 +98,8 @@ void ScanScriptController::PrepareParams(const char* scriptName)
 	SetEnvVar("NZBNP_DUPEMODE", dupeModeName[*m_dupeMode]);
 
 	// remove trailing slash
-	char dir[1024];
-	strncpy(dir, m_directory, 1024);
-	dir[1024-1] = '\0';
+	BString<1024> dir;
+	dir.Set(m_directory);
 	int len = strlen(dir);
 	if (dir[len-1] == PATH_SEPARATOR)
 	{
@@ -133,7 +130,7 @@ void ScanScriptController::AddMessage(Message::EKind kind, const char* text)
 		}
 		else if (!strncmp(msgText + 6, "NZBPR_", 6))
 		{
-			char* param = strdup(msgText + 6 + 6);
+			CString param = msgText + 6 + 6;
 			char* value = strchr(param, '=');
 			if (value)
 			{
@@ -144,7 +141,6 @@ void ScanScriptController::AddMessage(Message::EKind kind, const char* text)
 			{
 				error("Invalid command \"%s\" received from %s", msgText, GetInfoName());
 			}
-			free(param);
 		}
 		else if (!strncmp(msgText + 6, "PRIORITY=", 9))
 		{

@@ -385,10 +385,8 @@ int NCursesFrontend::CalcQueueSize()
 
 void NCursesFrontend::PlotLine(const char * string, int row, int pos, int colorPair)
 {
-	char buffer[MAX_SCREEN_WIDTH];
-	snprintf(buffer, sizeof(buffer), "%-*s", m_screenWidth, string);
-	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
-	int len = strlen(buffer);
+	BString<1024> buffer("%-*s", m_screenWidth, string);
+	int len = buffer.Length();
 	if (len > m_screenWidth - pos && m_screenWidth - pos < MAX_SCREEN_WIDTH)
 	{
 		buffer[m_screenWidth - pos] = '\0';
@@ -476,9 +474,7 @@ void NCursesFrontend::PrintMessages()
 {
 	int lineNr = m_messagesWinTop;
 
-	char buffer[MAX_SCREEN_WIDTH];
-	snprintf(buffer, sizeof(buffer), "%s Messages", m_useColor ? "" : "*** ");
-	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
+	BString<1024> buffer("%s Messages", m_useColor ? "" : "*** ");
 	PlotLine(buffer, lineNr++, 0, NCURSES_COLORPAIR_INFOLINE);
 
 	int line = lineNr + m_messagesWinClientHeight - 1;
@@ -520,7 +516,7 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 	const int messageTypeColor[] = { NCURSES_COLORPAIR_INFO, NCURSES_COLORPAIR_WARNING,
 		NCURSES_COLORPAIR_ERROR, NCURSES_COLORPAIR_DEBUG, NCURSES_COLORPAIR_DETAIL };
 
-	char* text = (char*)Msg->GetText();
+	CString text;
 
 	if (m_showTimestamp)
 	{
@@ -530,25 +526,23 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 		time_t rawtime = Msg->GetTime();
 		rawtime += g_Options->GetTimeCorrection();
 
-		char time[50];
+		BString<100> time;
 #ifdef HAVE_CTIME_R_3
-		ctime_r(&rawtime, time, 50);
+		ctime_r(&rawtime, time, time.Capacity());
 #else
 		ctime_r(&rawtime, time);
 #endif
-		time[50-1] = '\0';
 		time[strlen(time) - 1] = '\0'; // trim LF
 
-		snprintf(text, len, "%s - %s", time, Msg->GetText());
-		text[len - 1] = '\0';
+		text.Format("%s - %s", *time, Msg->GetText());
 	}
 	else
 	{
-		text = strdup(text);
+		text = Msg->GetText();
 	}
 
 	// replace some special characters with spaces
-	for (char* p = text; *p; p++)
+	for (char* p = (char*)text; *p; p++)
 	{
 		if (*p == '\n' || *p == '\r' || *p == '\b')
 		{
@@ -580,18 +574,14 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 		lines++;
 	}
 
-	free(text);
-
 	return lines;
 }
 
 void NCursesFrontend::PrintStatus()
 {
-	char tmp[MAX_SCREEN_WIDTH];
 	int statusRow = m_screenHeight - 2;
 
-	char timeString[100];
-	timeString[0] = '\0';
+	BString<100> timeString;
 
 	int currentDownloadSpeed = m_standBy ? 0 : m_currentDownloadSpeed;
 	if (currentDownloadSpeed > 0 && !m_pauseDownload)
@@ -600,41 +590,29 @@ void NCursesFrontend::PrintStatus()
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
-		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
+		timeString.Format(" (~ %.2d:%.2d:%.2d)", h, m, s);
 	}
 
-	char downloadLimit[128];
+	BString<100> downloadLimit;
 	if (m_downloadLimit > 0)
 	{
-		sprintf(downloadLimit, ", Limit %i KB/s", m_downloadLimit / 1024);
-	}
-	else
-	{
-		downloadLimit[0] = 0;
+		downloadLimit.Format(", Limit %i KB/s", m_downloadLimit / 1024);
 	}
 
-	char postStatus[128];
+	BString<100> postStatus;
 	if (m_postJobCount > 0)
 	{
-		sprintf(postStatus, ", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
-	}
-	else
-	{
-		postStatus[0] = 0;
+		postStatus.Format(", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
 	}
 
-	char currentSpeedBuf[20];
-	char averageSpeedBuf[20];
-	char remainingSizeBuf[20];
 	int averageSpeed = (int)(m_dnTimeSec > 0 ? m_allBytes / m_dnTimeSec : 0);
 
-	snprintf(tmp, MAX_SCREEN_WIDTH, " %d threads, %s, %s remaining%s%s%s%s, Avg. %s",
-		m_threadCount, Util::FormatSpeed(currentSpeedBuf, sizeof(currentSpeedBuf), currentDownloadSpeed),
-		Util::FormatSize(remainingSizeBuf, sizeof(remainingSizeBuf), m_remainingSize),
-		timeString, postStatus, m_pauseDownload ? (m_standBy ? ", Paused" : ", Pausing") : "",
-		downloadLimit, Util::FormatSpeed(averageSpeedBuf, sizeof(averageSpeedBuf), averageSpeed));
-	tmp[MAX_SCREEN_WIDTH - 1] = '\0';
-	PlotLine(tmp, statusRow, 0, NCURSES_COLORPAIR_STATUS);
+	BString<1024> status(" %d threads, %s, %s remaining%s%s%s%s, Avg. %s",
+		m_threadCount, *Util::FormatSpeed(currentDownloadSpeed),
+		*Util::FormatSize(m_remainingSize),
+		*timeString, *postStatus, m_pauseDownload ? (m_standBy ? ", Paused" : ", Pausing") : "",
+		*downloadLimit, *Util::FormatSpeed(averageSpeed));
+	PlotLine(status, statusRow, 0, NCURSES_COLORPAIR_STATUS);
 }
 
 void NCursesFrontend::PrintKeyInputBar()
@@ -692,10 +670,8 @@ void NCursesFrontend::PrintKeyInputBar()
 		break;
 	}
 	case downloadRate:
-		char string[128];
-		snprintf(string, 128, "Download rate: %i", m_inputValue);
-		string[128-1] = '\0';
-		PlotLine(string, inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
+		BString<100> hint("Download rate: %i", m_inputValue);
+		PlotLine(hint, inputBarRow, 0, NCURSES_COLORPAIR_KEYBAR);
 		// Print the cursor
 		PlotText(" ", inputBarRow, 15 + m_inputNumberIndex, NCURSES_COLORPAIR_CURSOR, true);
 		break;
@@ -756,24 +732,17 @@ void NCursesFrontend::PrintFileQueue()
 
 	if (fileNum > 0)
 	{
-		char remainingBuf[20];
-		char unpausedBuf[20];
-		char buffer[MAX_SCREEN_WIDTH];
-		snprintf(buffer, sizeof(buffer), " %sFiles for downloading - %i / %i files in queue - %s / %s",
+		BString<1024> header(" %sFiles for downloading - %i / %i files in queue - %s / %s",
 			m_useColor ? "" : "*** ", fileNum,
 			fileNum - pausedFiles,
-			Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining),
-			Util::FormatSize(unpausedBuf, sizeof(unpausedBuf), remaining - paused));
-		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
-		PrintTopHeader(buffer, m_queueWinTop, true);
+			*Util::FormatSize(remaining), *Util::FormatSize(remaining - paused));
+		PrintTopHeader(header, m_queueWinTop, true);
 	}
 	else
 	{
 		lineNr--;
-		char buffer[MAX_SCREEN_WIDTH];
-		snprintf(buffer, sizeof(buffer), "%s Files for downloading", m_useColor ? "" : "*** ");
-		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
-		PrintTopHeader(buffer, lineNr++, true);
+		BString<1024> header("%s Files for downloading", m_useColor ? "" : "*** ");
+		PrintTopHeader(header, lineNr++, true);
 		PlotLine("Ready to receive nzb-job", lineNr++, 0, NCURSES_COLORPAIR_TEXT);
 	}
 
@@ -805,49 +774,35 @@ void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
 		downloading = " *";
 	}
 
-	char priority[100];
-	priority[0] = '\0';
+	BString<100> priority;
 	if (fileInfo->GetNzbInfo()->GetPriority() != 0)
 	{
-		sprintf(priority, " [%+i]", fileInfo->GetNzbInfo()->GetPriority());
+		priority.Format(" [%+i]", fileInfo->GetNzbInfo()->GetPriority());
 	}
 
-	char completed[20];
-	completed[0] = '\0';
+	BString<100> completed;
 	if (fileInfo->GetRemainingSize() < fileInfo->GetSize())
 	{
-		sprintf(completed, ", %i%%", (int)(100 - fileInfo->GetRemainingSize() * 100 / fileInfo->GetSize()));
+		completed.Format(", %i%%", (int)(100 - fileInfo->GetRemainingSize() * 100 / fileInfo->GetSize()));
 	}
 
-	char nzbNiceName[1024];
+	BString<1024> nzbNiceName;
 	if (m_showNzbname)
 	{
-		strncpy(nzbNiceName, fileInfo->GetNzbInfo()->GetName(), 1023);
-		int len = strlen(nzbNiceName);
-		nzbNiceName[len] = PATH_SEPARATOR;
-		nzbNiceName[len + 1] = '\0';
-	}
-	else
-	{
-		nzbNiceName[0] = '\0';
+		nzbNiceName.Format("%s%c", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR);
 	}
 
-	char size[20];
-	char buffer[MAX_SCREEN_WIDTH];
-	snprintf(buffer, MAX_SCREEN_WIDTH, "%s%i%s%s%s %s%s (%s%s)%s", Brace1, fileInfo->GetId(),
-		Brace2, priority, downloading, nzbNiceName, fileInfo->GetFilename(),
-		Util::FormatSize(size, sizeof(size), fileInfo->GetSize()),
-		completed, fileInfo->GetPaused() ? " (paused)" : "");
-	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
+	BString<1024> text("%s%i%s%s%s %s%s (%s%s)%s", Brace1, fileInfo->GetId(),
+		Brace2, *priority, downloading, *nzbNiceName, fileInfo->GetFilename(),
+		*Util::FormatSize(fileInfo->GetSize()),
+		*completed, fileInfo->GetPaused() ? " (paused)" : "");
 
-	PlotLine(buffer, row, 0, color);
+	PlotLine(text, row, 0, color);
 }
 
 void NCursesFrontend::PrintTopHeader(char* header, int lineNr, bool upTime)
 {
-	char buffer[MAX_SCREEN_WIDTH];
-	snprintf(buffer, sizeof(buffer), "%-*s", m_screenWidth, header);
-	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
+	BString<1024> buffer("%-*s", m_screenWidth, header);
 	int headerLen = strlen(header);
 	int charsLeft = m_screenWidth - headerLen - 2;
 
@@ -856,30 +811,29 @@ void NCursesFrontend::PrintTopHeader(char* header, int lineNr, bool upTime)
 	int h = (time % (3600 * 24)) / 3600;
 	int m = (time % 3600) / 60;
 	int s = time % 60;
-	char timeStr[30];
+	BString<100> timeStr;
 
 	if (d == 0)
 	{
-		snprintf(timeStr, 30, "%.2d:%.2d:%.2d", h, m, s);
+		timeStr.Format("%.2d:%.2d:%.2d", h, m, s);
 		if ((int)strlen(timeStr) > charsLeft)
 		{
-			snprintf(timeStr, 30, "%.2d:%.2d", h, m);
+			timeStr.Format("%.2d:%.2d", h, m);
 		}
 	}
 	else
 	{
-		snprintf(timeStr, 30, "%i %s %.2d:%.2d:%.2d", d, (d == 1 ? "day" : "days"), h, m, s);
+		timeStr.Format("%i %s %.2d:%.2d:%.2d", d, (d == 1 ? "day" : "days"), h, m, s);
 		if ((int)strlen(timeStr) > charsLeft)
 		{
-			snprintf(timeStr, 30, "%id %.2d:%.2d:%.2d", d, h, m, s);
+			timeStr.Format("%id %.2d:%.2d:%.2d", d, h, m, s);
 		}
 		if ((int)strlen(timeStr) > charsLeft)
 		{
-			snprintf(timeStr, 30, "%id %.2d:%.2d", d, h, m);
+			timeStr.Format("%id %.2d:%.2d", d, h, m);
 		}
 	}
 
-	timeStr[29] = '\0';
 	const char* shortCap = upTime ? " Up " : "Dn ";
 	const char* longCap = upTime ? " Uptime " : " Download-time ";
 
@@ -889,15 +843,15 @@ void NCursesFrontend::PrintTopHeader(char* header, int lineNr, bool upTime)
 
 	if (charsLeft - timeLen - longCapLen >= 0)
 	{
-		snprintf(buffer + m_screenWidth - timeLen - longCapLen, MAX_SCREEN_WIDTH - (m_screenWidth - timeLen - longCapLen), "%s%s", longCap, timeStr);
+		snprintf(buffer + m_screenWidth - timeLen - longCapLen, MAX_SCREEN_WIDTH - (m_screenWidth - timeLen - longCapLen), "%s%s", longCap, *timeStr);
 	}
 	else if (charsLeft - timeLen - shortCapLen >= 0)
 	{
-		snprintf(buffer + m_screenWidth - timeLen - shortCapLen, MAX_SCREEN_WIDTH - (m_screenWidth - timeLen - shortCapLen), "%s%s", shortCap, timeStr);
+		snprintf(buffer + m_screenWidth - timeLen - shortCapLen, MAX_SCREEN_WIDTH - (m_screenWidth - timeLen - shortCapLen), "%s%s", shortCap, *timeStr);
 	}
 	else if (charsLeft - timeLen >= 0)
 	{
-		snprintf(buffer + m_screenWidth - timeLen, MAX_SCREEN_WIDTH - (m_screenWidth - timeLen), "%s", timeStr);
+		snprintf(buffer + m_screenWidth - timeLen, MAX_SCREEN_WIDTH - (m_screenWidth - timeLen), "%s", *timeStr);
 	}
 
 	PlotLine(buffer, lineNr, 0, NCURSES_COLORPAIR_INFOLINE);
@@ -910,9 +864,7 @@ void NCursesFrontend::PrintGroupQueue()
 	DownloadQueue* downloadQueue = LockQueue();
 	if (downloadQueue->GetQueue()->empty())
 	{
-		char buffer[MAX_SCREEN_WIDTH];
-		snprintf(buffer, sizeof(buffer), "%s NZBs for downloading", m_useColor ? "" : "*** ");
-		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
+		BString<1024> buffer("%s NZBs for downloading", m_useColor ? "" : "*** ");
 		PrintTopHeader(buffer, lineNr++, false);
 		PlotLine("Ready to receive nzb-job", lineNr++, 0, NCURSES_COLORPAIR_TEXT);
 	}
@@ -946,16 +898,9 @@ void NCursesFrontend::PrintGroupQueue()
 			paused += nzbInfo->GetPausedSize();
 		}
 
-		char remainingBuf[20];
-		Util::FormatSize(remainingBuf, sizeof(remainingBuf), remaining);
-
-		char unpausedBuf[20];
-		Util::FormatSize(unpausedBuf, sizeof(unpausedBuf), remaining - paused);
-
-		char buffer[MAX_SCREEN_WIDTH];
-		snprintf(buffer, sizeof(buffer), " %sNZBs for downloading - %i NZBs in queue - %s / %s",
-			m_useColor ? "" : "*** ", (int)downloadQueue->GetQueue()->size(), remainingBuf, unpausedBuf);
-		buffer[MAX_SCREEN_WIDTH - 1] = '\0';
+		BString<1024> buffer(" %sNZBs for downloading - %i NZBs in queue - %s / %s",
+			m_useColor ? "" : "*** ", (int)downloadQueue->GetQueue()->size(),
+			*Util::FormatSize(remaining), *Util::FormatSize(remaining - paused));
 		PrintTopHeader(buffer, m_queueWinTop, false);
 	}
 	UnlockQueue();
@@ -989,19 +934,11 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 		downloading = " *";
 	}
 
-	int64 unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
-
-	char remaining[20];
-	Util::FormatSize(remaining, sizeof(remaining), unpausedRemainingSize);
-
-	char priority[100];
-	priority[0] = '\0';
+	BString<100> priority;
 	if (nzbInfo->GetPriority() != 0)
 	{
-		sprintf(priority, " [%+i]", nzbInfo->GetPriority());
+		priority.Format(" [%+i]", nzbInfo->GetPriority());
 	}
-
-	char buffer[MAX_SCREEN_WIDTH];
 
 	// Format:
 	// [id - id] Name   Left-Files/Paused     Total      Left     Time
@@ -1017,29 +954,26 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 		nameLen = m_screenWidth - 1 - m_colWidthFiles - 2 - m_colWidthTotal - 2 - m_colWidthLeft - 2 - 9;
 	}
 
+	BString<1024> buffer;
+
 	bool printFormatted = nameLen > 20;
 
 	if (printFormatted)
 	{
-		char files[20];
-		snprintf(files, 20, "%i/%i", (int)nzbInfo->GetFileList()->size(), nzbInfo->GetPausedFileCount());
-		files[20-1] = '\0';
+		BString<100> files("%i/%i", (int)nzbInfo->GetFileList()->size(), nzbInfo->GetPausedFileCount());
+		BString<1024> nameWithIds("%c%i%c%s%s %s", chBrace1, nzbInfo->GetId(), chBrace2,
+			*priority, downloading, nzbInfo->GetName());
 
-		char total[20];
-		Util::FormatSize(total, sizeof(total), nzbInfo->GetSize());
+		int64 unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
+		CString remaining = Util::FormatSize(unpausedRemainingSize);
+		CString total = Util::FormatSize(nzbInfo->GetSize());
 
-		char nameWithIds[1024];
-		snprintf(nameWithIds, 1024, "%c%i%c%s%s %s", chBrace1, nzbInfo->GetId(), chBrace2,
-			priority, downloading, nzbInfo->GetName());
-		nameWithIds[nameLen] = '\0';
-
-		char time[100];
-		time[0] = '\0';
+		BString<100> time;
 		int currentDownloadSpeed = m_standBy ? 0 : m_currentDownloadSpeed;
 		if (nzbInfo->GetPausedSize() > 0 && unpausedRemainingSize == 0)
 		{
-			snprintf(time, 100, "[paused]");
-			Util::FormatSize(remaining, sizeof(remaining), nzbInfo->GetRemainingSize());
+			time = "[paused]";
+			remaining = Util::FormatSize(nzbInfo->GetRemainingSize());
 		}
 		else if (currentDownloadSpeed > 0 && !m_pauseDownload)
 		{
@@ -1049,11 +983,11 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 			int s = (int)(remain_sec % 60);
 			if (h < 100)
 			{
-				snprintf(time, 100, "%.2d:%.2d:%.2d", h, m, s);
+				time.Format("%.2d:%.2d:%.2d", h, m, s);
 			}
 			else
 			{
-				snprintf(time, 100, "99:99:99");
+				time.Format("99:99:99");
 			}
 		}
 
@@ -1070,16 +1004,15 @@ void NCursesFrontend::PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, b
 		}
 		else
 		{
-			snprintf(buffer, MAX_SCREEN_WIDTH, "%-*s  %*s  %*s  %*s  %8s", nameLen, nameWithIds, m_colWidthFiles, files, m_colWidthTotal, total, m_colWidthLeft, remaining, time);
+			buffer.Format("%-*s  %*s  %*s  %*s  %8s", nameLen, *nameWithIds,
+				m_colWidthFiles, *files, m_colWidthTotal, *total, m_colWidthLeft, *remaining, *time);
 		}
 	}
 	else
 	{
-		snprintf(buffer, MAX_SCREEN_WIDTH, "%c%i%c%s %s", chBrace1, nzbInfo->GetId(),
+		buffer.Format("%c%i%c%s %s", chBrace1, nzbInfo->GetId(),
 			chBrace2, downloading, nzbInfo->GetName());
 	}
-
-	buffer[MAX_SCREEN_WIDTH - 1] = '\0';
 
 	if (!calcColWidth)
 	{

@@ -93,15 +93,15 @@ void TestUtil::PrepareWorkingDir(const std::string templateDir)
 	std::string workDir = WorkingDir();
 	std::string srcDir(TestDataDir() + "/" + templateDir);
 
-	char errStr[256];
+	CString errmsg;
 	int retries = 20;
 
-	Util::DeleteDirectoryWithContent(workDir.c_str(), errStr, sizeof(errStr));
+	Util::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
 	while (Util::DirectoryExists(workDir.c_str()) && retries > 0)
 	{
 		usleep(1000 * 100);
 		retries--;
-		Util::DeleteDirectoryWithContent(workDir.c_str(), errStr, sizeof(errStr));
+		Util::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
 	}
 	REQUIRE_FALSE(Util::DirectoryExists(workDir.c_str()));
 	Util::CreateDirectory(workDir.c_str());
@@ -126,8 +126,8 @@ void TestUtil::CopyAllFiles(const std::string destDir, const std::string srcDir)
 
 void TestUtil::CleanupWorkingDir()
 {
-	char errStr[256];
-	Util::DeleteDirectoryWithContent(WorkingDir().c_str(), errStr, sizeof(errStr));
+	CString errmsg;
+	Util::DeleteDirectoryWithContent(WorkingDir().c_str(), errmsg);
 }
 
 void TestUtil::DisableCout()

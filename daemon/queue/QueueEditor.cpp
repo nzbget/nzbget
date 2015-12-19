@@ -752,8 +752,7 @@ bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, Do
 				if (action < DownloadQueue::eaGroupMoveOffset)
 				{
 					// file action
-					char filename[MAX_PATH];
-					snprintf(filename, sizeof(filename) - 1, "%s/%s", fileInfo->GetNzbInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
+					BString<1024> filename("%s/%s", fileInfo->GetNzbInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
 					if (((!regEx && !strcmp(filename, name)) || (regEx && regEx->Match(filename))) &&
 						(uniqueIds.find(fileInfo->GetId()) == uniqueIds.end()))
 					{
@@ -1038,10 +1037,7 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 			}
 			if (!found)
 			{
-				char param[1024];
-				snprintf(param, 1024, "%s:", newScriptName);
-				param[1024-1] = '\0';
-				nzbInfo->GetParameters()->SetParameter(param, "yes");
+				nzbInfo->GetParameters()->SetParameter(BString<1024>("%s:", newScriptName), "yes");
 			}
 		}
 
@@ -1058,10 +1054,7 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 			}
 			if (!found)
 			{
-				char param[1024];
-				snprintf(param, 1024, "%s:", oldScriptName);
-				param[1024-1] = '\0';
-				nzbInfo->GetParameters()->SetParameter(param, "no");
+				nzbInfo->GetParameters()->SetParameter(BString<1024>("%s:", oldScriptName), "no");
 			}
 		}
 	}

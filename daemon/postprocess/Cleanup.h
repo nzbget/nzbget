@@ -26,6 +26,7 @@
 #ifndef CLEANUP_H
 #define CLEANUP_H
 
+#include "NString.h"
 #include "Log.h"
 #include "Thread.h"
 #include "DownloadInfo.h"
@@ -35,8 +36,8 @@ class MoveController : public Thread, public ScriptController
 {
 private:
 	PostInfo*			m_postInfo;
-	char				m_interDir[1024];
-	char				m_destDir[1024];
+	CString				m_interDir;
+	CString				m_destDir;
 
 	bool				MoveFiles();
 
@@ -52,8 +53,8 @@ class CleanupController : public Thread, public ScriptController
 {
 private:
 	PostInfo*			m_postInfo;
-	char				m_destDir[1024];
-	char				m_finalDir[1024];
+	CString				m_destDir;
+	CString				m_finalDir;
 
 	bool				Cleanup(const char* destDir, bool *deleted);
 

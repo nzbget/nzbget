@@ -320,13 +320,9 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	}
 
 	// retrieve article
-	char tmp[1024];
-	snprintf(tmp, 1024, "ARTICLE %s\r\n", m_articleInfo->GetMessageId());
-	tmp[1024-1] = '\0';
-
 	for (int retry = 3; retry > 0; retry--)
 	{
-		response = m_connection->Request(tmp);
+		response = m_connection->Request(BString<1024>("ARTICLE %s\r\n", m_articleInfo->GetMessageId()));
 		if ((response && !strncmp(response, "2", 1)) || m_connection->GetAuthError())
 		{
 			break;

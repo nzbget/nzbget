@@ -102,11 +102,7 @@ bool NntpConnection::AuthInfoUser(int recur)
 		return false;
 	}
 
-	char tmp[1024];
-	snprintf(tmp, 1024, "AUTHINFO USER %s\r\n", m_newsServer->GetUser());
-	tmp[1024-1] = '\0';
-
-	WriteLine(tmp);
+	WriteLine(BString<1024>("AUTHINFO USER %s\r\n", m_newsServer->GetUser()));
 
 	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
@@ -145,11 +141,7 @@ bool NntpConnection::AuthInfoPass(int recur)
 		return false;
 	}
 
-	char tmp[1024];
-	snprintf(tmp, 1024, "AUTHINFO PASS %s\r\n", m_newsServer->GetPassword());
-	tmp[1024-1] = '\0';
-
-	WriteLine(tmp);
+	WriteLine(BString<1024>("AUTHINFO PASS %s\r\n", m_newsServer->GetPassword()));
 
 	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
@@ -185,11 +177,7 @@ const char* NntpConnection::JoinGroup(const char* grp)
 		return m_lineBuf;
 	}
 
-	char tmp[1024];
-	snprintf(tmp, 1024, "GROUP %s\r\n", grp);
-	tmp[1024-1] = '\0';
-
-	const char* answer = Request(tmp);
+	const char* answer = Request(BString<1024>("GROUP %s\r\n", grp));
 
 	if (answer && !strncmp(answer, "2", 1))
 	{
@@ -260,9 +248,6 @@ bool NntpConnection::Disconnect()
 
 void NntpConnection::ReportErrorAnswer(const char* msgPrefix, const char* answer)
 {
-	char errStr[1024];
-	snprintf(errStr, 1024, msgPrefix, m_newsServer->GetName(), m_newsServer->GetHost(), answer);
-	errStr[1024-1] = '\0';
-
+	BString<1024> errStr(msgPrefix, m_newsServer->GetName(), m_newsServer->GetHost(), answer);
 	ReportError(errStr, NULL, false, 0);
 }

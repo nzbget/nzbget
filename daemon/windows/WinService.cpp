@@ -129,9 +129,7 @@ void InstallService(int argc, char *argv[])
 	GetModuleFileName(NULL, exeName, 1024);
 	exeName[1024-1] = '\0';
 
-	char cmdLine[1024];
-	snprintf(cmdLine, 1024, "%s -D", exeName);
-	cmdLine[1024-1] = '\0';
+	BString<1024> cmdLine("%s -D", exeName);
 
 	SC_HANDLE hService = CreateService(scm, strServiceName,
 		strServiceName,

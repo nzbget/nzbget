@@ -353,10 +353,7 @@ void WebProcessor::Dispatch()
 		defRes = "index.html";
 	}
 
-	char disk_filename[1024];
-	snprintf(disk_filename, sizeof(disk_filename), "%s%s%s", g_Options->GetWebDir(), m_url + 1, defRes);
-
-	disk_filename[sizeof(disk_filename)-1] = '\0';
+	BString<1024> disk_filename("%s%s%s", g_Options->GetWebDir(), m_url + 1, defRes);
 
 	SendFileResponse(disk_filename);
 }
@@ -370,12 +367,11 @@ void WebProcessor::SendAuthResponse()
 		"Content-Type: text/plain\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
-	char responseHeader[1024];
-	snprintf(responseHeader, 1024, AUTH_RESPONSE_HEADER, Util::VersionRevision());
+	BString<1024> responseHeader(AUTH_RESPONSE_HEADER, Util::VersionRevision());
 
 	// Send the response answer
-	debug("ResponseHeader=%s", responseHeader);
-	m_connection->Send(responseHeader, strlen(responseHeader));
+	debug("ResponseHeader=%s", *responseHeader);
+	m_connection->Send(responseHeader, responseHeader.Length());
 }
 
 void WebProcessor::SendOptionsResponse()
@@ -391,14 +387,12 @@ void WebProcessor::SendOptionsResponse()
 		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
-	char responseHeader[1024];
-	snprintf(responseHeader, 1024, OPTIONS_RESPONSE_HEADER,
-		m_origin.Str(),
-		Util::VersionRevision());
+	BString<1024> responseHeader(OPTIONS_RESPONSE_HEADER,
+		m_origin.Str(), Util::VersionRevision());
 
 	// Send the response answer
-	debug("ResponseHeader=%s", responseHeader);
-	m_connection->Send(responseHeader, strlen(responseHeader));
+	debug("ResponseHeader=%s", *responseHeader);
+	m_connection->Send(responseHeader, responseHeader.Length());
 }
 
 void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
@@ -416,15 +410,14 @@ void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
 		warn("Web-Server: %s, Resource: %s", errCode, m_url);
 	}
 
-	char responseBody[1024];
-	snprintf(responseBody, 1024, "<html><head><title>%s</title></head><body>Error: %s</body></html>", errCode, errCode);
-	int pageContentLen = strlen(responseBody);
+	BString<1024> responseBody("<html><head><title>%s</title></head><body>Error: %s</body></html>",
+		errCode, errCode);
+	int pageContentLen = responseBody.Length();
 
-	char responseHeader[1024];
-	snprintf(responseHeader, 1024, RESPONSE_HEADER, errCode, pageContentLen, Util::VersionRevision());
+	BString<1024> responseHeader(RESPONSE_HEADER, errCode, pageContentLen, Util::VersionRevision());
 
 	// Send the response answer
-	m_connection->Send(responseHeader, strlen(responseHeader));
+	m_connection->Send(responseHeader, responseHeader.Length());
 	m_connection->Send(responseBody, pageContentLen);
 }
 
@@ -436,12 +429,11 @@ void WebProcessor::SendRedirectResponse(const char* url)
 		"Connection: close\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
-	char responseHeader[1024];
-	snprintf(responseHeader, 1024, REDIRECT_RESPONSE_HEADER, url, Util::VersionRevision());
+	BString<1024> responseHeader(REDIRECT_RESPONSE_HEADER, url, Util::VersionRevision());
 
 	// Send the response answer
-	debug("ResponseHeader=%s", responseHeader);
-	m_connection->Send(responseHeader, strlen(responseHeader));
+	debug("ResponseHeader=%s", *responseHeader);
+	m_connection->Send(responseHeader, responseHeader.Length());
 }
 
 void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* contentType)
@@ -485,25 +477,20 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	bool gzip = false;
 #endif
 
-	char contentTypeHeader[1024];
+	BString<1024> contentTypeHeader;
 	if (contentType)
 	{
-		snprintf(contentTypeHeader, 1024, "Content-Type: %s\r\n", contentType);
-	}
-	else
-	{
-		contentTypeHeader[0] = '\0';
+		contentTypeHeader.Format("Content-Type: %s\r\n", contentType);
 	}
 
-	char responseHeader[1024];
-	snprintf(responseHeader, 1024, RESPONSE_HEADER,
+	BString<1024> responseHeader(RESPONSE_HEADER,
 		m_origin.Str(),
-		m_serverAuthToken[m_userAccess], bodyLen, contentTypeHeader,
+		m_serverAuthToken[m_userAccess], bodyLen, *contentTypeHeader,
 		gzip ? "Content-Encoding: gzip\r\n" : "",
 		Util::VersionRevision());
 
 	// Send the request answer
-	m_connection->Send(responseHeader, strlen(responseHeader));
+	m_connection->Send(responseHeader, responseHeader.Length());
 	m_connection->Send(body, bodyLen);
 
 #ifndef DISABLE_GZIP

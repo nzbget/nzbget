@@ -111,9 +111,7 @@ int getopt(int argc, char *argv[], char *optstring)
 
 DirBrowser::DirBrowser(const char* path)
 {
-	char mask[MAX_PATH + 1];
-	snprintf(mask, MAX_PATH + 1, "%s%c*.*", path, (int)PATH_SEPARATOR);
-	mask[MAX_PATH] = '\0';
+	BString<1024> mask("%s%c*.*", path, (int)PATH_SEPARATOR);
 	m_file = FindFirstFile(mask, &m_findData);
 	m_first = true;
 }
@@ -250,10 +248,9 @@ void Util::NormalizePathSeparators(char* path)
 	}
 }
 
-bool Util::ForceDirectories(const char* path, char* errBuf, int bufSize)
+bool Util::ForceDirectories(const char* path, CString& errmsg)
 {
-	*errBuf = '\0';
-	char sysErrStr[256];
+	errmsg.Clear();
 	char normPath[1024];
 	strncpy(normPath, path, 1024);
 	normPath[1024-1] = '\0';
@@ -272,15 +269,13 @@ bool Util::ForceDirectories(const char* path, char* errBuf, int bufSize)
 	bool ok = !stat(normPath, &buffer);
 	if (!ok && errno != ENOENT)
 	{
-		snprintf(errBuf, bufSize, "could not read information for directory %s: errno %i, %s", normPath, errno, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
-		errBuf[bufSize-1] = 0;
+		errmsg.Format("could not read information for directory %s: errno %i, %s", normPath, errno, *GetLastErrorMessage());
 		return false;
 	}
 
 	if (ok && !S_ISDIR(buffer.st_mode))
 	{
-		snprintf(errBuf, bufSize, "path %s is not a directory", normPath);
-		errBuf[bufSize-1] = 0;
+		errmsg.Format("path %s is not a directory", normPath);
 		return false;
 	}
 
@@ -306,7 +301,7 @@ bool Util::ForceDirectories(const char* path, char* errBuf, int bufSize)
 			{
 				*p = '\0';
 			}
-			if (strlen(parentPath) != strlen(path) && !ForceDirectories(parentPath, errBuf, bufSize))
+			if (strlen(parentPath) != strlen(path) && !ForceDirectories(parentPath, errmsg))
 			{
 				return false;
 			}
@@ -314,22 +309,19 @@ bool Util::ForceDirectories(const char* path, char* errBuf, int bufSize)
 
 		if (mkdir(normPath, S_DIRMODE) != 0 && errno != EEXIST)
 		{
-			snprintf(errBuf, bufSize, "could not create directory %s: %s", normPath, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
-			errBuf[bufSize-1] = 0;
+			errmsg.Format("could not create directory %s: %s", normPath, *GetLastErrorMessage());
 			return false;
 		}
 
 		if (stat(normPath, &buffer) != 0)
 		{
-			snprintf(errBuf, bufSize, "could not read information for directory %s: %s", normPath, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
-			errBuf[bufSize-1] = 0;
+			errmsg.Format("could not read information for directory %s: %s", normPath, *GetLastErrorMessage());
 			return false;
 		}
 
 		if (!S_ISDIR(buffer.st_mode))
 		{
-			snprintf(errBuf, bufSize, "path %s is not a directory", normPath);
-			errBuf[bufSize-1] = 0;
+			errmsg.Format("path %s is not a directory", normPath);
 			return false;
 		}
 	}
@@ -414,15 +406,15 @@ bool Util::SaveBufferIntoFile(const char* fileName, const char* buffer, int bufL
 	return writtenBytes == bufLen;
 }
 
-bool Util::CreateSparseFile(const char* filename, int64 size, char* errBuf, int bufSize)
+bool Util::CreateSparseFile(const char* filename, int64 size, CString& errmsg)
 {
-	*errBuf = '\0';
+	errmsg.Clear();
 	bool ok = false;
 #ifdef WIN32
 	HANDLE hFile = CreateFile(filename, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		GetLastErrorMessage(errBuf, sizeof(bufSize));
+		errmsg = GetLastErrorMessage();
 		return false;
 	}
 	// first try to create sparse file (supported only on NTFS partitions),
@@ -441,7 +433,7 @@ bool Util::CreateSparseFile(const char* filename, int64 size, char* errBuf, int 
 	FILE* file = fopen(filename, FOPEN_AB);
 	if (!file)
 	{
-		GetLastErrorMessage(errBuf, sizeof(bufSize));
+		errmsg = GetLastErrorMessage();
 		return false;
 	}
 	fclose(file);
@@ -459,7 +451,7 @@ bool Util::CreateSparseFile(const char* filename, int64 size, char* errBuf, int 
 		file = fopen(filename, FOPEN_AB);
 		if (!file)
 		{
-			GetLastErrorMessage(errBuf, sizeof(bufSize));
+			errmsg = GetLastErrorMessage();
 			return false;
 		}
 		char c = '0';
@@ -701,9 +693,7 @@ bool Util::FileExists(const char* filename)
 
 bool Util::FileExists(const char* path, const char* filenameWithoutPath)
 {
-	char fullFilename[1024];
-	snprintf(fullFilename, 1024, "%s%c%s", path, (int)PATH_SEPARATOR, filenameWithoutPath);
-	fullFilename[1024-1] = '\0';
+	BString<1024> fullFilename("%s%c%s", path, (int)PATH_SEPARATOR, filenameWithoutPath);
 	bool exists = Util::FileExists(fullFilename);
 	return exists;
 }
@@ -743,10 +733,9 @@ bool Util::RemoveDirectory(const char* dirFilename)
 #endif
 }
 
-bool Util::DeleteDirectoryWithContent(const char* dirFilename, char* errBuf, int bufSize)
+bool Util::DeleteDirectoryWithContent(const char* dirFilename, CString& errmsg)
 {
-	*errBuf = '\0';
-	char sysErrStr[256];
+	errmsg.Clear();
 
 	bool del = false;
 	bool ok = true;
@@ -754,33 +743,31 @@ bool Util::DeleteDirectoryWithContent(const char* dirFilename, char* errBuf, int
 	DirBrowser dir(dirFilename);
 	while (const char* filename = dir.Next())
 	{
-		char fullFilename[1024];
-		snprintf(fullFilename, 1024, "%s%c%s", dirFilename, PATH_SEPARATOR, filename);
-		fullFilename[1024-1] = '\0';
+		BString<1024> fullFilename("%s%c%s", dirFilename, PATH_SEPARATOR, filename);
 
 		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
 			if (Util::DirectoryExists(fullFilename))
 			{
-				del = DeleteDirectoryWithContent(fullFilename, sysErrStr, sizeof(sysErrStr));
+				del = DeleteDirectoryWithContent(fullFilename, errmsg);
 			}
 			else
 			{
 				del = remove(fullFilename) == 0;
 			}
 			ok &= del;
-			if (!del && !*errBuf)
+			if (!del && errmsg.Empty())
 			{
-				snprintf(errBuf, bufSize, "could not delete %s: %s", fullFilename, GetLastErrorMessage(sysErrStr, sizeof(sysErrStr)));
+				errmsg.Format("could not delete %s: %s", *fullFilename, *GetLastErrorMessage());
 			}
 		}
 	}
 
 	del = RemoveDirectory(dirFilename);
 	ok &= del;
-	if (!del && !*errBuf)
+	if (!del && errmsg.Empty())
 	{
-		GetLastErrorMessage(errBuf, bufSize);
+		errmsg = GetLastErrorMessage();
 	}
 	return ok;
 }
@@ -830,16 +817,13 @@ bool Util::RenameBak(const char* filename, const char* bakPart, bool removeOldEx
 		}
 	}
 
-	char bakname[1024];
-	snprintf(bakname, 1024, "%s.%s", removeOldExtension ? changedFilename : filename, bakPart);
-	bakname[1024-1] = '\0';
+	BString<1024> bakname("%s.%s", removeOldExtension ? changedFilename : filename, bakPart);
 
 	int i = 2;
 	struct stat buffer;
 	while (!stat(bakname, &buffer))
 	{
-		snprintf(bakname, 1024, "%s.%i.%s", removeOldExtension ? changedFilename : filename, i++, bakPart);
-		bakname[1024-1] = '\0';
+		bakname.Format("%s.%i.%s", removeOldExtension ? changedFilename : filename, i++, bakPart);
 	}
 
 	if (newNameBuf)
@@ -941,53 +925,55 @@ void Util::GetExeFileName(const char* argv0, char* buffer, int bufSize)
 #endif
 }
 
-char* Util::FormatSize(char * buffer, int bufLen, int64 fileSize)
+CString Util::FormatSize(int64 fileSize)
 {
+	CString result;
+
 	if (fileSize > 1024 * 1024 * 1000)
 	{
-		snprintf(buffer, bufLen, "%.2f GB", (float)((float)fileSize / 1024 / 1024 / 1024));
+		result.Format("%.2f GB", (float)((float)fileSize / 1024 / 1024 / 1024));
 	}
 	else if (fileSize > 1024 * 1000)
 	{
-		snprintf(buffer, bufLen, "%.2f MB", (float)((float)fileSize / 1024 / 1024));
+		result.Format("%.2f MB", (float)((float)fileSize / 1024 / 1024));
 	}
 	else if (fileSize > 1000)
 	{
-		snprintf(buffer, bufLen, "%.2f KB", (float)((float)fileSize / 1024));
+		result.Format("%.2f KB", (float)((float)fileSize / 1024));
 	}
 	else if (fileSize == 0)
 	{
-		strncpy(buffer, "0 MB", bufLen);
+		result = "0 MB";
 	}
 	else
 	{
-		snprintf(buffer, bufLen, "%i B", (int)fileSize);
+		result.Format("%i B", (int)fileSize);
 	}
-	buffer[bufLen - 1] = '\0';
-	return buffer;
+	return result;
 }
 
-char* Util::FormatSpeed(char* buffer, int bufSize, int bytesPerSecond)
+CString Util::FormatSpeed(int bytesPerSecond)
 {
+	CString result;
+
 	if (bytesPerSecond >= 100 * 1024 * 1024)
 	{
-		snprintf(buffer, bufSize, "%i MB/s", bytesPerSecond / 1024 / 1024);
+		result.Format("%i MB/s", bytesPerSecond / 1024 / 1024);
 	}
 	else if (bytesPerSecond >= 10 * 1024 * 1024)
 	{
-		snprintf(buffer, bufSize, "%0.1f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
+		result.Format("%0.1f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
 	}
 	else if (bytesPerSecond >= 1024 * 1000)
 	{
-		snprintf(buffer, bufSize, "%0.2f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
+		result.Format("%0.2f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
 	}
 	else
 	{
-		snprintf(buffer, bufSize, "%i KB/s", bytesPerSecond / 1024);
+		result.Format("%i KB/s", bytesPerSecond / 1024);
 	}
 
-	buffer[bufSize - 1] = '\0';
-	return buffer;
+	return result;
 }
 
 bool Util::SameFilename(const char* filename1, const char* filename2)
@@ -1037,12 +1023,11 @@ void Util::FixExecPermission(const char* filename)
 }
 #endif
 
-char* Util::GetLastErrorMessage(char* buffer, int bufLen)
+CString Util::GetLastErrorMessage()
 {
-	buffer[0] = '\0';
-	strerror_r(errno, buffer, bufLen);
-	buffer[bufLen-1] = '\0';
-	return buffer;
+	BString<1024> msg;
+	strerror_r(errno, msg, msg.Capacity());
+	return *msg;
 }
 
 void Util::Init()
@@ -1501,15 +1486,16 @@ int Util::NumberOfCpuCores()
 	return -1;
 }
 
-bool Util::FlushFileBuffers(int fileDescriptor, char* errBuf, int bufSize)
+bool Util::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 {
 #ifdef WIN32
 	BOOL ok = ::FlushFileBuffers((HANDLE)_get_osfhandle(fileDescriptor));
 	if (!ok)
 	{
+		errmsg.Reserve(1024);
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			errBuf, bufSize, NULL);
+			errmsg, 1024, NULL);
 	}
 	return ok;
 #else
@@ -1522,13 +1508,13 @@ bool Util::FlushFileBuffers(int fileDescriptor, char* errBuf, int bufSize)
 #endif
 	if (ret != 0)
 	{
-		GetLastErrorMessage(errBuf, bufSize);
+		errmsg = GetLastErrorMessage();
 	}
 	return ret == 0;
 #endif
 }
 
-bool Util::FlushDirBuffers(const char* filename, char* errBuf, int bufSize)
+bool Util::FlushDirBuffers(const char* filename, CString& errmsg)
 {
 	char parentPath[1024];
 	strncpy(parentPath, filename, 1024);
@@ -1547,10 +1533,10 @@ bool Util::FlushDirBuffers(const char* filename, char* errBuf, int bufSize)
 	FILE* file = fopen(parentPath, fileMode);
 	if (!file)
 	{
-		GetLastErrorMessage(errBuf, bufSize);
+		errmsg = GetLastErrorMessage();
 		return false;
 	}
-	bool ok = FlushFileBuffers(fileno(file), errBuf, bufSize);
+	bool ok = FlushFileBuffers(fileno(file), errmsg);
 	fclose(file);
 	return ok;
 }

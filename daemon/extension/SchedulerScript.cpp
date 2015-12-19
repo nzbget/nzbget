@@ -79,9 +79,7 @@ void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* script)
 	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "scheduler-script %s for Task%i", script->GetName(), m_taskId);
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("scheduler-script %s for Task%i", script->GetName(), m_taskId);
 	SetInfoName(infoName);
 
 	SetLogPrefix(script->GetDisplayName());
@@ -105,14 +103,11 @@ void SchedulerScriptController::ExecuteExternalProcess()
 {
 	info("Executing scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
 
-	char infoName[1024];
-	snprintf(infoName, 1024, "scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
-	infoName[1024-1] = '\0';
+	BString<1024> infoName("scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
 	SetInfoName(infoName);
 
-	char logPrefix[1024];
-	strncpy(logPrefix, Util::BaseFileName(GetScript()), 1024);
-	logPrefix[1024-1] = '\0';
+	BString<1024> logPrefix;
+	logPrefix.Set(Util::BaseFileName(GetScript()));
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(logPrefix);
 

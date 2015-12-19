@@ -29,9 +29,64 @@
 					   
 #include "NString.h"
 
+
+TEST_CASE("BString", "[NString][Quick]")
+{
+	BString<100> str;
+	REQUIRE(sizeof(str) == sizeof(char[100]));
+	REQUIRE(str.Empty());
+	REQUIRE(str);
+	str = "Hello, world";
+	REQUIRE(!str.Empty());
+	REQUIRE(str);
+	REQUIRE(!strcmp(str, "Hello, world"));
+
+	str.Format("Hi, %s%c: %i", "World", '!', 21);
+	REQUIRE(!strcmp(str, "Hi, World!: 21"));
+
+	BString<20> str2;
+	str2 = "Hello, world 01234567890123456789";
+	REQUIRE(!strcmp(str2, "Hello, world 012345"));
+
+	str2.Format("0123456789 Hi, %s%c: %i", "World", '!', 21);
+	REQUIRE(!strcmp(str2, "0123456789 Hi, Worl"));
+
+	BString<20> str3;
+	strncpy(str3, "Hello, 0123456789 world", str3.Capacity());
+	str3[str3.Capacity()] = '\0';
+	REQUIRE(!strcmp(str3, "Hello, 0123456789 w"));
+
+	str3 = "String 3 Test World, Hello!";
+	REQUIRE(!strcmp(str3, "String 3 Test World"));
+
+	BString<100> str4;
+	str4 = "String 4 initialized";
+	REQUIRE(!strcmp(str4, "String 4 initialized"));
+
+	BString<20> str5("Hi, %s%c: %i", "World", '!', 21);
+	REQUIRE(!strcmp(str5, "Hi, World!: 21"));
+
+	BString<20> str6;
+	str6.Append("Hello, World");
+	str6.Append("String5String5");
+	str6.Append("67");
+	str6.Append("0123456789", 5);
+	REQUIRE(!strcmp(str6, "Hello, WorldString5"));
+
+	BString<20> str7;
+	str7.Append("0123456789", 5);
+	REQUIRE(!strcmp(str7, "01234"));
+
+	BString<20> str8;
+	str8.Append("0123456789", 5);
+	str8.AppendFmt("%i:%i", 87, 65);
+	REQUIRE(!strcmp(str8, "0123487:65"));
+}
+
 TEST_CASE("CString", "[NString][Quick]")
 {
 	CString str;
+	REQUIRE(sizeof(str) == sizeof(char*));
 	REQUIRE(str.Empty());
 	REQUIRE(!str);
 	str = "Hello, world";
@@ -68,23 +123,6 @@ TEST_CASE("CString", "[NString][Quick]")
 	REQUIRE(str4.Str() != NULL);
 	REQUIRE(*str4.Str() == '\0');
 
-	CString str5;
-	REQUIRE(str5.Capacity() == 0);
-	str5.Reserve(5);
-	REQUIRE(str5.Capacity() >= 5);
-	strncpy((char*)str5, "Hello, World!", 5);
-	REQUIRE(str5.Length() == 0);
-	str5.Resync();
-	REQUIRE(str5.Length() == 5);
-	REQUIRE(!strcmp(str5, "Hello"));
-	((char*)str5)[1] = 'a';
-	REQUIRE(!strcmp(str5, "Hallo"));
-	((char*)str5)[2] = '\0';
-	REQUIRE(!strcmp(str5, "Ha"));
-	str5.Resync();
-	str5.Append(", World");
-	REQUIRE(!strcmp(str5, "Ha, World"));
-
 	CString str6;
 	str6.Append("");
 	str6.Append("Hello, World");
@@ -92,48 +130,45 @@ TEST_CASE("CString", "[NString][Quick]")
 	str6.Append("67");
 	REQUIRE(!strcmp(str6, "Hello, WorldString5String567"));
 
+	str6.Clear();
+	str6.Append("0123456789", 5);
+	str6.AppendFmt("%i:%i", 87, 65);
+	REQUIRE(!strcmp(str6, "0123487:65"));
+
 	std::vector<CString> vec1;
 	vec1.push_back("Hello, there");
 	CString& str7 = vec1.back();
 	REQUIRE(!strcmp(str7, "Hello, there"));
+
+	REQUIRE(!strcmp(CString::FormatStr("Many %s ago", "days"), "Many days ago"));
+
+	CString str8("Hello, World");
+	str8.Replace(1, 4, "i");
+	REQUIRE(!strcmp(str8, "Hi, World"));
+	str8.Replace(4, 5, "everybody");
+	REQUIRE(!strcmp(str8, "Hi, everybody"));
+	str8.Replace(4, 5, "nome", 2);
+	REQUIRE(!strcmp(str8, "Hi, nobody"));
+
+	CString str9 = " Long string with spaces \t\r\n ";
+	str9.TrimRight();
+	REQUIRE(!strcmp(str9, " Long string with spaces"));
+	int pos = str9.Find("with");
+	REQUIRE(pos == 13);
+	str9.Replace("string", "with");
+	REQUIRE(!strcmp(str9, " Long with with spaces"));
+	str9.Replace("with", "without");
+	REQUIRE(!strcmp(str9, " Long without without spaces"));
+	str9.Replace("without", "");
+	REQUIRE(!strcmp(str9, " Long   spaces"));
 }
 
-TEST_CASE("BString", "[NString][Quick]")
+TEST_CASE("StringBuilder", "[NString][Quick]")
 {
-	BString<100> str;
-	REQUIRE(str.Empty());
-	REQUIRE(str);
-	str = "Hello, world";
-	REQUIRE(!str.Empty());
-	REQUIRE(str);
-	REQUIRE(!strcmp(str, "Hello, world"));
-
-	str.Format("Hi, %s%c: %i", "World", '!', 21);
-	REQUIRE(!strcmp(str, "Hi, World!: 21"));
-
-	BString<5> str2;
-	str2 = "Hello, world";
-	REQUIRE(!strcmp(str2, "Hell"));
-
-	str2.Format("Hi, %s%c: %i", "World", '!', 21);
-	REQUIRE(!strcmp(str2, "Hi, W"));
-
-	BString<5> str3;
-	strncpy(str3, "Hello, world", str3.Capacity());
-	REQUIRE(!strncmp(str3, "Hello", 5));
-
-	str3 = "World, Hello!";
-	REQUIRE(!strcmp(str3, "Worl"));
-
-	BString<30> str4("String 4 initialized");
-	REQUIRE(!strcmp(str4, "String 4 initialized"));
-
-	BString<20> str5(0, "Hi, %s%c: %i", "World", '!', 21);
-	REQUIRE(!strcmp(str5, "Hi, World!: 21"));
-
-	BString<20> str6;
+	StringBuilder str6;
+	str6.Append("");
 	str6.Append("Hello, World");
 	str6.Append("String5String5");
 	str6.Append("67");
-	REQUIRE(!strcmp(str6, "Hello, WorldString5S"));
+	REQUIRE(!strcmp(str6, "Hello, WorldString5String567"));
 }

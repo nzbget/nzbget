@@ -1043,8 +1043,7 @@ void FileInfo::SetPaused(bool paused)
 
 void FileInfo::MakeValidFilename()
 {
-	Util::MakeValidFilename((char*)m_filename, '_', false);
-	m_filename.Resync();
+	Util::MakeValidFilename(m_filename, '_', false);
 }
 
 void FileInfo::LockOutputFile()

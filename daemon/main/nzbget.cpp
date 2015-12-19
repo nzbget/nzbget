@@ -940,8 +940,7 @@ void Daemonize()
 	// record pid to lockfile
 	if (lfp > -1)
 	{
-		char str[10];
-		sprintf(str, "%d\n", getpid());
+		BString<100> str("%d\n", getpid());
 		write(lfp, str, strlen(str));
 	}
 

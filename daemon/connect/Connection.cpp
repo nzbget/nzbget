@@ -238,14 +238,13 @@ bool Connection::Bind()
 
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo addr_hints, *addr_list, *addr;
-	char portStr[sizeof(int) * 4 + 1]; // is enough to hold any converted int
 
 	memset(&addr_hints, 0, sizeof(addr_hints));
 	addr_hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
 	addr_hints.ai_socktype = SOCK_STREAM,
 	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
 
-	sprintf(portStr, "%d", m_port);
+	BString<100> portStr("%d", m_port);
 
 	int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
 	if (res != 0)
@@ -540,13 +539,12 @@ bool Connection::DoConnect()
 
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo addr_hints, *addr_list, *addr;
-	char portStr[sizeof(int) * 4 + 1]; //is enough to hold any converted int
 
 	memset(&addr_hints, 0, sizeof(addr_hints));
 	addr_hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-	addr_hints.ai_socktype = SOCK_STREAM,
+	addr_hints.ai_socktype = SOCK_STREAM;
 
-	sprintf(portStr, "%d", m_port);
+	BString<100> portStr("%d", m_port);
 
 	int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
 	if (res != 0)
@@ -849,11 +847,7 @@ void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool Pri
 	}
 #endif
 
-	char errPrefix[1024];
-	snprintf(errPrefix, 1024, msgPrefix, msgArg);
-	errPrefix[1024-1] = '\0';
-
-	char message[1024];
+	BString<1024> errPrefix(msgPrefix, msgArg);
 
 	if (PrintErrCode)
 	{
@@ -878,20 +872,18 @@ void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool Pri
 #endif
 		if (m_suppressErrors)
 		{
-			debug("%s: ErrNo %i, %s", errPrefix, ErrCode, errMsg);
+			debug("%s: ErrNo %i, %s", *errPrefix, ErrCode, errMsg);
 		}
 		else
 		{
-			snprintf(message, sizeof(message), "%s: ErrNo %i, %s", errPrefix, ErrCode, errMsg);
-			message[sizeof(message) - 1] = '\0';
-			PrintError(message);
+			PrintError(BString<1024>("%s: ErrNo %i, %s", *errPrefix, ErrCode, errMsg));
 		}
 	}
 	else
 	{
 		if (m_suppressErrors)
 		{
-			debug("%s", errPrefix);
+			debug("%s", *errPrefix);
 		}
 		else
 		{

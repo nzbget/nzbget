@@ -220,17 +220,12 @@ void ScriptController::ResetEnv()
 
 void ScriptController::SetEnvVar(const char* name, const char* value)
 {
-	int len = strlen(name) + strlen(value) + 2;
-	char* var = (char*)malloc(len);
-	snprintf(var, len, "%s=%s", name, value);
-	m_environmentStrings.Append(var);
+	m_environmentStrings.Append(CString::FormatStr("%s=%s", name, value).Unbind());
 }
 
 void ScriptController::SetIntEnvVar(const char* name, int value)
 {
-	char strValue[1024];
-	snprintf(strValue, 10, "%i", value);
-	strValue[1024-1] = '\0';
+	BString<1024> strValue("%i", value);
 	SetEnvVar(name, strValue);
 }
 
@@ -264,16 +259,13 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 
 void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, const char* value)
 {
-	char varname[1024];
-	snprintf(varname, sizeof(varname), "%s_%s", prefix, name);
-	varname[1024-1] = '\0';
+	BString<1024> varname("%s_%s", prefix, name);
 
 	// Original name
 	SetEnvVar(varname, value);
 
-	char normVarname[1024];
-	strncpy(normVarname, varname, sizeof(varname));
-	normVarname[1024-1] = '\0';
+	BString<1024> normVarname;
+	normVarname.Set(varname);
 
 	// Replace special characters  with "_" and convert to upper case
 	for (char* ptr = normVarname; *ptr; ptr++)
@@ -307,12 +299,9 @@ void ScriptController::PrepareArgs()
 				command[bufLen] = '\0';
 				debug("Extension: %s", command);
 
-				char regPath[512];
-				snprintf(regPath, 512, "%s\\shell\\open\\command", command);
-				regPath[512-1] = '\0';
-
 				bufLen = 512-1;
-				if (Util::RegReadStr(HKEY_CLASSES_ROOT, regPath, NULL, command, &bufLen))
+				if (Util::RegReadStr(HKEY_CLASSES_ROOT, BString<1024>("%s\\shell\\open\\command", command),
+					NULL, command, &bufLen))
 				{
 					command[bufLen] = '\0';
 					debug("Command: %s", command);
@@ -326,7 +315,8 @@ void ScriptController::PrepareArgs()
 					}
 				}
 			}
-			warn("Could not found associated program for %s. Trying to execute %s directly", extension, Util::BaseFileName(GetScript()));
+			warn("Could not found associated program for %s. Trying to execute %s directly",
+				extension, Util::BaseFileName(GetScript()));
 		}
 	}
 #endif
@@ -785,24 +775,19 @@ void ScriptController::AddMessage(Message::EKind kind, const char* text)
 
 void ScriptController::PrintMessage(Message::EKind kind, const char* format, ...)
 {
-	char tmp2[1024];
+	BString<1024> tmp2;
 
 	va_list ap;
 	va_start(ap, format);
-	vsnprintf(tmp2, 1024, format, ap);
-	tmp2[1024-1] = '\0';
+	tmp2.FormatV(format, ap);
 	va_end(ap);
 
-	char tmp3[1024];
 	if (m_logPrefix)
 	{
-		snprintf(tmp3, 1024, "%s: %s", m_logPrefix, tmp2);
+		AddMessage(kind, BString<1024>("%s: %s", m_logPrefix, *tmp2));
 	}
 	else
 	{
-		strncpy(tmp3, tmp2, 1024);
+		AddMessage(kind, tmp2);
 	}
-	tmp3[1024-1] = '\0';
-
-	AddMessage(kind, tmp3);
 }

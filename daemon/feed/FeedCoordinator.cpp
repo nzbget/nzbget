@@ -314,19 +314,16 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
 	}
 	feedDownloader->SetForce(force || g_Options->GetUrlForce());
 
-	char tmp[1024];
-
+	BString<1024> outFilename;
 	if (feedInfo->GetId() > 0)
 	{
-		snprintf(tmp, 1024, "%sfeed-%i.tmp", g_Options->GetTempDir(), feedInfo->GetId());
+		outFilename.Format("%sfeed-%i.tmp", g_Options->GetTempDir(), feedInfo->GetId());
 	}
 	else
 	{
-		snprintf(tmp, 1024, "%sfeed-%i-%i.tmp", g_Options->GetTempDir(), (int)time(NULL), rand());
+		outFilename.Format("%sfeed-%i-%i.tmp", g_Options->GetTempDir(), (int)time(NULL), rand());
 	}
-
-	tmp[1024-1] = '\0';
-	feedDownloader->SetOutputFilename(tmp);
+	feedDownloader->SetOutputFilename(outFilename);
 
 	feedInfo->SetStatus(FeedInfo::fsRunning);
 	feedInfo->SetForce(force);
@@ -503,18 +500,16 @@ NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedIt
 	nzbInfo->SetUrl(feedItemInfo->GetUrl());
 
 	// add .nzb-extension if not present
-	char nzbName[1024];
-	strncpy(nzbName, feedItemInfo->GetFilename(), 1024);
-	nzbName[1024-1] = '\0';
+	BString<1024> nzbName;
+	nzbName.Set(feedItemInfo->GetFilename());
 	char* ext = strrchr(nzbName, '.');
 	if (ext && !strcasecmp(ext, ".nzb"))
 	{
 		*ext = '\0';
 	}
-	char nzbName2[1024];
-	snprintf(nzbName2, 1024, "%s.nzb", nzbName);
+	BString<1024> nzbName2("%s.nzb", *nzbName);
 	Util::MakeValidFilename(nzbName2, '_', false);
-	if (strlen(nzbName) > 0)
+	if (!nzbName.Empty())
 	{
 		nzbInfo->SetFilename(nzbName2);
 	}

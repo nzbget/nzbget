@@ -347,10 +347,10 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 		Util::DirectoryExists(historyInfo->GetNzbInfo()->GetDestDir()))
 	{
 		info("Deleting %s", historyInfo->GetNzbInfo()->GetDestDir());
-		char errBuf[256];
-		if (!Util::DeleteDirectoryWithContent(historyInfo->GetNzbInfo()->GetDestDir(), errBuf, sizeof(errBuf)))
+		CString errmsg;
+		if (!Util::DeleteDirectoryWithContent(historyInfo->GetNzbInfo()->GetDestDir(), errmsg))
 		{
-			error("Could not delete directory %s: %s", historyInfo->GetNzbInfo()->GetDestDir(), errBuf);
+			error("Could not delete directory %s: %s", historyInfo->GetNzbInfo()->GetDestDir(), *errmsg);
 		}
 	}
 
@@ -506,10 +506,10 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	if (Util::DirectoryExists(nzbInfo->GetDestDir()))
 	{
 		detail("Deleting %s", nzbInfo->GetDestDir());
-		char errBuf[256];
-		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errBuf, sizeof(errBuf)))
+		CString errmsg;
+		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errmsg))
 		{
-			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), errBuf);
+			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), *errmsg);
 		}
 	}
 
@@ -517,10 +517,10 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	if (Util::DirectoryExists(nzbInfo->GetDestDir()))
 	{
 		detail("Deleting %s", nzbInfo->GetDestDir());
-		char errBuf[256];
-		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errBuf, sizeof(errBuf)))
+		CString errmsg;
+		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errmsg))
 		{
-			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), errBuf);
+			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), *errmsg);
 		}
 	}
 
