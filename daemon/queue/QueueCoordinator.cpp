@@ -998,8 +998,7 @@ bool QueueCoordinator::SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbIn
 		return false;
 	}
 
-	BString<1024> oldDestDir;
-	oldDestDir.Set(nzbInfo->GetDestDir());
+	BString<1024> oldDestDir = nzbInfo->GetDestDir();
 
 	nzbInfo->SetCategory(category);
 	nzbInfo->BuildDestDirName();
@@ -1032,8 +1031,7 @@ bool QueueCoordinator::SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* 
 		return true;
 	}
 
-	BString<1024> oldDestDir;
-	oldDestDir.Set(nzbInfo->GetDestDir());
+	BString<1024> oldDestDir = nzbInfo->GetDestDir();
 
 	nzbInfo->BuildDestDirName();
 

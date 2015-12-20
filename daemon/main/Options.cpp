@@ -199,8 +199,7 @@ void Options::OptEntry::SetValue(const char* value)
 
 bool Options::OptEntry::Restricted()
 {
-	BString<1024> loName;
-	loName.Set(m_name);
+	BString<1024> loName = *m_name;
 	for (char* p = loName; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 	bool restricted = !strcasecmp(m_name, OPTION_CONTROLIP) ||

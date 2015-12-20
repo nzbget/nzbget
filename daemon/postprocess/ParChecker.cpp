@@ -340,12 +340,10 @@ public:
  */
 bool MissingFilesComparator::operator()(CommandLine::ExtraFile* file1, CommandLine::ExtraFile* file2) const
 {
-	BString<1024> name1;
-	name1.Set(Util::BaseFileName(file1->FileName().c_str()));
+	BString<1024> name1 = Util::BaseFileName(file1->FileName().c_str());
 	if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
 
-	BString<1024> name2;
-	name2.Set(Util::BaseFileName(file2->FileName().c_str()));
+	BString<1024> name2 = Util::BaseFileName(file2->FileName().c_str());
 	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
 
 	return strcmp(name1, m_baseParFilename) == 0 && strcmp(name1, name2) != 0;
@@ -908,8 +906,7 @@ bool ParChecker::AddMissingFiles()
 
 bool ParChecker::AddDupeFiles()
 {
-	BString<1024> directory;
-	directory.Set(m_parFilename);
+	BString<1024> directory = m_parFilename;
 
 	bool added = AddExtraFiles(false, false, directory);
 

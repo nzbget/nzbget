@@ -138,8 +138,7 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
 	SetEnvVar("NZBPP_DUPEMODE", dupeModeName[m_postInfo->GetNzbInfo()->GetDupeMode()]);
 
-	BString<1024> status;
-	status.Set(m_postInfo->GetNzbInfo()->MakeTextStatus(true));
+	BString<1024> status = m_postInfo->GetNzbInfo()->MakeTextStatus(true);
 	SetEnvVar("NZBPP_STATUS", status);
 
 	char* detail = strchr(status, '/');

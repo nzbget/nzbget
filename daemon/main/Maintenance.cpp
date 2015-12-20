@@ -274,8 +274,7 @@ void UpdateScriptController::Run()
 
 	SetEnvVar("NZBUP_PROCESSID", BString<100>("%i", pid));
 
-	BString<100> logPrefix;
-	logPrefix.Set(Util::BaseFileName(GetScript()));
+	BString<100> logPrefix = Util::BaseFileName(GetScript());
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(logPrefix);
 	m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
@@ -319,8 +318,7 @@ void UpdateInfoScriptController::ExecuteScript(const char* script, char** update
 	BString<1024> infoName("update-info-script %s", Util::BaseFileName(script));
 	scriptController->SetInfoName(infoName);
 
-	BString<1024> logPrefix;
-	logPrefix.Set(Util::BaseFileName(script));
+	BString<1024> logPrefix = Util::BaseFileName(script);
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	scriptController->SetLogPrefix(logPrefix);
 	scriptController->m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");

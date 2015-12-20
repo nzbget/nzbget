@@ -46,8 +46,7 @@ void MoveController::Run()
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
 
-	BString<1024> nzbName;
-	nzbName.Set(m_postInfo->GetNzbInfo()->GetName());
+	BString<1024> nzbName = m_postInfo->GetNzbInfo()->GetName();
 
 	BString<1024> infoName("move for %s", m_postInfo->GetNzbInfo()->GetName());
 	SetInfoName(infoName);

@@ -37,8 +37,10 @@ protected:
 	char m_data[size];
 public:
 	BString() { m_data[0] = '\0'; }
-	BString(const char* format, ...) PRINTF_SYNTAX(2);
+	explicit BString(const char* format, ...) PRINTF_SYNTAX(2);
 	BString(BString& other) = delete;
+	BString(const char* str) { Set(str); } // for initialization via assignment
+	BString(BString&& other) { Set(other.m_data); } // never used but declaration is needed for initialization via assignment
 	BString& operator=(const char* str) { Set(str); return *this; }
 	int Length() const { return (int)strlen(m_data); }
 	int Capacity() const { return size - 1; }

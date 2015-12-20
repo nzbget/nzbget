@@ -106,8 +106,7 @@ void SchedulerScriptController::ExecuteExternalProcess()
 	BString<1024> infoName("scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
 	SetInfoName(infoName);
 
-	BString<1024> logPrefix;
-	logPrefix.Set(Util::BaseFileName(GetScript()));
+	BString<1024> logPrefix = Util::BaseFileName(GetScript());
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(logPrefix);
 

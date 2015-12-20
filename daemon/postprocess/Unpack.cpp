@@ -438,8 +438,7 @@ void UnpackController::JoinSplittedFiles()
 
 bool UnpackController::JoinFile(const char* fragBaseName)
 {
-	BString<1024> destBaseName;
-	destBaseName.Set(fragBaseName);
+	BString<1024> destBaseName = fragBaseName;
 
 	// trim extension
 	char* extension = strrchr(destBaseName, '.');
@@ -836,8 +835,7 @@ bool UnpackController::ReadLine(char* buf, int bufSize, FILE* stream)
 		{
 			if (!printed)
 			{
-				BString<1024> tmp;
-				tmp.Set(buf);
+				BString<1024> tmp = buf;
 				char* tmpPercent = strrchr(tmp, '\b');
 				if (tmpPercent)
 				{
@@ -869,8 +867,7 @@ bool UnpackController::ReadLine(char* buf, int bufSize, FILE* stream)
 
 void UnpackController::AddMessage(Message::EKind kind, const char* text)
 {
-	BString<1024> msgText;
-	msgText.Set(text);
+	BString<1024> msgText = text;
 	int len = strlen(text);
 
 	// Modify unrar messages for better readability:

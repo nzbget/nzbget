@@ -251,8 +251,7 @@ void Util::NormalizePathSeparators(char* path)
 bool Util::ForceDirectories(const char* path, CString& errmsg)
 {
 	errmsg.Clear();
-	BString<1024> normPath;
-	normPath.Set(path);
+	BString<1024> normPath = path;
 	NormalizePathSeparators(normPath);
 	int len = strlen(normPath);
 	if ((len > 0) && normPath[len-1] == PATH_SEPARATOR
@@ -285,8 +284,7 @@ bool Util::ForceDirectories(const char* path, CString& errmsg)
 #endif
 		)
 	{
-		BString<1024> parentPath;
-		parentPath.Set(normPath);
+		BString<1024> parentPath = *normPath;
 		char* p = (char*)strrchr(parentPath, PATH_SEPARATOR);
 		if (p)
 		{
@@ -520,8 +518,7 @@ CString Util::MakeUniqueFilename(const char* destDir, const char* basename)
 		const char* extension = strrchr(basename, '.');
 		if (extension && extension != basename)
 		{
-			BString<1024> filenameWithoutExt;
-			filenameWithoutExt.Set(basename);
+			BString<1024> filenameWithoutExt = basename;
 			int end = extension - basename;
 			filenameWithoutExt[end < 1024 ? end : 1024-1] = '\0';
 
@@ -1522,8 +1519,7 @@ bool Util::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 
 bool Util::FlushDirBuffers(const char* filename, CString& errmsg)
 {
-	BString<1024> parentPath;
-	parentPath.Set(filename);
+	BString<1024> parentPath = filename;
 	const char* fileMode = FOPEN_RBP;
 
 #ifndef WIN32

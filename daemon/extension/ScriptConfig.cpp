@@ -404,8 +404,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 								BString<1024> scriptName;
 								if (isSubDir)
 								{
-									BString<1024> directory2;
-									directory2.Set(directory);
+									BString<1024> directory2 = directory;
 									int len = strlen(directory2);
 									if (directory2[len-1] == PATH_SEPARATOR || directory2[len-1] == ALT_PATH_SEPARATOR)
 									{
@@ -417,7 +416,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 								}
 								else
 								{
-									scriptName.Set(filename);
+									scriptName = filename;
 								}
 
 								char* queueEvents = NULL;
@@ -472,8 +471,7 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 	{
 		Script* script = *it;
 
-		BString<1024> shortName;
-		shortName.Set(script->GetName());
+		BString<1024> shortName = script->GetName();
 		if (char* ext = strrchr(shortName, '.')) *ext = '\0'; // strip file extension
 
 		const char* displayName = Util::BaseFileName(shortName);
@@ -482,8 +480,7 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 		{
 			Script* script2 = *it2;
 
-			BString<1024> shortName2;
-			shortName2.Set(script2->GetName());
+			BString<1024> shortName2 = script2->GetName();
 			if (char* ext = strrchr(shortName2, '.')) *ext = '\0'; // strip file extension
 
 			const char* displayName2 = Util::BaseFileName(shortName2);

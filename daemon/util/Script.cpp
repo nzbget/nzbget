@@ -264,8 +264,7 @@ void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, co
 	// Original name
 	SetEnvVar(varname, value);
 
-	BString<1024> normVarname;
-	normVarname.Set(varname);
+	BString<1024> normVarname = *varname;
 
 	// Replace special characters  with "_" and convert to upper case
 	for (char* ptr = normVarname; *ptr; ptr++)

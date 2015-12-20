@@ -328,8 +328,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 					 !strcasecmp(parameter->GetValue(), "on") ||
 					 !strcasecmp(parameter->GetValue(), "1")))
 				{
-					BString<1024> scriptName;
-					scriptName.Set(varname);
+					BString<1024> scriptName = varname;
 					scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
 					if (Util::SameFilename(scriptName, script->GetName()))
 					{

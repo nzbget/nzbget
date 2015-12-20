@@ -347,8 +347,7 @@ void Log::ResetLog()
 
 void Log::RotateLog()
 {
-	BString<1024> directory;
-	directory.Set(g_Options->GetLogFile());
+	BString<1024> directory = g_Options->GetLogFile();
 
 	// split the full filename into path, basename and extension
 	char* baseName = Util::BaseFileName(directory);

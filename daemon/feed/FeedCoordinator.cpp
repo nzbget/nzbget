@@ -497,8 +497,7 @@ NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedIt
 	nzbInfo->SetUrl(feedItemInfo->GetUrl());
 
 	// add .nzb-extension if not present
-	BString<1024> nzbName;
-	nzbName.Set(feedItemInfo->GetFilename());
+	BString<1024> nzbName = feedItemInfo->GetFilename();
 	char* ext = strrchr(nzbName, '.');
 	if (ext && !strcasecmp(ext, ".nzb"))
 	{

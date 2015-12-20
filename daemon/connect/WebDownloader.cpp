@@ -516,8 +516,7 @@ void WebDownloader::ParseFilename(const char* contentDisposition)
 
 	while (*p == ' ') p++;
 
-	BString<1024> fname;
-	fname.Set(p);
+	BString<1024> fname = p;
 
 	char *pe = fname + strlen(fname) - 1;
 	while ((*pe == ' ' || *pe == '\n' || *pe == '\r' || *pe == ';') && pe > fname) {

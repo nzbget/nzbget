@@ -579,8 +579,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 
 	// move file into NzbDir, make sure the file name is unique
-	BString<1024> validNzbName;
-	validNzbName.Set(Util::BaseFileName(nzbName));
+	BString<1024> validNzbName = Util::BaseFileName(nzbName);
 	Util::MakeValidFilename(validNzbName, '_', false);
 
 #ifdef WIN32

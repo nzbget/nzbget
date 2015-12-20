@@ -98,8 +98,7 @@ void ScanScriptController::PrepareParams(const char* scriptName)
 	SetEnvVar("NZBNP_DUPEMODE", dupeModeName[*m_dupeMode]);
 
 	// remove trailing slash
-	BString<1024> dir;
-	dir.Set(m_directory);
+	BString<1024> dir = m_directory;
 	int len = strlen(dir);
 	if (dir[len-1] == PATH_SEPARATOR)
 	{

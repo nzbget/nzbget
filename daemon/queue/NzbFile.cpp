@@ -142,8 +142,7 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 	// Example subject: some garbage "title" yEnc (10/99)
 
 	// strip the "yEnc (10/99)"-suffix
-	BString<1024> subject;
-	subject.Set(fileInfo->GetSubject());
+	BString<1024> subject = fileInfo->GetSubject();
 	char* end = subject + strlen(subject) - 1;
 	if (*end == ')')
 	{
@@ -388,8 +387,7 @@ void NzbFile::ProcessFiles()
 		FileInfo* fileInfo = *it;
 		fileInfo->MakeValidFilename();
 
-		BString<1024> loFileName;
-		loFileName.Set(fileInfo->GetFilename());
+		BString<1024> loFileName = fileInfo->GetFilename();
 		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 		bool parFile = strstr(loFileName, ".par2");
 
@@ -539,8 +537,7 @@ bool NzbFile::Parse()
 
 void NzbFile::EncodeUrl(const char* filename, char* url, int bufLen)
 {
-	BString<1024> utfFilename;
-	utfFilename.Set(filename);
+	BString<1024> utfFilename = filename;
 	WebUtil::AnsiToUtf8(utfFilename, utfFilename.Capacity());
 
 	char* end = url + bufLen;

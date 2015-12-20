@@ -388,8 +388,7 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 		return;
 	}
 
-	BString<100> setId;
-	setId.Set(header.setid.print().c_str());
+	BString<100> setId = header.setid.print().c_str();
 	for (char* p = setId; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 	debug("Renaming: %s; setid: %s", Util::BaseFileName(filename), *setId);

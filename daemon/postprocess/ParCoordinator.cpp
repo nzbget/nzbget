@@ -563,8 +563,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 				// the pFileInfo->GetFilename() may be not confirmed and may contain
 				// additional texts if Subject could not be parsed correctly
 
-				BString<1024> loFileName;
-				loFileName.Set(fileInfo->GetFilename());
+				BString<1024> loFileName = fileInfo->GetFilename();
 				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 				BString<1024> candidateFileName("%s.par2", *mainBaseFilename);

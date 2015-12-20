@@ -81,6 +81,10 @@ TEST_CASE("BString", "[NString][Quick]")
 	str8.Append("0123456789", 5);
 	str8.AppendFmt("%i:%i", 87, 65);
 	REQUIRE(!strcmp(str8, "0123487:65"));
+
+	const char* txt = "String 9 initialized";
+	BString<100> str9 = txt;
+	REQUIRE(!strcmp(str9, "String 9 initialized"));
 }
 
 TEST_CASE("CString", "[NString][Quick]")
