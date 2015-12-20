@@ -352,10 +352,9 @@ void NzbInfo::SetUrl(const char* url)
 
 	if (!m_name)
 	{
-		char nzbNicename[1024];
-		MakeNiceUrlName(url, m_filename, nzbNicename, sizeof(nzbNicename));
-		nzbNicename[1024-1] = '\0';
+		CString nzbNicename = MakeNiceUrlName(url, m_filename);
 #ifdef WIN32
+		nzbNicename.Reserve(1024);
 		WebUtil::AnsiToUtf8(nzbNicename, 1024);
 #endif
 		SetName(nzbNicename);
@@ -365,123 +364,105 @@ void NzbInfo::SetUrl(const char* url)
 void NzbInfo::SetFilename(const char* filename)
 {
 	bool hadFilename = !Util::EmptyStr(m_filename);
-
 	m_filename = filename;
 
 	if ((!m_name || !hadFilename) && !Util::EmptyStr(filename))
 	{
-		char nzbNicename[1024];
-		MakeNiceNzbName(m_filename, nzbNicename, sizeof(nzbNicename), true);
-		nzbNicename[1024-1] = '\0';
+		CString nzbNicename = MakeNiceNzbName(m_filename, true);
 #ifdef WIN32
+		nzbNicename.Reserve(1024);
 		WebUtil::AnsiToUtf8(nzbNicename, 1024);
 #endif
 		SetName(nzbNicename);
 	}
 }
 
-void NzbInfo::MakeNiceNzbName(const char * nzbFilename, char * buffer, int size, bool removeExt)
+CString NzbInfo::MakeNiceNzbName(const char * nzbFilename, bool removeExt)
 {
-	char postname[1024];
-	const char* baseName = Util::BaseFileName(nzbFilename);
-
-	strncpy(postname, baseName, 1024);
-	postname[1024-1] = '\0';
-
+	CString nicename = Util::BaseFileName(nzbFilename);
 	if (removeExt)
 	{
 		// wipe out ".nzb"
-		char* p = strrchr(postname, '.');
+		char* p = strrchr(nicename, '.');
 		if (p && !strcasecmp(p, ".nzb")) *p = '\0';
 	}
-
-	Util::MakeValidFilename(postname, '_', false);
-
-	strncpy(buffer, postname, size);
-	buffer[size-1] = '\0';
+	Util::MakeValidFilename(nicename, '_', false);
+	return nicename;
 }
 
-void NzbInfo::MakeNiceUrlName(const char* urlStr, const char* nzbFilename, char* buffer, int size)
+CString NzbInfo::MakeNiceUrlName(const char* urlStr, const char* nzbFilename)
 {
+	CString urlNicename;
 	URL url(urlStr);
 
 	if (!Util::EmptyStr(nzbFilename))
 	{
-		char nzbNicename[1024];
-		MakeNiceNzbName(nzbFilename, nzbNicename, sizeof(nzbNicename), true);
-		snprintf(buffer, size, "%s @ %s", nzbNicename, url.GetHost());
+		CString nzbNicename = MakeNiceNzbName(nzbFilename, true);
+		urlNicename.Format("%s @ %s", *nzbNicename, url.GetHost());
 	}
 	else if (url.IsValid())
 	{
-		snprintf(buffer, size, "%s%s", url.GetHost(), url.GetResource());
+		urlNicename.Format("%s%s", url.GetHost(), url.GetResource());
 	}
 	else
 	{
-		snprintf(buffer, size, "%s", urlStr);
+		urlNicename = urlStr;
 	}
 
-	buffer[size-1] = '\0';
+	return urlNicename;
 }
 
 void NzbInfo::BuildDestDirName()
 {
-	char destDir[1024];
+	CString destDir;
 
 	if (Util::EmptyStr(g_Options->GetInterDir()))
 	{
-		BuildFinalDirName(destDir, 1024);
+		destDir = BuildFinalDirName();
 	}
 	else
 	{
-		snprintf(destDir, 1024, "%s%s.#%i", g_Options->GetInterDir(), GetName(), GetId());
-		destDir[1024-1] = '\0';
+		destDir.Format("%s%s.#%i", g_Options->GetInterDir(), GetName(), GetId());
 	}
 
 #ifdef WIN32
-	WebUtil::Utf8ToAnsi(destDir, 1024);
+	WebUtil::Utf8ToAnsi(destDir, destDir.Length() + 1);
 #endif
 
 	SetDestDir(destDir);
 }
 
-void NzbInfo::BuildFinalDirName(char* finalDirBuf, int bufSize)
+CString NzbInfo::BuildFinalDirName()
 {
-	char buffer[1024];
+	CString finalDir = g_Options->GetDestDir();
 	bool useCategory = m_category && m_category[0] != '\0';
-
-	snprintf(finalDirBuf, bufSize, "%s", g_Options->GetDestDir());
-	finalDirBuf[bufSize-1] = '\0';
 
 	if (useCategory)
 	{
 		Options::Category *category = g_Options->FindCategory(m_category, false);
 		if (category && category->GetDestDir() && category->GetDestDir()[0] != '\0')
 		{
-			snprintf(finalDirBuf, bufSize, "%s", category->GetDestDir());
-			finalDirBuf[bufSize-1] = '\0';
+			finalDir = category->GetDestDir();
 			useCategory = false;
 		}
 	}
 
 	if (g_Options->GetAppendCategoryDir() && useCategory)
 	{
-		char categoryDir[1024];
-		strncpy(categoryDir, m_category, 1024);
-		categoryDir[1024 - 1] = '\0';
+		BString<1024> categoryDir;
+		categoryDir = m_category;
 		Util::MakeValidFilename(categoryDir, '_', true);
-
-		snprintf(buffer, 1024, "%s%s%c", finalDirBuf, categoryDir, PATH_SEPARATOR);
-		buffer[1024-1] = '\0';
-		strncpy(finalDirBuf, buffer, bufSize);
+		// we can't format using "finalDir.Format" because one of the parameter is "finalDir" itself.
+		finalDir = BString<1024>("%s%s%c", *finalDir, *categoryDir, PATH_SEPARATOR);
 	}
 
-	snprintf(buffer, 1024, "%s%s", finalDirBuf, GetName());
-	buffer[1024-1] = '\0';
-	strncpy(finalDirBuf, buffer, bufSize);
+	finalDir.Append(GetName());
 
 #ifdef WIN32
-	WebUtil::Utf8ToAnsi(finalDirBuf, bufSize);
+	WebUtil::Utf8ToAnsi(finalDir, finalDir.Length() + 1);
 #endif
+
+	return finalDir;
 }
 
 int NzbInfo::CalcHealth()
@@ -1198,21 +1179,19 @@ int HistoryInfo::GetId()
 	}
 }
 
-void HistoryInfo::GetName(char* buffer, int size)
+const char* HistoryInfo::GetName()
 {
 	if (m_kind == hkNzb || m_kind == hkUrl)
 	{
-		strncpy(buffer, GetNzbInfo()->GetName(), size);
-		buffer[size-1] = '\0';
+		return GetNzbInfo()->GetName();
 	}
 	else if (m_kind == hkDup)
 	{
-		strncpy(buffer, GetDupInfo()->GetName(), size);
-		buffer[size-1] = '\0';
+		return GetDupInfo()->GetName();
 	}
 	else
 	{
-		strncpy(buffer, "<unknown>", size);
+		return "<unknown>";
 	}
 }
 

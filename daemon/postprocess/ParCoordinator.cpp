@@ -317,11 +317,10 @@ void ParCoordinator::StartParRenameJob(PostInfo* postInfo)
 {
 	const char* destDir = postInfo->GetNzbInfo()->GetDestDir();
 
-	char finalDir[1024];
+	CString finalDir;
 	if (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess)
 	{
-		postInfo->GetNzbInfo()->BuildFinalDirName(finalDir, 1024);
-		finalDir[1024-1] = '\0';
+		finalDir = postInfo->GetNzbInfo()->BuildFinalDirName();
 		destDir = finalDir;
 	}
 
@@ -535,7 +534,6 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
 	char* baseParFilename = Util::BaseFileName(parFilename);
-	char mainBaseFilename[1024];
 	int mainBaseLen = 0;
 	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, NULL))
 	{
@@ -543,9 +541,8 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 		nzbInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", baseParFilename);
 		return;
 	}
-	int maxlen = mainBaseLen < 1024 ? mainBaseLen : 1024 - 1;
-	strncpy(mainBaseFilename, baseParFilename, maxlen);
-	mainBaseFilename[maxlen] = '\0';
+	BString<1024> mainBaseFilename;
+	mainBaseFilename.Set(baseParFilename, mainBaseLen);
 	for (char* p = mainBaseFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
@@ -566,15 +563,14 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 				// the pFileInfo->GetFilename() may be not confirmed and may contain
 				// additional texts if Subject could not be parsed correctly
 
-				char loFileName[1024];
-				strncpy(loFileName, fileInfo->GetFilename(), 1024);
-				loFileName[1024-1] = '\0';
+				BString<1024> loFileName;
+				loFileName.Set(fileInfo->GetFilename());
 				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-				BString<1024> candidateFileName("%s.par2", mainBaseFilename);
+				BString<1024> candidateFileName("%s.par2", *mainBaseFilename);
 				if (!strstr(loFileName, candidateFileName))
 				{
-					candidateFileName.Format("%s.vol", mainBaseFilename);
+					candidateFileName.Format("%s.vol", *mainBaseFilename);
 					useFile = strstr(loFileName, candidateFileName);
 				}
 			}

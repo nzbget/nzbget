@@ -908,9 +908,8 @@ void QueueEditor::PausePars(FileList* fileList, bool extraParsOnly)
 	for (FileList::iterator it = fileList->begin(); it != fileList->end(); it++)
 	{
 		FileInfo* fileInfo = *it;
-		char loFileName[1024];
-		strncpy(loFileName, fileInfo->GetFilename(), 1024);
-		loFileName[1024-1] = '\0';
+		BString<1024> loFileName;
+		loFileName.Set(fileInfo->GetFilename());
 		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 		if (strstr(loFileName, ".par2"))
@@ -1082,9 +1081,8 @@ bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* fileInfo = *it;
-		char loFileName[1024];
-		strncpy(loFileName, fileInfo->GetFilename(), 1024);
-		loFileName[1024-1] = '\0';
+		BString<1024> loFileName;
+		loFileName.Set(fileInfo->GetFilename());
 		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 		if (!strstr(loFileName, ".par2"))

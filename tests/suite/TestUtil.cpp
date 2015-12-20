@@ -45,8 +45,7 @@ void TestUtil::Init(const char* argv0)
 {
 	m_usedWorkingDir = false;
 
-	char filename[MAX_PATH + 1];
-	Util::GetExeFileName(argv0, filename, sizeof(filename));
+	CString filename = Util::GetExeFileName(argv0);
 	Util::NormalizePathSeparators(filename);
 	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';

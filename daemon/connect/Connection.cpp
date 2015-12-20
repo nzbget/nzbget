@@ -1020,12 +1020,12 @@ const char* Connection::GetRemoteAddr()
 	if (getpeername(m_socket, (struct sockaddr*)&PeerName, (SOCKLEN_T*) &peerNameLength) >= 0)
 	{
 #ifdef WIN32
-		strncpy(m_remoteAddr, inet_ntoa(PeerName.sin_addr), sizeof(m_remoteAddr));
+		m_remoteAddr = inet_ntoa(PeerName.sin_addr);
 #else
-		inet_ntop(AF_INET, &PeerName.sin_addr, m_remoteAddr, sizeof(m_remoteAddr));
+		inet_ntop(AF_INET, &PeerName.sin_addr, m_remoteAddr, m_remoteAddr.Capacity());
+		m_remoteAddr[m_remoteAddr.Capacity() - 1] = '\0';
 #endif
 	}
-	m_remoteAddr[sizeof(m_remoteAddr)-1] = '\0';
 
 	return m_remoteAddr;
 }

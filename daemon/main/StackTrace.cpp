@@ -101,19 +101,19 @@ void PrintBacktrace(PCONTEXT context)
 		}
 
 		DWORD64 dwAddr = sfStackFrame.AddrPC.Offset;
-		char symName[1024];
-		char srcFileName[1024];
+		BString<1024> symName;
+		BString<1024> srcFileName;
 		int lineNumber = 0;
 
 		DWORD64 dwSymbolDisplacement;
 		if (SymGetSymFromAddr64(hProcess, dwAddr, &dwSymbolDisplacement, sym))
 		{
-			UnDecorateSymbolName(sym->Name, symName, sizeof(symName), UNDNAME_COMPLETE);
+			UnDecorateSymbolName(sym->Name, symName, symName.Capacity(), UNDNAME_COMPLETE);
 			symName[sizeof(symName) - 1] = '\0';
 		}
 		else
 		{
-			strncpy(symName, "<symbol not available>", sizeof(symName));
+			symName = "<symbol not available>";
 		}
 
 		DWORD dwLineDisplacement;
@@ -126,15 +126,14 @@ void PrintBacktrace(PCONTEXT context)
 			{
 				useFileName = root;
 			}
-			strncpy(srcFileName, useFileName, sizeof(srcFileName));
-			srcFileName[sizeof(srcFileName) - 1] = '\0';
+			srcFileName = useFileName;
 		}
 		else
 		{
-			strncpy(srcFileName, "<filename not available>", sizeof(symName));
+			srcFileName = "<filename not available>";
 		}
 
-		info("%s (%i) : %s", srcFileName, lineNumber, symName);
+		info("%s (%i) : %s", *srcFileName, lineNumber, *symName);
 
 		if (sfStackFrame.AddrReturn.Offset == 0)
 		{

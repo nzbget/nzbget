@@ -361,11 +361,11 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 		exists = Util::FileExists(fullFilename);
 		if (exists && strcasecmp(extension, ".nzb"))
 		{
-			char bakname2[1024];
-			bool renameOK = Util::RenameBak(fullFilename, "processed", false, bakname2, 1024);
+			CString bakname2;
+			bool renameOK = Util::RenameBak(fullFilename, "processed", false, bakname2);
 			if (!renameOK)
 			{
-				error("Could not rename file %s to %s: %s", fullFilename, bakname2,
+				error("Could not rename file %s to %s: %s", fullFilename, *bakname2,
 					*Util::GetLastErrorMessage());
 			}
 		}
@@ -373,8 +373,8 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 
 	if (!strcasecmp(extension, ".nzb_processed"))
 	{
-		char renamedName[1024];
-		bool renameOK = Util::RenameBak(fullFilename, "nzb", true, renamedName, 1024);
+		CString renamedName;
+		bool renameOK = Util::RenameBak(fullFilename, "nzb", true, renamedName);
 		if (renameOK)
 		{
 			bool added = AddFileToQueue(renamedName, nzbName, nzbCategory, priority,
@@ -383,7 +383,7 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 		}
 		else
 		{
-			error("Could not rename file %s to %s: %s", fullFilename, renamedName,
+			error("Could not rename file %s to %s: %s", fullFilename, *renamedName,
 				*Util::GetLastErrorMessage());
 			addStatus = asFailed;
 		}
@@ -463,11 +463,11 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 		error("Could not add collection %s to queue", basename);
 	}
 
-	char bakname2[1024];
-	if (!Util::RenameBak(filename, nzbFile ? "queued" : "error", false, bakname2, 1024))
+	CString bakname2;
+	if (!Util::RenameBak(filename, nzbFile ? "queued" : "error", false, bakname2))
 	{
 		ok = false;
-		error("Could not rename file %s to %s: %s", filename, bakname2,
+		error("Could not rename file %s to %s: %s", filename, *bakname2,
 			*Util::GetLastErrorMessage());
 	}
 
@@ -584,7 +584,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	Util::MakeValidFilename(validNzbName, '_', false);
 
 #ifdef WIN32
-	WebUtil::Utf8ToAnsi(validNzbName, 1024);
+	WebUtil::Utf8ToAnsi(validNzbName, validNzbName.Capacity());
 #endif
 
 	const char* extension = strrchr(nzbName, '.');

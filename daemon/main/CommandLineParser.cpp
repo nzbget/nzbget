@@ -890,7 +890,7 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 		const char* fileName = argv[optind];
 
 #ifdef WIN32
-			m_argFilename = fileName;
+		m_argFilename = fileName;
 #else
 		if (fileName[0] == '/' || !strncasecmp(fileName, "http://", 6) || !strncasecmp(fileName, "https://", 7))
 		{
@@ -899,11 +899,9 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 		else
 		{
 			// TEST
-			char fileNameWithPath[1024];
-			getcwd(fileNameWithPath, 1024);
-			strcat(fileNameWithPath, "/");
-			strcat(fileNameWithPath, fileName);
-			m_argFilename = fileNameWithPath;
+			m_argFilename.Reserve(1024);
+			getcwd(m_argFilename, 1024);
+			m_argFilename.AppendFmt("/%s", fileName);
 		}
 #endif
 
@@ -934,10 +932,8 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 			const char* p = strchr(optarg, '-');
 			if (p)
 			{
-				char buf[101];
-				int maxlen = (int)(p - optarg < 100 ? p - optarg : 100);
-				strncpy(buf, optarg, maxlen);
-				buf[maxlen] = '\0';
+				BString<100> buf;
+				buf.Set(optarg, p - optarg);
 				editQueueIdFrom = atoi(buf);
 				editQueueIdTo = atoi(p + 1);
 				if (editQueueIdFrom <= 0 || editQueueIdTo <= 0)

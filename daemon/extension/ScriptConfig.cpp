@@ -137,17 +137,14 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 			continue;
 		}
 
-		char* optname;
-		char* optvalue;
-		if (g_Options->SplitOptionString(buf, &optname, &optvalue))
+		CString optname;
+		CString optvalue;
+		if (g_Options->SplitOptionString(buf, optname, optvalue))
 		{
 			Options::OptEntry* optEntry = new Options::OptEntry();
 			optEntry->SetName(optname);
 			optEntry->SetValue(optvalue);
 			optEntries->push_back(optEntry);
-
-			free(optname);
-			free(optvalue);
 		}
 	}
 
@@ -192,9 +189,9 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 			// remove trailing '\n' and '\r' and spaces
 			buf.TrimRight();
 
-			char* optname;
-			char* optvalue;
-			if (g_Options->SplitOptionString(buf, &optname, &optvalue))
+			CString optname;
+			CString optvalue;
+			if (g_Options->SplitOptionString(buf, optname, optvalue))
 			{
 				Options::OptEntry *optEntry = optEntries->FindOption(optname);
 				if (optEntry)
@@ -205,9 +202,6 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 					fputs("\n", infile);
 					writtenOptions.insert(optEntry);
 				}
-
-				free(optname);
-				free(optvalue);
 			}
 		}
 		else

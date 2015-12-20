@@ -178,8 +178,7 @@ void RunMain()
 	// the program is reloaded (RPC-Method "reload") in order for
 	// config to properly load in a case relative paths are used
 	// in command line
-	char curDir[MAX_PATH + 1];
-	Util::GetCurrentDirectory(curDir, sizeof(curDir));
+	CString curDir = Util::GetCurrentDirectory();
 
 	bool reload = false;
 	while (g_Reloading)

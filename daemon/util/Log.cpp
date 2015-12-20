@@ -347,9 +347,8 @@ void Log::ResetLog()
 
 void Log::RotateLog()
 {
-	char directory[1024];
-	strncpy(directory, g_Options->GetLogFile(), 1024);
-	directory[1024-1] = '\0';
+	BString<1024> directory;
+	directory.Set(g_Options->GetLogFile());
 
 	// split the full filename into path, basename and extension
 	char* baseName = Util::BaseFileName(directory);
@@ -358,20 +357,15 @@ void Log::RotateLog()
 		baseName[-1] = '\0';
 	}
 
-	char baseExt[250];
+	BString<1024> baseExt;
 	char* ext = strrchr(baseName, '.');
 	if (ext && ext > baseName)
 	{
-		strncpy(baseExt, ext, 250);
-		baseExt[250-1] = '\0';
+		baseExt = ext;
 		ext[0] = '\0';
 	}
-	else
-	{
-		baseExt[0] = '\0';
-	}
 
-	BString<1024> fileMask("%s-####-##-##%s", baseName, baseExt);
+	BString<1024> fileMask("%s-####-##-##%s", baseName, *baseExt);
 
 	time_t curTime = time(NULL) + g_Options->GetTimeCorrection();
 	int curDay = (int)curTime / 86400;
@@ -383,7 +377,7 @@ void Log::RotateLog()
 	{
 		if (mask.Match(filename))
 		{
-			fullFilename.Format("%s%c%s", directory, PATH_SEPARATOR, filename);
+			fullFilename.Format("%s%c%s", *directory, PATH_SEPARATOR, filename);
 
 			struct tm tm;
 			memset(&tm, 0, sizeof(tm));
@@ -405,12 +399,12 @@ void Log::RotateLog()
 
 	struct tm tm;
 	gmtime_r(&curTime, &tm);
-	fullFilename.Format("%s%c%s-%i-%.2i-%.2i%s", directory, PATH_SEPARATOR,
-		baseName, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, baseExt);
+	fullFilename.Format("%s%c%s-%i-%.2i-%.2i%s", *directory, PATH_SEPARATOR,
+		baseName, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, *baseExt);
 
 	m_logFilename = fullFilename;
 #ifdef WIN32
-	WebUtil::Utf8ToAnsi((char*)m_logFilename, strlen(m_logFilename) + 1);
+	WebUtil::Utf8ToAnsi(m_logFilename, m_logFilename.Length() + 1);
 #endif
 }
 
@@ -431,7 +425,7 @@ void Log::InitOptions()
 	{
 		m_logFilename = g_Options->GetLogFile();
 #ifdef WIN32
-		WebUtil::Utf8ToAnsi((char*)m_logFilename, strlen(m_logFilename) + 1);
+		WebUtil::Utf8ToAnsi(m_logFilename, m_logFilename.Length() + 1);
 #endif
 
 		if (g_Options->GetServerMode() && g_Options->GetWriteLog() == Options::wlReset)

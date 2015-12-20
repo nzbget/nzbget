@@ -522,8 +522,8 @@ public:
 	void				SetUrl(const char* url);
 	const char*			GetFilename() { return m_filename; }
 	void				SetFilename(const char* filename);
-	static void			MakeNiceNzbName(const char* nzbFilename, char* buffer, int size, bool removeExt);
-	static void			MakeNiceUrlName(const char* url, const char* nzbFilename, char* buffer, int size);
+	static CString		MakeNiceNzbName(const char* nzbFilename, bool removeExt);
+	static CString		MakeNiceUrlName(const char* url, const char* nzbFilename);
 	const char*			GetDestDir() { return m_destDir; }
 	void				SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char*			GetFinalDir() { return m_finalDir; }
@@ -584,7 +584,7 @@ public:
 	time_t				GetMaxTime() { return m_maxTime; }
 	void				SetMaxTime(time_t maxTime) { m_maxTime = maxTime; }
 	void				BuildDestDirName();
-	void				BuildFinalDirName(char* finalDirBuf, int bufSize);
+	CString				BuildFinalDirName();
 	CompletedFiles*		GetCompletedFiles() { return &m_completedFiles; }
 	void				ClearCompletedFiles();
 	ERenameStatus		GetRenameStatus() { return m_renameStatus; }
@@ -855,7 +855,7 @@ public:
 	void				DiscardNzbInfo() { m_info = NULL; }
 	time_t				GetTime() { return m_time; }
 	void				SetTime(time_t time) { m_time = time; }
-	void				GetName(char* buffer, int size);		// needs locking (for shared objects)
+	const char*			GetName();
 };
 
 typedef std::deque<HistoryInfo*> HistoryListBase;

@@ -60,10 +60,8 @@ void UrlDownloader::ProcessHeader(const char* line)
 			debug("Value: %s", value);
 
 			BString<100> paramName("*DNZB:%s", modLine + 7);
-
-			char* val = WebUtil::Latin1ToUtf8(value);
-			m_nzbInfo->GetParameters()->SetParameter(paramName, val);
-			free(val);
+			CString paramValue = WebUtil::Latin1ToUtf8(value);
+			m_nzbInfo->GetParameters()->SetParameter(paramName, paramValue);
 		}
 		free(modLine);
 	}
@@ -276,16 +274,10 @@ void UrlCoordinator::StartUrlDownload(NzbInfo* nzbInfo)
 	urlDownloader->SetNzbInfo(nzbInfo);
 	urlDownloader->SetUrl(nzbInfo->GetUrl());
 	urlDownloader->SetForce(g_Options->GetUrlForce());
+	urlDownloader->SetInfoName(nzbInfo->MakeNiceUrlName(nzbInfo->GetUrl(), nzbInfo->GetFilename()));
+	urlDownloader->SetOutputFilename(BString<1024>("%surl-%i.tmp", g_Options->GetTempDir(), nzbInfo->GetId()));
+
 	nzbInfo->SetActiveDownloads(1);
-
-	char tmp[1024];
-
-	nzbInfo->MakeNiceUrlName(nzbInfo->GetUrl(), nzbInfo->GetFilename(), tmp, 1024);
-	urlDownloader->SetInfoName(tmp);
-
-	BString<1024> outFlename("%surl-%i.tmp", g_Options->GetTempDir(), nzbInfo->GetId());
-	urlDownloader->SetOutputFilename(outFlename);
-
 	nzbInfo->SetUrlStatus(NzbInfo::lsRunning);
 
 	m_activeDownloads.push_back(urlDownloader);
@@ -311,23 +303,21 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 	NzbInfo* nzbInfo = urlDownloader->GetNzbInfo();
 
-	char filename[1024];
+	BString<1024> filename;
 	if (urlDownloader->GetOriginalFilename())
 	{
-		strncpy(filename, urlDownloader->GetOriginalFilename(), 1024);
-		filename[1024-1] = '\0';
+		filename = urlDownloader->GetOriginalFilename();
 	}
 	else
 	{
-		strncpy(filename, Util::BaseFileName(nzbInfo->GetUrl()), 1024);
-		filename[1024-1] = '\0';
+		filename = Util::BaseFileName(nzbInfo->GetUrl());
 
 		// TODO: decode URL escaping
 	}
 
 	Util::MakeValidFilename(filename, '_', false);
 
-	debug("Filename: [%s]", filename);
+	debug("Filename: [%s]", *filename);
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
@@ -381,7 +371,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 	{
 		// add nzb-file to download queue
 		Scanner::EAddStatus addStatus = g_Scanner->AddExternalFile(
-			!Util::EmptyStr(nzbInfo->GetFilename()) ? nzbInfo->GetFilename() : filename,
+			!Util::EmptyStr(nzbInfo->GetFilename()) ? nzbInfo->GetFilename() : *filename,
 			!Util::EmptyStr(nzbInfo->GetCategory()) ? nzbInfo->GetCategory() : urlDownloader->GetCategory(),
 			nzbInfo->GetPriority(), nzbInfo->GetDupeKey(), nzbInfo->GetDupeScore(), nzbInfo->GetDupeMode(),
 			nzbInfo->GetParameters(), false, nzbInfo->GetAddUrlPaused(), nzbInfo,

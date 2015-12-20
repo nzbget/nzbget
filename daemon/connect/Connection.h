@@ -61,7 +61,7 @@ protected:
 	EStatus				m_status;
 	int					m_timeout;
 	bool				m_suppressErrors;
-	char				m_remoteAddr[20];
+	BString<100>		m_remoteAddr;
 	int					m_totalBytesRead;
 	bool				m_broken;
 	bool				m_gracefull;

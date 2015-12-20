@@ -251,9 +251,8 @@ void Util::NormalizePathSeparators(char* path)
 bool Util::ForceDirectories(const char* path, CString& errmsg)
 {
 	errmsg.Clear();
-	char normPath[1024];
-	strncpy(normPath, path, 1024);
-	normPath[1024-1] = '\0';
+	BString<1024> normPath;
+	normPath.Set(path);
 	NormalizePathSeparators(normPath);
 	int len = strlen(normPath);
 	if ((len > 0) && normPath[len-1] == PATH_SEPARATOR
@@ -269,13 +268,14 @@ bool Util::ForceDirectories(const char* path, CString& errmsg)
 	bool ok = !stat(normPath, &buffer);
 	if (!ok && errno != ENOENT)
 	{
-		errmsg.Format("could not read information for directory %s: errno %i, %s", normPath, errno, *GetLastErrorMessage());
+		errmsg.Format("could not read information for directory %s: errno %i, %s",
+			*normPath, errno, *GetLastErrorMessage());
 		return false;
 	}
 
 	if (ok && !S_ISDIR(buffer.st_mode))
 	{
-		errmsg.Format("path %s is not a directory", normPath);
+		errmsg.Format("path %s is not a directory", *normPath);
 		return false;
 	}
 
@@ -285,9 +285,8 @@ bool Util::ForceDirectories(const char* path, CString& errmsg)
 #endif
 		)
 	{
-		char parentPath[1024];
-		strncpy(parentPath, normPath, 1024);
-		parentPath[1024-1] = '\0';
+		BString<1024> parentPath;
+		parentPath.Set(normPath);
 		char* p = (char*)strrchr(parentPath, PATH_SEPARATOR);
 		if (p)
 		{
@@ -309,19 +308,20 @@ bool Util::ForceDirectories(const char* path, CString& errmsg)
 
 		if (mkdir(normPath, S_DIRMODE) != 0 && errno != EEXIST)
 		{
-			errmsg.Format("could not create directory %s: %s", normPath, *GetLastErrorMessage());
+			errmsg.Format("could not create directory %s: %s", *normPath, *GetLastErrorMessage());
 			return false;
 		}
 
 		if (stat(normPath, &buffer) != 0)
 		{
-			errmsg.Format("could not read information for directory %s: %s", normPath, *GetLastErrorMessage());
+			errmsg.Format("could not read information for directory %s: %s",
+				*normPath, *GetLastErrorMessage());
 			return false;
 		}
 
 		if (!S_ISDIR(buffer.st_mode))
 		{
-			errmsg.Format("path %s is not a directory", normPath);
+			errmsg.Format("path %s is not a directory", *normPath);
 			return false;
 		}
 	}
@@ -329,13 +329,16 @@ bool Util::ForceDirectories(const char* path, CString& errmsg)
 	return true;
 }
 
-bool Util::GetCurrentDirectory(char* buffer, int bufSize)
+CString Util::GetCurrentDirectory()
 {
+	CString result;
+	result.Reserve(1024);
 #ifdef WIN32
-	return ::GetCurrentDirectory(bufSize, buffer) != NULL;
+	::GetCurrentDirectory(1024, result);
 #else
-	return getcwd(buffer, bufSize) != NULL;
+	getcwd(result, 1024);
 #endif
+	return result;
 }
 
 bool Util::SetCurrentDirectory(const char* dirFilename)
@@ -504,45 +507,46 @@ void Util::MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashe
 }
 
 // returns TRUE if the name was changed by adding duplicate-suffix
-bool Util::MakeUniqueFilename(char* destBufFilename, int destBufSize, const char* destDir, const char* basename)
+CString Util::MakeUniqueFilename(const char* destDir, const char* basename)
 {
-	snprintf(destBufFilename, destBufSize, "%s%c%s", destDir, (int)PATH_SEPARATOR, basename);
-	destBufFilename[destBufSize-1] = '\0';
+	CString result;
+	result.Format("%s%c%s", destDir, (int)PATH_SEPARATOR, basename);
 
 	int dupeNumber = 0;
-	while (FileExists(destBufFilename))
+	while (FileExists(result))
 	{
 		dupeNumber++;
 
 		const char* extension = strrchr(basename, '.');
 		if (extension && extension != basename)
 		{
-			char filenameWithoutExt[1024];
-			strncpy(filenameWithoutExt, basename, 1024);
+			BString<1024> filenameWithoutExt;
+			filenameWithoutExt.Set(basename);
 			int end = extension - basename;
 			filenameWithoutExt[end < 1024 ? end : 1024-1] = '\0';
 
 			if (!strcasecmp(extension, ".par2"))
 			{
 				char* volExtension = strrchr(filenameWithoutExt, '.');
-				if (volExtension && volExtension != filenameWithoutExt && !strncasecmp(volExtension, ".vol", 4))
+				if (volExtension && volExtension != filenameWithoutExt &&
+					!strncasecmp(volExtension, ".vol", 4))
 				{
 					*volExtension = '\0';
 					extension = basename + (volExtension - filenameWithoutExt);
 				}
 			}
 
-			snprintf(destBufFilename, destBufSize, "%s%c%s.duplicate%d%s", destDir, (int)PATH_SEPARATOR, filenameWithoutExt, dupeNumber, extension);
+			result.Format("%s%c%s.duplicate%d%s", destDir, (int)PATH_SEPARATOR,
+				*filenameWithoutExt, dupeNumber, extension);
 		}
 		else
 		{
-			snprintf(destBufFilename, destBufSize, "%s%c%s.duplicate%d", destDir, (int)PATH_SEPARATOR, basename, dupeNumber);
+			result.Format("%s%c%s.duplicate%d", destDir, (int)PATH_SEPARATOR,
+				basename, dupeNumber);
 		}
-
-		destBufFilename[destBufSize-1] = '\0';
 	}
 
-	return dupeNumber > 0;
+	return result;
 }
 
 int64 Util::JoinInt64(uint32 Hi, uint32 Lo)
@@ -802,14 +806,13 @@ int64 Util::FreeDiskSize(const char* path)
 	return -1;
 }
 
-bool Util::RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, char* newNameBuf, int newNameBufSize)
+bool Util::RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, CString& newName)
 {
-	char changedFilename[1024];
+	BString<1024> changedFilename;
 
 	if (removeOldExtension)
 	{
-		strncpy(changedFilename, filename, 1024);
-		changedFilename[1024-1] = '\0';
+		changedFilename = filename;
 		char* extension = strrchr(changedFilename, '.');
 		if (extension)
 		{
@@ -817,27 +820,24 @@ bool Util::RenameBak(const char* filename, const char* bakPart, bool removeOldEx
 		}
 	}
 
-	BString<1024> bakname("%s.%s", removeOldExtension ? changedFilename : filename, bakPart);
+	newName.Format("%s.%s", removeOldExtension ? *changedFilename : filename, bakPart);
 
 	int i = 2;
 	struct stat buffer;
-	while (!stat(bakname, &buffer))
+	while (!stat(newName, &buffer))
 	{
-		bakname.Format("%s.%i.%s", removeOldExtension ? changedFilename : filename, i++, bakPart);
+		newName.Format("%s.%i.%s", removeOldExtension ? *changedFilename : filename, i++, bakPart);
 	}
 
-	if (newNameBuf)
-	{
-		strncpy(newNameBuf, bakname, newNameBufSize);
-	}
-
-	bool ok = !rename(filename, bakname);
+	bool ok = !rename(filename, newName);
 	return ok;
 }
 
 #ifndef WIN32
-bool Util::ExpandHomePath(const char* filename, char* buffer, int bufSize)
+CString Util::ExpandHomePath(const char* filename)
 {
+	CString result;
+
 	if (filename && (filename[0] == '~') && (filename[1] == '/'))
 	{
 		// expand home-dir
@@ -854,33 +854,34 @@ bool Util::ExpandHomePath(const char* filename, char* buffer, int bufSize)
 
 		if (!home)
 		{
-			return false;
+			return filename;
 		}
 
 		if (home[strlen(home)-1] == '/')
 		{
-			snprintf(buffer, bufSize, "%s%s", home, filename + 2);
+			result.Format("%s%s", home, filename + 2);
 		}
 		else
 		{
-			snprintf(buffer, bufSize, "%s/%s", home, filename + 2);
+			result.Format("%s/%s", home, filename + 2);
 		}
-		buffer[bufSize - 1] = '\0';
 	}
 	else
 	{
-		strncpy(buffer, filename ? filename : "", bufSize);
-		buffer[bufSize - 1] = '\0';
+		result.Append(filename ? filename : "");
 	}
 
-	return true;
+	return result;
 }
 #endif
 
-void Util::ExpandFileName(const char* filename, char* buffer, int bufSize)
+CString Util::ExpandFileName(const char* filename)
 {
+	CString result;
+	result.Reserve(1024);
+
 #ifdef WIN32
-	_fullpath(buffer, filename, bufSize);
+	_fullpath(result, filename, 1024);
 #else
 	if (filename[0] != '\0' && filename[0] != '/')
 	{
@@ -891,38 +892,43 @@ void Util::ExpandFileName(const char* filename, char* buffer, int bufSize)
 		{
 			offset += 2;
 		}
-		snprintf(buffer, bufSize, "%s/%s", curDir, filename + offset);
+		result.Format("%s/%s", curDir, filename + offset);
 	}
 	else
 	{
-		strncpy(buffer, filename, bufSize);
-		buffer[bufSize - 1] = '\0';
+		result = filename;
 	}
 #endif
+
+	return result;
 }
 
-void Util::GetExeFileName(const char* argv0, char* buffer, int bufSize)
+CString Util::GetExeFileName(const char* argv0)
 {
+	CString exename;
+	exename.Reserve(1024);
+	exename[1024 - 1] = '\0';
+
 #ifdef WIN32
-	GetModuleFileName(NULL, buffer, bufSize);
+	GetModuleFileName(NULL, exename, 1024);
 #else
 	// Linux
-	int r = readlink("/proc/self/exe", buffer, bufSize-1);
+	int r = readlink("/proc/self/exe", exename, 1024 - 1);
 	if (r > 0)
 	{
-		buffer[r] = '\0';
-		return;
+		return exename;
 	}
 	// FreeBSD
-	r = readlink("/proc/curproc/file", buffer, bufSize-1);
+	r = readlink("/proc/curproc/file", exename, 1024 - 1);
 	if (r > 0)
 	{
-		buffer[r] = '\0';
-		return;
+		return exename;
 	}
 
-	ExpandFileName(argv0, buffer, bufSize);
+	exename = ExpandFileName(argv0);
 #endif
+
+	return exename;
 }
 
 CString Util::FormatSize(int64 fileSize)
@@ -1516,9 +1522,8 @@ bool Util::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 
 bool Util::FlushDirBuffers(const char* filename, CString& errmsg)
 {
-	char parentPath[1024];
-	strncpy(parentPath, filename, 1024);
-	parentPath[1024-1] = '\0';
+	BString<1024> parentPath;
+	parentPath.Set(filename);
 	const char* fileMode = FOPEN_RBP;
 
 #ifndef WIN32
@@ -1599,7 +1604,7 @@ uint32 WebUtil::DecodeBase64(char* inputBuffer, int inputBufferLength, char* out
 /* END - Base64
 */
 
-char* WebUtil::XmlEncode(const char* raw)
+CString WebUtil::XmlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of xml-entities and their sizes
 	int reqSize = strlen(raw);
@@ -1628,7 +1633,8 @@ char* WebUtil::XmlEncode(const char* raw)
 		}
 	}
 
-	char* result = (char*)malloc(reqSize + 1);
+	CString result;
+	result.Reserve(reqSize);
 
 	// copy string
 	char* output = result;
@@ -1702,8 +1708,7 @@ char* WebUtil::XmlEncode(const char* raw)
 					else
 					{
 						// replace invalid characters with dots
-						sprintf(output, ".");
-						output += 1;
+						*output++ = '.';
 					}
 				}
 				else
@@ -1783,17 +1788,9 @@ BreakLoop:
 
 const char* WebUtil::XmlFindTag(const char* xml, const char* tag, int* valueLength)
 {
-	char openTag[100];
-	snprintf(openTag, 100, "<%s>", tag);
-	openTag[100-1] = '\0';
-
-	char closeTag[100];
-	snprintf(closeTag, 100, "</%s>", tag);
-	closeTag[100-1] = '\0';
-
-	char openCloseTag[100];
-	snprintf(openCloseTag, 100, "<%s/>", tag);
-	openCloseTag[100-1] = '\0';
+	BString<100> openTag("<%s>", tag);
+	BString<100> closeTag("</%s>", tag);
+	BString<100> openCloseTag("<%s/>", tag);
 
 	const char* pstart = strstr(xml, openTag);
 	const char* pstartend = strstr(xml, openCloseTag);
@@ -1880,7 +1877,7 @@ BreakLoop:
 	*output = '\0';
 }
 
-char* WebUtil::JsonEncode(const char* raw)
+CString WebUtil::JsonEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of escape-entities and their sizes
 	int reqSize = strlen(raw);
@@ -1908,7 +1905,8 @@ char* WebUtil::JsonEncode(const char* raw)
 		}
 	}
 
-	char* result = (char*)malloc(reqSize + 1);
+	CString result;
+	result.Reserve(reqSize);
 
 	// copy string
 	char* output = result;
@@ -2062,9 +2060,7 @@ BreakLoop:
 
 const char* WebUtil::JsonFindField(const char* jsonText, const char* fieldName, int* valueLength)
 {
-	char openTag[100];
-	snprintf(openTag, 100, "\"%s\"", fieldName);
-	openTag[100-1] = '\0';
+	BString<100> openTag("\"%s\"", fieldName);
 
 	const char* pstart = strstr(jsonText, openTag);
 	if (!pstart) return NULL;
@@ -2173,7 +2169,7 @@ BreakLoop:
 	*output = '\0';
 }
 
-char* WebUtil::UrlEncode(const char* raw)
+CString WebUtil::UrlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of spaces
 	int reqSize = strlen(raw);
@@ -2185,7 +2181,8 @@ char* WebUtil::UrlEncode(const char* raw)
 		}
 	}
 
-	char* result = (char*)malloc(reqSize + 1);
+	CString result;
+	result.Reserve(reqSize);
 
 	// copy string
 	char* output = result;
@@ -2237,11 +2234,12 @@ bool WebUtil::AnsiToUtf8(char* buffer, int bufLen)
 }
 #endif
 
-char* WebUtil::Latin1ToUtf8(const char* str)
+CString WebUtil::Latin1ToUtf8(const char* str)
 {
-	char *res = (char*)malloc(strlen(str) * 2 + 1);
+	CString res;
+	res.Reserve(strlen(str) * 2);
 	const uchar *in = (const uchar*)str;
-	uchar *out = (uchar*)res;
+	uchar *out = (uchar*)(char*)res;
 	while (*in)
 	{
 		if (*in < 128)
@@ -2310,31 +2308,15 @@ time_t WebUtil::ParseRfc822DateTime(const char* dateTimeStr)
 
 URL::URL(const char* address)
 {
-	m_address = NULL;
-	m_protocol = NULL;
-	m_user = NULL;
-	m_password = NULL;
-	m_host = NULL;
-	m_resource = NULL;
+	m_address = address;
 	m_port = 0;
 	m_tls = false;
 	m_valid = false;
 
 	if (address)
 	{
-		m_address = strdup(address);
 		ParseUrl();
 	}
-}
-
-URL::~URL()
-{
-	free(m_address);
-	free(m_protocol);
-	free(m_user);
-	free(m_password);
-	free(m_host);
-	free(m_resource);
 }
 
 void URL::ParseUrl()
@@ -2353,9 +2335,7 @@ void URL::ParseUrl()
 		return;
 	}
 
-	m_protocol = (char*)malloc(protEnd - m_address + 1);
-	strncpy(m_protocol, m_address, protEnd - m_address);
-	m_protocol[protEnd - m_address] = 0;
+	m_protocol.Set(m_address, protEnd - m_address);
 
 	char* hostStart = protEnd + 3;
 	char* slash = strchr(hostStart, '/');
@@ -2372,9 +2352,7 @@ void URL::ParseUrl()
 			int len = (int)(amp - pass - 1);
 			if (len > 0)
 			{
-				m_password = (char*)malloc(len + 1);
-				strncpy(m_password, pass + 1, len);
-				m_password[len] = 0;
+				m_password.Set(pass + 1, len);
 			}
 			userend = pass - 1;
 		}
@@ -2382,9 +2360,7 @@ void URL::ParseUrl()
 		int len = (int)(userend - hostStart + 1);
 		if (len > 0)
 		{
-			m_user = (char*)malloc(len + 1);
-			strncpy(m_user, hostStart, len);
-			m_user[len] = 0;
+			m_user.Set(hostStart, len);
 		}
 
 		hostStart = amp + 1;
@@ -2393,15 +2369,13 @@ void URL::ParseUrl()
 	if (slash)
 	{
 		char* resEnd = m_address + strlen(m_address);
-		m_resource = (char*)malloc(resEnd - slash + 1 + 1);
-		strncpy(m_resource, slash, resEnd - slash + 1);
-		m_resource[resEnd - slash + 1] = 0;
+		m_resource.Set(slash, resEnd - slash + 1);
 
 		hostEnd = slash - 1;
 	}
 	else
 	{
-		m_resource = strdup("/");
+		m_resource = "/";
 
 		hostEnd = m_address + strlen(m_address);
 	}
@@ -2413,9 +2387,7 @@ void URL::ParseUrl()
 		m_port = atoi(colon + 1);
 	}
 
-	m_host = (char*)malloc(hostEnd - hostStart + 1 + 1);
-	strncpy(m_host, hostStart, hostEnd - hostStart + 1);
-	m_host[hostEnd - hostStart + 1] = 0;
+	m_host.Set(hostStart, hostEnd - hostStart + 1);
 
 	m_valid = true;
 }
@@ -2765,10 +2737,9 @@ Tokenizer::Tokenizer(const char* dataString, const char* separators)
 {
 	// an optimization to avoid memory allocation for short data string (shorten than 1024 chars)
 	int len = strlen(dataString);
-	if (len < sizeof(m_defaultBuf) - 1)
+	if (len < m_defaultBuf.Capacity())
 	{
-		strncpy(m_defaultBuf, dataString, sizeof(m_defaultBuf));
-		m_defaultBuf[1024- 1] = '\0';
+		m_defaultBuf.Set(dataString);
 		m_dataString = m_defaultBuf;
 		m_inplaceBuf = true;
 	}

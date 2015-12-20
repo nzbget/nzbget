@@ -73,7 +73,7 @@ public:
 	static bool CreateSparseFile(const char* filename, int64 size, CString& errmsg);
 	static bool TruncateFile(const char* filename, int size);
 	static void MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes);
-	static bool MakeUniqueFilename(char* destBufFilename, int destBufSize, const char* destDir, const char* basename);
+	static CString MakeUniqueFilename(const char* destDir, const char* basename);
 	static bool MoveFile(const char* srcFilename, const char* dstFilename);
 	static bool CopyFile(const char* srcFilename, const char* dstFilename);
 	static bool FileExists(const char* filename);
@@ -83,18 +83,18 @@ public:
 	static bool RemoveDirectory(const char* dirFilename);
 	static bool DeleteDirectoryWithContent(const char* dirFilename, CString& errmsg);
 	static bool ForceDirectories(const char* path, CString& errmsg);
-	static bool GetCurrentDirectory(char* buffer, int bufSize);
+	static CString GetCurrentDirectory();
 	static bool SetCurrentDirectory(const char* dirFilename);
 	static int64 FileSize(const char* filename);
 	static int64 FreeDiskSize(const char* path);
 	static bool DirEmpty(const char* dirFilename);
-	static bool RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, char* newNameBuf, int newNameBufSize);
+	static bool RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, CString& newName);
 #ifndef WIN32
-	static bool ExpandHomePath(const char* filename, char* buffer, int bufSize);
+	static CString ExpandHomePath(const char* filename);
 	static void FixExecPermission(const char* filename);
 #endif
-	static void ExpandFileName(const char* filename, char* buffer, int bufSize);
-	static void GetExeFileName(const char* argv0, char* buffer, int bufSize);
+	static CString ExpandFileName(const char* filename);
+	static CString GetExeFileName(const char* argv0);
 	static CString FormatSpeed(int bytesPerSecond);
 	static CString FormatSize(int64 fileSize);
 	static bool SameFilename(const char* filename1, const char* filename2);
@@ -171,9 +171,8 @@ public:
 
 	/*
 	 * Encodes string to be used as content of xml-tag.
-	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */
-	static char* XmlEncode(const char* raw);
+	static CString XmlEncode(const char* raw);
 
 	/*
 	 * Decodes string from xml.
@@ -206,9 +205,8 @@ public:
 
 	/*
 	 * Creates JSON-string by replace the certain characters with escape-sequences.
-	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */
-	static char* JsonEncode(const char* raw);
+	static CString JsonEncode(const char* raw);
 
 	/*
 	 * Decodes JSON-string.
@@ -242,9 +240,8 @@ public:
 
 	/*
 	 * Makes valid URL by replacing of spaces with "%20".
-	 * Returns new string allocated with malloc, it need to be freed by caller.
 	 */
-	static char* UrlEncode(const char* raw);
+	static CString UrlEncode(const char* raw);
 
 #ifdef WIN32
 	static bool Utf8ToAnsi(char* buffer, int bufLen);
@@ -253,9 +250,8 @@ public:
 
 	/*
 	 * Converts ISO-8859-1 (aka Latin-1) into UTF-8.
-	 * Returns new string allocated with malloc, it needs to be freed by caller.
 	 */
-	static char* Latin1ToUtf8(const char* str);
+	static CString Latin1ToUtf8(const char* str);
 
 	static time_t ParseRfc822DateTime(const char* dateTimeStr);
 };
@@ -263,12 +259,12 @@ public:
 class URL
 {
 private:
-	char*				m_address;
-	char*				m_protocol;
-	char*				m_user;
-	char*				m_password;
-	char*				m_host;
-	char*				m_resource;
+	CString				m_address;
+	CString				m_protocol;
+	CString				m_user;
+	CString				m_password;
+	CString				m_host;
+	CString				m_resource;
 	int					m_port;
 	bool				m_tls;
 	bool				m_valid;
@@ -276,7 +272,6 @@ private:
 
 public:
 	 					URL(const char* address);
-						~URL();
 	bool				IsValid() { return m_valid; }
 	const char*			GetAddress() { return m_address; }
 	const char*			GetProtocol() { return m_protocol; }
@@ -337,7 +332,8 @@ public:
 	static uint32 GZipLen(int inputBufferLength);
 
 	/*
-	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
+	 * compresses inputBuffer and returns the size of bytes written to
+	 * outputBuffer or 0 if the buffer is too small or an error occured.
 	 */
 	static uint32 GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength);
 };
@@ -377,7 +373,7 @@ public:
 class Tokenizer
 {
 private:
-	char				m_defaultBuf[2014];
+	BString<1024>		m_defaultBuf;
 	char*				m_dataString;
 	bool				m_inplaceBuf;
 	const char*			m_separators;

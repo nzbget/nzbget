@@ -197,10 +197,7 @@ void WebProcessor::ParseUrl()
 	// http://localhost:6789/nzbget -> http://localhost:6789
 	if (!strcmp(m_url, "/nzbget"))
 	{
-		char redirectUrl[1024];
-		snprintf(redirectUrl, 1024, "%s/", m_url);
-		redirectUrl[1024-1] = '\0';
-		SendRedirectResponse(redirectUrl);
+		SendRedirectResponse(BString<1024>("%s/", m_url));
 		return;
 	}
 

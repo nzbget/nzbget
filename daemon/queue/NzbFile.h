@@ -54,8 +54,7 @@ private:
 #else
 	FileInfo*			m_fileInfo;
 	ArticleInfo*		m_article;
-	char*				m_tagContent;
-	int					m_tagContentLen;
+	StringBuilder		m_tagContent;
 	bool				m_ignoreNextError;
 	bool				m_hasPassword;
 

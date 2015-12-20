@@ -263,17 +263,14 @@ bool ArticleWriter::CreateOutputFile(int64 size)
 	remove(m_outputFilename);
 
 	// ensure the directory exist
-	char destDir[1024];
-	int maxlen = Util::BaseFileName(m_outputFilename) - m_outputFilename;
-	if (maxlen > 1024-1) maxlen = 1024-1;
-	strncpy(destDir, m_outputFilename, maxlen);
-	destDir[maxlen] = '\0';
+	BString<1024> destDir;
+	destDir.Set(m_outputFilename, Util::BaseFileName(m_outputFilename) - m_outputFilename);
 	CString errmsg;
 
 	if (!Util::ForceDirectories(destDir, errmsg))
 	{
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-			"Could not create directory %s: %s", destDir, *errmsg);
+			"Could not create directory %s: %s", *destDir, *errmsg);
 		return false;
 	}
 
@@ -301,7 +298,7 @@ void ArticleWriter::BuildOutputFilename()
 
 		if (m_fileInfo->GetOutputFilename())
 		{
-			strncpy(filename, m_fileInfo->GetOutputFilename(), 1024);
+			filename = m_fileInfo->GetOutputFilename();
 		}
 		else
 		{
@@ -324,17 +321,16 @@ void ArticleWriter::CompleteFileParts()
 	bool directWrite = g_Options->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
 
 	CString errmsg;
-	char nzbName[1024];
-	char nzbDestDir[1024];
+	BString<1024> nzbName;
+	BString<1024> nzbDestDir;
+
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	strncpy(nzbName, m_fileInfo->GetNzbInfo()->GetName(), 1024);
-	strncpy(nzbDestDir, m_fileInfo->GetNzbInfo()->GetDestDir(), 1024);
+	nzbName = m_fileInfo->GetNzbInfo()->GetName();
+	nzbDestDir = m_fileInfo->GetNzbInfo()->GetDestDir();
 	DownloadQueue::Unlock();
-	nzbName[1024-1] = '\0';
-	nzbDestDir[1024-1] = '\0';
 
-	BString<1024> infoFilename("%s%c%s", nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
+	BString<1024> infoFilename("%s%c%s", *nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
 
 	bool cached = m_fileInfo->GetCachedArticles() > 0;
 
@@ -359,15 +355,14 @@ void ArticleWriter::CompleteFileParts()
 	if (!Util::ForceDirectories(nzbDestDir, errmsg))
 	{
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-			"Could not create directory %s: %s", nzbDestDir, *errmsg);
+			"Could not create directory %s: %s", *nzbDestDir, *errmsg);
 		return;
 	}
 
-	char ofn[1024];
-	Util::MakeUniqueFilename(ofn, 1024, nzbDestDir, m_fileInfo->GetFilename());
+	CString ofn = Util::MakeUniqueFilename(nzbDestDir, m_fileInfo->GetFilename());
 
 	FILE* outfile = NULL;
-	BString<1024> tmpdestfile("%s.tmp", ofn);
+	BString<1024> tmpdestfile("%s.tmp", *ofn);
 
 	if (g_Options->GetDecode() && !directWrite)
 	{
@@ -397,7 +392,7 @@ void ArticleWriter::CompleteFileParts()
 		if (!Util::CreateDirectory(ofn))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-				"Could not create directory %s: %s", ofn, *Util::GetLastErrorMessage());
+				"Could not create directory %s: %s", *ofn, *Util::GetLastErrorMessage());
 			return;
 		}
 	}
@@ -466,13 +461,13 @@ void ArticleWriter::CompleteFileParts()
 				m_fileInfo->SetSuccessArticles(m_fileInfo->GetSuccessArticles() - 1);
 				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 					"Could not find file %s for %s%c%s [%i/%i]",
-					pa->GetResultFilename(), nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename(),
+					pa->GetResultFilename(), *nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename(),
 					pa->GetPartNumber(), (int)m_fileInfo->GetArticles()->size());
 			}
 		}
 		else if (!g_Options->GetDecode())
 		{
-			BString<1024> dstFileName("%s%c%03i", ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
+			BString<1024> dstFileName("%s%c%03i", *ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
 			if (!Util::MoveFile(pa->GetResultFilename(), dstFileName))
 			{
 				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
@@ -502,7 +497,7 @@ void ArticleWriter::CompleteFileParts()
 		if (!directWrite && !Util::MoveFile(tmpdestfile, ofn))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-				"Could not move file %s to %s: %s", *tmpdestfile, ofn,
+				"Could not move file %s to %s: %s", *tmpdestfile, *ofn,
 				*Util::GetLastErrorMessage());
 		}
 	}
@@ -512,7 +507,7 @@ void ArticleWriter::CompleteFileParts()
 		if (!Util::MoveFile(m_outputFilename, ofn))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-				"Could not move file %s to %s: %s", *m_outputFilename, ofn,
+				"Could not move file %s to %s: %s", *m_outputFilename, *ofn,
 				*Util::GetLastErrorMessage());
 		}
 
@@ -522,14 +517,11 @@ void ArticleWriter::CompleteFileParts()
 			(m_outputFilename[len] == PATH_SEPARATOR || m_outputFilename[len] == ALT_PATH_SEPARATOR)))
 		{
 			debug("Checking old dir for: %s", *m_outputFilename);
-			char oldDestDir[1024];
-			int maxlen = Util::BaseFileName(m_outputFilename) - m_outputFilename;
-			if (maxlen > 1024-1) maxlen = 1024-1;
-			strncpy(oldDestDir, m_outputFilename, maxlen);
-			oldDestDir[maxlen] = '\0';
+			BString<1024> oldDestDir;
+			oldDestDir.Set(m_outputFilename, Util::BaseFileName(m_outputFilename) - m_outputFilename);
 			if (Util::DirEmpty(oldDestDir))
 			{
-				debug("Deleting old dir: %s", oldDestDir);
+				debug("Deleting old dir: %s", *oldDestDir);
 				rmdir(oldDestDir);
 			}
 		}
@@ -557,7 +549,7 @@ void ArticleWriter::CompleteFileParts()
 
 		if (g_Options->GetBrokenLog())
 		{
-			BString<1024> brokenLogName("%s%c_brokenlog.txt", nzbDestDir, (int)PATH_SEPARATOR);
+			BString<1024> brokenLogName("%s%c_brokenlog.txt", *nzbDestDir, (int)PATH_SEPARATOR);
 			FILE* file = fopen(brokenLogName, FOPEN_AB);
 			fprintf(file, "%s (%i/%i)%s", m_fileInfo->GetFilename(), m_fileInfo->GetSuccessArticles(),
 				m_fileInfo->GetTotalArticles(), LINE_ENDING);
@@ -729,7 +721,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 		if (strcmp(oldFileName, newFileName))
 		{
 			// prevent overwriting of existing files
-			Util::MakeUniqueFilename(newFileName, 1024, nzbInfo->GetDestDir(), completedFile->GetFileName());
+			newFileName = Util::MakeUniqueFilename(nzbInfo->GetDestDir(), completedFile->GetFileName());
 
 			detail("Moving file %s to %s", *oldFileName, *newFileName);
 			if (!Util::MoveFile(oldFileName, newFileName))

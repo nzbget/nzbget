@@ -414,12 +414,9 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 
 void DupeCoordinator::HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, NzbInfo::EMarkStatus markStatus)
 {
-	char nzbName[1024];
-	historyInfo->GetName(nzbName, 1024);
-
 	const char* markStatusName[] = { "NONE", "bad", "good", "success" };
 
-	info("Marking %s as %s", nzbName, markStatusName[markStatus]);
+	info("Marking %s as %s", historyInfo->GetName(), markStatusName[markStatus]);
 
 	if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 	{
@@ -434,7 +431,7 @@ void DupeCoordinator::HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* his
 	}
 	else
 	{
-		error("Could not mark %s as bad: history item has wrong type", nzbName);
+		error("Could not mark %s as bad: history item has wrong type", historyInfo->GetName());
 		return;
 	}
 
@@ -459,7 +456,7 @@ void DupeCoordinator::HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* his
 		const char* dupeKey = historyInfo->GetKind() == HistoryInfo::hkNzb ? historyInfo->GetNzbInfo()->GetDupeKey() :
 			historyInfo->GetKind() == HistoryInfo::hkDup ? historyInfo->GetDupInfo()->GetDupeKey() :
 			NULL;
-		ReturnBestDupe(downloadQueue, NULL, nzbName, dupeKey);
+		ReturnBestDupe(downloadQueue, NULL, historyInfo->GetName(), dupeKey);
 	}
 }
 

@@ -46,8 +46,6 @@ NzbFile::NzbFile(const char* fileName, const char* category)
 	m_hasPassword = false;
 	m_fileInfo = NULL;
 	m_article = NULL;
-	m_tagContent = NULL;
-	m_tagContentLen = 0;
 #endif
 }
 
@@ -57,7 +55,6 @@ NzbFile::~NzbFile()
 
 #ifndef WIN32
 	delete m_fileInfo;
-	free(m_tagContent);
 #endif
 
 	delete m_nzbInfo;
@@ -145,9 +142,8 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 	// Example subject: some garbage "title" yEnc (10/99)
 
 	// strip the "yEnc (10/99)"-suffix
-	char subject[1024];
-	strncpy(subject, fileInfo->GetSubject(), sizeof(subject));
-	subject[1024-1] = '\0';
+	BString<1024> subject;
+	subject.Set(fileInfo->GetSubject());
 	char* end = subject + strlen(subject) - 1;
 	if (*end == ')')
 	{
@@ -179,11 +175,9 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 				char* point = strchr(start + 1, '.');
 				if (point && point < end)
 				{
-					char* filename = (char*)malloc(len + 1);
-					strncpy(filename, start, len);
-					filename[len] = '\0';
+					BString<1024> filename;
+					filename.Set(start, len);
 					fileInfo->SetFilename(filename);
-					free(filename);
 					return;
 				}
 			}
@@ -212,10 +206,8 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 			int len = (int)(p - start);
 			if (len > 0)
 			{
-				char* token = (char*)malloc(len + 1);
-				strncpy(token, start, len);
-				token[len] = '\0';
-				tokens.push_back(token);
+				CString token(start, len);
+				tokens.push_back(token.Unbind());
 			}
 			start = p;
 			if (ch != '\"' || quot)
@@ -396,9 +388,8 @@ void NzbFile::ProcessFiles()
 		FileInfo* fileInfo = *it;
 		fileInfo->MakeValidFilename();
 
-		char loFileName[1024];
-		strncpy(loFileName, fileInfo->GetFilename(), 1024);
-		loFileName[1024-1] = '\0';
+		BString<1024> loFileName;
+		loFileName.Set(fileInfo->GetFilename());
 		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 		bool parFile = strstr(loFileName, ".par2");
 
@@ -548,10 +539,9 @@ bool NzbFile::Parse()
 
 void NzbFile::EncodeUrl(const char* filename, char* url, int bufLen)
 {
-	char utfFilename[2048];
-	strncpy(utfFilename, filename, 2048);
-	utfFilename[2048-1] = '\0';
-	WebUtil::AnsiToUtf8(utfFilename, 2048);
+	BString<1024> utfFilename;
+	utfFilename.Set(filename);
+	WebUtil::AnsiToUtf8(utfFilename, utfFilename.Capacity());
 
 	char* end = url + bufLen;
 	for (char* p = utfFilename; *p && url < end - 3; p++)
@@ -684,12 +674,7 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 {
 	BString<1024> tagAttrMessage("Malformed nzb-file, tag <%s> must have attributes", name);
 
-	if (m_tagContent)
-	{
-		free(m_tagContent);
-		m_tagContent = NULL;
-		m_tagContentLen = 0;
-	}
+	m_tagContent.Clear();
 
 	if (!strcmp("file", name))
 	{
@@ -784,9 +769,8 @@ void NzbFile::Parse_EndElement(const char *name)
 			return;
 		}
 
-		m_fileInfo->GetGroups()->push_back(m_tagContent);
-		m_tagContent = NULL;
-		m_tagContentLen = 0;
+		m_fileInfo->GetGroups()->push_back(*m_tagContent);
+		m_tagContent.Clear();
 	}
 	else if (!strcmp("segment", name))
 	{
@@ -797,7 +781,7 @@ void NzbFile::Parse_EndElement(const char *name)
 		}
 
 		// Get the #text part
-		BString<1024> id("<%s>", m_tagContent);
+		BString<1024> id("<%s>", *m_tagContent);
 		m_article->SetMessageId(id);
 		m_article = NULL;
 	}
@@ -809,10 +793,7 @@ void NzbFile::Parse_EndElement(const char *name)
 
 void NzbFile::Parse_Content(const char *buf, int len)
 {
-	m_tagContent = (char*)realloc(m_tagContent, m_tagContentLen + len + 1);
-	strncpy(m_tagContent + m_tagContentLen, buf, len);
-	m_tagContentLen += len;
-	m_tagContent[m_tagContentLen] = '\0';
+	m_tagContent.Append(buf, len);
 }
 
 void NzbFile::SAX_StartElement(NzbFile* file, const char *name, const char **atts)

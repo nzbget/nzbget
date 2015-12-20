@@ -2279,9 +2279,8 @@ void DiskState::CalcCriticalHealth(NzbList* nzbList)
 			{
 				FileInfo* fileInfo = *it;
 
-				char loFileName[1024];
-				strncpy(loFileName, fileInfo->GetFilename(), 1024);
-				loFileName[1024-1] = '\0';
+				BString<1024> loFileName;
+				loFileName = fileInfo->GetFilename();
 				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 				bool parFile = strstr(loFileName, ".par2");
 
@@ -2877,9 +2876,8 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 
 	const char* messageType[] = { "INFO", "WARNING", "ERROR", "DEBUG", "DETAIL"};
 
-	char tmp2[1024];
-	strncpy(tmp2, text, 1024);
-	tmp2[1024-1] = '\0';
+	BString<1024> tmp2;
+	tmp2 = text;
 
 	// replace bad chars
 	for (char* p = tmp2; *p; p++)
@@ -2894,16 +2892,15 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 	time_t tm = time(NULL);
 	time_t rawtime = tm + g_Options->GetTimeCorrection();
 
-	char time[50];
+	BString<100> time;
 #ifdef HAVE_CTIME_R_3
-	ctime_r(&rawtime, time, 50);
+	ctime_r(&rawtime, time, time.Capacity());
 #else
 	ctime_r(&rawtime, time);
 #endif
-	time[50-1] = '\0';
 	time[strlen(time) - 1] = '\0'; // trim LF
 
-	fprintf(outfile, "%s\t%u\t%s\t%s%s", time, (int)tm, messageType[kind], tmp2, LINE_ENDING);
+	fprintf(outfile, "%s\t%u\t%s\t%s%s", *time, (int)tm, messageType[kind], *tmp2, LINE_ENDING);
 
 	fclose(outfile);
 }

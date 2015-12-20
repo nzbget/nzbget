@@ -319,7 +319,7 @@ private:
 	void				ConfigError(const char* msg, ...);
 	void				ConfigWarn(const char* msg, ...);
 	void				LocateOptionSrcPos(const char *optionName);
-	void				ConvertOldOption(char *option, int optionBufLen, char *value, int valueBufLen);
+	void				ConvertOldOption(CString& option, CString& value);
 
 public:
 						Options(const char* exeName, const char* configFilename, bool noConfig,
@@ -327,7 +327,7 @@ public:
 						Options(CmdOptList* commandLineOptions, Extender* extender);
 						~Options();
 
-	bool				SplitOptionString(const char* option, char** optName, char** optValue);
+	bool				SplitOptionString(const char* option, CString& optName, CString& optValue);
 	bool				GetFatalError() { return m_fatalError; }
 	OptEntries*			LockOptEntries();
 	void				UnlockOptEntries();

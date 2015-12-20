@@ -340,14 +340,12 @@ public:
  */
 bool MissingFilesComparator::operator()(CommandLine::ExtraFile* file1, CommandLine::ExtraFile* file2) const
 {
-	char name1[1024];
-	strncpy(name1, Util::BaseFileName(file1->FileName().c_str()), 1024);
-	name1[1024-1] = '\0';
+	BString<1024> name1;
+	name1.Set(Util::BaseFileName(file1->FileName().c_str()));
 	if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
 
-	char name2[1024];
-	strncpy(name2, Util::BaseFileName(file2->FileName().c_str()), 1024);
-	name2[1024-1] = '\0';
+	BString<1024> name2;
+	name2.Set(Util::BaseFileName(file2->FileName().c_str()));
 	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
 
 	return strcmp(name1, m_baseParFilename) == 0 && strcmp(name1, name2) != 0;
@@ -459,14 +457,12 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 		{
 			BString<1024> fullParFilename( "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, parFilename);
 
-			char infoName[1024];
 			int baseLen = 0;
 			ParParser::ParseParFilename(parFilename, &baseLen, NULL);
-			int maxlen = baseLen < 1024 ? baseLen : 1024 - 1;
-			strncpy(infoName, parFilename, maxlen);
-			infoName[maxlen] = '\0';
+			BString<1024> infoName;
+			infoName.Set(parFilename, baseLen);
 
-			BString<1024> parInfoName("%s%c%s", *m_nzbName, (int)PATH_SEPARATOR, infoName);
+			BString<1024> parInfoName("%s%c%s", *m_nzbName, (int)PATH_SEPARATOR, *infoName);
 			SetInfoName(parInfoName);
 
 			EStatus status = RunParCheck(fullParFilename);
@@ -912,9 +908,8 @@ bool ParChecker::AddMissingFiles()
 
 bool ParChecker::AddDupeFiles()
 {
-	char directory[1024];
-	strncpy(directory, m_parFilename, 1024);
-	directory[1024-1] = '\0';
+	BString<1024> directory;
+	directory.Set(m_parFilename);
 
 	bool added = AddExtraFiles(false, false, directory);
 

@@ -53,10 +53,7 @@ void MoveController::Run()
 	SetInfoName(infoName);
 
 	m_interDir = m_postInfo->GetNzbInfo()->GetDestDir();
-
-	BString<1024> destDir;
-	m_postInfo->GetNzbInfo()->BuildFinalDirName(destDir, destDir.Capacity());
-	m_destDir = destDir;
+	m_destDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
 
 	DownloadQueue::Unlock();
 
@@ -101,10 +98,7 @@ bool MoveController::MoveFiles()
 		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
 			BString<1024> srcFile("%s%c%s",* m_interDir, PATH_SEPARATOR, filename);
-
-			BString<1024> dstFile;
-			Util::MakeUniqueFilename(dstFile, 1024, m_destDir, filename);
-
+			CString dstFile = Util::MakeUniqueFilename(m_destDir, filename);
 			bool hiddenFile = filename[0] == '.';
 
 			if (!hiddenFile)
@@ -162,9 +156,7 @@ void CleanupController::Run()
 		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
 	if (interDir)
 	{
-		BString<1024> finalDir;
-		m_postInfo->GetNzbInfo()->BuildFinalDirName(finalDir, finalDir.Capacity());
-		m_finalDir = finalDir;
+		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
 	}
 	else
 	{

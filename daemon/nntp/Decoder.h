@@ -26,6 +26,8 @@
 #ifndef DECODER_H
 #define DECODER_H
 
+#include "NString.h"
+
 class Decoder
 {
 public:
@@ -49,7 +51,7 @@ public:
 	static const char* FormatNames[];
 
 protected:
-	char*					m_articleFilename;
+	CString					m_articleFilename;
 
 public:
 							Decoder();

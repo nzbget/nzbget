@@ -43,7 +43,7 @@ WebDownloader::WebDownloader()
 
 void WebDownloader::SetUrl(const char* url)
 {
-	m_url.Bind(WebUtil::UrlEncode(url));
+	m_url = WebUtil::UrlEncode(url);
 }
 
 void WebDownloader::SetStatus(EStatus status)

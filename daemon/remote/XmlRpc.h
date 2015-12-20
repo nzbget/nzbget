@@ -107,7 +107,7 @@ protected:
 	bool				NextParamAsStr(char** valueBuf);
 	char*				XmlNextValue(char* xml, const char* tag, int* valueLength);
 	const char*			BoolToStr(bool value);
-	char*				EncodeStr(const char* str);
+	CString				EncodeStr(const char* str);
 	void				DecodeStr(char* str);
 
 public:

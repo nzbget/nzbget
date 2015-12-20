@@ -998,9 +998,8 @@ bool QueueCoordinator::SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbIn
 		return false;
 	}
 
-	char oldDestDir[1024];
-	strncpy(oldDestDir, nzbInfo->GetDestDir(), 1024);
-	oldDestDir[1024-1] = '\0';
+	BString<1024> oldDestDir;
+	oldDestDir.Set(nzbInfo->GetDestDir());
 
 	nzbInfo->SetCategory(category);
 	nzbInfo->BuildDestDirName();
@@ -1025,14 +1024,11 @@ bool QueueCoordinator::SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* 
 		return false;
 	}
 
-	char nzbNicename[1024];
-	NzbInfo::MakeNiceNzbName(name, nzbNicename, sizeof(nzbNicename), false);
-	nzbInfo->SetName(nzbNicename);
+	nzbInfo->SetName(NzbInfo::MakeNiceNzbName(name, false));
 
 	if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 	{
-		BString<1024> filename("%s.nzb", nzbNicename);
-		nzbInfo->SetFilename(filename);
+		nzbInfo->SetFilename(BString<1024>("%s.nzb", nzbInfo->GetName()));
 		return true;
 	}
 

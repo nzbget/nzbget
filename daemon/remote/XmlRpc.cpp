@@ -293,7 +293,7 @@ protected:
 class TestServerXmlCommand: public XmlCommand
 {
 private:
-	char*				m_errText;
+	CString				m_errText;
 
 	class TestConnection : public NntpConnection
 	{
@@ -325,7 +325,7 @@ XmlRpcProcessor::XmlRpcProcessor()
 void XmlRpcProcessor::SetUrl(const char* url)
 {
 	m_url = url;
-	WebUtil::UrlDecode((char*)m_url);
+	WebUtil::UrlDecode(m_url);
 }
 
 bool XmlRpcProcessor::IsRpcRequest(const char* url)
@@ -363,11 +363,8 @@ void XmlRpcProcessor::Dispatch()
 {
 	char* request = m_request;
 
-	char methodName[100];
-	methodName[0] = '\0';
-
-	char requestId[100];
-	requestId[0] = '\0';
+	BString<100> methodName;
+	BString<100> requestId;
 
 	if (m_httpMethod == hmGet)
 	{
@@ -379,15 +376,12 @@ void XmlRpcProcessor::Dispatch()
 			if (pend)
 			{
 				int len = (int)(pend - pstart - 1 < (int)sizeof(methodName) - 1 ? pend - pstart - 1 : (int)sizeof(methodName) - 1);
-				len = len >= sizeof(methodName) ? sizeof(methodName) - 1 : len;
-				strncpy(methodName, pstart + 1, len);
-				methodName[len] = '\0';
+				methodName.Set(pstart + 1, len);
 				request = pend + 1;
 			}
 			else
 			{
-				strncpy(methodName, pstart + 1, sizeof(methodName));
-				methodName[sizeof(methodName) - 1] = '\0';
+				methodName.Set(pstart + 1);
 				request = request + strlen(request);
 			}
 		}
@@ -402,18 +396,16 @@ void XmlRpcProcessor::Dispatch()
 		if (const char* methodPtr = WebUtil::JsonFindField(m_request, "method", &valueLen))
 		{
 			valueLen = valueLen >= sizeof(methodName) ? sizeof(methodName) - 1 : valueLen;
-			strncpy(methodName, methodPtr + 1, valueLen - 2);
-			methodName[valueLen - 2] = '\0';
+			methodName.Set(methodPtr + 1, valueLen - 2);
 		}
 		if (const char* requestIdPtr = WebUtil::JsonFindField(m_request, "id", &valueLen))
 		{
 			valueLen = valueLen >= sizeof(requestId) ? sizeof(requestId) - 1 : valueLen;
-			strncpy(requestId, requestIdPtr, valueLen);
-			requestId[valueLen] = '\0';
+			requestId.Set(requestIdPtr, valueLen);
 		}
 	}
 
-	debug("MethodName=%s", methodName);
+	debug("MethodName=%s", *methodName);
 
 	if (!strcasecmp(methodName, "system.multicall") && m_protocol == rpXmlRpc && m_httpMethod == hmPost)
 	{
@@ -436,7 +428,7 @@ void XmlRpcProcessor::Dispatch()
 void XmlRpcProcessor::MutliCall()
 {
 	bool error = false;
-	CString response;
+	StringBuilder response;
 
 	response.Append("<array><data>");
 
@@ -804,13 +796,8 @@ void XmlCommand::BuildErrorResponse(int errCode, const char* errText, ...)
 	fullText[1024-1] = '\0';
 	va_end(ap);
 
-	char* xmlText = EncodeStr(fullText);
-
-	char content[1024];
-	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_ERROR_BODY : XML_RESPONSE_ERROR_BODY, errCode, xmlText);
-	content[1024-1] = '\0';
-
-	free(xmlText);
+	BString<1024> content(IsJson() ? JSON_RESPONSE_ERROR_BODY : XML_RESPONSE_ERROR_BODY,
+		errCode, *EncodeStr(fullText));
 
 	AppendResponse(content);
 
@@ -822,10 +809,8 @@ void XmlCommand::BuildBoolResponse(bool ok)
 	const char* XML_RESPONSE_BOOL_BODY = "<boolean>%s</boolean>";
 	const char* JSON_RESPONSE_BOOL_BODY = "%s";
 
-	char content[1024];
-	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_BOOL_BODY : XML_RESPONSE_BOOL_BODY,
+	BString<1024> content(IsJson() ? JSON_RESPONSE_BOOL_BODY : XML_RESPONSE_BOOL_BODY,
 		BoolToStr(ok));
-	content[1024-1] = '\0';
 
 	AppendResponse(content);
 }
@@ -835,9 +820,7 @@ void XmlCommand::BuildIntResponse(int value)
 	const char* XML_RESPONSE_INT_BODY = "<i4>%i</i4>";
 	const char* JSON_RESPONSE_INT_BODY = "%i";
 
-	char content[1024];
-	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_INT_BODY : XML_RESPONSE_INT_BODY, value);
-	content[1024-1] = '\0';
+	BString<1024> content(IsJson() ? JSON_RESPONSE_INT_BODY : XML_RESPONSE_INT_BODY, value);
 
 	AppendResponse(content);
 }
@@ -1053,21 +1036,23 @@ const char* XmlCommand::BoolToStr(bool value)
 	return IsJson() ? (value ? "true" : "false") : (value ? "1" : "0");
 }
 
-char* XmlCommand::EncodeStr(const char* str)
+CString XmlCommand::EncodeStr(const char* str)
 {
 	if (!str)
 	{
-		return strdup("");
+		return "";
 	}
 
+	CString result;
 	if (IsJson())
 	{
-		return WebUtil::JsonEncode(str);
+		result = WebUtil::JsonEncode(str);
 	}
 	else
 	{
-		return WebUtil::XmlEncode(str);
+		result = WebUtil::XmlEncode(str);
 	}
+	return result;
 }
 
 void XmlCommand::DecodeStr(char* str)
@@ -1193,9 +1178,7 @@ void VersionXmlCommand::Execute()
 	const char* XML_RESPONSE_STRING_BODY = "<string>%s</string>";
 	const char* JSON_RESPONSE_STRING_BODY = "\"%s\"";
 
-	char content[1024];
-	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, Util::VersionRevision());
-	content[1024-1] = '\0';
+	BString<1024> content(IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, Util::VersionRevision());
 
 	AppendResponse(content);
 }
@@ -1456,13 +1439,10 @@ void LogXmlCommand::Execute()
 	{
 		Message* message = (*messages)[i];
 
-		char* xmltext = EncodeStr(message->GetText());
-
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-			message->GetId(), messageType[message->GetKind()], message->GetTime(), xmltext);
-
-		free(xmltext);
+			message->GetId(), messageType[message->GetKind()], message->GetTime(),
+			*EncodeStr(message->GetText()));
 	}
 
 	UnlockMessages();
@@ -1569,12 +1549,7 @@ void ListFilesXmlCommand::Execute()
 				uint32 remainingSizeLo, remainingSizeHi;
 				Util::SplitInt64(fileInfo->GetSize(), &fileSizeHi, &fileSizeLo);
 				Util::SplitInt64(fileInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
-				char* xmlNzbFilename = EncodeStr(fileInfo->GetNzbInfo()->GetFilename());
-				char* xmlSubject = EncodeStr(fileInfo->GetSubject());
-				char* xmlFilename = EncodeStr(fileInfo->GetFilename());
-				char* xmlDestDir = EncodeStr(fileInfo->GetNzbInfo()->GetDestDir());
-				char* xmlCategory = EncodeStr(fileInfo->GetNzbInfo()->GetCategory());
-				char* xmlNzbNicename = EncodeStr(fileInfo->GetNzbInfo()->GetName());
+				CString xmlNzbNicename = EncodeStr(fileInfo->GetNzbInfo()->GetName());
 
 				int progress = fileInfo->GetFailedSize() == 0 && fileInfo->GetSuccessSize() == 0 ? 0 :
 					(int)(1000 - fileInfo->GetRemainingSize() * 1000 / (fileInfo->GetSize() - fileInfo->GetMissedSize()));
@@ -1583,16 +1558,11 @@ void ListFilesXmlCommand::Execute()
 				AppendFmtResponse(IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 					fileInfo->GetId(), fileSizeLo, fileSizeHi, remainingSizeLo, remainingSizeHi,
 					fileInfo->GetTime(), BoolToStr(fileInfo->GetFilenameConfirmed()),
-					BoolToStr(fileInfo->GetPaused()), fileInfo->GetNzbInfo()->GetId(), xmlNzbNicename,
-					xmlNzbNicename, xmlNzbFilename, xmlSubject, xmlFilename, xmlDestDir, xmlCategory,
+					BoolToStr(fileInfo->GetPaused()), fileInfo->GetNzbInfo()->GetId(),
+					*xmlNzbNicename, *xmlNzbNicename, *EncodeStr(fileInfo->GetNzbInfo()->GetFilename()),
+					*EncodeStr(fileInfo->GetSubject()), *EncodeStr(fileInfo->GetFilename()),
+					*EncodeStr(fileInfo->GetNzbInfo()->GetDestDir()), *EncodeStr(fileInfo->GetNzbInfo()->GetCategory()),
 					fileInfo->GetNzbInfo()->GetPriority(), fileInfo->GetActiveDownloads(), progress);
-
-				free(xmlNzbFilename);
-				free(xmlSubject);
-				free(xmlFilename);
-				free(xmlDestDir);
-				free(xmlCategory);
-				free(xmlNzbNicename);
 			}
 		}
 	}
@@ -1773,40 +1743,28 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 
 	int messageCount = nzbInfo->GetMessageCount() > 0 ? nzbInfo->GetMessageCount() : nzbInfo->GetCachedMessageCount();
 
-	char* xmlUrl = EncodeStr(nzbInfo->GetUrl());
-	char* xmlNzbFilename = EncodeStr(nzbInfo->GetFilename());
-	char* xmlNzbNicename = EncodeStr(nzbInfo->GetName());
-	char* xmlDestDir = EncodeStr(nzbInfo->GetDestDir());
-	char* xmlFinalDir = EncodeStr(nzbInfo->GetFinalDir());
-	char* xmlCategory = EncodeStr(nzbInfo->GetCategory());
-	char* xmlDupeKey = EncodeStr(nzbInfo->GetDupeKey());
+	CString xmlNzbNicename = EncodeStr(nzbInfo->GetName());
 	const char* exParStatus = nzbInfo->GetExtraParBlocks() > 0 ? "RECIPIENT" : nzbInfo->GetExtraParBlocks() < 0 ? "DONOR" : "NONE";
 
 	AppendFmtResponse(IsJson() ? JSON_NZB_ITEM_START : XML_NZB_ITEM_START,
-			 nzbInfo->GetId(), xmlNzbNicename, xmlNzbNicename, kindName[nzbInfo->GetKind()],
-			 xmlUrl, xmlNzbFilename, xmlDestDir, xmlFinalDir, xmlCategory,
-			 parStatusName[nzbInfo->GetParStatus()], exParStatus,
-			 unpackStatusName[nzbInfo->GetUnpackStatus()], moveStatusName[nzbInfo->GetMoveStatus()],
-			 scriptStatusName[nzbInfo->GetScriptStatuses()->CalcTotalStatus()],
-			 deleteStatusName[nzbInfo->GetDeleteStatus()], markStatusName[nzbInfo->GetMarkStatus()],
-			 urlStatusName[nzbInfo->GetUrlStatus()],
-			 fileSizeLo, fileSizeHi, fileSizeMB, nzbInfo->GetFileCount(),
-			 nzbInfo->GetMinTime(), nzbInfo->GetMaxTime(),
-			 nzbInfo->GetTotalArticles(), nzbInfo->GetCurrentSuccessArticles(), nzbInfo->GetCurrentFailedArticles(),
-			 nzbInfo->CalcHealth(), nzbInfo->CalcCriticalHealth(false),
-			 xmlDupeKey, nzbInfo->GetDupeScore(), dupeModeName[nzbInfo->GetDupeMode()],
-			 BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
-			 downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(),
-			 nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ? time(NULL) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
-			 nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
-
-	free(xmlUrl);
-	free(xmlNzbNicename);
-	free(xmlNzbFilename);
-	free(xmlCategory);
-	free(xmlDestDir);
-	free(xmlFinalDir);
-	free(xmlDupeKey);
+			nzbInfo->GetId(), *xmlNzbNicename, *xmlNzbNicename, kindName[nzbInfo->GetKind()],
+			*EncodeStr(nzbInfo->GetUrl()), *EncodeStr(nzbInfo->GetFilename()),
+			*EncodeStr(nzbInfo->GetDestDir()), *EncodeStr(nzbInfo->GetFinalDir()),
+			*EncodeStr(nzbInfo->GetCategory()), parStatusName[nzbInfo->GetParStatus()], exParStatus,
+			unpackStatusName[nzbInfo->GetUnpackStatus()], moveStatusName[nzbInfo->GetMoveStatus()],
+			scriptStatusName[nzbInfo->GetScriptStatuses()->CalcTotalStatus()],
+			deleteStatusName[nzbInfo->GetDeleteStatus()], markStatusName[nzbInfo->GetMarkStatus()],
+			urlStatusName[nzbInfo->GetUrlStatus()],
+			fileSizeLo, fileSizeHi, fileSizeMB, nzbInfo->GetFileCount(),
+			nzbInfo->GetMinTime(), nzbInfo->GetMaxTime(),
+			nzbInfo->GetTotalArticles(), nzbInfo->GetCurrentSuccessArticles(), nzbInfo->GetCurrentFailedArticles(),
+			nzbInfo->CalcHealth(), nzbInfo->CalcCriticalHealth(false),
+			*EncodeStr(nzbInfo->GetDupeKey()), nzbInfo->GetDupeScore(), dupeModeName[nzbInfo->GetDupeMode()],
+			BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
+			downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(),
+			nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ?
+				time(NULL) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
+			nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
 	// Post-processing parameters
 	int paramIndex = 0;
@@ -1814,14 +1772,9 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	{
 		NzbParameter* parameter = *it;
 
-		char* xmlName = EncodeStr(parameter->GetName());
-		char* xmlValue = EncodeStr(parameter->GetValue());
-
 		AppendCondResponse(",\n", IsJson() && paramIndex++ > 0);
-		AppendFmtResponse(IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM, xmlName, xmlValue);
-
-		free(xmlName);
-		free(xmlValue);
+		AppendFmtResponse(IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM,
+			*EncodeStr(parameter->GetName()), *EncodeStr(parameter->GetValue()));
 	}
 
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_SCRIPT_START : XML_NZB_ITEM_SCRIPT_START);
@@ -1832,14 +1785,9 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	{
 		ScriptStatus* scriptStatus = *it;
 
-		char* xmlName = EncodeStr(scriptStatus->GetName());
-		char* xmlStatus = EncodeStr(scriptStatusName[scriptStatus->GetStatus()]);
-
 		AppendCondResponse(",\n", IsJson() && scriptIndex++ > 0);
-		AppendFmtResponse(IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM, xmlName, xmlStatus);
-
-		free(xmlName);
-		free(xmlStatus);
+		AppendFmtResponse(IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM,
+			*EncodeStr(scriptStatus->GetName()), *EncodeStr(scriptStatusName[scriptStatus->GetStatus()]));
 	}
 
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_STATS_START : XML_NZB_ITEM_STATS_START);
@@ -1919,13 +1867,11 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 	if (postInfo)
 	{
 		time_t curTime = time(NULL);
-		char* xmlProgressLabel = EncodeStr(postInfo->GetProgressLabel());
 
-		AppendFmtResponse(itemStart, xmlProgressLabel, postInfo->GetStageProgress(),
+		AppendFmtResponse(itemStart, *EncodeStr(postInfo->GetProgressLabel()),
+			postInfo->GetStageProgress(),
 			postInfo->GetStageTime() ? curTime - postInfo->GetStageTime() : 0,
 			postInfo->GetStartTime() ? curTime - postInfo->GetStartTime() : 0);
-
-		free(xmlProgressLabel);
 	}
 	else
 	{
@@ -1950,13 +1896,10 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 			{
 				Message* message = (*messages)[i];
 
-				char* xmltext = EncodeStr(message->GetText());
-
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-					message->GetId(), messageType[message->GetKind()], message->GetTime(), xmltext);
-
-				free(xmltext);
+					message->GetId(), messageType[message->GetKind()], message->GetTime(),
+					*EncodeStr(message->GetText()));
 			}
 		}
 		postInfo->GetNzbInfo()->UnlockCachedMessages();
@@ -2325,9 +2268,7 @@ void DownloadXmlCommand::Execute()
 		nzbInfo->GetParameters()->CopyFrom(&Params);
 		int nzbId = nzbInfo->GetId();
 
-		char nicename[1024];
-		nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename, nicename, sizeof(nicename));
-		info("Queue %s", nicename);
+		info("Queue %s", *nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename));
 
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
 		downloadQueue->GetQueue()->Add(nzbInfo, addTop);
@@ -2396,7 +2337,8 @@ void PostQueueXmlCommand::Execute()
 	const char* JSON_POSTQUEUE_ITEM_END =
 		"}";
 
-	const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
+	const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING",
+		"VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
 	NzbList* nzbList = DownloadQueue::Lock()->GetQueue();
 
@@ -2411,13 +2353,10 @@ void PostQueueXmlCommand::Execute()
 			continue;
 		}
 
-		char* xmlInfoName = EncodeStr(postInfo->GetNzbInfo()->GetName());
-
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_POSTQUEUE_ITEM_START : XML_POSTQUEUE_ITEM_START,
-			nzbInfo->GetId(), xmlInfoName, postStageName[postInfo->GetStage()], postInfo->GetFileProgress());
-
-		free(xmlInfoName);
+			nzbInfo->GetId(), *EncodeStr(postInfo->GetNzbInfo()->GetName()),
+			postStageName[postInfo->GetStage()], postInfo->GetFileProgress());
 
 		AppendNzbInfoFields(postInfo->GetNzbInfo());
 		AppendCondResponse(",\n", IsJson());
@@ -2588,10 +2527,7 @@ void HistoryXmlCommand::Execute()
 		}
 
 		NzbInfo* nzbInfo = NULL;
-		char nicename[1024];
-		historyInfo->GetName(nicename, sizeof(nicename));
 
-		char *xmlNicename = EncodeStr(nicename);
 		const char* status = DetectStatus(historyInfo);
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
@@ -2602,7 +2538,7 @@ void HistoryXmlCommand::Execute()
 			nzbInfo = historyInfo->GetNzbInfo();
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
-				historyInfo->GetId(), xmlNicename, nzbInfo->GetParkedFileCount(),
+				historyInfo->GetId(), *EncodeStr(historyInfo->GetName()), nzbInfo->GetParkedFileCount(),
 				historyInfo->GetTime(), status);
 		}
 		else if (historyInfo->GetKind() == HistoryInfo::hkDup)
@@ -2613,18 +2549,13 @@ void HistoryXmlCommand::Execute()
 			Util::SplitInt64(dupInfo->GetSize(), &fileSizeHi, &fileSizeLo);
 			fileSizeMB = (int)(dupInfo->GetSize() / 1024 / 1024);
 
-			char* xmlDupeKey = EncodeStr(dupInfo->GetDupeKey());
-
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
-				historyInfo->GetId(), historyInfo->GetId(), "DUP", xmlNicename, historyInfo->GetTime(),
-				fileSizeLo, fileSizeHi, fileSizeMB, xmlDupeKey, dupInfo->GetDupeScore(),
+				historyInfo->GetId(), historyInfo->GetId(), "DUP", *EncodeStr(historyInfo->GetName()),
+				historyInfo->GetTime(), fileSizeLo, fileSizeHi, fileSizeMB,
+				*EncodeStr(dupInfo->GetDupeKey()), dupInfo->GetDupeScore(),
 				dupeModeName[dupInfo->GetDupeMode()], dupStatusName[dupInfo->GetStatus()],
 				status);
-
-			free(xmlDupeKey);
 		}
-
-		free(xmlNicename);
 
 		if (nzbInfo)
 		{
@@ -2694,19 +2625,10 @@ void UrlQueueXmlCommand::Execute()
 
 		if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 		{
-			char* xmlNicename = EncodeStr(nzbInfo->GetName());
-			char* xmlNzbFilename = EncodeStr(nzbInfo->GetFilename());
-			char* xmlUrl = EncodeStr(nzbInfo->GetUrl());
-			char* xmlCategory = EncodeStr(nzbInfo->GetCategory());
-
 			AppendCondResponse(",\n", IsJson() && index++ > 0);
 			AppendFmtResponse(IsJson() ? JSON_URLQUEUE_ITEM : XML_URLQUEUE_ITEM,
-				nzbInfo->GetId(), xmlNzbFilename, xmlUrl, xmlNicename, xmlCategory, nzbInfo->GetPriority());
-
-			free(xmlNicename);
-			free(xmlNzbFilename);
-			free(xmlUrl);
-			free(xmlCategory);
+				nzbInfo->GetId(), *EncodeStr(nzbInfo->GetFilename()), *EncodeStr(nzbInfo->GetUrl()),
+				*EncodeStr(nzbInfo->GetName()), *EncodeStr(nzbInfo->GetCategory()), nzbInfo->GetPriority());
 		}
 	}
 
@@ -2740,15 +2662,12 @@ void ConfigXmlCommand::Execute()
 	{
 		Options::OptEntry* optEntry = *it;
 
-		char* xmlName = EncodeStr(optEntry->GetName());
-		char* xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
+		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
 			optEntry->Restricted() ? "***" : optEntry->GetValue());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
-		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
-
-		free(xmlName);
-		free(xmlValue);
+		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
+			*EncodeStr(optEntry->GetName()), *xmlValue);
 	}
 
 	g_Options->UnlockOptEntries();
@@ -2787,15 +2706,12 @@ void LoadConfigXmlCommand::Execute()
 	{
 		Options::OptEntry* optEntry = *it;
 
-		char* xmlName = EncodeStr(optEntry->GetName());
-		char* xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
+		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
 			optEntry->Restricted() ? "***" : optEntry->GetValue());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
-		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM, xmlName, xmlValue);
-
-		free(xmlName);
-		free(xmlValue);
+		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
+			*EncodeStr(optEntry->GetName()), *xmlValue);
 	}
 
 	delete optEntries;
@@ -2880,23 +2796,16 @@ void ConfigTemplatesXmlCommand::Execute()
 	{
 		ScriptConfig::ConfigTemplate* configTemplate = *it;
 
-		char* xmlName = EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetName() : "");
-		char* xmlDisplayName = EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetDisplayName() : "");
-		char* xmlTemplate = EncodeStr(configTemplate->GetTemplate());
-
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
-			xmlName, xmlDisplayName,
+			*EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetName() : ""),
+			*EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetDisplayName() : ""),
 			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetPostScript()),
 			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetScanScript()),
 			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetQueueScript()),
 			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetSchedulerScript()),
 			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetFeedScript()),
-			xmlTemplate);
-
-		free(xmlName);
-		free(xmlDisplayName);
-		free(xmlTemplate);
+			*EncodeStr(configTemplate->GetTemplate()));
 	}
 
 	if (loadFromDisk)
@@ -3045,27 +2954,15 @@ void ViewFeedXmlCommand::Execute()
 			Util::SplitInt64(feedItemInfo->GetSize(), &sizeHi, &sizeLo);
 			int sizeMB = (int)(feedItemInfo->GetSize() / 1024 / 1024);
 
-			char* xmltitle = EncodeStr(feedItemInfo->GetTitle());
-			char* xmlfilename = EncodeStr(feedItemInfo->GetFilename());
-			char* xmlurl = EncodeStr(feedItemInfo->GetUrl());
-			char* xmlcategory = EncodeStr(feedItemInfo->GetCategory());
-			char* xmladdcategory = EncodeStr(feedItemInfo->GetAddCategory());
-			char* xmldupekey = EncodeStr(feedItemInfo->GetDupeKey());
-
 			AppendCondResponse(",\n", IsJson() && index++ > 0);
 			AppendFmtResponse(IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
-				xmltitle, xmlfilename, xmlurl, sizeLo, sizeHi, sizeMB, xmlcategory, xmladdcategory,
+				*EncodeStr(feedItemInfo->GetTitle()), *EncodeStr(feedItemInfo->GetFilename()),
+				*EncodeStr(feedItemInfo->GetUrl()), sizeLo, sizeHi, sizeMB,
+				*EncodeStr(feedItemInfo->GetCategory()), *EncodeStr(feedItemInfo->GetAddCategory()),
 				BoolToStr(feedItemInfo->GetPauseNzb()), feedItemInfo->GetPriority(), feedItemInfo->GetTime(),
 				matchStatusType[feedItemInfo->GetMatchStatus()], feedItemInfo->GetMatchRule(),
-				xmldupekey, feedItemInfo->GetDupeScore(), dupeModeType[feedItemInfo->GetDupeMode()],
-				statusType[feedItemInfo->GetStatus()]);
-
-			free(xmltitle);
-			free(xmlfilename);
-			free(xmlurl);
-			free(xmlcategory);
-			free(xmladdcategory);
-			free(xmldupekey);
+				*EncodeStr(feedItemInfo->GetDupeKey()), feedItemInfo->GetDupeScore(),
+				dupeModeType[feedItemInfo->GetDupeMode()], statusType[feedItemInfo->GetStatus()]);
 		}
 	}
 
@@ -3162,12 +3059,11 @@ void ReadUrlXmlCommand::Execute()
 	DecodeStr(infoName);
 
 	// generate temp file name
-	char tempFileName[1024];
+	BString<1024> tempFileName;
 	int num = 1;
 	while (num == 1 || Util::FileExists(tempFileName))
 	{
-		snprintf(tempFileName, 1024, "%sreadurl-%i.tmp", g_Options->GetTempDir(), num);
-		tempFileName[1024-1] = '\0';
+		tempFileName.Format("%sreadurl-%i.tmp", g_Options->GetTempDir(), num);
 		num++;
 	}
 
@@ -3189,12 +3085,11 @@ void ReadUrlXmlCommand::Execute()
 		char* fileContent = NULL;
 		int fileContentLen = 0;
 		Util::LoadFileIntoBuffer(tempFileName, &fileContent, &fileContentLen);
-		char* xmlContent = EncodeStr(fileContent);
+		CString xmlContent = EncodeStr(fileContent);
 		free(fileContent);
 		AppendResponse(IsJson() ? "\"" : "<string>");
 		AppendResponse(xmlContent);
 		AppendResponse(IsJson() ? "\"" : "</string>");
-		free(xmlContent);
 	}
 	else
 	{
@@ -3212,12 +3107,11 @@ void CheckUpdatesXmlCommand::Execute()
 
 	if (ok)
 	{
-		char* xmlContent = EncodeStr(updateInfo);
+		CString xmlContent = EncodeStr(updateInfo);
 		free(updateInfo);
 		AppendResponse(IsJson() ? "\"" : "<string>");
 		AppendResponse(xmlContent);
 		AppendResponse(IsJson() ? "\"" : "</string>");
-		free(xmlContent);
 	}
 	else
 	{
@@ -3520,14 +3414,11 @@ void TestServerXmlCommand::Execute()
 	TestConnection* connection = new TestConnection(&server, this);
 	connection->SetTimeout(timeout == 0 ? g_Options->GetArticleTimeout() : timeout);
 	connection->SetSuppressErrors(false);
-	m_errText = NULL;
 
 	bool ok = connection->Connect();
 
-	char content[1024];
-	snprintf(content, 1024, IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
-		ok ? "" : Util::EmptyStr(m_errText) ? "Unknown error" : m_errText);
-	content[1024-1] = '\0';
+	BString<1024> content(IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
+		ok ? "" : m_errText.Empty() ? "Unknown error" : *m_errText);
 
 	AppendResponse(content);
 
@@ -3536,7 +3427,7 @@ void TestServerXmlCommand::Execute()
 
 void TestServerXmlCommand::PrintError(const char* errMsg)
 {
-	if (!m_errText)
+	if (m_errText.Empty())
 	{
 		m_errText = EncodeStr(errMsg);
 	}

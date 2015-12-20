@@ -35,13 +35,13 @@ class RarLister : public Thread, public ScriptController
 {
 private:
 	DupeMatcher*		m_owner;
-	int64			m_maxSize;
+	int64				m_maxSize;
 	bool				m_compressed;
 	bool				m_lastSizeMax;
-	int64			m_expectedSize;
+	int64				m_expectedSize;
 	char*				m_filenameBuf;
 	int					m_filenameBufLen;
-	char				m_lastFilename[1024];
+	BString<1024>		m_lastFilename;
 
 protected:
 	virtual void		AddMessage(Message::EKind kind, const char* text);
@@ -130,8 +130,7 @@ void RarLister::AddMessage(Message::EKind kind, const char* text)
 	}
 	else if (!strncasecmp(text, "        Name: ", 14))
 	{
-		strncpy(m_lastFilename, text + 14, sizeof(m_lastFilename));
-		m_lastFilename[sizeof(m_lastFilename)-1] = '\0';
+		m_lastFilename = text + 14;
 	}
 	else if (!strncasecmp(text, "        Size: ", 14))
 	{

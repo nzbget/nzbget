@@ -199,9 +199,8 @@ void Options::OptEntry::SetValue(const char* value)
 
 bool Options::OptEntry::Restricted()
 {
-	char loName[256];
-	strncpy(loName, m_name, sizeof(loName));
-	loName[256-1] = '\0';
+	BString<1024> loName;
+	loName.Set(m_name);
 	for (char* p = loName; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 	bool restricted = !strcasecmp(m_name, OPTION_CONTROLIP) ||
@@ -214,7 +213,7 @@ bool Options::OptEntry::Restricted()
 		!strcasecmp(m_name, OPTION_DAEMONUSERNAME) ||
 		!strcasecmp(m_name, OPTION_UMASK) ||
 		strchr(m_name, ':') ||			// All extension script options
-		strstr(loName, "username") ||		// ServerX.Username, ControlUsername, etc.
+		strstr(loName, "username") ||	// ServerX.Username, ControlUsername, etc.
 		strstr(loName, "password");		// ServerX.Password, ControlPassword, etc.
 
 	return restricted;
@@ -406,22 +405,21 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_configFilename = configFilename;
 	SetOption(OPTION_CONFIGFILE, "");
 
-	char filename[MAX_PATH + 1];
+	CString filename;
 	if (m_noDiskAccess)
 	{
-		strncpy(filename, exeName, sizeof(filename));
-		filename[sizeof(filename)-1] = '\0';
+		filename = exeName;
 	}
 	else
 	{
-		Util::GetExeFileName(exeName, filename, sizeof(filename));
+		filename = Util::GetExeFileName(exeName);
 	}
 	Util::NormalizePathSeparators(filename);
 	SetOption(OPTION_APPBIN, filename);
 	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';
 	SetOption(OPTION_APPDIR, filename);
-	m_appDir = filename;
+	m_appDir = *filename;
 
 	SetOption(OPTION_VERSION, Util::VersionRevision());
 
@@ -669,18 +667,14 @@ void Options::InitOptFile()
 		else
 		{
 			int p = 0;
-			while (const char* filename = PossibleConfigLocations[p++])
+			while (const char* altfilename = PossibleConfigLocations[p++])
 			{
 				// substitute HOME-variable
-				char expandedFilename[1024];
-				if (Util::ExpandHomePath(filename, expandedFilename, sizeof(expandedFilename)))
-				{
-					filename = expandedFilename;
-				}
+				filename = Util::ExpandHomePath(altfilename);
 
 				if (Util::FileExists(filename))
 				{
-					m_configFilename = filename;
+					m_configFilename = *filename;
 					break;
 				}
 			}
@@ -691,20 +685,14 @@ void Options::InitOptFile()
 	if (m_configFilename)
 	{
 		// normalize path in filename
-		char filename[MAX_PATH + 1];
-		Util::ExpandFileName(m_configFilename, filename, sizeof(filename));
-		filename[MAX_PATH] = '\0';
+		CString filename = Util::ExpandFileName(m_configFilename);
 
 #ifndef WIN32
 		// substitute HOME-variable
-		char expandedFilename[1024];
-		if (Util::ExpandHomePath(filename, expandedFilename, sizeof(expandedFilename)))
-		{
-			strncpy(filename, expandedFilename, sizeof(filename));
-		}
+		filename = Util::ExpandHomePath(filename);
 #endif
 
-		m_configFilename = filename;
+		m_configFilename = *filename;
 
 		SetOption(OPTION_CONFIGFILE, m_configFilename);
 		LoadConfigFile();
@@ -988,15 +976,13 @@ void Options::SetOption(const char* optname, const char* value)
 #ifndef WIN32
 	if (value && (value[0] == '~') && (value[1] == '/'))
 	{
-		curvalue.Reserve(MAX_PATH);
 		if (m_noDiskAccess)
 		{
 			curvalue = value;
 		}
-		else if (!Util::ExpandHomePath(value, (char*)curvalue, curvalue.Capacity()))
+		else
 		{
-			ConfigError("Invalid value for option\"%s\": unable to determine home-directory", optname);
-			curvalue = "";
+			curvalue = Util::ExpandHomePath(value);
 		}
 	}
 	else
@@ -1534,10 +1520,10 @@ void Options::InitCommandLineOptions(CmdOptList* commandLineOptions)
 
 bool Options::SetOptionString(const char* option)
 {
-	char* optname;
-	char* optvalue;
+	CString optname;
+	CString optvalue;
 
-	if (!SplitOptionString(option, &optname, &optvalue))
+	if (!SplitOptionString(option, optname, optvalue))
 	{
 		ConfigError("Invalid option \"%s\"", option);
 		return false;
@@ -1550,11 +1536,8 @@ bool Options::SetOptionString(const char* option)
 	}
 	else
 	{
-		ConfigError("Invalid option \"%s\"", optname);
+		ConfigError("Invalid option \"%s\"", *optname);
 	}
-
-	free(optname);
-	free(optvalue);
 
 	return ok;
 }
@@ -1562,43 +1545,20 @@ bool Options::SetOptionString(const char* option)
 /*
  * Splits option string into name and value;
  * Converts old names and values if necessary;
- * Allocates buffers for name and value;
  * Returns true if the option string has name and value;
- * If "true" is returned the caller is responsible for freeing optname and optvalue.
  */
-bool Options::SplitOptionString(const char* option, char** optName, char** optValue)
+bool Options::SplitOptionString(const char* option, CString& optName, CString& optValue)
 {
 	const char* eq = strchr(option, '=');
-	if (!eq)
+	if (!eq || eq == option)
 	{
 		return false;
 	}
 
-	const char* value = eq + 1;
+	optName.Set(option, eq - option);
+	optValue.Set(eq + 1);
 
-	char optname[1001];
-	char optvalue[1001];
-	int maxlen = (int)(eq - option < 1000 ? eq - option : 1000);
-	strncpy(optname, option, maxlen);
-	optname[maxlen] = '\0';
-	strncpy(optvalue, eq + 1, 1000);
-	optvalue[1000]  = '\0';
-	if (strlen(optname) == 0)
-	{
-		return false;
-	}
-
-	ConvertOldOption(optname, sizeof(optname), optvalue, sizeof(optvalue));
-
-	// if value was (old-)converted use the new value, which is linited to 1000 characters,
-	// otherwise use original (length-unlimited) value
-	if (strncmp(value, optvalue, 1000))
-	{
-		value = optvalue;
-	}
-
-	*optName = strdup(optname);
-	*optValue = strdup(value);
+	ConvertOldOption(optName, optValue);
 
 	return true;
 }
@@ -1719,82 +1679,79 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 	return false;
 }
 
-void Options::ConvertOldOption(char *option, int optionBufLen, char *value, int valueBufLen)
+void Options::ConvertOldOption(CString& option, CString& value)
 {
 	// for compatibility with older versions accept old option names
 
 	if (!strcasecmp(option, "$MAINDIR"))
 	{
-		strncpy(option, "MainDir", optionBufLen);
+		option = "MainDir";
 	}
 
 	if (!strcasecmp(option, "ServerIP"))
 	{
-		strncpy(option, "ControlIP", optionBufLen);
+		option = "ControlIP";
 	}
 
 	if (!strcasecmp(option, "ServerPort"))
 	{
-		strncpy(option, "ControlPort", optionBufLen);
+		option = "ControlPort";
 	}
 
 	if (!strcasecmp(option, "ServerPassword"))
 	{
-		strncpy(option, "ControlPassword", optionBufLen);
+		option = "ControlPassword";
 	}
 
 	if (!strcasecmp(option, "PostPauseQueue"))
 	{
-		strncpy(option, "ScriptPauseQueue", optionBufLen);
+		option = "ScriptPauseQueue";
 	}
 
 	if (!strcasecmp(option, "ParCheck") && !strcasecmp(value, "yes"))
 	{
-		strncpy(value, "always", valueBufLen);
+		value = "always";
 	}
 
 	if (!strcasecmp(option, "ParCheck") && !strcasecmp(value, "no"))
 	{
-		strncpy(value, "auto", valueBufLen);
+		value = "auto";
 	}
 
 	if (!strcasecmp(option, "ParScan") && !strcasecmp(value, "auto"))
 	{
-		strncpy(value, "extended", valueBufLen);
+		value = "extended";
 	}
 
 	if (!strcasecmp(option, "DefScript"))
 	{
-		strncpy(option, "PostScript", optionBufLen);
+		option = "PostScript";
 	}
 
 	int nameLen = strlen(option);
 	if (!strncasecmp(option, "Category", 8) && nameLen > 10 &&
 		!strcasecmp(option + nameLen - 10, ".DefScript"))
 	{
-		strncpy(option + nameLen - 10, ".PostScript", optionBufLen - 9 /* strlen("Category.") */);
+		option.Replace(".DefScript", ".PostScript");
 	}
 
 	if (!strcasecmp(option, "WriteBufferSize"))
 	{
-		strncpy(option, "WriteBuffer", optionBufLen);
+		option = "WriteBuffer";
 		int val = strtol(value, NULL, 10);
 		val = val == -1 ? 1024 : val / 1024;
-		snprintf(value, valueBufLen, "%i", val);
+		value.Format("%i", val);
 	}
 
 	if (!strcasecmp(option, "ConnectionTimeout"))
 	{
-		strncpy(option, "ArticleTimeout", optionBufLen);
+		option = "ArticleTimeout";
 	}
 
 	if (!strcasecmp(option, "CreateBrokenLog"))
 	{
-		strncpy(option, "BrokenLog", optionBufLen);
+		option = "BrokenLog";
 	}
-
-	option[optionBufLen-1] = '\0';
-	option[valueBufLen-1] = '\0';
 }
 
 void Options::CheckOptions()

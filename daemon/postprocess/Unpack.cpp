@@ -625,9 +625,7 @@ void UnpackController::CreateUnpackDir()
 		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
 	if (m_interDir)
 	{
-		BString<1024> finalDir;
-		m_postInfo->GetNzbInfo()->BuildFinalDirName(finalDir, finalDir.Capacity());
-		m_finalDir = finalDir;
+		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
 		m_unpackDir.Format("%s%c%s", *m_finalDir, PATH_SEPARATOR, "_unpack");
 		m_finalDirCreated = !Util::DirectoryExists(m_finalDir);
 	}
@@ -838,9 +836,8 @@ bool UnpackController::ReadLine(char* buf, int bufSize, FILE* stream)
 		{
 			if (!printed)
 			{
-				char tmp[1024];
-				strncpy(tmp, buf, 1024);
-				tmp[1024-1] = '\0';
+				BString<1024> tmp;
+				tmp.Set(buf);
 				char* tmpPercent = strrchr(tmp, '\b');
 				if (tmpPercent)
 				{

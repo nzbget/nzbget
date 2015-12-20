@@ -72,16 +72,13 @@ void HistoryCoordinator::ServiceWork()
 			}
 			else
 			{
-				char niceName[1024];
-				historyInfo->GetName(niceName, 1024);
-
 				downloadQueue->GetHistory()->erase(downloadQueue->GetHistory()->end() - 1 - index);
 
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 				{
 					DeleteDiskFiles(historyInfo->GetNzbInfo());
 				}
-				info("Collection %s removed from history", niceName);
+				info("Collection %s removed from history", historyInfo->GetName());
 
 				delete historyInfo;
 			}
@@ -193,9 +190,6 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 
 void HistoryCoordinator::HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex)
 {
-	char niceName[1024];
-	historyInfo->GetName(niceName, 1024);
-
 	// replace history element
 	DupInfo* dupInfo = new DupInfo();
 	dupInfo->SetId(historyInfo->GetNzbInfo()->GetId());
@@ -224,8 +218,8 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* 
 
 	DeleteDiskFiles(historyInfo->GetNzbInfo());
 
+	info("Collection %s removed from history", historyInfo->GetName());
 	delete historyInfo;
-	info("Collection %s removed from history", niceName);
 }
 
 void HistoryCoordinator::PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action)
@@ -329,9 +323,7 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
 	HistoryInfo* historyInfo, bool final)
 {
-	char niceName[1024];
-	historyInfo->GetName(niceName, 1024);
-	info("Deleting %s from history", niceName);
+	info("Deleting %s from history", historyInfo->GetName());
 
 	if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 	{
@@ -372,14 +364,13 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 
 void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess)
 {
-	char niceName[1024];
-	historyInfo->GetName(niceName, 1024);
-	debug("Returning %s from history back to download queue", niceName);
+	debug("Returning %s from history back to download queue", historyInfo->GetName());
 	NzbInfo* nzbInfo = NULL;
+	CString nicename = historyInfo->GetName();
 
 	if (reprocess && historyInfo->GetKind() != HistoryInfo::hkNzb)
 	{
-		error("Could not restart postprocessing for %s: history item has wrong type", niceName);
+		error("Could not restart postprocessing for %s: history item has wrong type", historyInfo->GetName());
 		return;
 	}
 
@@ -398,7 +389,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 
 		if (!(unparked || reprocess))
 		{
-			warn("Could not return %s back from history to download queue: history item does not have any files left for download", niceName);
+			warn("Could not return %s back from history to download queue: history item does not have any files left for download", historyInfo->GetName());
 			return;
 		}
 
@@ -447,12 +438,12 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 
 	downloadQueue->GetHistory()->erase(itHistory);
 	// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
-	nzbInfo->PrintMessage(Message::mkInfo, "%s returned from history back to download queue", niceName);
+	nzbInfo->PrintMessage(Message::mkInfo, "%s returned from history back to download queue", *nicename);
 
 	if (reprocess)
 	{
 		// start postprocessing
-		debug("Restarting postprocessing for %s", niceName);
+		debug("Restarting postprocessing for %s", *nicename);
 		g_PrePostProcessor->NzbDownloaded(downloadQueue, nzbInfo);
 	}
 
@@ -470,9 +461,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	if (historyInfo->GetKind() != HistoryInfo::hkNzb)
 	{
-		char niceName[1024];
-		historyInfo->GetName(niceName, 1024);
-		error("Could not return %s from history back to queue: history item has wrong type", niceName);
+		error("Could not return %s from history back to queue: history item has wrong type", historyInfo->GetName());
 		return;
 	}
 
@@ -554,13 +543,11 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const char* text)
 {
-	char niceName[1024];
-	historyInfo->GetName(niceName, 1024);
-	debug("Setting post-process-parameter '%s' for '%s'", text, niceName);
+	debug("Setting post-process-parameter '%s' for '%s'", text, historyInfo->GetName());
 
 	if (!(historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl))
 	{
-		error("Could not set post-process-parameter for %s: history item has wrong type", niceName);
+		error("Could not set post-process-parameter for %s: history item has wrong type", historyInfo->GetName());
 		return false;
 	}
 
@@ -585,13 +572,11 @@ bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const cha
 
 bool HistoryCoordinator::HistorySetCategory(HistoryInfo* historyInfo, const char* text)
 {
-	char niceName[1024];
-	historyInfo->GetName(niceName, 1024);
-	debug("Setting category '%s' for '%s'", text, niceName);
+	debug("Setting category '%s' for '%s'", text, historyInfo->GetName());
 
 	if (!(historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl))
 	{
-		error("Could not set category for %s: history item has wrong type", niceName);
+		error("Could not set category for %s: history item has wrong type", historyInfo->GetName());
 		return false;
 	}
 
@@ -602,13 +587,11 @@ bool HistoryCoordinator::HistorySetCategory(HistoryInfo* historyInfo, const char
 
 bool HistoryCoordinator::HistorySetName(HistoryInfo* historyInfo, const char* text)
 {
-	char niceName[1024];
-	historyInfo->GetName(niceName, 1024);
-	debug("Setting name '%s' for '%s'", text, niceName);
+	debug("Setting name '%s' for '%s'", text, historyInfo->GetName());
 
 	if (Util::EmptyStr(text))
 	{
-		error("Could not rename %s. The new name cannot be empty", niceName);
+		error("Could not rename %s. The new name cannot be empty", historyInfo->GetName());
 		return false;
 	}
 
@@ -626,9 +609,7 @@ bool HistoryCoordinator::HistorySetName(HistoryInfo* historyInfo, const char* te
 
 void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQueue::EEditAction action, const char* text)
 {
-	char niceName[1024];
-	historyInfo->GetName(niceName, 1024);
-	debug("Setting dupe-parameter '%i'='%s' for '%s'", (int)action, text, niceName);
+	debug("Setting dupe-parameter '%i'='%s' for '%s'", (int)action, text, historyInfo->GetName());
 
 	EDupeMode mode = dmScore;
 	if (action == DownloadQueue::eaHistorySetDupeMode)
@@ -647,7 +628,7 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQ
 		}
 		else
 		{
-			error("Could not set duplicate mode for %s: incorrect mode (%s)", niceName, text);
+			error("Could not set duplicate mode for %s: incorrect mode (%s)", historyInfo->GetName(), text);
 			return;
 		}
 	}
@@ -671,13 +652,13 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQ
 			case DownloadQueue::eaHistorySetDupeBackup:
 				if (historyInfo->GetKind() == HistoryInfo::hkUrl)
 				{
-					error("Could not set duplicate parameter for %s: history item has wrong type", niceName);
+					error("Could not set duplicate parameter for %s: history item has wrong type", historyInfo->GetName());
 					return;
 				}
 				else if (historyInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsDupe &&
 					historyInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsManual)
 				{
-					error("Could not set duplicate parameter for %s: history item has wrong delete status", niceName);
+					error("Could not set duplicate parameter for %s: history item has wrong delete status", historyInfo->GetName());
 					return;
 				}
 				historyInfo->GetNzbInfo()->SetDeleteStatus(!strcasecmp(text, "YES") ||
@@ -706,7 +687,7 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQ
 				break;
 
 			case DownloadQueue::eaHistorySetDupeBackup:
-				error("Could not set duplicate parameter for %s: history item has wrong type", niceName);
+				error("Could not set duplicate parameter for %s: history item has wrong type", historyInfo->GetName());
 				return;
 
 			default:

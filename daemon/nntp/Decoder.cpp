@@ -33,21 +33,16 @@ const char* Decoder::FormatNames[] = { "Unknown", "yEnc", "UU" };
 Decoder::Decoder()
 {
 	debug("Creating Decoder");
-
-	m_articleFilename	= NULL;
 }
 
 Decoder::~ Decoder()
 {
 	debug("Destroying Decoder");
-
-	free(m_articleFilename);
 }
 
 void Decoder::Clear()
 {
-	free(m_articleFilename);
-	m_articleFilename = NULL;
+	m_articleFilename.Clear();
 }
 
 Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len, bool inBody)
@@ -176,10 +171,7 @@ BreakLoop:
 				pb += 6; //=strlen(" name=")
 				char* pe;
 				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-				free(m_articleFilename);
-				m_articleFilename = (char*)malloc(pe - pb + 1);
-				strncpy(m_articleFilename, pb, pe - pb);
-				m_articleFilename[pe - pb] = '\0';
+				m_articleFilename.Set(pb, pe - pb);
 			}
 			pb = strstr(buffer, " size=");
 			if (pb)
@@ -287,10 +279,7 @@ int UDecoder::DecodeBuffer(char* buffer, int len)
 			// extracting filename
 			char* pe;
 			for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-			free(m_articleFilename);
-			m_articleFilename = (char*)malloc(pe - pb + 1);
-			strncpy(m_articleFilename, pb, pe - pb);
-			m_articleFilename[pe - pb] = '\0';
+			m_articleFilename.Set(pb, pe - pb);
 
 			m_body = true;
 			return 0;

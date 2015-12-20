@@ -515,12 +515,8 @@ void FeedFilter::Term::FillWildMaskRefValues(const char* strValue, WildMask* mas
 
 	for (int i = refOffset; i < mask->GetMatchCount(); i++)
 	{
-		int len = mask->GetMatchLen(i);
-		char* value = (char*)malloc(len + 1);
-		strncpy(value, strValue + mask->GetMatchStart(i), len);
-		value[len] = '\0';
-
-		m_refValues->push_back(value);
+		CString value(strValue + mask->GetMatchStart(i), mask->GetMatchLen(i));
+		m_refValues->push_back(value.Unbind());
 	}
 }
 
@@ -533,12 +529,8 @@ void FeedFilter::Term::FillRegExRefValues(const char* strValue, RegEx* regEx)
 
 	for (int i = 1; i < regEx->GetMatchCount(); i++)
 	{
-		int len = regEx->GetMatchLen(i);
-		char* value = (char*)malloc(len + 1);
-		strncpy(value, strValue + regEx->GetMatchStart(i), len);
-		value[len] = '\0';
-
-		m_refValues->push_back(value);
+		CString value(strValue + regEx->GetMatchStart(i), regEx->GetMatchLen(i));
+		m_refValues->push_back(value.Unbind());
 	}
 }
 

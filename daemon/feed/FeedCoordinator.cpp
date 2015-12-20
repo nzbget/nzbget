@@ -64,22 +64,21 @@ void FeedCoordinator::FilterHelper::CalcDupeStatus(const char* title, const char
 {
 	const char* dupeStatusName[] = { "", "QUEUED", "DOWNLOADING", "3", "SUCCESS", "5", "6", "7", "WARNING",
 		"9", "10", "11", "12", "13", "14", "15", "FAILURE" };
-	char statuses[200];
-	statuses[0] = '\0';
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	DupeCoordinator::EDupeStatus dupeStatus = g_DupeCoordinator->GetDupeStatus(downloadQueue, title, dupeKey);
 	DownloadQueue::Unlock();
 
+	BString<1024> statuses;
 	for (int i = 1; i <= (int)DupeCoordinator::dsFailure; i = i << 1)
 	{
 		if (dupeStatus & i)
 		{
-			if (*statuses)
+			if (!statuses.Empty())
 			{
-				strcat(statuses, ",");
+				statuses.Append(",");
 			}
-			strcat(statuses, dupeStatusName[i]);
+			statuses.Append(dupeStatusName[i]);
 		}
 	}
 
@@ -308,9 +307,7 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
 	}
 	else
 	{
-		char urlName[1024];
-		NzbInfo::MakeNiceUrlName(feedInfo->GetUrl(), "", urlName, sizeof(urlName));
-		feedDownloader->SetInfoName(urlName);
+		feedDownloader->SetInfoName(NzbInfo::MakeNiceUrlName(feedInfo->GetUrl(), ""));
 	}
 	feedDownloader->SetForce(force || g_Options->GetUrlForce());
 
@@ -507,10 +504,10 @@ NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedIt
 	{
 		*ext = '\0';
 	}
-	BString<1024> nzbName2("%s.nzb", *nzbName);
-	Util::MakeValidFilename(nzbName2, '_', false);
 	if (!nzbName.Empty())
 	{
+		BString<1024> nzbName2("%s.nzb", *nzbName);
+		Util::MakeValidFilename(nzbName2, '_', false);
 		nzbInfo->SetFilename(nzbName2);
 	}
 

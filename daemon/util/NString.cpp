@@ -235,7 +235,7 @@ char* CString::Unbind()
 void CString::Reserve(int capacity)
 {
 	int curLen = Length();
-	if (capacity > curLen)
+	if (capacity > curLen || curLen == 0)
 	{
 		m_data = (char*)realloc(m_data, capacity + 1);
 	}

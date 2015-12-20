@@ -1111,9 +1111,7 @@ void HistoryBinCommand::Execute()
 		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
-			char nicename[1024];
-			historyInfo->GetName(nicename, sizeof(nicename));
-			bufsize += strlen(nicename) + 1;
+			bufsize += strlen(historyInfo->GetName()) + 1;
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
 			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 		}
@@ -1129,41 +1127,38 @@ void HistoryBinCommand::Execute()
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
 			SNzbHistoryResponseEntry* listAnswer = (SNzbHistoryResponseEntry*) bufptr;
-			listAnswer->m_id					= htonl(historyInfo->GetId());
-			listAnswer->m_kind				= htonl((int)historyInfo->GetKind());
-			listAnswer->m_time				= htonl((int)historyInfo->GetTime());
-
-			char nicename[1024];
-			historyInfo->GetName(nicename, sizeof(nicename));
-			listAnswer->m_nicenameLen			= htonl(strlen(nicename) + 1);
+			listAnswer->m_id = htonl(historyInfo->GetId());
+			listAnswer->m_kind = htonl((int)historyInfo->GetKind());
+			listAnswer->m_time = htonl((int)historyInfo->GetTime());
+			listAnswer->m_nicenameLen = htonl(strlen(historyInfo->GetName()) + 1);
 
 			if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 			{
 				NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
 				uint32 sizeHi, sizeLo;
 				Util::SplitInt64(nzbInfo->GetSize(), &sizeHi, &sizeLo);
-				listAnswer->m_sizeLo				= htonl(sizeLo);
-				listAnswer->m_sizeHi				= htonl(sizeHi);
-				listAnswer->m_fileCount			= htonl(nzbInfo->GetFileCount());
-				listAnswer->m_parStatus			= htonl(nzbInfo->GetParStatus());
-				listAnswer->m_scriptStatus		= htonl(nzbInfo->GetScriptStatuses()->CalcTotalStatus());
+				listAnswer->m_sizeLo = htonl(sizeLo);
+				listAnswer->m_sizeHi = htonl(sizeHi);
+				listAnswer->m_fileCount = htonl(nzbInfo->GetFileCount());
+				listAnswer->m_parStatus = htonl(nzbInfo->GetParStatus());
+				listAnswer->m_scriptStatus = htonl(nzbInfo->GetScriptStatuses()->CalcTotalStatus());
 			}
 			else if (historyInfo->GetKind() == HistoryInfo::hkDup && showHidden)
 			{
 				DupInfo* dupInfo = historyInfo->GetDupInfo();
 				uint32 sizeHi, sizeLo;
 				Util::SplitInt64(dupInfo->GetSize(), &sizeHi, &sizeLo);
-				listAnswer->m_sizeLo				= htonl(sizeLo);
-				listAnswer->m_sizeHi				= htonl(sizeHi);
+				listAnswer->m_sizeLo = htonl(sizeLo);
+				listAnswer->m_sizeHi = htonl(sizeHi);
 			}
 			else if (historyInfo->GetKind() == HistoryInfo::hkUrl)
 			{
 				NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
-				listAnswer->m_urlStatus			= htonl(nzbInfo->GetUrlStatus());
+				listAnswer->m_urlStatus = htonl(nzbInfo->GetUrlStatus());
 			}
 
 			bufptr += sizeof(SNzbHistoryResponseEntry);
-			strcpy(bufptr, nicename);
+			strcpy(bufptr, historyInfo->GetName());
 			bufptr += ntohl(listAnswer->m_nicenameLen);
 			// align struct to 4-bytes, needed by ARM-processor (and may be others)
 			if ((size_t)bufptr % 4 > 0)

@@ -43,8 +43,7 @@ private:
 	static void			EncodeUrl(const char* filename, char* url);
 #else
 	FeedItemInfo*		m_feedItemInfo;
-	char*				m_tagContent;
-	int					m_tagContentLen;
+	StringBuilder		m_tagContent;
 	bool				m_ignoreNextError;
 
 	static void			SAX_StartElement(FeedFile* file, const char *name, const char **atts);

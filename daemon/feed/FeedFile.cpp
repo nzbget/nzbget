@@ -40,8 +40,7 @@ FeedFile::FeedFile(const char* fileName)
 
 #ifndef WIN32
 	m_feedItemInfo = NULL;
-	m_tagContent = NULL;
-	m_tagContentLen = 0;
+	m_tagContent.Clear();
 #endif
 }
 
@@ -54,7 +53,6 @@ FeedFile::~FeedFile()
 
 #ifndef WIN32
 	delete m_feedItemInfo;
-	free(m_tagContent);
 #endif
 }
 
@@ -83,9 +81,7 @@ void FeedFile::ParseSubject(FeedItemInfo* feedItemInfo)
 			char* point = strchr(start + 1, '.');
 			if (point && point < end)
 			{
-				char* filename = (char*)malloc(len + 1);
-				strncpy(filename, start, len);
-				filename[len] = '\0';
+				CString filename(start, len);
 
 				char* ext = strrchr(filename, '.');
 				if (ext && !strcasecmp(ext, ".par2"))
@@ -94,7 +90,6 @@ void FeedFile::ParseSubject(FeedItemInfo* feedItemInfo)
 				}
 
 				feedItemInfo->SetFilename(filename);
-				free(filename);
 				return;
 			}
 		}
@@ -475,7 +470,7 @@ void FeedFile::Parse_EndElement(const char *name)
 	else if (!strcmp("description", name) && m_feedItemInfo)
 	{
 		// cleanup CDATA
-		CString description = m_tagContent;
+		CString description = *m_tagContent;
 		WebUtil::XmlStripTags(description);
 		WebUtil::XmlDecode(description);
 		WebUtil::XmlRemoveEntities(description);
@@ -495,17 +490,12 @@ void FeedFile::Parse_EndElement(const char *name)
 
 void FeedFile::Parse_Content(const char *buf, int len)
 {
-	m_tagContent = (char*)realloc(m_tagContent, m_tagContentLen + len + 1);
-	strncpy(m_tagContent + m_tagContentLen, buf, len);
-	m_tagContentLen += len;
-	m_tagContent[m_tagContentLen] = '\0';
+	m_tagContent.Append(buf, len);
 }
 
 void FeedFile::ResetTagContent()
 {
-	free(m_tagContent);
-	m_tagContent = NULL;
-	m_tagContentLen = 0;
+	m_tagContent.Clear();
 }
 
 void FeedFile::SAX_StartElement(FeedFile* file, const char *name, const char **atts)

@@ -388,18 +388,17 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 		return;
 	}
 
-	char setId[33];
-	strncpy(setId, header.setid.print().c_str(), sizeof(setId));
-	setId[33-1] = '\0';
+	BString<100> setId;
+	setId.Set(header.setid.print().c_str());
 	for (char* p = setId; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	debug("Renaming: %s; setid: %s", Util::BaseFileName(filename), setId);
+	debug("Renaming: %s; setid: %s", Util::BaseFileName(filename), *setId);
 
 	BString<1024> destFileName;
 	int num = 1;
 	while (num == 1 || Util::FileExists(destFileName))
 	{
-		destFileName.Format("%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, setId, num);
+		destFileName.Format("%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, *setId, num);
 		num++;
 	}
 

@@ -76,9 +76,8 @@ bool ParParser::SameParCollection(const char* filename1, const char* filename2)
 
 bool ParParser::ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks)
 {
-	char filename[1024];
-	strncpy(filename, parFilename, 1024);
-	filename[1024-1] = '\0';
+	BString<1024> filename;
+	filename.Set(parFilename);
 	for (char* p = filename; *p; p++) *p = tolower(*p); // convert string to lowercase
 
 	int len = strlen(filename);
