@@ -40,7 +40,7 @@ public:
 	explicit BString(const char* format, ...) PRINTF_SYNTAX(2);
 	BString(BString& other) = delete;
 	BString(const char* str) { Set(str); } // for initialization via assignment
-	BString(BString&& other) { Set(other.m_data); } // never used but declaration is needed for initialization via assignment
+	BString(BString&& other) noexcept { Set(other.m_data); } // never used but declaration is needed for initialization via assignment
 	BString& operator=(const char* str) { Set(str); return *this; }
 	int Length() const { return (int)strlen(m_data); }
 	int Capacity() const { return size - 1; }
@@ -69,7 +69,7 @@ public:
 	CString() {}
 	~CString() { free(m_data); }
 	CString(const char* str, int len = 0) { Set(str, len); }
-	CString(CString&& other) { m_data = other.m_data; other.m_data = nullptr; }
+	CString(CString&& other) noexcept { m_data = other.m_data; other.m_data = nullptr; }
 	CString(CString& other) = delete;
 	CString& operator=(CString&& other) { m_data = other.m_data; other.m_data = nullptr; return *this; }
 	CString& operator=(const char* str) { Set(str); return *this; }
