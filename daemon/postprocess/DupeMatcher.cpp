@@ -212,24 +212,21 @@ void DupeMatcher::FindLargestFile(const char* directory, char* filenameBuf, int 
 	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
+		BString<1024> fullFilename("%s%c%s", directory, PATH_SEPARATOR, filename);
+
+		int64 fileSize = Util::FileSize(fullFilename);
+		if (fileSize > *maxSize)
 		{
-			BString<1024> fullFilename("%s%c%s", directory, PATH_SEPARATOR, filename);
+			*maxSize = fileSize;
+			strncpy(filenameBuf, filename, bufLen);
+			filenameBuf[bufLen-1] = '\0';
+		}
 
-			int64 fileSize = Util::FileSize(fullFilename);
-			if (fileSize > *maxSize)
-			{
-				*maxSize = fileSize;
-				strncpy(filenameBuf, filename, bufLen);
-				filenameBuf[bufLen-1] = '\0';
-			}
-
-			if (Util::MatchFileExt(filename, ".rar", ","))
-			{
-				RarLister::FindLargestFile(this, directory, filenameBuf, bufLen,
-					m_maxSize, 60, maxSize, compressed);
-				return;
-			}
+		if (Util::MatchFileExt(filename, ".rar", ","))
+		{
+			RarLister::FindLargestFile(this, directory, filenameBuf, bufLen,
+				m_maxSize, 60, maxSize, compressed);
+			return;
 		}
 	}
 }

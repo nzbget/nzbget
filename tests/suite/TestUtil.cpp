@@ -114,12 +114,9 @@ void TestUtil::CopyAllFiles(const std::string destDir, const std::string srcDir)
 	DirBrowser dir(srcDir.c_str());
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
-		{
-			std::string srcFile(srcDir + "/" + filename);
-			std::string dstFile(destDir + "/" + filename);
-			REQUIRE(Util::CopyFile(srcFile.c_str(), dstFile.c_str()));
-		}
+		std::string srcFile(srcDir + "/" + filename);
+		std::string dstFile(destDir + "/" + filename);
+		REQUIRE(Util::CopyFile(srcFile.c_str(), dstFile.c_str()));
 	}
 }
 

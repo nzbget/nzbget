@@ -124,7 +124,7 @@ DirBrowser::~DirBrowser()
 	}
 }
 
-const char* DirBrowser::Next()
+const char* DirBrowser::InternNext()
 {
 	bool ok = false;
 	if (m_first)
@@ -184,12 +184,12 @@ DirBrowser::~DirBrowser()
 	{
 		if (m_dir)
 		{
-			closedir((DIR*)m_dir);
+			closedir(m_dir);
 		}
 	}
 }
 
-const char* DirBrowser::Next()
+const char* DirBrowser::InternNext()
 {
 #ifdef DIRBROWSER_SNAPSHOT
 	if (m_snapshot)
@@ -201,7 +201,7 @@ const char* DirBrowser::Next()
 	{
 		if (m_dir)
 		{
-			m_findData = readdir((DIR*)m_dir);
+			m_findData = readdir(m_dir);
 			if (m_findData)
 			{
 				return m_findData->d_name;
@@ -210,8 +210,17 @@ const char* DirBrowser::Next()
 		return NULL;
 	}
 }
-
 #endif
+
+const char* DirBrowser::Next()
+{
+	const char* filename = NULL;
+	for (filename = InternNext(); filename && (!strcmp(filename, ".") || !strcmp(filename, "..")); )
+	{
+		filename = InternNext();
+	}
+	return filename;
+}
 
 
 char Util::VersionRevisionBuf[100];

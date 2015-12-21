@@ -419,15 +419,13 @@ void UnpackController::JoinSplittedFiles()
 	{
 		BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(fullFilename))
+		if (!Util::DirectoryExists(fullFilename) &&
+			regExSplitExt.Match(filename) && !FileHasRarSignature(fullFilename))
 		{
-			if (regExSplitExt.Match(filename) && !FileHasRarSignature(fullFilename))
+			if (!JoinFile(filename))
 			{
-				if (!JoinFile(filename))
-				{
-					m_unpackOk = false;
-					break;
-				}
+				m_unpackOk = false;
+				break;
 			}
 		}
 	}
@@ -465,8 +463,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	{
 		fullFilename.Format("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(fullFilename) &&
-			regExSplitExt.Match(filename))
+		if (!Util::DirectoryExists(fullFilename) && regExSplitExt.Match(filename))
 		{
 			const char* segExt = strrchr(filename, '.');
 			int segNum = atoi(segExt + 1);
@@ -661,7 +658,7 @@ void UnpackController::CheckArchiveFiles(bool scanNonStdFiles)
 	{
 		BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-		if (strcmp(filename, ".") && strcmp(filename, "..") && !Util::DirectoryExists(fullFilename))
+		if (!Util::DirectoryExists(fullFilename))
 		{
 			const char* ext = strchr(filename, '.');
 			int extNum = ext ? atoi(ext + 1) : -1;
@@ -732,25 +729,22 @@ bool UnpackController::Cleanup()
 		DirBrowser dir(m_unpackDir);
 		while (const char* filename = dir.Next())
 		{
-			if (strcmp(filename, ".") && strcmp(filename, ".."))
+			BString<1024> srcFile("%s%c%s", *m_unpackDir, PATH_SEPARATOR, filename);
+			BString<1024> dstFile("%s%c%s", !m_finalDir.Empty() ? *m_finalDir : *m_destDir, PATH_SEPARATOR, filename);
+
+			// silently overwrite existing files
+			remove(dstFile);
+
+			bool hiddenFile = filename[0] == '.';
+
+			if (!Util::MoveFile(srcFile, dstFile) && !hiddenFile)
 			{
-				BString<1024> srcFile("%s%c%s", *m_unpackDir, PATH_SEPARATOR, filename);
-				BString<1024> dstFile("%s%c%s", !m_finalDir.Empty() ? *m_finalDir : *m_destDir, PATH_SEPARATOR, filename);
-
-				// silently overwrite existing files
-				remove(dstFile);
-
-				bool hiddenFile = filename[0] == '.';
-
-				if (!Util::MoveFile(srcFile, dstFile) && !hiddenFile)
-				{
-					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", *srcFile, *dstFile,
-						*Util::GetLastErrorMessage());
-					ok = false;
-				}
-
-				extractedFiles.push_back(filename);
+				PrintMessage(Message::mkError, "Could not move file %s to %s: %s", *srcFile, *dstFile,
+					*Util::GetLastErrorMessage());
+				ok = false;
 			}
+
+			extractedFiles.push_back(filename);
 		}
 	}
 
@@ -780,8 +774,7 @@ bool UnpackController::Cleanup()
 		{
 			BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-			if (strcmp(filename, ".") && strcmp(filename, "..") &&
-				!Util::DirectoryExists(fullFilename) &&
+			if (!Util::DirectoryExists(fullFilename) &&
 				(m_interDir || !extractedFiles.Exists(filename)) &&
 				(regExRar.Match(filename) || regExSevenZip.Match(filename) ||
 				 (regExRarMultiSeq.Match(filename) && FileHasRarSignature(fullFilename)) ||

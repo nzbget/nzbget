@@ -852,8 +852,7 @@ bool ParChecker::AddSplittedFragments()
 	DirBrowser dir(m_destDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
-			!IsParredFile(filename) && !IsProcessedFile(filename))
+		if (strcmp(filename, "_brokenlog.txt") && !IsParredFile(filename) && !IsProcessedFile(filename))
 		{
 			for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_repairer)->sourcefiles.begin();
 				it != ((Repairer*)m_repairer)->sourcefiles.end(); it++)
@@ -963,7 +962,7 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") && strcmp(filename, "_brokenlog.txt") &&
+		if (strcmp(filename, "_brokenlog.txt") &&
 			(externalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
 		{
 			BString<1024> fullfilename("%s%c%s", directory, PATH_SEPARATOR, filename);

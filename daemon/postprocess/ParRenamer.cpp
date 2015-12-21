@@ -152,7 +152,7 @@ void ParRenamer::BuildDirList(const char* destDir)
 
 	while (const char* filename = dirBrowser->Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") && !m_cancelled)
+		if (!m_cancelled)
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 			if (Util::DirectoryExists(fullFilename))
@@ -221,7 +221,7 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 	DirBrowser dir(destDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") && !m_cancelled)
+		if (!m_cancelled)
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 

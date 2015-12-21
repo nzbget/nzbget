@@ -187,7 +187,7 @@ void Scanner::CheckIncomingNzbs(const char* directory, const char* category, boo
 		BString<1024> fullfilename("%s%s", directory, filename);
 		bool isDirectory = Util::DirectoryExists(fullfilename);
 		// check subfolders
-		if (isDirectory && strcmp(filename, ".") && strcmp(filename, ".."))
+		if (isDirectory)
 		{
 			fullfilename[strlen(fullfilename) + 1] = '\0';
 			fullfilename.AppendFmt("%c", PATH_SEPARATOR);

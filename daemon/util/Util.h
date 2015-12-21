@@ -42,7 +42,7 @@ private:
 	HANDLE				m_file;
 	bool				m_first;
 #else
-	void*				m_dir;    // DIR*, declared as void* to avoid including of <dirent>
+	DIR*				m_dir;
 	struct dirent*		m_findData;
 #endif
 
@@ -53,6 +53,7 @@ private:
 	FileList::iterator	m_itSnapshot;
 #endif
 
+	const char*			InternNext();
 public:
 #ifdef DIRBROWSER_SNAPSHOT
 						DirBrowser(const char* path, bool snapshot = true);

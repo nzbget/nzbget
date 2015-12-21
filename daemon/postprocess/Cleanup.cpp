@@ -94,23 +94,20 @@ bool MoveController::MoveFiles()
 	DirBrowser dir(m_interDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
+		BString<1024> srcFile("%s%c%s",* m_interDir, PATH_SEPARATOR, filename);
+		CString dstFile = Util::MakeUniqueFilename(m_destDir, filename);
+		bool hiddenFile = filename[0] == '.';
+
+		if (!hiddenFile)
 		{
-			BString<1024> srcFile("%s%c%s",* m_interDir, PATH_SEPARATOR, filename);
-			CString dstFile = Util::MakeUniqueFilename(m_destDir, filename);
-			bool hiddenFile = filename[0] == '.';
+			PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(srcFile), *m_destDir);
+		}
 
-			if (!hiddenFile)
-			{
-				PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(srcFile), *m_destDir);
-			}
-
-			if (!Util::MoveFile(srcFile, dstFile) && !hiddenFile)
-			{
-				PrintMessage(Message::mkError, "Could not move file %s to %s: %s",
-					*srcFile, *dstFile, *Util::GetLastErrorMessage());
-				ok = false;
-			}
+		if (!Util::MoveFile(srcFile, dstFile) && !hiddenFile)
+		{
+			PrintMessage(Message::mkError, "Could not move file %s to %s: %s",
+				*srcFile, *dstFile, *Util::GetLastErrorMessage());
+			ok = false;
 		}
 	}
 
@@ -210,7 +207,7 @@ bool CleanupController::Cleanup(const char* destDir, bool *deleted)
 
 		bool isDir = Util::DirectoryExists(fullFilename);
 
-		if (strcmp(filename, ".") && strcmp(filename, "..") && isDir)
+		if (isDir)
 		{
 			ok &= Cleanup(fullFilename, deleted);
 		}
