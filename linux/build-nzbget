@@ -291,7 +291,7 @@ ConfigureTarget()
             ;;
         buildroot-release|buildroot-release-nostrip)
             LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-std=c++14" \
+                CXXFLAGS="-std=c++14 -O2" \
                 LIBS="-lcrypto -ldl -lz" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
             ;;
@@ -303,7 +303,7 @@ ConfigureTarget()
                 ;;
         crossgcc-release|crossgcc-release-nostrip)
             LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-std=c++14" \
+                CXXFLAGS="-std=c++14 -O2" \
                 PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
                 ;;
