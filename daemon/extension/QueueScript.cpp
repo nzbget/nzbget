@@ -30,6 +30,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "URL_COMPLETED", "NZB_ADDED", "NZB_DOWNLOADED", "NZB_DELETED" };
 
@@ -117,12 +118,12 @@ void QueueScriptController::Run()
 void QueueScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
 	PrintMessage(m_event == QueueScriptCoordinator::qeFileDownloaded ? Message::mkDetail : Message::mkInfo,
-		"Executing queue-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbName));
+		"Executing queue-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbName));
 
 	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	BString<1024> infoName("queue-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbName));
+	BString<1024> infoName("queue-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbName));
 	SetInfoName(infoName);
 
 	SetLogPrefix(script->GetDisplayName());
@@ -308,7 +309,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 			Tokenizer tok(queueScript, ",;");
 			while (const char* scriptName = tok.Next())
 			{
-				if (Util::SameFilename(scriptName, script->GetName()))
+				if (FileSystem::SameFilename(scriptName, script->GetName()))
 				{
 					useScript = true;
 					break;
@@ -330,7 +331,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 				{
 					BString<1024> scriptName = varname;
 					scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
-					if (Util::SameFilename(scriptName, script->GetName()))
+					if (FileSystem::SameFilename(scriptName, script->GetName()))
 					{
 						useScript = true;
 						break;

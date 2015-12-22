@@ -28,7 +28,7 @@
 #include "Scanner.h"
 #include "Options.h"
 #include "Log.h"
-#include "Util.h"
+#include "FileSystem.h"
 
 void ScanScriptController::ExecuteScripts(const char* nzbFilename,
 	const char* url, const char* directory, char** nzbName, char** category,
@@ -58,17 +58,17 @@ void ScanScriptController::ExecuteScripts(const char* nzbFilename,
 
 void ScanScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
-	if (!script->GetScanScript() || !Util::FileExists(m_nzbFilename))
+	if (!script->GetScanScript() || !FileSystem::FileExists(m_nzbFilename))
 	{
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing scan-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbFilename));
+	PrintMessage(Message::mkInfo, "Executing scan-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbFilename));
 
 	SetScript(script->GetLocation());
 	SetArgs(NULL, false);
 
-	BString<1024> infoName("scan-script %s for %s", script->GetName(), Util::BaseFileName(m_nzbFilename));
+	BString<1024> infoName("scan-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbFilename));
 	SetInfoName(infoName);
 
 	SetLogPrefix(script->GetDisplayName());
@@ -86,7 +86,7 @@ void ScanScriptController::PrepareParams(const char* scriptName)
 
 	SetEnvVar("NZBNP_FILENAME", m_nzbFilename);
 	SetEnvVar("NZBNP_URL", m_url);
-	SetEnvVar("NZBNP_NZBNAME", strlen(*m_nzbName) > 0 ? *m_nzbName : Util::BaseFileName(m_nzbFilename));
+	SetEnvVar("NZBNP_NZBNAME", strlen(*m_nzbName) > 0 ? *m_nzbName : FileSystem::BaseFileName(m_nzbFilename));
 	SetEnvVar("NZBNP_CATEGORY", *m_category);
 	SetIntEnvVar("NZBNP_PRIORITY", *m_priority);
 	SetIntEnvVar("NZBNP_TOP", *m_addTop ? 1 : 0);

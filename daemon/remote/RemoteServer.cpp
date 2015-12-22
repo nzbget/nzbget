@@ -30,7 +30,7 @@
 #include "WebServer.h"
 #include "Log.h"
 #include "Options.h"
-#include "Util.h"
+#include "FileSystem.h"
 
 //*****************************************************************
 // RemoteServer
@@ -57,13 +57,13 @@ void RemoteServer::Run()
 #ifndef DISABLE_TLS
 	if (m_tls)
 	{
-		if (strlen(g_Options->GetSecureCert()) == 0 || !Util::FileExists(g_Options->GetSecureCert()))
+		if (strlen(g_Options->GetSecureCert()) == 0 || !FileSystem::FileExists(g_Options->GetSecureCert()))
 		{
 			error("Could not initialize TLS, secure certificate is not configured or the cert-file was not found. Check option <SecureCert>");
 			return;
 		}
 
-		if (strlen(g_Options->GetSecureKey()) == 0 || !Util::FileExists(g_Options->GetSecureKey()))
+		if (strlen(g_Options->GetSecureKey()) == 0 || !FileSystem::FileExists(g_Options->GetSecureKey()))
 		{
 			error("Could not initialize TLS, secure key is not configured or the key-file was not found. Check option <SecureKey>");
 			return;

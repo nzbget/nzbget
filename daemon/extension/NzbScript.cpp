@@ -27,7 +27,7 @@
 #include "NzbScript.h"
 #include "Options.h"
 #include "Log.h"
-#include "Util.h"
+#include "FileSystem.h"
 
 /**
  * If szStripPrefix is not NULL, only pp-parameters, whose names start with the prefix
@@ -93,7 +93,7 @@ void NzbScriptController::ExecuteScriptList(const char* scriptList)
 			Tokenizer tok(scriptList, ",;");
 			while (const char* scriptName = tok.Next())
 			{
-				if (Util::SameFilename(scriptName, script->GetName()))
+				if (FileSystem::SameFilename(scriptName, script->GetName()))
 				{
 					ExecuteScript(script);
 					break;

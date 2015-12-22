@@ -30,6 +30,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 RemoteClient::RemoteClient()
 {
@@ -153,7 +154,7 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 	}
 	else
 	{
-		if (!Util::LoadFileIntoBuffer(nzbContent, &buffer, &length))
+		if (!FileSystem::LoadFileIntoBuffer(nzbContent, &buffer, &length))
 		{
 			printf("Could not load file %s\n", nzbContent);
 			return false;

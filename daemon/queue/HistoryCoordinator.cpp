@@ -30,6 +30,7 @@
 #include "QueueCoordinator.h"
 #include "DiskState.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "NzbFile.h"
 #include "DupeCoordinator.h"
 #include "ParParser.h"
@@ -127,7 +128,7 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 		end = strchr(name1, '|');
 		if (end) *end = '\0';
 
-		if (Util::FileExists(name1))
+		if (FileSystem::FileExists(name1))
 		{
 			info("Deleting file %s", name1);
 			remove(name1);
@@ -336,11 +337,11 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 		historyInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psFailure ||
 		historyInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usFailure ||
 		historyInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usPassword) &&
-		Util::DirectoryExists(historyInfo->GetNzbInfo()->GetDestDir()))
+		FileSystem::DirectoryExists(historyInfo->GetNzbInfo()->GetDestDir()))
 	{
 		info("Deleting %s", historyInfo->GetNzbInfo()->GetDestDir());
 		CString errmsg;
-		if (!Util::DeleteDirectoryWithContent(historyInfo->GetNzbInfo()->GetDestDir(), errmsg))
+		if (!FileSystem::DeleteDirectoryWithContent(historyInfo->GetNzbInfo()->GetDestDir(), errmsg))
 		{
 			error("Could not delete directory %s: %s", historyInfo->GetNzbInfo()->GetDestDir(), *errmsg);
 		}
@@ -468,7 +469,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
 	bool paused = restorePauseState && nzbInfo->GetDeletePaused();
 
-	if (!Util::FileExists(nzbInfo->GetQueuedFilename()))
+	if (!FileSystem::FileExists(nzbInfo->GetQueuedFilename()))
 	{
 		error("Could not return %s from history back to queue: could not find source nzb-file %s",
 			nzbInfo->GetName(), nzbInfo->GetQueuedFilename());
@@ -492,22 +493,22 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 		fileInfo->SetPaused(paused);
 	}
 
-	if (Util::DirectoryExists(nzbInfo->GetDestDir()))
+	if (FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
 	{
 		detail("Deleting %s", nzbInfo->GetDestDir());
 		CString errmsg;
-		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errmsg))
+		if (!FileSystem::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errmsg))
 		{
 			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), *errmsg);
 		}
 	}
 
 	nzbInfo->BuildDestDirName();
-	if (Util::DirectoryExists(nzbInfo->GetDestDir()))
+	if (FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
 	{
 		detail("Deleting %s", nzbInfo->GetDestDir());
 		CString errmsg;
-		if (!Util::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errmsg))
+		if (!FileSystem::DeleteDirectoryWithContent(nzbInfo->GetDestDir(), errmsg))
 		{
 			error("Could not delete directory %s: %s", nzbInfo->GetDestDir(), *errmsg);
 		}

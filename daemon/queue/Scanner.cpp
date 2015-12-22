@@ -31,6 +31,7 @@
 #include "HistoryCoordinator.h"
 #include "ScanScript.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 Scanner::FileData::FileData(const char* filename)
 {
@@ -185,7 +186,7 @@ void Scanner::CheckIncomingNzbs(const char* directory, const char* category, boo
 	while (const char* filename = dir.Next())
 	{
 		BString<1024> fullfilename("%s%s", directory, filename);
-		bool isDirectory = Util::DirectoryExists(fullfilename);
+		bool isDirectory = FileSystem::DirectoryExists(fullfilename);
 		// check subfolders
 		if (isDirectory)
 		{
@@ -228,7 +229,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 		return true;
 	}
 
-	int64 size = Util::FileSize(fullFilename);
+	int64 size = FileSystem::FileSize(fullFilename);
 	time_t current = time(NULL);
 	bool canProcess = false;
 	bool inList = false;
@@ -329,7 +330,7 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 	for (QueueList::iterator it = m_queueList.begin(); it != m_queueList.end(); it++)
 	{
 		QueueData* queueData1 = *it;
-		if (Util::SameFilename(queueData1->GetFilename(), fullFilename))
+		if (FileSystem::SameFilename(queueData1->GetFilename(), fullFilename))
 		{
 			queueData = queueData1;
 			free(nzbName);
@@ -358,15 +359,15 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 			urlInfo ? urlInfo->GetUrl() : "", directory,
 			&nzbName, &nzbCategory, &priority, parameters, &addTop,
 			&addPaused, &dupeKey, &dupeScore, &dupeMode);
-		exists = Util::FileExists(fullFilename);
+		exists = FileSystem::FileExists(fullFilename);
 		if (exists && strcasecmp(extension, ".nzb"))
 		{
 			CString bakname2;
-			bool renameOK = Util::RenameBak(fullFilename, "processed", false, bakname2);
+			bool renameOK = FileSystem::RenameBak(fullFilename, "processed", false, bakname2);
 			if (!renameOK)
 			{
 				error("Could not rename file %s to %s: %s", fullFilename, *bakname2,
-					*Util::GetLastErrorMessage());
+					*FileSystem::GetLastErrorMessage());
 			}
 		}
 	}
@@ -374,7 +375,7 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 	if (!strcasecmp(extension, ".nzb_processed"))
 	{
 		CString renamedName;
-		bool renameOK = Util::RenameBak(fullFilename, "nzb", true, renamedName);
+		bool renameOK = FileSystem::RenameBak(fullFilename, "nzb", true, renamedName);
 		if (renameOK)
 		{
 			bool added = AddFileToQueue(renamedName, nzbName, nzbCategory, priority,
@@ -384,7 +385,7 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 		else
 		{
 			error("Could not rename file %s to %s: %s", fullFilename, *renamedName,
-				*Util::GetLastErrorMessage());
+				*FileSystem::GetLastErrorMessage());
 			addStatus = asFailed;
 		}
 	}
@@ -452,7 +453,7 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 	int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
 	NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo, int* nzbId)
 {
-	const char* basename = Util::BaseFileName(filename);
+	const char* basename = FileSystem::BaseFileName(filename);
 
 	info("Adding collection %s to queue", basename);
 
@@ -464,11 +465,11 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 	}
 
 	CString bakname2;
-	if (!Util::RenameBak(filename, nzbFile ? "queued" : "error", false, bakname2))
+	if (!FileSystem::RenameBak(filename, nzbFile ? "queued" : "error", false, bakname2))
 	{
 		ok = false;
 		error("Could not rename file %s to %s: %s", filename, *bakname2,
-			*Util::GetLastErrorMessage());
+			*FileSystem::GetLastErrorMessage());
 	}
 
 	NzbInfo* nzbInfo = nzbFile->GetNzbInfo();
@@ -560,13 +561,13 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	else
 	{
 		int num = 1;
-		while (num == 1 || Util::FileExists(tempFileName))
+		while (num == 1 || FileSystem::FileExists(tempFileName))
 		{
 			tempFileName.Format("%snzb-%i.tmp", g_Options->GetTempDir(), num);
 			num++;
 		}
 
-		if (!Util::SaveBufferIntoFile(tempFileName, buffer, bufSize))
+		if (!FileSystem::SaveBufferIntoFile(tempFileName, buffer, bufSize))
 		{
 			error("Could not create file %s", *tempFileName);
 			return asFailed;
@@ -579,8 +580,8 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 
 	// move file into NzbDir, make sure the file name is unique
-	BString<1024> validNzbName = Util::BaseFileName(nzbName);
-	Util::MakeValidFilename(validNzbName, '_', false);
+	BString<1024> validNzbName = FileSystem::BaseFileName(nzbName);
+	FileSystem::MakeValidFilename(validNzbName, '_', false);
 
 #ifdef WIN32
 	WebUtil::Utf8ToAnsi(validNzbName, validNzbName.Capacity());
@@ -602,7 +603,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 
 	int num = 2;
-	while (Util::FileExists(scanFileName))
+	while (FileSystem::FileExists(scanFileName))
 	{
 		if (ext)
 		{
@@ -617,10 +618,10 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 
 	m_scanMutex.Lock();
 
-	if (!Util::MoveFile(tempFileName, scanFileName))
+	if (!FileSystem::MoveFile(tempFileName, scanFileName))
 	{
 		error("Could not move file %s to %s: %s", *tempFileName, *scanFileName,
-			*Util::GetLastErrorMessage());
+			*FileSystem::GetLastErrorMessage());
 		remove(tempFileName);
 		m_scanMutex.Unlock(); // UNLOCK
 		return asFailed;

@@ -27,6 +27,7 @@
 #include "Cleanup.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "ParParser.h"
 #include "Options.h"
 
@@ -84,7 +85,7 @@ void MoveController::Run()
 bool MoveController::MoveFiles()
 {
 	CString errmsg;
-	if (!Util::ForceDirectories(m_destDir, errmsg))
+	if (!FileSystem::ForceDirectories(m_destDir, errmsg))
 	{
 		PrintMessage(Message::mkError, "Could not create directory %s: %s", *m_destDir, *errmsg);
 		return false;
@@ -95,23 +96,23 @@ bool MoveController::MoveFiles()
 	while (const char* filename = dir.Next())
 	{
 		BString<1024> srcFile("%s%c%s",* m_interDir, PATH_SEPARATOR, filename);
-		CString dstFile = Util::MakeUniqueFilename(m_destDir, filename);
+		CString dstFile = FileSystem::MakeUniqueFilename(m_destDir, filename);
 		bool hiddenFile = filename[0] == '.';
 
 		if (!hiddenFile)
 		{
-			PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(srcFile), *m_destDir);
+			PrintMessage(Message::mkInfo, "Moving file %s to %s", FileSystem::BaseFileName(srcFile), *m_destDir);
 		}
 
-		if (!Util::MoveFile(srcFile, dstFile) && !hiddenFile)
+		if (!FileSystem::MoveFile(srcFile, dstFile) && !hiddenFile)
 		{
 			PrintMessage(Message::mkError, "Could not move file %s to %s: %s",
-				*srcFile, *dstFile, *Util::GetLastErrorMessage());
+				*srcFile, *dstFile, *FileSystem::GetLastErrorMessage());
 			ok = false;
 		}
 	}
 
-	if (ok && !Util::DeleteDirectoryWithContent(m_interDir, errmsg))
+	if (ok && !FileSystem::DeleteDirectoryWithContent(m_interDir, errmsg))
 	{
 		PrintMessage(Message::mkWarning, "Could not delete intermediate directory %s: %s", *m_interDir, *errmsg);
 	}
@@ -205,7 +206,7 @@ bool CleanupController::Cleanup(const char* destDir, bool *deleted)
 	{
 		BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 
-		bool isDir = Util::DirectoryExists(fullFilename);
+		bool isDir = FileSystem::DirectoryExists(fullFilename);
 
 		if (isDir)
 		{
@@ -221,7 +222,7 @@ bool CleanupController::Cleanup(const char* destDir, bool *deleted)
 			if (remove(fullFilename) != 0)
 			{
 				PrintMessage(Message::mkError, "Could not delete file %s: %s", *fullFilename,
-					*Util::GetLastErrorMessage());
+					*FileSystem::GetLastErrorMessage());
 				ok = false;
 			}
 

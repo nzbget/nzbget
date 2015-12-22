@@ -153,6 +153,7 @@
     <ClCompile Include="daemon\util\Thread.cpp" />
     <ClCompile Include="daemon\util\NString.cpp" />
     <ClCompile Include="daemon\util\Util.cpp" />
+    <ClCompile Include="daemon\util\FileSystem.cpp" />
     <ClCompile Include="daemon\windows\StdAfx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -243,6 +244,7 @@
     <ClInclude Include="daemon\util\Thread.h" />
     <ClInclude Include="daemon\util\NString.h" />
     <ClInclude Include="daemon\util\Util.h" />
+    <ClInclude Include="daemon\util\FileSystem.h" />
     <ClInclude Include="daemon\windows\WinService.h" />
     <ClInclude Include="daemon\windows\WinConsole.h" />
     <ClInclude Include="lib\par2\commandline.h" />

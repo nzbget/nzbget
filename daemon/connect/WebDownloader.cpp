@@ -28,6 +28,7 @@
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 WebDownloader::WebDownloader()
 {
@@ -526,7 +527,7 @@ void WebDownloader::ParseFilename(const char* contentDisposition)
 
 	WebUtil::HttpUnquote(fname);
 
-	m_originalFilename = Util::BaseFileName(fname);
+	m_originalFilename = FileSystem::BaseFileName(fname);
 
 	debug("OriginalFilename: %s", *m_originalFilename);
 }
@@ -652,7 +653,7 @@ void WebDownloader::LogDebugInfo()
 		ctime_r(&m_lastUpdateTime, time);
 #endif
 
-	info("      Web-Download: status=%i, LastUpdateTime=%s, filename=%s", m_status, time, Util::BaseFileName(m_outputFilename));
+	info("      Web-Download: status=%i, LastUpdateTime=%s, filename=%s", m_status, time, FileSystem::BaseFileName(m_outputFilename));
 }
 
 void WebDownloader::Stop()

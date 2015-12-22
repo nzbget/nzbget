@@ -30,6 +30,7 @@
 #include "Options.h"
 #include "QueueEditor.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "DownloadInfo.h"
 #include "Scanner.h"
 #include "StatMeter.h"
@@ -460,7 +461,7 @@ void DownloadBinCommand::Execute()
 
 	SendBoolResponse(ok, BString<1024>(ok ? "Collection %s added to queue" :
 		"Download Request failed for %s",
-		Util::BaseFileName(DownloadRequest.m_nzbFilename)));
+		FileSystem::BaseFileName(DownloadRequest.m_nzbFilename)));
 
 	free(nzbContent);
 }
@@ -649,7 +650,7 @@ void ListBinCommand::Execute()
 				if (regEx && !matchGroup)
 				{
 					BString<1024> filename("%s/%s", fileInfo->GetNzbInfo()->GetName(),
-						Util::BaseFileName(fileInfo->GetFilename()));
+						FileSystem::BaseFileName(fileInfo->GetFilename()));
 					listAnswer->m_match = htonl(regEx->Match(filename));
 				}
 

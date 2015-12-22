@@ -34,92 +34,25 @@ extern char *optarg;
 int getopt(int argc, char *argv[], char *optstring);
 #endif
 
-class DirBrowser
-{
-private:
-#ifdef WIN32
-	WIN32_FIND_DATA		m_findData;
-	HANDLE				m_file;
-	bool				m_first;
-#else
-	DIR*				m_dir;
-	struct dirent*		m_findData;
-#endif
-
-#ifdef DIRBROWSER_SNAPSHOT
-	bool				m_snapshot;
-	typedef std::deque<char*>	FileList;
-	FileList			m_snapshot;
-	FileList::iterator	m_itSnapshot;
-#endif
-
-	const char*			InternNext();
-public:
-#ifdef DIRBROWSER_SNAPSHOT
-						DirBrowser(const char* path, bool snapshot = true);
-#else
-						DirBrowser(const char* path);
-#endif
-						~DirBrowser();
-	const char*			Next();
-};
-
 class Util
 {
 public:
-	static char* BaseFileName(const char* filename);
-	static void NormalizePathSeparators(char* path);
-	static bool LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength);
-	static bool SaveBufferIntoFile(const char* fileName, const char* buffer, int bufLen);
-	static bool CreateSparseFile(const char* filename, int64 size, CString& errmsg);
-	static bool TruncateFile(const char* filename, int size);
-	static void MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes);
-	static CString MakeUniqueFilename(const char* destDir, const char* basename);
-	static bool MoveFile(const char* srcFilename, const char* dstFilename);
-	static bool CopyFile(const char* srcFilename, const char* dstFilename);
-	static bool FileExists(const char* filename);
-	static bool FileExists(const char* path, const char* filenameWithoutPath);
-	static bool DirectoryExists(const char* dirFilename);
-	static bool CreateDirectory(const char* dirFilename);
-	static bool RemoveDirectory(const char* dirFilename);
-	static bool DeleteDirectoryWithContent(const char* dirFilename, CString& errmsg);
-	static bool ForceDirectories(const char* path, CString& errmsg);
-	static CString GetCurrentDirectory();
-	static bool SetCurrentDirectory(const char* dirFilename);
-	static int64 FileSize(const char* filename);
-	static int64 FreeDiskSize(const char* path);
-	static bool DirEmpty(const char* dirFilename);
-	static bool RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, CString& newName);
-#ifndef WIN32
-	static CString ExpandHomePath(const char* filename);
-	static void FixExecPermission(const char* filename);
-#endif
-	static CString ExpandFileName(const char* filename);
-	static CString GetExeFileName(const char* argv0);
+	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
 	static CString FormatSpeed(int bytesPerSecond);
 	static CString FormatSize(int64 fileSize);
-	static bool SameFilename(const char* filename1, const char* filename2);
-	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
-	static CString GetLastErrorMessage();
 	static int64 GetCurrentTicks();
 
-	/* Flush disk buffers for file with given descriptor */
-	static bool FlushFileBuffers(int fileDescriptor, CString& errmsg);
-
-	/* Flush disk buffers for file metadata (after file renaming) */
-	static bool FlushDirBuffers(const char* filename, CString& errmsg);
-
 	/*
-	 * Split command line int arguments.
+	 * Split command line into arguments.
 	 * Uses spaces and single quotation marks as separators.
 	 * Returns bool if sucessful or false if bad escaping was detected.
 	 * Parameter "argv" may be NULL if only a syntax check is needed.
 	 * Parsed parameters returned in Array "argv", which contains at least one element.
 	 * The last element in array is NULL.
-	 * Restrictions: the number of arguments is limited to 100 and each arguments must
+	 * Restrictions: the number of arguments is limited to 100 and each argument must
 	 * be maximum 1024 chars long.
 	 * If these restrictions are exceeded, only first 100 arguments and only first 1024
-	 * for each argument are returned (the functions still returns "true").
+	 * for each argument are returned (the function still returns "true").
 	 */
 	static bool SplitCommandLine(const char* commandLine, char*** argv);
 

@@ -28,6 +28,7 @@
 #include "Options.h"
 #include "WebDownloader.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "NzbFile.h"
 #include "Scanner.h"
 #include "DiskState.h"
@@ -310,12 +311,12 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 	}
 	else
 	{
-		filename = Util::BaseFileName(nzbInfo->GetUrl());
+		filename = FileSystem::BaseFileName(nzbInfo->GetUrl());
 
 		// TODO: decode URL escaping
 	}
 
-	Util::MakeValidFilename(filename, '_', false);
+	FileSystem::MakeValidFilename(filename, '_', false);
 
 	debug("Filename: [%s]", *filename);
 

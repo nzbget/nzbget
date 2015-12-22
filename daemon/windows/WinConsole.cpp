@@ -26,11 +26,12 @@
 #include "nzbget.h"
 #include "Log.h"
 #include "Options.h"
-#include "Util.h"
 #include "FeedCoordinator.h"
 #include "StatMeter.h"
 #include "WinConsole.h"
 #include "WinService.h"
+#include "FileSystem.h"
+#include "Util.h"
 #include "resource.h"
 
 extern Options* g_Options;
@@ -438,10 +439,10 @@ void WinConsole::ShowInExplorer(const char* filename)
 	char fileName2[MAX_PATH + 1];
 	strncpy(fileName2, filename, MAX_PATH);
 	fileName2[MAX_PATH] = '\0';
-	Util::NormalizePathSeparators(fileName2);
+	FileSystem::NormalizePathSeparators(fileName2);
 	if (*fileName2 && fileName2[strlen(fileName2) - 1] == PATH_SEPARATOR) fileName2[strlen(fileName2) - 1] = '\0'; // trim slash
 
-	if (!Util::FileExists(fileName2) && !Util::DirectoryExists(fileName2))
+	if (!FileSystem::FileExists(fileName2) && !FileSystem::DirectoryExists(fileName2))
 	{
 		BString<1024> message("Directory or file %s doesn't exist (yet).", fileName2);
 		MessageBox(m_trayWindow, message, "Information", MB_ICONINFORMATION);
@@ -868,7 +869,7 @@ void WinConsole::ShowCategoryDir(int catIndex)
 	{
 		BString<1024> categoryDir;
 		categoryDir.Set(category->GetName());
-		Util::MakeValidFilename(categoryDir, '_', true);
+		FileSystem::MakeValidFilename(categoryDir, '_', true);
 
 		destDir.Format("%s%s", g_Options->GetDestDir(), *categoryDir);
 	}
@@ -897,7 +898,7 @@ void WinConsole::SetupConfigFile()
 	BString<1024> filename("%s\\NZBGet\\nzbget.conf", commonAppDataPath);
 
 	BString<1024> appDataPath("%s\\NZBGet", commonAppDataPath);
-	Util::CreateDirectory(appDataPath);
+	FileSystem::CreateDirectory(appDataPath);
 
 	BString<1024> confTemplateFilename("%s\\nzbget.conf.template", g_Options->GetAppDir());
 	CopyFile(confTemplateFilename, filename, FALSE);
@@ -905,7 +906,7 @@ void WinConsole::SetupConfigFile()
 	// set MainDir in the config-file
 	int size = 0;
 	char* config = NULL;
-	if (Util::LoadFileIntoBuffer(filename, &config, &size))
+	if (FileSystem::LoadFileIntoBuffer(filename, &config, &size))
 	{
 		const char* SIGNATURE = "MainDir=${AppDir}\\downloads";
 		char* p = strstr(config, SIGNATURE);
@@ -927,7 +928,7 @@ void WinConsole::SetupConfigFile()
 
 	// create default destination directory (which is not created on start automatically)
 	BString<1024> completeDir("%s\\NZBGet\\complete", commonAppDataPath);
-	Util::CreateDirectory(completeDir);
+	FileSystem::CreateDirectory(completeDir);
 }
 
 void WinConsole::SetupScripts()
@@ -938,19 +939,16 @@ void WinConsole::SetupScripts()
 	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appDataPath);
 
 	BString<1024> destDir("%s\\NZBGet\\scripts", appDataPath);
-	Util::CreateDirectory(destDir);
+	FileSystem::CreateDirectory(destDir);
 
 	BString<1024> srcDir("%s\\scripts", g_Options->GetAppDir());
 
 	DirBrowser dir(srcDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
-		{
-			BString<1024> srcFullFilename("%s\\%s", srcDir, filename);
-			BString<1024> dstFullFilename("%s\\%s", destDir, filename);
-			CopyFile(srcFullFilename, dstFullFilename, FALSE);
-		}
+		BString<1024> srcFullFilename("%s\\%s", srcDir, filename);
+		BString<1024> dstFullFilename("%s\\%s", destDir, filename);
+		CopyFile(srcFullFilename, dstFullFilename, FALSE);
 	}
 }
 
@@ -1015,14 +1013,14 @@ void WinConsole::ResetFactoryDefaults()
 
 		// try to delete the directory
 		int retry = 10;
-		while (retry > 0 && Util::DirectoryExists(path) &&
-			!Util::DeleteDirectoryWithContent(path, errmsg))
+		while (retry > 0 && FileSystem::DirectoryExists(path) &&
+			!FileSystem::DeleteDirectoryWithContent(path, errmsg))
 		{
 			usleep(200 * 1000);
 			retry--;
 		}
 
-		if (Util::DirectoryExists(path))
+		if (FileSystem::DirectoryExists(path))
 		{
 			MessageBox(m_trayWindow,
 				BString<1024>("Could not delete directory %s:\n%s.\nPlease delete the directory manually and try again.", *path, *errmsg),
@@ -1035,9 +1033,9 @@ void WinConsole::ResetFactoryDefaults()
 	path.Format("%s\\nzbget.conf", g_Options->GetAppDir());
 
 	remove(path);
-	errmsg = Util::GetLastErrorMessage();
+	errmsg = FileSystem::GetLastErrorMessage();
 
-	if (Util::FileExists(path))
+	if (FileSystem::FileExists(path))
 	{
 		MessageBox(m_trayWindow,
 			BString<1024>("Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", *path, *errmsg),
@@ -1049,9 +1047,9 @@ void WinConsole::ResetFactoryDefaults()
 	path.Format("%s\\NZBGet\\nzbget.conf", commonAppDataPath);
 
 	remove(path);
-	errmsg = Util::GetLastErrorMessage();
+	errmsg = FileSystem::GetLastErrorMessage();
 
-	if (Util::FileExists(path))
+	if (FileSystem::FileExists(path))
 	{
 		MessageBox(m_trayWindow,
 			BString<1024>("Could not delete file %s:\n%s.\nPlease delete the file manually and try again.", *path, *errmsg),

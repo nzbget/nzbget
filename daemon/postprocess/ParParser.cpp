@@ -24,7 +24,7 @@
 
 
 #include "nzbget.h"
-#include "Util.h"
+#include "FileSystem.h"
 #include "ParParser.h"
 
 bool ParParser::FindMainPars(const char* path, ParFileList* fileList)

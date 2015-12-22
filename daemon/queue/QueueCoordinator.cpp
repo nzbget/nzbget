@@ -32,6 +32,7 @@
 #include "ArticleWriter.h"
 #include "DiskState.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "Decoder.h"
 #include "StatMeter.h"
 
@@ -666,7 +667,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 		if (g_Options->GetDupeCheck() &&
 			nzbInfo->GetDupeMode() != dmForce &&
 			!nzbInfo->GetManyDupeFiles() &&
-			Util::FileExists(nzbInfo->GetDestDir(), fileInfo->GetFilename()))
+			FileSystem::FileExists(nzbInfo->GetDestDir(), fileInfo->GetFilename()))
 		{
 			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", fileInfo->GetFilename());
 			fileCompleted = false;

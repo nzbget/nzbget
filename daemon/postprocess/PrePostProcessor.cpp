@@ -31,6 +31,7 @@
 #include "DupeCoordinator.h"
 #include "PostScript.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "Unpack.h"
 #include "Cleanup.h"
 #include "NzbFile.h"
@@ -315,7 +316,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 		{
 			CompletedFile* completedFile = *it;
 			BString<1024> fullFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile->GetFileName());
-			if (Util::FileExists(fullFileName))
+			if (FileSystem::FileExists(fullFileName))
 			{
 				detail("Deleting file %s", completedFile->GetFileName());
 				remove(fullFileName);
@@ -336,7 +337,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 		}
 
 		// delete old directory (if empty)
-		if (Util::DirEmpty(nzbInfo->GetDestDir()))
+		if (FileSystem::DirEmpty(nzbInfo->GetDestDir()))
 		{
 			rmdir(nzbInfo->GetDestDir());
 		}
@@ -453,7 +454,7 @@ void PrePostProcessor::SanitisePostQueue(DownloadQueue* downloadQueue)
 		{
 			m_jobCount++;
 			if (postInfo->GetStage() == PostInfo::ptExecutingScript ||
-				!Util::DirectoryExists(nzbInfo->GetDestDir()))
+				!FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
 			{
 				postInfo->SetStage(PostInfo::ptFinished);
 			}

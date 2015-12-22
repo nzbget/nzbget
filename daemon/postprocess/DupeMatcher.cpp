@@ -27,6 +27,7 @@
 #include "DupeMatcher.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "Options.h"
 #include "Script.h"
 #include "Thread.h"
@@ -214,7 +215,7 @@ void DupeMatcher::FindLargestFile(const char* directory, char* filenameBuf, int 
 	{
 		BString<1024> fullFilename("%s%c%s", directory, PATH_SEPARATOR, filename);
 
-		int64 fileSize = Util::FileSize(fullFilename);
+		int64 fileSize = FileSystem::FileSize(fullFilename);
 		if (fileSize > *maxSize)
 		{
 			*maxSize = fileSize;

@@ -29,6 +29,7 @@
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 static const char* ERR_HTTP_BAD_REQUEST = "400 Bad Request";
 static const char* ERR_HTTP_NOT_FOUND = "404 Not Found";
@@ -501,7 +502,7 @@ void WebProcessor::SendFileResponse(const char* filename)
 
 	char *body;
 	int bodyLen;
-	if (!Util::LoadFileIntoBuffer(filename, &body, &bodyLen))
+	if (!FileSystem::LoadFileIntoBuffer(filename, &body, &bodyLen))
 	{
 		// do not print warnings "404 not found" for certain files
 		bool ignorable = !strcmp(filename, "package-info.json") ||

@@ -29,6 +29,7 @@
 
 #include "Options.h"
 #include "ParRenamer.h"
+#include "FileSystem.h"
 #include "TestUtil.h"
 
 class ParRenamerMock: public ParRenamer
@@ -81,7 +82,7 @@ TEST_CASE("Par-renamer: rename successful", "[Par][ParRenamer][Slow][TestData]")
 	Options options(&cmdOpts, NULL);
 
 	ParRenamerMock parRenamer;
-	Util::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
 	parRenamer.Execute();
 
 	REQUIRE(parRenamer.GetStatus() == ParRenamer::psSuccess);
@@ -96,7 +97,7 @@ TEST_CASE("Par-renamer: detecting missing", "[Par][ParRenamer][Slow][TestData]")
 	Options options(&cmdOpts, NULL);
 
 	ParRenamerMock parRenamer;
-	Util::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
 	parRenamer.SetDetectMissing(true);
 	REQUIRE(remove((TestUtil::WorkingDir() + "/testfile.nfo").c_str()) == 0);
 	parRenamer.Execute();

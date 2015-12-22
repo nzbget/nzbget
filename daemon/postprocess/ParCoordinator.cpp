@@ -30,7 +30,7 @@
 #include "Options.h"
 #include "DiskState.h"
 #include "Log.h"
-#include "Util.h"
+#include "FileSystem.h"
 
 #ifndef DISABLE_PARCHECK
 bool ParCoordinator::PostParChecker::RequestMorePars(int blockNeeded, int* blockFound)
@@ -92,7 +92,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 		return ParChecker::fsUnknown;
 	}
 
-	debug("Found completed file: %s, CRC: %.8x, Status: %i", Util::BaseFileName(completedFile->GetFileName()), completedFile->GetCrc(), (int)completedFile->GetStatus());
+	debug("Found completed file: %s, CRC: %.8x, Status: %i", FileSystem::BaseFileName(completedFile->GetFileName()), completedFile->GetCrc(), (int)completedFile->GetStatus());
 
 	*crc = completedFile->GetCrc();
 
@@ -143,12 +143,12 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 			NzbInfo* dupeNzbInfo = *it;
 			if (sizeComparisonPossible)
 			{
-				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", Util::BaseFileName(dupeNzbInfo->GetDestDir()));
+				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", FileSystem::BaseFileName(dupeNzbInfo->GetDestDir()));
 			}
 			bool useDupe = !sizeComparisonPossible || dupeMatcher.MatchDupeContent(dupeNzbInfo->GetDestDir());
 			if (useDupe)
 			{
-				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", Util::BaseFileName(dupeNzbInfo->GetDestDir()));
+				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", FileSystem::BaseFileName(dupeNzbInfo->GetDestDir()));
 				dupeSourceList->push_back(new ParChecker::DupeSource(dupeNzbInfo->GetId(), dupeNzbInfo->GetDestDir()));
 			}
 		}
@@ -533,7 +533,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	*blockFound = 0;
 
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
-	char* baseParFilename = Util::BaseFileName(parFilename);
+	char* baseParFilename = FileSystem::BaseFileName(parFilename);
 	int mainBaseLen = 0;
 	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, NULL))
 	{
@@ -556,7 +556,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 
 			if (exactParName)
 			{
-				useFile = ParParser::SameParCollection(fileInfo->GetFilename(), Util::BaseFileName(parFilename));
+				useFile = ParParser::SameParCollection(fileInfo->GetFilename(), FileSystem::BaseFileName(parFilename));
 			}
 			else if (strictParName)
 			{

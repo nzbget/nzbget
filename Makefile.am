@@ -143,6 +143,8 @@ nzbget_SOURCES = \
 	daemon/util/Thread.h \
 	daemon/util/Service.cpp \
 	daemon/util/Service.h \
+	daemon/util/FileSystem.cpp \
+	daemon/util/FileSystem.h \
 	daemon/util/Util.cpp \
 	daemon/util/Util.h \
 	code_revision.cpp

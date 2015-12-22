@@ -36,6 +36,7 @@
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 const char* Par2CmdLineErrStr[] = { "OK",
 	"data files are damaged and there is enough recovery data available to repair them",
@@ -115,7 +116,7 @@ Result Repairer::PreProcess(const char *parFilename)
 	if (g_Options->GetParScan() == Options::psFull)
 	{
 		BString<1024> wildcardParam(parFilename, 1024);
-		char* basename = Util::BaseFileName(wildcardParam);
+		char* basename = FileSystem::BaseFileName(wildcardParam);
 		if (basename != wildcardParam && strlen(basename) > 0)
 		{
 			basename[0] = '*';
@@ -340,10 +341,10 @@ public:
  */
 bool MissingFilesComparator::operator()(CommandLine::ExtraFile* file1, CommandLine::ExtraFile* file2) const
 {
-	BString<1024> name1 = Util::BaseFileName(file1->FileName().c_str());
+	BString<1024> name1 = FileSystem::BaseFileName(file1->FileName().c_str());
 	if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
 
-	BString<1024> name2 = Util::BaseFileName(file2->FileName().c_str());
+	BString<1024> name2 = FileSystem::BaseFileName(file2->FileName().c_str());
 	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
 
 	return strcmp(name1, m_baseParFilename) == 0 && strcmp(name1, name2) != 0;
@@ -819,11 +820,11 @@ bool ParChecker::LoadMorePars()
 		bool loadedOK = ((Repairer*)m_repairer)->LoadPacketsFromFile(parFilename);
 		if (loadedOK)
 		{
-			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", Util::BaseFileName(parFilename));
+			PrintMessage(Message::mkInfo, "File %s successfully loaded for par-check", FileSystem::BaseFileName(parFilename));
 		}
 		else
 		{
-			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", Util::BaseFileName(parFilename));
+			PrintMessage(Message::mkInfo, "Could not load file %s for par-check", FileSystem::BaseFileName(parFilename));
 		}
 	}
 
@@ -861,7 +862,7 @@ bool ParChecker::AddSplittedFragments()
 
 				std::string target = sourcefile->TargetFileName();
 				const char* filename2 = target.c_str();
-				const char* basename2 = Util::BaseFileName(filename2);
+				const char* basename2 = FileSystem::BaseFileName(filename2);
 				int baseLen = strlen(basename2);
 
 				if (!strncasecmp(filename, basename2, baseLen))
@@ -874,7 +875,7 @@ bool ParChecker::AddSplittedFragments()
 						{
 							debug("Found splitted fragment %s", filename);
 							BString<1024> fullfilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
-							CommandLine::ExtraFile extrafile(*fullfilename, Util::FileSize(fullfilename));
+							CommandLine::ExtraFile extrafile(*fullfilename, FileSystem::FileSize(fullfilename));
 							extrafiles.push_back(extrafile);
 						}
 					}
@@ -921,7 +922,7 @@ bool ParChecker::AddDupeFiles()
 			for (DupeSourceList::iterator it = m_dupeSources.begin(); it != m_dupeSources.end(); it++)
 			{
 				DupeSource* dupeSource = *it;
-				if (((Repairer*)m_repairer)->missingblockcount > 0 && Util::DirectoryExists(dupeSource->GetDirectory()))
+				if (((Repairer*)m_repairer)->missingblockcount > 0 && FileSystem::DirectoryExists(dupeSource->GetDirectory()))
 				{
 					int wasBlocksMissing2 = ((Repairer*)m_repairer)->missingblockcount;
 					bool oneAdded = AddExtraFiles(false, true, dupeSource->GetDirectory());
@@ -950,7 +951,7 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 {
 	if (externalDir)
 	{
-		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", *m_infoName, Util::BaseFileName(directory));
+		PrintMessage(Message::mkInfo, "Performing dupe par-scan for %s in %s", *m_infoName, FileSystem::BaseFileName(directory));
 	}
 	else
 	{
@@ -966,12 +967,12 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 			(externalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
 		{
 			BString<1024> fullfilename("%s%c%s", directory, PATH_SEPARATOR, filename);
-			extrafiles.push_back(new CommandLine::ExtraFile(*fullfilename, Util::FileSize(fullfilename)));
+			extrafiles.push_back(new CommandLine::ExtraFile(*fullfilename, FileSystem::FileSize(fullfilename)));
 		}
 	}
 
 	// Sort the list
-	char* baseParFilename = strdup(Util::BaseFileName(m_parFilename));
+	char* baseParFilename = strdup(FileSystem::BaseFileName(m_parFilename));
 	if (char* ext = strrchr(baseParFilename, '.')) *ext = '\0'; // trim extension
 	extrafiles.sort(MissingFilesComparator(baseParFilename));
 	free(baseParFilename);
@@ -1006,8 +1007,8 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 
 			if (fileAdded && !externalDir)
 			{
-				PrintMessage(Message::mkInfo, "Found missing file %s", Util::BaseFileName(extraFile->FileName().c_str()));
-				RegisterParredFile(Util::BaseFileName(extraFile->FileName().c_str()));
+				PrintMessage(Message::mkInfo, "Found missing file %s", FileSystem::BaseFileName(extraFile->FileName().c_str()));
+				RegisterParredFile(FileSystem::BaseFileName(extraFile->FileName().c_str()));
 			}
 			else if (blockAdded)
 			{
@@ -1048,7 +1049,7 @@ bool ParChecker::IsProcessedFile(const char* filename)
 	for (FileList::iterator it = m_processedFiles.begin(); it != m_processedFiles.end(); it++)
 	{
 		const char* processedFilename = *it;
-		if (!strcasecmp(Util::BaseFileName(processedFilename), filename))
+		if (!strcasecmp(FileSystem::BaseFileName(processedFilename), filename))
 		{
 			return true;
 		}
@@ -1161,7 +1162,7 @@ void ParChecker::signal_done(std::string str, int available, int total)
 				it != ((Repairer*)m_repairer)->sourcefiles.end(); it++)
 			{
 				Par2RepairerSourceFile *sourcefile = *it;
-				if (sourcefile && !strcmp(filename, Util::BaseFileName(sourcefile->TargetFileName().c_str())) &&
+				if (sourcefile && !strcmp(filename, FileSystem::BaseFileName(sourcefile->TargetFileName().c_str())) &&
 					!sourcefile->GetTargetExists())
 				{
 					fileExists = false;
@@ -1238,7 +1239,7 @@ void ParChecker::WriteBrokenLog(EStatus status)
 {
 	BString<1024> brokenLogName("%s%c_brokenlog.txt", *m_destDir, (int)PATH_SEPARATOR);
 
-	if (status != psRepairNotNeeded || Util::FileExists(brokenLogName))
+	if (status != psRepairNotNeeded || FileSystem::FileExists(brokenLogName))
 	{
 		FILE* file = fopen(brokenLogName, FOPEN_AB);
 		if (file)
@@ -1321,7 +1322,7 @@ void ParChecker::DeleteLeftovers()
 
 		if (!found)
 		{
-			PrintMessage(Message::mkInfo, "Deleting file %s", Util::BaseFileName(sourceFile->FileName().c_str()));
+			PrintMessage(Message::mkInfo, "Deleting file %s", FileSystem::BaseFileName(sourceFile->FileName().c_str()));
 			remove(sourceFile->FileName().c_str());
 		}
 	}
@@ -1368,7 +1369,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 	std::string filenameObj = sourceFile->GetTargetFile()->FileName();
 	const char* filename = filenameObj.c_str();
 
-	if (Util::FileSize(filename) == 0 && sourceFile->BlockCount() > 0)
+	if (FileSystem::FileSize(filename) == 0 && sourceFile->BlockCount() > 0)
 	{
 		*availableBlocks = 0;
 		return fsFailure;
@@ -1377,7 +1378,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 	// find file status and CRC computed during download
 	uint32 downloadCrc;
 	SegmentList segments;
-	EFileStatus	fileStatus = FindFileCrc(Util::BaseFileName(filename), &downloadCrc, &segments);
+	EFileStatus	fileStatus = FindFileCrc(FileSystem::BaseFileName(filename), &downloadCrc, &segments);
 	ValidBlocks validBlocks;
 
 	if (fileStatus == fsFailure || fileStatus == fsUnknown)
@@ -1388,7 +1389,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 		(fileStatus == fsPartial && !VerifyPartialDataFile(diskfile, sourcefile, &segments, &validBlocks)))
 	{
 		PrintMessage(Message::mkWarning, "Quick verification failed for %s file %s, performing full verification instead",
-			fileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(filename));
+			fileStatus == fsSuccess ? "good" : "damaged", FileSystem::BaseFileName(filename));
 		return fsUnknown; // let libpar2 do the full verification of the file
 	}
 
@@ -1424,7 +1425,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 
 	m_quickFiles++;
 	PrintMessage(Message::mkDetail, "Quickly verified %s file %s",
-		fileStatus == fsSuccess ? "good" : "damaged", Util::BaseFileName(filename));
+		fileStatus == fsSuccess ? "good" : "damaged", FileSystem::BaseFileName(filename));
 
 	return fileStatus;
 }
@@ -1450,7 +1451,7 @@ bool ParChecker::VerifySuccessDataFile(void* diskfile, void* sourcefile, uint32 
 		u32 blockCrc = entry->crc;
 		parCrc = i == 0 ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (uint32)blocksize);
 	}
-	debug("Block-CRC: %x, filename: %s", parCrc, Util::BaseFileName(sourceFile->GetTargetFile()->FileName().c_str()));
+	debug("Block-CRC: %x, filename: %s", parCrc, FileSystem::BaseFileName(sourceFile->GetTargetFile()->FileName().c_str()));
 
 	return parCrc == downloadCrc;
 }
@@ -1504,7 +1505,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 	if (!infile)
 	{
 		PrintMessage(Message::mkError, "Could not open file %s: %s",
-			filename, *Util::GetLastErrorMessage());
+			filename, *FileSystem::GetLastErrorMessage());
 	}
 
 	// For each sequential range of presumably valid blocks:

@@ -215,7 +215,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/util/Observer.h daemon/util/Script.cpp \
 	daemon/util/Script.h daemon/util/Thread.cpp \
 	daemon/util/Thread.h daemon/util/Service.cpp \
-	daemon/util/Service.h daemon/util/Util.cpp daemon/util/Util.h \
+	daemon/util/Service.h daemon/util/FileSystem.cpp \
+	daemon/util/FileSystem.h daemon/util/Util.cpp daemon/util/Util.h \
 	code_revision.cpp lib/par2/commandline.cpp \
 	lib/par2/commandline.h lib/par2/crc.cpp lib/par2/crc.h \
 	lib/par2/creatorpacket.cpp lib/par2/creatorpacket.h \
@@ -291,8 +292,9 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
 	WebServer.$(OBJEXT) XmlRpc.$(OBJEXT) Log.$(OBJEXT) \
 	NString.$(OBJEXT) Observer.$(OBJEXT) Script.$(OBJEXT) \
-	Thread.$(OBJEXT) Service.$(OBJEXT) Util.$(OBJEXT) \
-	code_revision.$(OBJEXT) $(am__objects_1) $(am__objects_2)
+	Thread.$(OBJEXT) Service.$(OBJEXT) FileSystem.$(OBJEXT) \
+	Util.$(OBJEXT) code_revision.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -497,7 +499,8 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/util/Observer.h daemon/util/Script.cpp \
 	daemon/util/Script.h daemon/util/Thread.cpp \
 	daemon/util/Thread.h daemon/util/Service.cpp \
-	daemon/util/Service.h daemon/util/Util.cpp daemon/util/Util.h \
+	daemon/util/Service.h daemon/util/FileSystem.cpp \
+	daemon/util/FileSystem.h daemon/util/Util.cpp daemon/util/Util.h \
 	code_revision.cpp $(am__append_1) $(am__append_2)
 AM_CPPFLAGS = -I$(srcdir)/daemon/connect -I$(srcdir)/daemon/extension \
 	-I$(srcdir)/daemon/feed -I$(srcdir)/daemon/frontend \
@@ -783,6 +786,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedFilterTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedInfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FeedScript.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FileSystem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Frontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HistoryCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Log.Po@am__quote@
@@ -1708,6 +1712,20 @@ Service.obj: daemon/util/Service.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/Service.cpp' object='Service.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Service.obj `if test -f 'daemon/util/Service.cpp'; then $(CYGPATH_W) 'daemon/util/Service.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Service.cpp'; fi`
+
+FileSystem.o: daemon/util/FileSystem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FileSystem.o -MD -MP -MF "$(DEPDIR)/FileSystem.Tpo" -c -o FileSystem.o `test -f 'daemon/util/FileSystem.cpp' || echo '$(srcdir)/'`daemon/util/FileSystem.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FileSystem.Tpo" "$(DEPDIR)/FileSystem.Po"; else rm -f "$(DEPDIR)/FileSystem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/FileSystem.cpp' object='FileSystem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FileSystem.o `test -f 'daemon/util/FileSystem.cpp' || echo '$(srcdir)/'`daemon/util/FileSystem.cpp
+
+FileSystem.obj: daemon/util/FileSystem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FileSystem.obj -MD -MP -MF "$(DEPDIR)/FileSystem.Tpo" -c -o FileSystem.obj `if test -f 'daemon/util/FileSystem.cpp'; then $(CYGPATH_W) 'daemon/util/FileSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/FileSystem.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FileSystem.Tpo" "$(DEPDIR)/FileSystem.Po"; else rm -f "$(DEPDIR)/FileSystem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/util/FileSystem.cpp' object='FileSystem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FileSystem.obj `if test -f 'daemon/util/FileSystem.cpp'; then $(CYGPATH_W) 'daemon/util/FileSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/FileSystem.cpp'; fi`
 
 Util.o: daemon/util/Util.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Util.o -MD -MP -MF "$(DEPDIR)/Util.Tpo" -c -o Util.o `test -f 'daemon/util/Util.cpp' || echo '$(srcdir)/'`daemon/util/Util.cpp; \

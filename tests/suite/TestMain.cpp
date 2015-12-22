@@ -31,6 +31,7 @@
 #include "Thread.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "TestUtil.h"
 
 int TestMain(int argc, char * argv[])
@@ -42,7 +43,7 @@ int TestMain(int argc, char * argv[])
 	if (argc == 1)
 	{
 		printf("Unit and integration tests for nzbget-%s.\nUse '%s -tests [quick]' to run only quick tests or '%s -h' for more options.\n",
-			   Util::VersionRevision(), Util::BaseFileName(argv[0]), Util::BaseFileName(argv[0]));
+			   Util::VersionRevision(), FileSystem::BaseFileName(argv[0]), FileSystem::BaseFileName(argv[0]));
 	}
 
 	// shift arguments for catch to not see the parameter "-tests"

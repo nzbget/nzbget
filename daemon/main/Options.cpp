@@ -26,6 +26,7 @@
 
 #include "nzbget.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "Options.h"
 #include "Log.h"
 #include "MessageBase.h"
@@ -411,9 +412,9 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	}
 	else
 	{
-		filename = Util::GetExeFileName(exeName);
+		filename = FileSystem::GetExeFileName(exeName);
 	}
-	Util::NormalizePathSeparators(filename);
+	FileSystem::NormalizePathSeparators(filename);
 	SetOption(OPTION_APPBIN, filename);
 	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';
@@ -485,8 +486,8 @@ void Options::ConfigError(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	printf("%s(%i): %s\n", m_configFilename ? Util::BaseFileName(m_configFilename) : "<noconfig>", m_configLine, tmp2);
-	error("%s(%i): %s", m_configFilename ? Util::BaseFileName(m_configFilename) : "<noconfig>", m_configLine, tmp2);
+	printf("%s(%i): %s\n", m_configFilename ? FileSystem::BaseFileName(m_configFilename) : "<noconfig>", m_configLine, tmp2);
+	error("%s(%i): %s", m_configFilename ? FileSystem::BaseFileName(m_configFilename) : "<noconfig>", m_configLine, tmp2);
 
 	m_configErrors = true;
 }
@@ -501,8 +502,8 @@ void Options::ConfigWarn(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	printf("%s(%i): %s\n", Util::BaseFileName(m_configFilename), m_configLine, tmp2);
-	warn("%s(%i): %s", Util::BaseFileName(m_configFilename), m_configLine, tmp2);
+	printf("%s(%i): %s\n", FileSystem::BaseFileName(m_configFilename), m_configLine, tmp2);
+	warn("%s(%i): %s", FileSystem::BaseFileName(m_configFilename), m_configLine, tmp2);
 }
 
 void Options::LocateOptionSrcPos(const char *optionName)
@@ -639,19 +640,19 @@ void Options::InitOptFile()
 #ifdef WIN32
 		BString<1024> filename("%s\\nzbget.conf", *m_appDir);
 
-		if (!Util::FileExists(filename))
+		if (!FileSystem::FileExists(filename))
 		{
 			char appDataPath[MAX_PATH];
 			SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appDataPath);
 			filename.Format("%s\\NZBGet\\nzbget.conf", appDataPath);
 
-			if (m_extender && !Util::FileExists(filename))
+			if (m_extender && !FileSystem::FileExists(filename))
 			{
 				m_extender->SetupFirstStart();
 			}
 		}
 
-		if (Util::FileExists(filename))
+		if (FileSystem::FileExists(filename))
 		{
 			m_configFilename = filename;
 		}
@@ -659,7 +660,7 @@ void Options::InitOptFile()
 		// look in the exe-directory first
 		BString<1024> filename("%s/nzbget.conf", *m_appDir);
 
-		if (Util::FileExists(filename))
+		if (FileSystem::FileExists(filename))
 		{
 			m_configFilename = filename;
 		}
@@ -669,9 +670,9 @@ void Options::InitOptFile()
 			while (const char* altfilename = PossibleConfigLocations[p++])
 			{
 				// substitute HOME-variable
-				filename = Util::ExpandHomePath(altfilename);
+				filename = FileSystem::ExpandHomePath(altfilename);
 
-				if (Util::FileExists(filename))
+				if (FileSystem::FileExists(filename))
 				{
 					m_configFilename = *filename;
 					break;
@@ -684,11 +685,11 @@ void Options::InitOptFile()
 	if (m_configFilename)
 	{
 		// normalize path in filename
-		CString filename = Util::ExpandFileName(m_configFilename);
+		CString filename = FileSystem::ExpandFileName(m_configFilename);
 
 #ifndef WIN32
 		// substitute HOME-variable
-		filename = Util::ExpandHomePath(filename);
+		filename = FileSystem::ExpandHomePath(filename);
 #endif
 
 		m_configFilename = *filename;
@@ -720,7 +721,7 @@ void Options::CheckDir(CString& dir, const char* optionName,
 	}
 
 	dir = tempdir;
-	Util::NormalizePathSeparators((char*)dir);
+	FileSystem::NormalizePathSeparators((char*)dir);
 	if (dir[dir.Length() - 1] != PATH_SEPARATOR)
 	{
 		dir.AppendFmt("%c", (int)PATH_SEPARATOR);
@@ -743,7 +744,7 @@ void Options::CheckDir(CString& dir, const char* optionName,
 			usedir2.Format("%s%c%s", parentDir, PATH_SEPARATOR, *dir);
 		}
 
-		Util::NormalizePathSeparators((char*)usedir2);
+		FileSystem::NormalizePathSeparators((char*)usedir2);
 		dir = usedir2;
 
 		usedir2[usedir2.Length() - 1] = '\0';
@@ -752,7 +753,7 @@ void Options::CheckDir(CString& dir, const char* optionName,
 
 	// Ensure the dir is created
 	CString errmsg;
-	if (create && !Util::ForceDirectories(dir, errmsg))
+	if (create && !FileSystem::ForceDirectories(dir, errmsg))
 	{
 		ConfigError("Invalid value for option \"%s\" (%s): %s", optionName, *dir, *errmsg);
 	}
@@ -981,7 +982,7 @@ void Options::SetOption(const char* optname, const char* value)
 		}
 		else
 		{
-			curvalue = Util::ExpandHomePath(value);
+			curvalue = FileSystem::ExpandHomePath(value);
 		}
 	}
 	else
@@ -1477,7 +1478,7 @@ void Options::LoadConfigFile()
 	}
 
 	m_configLine = 0;
-	int bufLen = (int)Util::FileSize(m_configFilename) + 1;
+	int bufLen = (int)FileSystem::FileSize(m_configFilename) + 1;
 	char* buf = (char*)malloc(bufLen);
 
 	int line = 0;
@@ -1794,7 +1795,7 @@ void Options::CheckOptions()
 	if (m_configTemplate.Empty() && !m_noDiskAccess)
 	{
 		m_configTemplate.Format("%s%s", *m_webDir, "nzbget.conf");
-		if (!Util::FileExists(m_configTemplate))
+		if (!FileSystem::FileExists(m_configTemplate))
 		{
 			m_configTemplate = "";
 		}
@@ -1822,7 +1823,7 @@ void Options::CheckOptions()
 		m_parBuffer = 400;
 	}
 
-	if (!m_unpackPassFile.Empty() && !Util::FileExists(m_unpackPassFile))
+	if (!m_unpackPassFile.Empty() && !FileSystem::FileExists(m_unpackPassFile))
 	{
 		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", *m_unpackPassFile);
 	}

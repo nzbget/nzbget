@@ -27,6 +27,7 @@
 #include "Unpack.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "ParParser.h"
 #include "Options.h"
 
@@ -379,7 +380,7 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 
 bool UnpackController::PrepareCmdParams(const char* command, ParamList* params, const char* infoName)
 {
-	if (Util::FileExists(command))
+	if (FileSystem::FileExists(command))
 	{
 		params->push_back(strdup(command));
 		return true;
@@ -419,7 +420,7 @@ void UnpackController::JoinSplittedFiles()
 	{
 		BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-		if (!Util::DirectoryExists(fullFilename) &&
+		if (!FileSystem::DirectoryExists(fullFilename) &&
 			regExSplitExt.Match(filename) && !FileHasRarSignature(fullFilename))
 		{
 			if (!JoinFile(filename))
@@ -443,7 +444,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	*extension = '\0';
 
 	BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, fragBaseName);
-	int64 firstSegmentSize = Util::FileSize(fullFilename);
+	int64 firstSegmentSize = FileSystem::FileSize(fullFilename);
 	int64 difSegmentSize = 0;
 
 	// Validate joinable file:
@@ -463,7 +464,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	{
 		fullFilename.Format("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-		if (!Util::DirectoryExists(fullFilename) && regExSplitExt.Match(filename))
+		if (!FileSystem::DirectoryExists(fullFilename) && regExSplitExt.Match(filename))
 		{
 			const char* segExt = strrchr(filename, '.');
 			int segNum = atoi(segExt + 1);
@@ -471,7 +472,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 			min = segNum < min || min == -1 ? segNum : min;
 			max = segNum > max ? segNum : max;
 
-			int64 segmentSize = Util::FileSize(fullFilename);
+			int64 segmentSize = FileSystem::FileSize(fullFilename);
 			if (segmentSize != firstSegmentSize)
 			{
 				difSizeCount++;
@@ -500,7 +501,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	if (!outFile)
 	{
 		PrintMessage(Message::mkError, "Could not create file %s: %s", *destFilename,
-			*Util::GetLastErrorMessage());
+			*FileSystem::GetLastErrorMessage());
 		return false;
 	}
 	if (g_Options->GetWriteBuffer() > 0)
@@ -521,7 +522,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 		SetProgressLabel(BString<1024>("Joining from %s.%.3i", *destBaseName, i));
 
 		BString<1024> fragFilename("%s%c%s.%.3i", *m_destDir, PATH_SEPARATOR, *destBaseName, i);
-		if (!Util::FileExists(fragFilename))
+		if (!FileSystem::FileExists(fragFilename))
 		{
 			break;
 		}
@@ -623,7 +624,7 @@ void UnpackController::CreateUnpackDir()
 	{
 		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
 		m_unpackDir.Format("%s%c%s", *m_finalDir, PATH_SEPARATOR, "_unpack");
-		m_finalDirCreated = !Util::DirectoryExists(m_finalDir);
+		m_finalDirCreated = !FileSystem::DirectoryExists(m_finalDir);
 	}
 	else
 	{
@@ -631,7 +632,7 @@ void UnpackController::CreateUnpackDir()
 	}
 
 	CString errmsg;
-	if (!Util::ForceDirectories(m_unpackDir, errmsg))
+	if (!FileSystem::ForceDirectories(m_unpackDir, errmsg))
 	{
 		PrintMessage(Message::mkError, "Could not create directory %s: %s", *m_unpackDir, *errmsg);
 	}
@@ -658,7 +659,7 @@ void UnpackController::CheckArchiveFiles(bool scanNonStdFiles)
 	{
 		BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-		if (!Util::DirectoryExists(fullFilename))
+		if (!FileSystem::DirectoryExists(fullFilename))
 		{
 			const char* ext = strchr(filename, '.');
 			int extNum = ext ? atoi(ext + 1) : -1;
@@ -737,10 +738,10 @@ bool UnpackController::Cleanup()
 
 			bool hiddenFile = filename[0] == '.';
 
-			if (!Util::MoveFile(srcFile, dstFile) && !hiddenFile)
+			if (!FileSystem::MoveFile(srcFile, dstFile) && !hiddenFile)
 			{
 				PrintMessage(Message::mkError, "Could not move file %s to %s: %s", *srcFile, *dstFile,
-					*Util::GetLastErrorMessage());
+					*FileSystem::GetLastErrorMessage());
 				ok = false;
 			}
 
@@ -749,14 +750,14 @@ bool UnpackController::Cleanup()
 	}
 
 	CString errmsg;
-	if (ok && !Util::DeleteDirectoryWithContent(m_unpackDir, errmsg))
+	if (ok && !FileSystem::DeleteDirectoryWithContent(m_unpackDir, errmsg))
 	{
 		PrintMessage(Message::mkError, "Could not delete temporary directory %s: %s", *m_unpackDir, *errmsg);
 	}
 
 	if (!m_unpackOk && m_finalDirCreated)
 	{
-		Util::RemoveDirectory(m_finalDir);
+		FileSystem::RemoveDirectory(m_finalDir);
 	}
 
 	if (m_unpackOk && ok && g_Options->GetUnpackCleanupDisk())
@@ -774,7 +775,7 @@ bool UnpackController::Cleanup()
 		{
 			BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 
-			if (!Util::DirectoryExists(fullFilename) &&
+			if (!FileSystem::DirectoryExists(fullFilename) &&
 				(m_interDir || !extractedFiles.Exists(filename)) &&
 				(regExRar.Match(filename) || regExSevenZip.Match(filename) ||
 				 (regExRarMultiSeq.Match(filename) && FileHasRarSignature(fullFilename)) ||
@@ -786,7 +787,7 @@ bool UnpackController::Cleanup()
 				if (remove(fullFilename) != 0)
 				{
 					PrintMessage(Message::mkError, "Could not delete file %s: %s", *fullFilename,
-						*Util::GetLastErrorMessage());
+						*FileSystem::GetLastErrorMessage());
 				}
 			}
 		}

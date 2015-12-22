@@ -36,6 +36,7 @@
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 class ParRenamerRepairer : public Par2Repairer
 {
@@ -155,7 +156,7 @@ void ParRenamer::BuildDirList(const char* destDir)
 		if (!m_cancelled)
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
-			if (Util::DirectoryExists(fullFilename))
+			if (FileSystem::DirectoryExists(fullFilename))
 			{
 				BuildDirList(fullFilename);
 			}
@@ -225,7 +226,7 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 
-			if (!Util::DirectoryExists(fullFilename))
+			if (!FileSystem::DirectoryExists(fullFilename))
 			{
 				m_progressLabel.Format("Checking file %s", filename);
 				m_stageProgress = m_curFile * 1000 / m_fileCount;
@@ -269,7 +270,7 @@ void ParRenamer::CheckMissing()
 bool ParRenamer::IsSplittedFragment(const char* filename, const char* correctName)
 {
 	bool splittedFragement = false;
-	const char* diskBasename = Util::BaseFileName(filename);
+	const char* diskBasename = FileSystem::BaseFileName(filename);
 	const char* extension = strrchr(diskBasename, '.');
 	int baseLen = strlen(correctName);
 	if (extension && !strncasecmp(diskBasename, correctName, baseLen))
@@ -320,7 +321,7 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 
 	free(buffer);
 
-	debug("file: %s; hash16k: %s", Util::BaseFileName(filename), hash16k.print().c_str());
+	debug("file: %s; hash16k: %s", FileSystem::BaseFileName(filename), hash16k.print().c_str());
 
 	for (FileHashList::iterator it = m_fileHashList.begin(); it != m_fileHashList.end(); it++)
 	{
@@ -332,7 +333,7 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 
 			BString<1024> dstFilename("%s%c%s", destDir, PATH_SEPARATOR, fileHash->GetFilename());
 
-			if (!Util::FileExists(dstFilename) && !IsSplittedFragment(filename, fileHash->GetFilename()))
+			if (!FileSystem::FileExists(dstFilename) && !IsSplittedFragment(filename, fileHash->GetFilename()))
 			{
 				RenameFile(filename, dstFilename);
 			}
@@ -350,7 +351,7 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 {
 	debug("Checking par2-header for %s", filename);
 
-	const char* basename = Util::BaseFileName(filename);
+	const char* basename = FileSystem::BaseFileName(filename);
 	const char* extension = strrchr(basename, '.');
 	if (extension && !strcasecmp(extension, ".par2"))
 	{
@@ -382,7 +383,7 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 	if (packet_magic != header.magic ||          // not par2-file
 		sizeof(PACKET_HEADER) > header.length || // packet length is too small
 		0 != (header.length & 3) ||              // packet length is not a multiple of 4
-		Util::FileSize(filename) < (int)header.length)       // packet would extend beyond the end of the file
+		FileSystem::FileSize(filename) < (int)header.length)       // packet would extend beyond the end of the file
 	{
 		// not par2-file or damaged header, ignoring the file
 		return;
@@ -391,11 +392,11 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 	BString<100> setId = header.setid.print().c_str();
 	for (char* p = setId; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	debug("Renaming: %s; setid: %s", Util::BaseFileName(filename), *setId);
+	debug("Renaming: %s; setid: %s", FileSystem::BaseFileName(filename), *setId);
 
 	BString<1024> destFileName;
 	int num = 1;
-	while (num == 1 || Util::FileExists(destFileName))
+	while (num == 1 || FileSystem::FileExists(destFileName))
 	{
 		destFileName.Format("%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, *setId, num);
 		num++;
@@ -406,18 +407,18 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 
 void ParRenamer::RenameFile(const char* srcFilename, const char* destFileName)
 {
-	PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(srcFilename), Util::BaseFileName(destFileName));
-	if (!Util::MoveFile(srcFilename, destFileName))
+	PrintMessage(Message::mkInfo, "Renaming %s to %s", FileSystem::BaseFileName(srcFilename), FileSystem::BaseFileName(destFileName));
+	if (!FileSystem::MoveFile(srcFilename, destFileName))
 	{
 		PrintMessage(Message::mkError, "Could not rename %s to %s: %s", srcFilename, destFileName,
-			*Util::GetLastErrorMessage());
+			*FileSystem::GetLastErrorMessage());
 		return;
 	}
 
 	m_renamedCount++;
 
 	// notify about new file name
-	RegisterRenamedFile(Util::BaseFileName(srcFilename), Util::BaseFileName(destFileName));
+	RegisterRenamedFile(FileSystem::BaseFileName(srcFilename), FileSystem::BaseFileName(destFileName));
 }
 
 #endif

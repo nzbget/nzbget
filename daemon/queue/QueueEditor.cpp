@@ -29,6 +29,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "QueueCoordinator.h"
 #include "PrePostProcessor.h"
 #include "HistoryCoordinator.h"
@@ -752,7 +753,7 @@ bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, Do
 				if (action < DownloadQueue::eaGroupMoveOffset)
 				{
 					// file action
-					BString<1024> filename("%s/%s", fileInfo->GetNzbInfo()->GetName(), Util::BaseFileName(fileInfo->GetFilename()));
+					BString<1024> filename("%s/%s", fileInfo->GetNzbInfo()->GetName(), FileSystem::BaseFileName(fileInfo->GetFilename()));
 					if (((!regEx && !strcmp(filename, name)) || (regEx && regEx->Match(filename))) &&
 						(uniqueIds.find(fileInfo->GetId()) == uniqueIds.end()))
 					{
@@ -1182,7 +1183,7 @@ void QueueEditor::ReorderFiles(ItemList* itemList)
 
 void QueueEditor::SetNzbParameter(NzbInfo* nzbInfo, const char* paramString)
 {
-	debug("QueueEditor: setting nzb parameter '%s' for '%s'", paramString, Util::BaseFileName(nzbInfo->GetFilename()));
+	debug("QueueEditor: setting nzb parameter '%s' for '%s'", paramString, FileSystem::BaseFileName(nzbInfo->GetFilename()));
 
 	char* str = strdup(paramString);
 

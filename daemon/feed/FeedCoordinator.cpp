@@ -28,6 +28,7 @@
 #include "Options.h"
 #include "WebDownloader.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "FeedFile.h"
 #include "FeedFilter.h"
 #include "FeedScript.h"
@@ -506,7 +507,7 @@ NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedIt
 	if (!nzbName.Empty())
 	{
 		BString<1024> nzbName2("%s.nzb", *nzbName);
-		Util::MakeValidFilename(nzbName2, '_', false);
+		FileSystem::MakeValidFilename(nzbName2, '_', false);
 		nzbInfo->SetFilename(nzbName2);
 	}
 

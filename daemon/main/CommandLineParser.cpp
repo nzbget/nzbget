@@ -24,11 +24,12 @@
 
 
 #include "nzbget.h"
-#include "Util.h"
+#include "CommandLineParser.h"
 #include "Log.h"
 #include "MessageBase.h"
 #include "DownloadInfo.h"
-#include "CommandLineParser.h"
+#include "FileSystem.h"
+#include "Util.h"
 
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
@@ -846,7 +847,7 @@ void CommandLineParser::PrintUsage(const char* com)
 		"                            e. g.: \"my nzb download%cmyfile.nfo\" \"another nzb\"\n"
 		"    <RegExs>                List of regular expressions (options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax\n",
-		Util::BaseFileName(com),
+		FileSystem::BaseFileName(com),
 		PATH_SEPARATOR);
 }
 

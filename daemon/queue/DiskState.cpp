@@ -29,6 +29,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
 
@@ -105,7 +106,7 @@ void StateFile::Discard()
 
 bool StateFile::FileExists()
 {
-	return Util::FileExists(m_destFilename) || Util::FileExists(m_tempFilename);
+	return FileSystem::FileExists(m_destFilename) || FileSystem::FileExists(m_tempFilename);
 }
 
 FILE* StateFile::BeginWriteTransaction()
@@ -115,7 +116,7 @@ FILE* StateFile::BeginWriteTransaction()
 	if (!m_file)
 	{
 		error("Error saving diskstate: Could not create file %s: %s", *m_tempFilename,
-			*Util::GetLastErrorMessage());
+			*FileSystem::GetLastErrorMessage());
 		return NULL;
 	}
 
@@ -129,10 +130,10 @@ bool StateFile::FinishWriteTransaction()
 	// flush file content before renaming
 	if (g_Options->GetFlushQueue())
 	{
-		debug("Flushing data for file %s", Util::BaseFileName(m_tempFilename));
+		debug("Flushing data for file %s", FileSystem::BaseFileName(m_tempFilename));
 		fflush(m_file);
 		CString errmsg;
-		if (!Util::FlushFileBuffers(fileno(m_file), errmsg))
+		if (!FileSystem::FlushFileBuffers(fileno(m_file), errmsg))
 		{
 			warn("Could not flush file %s into disk: %s", *m_tempFilename, *errmsg);
 		}
@@ -146,16 +147,16 @@ bool StateFile::FinishWriteTransaction()
 	if (rename(m_tempFilename, m_destFilename))
 	{
 		error("Error saving diskstate: Could not rename file %s to %s: %s",
-			*m_tempFilename, *m_destFilename, *Util::GetLastErrorMessage());
+			*m_tempFilename, *m_destFilename, *FileSystem::GetLastErrorMessage());
 		return false;
 	}
 
 	// flush directory buffer after renaming
 	if (g_Options->GetFlushQueue())
 	{
-		debug("Flushing directory for file %s", Util::BaseFileName(m_destFilename));
+		debug("Flushing directory for file %s", FileSystem::BaseFileName(m_destFilename));
 		CString errmsg;
-		if (!Util::FlushDirBuffers(m_destFilename, errmsg))
+		if (!FileSystem::FlushDirBuffers(m_destFilename, errmsg))
 		{
 			warn("Could not flush directory buffers for file %s into disk: %s", *m_destFilename, *errmsg);
 		}
@@ -166,14 +167,14 @@ bool StateFile::FinishWriteTransaction()
 
 FILE* StateFile::BeginReadTransaction()
 {
-	if (!Util::FileExists(m_destFilename) && Util::FileExists(m_tempFilename))
+	if (!FileSystem::FileExists(m_destFilename) && FileSystem::FileExists(m_tempFilename))
 	{
 		// disaster recovery: temp-file exists but the dest-file doesn't
-		warn("Restoring diskstate file %s from %s", Util::BaseFileName(m_destFilename), Util::BaseFileName(m_tempFilename));
+		warn("Restoring diskstate file %s from %s", FileSystem::BaseFileName(m_destFilename), FileSystem::BaseFileName(m_tempFilename));
 		if (rename(m_tempFilename, m_destFilename))
 		{
 			error("Error restoring diskstate: Could not rename file %s to %s: %s",
-				*m_tempFilename, *m_destFilename, *Util::GetLastErrorMessage());
+				*m_tempFilename, *m_destFilename, *FileSystem::GetLastErrorMessage());
 			return NULL;
 		}
 	}
@@ -183,7 +184,7 @@ FILE* StateFile::BeginReadTransaction()
 	if (!m_file)
 	{
 		error("Error reading diskstate: could not open file %s: %s", *m_destFilename,
-			*Util::GetLastErrorMessage());
+			*FileSystem::GetLastErrorMessage());
 		return NULL;
 	}
 
@@ -1551,7 +1552,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 
 	BString<1024> fileName("%s%s", g_Options->GetQueueDir(), "postq");
 
-	if (!Util::FileExists(fileName))
+	if (!FileSystem::FileExists(fileName))
 	{
 		return true;
 	}
@@ -2040,7 +2041,7 @@ bool DiskState::DownloadQueueExists()
 	debug("Checking if a saved queue exists on disk");
 
 	BString<1024> fileName("%s%s", g_Options->GetQueueDir(), "queue");
-	return Util::FileExists(fileName);
+	return FileSystem::FileExists(fileName);
 }
 
 void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState)
@@ -2371,7 +2372,7 @@ void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers)
 {
 	BString<1024> cacheFlagFilename("%s%s", g_Options->GetQueueDir(), "acache");
-	bool cacheWasActive = Util::FileExists(cacheFlagFilename);
+	bool cacheWasActive = FileSystem::FileExists(cacheFlagFilename);
 
 	DirBrowser dir(g_Options->GetQueueDir());
 	while (const char* filename = dir.Next())
@@ -2913,7 +2914,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 
 	BString<1024> logFilename("%sn%i.log", g_Options->GetQueueDir(), nzbId);
 
-	if (!Util::FileExists(logFilename))
+	if (!FileSystem::FileExists(logFilename))
 	{
 		return;
 	}

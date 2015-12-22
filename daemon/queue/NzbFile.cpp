@@ -31,6 +31,7 @@
 #include "Options.h"
 #include "DiskState.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 NzbFile::NzbFile(const char* fileName, const char* category)
 {
@@ -514,7 +515,7 @@ bool NzbFile::Parse()
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* errMsg = r;
 		m_nzbInfo->AddMessage(Message::mkError, BString<1024>("Error parsing nzb-file %s: %s",
-			Util::BaseFileName(m_fileName), errMsg));
+			FileSystem::BaseFileName(m_fileName), errMsg));
 		return false;
 	}
 
@@ -526,7 +527,7 @@ bool NzbFile::Parse()
 	if (GetNzbInfo()->GetFileList()->empty())
 	{
 		m_nzbInfo->AddMessage(Message::mkError, BString<1024>(
-			"Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName)));
+			"Error parsing nzb-file %s: file has no content", FileSystem::BaseFileName(m_fileName)));
 		return false;
 	}
 
@@ -651,14 +652,14 @@ bool NzbFile::Parse()
 	if (ret != 0)
 	{
 		m_nzbInfo->AddMessage(Message::mkError, BString<1024>(
-			"Error parsing nzb-file %s", Util::BaseFileName(m_fileName)));
+			"Error parsing nzb-file %s", FileSystem::BaseFileName(m_fileName)));
 		return false;
 	}
 
 	if (m_nzbInfo->GetFileList()->empty())
 	{
 		m_nzbInfo->AddMessage(Message::mkError, BString<1024>(
-			"Error parsing nzb-file %s: file has no content", Util::BaseFileName(m_fileName)));
+			"Error parsing nzb-file %s: file has no content", FileSystem::BaseFileName(m_fileName)));
 		return false;
 	}
 

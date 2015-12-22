@@ -29,6 +29,7 @@
 #include "StatMeter.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 DiskService::DiskService()
 {
@@ -59,7 +60,7 @@ void DiskService::ServiceWork()
 
 void DiskService::CheckDiskSpace()
 {
-	int64 freeSpace = Util::FreeDiskSize(g_Options->GetDestDir());
+	int64 freeSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
 	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 	{
 		warn("Low disk space on %s. Pausing download", g_Options->GetDestDir());
@@ -68,7 +69,7 @@ void DiskService::CheckDiskSpace()
 
 	if (!Util::EmptyStr(g_Options->GetInterDir()))
 	{
-		freeSpace = Util::FreeDiskSize(g_Options->GetInterDir());
+		freeSpace = FileSystem::FreeDiskSize(g_Options->GetInterDir());
 		if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 		{
 			warn("Low disk space on %s. Pausing download", g_Options->GetInterDir());
@@ -87,7 +88,7 @@ void DiskService::CheckRequiredDir()
 		Tokenizer tok(g_Options->GetRequiredDir(), ",;");
 		while (const char* dir = tok.Next())
 		{
-			if (!Util::FileExists(dir) && !Util::DirectoryExists(dir))
+			if (!FileSystem::FileExists(dir) && !FileSystem::DirectoryExists(dir))
 			{
 				if (!wasWaitingReported)
 				{

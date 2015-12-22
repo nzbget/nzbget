@@ -29,6 +29,7 @@
 
 #include "Options.h"
 #include "DupeMatcher.h"
+#include "FileSystem.h"
 #include "TestUtil.h"
 
 TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
@@ -42,11 +43,11 @@ TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 	// prepare directories
 
 	std::string dupe1(TestUtil::WorkingDir() + "/dupe1");
-	REQUIRE(Util::ForceDirectories(dupe1.c_str(), errmsg));
+	REQUIRE(FileSystem::ForceDirectories(dupe1.c_str(), errmsg));
 	TestUtil::CopyAllFiles(dupe1, TestUtil::TestDataDir() + "/parchecker");
 
 	std::string dupe2(TestUtil::WorkingDir() + "/dupe2");
-	REQUIRE(Util::ForceDirectories(dupe2.c_str(), errmsg));
+	REQUIRE(FileSystem::ForceDirectories(dupe2.c_str(), errmsg));
 	TestUtil::CopyAllFiles(dupe2, TestUtil::TestDataDir() + "/parchecker");
 	remove((dupe2 + "/testfile.nfo").c_str());
 
@@ -54,12 +55,12 @@ TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 	std::string rardupe2(TestUtil::TestDataDir() + "/dupematcher2");
 
 	std::string nondupe(TestUtil::WorkingDir() + "/nondupe");
-	REQUIRE(Util::ForceDirectories(nondupe.c_str(), errmsg));
+	REQUIRE(FileSystem::ForceDirectories(nondupe.c_str(), errmsg));
 	TestUtil::CopyAllFiles(nondupe, TestUtil::TestDataDir() + "/parchecker");
 	remove((nondupe + "/testfile.dat").c_str());
 
 	// now test
-	int64 expectedSize = Util::FileSize((dupe1 + "/testfile.dat").c_str());
+	int64 expectedSize = FileSystem::FileSize((dupe1 + "/testfile.dat").c_str());
 
 	DupeMatcher dupe1Matcher(dupe1.c_str(), expectedSize);
 	CHECK(dupe1Matcher.Prepare());

@@ -30,6 +30,7 @@
 #include "DiskState.h"
 #include "Options.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 int FileInfo::m_idGen = 0;
 int FileInfo::m_idMax = 0;
@@ -379,14 +380,14 @@ void NzbInfo::SetFilename(const char* filename)
 
 CString NzbInfo::MakeNiceNzbName(const char * nzbFilename, bool removeExt)
 {
-	CString nicename = Util::BaseFileName(nzbFilename);
+	CString nicename = FileSystem::BaseFileName(nzbFilename);
 	if (removeExt)
 	{
 		// wipe out ".nzb"
 		char* p = strrchr(nicename, '.');
 		if (p && !strcasecmp(p, ".nzb")) *p = '\0';
 	}
-	Util::MakeValidFilename(nicename, '_', false);
+	FileSystem::MakeValidFilename(nicename, '_', false);
 	return nicename;
 }
 
@@ -451,7 +452,7 @@ CString NzbInfo::BuildFinalDirName()
 	{
 		BString<1024> categoryDir;
 		categoryDir = m_category;
-		Util::MakeValidFilename(categoryDir, '_', true);
+		FileSystem::MakeValidFilename(categoryDir, '_', true);
 		// we can't format using "finalDir.Format" because one of the parameter is "finalDir" itself.
 		finalDir = BString<1024>("%s%s%c", *finalDir, *categoryDir, PATH_SEPARATOR);
 	}
@@ -1024,7 +1025,7 @@ void FileInfo::SetPaused(bool paused)
 
 void FileInfo::MakeValidFilename()
 {
-	Util::MakeValidFilename(m_filename, '_', false);
+	FileSystem::MakeValidFilename(m_filename, '_', false);
 }
 
 void FileInfo::LockOutputFile()

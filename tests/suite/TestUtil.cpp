@@ -27,7 +27,7 @@
 
 #include "catch.h"
 
-#include "Util.h"
+#include "FileSystem.h"
 #include "TestUtil.h"
 
 bool TestUtil::m_usedWorkingDir = false;
@@ -45,18 +45,18 @@ void TestUtil::Init(const char* argv0)
 {
 	m_usedWorkingDir = false;
 
-	CString filename = Util::GetExeFileName(argv0);
-	Util::NormalizePathSeparators(filename);
+	CString filename = FileSystem::GetExeFileName(argv0);
+	FileSystem::NormalizePathSeparators(filename);
 	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';
 	DataDir = filename;
 	DataDir += "/testdata";
-	if (!Util::DirectoryExists(DataDir.c_str()))
+	if (!FileSystem::DirectoryExists(DataDir.c_str()))
 	{
 		DataDir = filename;
 		DataDir += "/tests/testdata";
 	}
-	if (!Util::DirectoryExists(DataDir.c_str()))
+	if (!FileSystem::DirectoryExists(DataDir.c_str()))
 	{
 		DataDir = "";
 	}
@@ -95,16 +95,16 @@ void TestUtil::PrepareWorkingDir(const std::string templateDir)
 	CString errmsg;
 	int retries = 20;
 
-	Util::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
-	while (Util::DirectoryExists(workDir.c_str()) && retries > 0)
+	FileSystem::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
+	while (FileSystem::DirectoryExists(workDir.c_str()) && retries > 0)
 	{
 		usleep(1000 * 100);
 		retries--;
-		Util::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
+		FileSystem::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
 	}
-	REQUIRE_FALSE(Util::DirectoryExists(workDir.c_str()));
-	Util::CreateDirectory(workDir.c_str());
-	REQUIRE(Util::DirEmpty(workDir.c_str()));
+	REQUIRE_FALSE(FileSystem::DirectoryExists(workDir.c_str()));
+	FileSystem::CreateDirectory(workDir.c_str());
+	REQUIRE(FileSystem::DirEmpty(workDir.c_str()));
 
 	CopyAllFiles(workDir, srcDir);
 }
@@ -116,14 +116,14 @@ void TestUtil::CopyAllFiles(const std::string destDir, const std::string srcDir)
 	{
 		std::string srcFile(srcDir + "/" + filename);
 		std::string dstFile(destDir + "/" + filename);
-		REQUIRE(Util::CopyFile(srcFile.c_str(), dstFile.c_str()));
+		REQUIRE(FileSystem::CopyFile(srcFile.c_str(), dstFile.c_str()));
 	}
 }
 
 void TestUtil::CleanupWorkingDir()
 {
 	CString errmsg;
-	Util::DeleteDirectoryWithContent(WorkingDir().c_str(), errmsg);
+	FileSystem::DeleteDirectoryWithContent(WorkingDir().c_str(), errmsg);
 }
 
 void TestUtil::DisableCout()

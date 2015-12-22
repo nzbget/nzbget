@@ -27,6 +27,7 @@
 #include "Script.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "Options.h"
 
 // System global variable holding environments variables
@@ -315,7 +316,7 @@ void ScriptController::PrepareArgs()
 				}
 			}
 			warn("Could not found associated program for %s. Trying to execute %s directly",
-				extension, Util::BaseFileName(GetScript()));
+				extension, FileSystem::BaseFileName(GetScript()));
 		}
 	}
 #endif
@@ -506,7 +507,7 @@ int ScriptController::StartProcess()
 		{
 			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, errCode);
 		}
-		if (!Util::FileExists(m_script))
+		if (!FileSystem::FileExists(m_script))
 		{
 			PrintMessage(Message::mkError, "Could not find file %s", m_script);
 		}
@@ -586,7 +587,7 @@ int ScriptController::StartProcess()
 		{
 			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_script);
 			fflush(stdout);
-			Util::FixExecPermission(m_script);
+			FileSystem::FixExecPermission(m_script);
 			execvp(m_script, (char* const*)m_args);
 		}
 

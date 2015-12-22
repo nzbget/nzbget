@@ -28,6 +28,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 void SchedulerScriptController::StartScript(const char* param, bool externalProcess, int taskId)
 {
@@ -101,12 +102,12 @@ void SchedulerScriptController::PrepareParams(const char* scriptName)
 
 void SchedulerScriptController::ExecuteExternalProcess()
 {
-	info("Executing scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
+	info("Executing scheduled process-script %s for Task%i", FileSystem::BaseFileName(GetScript()), m_taskId);
 
-	BString<1024> infoName("scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_taskId);
+	BString<1024> infoName("scheduled process-script %s for Task%i", FileSystem::BaseFileName(GetScript()), m_taskId);
 	SetInfoName(infoName);
 
-	BString<1024> logPrefix = Util::BaseFileName(GetScript());
+	BString<1024> logPrefix = FileSystem::BaseFileName(GetScript());
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(logPrefix);
 

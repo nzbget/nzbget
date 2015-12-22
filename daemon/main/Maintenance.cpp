@@ -25,7 +25,7 @@
 
 #include "nzbget.h"
 #include "Log.h"
-#include "Util.h"
+#include "FileSystem.h"
 #include "Maintenance.h"
 #include "Options.h"
 #include "CommandLineParser.h"
@@ -182,7 +182,7 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 
 	char* packageInfo;
 	int packageInfoLen;
-	if (!Util::LoadFileIntoBuffer(fileName, &packageInfo, &packageInfoLen))
+	if (!FileSystem::LoadFileIntoBuffer(fileName, &packageInfo, &packageInfoLen))
 	{
 		error("Could not load file %s", *fileName);
 		return false;
@@ -252,7 +252,7 @@ void UpdateScriptController::Run()
 	m_prefixLen = 0;
 	PrintMessage(Message::mkInfo, "Executing update-script %s", GetScript());
 
-	BString<1024> infoName("update-script %s", Util::BaseFileName(GetScript()));
+	BString<1024> infoName("update-script %s", FileSystem::BaseFileName(GetScript()));
 	SetInfoName(infoName);
 
 	const char* branchName[] = { "STABLE", "TESTING", "DEVEL" };
@@ -274,7 +274,7 @@ void UpdateScriptController::Run()
 
 	SetEnvVar("NZBUP_PROCESSID", BString<100>("%i", pid));
 
-	BString<100> logPrefix = Util::BaseFileName(GetScript());
+	BString<100> logPrefix = FileSystem::BaseFileName(GetScript());
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	SetLogPrefix(logPrefix);
 	m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
@@ -310,15 +310,15 @@ void UpdateScriptController::AddMessage(Message::EKind kind, const char* text)
 
 void UpdateInfoScriptController::ExecuteScript(const char* script, char** updateInfo)
 {
-	detail("Executing update-info-script %s", Util::BaseFileName(script));
+	detail("Executing update-info-script %s", FileSystem::BaseFileName(script));
 
 	UpdateInfoScriptController* scriptController = new UpdateInfoScriptController();
 	scriptController->SetScript(script);
 
-	BString<1024> infoName("update-info-script %s", Util::BaseFileName(script));
+	BString<1024> infoName("update-info-script %s", FileSystem::BaseFileName(script));
 	scriptController->SetInfoName(infoName);
 
-	BString<1024> logPrefix = Util::BaseFileName(script);
+	BString<1024> logPrefix = FileSystem::BaseFileName(script);
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
 	scriptController->SetLogPrefix(logPrefix);
 	scriptController->m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
@@ -394,7 +394,7 @@ bool Signature::ComputeInHash()
 // Read signature from file (m_szSigFilename) into memory
 bool Signature::ReadSignature()
 {
-	BString<1024> sigTitle("\"RSA-SHA256(%s)\" : \"", Util::BaseFileName(m_inFilename));
+	BString<1024> sigTitle("\"RSA-SHA256(%s)\" : \"", FileSystem::BaseFileName(m_inFilename));
 
 	FILE* infile = fopen(m_sigFilename, FOPEN_RB);
 	if (!infile)
@@ -442,7 +442,7 @@ bool Signature::ReadPubKey()
 {
 	char* keybuf;
 	int keybuflen;
-	if (!Util::LoadFileIntoBuffer(m_pubKeyFilename, &keybuf, &keybuflen))
+	if (!FileSystem::LoadFileIntoBuffer(m_pubKeyFilename, &keybuf, &keybuflen))
 	{
 		return false;
 	}

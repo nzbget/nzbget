@@ -25,6 +25,7 @@
 
 #include "nzbget.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "Options.h"
 #include "Log.h"
 #include "ScriptConfig.h"
@@ -123,7 +124,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 		return false;
 	}
 
-	int bufLen = (int)Util::FileSize(g_Options->GetConfigFilename()) + 1;
+	int bufLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename()) + 1;
 	char* buf = (char*)malloc(bufLen);
 
 	while (fgets(buf, bufLen - 1, infile))
@@ -168,7 +169,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	std::set<Options::OptEntry*> writtenOptions;
 
 	// read config file into memory array
-	int fileLen = (int)Util::FileSize(g_Options->GetConfigFilename());
+	int fileLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename());
 	CString content;
 	content.Reserve(fileLen);
 	while (fgets(content, fileLen, infile))
@@ -228,7 +229,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	int pos = (int)ftell(infile);
 	fclose(infile);
 
-	Util::TruncateFile(g_Options->GetConfigFilename(), pos);
+	FileSystem::TruncateFile(g_Options->GetConfigFilename(), pos);
 
 	return true;
 }
@@ -237,7 +238,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 {
 	char* buffer;
 	int length;
-	if (!Util::LoadFileIntoBuffer(g_Options->GetConfigTemplate(), &buffer, &length))
+	if (!FileSystem::LoadFileIntoBuffer(g_Options->GetConfigTemplate(), &buffer, &length))
 	{
 		return false;
 	}
@@ -376,7 +377,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 		{
 			BString<1024> fullFilename("%s%s", directory, filename);
 
-			if (!Util::DirectoryExists(fullFilename))
+			if (!FileSystem::DirectoryExists(fullFilename))
 			{
 				// check if the file contains pp-script-signature
 				FILE* infile = fopen(fullFilename, FOPEN_RB);
@@ -412,7 +413,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 										directory2[len-1] = '\0';
 									}
 
-									scriptName.Format("%s%c%s", Util::BaseFileName(directory2), PATH_SEPARATOR, filename);
+									scriptName.Format("%s%c%s", FileSystem::BaseFileName(directory2), PATH_SEPARATOR, filename);
 								}
 								else
 								{
@@ -474,7 +475,7 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 		BString<1024> shortName = script->GetName();
 		if (char* ext = strrchr(shortName, '.')) *ext = '\0'; // strip file extension
 
-		const char* displayName = Util::BaseFileName(shortName);
+		const char* displayName = FileSystem::BaseFileName(shortName);
 
 		for (Scripts::iterator it2 = scripts->begin(); it2 != scripts->end(); it2++)
 		{
@@ -483,7 +484,7 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 			BString<1024> shortName2 = script2->GetName();
 			if (char* ext = strrchr(shortName2, '.')) *ext = '\0'; // strip file extension
 
-			const char* displayName2 = Util::BaseFileName(shortName2);
+			const char* displayName2 = FileSystem::BaseFileName(shortName2);
 
 			if (!strcmp(displayName, displayName2) && script->GetName() != script2->GetName())
 			{

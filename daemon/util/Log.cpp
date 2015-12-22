@@ -27,6 +27,7 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 Log* g_Log = NULL;
 
@@ -48,7 +49,7 @@ Log::Log()
 	m_optInit = false;
 	m_lastWritten = 0;
 #ifdef DEBUG
-	m_extraDebug = Util::FileExists("extradebug");
+	m_extraDebug = FileSystem::FileExists("extradebug");
 #endif
 }
 
@@ -150,11 +151,11 @@ void debug(const char* msg, ...)
 #ifdef HAVE_VARIADIC_MACROS
 	if (funcname)
 	{
-		tmp2.Format("%s (%s:%i:%s)", tmp1, Util::BaseFileName(filename), lineNr, funcname);
+		tmp2.Format("%s (%s:%i:%s)", tmp1, FileSystem::BaseFileName(filename), lineNr, funcname);
 	}
 	else
 	{
-		tmp2.Format("%s (%s:%i)", tmp1, Util::BaseFileName(filename), lineNr);
+		tmp2.Format("%s (%s:%i)", tmp1, FileSystem::BaseFileName(filename), lineNr);
 	}
 #else
 	tmp2.Format("%s", tmp1);
@@ -350,7 +351,7 @@ void Log::RotateLog()
 	BString<1024> directory = g_Options->GetLogFile();
 
 	// split the full filename into path, basename and extension
-	char* baseName = Util::BaseFileName(directory);
+	char* baseName = FileSystem::BaseFileName(directory);
 	if (baseName > directory)
 	{
 		baseName[-1] = '\0';

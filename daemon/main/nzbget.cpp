@@ -55,6 +55,7 @@
 #include "StatMeter.h"
 #include "QueueScript.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "StackTrace.h"
 #ifdef WIN32
 #include "WinService.h"
@@ -178,13 +179,13 @@ void RunMain()
 	// the program is reloaded (RPC-Method "reload") in order for
 	// config to properly load in a case relative paths are used
 	// in command line
-	CString curDir = Util::GetCurrentDirectory();
+	CString curDir = FileSystem::GetCurrentDirectory();
 
 	bool reload = false;
 	while (g_Reloading)
 	{
 		g_Reloading = false;
-		Util::SetCurrentDirectory(curDir);
+		FileSystem::SetCurrentDirectory(curDir);
 		Run(reload);
 		reload = true;
 	}

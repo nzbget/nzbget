@@ -31,6 +31,7 @@
 #include "FeedCoordinator.h"
 #include "ServerPool.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "Maintenance.h"
 #include "StatMeter.h"
 #include "ArticleWriter.h"
@@ -1347,7 +1348,7 @@ void StatusXmlCommand::Execute()
 	Util::SplitInt64(allBytes, &downloadedSizeHi, &downloadedSizeLo);
 	int averageDownloadRate = (int)(downloadTimeSec > 0 ? allBytes / downloadTimeSec : 0);
 	uint32 freeDiskSpaceHi, freeDiskSpaceLo;
-	int64 freeDiskSpace = Util::FreeDiskSize(g_Options->GetDestDir());
+	int64 freeDiskSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
 	int serverTime = time(NULL);
@@ -3061,7 +3062,7 @@ void ReadUrlXmlCommand::Execute()
 	// generate temp file name
 	BString<1024> tempFileName;
 	int num = 1;
-	while (num == 1 || Util::FileExists(tempFileName))
+	while (num == 1 || FileSystem::FileExists(tempFileName))
 	{
 		tempFileName.Format("%sreadurl-%i.tmp", g_Options->GetTempDir(), num);
 		num++;
@@ -3084,7 +3085,7 @@ void ReadUrlXmlCommand::Execute()
 	{
 		char* fileContent = NULL;
 		int fileContentLen = 0;
-		Util::LoadFileIntoBuffer(tempFileName, &fileContent, &fileContentLen);
+		FileSystem::LoadFileIntoBuffer(tempFileName, &fileContent, &fileContentLen);
 		CString xmlContent = EncodeStr(fileContent);
 		free(fileContent);
 		AppendResponse(IsJson() ? "\"" : "<string>");
