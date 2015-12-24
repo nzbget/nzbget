@@ -622,7 +622,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	{
 		error("Could not move file %s to %s: %s", *tempFileName, *scanFileName,
 			*FileSystem::GetLastErrorMessage());
-		remove(tempFileName);
+		FileSystem::DeleteFile(tempFileName);
 		m_scanMutex.Unlock(); // UNLOCK
 		return asFailed;
 	}

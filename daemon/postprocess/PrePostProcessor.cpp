@@ -319,7 +319,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 			if (FileSystem::FileExists(fullFileName))
 			{
 				detail("Deleting file %s", completedFile->GetFileName());
-				remove(fullFileName);
+				FileSystem::DeleteFile(fullFileName);
 			}
 		}
 

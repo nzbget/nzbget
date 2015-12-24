@@ -376,7 +376,7 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId());
 			FeedFile* feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
-			remove(feedInfo->GetOutputFilename());
+			FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
 			NzbList addedNzbs;
 

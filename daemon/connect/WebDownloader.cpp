@@ -182,7 +182,7 @@ WebDownloader::EStatus WebDownloader::Download()
 	if (Status != adFinished)
 	{
 		// Download failed, delete broken output file
-		remove(m_outputFilename);
+		FileSystem::DeleteFile(m_outputFilename);
 	}
 
 	return Status;

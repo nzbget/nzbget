@@ -49,7 +49,7 @@ TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 	std::string dupe2(TestUtil::WorkingDir() + "/dupe2");
 	REQUIRE(FileSystem::ForceDirectories(dupe2.c_str(), errmsg));
 	TestUtil::CopyAllFiles(dupe2, TestUtil::TestDataDir() + "/parchecker");
-	remove((dupe2 + "/testfile.nfo").c_str());
+	FileSystem::DeleteFile((dupe2 + "/testfile.nfo").c_str());
 
 	std::string rardupe1(TestUtil::TestDataDir() + "/dupematcher1");
 	std::string rardupe2(TestUtil::TestDataDir() + "/dupematcher2");

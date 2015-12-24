@@ -820,7 +820,7 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* fileInfo)
 			ArticleInfo* pa = *it;
 			if (pa->GetResultFilename())
 			{
-				remove(pa->GetResultFilename());
+				FileSystem::DeleteFile(pa->GetResultFilename());
 			}
 		}
 	}

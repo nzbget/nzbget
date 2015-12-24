@@ -792,7 +792,7 @@ void Cleanup()
 		if (g_CommandLineParser->GetDaemonMode() && !g_Reloading)
 		{
 			info("Deleting lock file");
-			remove(g_Options->GetLockFile());
+			FileSystem::DeleteFile(g_Options->GetLockFile());
 		}
 		delete g_Options;
 	}

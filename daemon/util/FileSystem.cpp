@@ -363,7 +363,7 @@ bool FileSystem::MoveFile(const char* srcFilename, const char* dstFilename)
 #ifndef WIN32
 	if (!ok && errno == EXDEV)
 	{
-		ok = CopyFile(srcFilename, dstFilename) && remove(srcFilename) == 0;
+		ok = CopyFile(srcFilename, dstFilename) && DeleteFile(srcFilename);
 	}
 #endif
 
@@ -402,6 +402,11 @@ bool FileSystem::CopyFile(const char* srcFilename, const char* dstFilename)
 	return true;
 }
 
+bool FileSystem::DeleteFile(const char* filename)
+{
+	return remove(filename) == 0;
+}
+
 bool FileSystem::FileExists(const char* filename)
 {
 #ifdef WIN32
@@ -425,7 +430,7 @@ bool FileSystem::FileExists(const char* filename)
 bool FileSystem::FileExists(const char* path, const char* filenameWithoutPath)
 {
 	BString<1024> fullFilename("%s%c%s", path, (int)PATH_SEPARATOR, filenameWithoutPath);
-	bool exists = FileSystem::FileExists(fullFilename);
+	bool exists = FileExists(fullFilename);
 	return exists;
 }
 

@@ -343,7 +343,7 @@ void Log::UnlockMessages()
 
 void Log::ResetLog()
 {
-	remove(g_Options->GetLogFile());
+	FileSystem::DeleteFile(g_Options->GetLogFile());
 }
 
 void Log::RotateLog()

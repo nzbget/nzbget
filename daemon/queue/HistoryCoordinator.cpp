@@ -131,7 +131,7 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 		if (FileSystem::FileExists(name1))
 		{
 			info("Deleting file %s", name1);
-			remove(name1);
+			FileSystem::DeleteFile(name1);
 		}
 	}
 

@@ -101,7 +101,7 @@ StateFile::~StateFile()
 
 void StateFile::Discard()
 {
-	remove(m_destFilename);
+	FileSystem::DeleteFile(m_destFilename);
 }
 
 bool StateFile::FileExists()
@@ -144,7 +144,7 @@ bool StateFile::FinishWriteTransaction()
 
 	// now rename to dest file name
 	remove(m_destFilename);
-	if (rename(m_tempFilename, m_destFilename))
+	if (!FileSystem::MoveFile(m_tempFilename, m_destFilename))
 	{
 		error("Error saving diskstate: Could not rename file %s to %s: %s",
 			*m_tempFilename, *m_destFilename, *FileSystem::GetLastErrorMessage());

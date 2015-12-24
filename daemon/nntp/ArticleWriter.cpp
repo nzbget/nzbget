@@ -199,8 +199,8 @@ void ArticleWriter::Finish(bool success)
 
 	if (!success)
 	{
-		remove(m_tempFilename);
-		remove(m_resultFilename);
+		FileSystem::DeleteFile(m_tempFilename);
+		FileSystem::DeleteFile(m_resultFilename);
 		return;
 	}
 

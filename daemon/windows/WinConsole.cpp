@@ -1032,7 +1032,7 @@ void WinConsole::ResetFactoryDefaults()
 	// delete old config file in the program's directory
 	path.Format("%s\\nzbget.conf", g_Options->GetAppDir());
 
-	remove(path);
+	FileSystem::DeleteFile(path);
 	errmsg = FileSystem::GetLastErrorMessage();
 
 	if (FileSystem::FileExists(path))

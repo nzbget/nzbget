@@ -99,7 +99,7 @@ TEST_CASE("Par-renamer: detecting missing", "[Par][ParRenamer][Slow][TestData]")
 	ParRenamerMock parRenamer;
 	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
 	parRenamer.SetDetectMissing(true);
-	REQUIRE(remove((TestUtil::WorkingDir() + "/testfile.nfo").c_str()) == 0);
+	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile.nfo").c_str()));
 	parRenamer.Execute();
 
 	REQUIRE(parRenamer.GetStatus() == ParRenamer::psSuccess);

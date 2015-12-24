@@ -3097,7 +3097,7 @@ void ReadUrlXmlCommand::Execute()
 		BuildErrorResponse(3, "Could not read url");
 	}
 
-	remove(tempFileName);
+	FileSystem::DeleteFile(tempFileName);
 }
 
 // string checkupdates()

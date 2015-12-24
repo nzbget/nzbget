@@ -734,7 +734,7 @@ bool UnpackController::Cleanup()
 			BString<1024> dstFile("%s%c%s", !m_finalDir.Empty() ? *m_finalDir : *m_destDir, PATH_SEPARATOR, filename);
 
 			// silently overwrite existing files
-			remove(dstFile);
+			FileSystem::DeleteFile(dstFile);
 
 			bool hiddenFile = filename[0] == '.';
 

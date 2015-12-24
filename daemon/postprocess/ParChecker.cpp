@@ -1323,7 +1323,7 @@ void ParChecker::DeleteLeftovers()
 		if (!found)
 		{
 			PrintMessage(Message::mkInfo, "Deleting file %s", FileSystem::BaseFileName(sourceFile->FileName().c_str()));
-			remove(sourceFile->FileName().c_str());
+			FileSystem::DeleteFile(sourceFile->FileName().c_str());
 		}
 	}
 }
