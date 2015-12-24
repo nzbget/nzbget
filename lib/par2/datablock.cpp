@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // Open the file associated with the data block if is not already open
 bool DataBlock::Open(void)
 {
@@ -106,3 +109,5 @@ bool DataBlock::WriteData(u64         position, // Position within the block
 
   return true;
 }
+
+} // end namespace Par2

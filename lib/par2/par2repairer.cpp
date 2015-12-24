@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 Par2Repairer::Par2Repairer(void)
 {
   firstpacket = true;
@@ -2553,3 +2556,5 @@ bool Par2Repairer::DeleteIncompleteTargetFiles(void)
 
   return true;
 }
+
+} // end namespace Par2

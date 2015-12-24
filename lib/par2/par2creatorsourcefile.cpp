@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 Par2CreatorSourceFile::Par2CreatorSourceFile(void)
 {
   descriptionpacket = 0;
@@ -341,3 +344,5 @@ void Par2CreatorSourceFile::FinishHashes(void)
   // Store it in the description packet
   descriptionpacket->HashFull(hash);
 }
+
+} // end namespace Par2

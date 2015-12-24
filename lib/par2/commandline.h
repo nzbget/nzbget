@@ -20,6 +20,9 @@
 #ifndef __COMMANDLINE_H__
 #define __COMMANDLINE_H__
 
+namespace Par2
+{
+
 // The CommandLine object is responsible for understanding the format
 // of the command line parameters are parsing the command line to
 // extract details as to what the user wants to do.
@@ -153,5 +156,7 @@ protected:
 };
 
 typedef list<CommandLine::ExtraFile>::const_iterator ExtraFileIterator;
+
+} // end namespace Par2
 
 #endif // __COMMANDLINE_H__

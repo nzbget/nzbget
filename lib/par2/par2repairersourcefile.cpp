@@ -28,6 +28,8 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2 {
+
 Par2RepairerSourceFile::Par2RepairerSourceFile(DescriptionPacket *_descriptionpacket,
                                                VerificationPacket *_verificationpacket)
 {
@@ -158,3 +160,5 @@ void Par2RepairerSourceFile::SetBlockCount(u64 blocksize)
     blockcount = 0;
   }
 }
+
+} // end namespace Par2

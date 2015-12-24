@@ -28,6 +28,8 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
 
 #ifdef WIN32
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -993,3 +995,5 @@ DiskFile* DiskFileMap::Find(string filename) const
 
   return (f != diskfilemap.end()) ?  f->second : 0;
 }
+
+} // end namespace Par2

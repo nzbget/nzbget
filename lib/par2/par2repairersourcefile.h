@@ -20,6 +20,9 @@
 #ifndef __PAR2REPAIRERSOURCEFILE_H__
 #define __PAR2REPAIRERSOURCEFILE_H__
 
+namespace Par2
+{
+
 enum MatchType
 {
   eNoMatch = 0,
@@ -102,5 +105,7 @@ protected:
 
   string                       targetfilename;      // The filename of the target file
 };
+
+} // end namespace Par2
 
 #endif // __PAR2REPAIRERSOURCEFILE_H__

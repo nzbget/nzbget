@@ -38,7 +38,7 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-class ParRenamerRepairer : public Par2Repairer
+class ParRenamerRepairer : public Par2::Par2Repairer
 {
 public:
 	friend class ParRenamer;
@@ -196,14 +196,14 @@ void ParRenamer::LoadParFile(const char* parFilename)
 		return;
 	}
 
-	for (map<MD5Hash, Par2RepairerSourceFile*>::iterator it = repairer->sourcefilemap.begin(); it != repairer->sourcefilemap.end(); it++)
+	for (map<Par2::MD5Hash, Par2::Par2RepairerSourceFile*>::iterator it = repairer->sourcefilemap.begin(); it != repairer->sourcefilemap.end(); it++)
 	{
 		if (m_cancelled)
 		{
 			break;
 		}
 
-		Par2RepairerSourceFile* sourceFile = (*it).second;
+		Par2::Par2RepairerSourceFile* sourceFile = (*it).second;
 		if (!sourceFile || !sourceFile->GetDescriptionPacket())
 		{
 			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", parFilename);
@@ -314,8 +314,8 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 
 	fclose(file);
 
-	MD5Hash hash16k;
-	MD5Context context;
+	Par2::MD5Hash hash16k;
+	Par2::MD5Context context;
 	context.Update(buffer, readBytes);
 	context.Final(hash16k);
 
@@ -367,7 +367,7 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 	}
 
 	// load par2-header
-	PACKET_HEADER header;
+	Par2::PACKET_HEADER header;
 
 	int readBytes = fread(&header, 1, sizeof(header), file);
 	int error = ferror(file);
@@ -380,8 +380,8 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 	fclose(file);
 
 	// Check the packet header
-	if (packet_magic != header.magic ||          // not par2-file
-		sizeof(PACKET_HEADER) > header.length || // packet length is too small
+	if (Par2::packet_magic != header.magic ||          // not par2-file
+		sizeof(Par2::PACKET_HEADER) > header.length || // packet length is too small
 		0 != (header.length & 3) ||              // packet length is not a multiple of 4
 		FileSystem::FileSize(filename) < (int)header.length)       // packet would extend beyond the end of the file
 	{

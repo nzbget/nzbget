@@ -19,6 +19,10 @@
 
 #include <stdlib.h>
 #include <iostream>
+
+namespace Par2
+{
+
 class ParHeaders {
  public:
   std::string setid;
@@ -34,3 +38,5 @@ class ParHeaders {
   ParHeaders(void);
 
 };
+
+} // end namespace Par2

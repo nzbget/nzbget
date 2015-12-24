@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // Construct the main packet from the source files and the block size
 
 bool MainPacket::Create(vector<Par2CreatorSourceFile*> &sourcefiles, u64 _blocksize)
@@ -129,3 +132,5 @@ bool MainPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &header)
 
   return true;
 }
+
+} // end namespace Par2

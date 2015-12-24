@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 RecoveryPacket::RecoveryPacket(void)
 {
   diskfile = NULL;
@@ -126,3 +129,5 @@ bool RecoveryPacket::Load(DiskFile      *_diskfile,
   // Read the rest of the packet header
   return diskfile->Read(offset + sizeof(packet.header), &packet.exponent, sizeof(packet)-sizeof(packet.header));
 }
+
+} // end namespace Par2

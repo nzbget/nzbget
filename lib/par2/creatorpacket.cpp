@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // Construct the creator packet. 
 
 // The only external information required to complete construction is 
@@ -84,3 +87,5 @@ bool CreatorPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &header)
                         packet->client, 
                         (size_t)packet->header.length - sizeof(PACKET_HEADER));
 }
+
+} // end namespace Par2

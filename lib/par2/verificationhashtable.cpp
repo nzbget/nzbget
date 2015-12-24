@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 VerificationHashTable::VerificationHashTable(void)
 {
   hashmask = 0;
@@ -106,3 +109,5 @@ void VerificationHashTable::Load(Par2RepairerSourceFile *sourcefile, u64 blocksi
     ++verificationentry;
   }
 }
+
+} // end namespace Par2

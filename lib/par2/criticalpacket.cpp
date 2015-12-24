@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 bool CriticalPacket::WritePacket(DiskFile &diskfile, u64 fileoffset) const
 {
   assert(packetdata != 0 && packetlength != 0);
@@ -47,3 +50,4 @@ void CriticalPacket::FinishPacket(const MD5Hash &setid)
   packetcontext.Final(header->hash);
 }
 
+} // end namespace Par2

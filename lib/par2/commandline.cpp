@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 CommandLine::ExtraFile::ExtraFile(void)
 : filename()
 , filesize(0)
@@ -826,3 +829,5 @@ bool CommandLine::Parse(int argc, char *argv[])
 
   return true;
 }
+
+} // end namespace Par2

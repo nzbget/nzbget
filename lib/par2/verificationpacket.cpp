@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // Create a packet large enough for the specified number of blocks
 
 bool VerificationPacket::Create(u32 _blockcount)
@@ -102,3 +105,5 @@ bool VerificationPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &hea
                         &packet->fileid, 
                         (size_t)packet->header.length - sizeof(PACKET_HEADER));
 }
+
+} // end namespace Par2

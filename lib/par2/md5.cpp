@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // Convert hash values to hex
 
 ostream& operator<<(ostream &result, const MD5Hash &h)
@@ -350,3 +353,4 @@ string MD5Context::print(void) const
   return buffer;
 }
 
+} // end namespace Par2

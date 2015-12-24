@@ -20,6 +20,9 @@
 #ifndef __PAR2CREATORSOURCEFILE_H__
 #define __PAR2CREATORSOURCEFILE_H__
 
+namespace Par2
+{
+
 class DescriptionPacket;
 class VerificationPacket;
 class DiskFile;
@@ -77,5 +80,7 @@ protected:
 
   MD5Context *contextfull; // MD5 context used to calculate the hash of the whole file
 };
+
+} // end namespace Par2
 
 #endif // __PAR2CREATORSOURCEFILE_H__

@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // The one and only CCITT CRC32 lookup table
 crc32table ccitttable(0xEDB88320L);
 
@@ -77,3 +80,5 @@ u32 ComputeWindowMask(u64 window)
 
   return result;
 }
+
+} // end namespace Par2

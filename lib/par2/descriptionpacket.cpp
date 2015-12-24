@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // Construct the packet and store the filename and size.
 
 bool DescriptionPacket::Create(string filename, u64 filesize)
@@ -112,3 +115,5 @@ bool DescriptionPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &head
 
   return true;
 }
+
+} // end namespace Par2

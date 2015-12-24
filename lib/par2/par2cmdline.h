@@ -31,6 +31,9 @@
 
 #define __BYTE_ORDER __LITTLE_ENDIAN
 
+namespace Par2
+{
+
 typedef unsigned char    u8;
 typedef unsigned short   u16;
 typedef unsigned long    u32;
@@ -45,8 +48,12 @@ typedef unsigned int     size_t;
 #  define _SIZE_T_DEFINED
 #endif
 
+} // end namespace Par2
 
 #else // WIN32
+
+namespace Par2
+{
 
 #if HAVE_STDINT_H
 typedef uint8_t            u8;
@@ -59,6 +66,8 @@ typedef unsigned short     u16;
 typedef unsigned int       u32;
 typedef unsigned long long u64;
 #endif
+
+} // end namespace Par2
 
 #if !HAVE_STRICMP
 #    define stricmp strcasecmp
@@ -99,6 +108,9 @@ typedef unsigned long long u64;
 #define ALTPATHSEP "\\"
 #endif
 
+namespace Par2
+{
+
 // Return type of par2cmdline
 typedef enum Result
 {
@@ -128,6 +140,8 @@ typedef enum Result
   eMemoryError                 = 8,  // Out of memory
 
 } Result;
+
+} // end namespace Par2
 
 #define LONGMULTIPLY
 

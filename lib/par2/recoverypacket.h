@@ -20,6 +20,9 @@
 #ifndef __RECOVERYPACKET_H__
 #define __RECOVERYPACKET_H__
 
+namespace Par2
+{
+
 // The RecoveryPacket object is used to access a specific recovery
 // packet within a recovery file (for when creating them, or using
 // them during a repair operation).
@@ -96,5 +99,7 @@ inline DataBlock* RecoveryPacket::GetDataBlock(void)
 {
   return &datablock;
 }
+
+} // end namespace Par2
 
 #endif // __RECOVERYPACKET_H__

@@ -20,6 +20,9 @@
 #ifndef __FILECHECKSUMMER_H__
 #define __FILECHECKSUMMER_H__
 
+namespace Par2
+{
+
 // This source file defines the FileCheckSummer object which is used
 // when scanning a data file to find blocks of undamaged data.
 //
@@ -174,5 +177,6 @@ inline bool FileCheckSummer::Step(void)
   return Fill();
 }
 
+} // end namespace Par2
 
 #endif // __FILECHECKSUMMER_H__

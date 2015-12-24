@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 u32 gcd(u32 a, u32 b)
 {
   if (a && b)
@@ -370,3 +373,4 @@ template <> bool ReedSolomon<Galois16>::Process(size_t size, u32 inputindex, con
   return eSuccess;
 }
 
+} // end namespace Par2

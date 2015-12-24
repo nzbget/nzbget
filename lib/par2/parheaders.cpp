@@ -20,6 +20,9 @@
 #include "nzbget.h"
 #include "parheaders.h"
 
+namespace Par2
+{
+
 ParHeaders::ParHeaders(void) {
   packets = -1;
   recovery_block = -1;
@@ -31,3 +34,5 @@ ParHeaders::ParHeaders(void) {
   setid = "";
   chunk_size = -1;
 }
+
+} // end namespace Par2

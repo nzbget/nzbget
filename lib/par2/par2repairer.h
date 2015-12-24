@@ -22,6 +22,8 @@
 
 #include "parheaders.h"
 
+namespace Par2 {
+
 class Par2Repairer
 {
 public:
@@ -195,5 +197,7 @@ protected:
 
   bool                      cancelled;               // repair cancelled
 };
+
+} // end namespace Par2
 
 #endif // __PAR2REPAIRER_H__

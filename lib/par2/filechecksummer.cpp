@@ -28,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #endif
 #endif
 
+namespace Par2
+{
+
 // Construct the checksummer and allocate buffers
 
 FileCheckSummer::FileCheckSummer(DiskFile   *_diskfile,
@@ -254,3 +257,5 @@ MD5Hash FileCheckSummer::ShortHash(u64 blocklength)
 
   return hash;
 }
+
+} // end namespace Par2
