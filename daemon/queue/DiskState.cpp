@@ -130,7 +130,7 @@ bool StateFile::FinishWriteTransaction()
 	m_file.Close();
 
 	// now rename to dest file name
-	remove(m_destFilename);
+	FileSystem::DeleteFile(m_destFilename);
 	if (!FileSystem::MoveFile(m_tempFilename, m_destFilename))
 	{
 		error("Error saving diskstate: Could not rename file %s to %s: %s",
@@ -158,7 +158,7 @@ DiskFile* StateFile::BeginReadTransaction()
 	{
 		// disaster recovery: temp-file exists but the dest-file doesn't
 		warn("Restoring diskstate file %s from %s", FileSystem::BaseFileName(m_destFilename), FileSystem::BaseFileName(m_tempFilename));
-		if (rename(m_tempFilename, m_destFilename))
+		if (!FileSystem::MoveFile(m_tempFilename, m_destFilename))
 		{
 			error("Error restoring diskstate: Could not rename file %s to %s: %s",
 				*m_tempFilename, *m_destFilename, *FileSystem::GetLastErrorMessage());
@@ -1442,18 +1442,18 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 		if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
 		{
 			filename.Format("%s%i", g_Options->GetQueueDir(), completedFile->GetId());
-			remove(filename);
+			FileSystem::DeleteFile(filename);
 
 			filename.Format("%s%is", g_Options->GetQueueDir(), completedFile->GetId());
-			remove(filename);
+			FileSystem::DeleteFile(filename);
 
 			filename.Format("%s%ic", g_Options->GetQueueDir(), completedFile->GetId());
-			remove(filename);
+			FileSystem::DeleteFile(filename);
 		}
 	}
 
 	filename.Format("%sn%i.log", g_Options->GetQueueDir(), nzbInfo->GetId());
-	remove(filename);
+	FileSystem::DeleteFile(filename);
 }
 
 bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, DiskFile& infile, int formatVersion)
@@ -1988,7 +1988,7 @@ void DiskState::DiscardDownloadQueue()
 	debug("Discarding queue");
 
 	BString<1024> fullFilename("%s%s", g_Options->GetQueueDir(), "queue");
-	remove(fullFilename);
+	FileSystem::DeleteFile(fullFilename);
 
 	DirBrowser dir(g_Options->GetQueueDir());
 	while (const char* filename = dir.Next())
@@ -2006,15 +2006,15 @@ void DiskState::DiscardDownloadQueue()
 		if (onlyNums)
 		{
 			fullFilename.Format("%s%s", g_Options->GetQueueDir(), filename);
-			remove(fullFilename);
+			FileSystem::DeleteFile(fullFilename);
 
 			// delete file state file
 			fullFilename.Format("%s%ss", g_Options->GetQueueDir(), filename);
-			remove(fullFilename);
+			FileSystem::DeleteFile(fullFilename);
 
 			// delete failed info file
 			fullFilename.Format("%s%sc", g_Options->GetQueueDir(), filename);
-			remove(fullFilename);
+			FileSystem::DeleteFile(fullFilename);
 		}
 	}
 }
@@ -2035,21 +2035,21 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	if (deleteData)
 	{
 		fileName.Format("%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
-		remove(fileName);
+		FileSystem::DeleteFile(fileName);
 	}
 
 	// partial state file
 	if (deletePartialState)
 	{
 		fileName.Format("%s%is", g_Options->GetQueueDir(), fileInfo->GetId());
-		remove(fileName);
+		FileSystem::DeleteFile(fileName);
 	}
 
 	// completed state file
 	if (deleteCompletedState)
 	{
 		fileName.Format("%s%ic", g_Options->GetQueueDir(), fileInfo->GetId());
-		remove(fileName);
+		FileSystem::DeleteFile(fileName);
 	}
 }
 
@@ -2063,7 +2063,7 @@ void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 			(sscanf(filename, "%i.%i", &id, &part) == 2))
 		{
 			BString<1024> fullFilename("%s%s", g_Options->GetTempDir(), filename);
-			remove(fullFilename);
+			FileSystem::DeleteFile(fullFilename);
 		}
 	}
 }
@@ -2383,7 +2383,7 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 			else
 			{
 				BString<1024> fullFilename("%s%s", g_Options->GetQueueDir(), filename);
-				remove(fullFilename);
+				FileSystem::DeleteFile(fullFilename);
 			}
 		}
 	}
@@ -2844,7 +2844,7 @@ void DiskState::WriteCacheFlag()
 void DiskState::DeleteCacheFlag()
 {
 	BString<1024> flagFilename("%s%s", g_Options->GetQueueDir(), "acache");
-	remove(flagFilename);
+	FileSystem::DeleteFile(flagFilename);
 }
 
 void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* text)

@@ -1045,7 +1045,7 @@ void WinConsole::ResetFactoryDefaults()
 	// delete config file in default directory
 	path.Format("%s\\NZBGet\\nzbget.conf", commonAppDataPath);
 
-	remove(path);
+	FileSystem::DeleteFile(path);
 	errmsg = FileSystem::GetLastErrorMessage();
 
 	if (FileSystem::FileExists(path))
@@ -1065,7 +1065,7 @@ void WinConsole::ResetFactoryDefaults()
 		if (Util::MatchFileExt(filename, ".log", ","))
 		{
 			BString<1024> fullFilename("%s%c%s", *path, PATH_SEPARATOR, filename);
-			remove(fullFilename);
+			FileSystem::DeleteFile(fullFilename);
 			// ignore errors
 		}
 	}

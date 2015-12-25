@@ -392,7 +392,7 @@ void Log::RotateLog()
 				BString<1024> message("Deleting old log-file %s\n", filename);
 				g_Log->AddMessage(Message::mkInfo, message);
 
-				remove(fullFilename);
+				FileSystem::DeleteFile(fullFilename);
 			}
 		}
 	}

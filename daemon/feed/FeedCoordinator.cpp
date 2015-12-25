@@ -603,7 +603,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 			feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
 		}
 
-		remove(feedInfo->GetOutputFilename());
+		FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
 		if (!feedFile)
 		{

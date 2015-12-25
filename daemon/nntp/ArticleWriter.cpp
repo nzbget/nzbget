@@ -212,7 +212,7 @@ void ArticleWriter::Finish(bool success)
 			}
 		}
 
-		remove(m_tempFilename);
+		FileSystem::DeleteFile(m_tempFilename);
 
 		if (m_articleData)
 		{
@@ -255,7 +255,7 @@ bool ArticleWriter::CreateOutputFile(int64 size)
 	}
 
 	// delete eventually existing old file from previous program session
-	remove(m_outputFilename);
+	FileSystem::DeleteFile(m_outputFilename);
 
 	// ensure the directory exist
 	BString<1024> destDir;
@@ -361,7 +361,7 @@ void ArticleWriter::CompleteFileParts()
 
 	if (g_Options->GetDecode() && !directWrite)
 	{
-		remove(tmpdestfile);
+		FileSystem::DeleteFile(tmpdestfile);
 		if (!outfile.Open(tmpdestfile, FOPEN_WBP))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
@@ -381,7 +381,7 @@ void ArticleWriter::CompleteFileParts()
 	}
 	else if (!g_Options->GetDecode())
 	{
-		remove(tmpdestfile);
+		FileSystem::DeleteFile(tmpdestfile);
 		if (!FileSystem::CreateDirectory(ofn))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
@@ -515,7 +515,7 @@ void ArticleWriter::CompleteFileParts()
 			if (FileSystem::DirEmpty(oldDestDir))
 			{
 				debug("Deleting old dir: %s", *oldDestDir);
-				rmdir(oldDestDir);
+				FileSystem::RemoveDirectory(oldDestDir);
 			}
 		}
 	}
@@ -525,7 +525,7 @@ void ArticleWriter::CompleteFileParts()
 		for (FileInfo::Articles::iterator it = m_fileInfo->GetArticles()->begin(); it != m_fileInfo->GetArticles()->end(); it++)
 		{
 			ArticleInfo* pa = *it;
-			remove(pa->GetResultFilename());
+			FileSystem::DeleteFile(pa->GetResultFilename());
 		}
 	}
 
@@ -750,7 +750,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 						}
 						infile.Close();
 						free(buffer);
-						remove(oldBrokenLogName);
+						FileSystem::DeleteFile(oldBrokenLogName);
 					}
 					else
 					{
@@ -797,7 +797,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 
 		if (!pendingWrites)
 		{
-			rmdir(oldDestDir);
+			FileSystem::RemoveDirectory(oldDestDir);
 		}
 	}
 

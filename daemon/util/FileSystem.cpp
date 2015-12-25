@@ -462,11 +462,7 @@ bool FileSystem::CreateDirectory(const char* dirFilename)
 
 bool FileSystem::RemoveDirectory(const char* dirFilename)
 {
-#ifdef WIN32
-	return _rmdir(dirFilename) == 0;
-#else
-	return remove(dirFilename) == 0;
-#endif
+	return rmdir(dirFilename) == 0;
 }
 
 bool FileSystem::DeleteDirectoryWithContent(const char* dirFilename, CString& errmsg)
@@ -558,7 +554,7 @@ bool FileSystem::RenameBak(const char* filename, const char* bakPart, bool remov
 		newName.Format("%s.%i.%s", removeOldExtension ? *changedFilename : filename, i++, bakPart);
 	}
 
-	bool ok = !rename(filename, newName);
+	bool ok = MoveFile(filename, newName);
 	return ok;
 }
 

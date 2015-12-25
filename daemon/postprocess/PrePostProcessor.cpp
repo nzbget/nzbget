@@ -332,14 +332,14 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 			{
 				BString<1024> fullFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, filename);
 				detail("Deleting file %s", filename);
-				remove(fullFilename);
+				FileSystem::DeleteFile(fullFilename);
 			}
 		}
 
 		// delete old directory (if empty)
 		if (FileSystem::DirEmpty(nzbInfo->GetDestDir()))
 		{
-			rmdir(nzbInfo->GetDestDir());
+			FileSystem::RemoveDirectory(nzbInfo->GetDestDir());
 		}
 	}
 }

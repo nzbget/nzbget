@@ -783,7 +783,7 @@ bool UnpackController::Cleanup()
 			{
 				PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 
-				if (remove(fullFilename) != 0)
+				if (!FileSystem::DeleteFile(fullFilename))
 				{
 					PrintMessage(Message::mkError, "Could not delete file %s: %s", *fullFilename,
 						*FileSystem::GetLastErrorMessage());

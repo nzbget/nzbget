@@ -827,7 +827,7 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* fileInfo)
 
 	if (g_Options->GetDirectWrite() && fileInfo->GetOutputFilename())
 	{
-		remove(fileInfo->GetOutputFilename());
+		FileSystem::DeleteFile(fileInfo->GetOutputFilename());
 	}
 }
 
