@@ -849,3 +849,94 @@ const char* DirBrowser::Next()
 	}
 	return filename;
 }
+
+
+DiskFile::~DiskFile()
+{
+	if (m_file)
+	{
+		Close();
+	}
+}
+
+bool DiskFile::Open(const char* filename, const char* mode)
+{
+	m_file = fopen(filename, mode);
+	return m_file;
+}
+
+bool DiskFile::Close()
+{
+	if (m_file)
+	{
+		int ret = fclose(m_file);
+		m_file = nullptr;
+		return ret;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+int64 DiskFile::Read(void* buffer, int64 size)
+{
+	return fread(buffer, 1, (size_t)size, m_file);
+}
+
+int64 DiskFile::Write(const void* buffer, int64 size)
+{
+	return fwrite(buffer, 1, (size_t)size, m_file);
+}
+
+int64 DiskFile::Print(const char* format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	int ret = vfprintf(m_file, format, ap);
+	va_end(ap);
+	return ret;
+}
+
+char* DiskFile::ReadLine(char* buffer, int64 size)
+{
+	return fgets(buffer, (int)size, m_file);
+}
+
+int64 DiskFile::Position()
+{
+	return ftell(m_file);
+}
+
+int64 DiskFile::Seek(int64 position, ESeekOrigin origin)
+{
+	return fseek(m_file, position,
+		origin == soCur ? SEEK_CUR :
+		origin == soEnd ? SEEK_END : SEEK_SET);
+}
+
+bool DiskFile::Eof()
+{
+	return feof(m_file) != 0;
+}
+
+bool DiskFile::Error()
+{
+	return ferror(m_file) != 0;
+}
+
+bool DiskFile::SetWriteBuffer(int size)
+{
+	return setvbuf(m_file, NULL, _IOFBF, size) == 0;
+}
+
+bool DiskFile::Flush()
+{
+	return fflush(m_file) == 0;
+}
+
+bool DiskFile::Sync(CString& errmsg)
+{
+	return FileSystem::FlushFileBuffers(fileno(m_file), errmsg);
+}
+

@@ -29,13 +29,14 @@
 #include "NString.h"
 #include "DownloadInfo.h"
 #include "Decoder.h"
+#include "FileSystem.h"
 
 class ArticleWriter
 {
 private:
 	FileInfo*			m_fileInfo;
 	ArticleInfo*		m_articleInfo;
-	FILE*				m_outFile;
+	DiskFile			m_outFile;
 	CString				m_tempFilename;
 	CString				m_outputFilename;
 	const char*			m_resultFilename;
@@ -50,7 +51,7 @@ private:
 
 	bool				CreateOutputFile(int64 size);
 	void				BuildOutputFilename();
-	void				SetWriteBuffer(FILE* outFile, int recSize);
+	void				SetWriteBuffer(DiskFile& outFile, int recSize);
 
 protected:
 	virtual void		SetLastUpdateTimeNow() {}
@@ -63,7 +64,7 @@ public:
 	void				SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
 	void				Prepare();
 	bool				Start(Decoder::EFormat format, const char* filename, int64 fileSize, int64 articleOffset, int articleSize);
-	bool				Write(char* bufffer, int len);
+	bool				Write(char* buffer, int len);
 	void				Finish(bool success);
 	bool				GetDuplicate() { return m_duplicate; }
 	void				CompleteFileParts();

@@ -369,11 +369,11 @@ Signature::~Signature()
 	RSA_free(m_pubKey);
 }
 
-// Calculate SHA-256 for input file (m_szInFilename)
+// Calculate SHA-256 for input file (m_inFilename)
 bool Signature::ComputeInHash()
 {
-	FILE* infile = fopen(m_inFilename, FOPEN_RB);
-	if (!infile)
+	DiskFile infile;
+	if (!infile.Open(m_inFilename, FOPEN_RB))
 	{
 		return false;
 	}
@@ -381,23 +381,23 @@ bool Signature::ComputeInHash()
 	SHA256_Init(&sha256);
 	const int bufSize = 32*1024;
 	char* buffer = (char*)malloc(bufSize);
-	while(int bytesRead = fread(buffer, 1, bufSize, infile))
+	while(int bytesRead = (int)infile.Read(buffer, bufSize))
 	{
 		SHA256_Update(&sha256, buffer, bytesRead);
 	}
 	SHA256_Final(m_inHash, &sha256);
 	free(buffer);
-	fclose(infile);
+	infile.Close();
 	return true;
 }
 
-// Read signature from file (m_szSigFilename) into memory
+// Read signature from file (m_sigFilename) into memory
 bool Signature::ReadSignature()
 {
 	BString<1024> sigTitle("\"RSA-SHA256(%s)\" : \"", FileSystem::BaseFileName(m_inFilename));
 
-	FILE* infile = fopen(m_sigFilename, FOPEN_RB);
-	if (!infile)
+	DiskFile infile;
+	if (!infile.Open(m_sigFilename, FOPEN_RB))
 	{
 		return false;
 	}
@@ -406,7 +406,7 @@ bool Signature::ReadSignature()
 	int titLen = strlen(sigTitle);
 	char buf[1024];
 	uchar* output = m_signature;
-	while (fgets(buf, sizeof(buf) - 1, infile))
+	while (infile.ReadLine(buf, sizeof(buf) - 1))
 	{
 		if (!strncmp(buf, sigTitle, titLen))
 		{
@@ -433,7 +433,7 @@ bool Signature::ReadSignature()
 		}
 	}
 
-	fclose(infile);
+	infile.Close();
 	return ok;
 }
 

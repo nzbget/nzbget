@@ -108,8 +108,8 @@ void Log::Filelog(const char* msg, ...)
 
 	m_lastWritten = rawtime;
 
-	FILE* file = fopen(m_logFilename, FOPEN_ABP);
-	if (file)
+	DiskFile file;
+	if (file.Open(m_logFilename, FOPEN_ABP))
 	{
 #ifdef WIN32
 		uint64 processId = GetCurrentProcessId();
@@ -119,11 +119,11 @@ void Log::Filelog(const char* msg, ...)
 		uint64 threadId = (uint64)pthread_self();
 #endif
 #ifdef DEBUG
-		fprintf(file, "%s\t%llu\t%llu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
+		file.Print("%s\t%llu\t%llu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
 #else
-		fprintf(file, "%s\t%s%s", time, tmp2, LINE_ENDING);
+		file.Print("%s\t%s%s", time, tmp2, LINE_ENDING);
 #endif
-		fclose(file);
+		file.Close();
 	}
 	else
 	{

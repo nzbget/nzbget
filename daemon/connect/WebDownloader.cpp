@@ -339,7 +339,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 {
 	EStatus Status = adRunning;
 
-	m_outFile = NULL;
+	m_outFile.Close();
 	bool end = false;
 	const int LineBufSize = 1024*10;
 	char* lineBuf = (char*)malloc(LineBufSize);
@@ -406,10 +406,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 	delete m_gUnzipStream;
 #endif
 
-	if (m_outFile)
-	{
-		fclose(m_outFile);
-	}
+	m_outFile.Close();
 
 	if (!end && Status == adRunning && !IsStopped())
 	{
@@ -585,7 +582,7 @@ void WebDownloader::ParseRedirect(const char* location)
 
 bool WebDownloader::Write(void* buffer, int len)
 {
-	if (!m_outFile && !PrepareFile())
+	if (!m_outFile.Active() && !PrepareFile())
 	{
 		return false;
 	}
@@ -606,7 +603,7 @@ bool WebDownloader::Write(void* buffer, int len)
 				return false;
 			}
 
-			if (outLen > 0 && fwrite(outBuf, 1, outLen, m_outFile) <= 0)
+			if (outLen > 0 && m_outFile.Write(outBuf, outLen) <= 0)
 			{
 				return false;
 			}
@@ -622,7 +619,7 @@ bool WebDownloader::Write(void* buffer, int len)
 	else
 #endif
 
-	return fwrite(buffer, 1, len, m_outFile) > 0;
+	return m_outFile.Write(buffer, len) > 0;
 }
 
 bool WebDownloader::PrepareFile()
@@ -630,15 +627,14 @@ bool WebDownloader::PrepareFile()
 	// prepare file for writing
 
 	const char* filename = m_outputFilename;
-	m_outFile = fopen(filename, FOPEN_WB);
-	if (!m_outFile)
+	if (!m_outFile.Open(filename, FOPEN_WB))
 	{
 		error("Could not %s file %s", "create", filename);
 		return false;
 	}
 	if (g_Options->GetWriteBuffer() > 0)
 	{
-		setvbuf(m_outFile, NULL, _IOFBF, g_Options->GetWriteBuffer() * 1024);
+		m_outFile.SetWriteBuffer(g_Options->GetWriteBuffer() * 1024);
 	}
 
 	return true;

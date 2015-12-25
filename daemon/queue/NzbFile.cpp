@@ -435,16 +435,16 @@ void NzbFile::ProcessFiles()
  */
 void NzbFile::ReadPassword()
 {
-	FILE* file = fopen(m_fileName, FOPEN_RB);
-	if (!file)
+	DiskFile file;
+	if (!file.Open(m_fileName, FOPEN_RB))
 	{
 		return;
 	}
 
 	// obtain file size.
-	fseek(file , 0 , SEEK_END);
-	int size  = (int)ftell(file);
-	rewind(file);
+	file.Seek(0, DiskFile::soEnd);
+	int size  = (int)file.Position();
+	file.Seek(0, DiskFile::soSet);
 
 	// reading first 4KB of the file
 
@@ -454,9 +454,9 @@ void NzbFile::ReadPassword()
 	size = size < 4096 ? size : 4096;
 
 	// copy the file into the buffer.
-	fread(buf, 1, size, file);
+	file.Read(buf, size);
 
-	fclose(file);
+	file.Close();
 
 	buf[size-1] = '\0';
 

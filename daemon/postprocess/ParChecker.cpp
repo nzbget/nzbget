@@ -1241,33 +1241,33 @@ void ParChecker::WriteBrokenLog(EStatus status)
 
 	if (status != psRepairNotNeeded || FileSystem::FileExists(brokenLogName))
 	{
-		FILE* file = fopen(brokenLogName, FOPEN_AB);
-		if (file)
+		DiskFile file;
+		if (file.Open(brokenLogName, FOPEN_AB))
 		{
 			if (status == psFailed)
 			{
 				if (m_cancelled)
 				{
-					fprintf(file, "Repair cancelled for %s\n", *m_infoName);
+					file.Print("Repair cancelled for %s\n", *m_infoName);
 				}
 				else
 				{
-					fprintf(file, "Repair failed for %s: %s\n", *m_infoName, *m_errMsg);
+					file.Print("Repair failed for %s: %s\n", *m_infoName, *m_errMsg);
 				}
 			}
 			else if (status == psRepairPossible)
 			{
-				fprintf(file, "Repair possible for %s\n", *m_infoName);
+				file.Print("Repair possible for %s\n", *m_infoName);
 			}
 			else if (status == psRepaired)
 			{
-				fprintf(file, "Successfully repaired %s\n", *m_infoName);
+				file.Print("Successfully repaired %s\n", *m_infoName);
 			}
 			else if (status == psRepairNotNeeded)
 			{
-				fprintf(file, "Repair not needed for %s\n", *m_infoName);
+				file.Print("Repair not needed for %s\n", *m_infoName);
 			}
-			fclose(file);
+			file.Close();
 		}
 		else
 		{
@@ -1501,8 +1501,8 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 		validBlocks->at(i) = blockOK && blockEndFound;
 	}
 
-	FILE* infile = fopen(filename, FOPEN_RB);
-	if (!infile)
+	DiskFile infile;
+	if (!infile.Open(filename, FOPEN_RB))
 	{
 		PrintMessage(Message::mkError, "Could not open file %s: %s",
 			filename, *FileSystem::GetLastErrorMessage());
@@ -1548,7 +1548,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 
 				if (!ok || downloadCrc != parCrc)
 				{
-					fclose(infile);
+					infile.Close();
 					return false;
 				}
 			}
@@ -1556,7 +1556,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 		}
 	}
 
-	fclose(infile);
+	infile.Close();
 
 	return true;
 }
@@ -1565,7 +1565,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
  * Compute CRC of bytes range of file using CRCs of segments and reading some data directly
  * from file if necessary
  */
-bool ParChecker::SmartCalcFileRangeCrc(FILE* file, int64 start, int64 end, SegmentList* segments,
+bool ParChecker::SmartCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, SegmentList* segments,
 	uint32* downloadCrcOut)
 {
 	uint32 downloadCrc = 0;
@@ -1621,9 +1621,9 @@ bool ParChecker::SmartCalcFileRangeCrc(FILE* file, int64 start, int64 end, Segme
 /*
  * Compute CRC of bytes range of file reading the data directly from file
  */
-bool ParChecker::DumbCalcFileRangeCrc(FILE* file, int64 start, int64 end, uint32* downloadCrcOut)
+bool ParChecker::DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, uint32* downloadCrcOut)
 {
-	if (fseek(file, start, SEEK_SET))
+	if (!file.Seek(start))
 	{
 		return false;
 	}
@@ -1636,7 +1636,7 @@ bool ParChecker::DumbCalcFileRangeCrc(FILE* file, int64 start, int64 end, uint32
 	while (cnt == BUFFER_SIZE && start < end)
 	{
 		int needBytes = end - start + 1 > BUFFER_SIZE ? BUFFER_SIZE : (int)(end - start + 1);
-		cnt = (int)fread(buffer, 1, needBytes, file);
+		cnt = (int)file.Read(buffer, needBytes);
 		downloadCrc = Util::Crc32m(downloadCrc, buffer, cnt);
 		start += cnt;
 	}

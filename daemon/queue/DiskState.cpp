@@ -68,16 +68,15 @@ private:
 	BString<1024>	m_tempFilename;
 	int				m_formatVersion;
 	int				m_fileVersion;
-	FILE*			m_file;
+	DiskFile		m_file;
 
 public:
 					StateFile(const char* filename, int formatVersion);
-					~StateFile();
 	void			Discard();
 	bool			FileExists();
-	FILE*			BeginWriteTransaction();
+	DiskFile*		BeginWriteTransaction();
 	bool			FinishWriteTransaction();
-	FILE*			BeginReadTransaction();
+	DiskFile*		BeginReadTransaction();
 	int				GetFileVersion() { return m_fileVersion; }
 	const char*		GetDestFilename() { return m_destFilename; }
 };
@@ -85,18 +84,9 @@ public:
 
 StateFile::StateFile(const char* filename, int formatVersion)
 {
-	m_file = NULL;
 	m_formatVersion = formatVersion;
 	m_destFilename.Format("%s%s", g_Options->GetQueueDir(), filename);
 	m_tempFilename.Format("%s%s.new", g_Options->GetQueueDir(), filename);
-}
-
-StateFile::~StateFile()
-{
-	if (m_file)
-	{
-		fclose(m_file);
-	}
 }
 
 void StateFile::Discard()
@@ -109,20 +99,18 @@ bool StateFile::FileExists()
 	return FileSystem::FileExists(m_destFilename) || FileSystem::FileExists(m_tempFilename);
 }
 
-FILE* StateFile::BeginWriteTransaction()
+DiskFile* StateFile::BeginWriteTransaction()
 {
-	m_file = fopen(m_tempFilename, FOPEN_WB);
-
-	if (!m_file)
+	if (!m_file.Open(m_tempFilename, FOPEN_WB))
 	{
 		error("Error saving diskstate: Could not create file %s: %s", *m_tempFilename,
 			*FileSystem::GetLastErrorMessage());
 		return NULL;
 	}
 
-	fprintf(m_file, "%s%i\n", FORMATVERSION_SIGNATURE, m_formatVersion);
+	m_file.Print("%s%i\n", FORMATVERSION_SIGNATURE, m_formatVersion);
 
-	return m_file;
+	return &m_file;
 }
 
 bool StateFile::FinishWriteTransaction()
@@ -131,16 +119,15 @@ bool StateFile::FinishWriteTransaction()
 	if (g_Options->GetFlushQueue())
 	{
 		debug("Flushing data for file %s", FileSystem::BaseFileName(m_tempFilename));
-		fflush(m_file);
+		m_file.Flush();
 		CString errmsg;
-		if (!FileSystem::FlushFileBuffers(fileno(m_file), errmsg))
+		if (!m_file.Sync(errmsg))
 		{
 			warn("Could not flush file %s into disk: %s", *m_tempFilename, *errmsg);
 		}
 	}
 
-	fclose(m_file);
-	m_file = NULL;
+	m_file.Close();
 
 	// now rename to dest file name
 	remove(m_destFilename);
@@ -165,7 +152,7 @@ bool StateFile::FinishWriteTransaction()
 	return true;
 }
 
-FILE* StateFile::BeginReadTransaction()
+DiskFile* StateFile::BeginReadTransaction()
 {
 	if (!FileSystem::FileExists(m_destFilename) && FileSystem::FileExists(m_tempFilename))
 	{
@@ -179,9 +166,7 @@ FILE* StateFile::BeginReadTransaction()
 		}
 	}
 
-	m_file = fopen(m_destFilename, FOPEN_RB);
-
-	if (!m_file)
+	if (!m_file.Open(m_destFilename, FOPEN_RB))
 	{
 		error("Error reading diskstate: could not open file %s: %s", *m_destFilename,
 			*FileSystem::GetLastErrorMessage());
@@ -189,27 +174,25 @@ FILE* StateFile::BeginReadTransaction()
 	}
 
 	char FileSignatur[128];
-	fgets(FileSignatur, sizeof(FileSignatur), m_file);
+	m_file.ReadLine(FileSignatur, sizeof(FileSignatur));
 	m_fileVersion = ParseFormatVersion(FileSignatur);
 	if (m_fileVersion > m_formatVersion)
 	{
 		error("Could not load diskstate due to file version mismatch");
-		fclose(m_file);
-		m_file = NULL;
-		return NULL;
+		m_file.Close();
 	}
 
-	return m_file;
+	return &m_file;
 }
 
 /*
  * Standard fscanf scans beoynd current line if the next line is empty.
  * This wrapper fixes that.
  */
-int DiskState::fscanf(FILE* infile, const char* format, ...)
+int DiskState::fscanf(DiskFile& infile, const char* format, ...)
 {
 	char line[1024];
-	if (!fgets(line, sizeof(line), infile))
+	if (!infile.ReadLine(line, sizeof(line)))
 	{
 		return 0;
 	}
@@ -246,17 +229,17 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue)
 		return true;
 	}
 
-	FILE* outfile = stateFile.BeginWriteTransaction();
+	DiskFile* outfile = stateFile.BeginWriteTransaction();
 	if (!outfile)
 	{
 		return false;
 	}
 
 	// save nzb-infos
-	SaveNzbQueue(downloadQueue, outfile);
+	SaveNzbQueue(downloadQueue, *outfile);
 
 	// save history
-	SaveHistory(downloadQueue, outfile);
+	SaveHistory(downloadQueue, *outfile);
 
 	// now rename to dest file name
 	return stateFile.FinishWriteTransaction();
@@ -268,7 +251,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 
 	StateFile stateFile("queue", 55);
 
-	FILE* infile = stateFile.BeginReadTransaction();
+	DiskFile* infile = stateFile.BeginReadTransaction();
 	if (!infile)
 	{
 		return false;
@@ -283,20 +266,20 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	if (formatVersion < 43)
 	{
 		// load nzb-infos
-		if (!LoadNzbList(&nzbList, servers, infile, formatVersion)) goto error;
+		if (!LoadNzbList(&nzbList, servers, *infile, formatVersion)) goto error;
 
 		// load file-infos
-		if (!LoadFileQueue12(&nzbList, &sortList, infile, formatVersion)) goto error;
+		if (!LoadFileQueue12(&nzbList, &sortList, *infile, formatVersion)) goto error;
 	}
 	else
 	{
-		if (!LoadNzbList(downloadQueue->GetQueue(), servers, infile, formatVersion)) goto error;
+		if (!LoadNzbList(downloadQueue->GetQueue(), servers, *infile, formatVersion)) goto error;
 	}
 
 	if (formatVersion >= 7 && formatVersion < 45)
 	{
 		// load post-queue from v12
-		if (!LoadPostQueue12(downloadQueue, &nzbList, infile, formatVersion)) goto error;
+		if (!LoadPostQueue12(downloadQueue, &nzbList, *infile, formatVersion)) goto error;
 	}
 	else if (formatVersion < 7)
 	{
@@ -307,19 +290,19 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	if (formatVersion >= 15 && formatVersion < 46)
 	{
 		// load url-queue
-		if (!LoadUrlQueue12(downloadQueue, infile, formatVersion)) goto error;
+		if (!LoadUrlQueue12(downloadQueue, *infile, formatVersion)) goto error;
 	}
 
 	if (formatVersion >= 9)
 	{
 		// load history
-		if (!LoadHistory(downloadQueue, &nzbList, servers, infile, formatVersion)) goto error;
+		if (!LoadHistory(downloadQueue, &nzbList, servers, *infile, formatVersion)) goto error;
 	}
 
 	if (formatVersion >= 9 && formatVersion < 43)
 	{
 		// load parked file-infos
-		if (!LoadFileQueue12(&nzbList, NULL, infile, formatVersion)) goto error;
+		if (!LoadFileQueue12(&nzbList, NULL, *infile, formatVersion)) goto error;
 	}
 
 	if (formatVersion < 29)
@@ -399,11 +382,11 @@ void DiskState::CompleteDupList12(DownloadQueue* downloadQueue, int formatVersio
 	}
 }
 
-void DiskState::SaveNzbQueue(DownloadQueue* downloadQueue, FILE* outfile)
+void DiskState::SaveNzbQueue(DownloadQueue* downloadQueue, DiskFile& outfile)
 {
 	debug("Saving nzb list to disk");
 
-	fprintf(outfile, "%i\n", (int)downloadQueue->GetQueue()->size());
+	outfile.Print("%i\n", (int)downloadQueue->GetQueue()->size());
 	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
 		NzbInfo* nzbInfo = *it;
@@ -411,7 +394,7 @@ void DiskState::SaveNzbQueue(DownloadQueue* downloadQueue, FILE* outfile)
 	}
 }
 
-bool DiskState::LoadNzbList(NzbList* nzbList, Servers* servers, FILE* infile, int formatVersion)
+bool DiskState::LoadNzbList(NzbList* nzbList, Servers* servers, DiskFile& infile, int formatVersion)
 {
 	debug("Loading nzb list from disk");
 
@@ -432,75 +415,75 @@ error:
 	return false;
 }
 
-void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
+void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, DiskFile& outfile)
 {
-	fprintf(outfile, "%i\n", nzbInfo->GetId());
-	fprintf(outfile, "%i\n", (int)nzbInfo->GetKind());
-	fprintf(outfile, "%s\n", nzbInfo->GetUrl());
-	fprintf(outfile, "%s\n", nzbInfo->GetFilename());
-	fprintf(outfile, "%s\n", nzbInfo->GetDestDir());
-	fprintf(outfile, "%s\n", nzbInfo->GetFinalDir());
-	fprintf(outfile, "%s\n", nzbInfo->GetQueuedFilename());
-	fprintf(outfile, "%s\n", nzbInfo->GetName());
-	fprintf(outfile, "%s\n", nzbInfo->GetCategory());
-	fprintf(outfile, "%i,%i,%i,%i,%i\n", (int)nzbInfo->GetPriority(),
+	outfile.Print("%i\n", nzbInfo->GetId());
+	outfile.Print("%i\n", (int)nzbInfo->GetKind());
+	outfile.Print("%s\n", nzbInfo->GetUrl());
+	outfile.Print("%s\n", nzbInfo->GetFilename());
+	outfile.Print("%s\n", nzbInfo->GetDestDir());
+	outfile.Print("%s\n", nzbInfo->GetFinalDir());
+	outfile.Print("%s\n", nzbInfo->GetQueuedFilename());
+	outfile.Print("%s\n", nzbInfo->GetName());
+	outfile.Print("%s\n", nzbInfo->GetCategory());
+	outfile.Print("%i,%i,%i,%i,%i\n", (int)nzbInfo->GetPriority(),
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetStage() + 1 : 0,
 		(int)nzbInfo->GetDeletePaused(), (int)nzbInfo->GetManyDupeFiles(), nzbInfo->GetFeedId());
-	fprintf(outfile, "%i,%i,%i,%i,%i,%i,%i\n", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
+	outfile.Print("%i,%i,%i,%i,%i,%i,%i\n", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
 		(int)nzbInfo->GetMoveStatus(), (int)nzbInfo->GetRenameStatus(), (int)nzbInfo->GetDeleteStatus(),
 		(int)nzbInfo->GetMarkStatus(), (int)nzbInfo->GetUrlStatus());
-	fprintf(outfile, "%i,%i,%i\n", (int)nzbInfo->GetUnpackCleanedUpDisk(), (int)nzbInfo->GetHealthPaused(),
+	outfile.Print("%i,%i,%i\n", (int)nzbInfo->GetUnpackCleanedUpDisk(), (int)nzbInfo->GetHealthPaused(),
 		(int)nzbInfo->GetAddUrlPaused());
-	fprintf(outfile, "%i,%i,%i\n", nzbInfo->GetFileCount(), nzbInfo->GetParkedFileCount(),
+	outfile.Print("%i,%i,%i\n", nzbInfo->GetFileCount(), nzbInfo->GetParkedFileCount(),
 		nzbInfo->GetMessageCount());
-	fprintf(outfile, "%i,%i\n", (int)nzbInfo->GetMinTime(), (int)nzbInfo->GetMaxTime());
-	fprintf(outfile, "%i,%i,%i,%i\n", (int)nzbInfo->GetParFull(),
+	outfile.Print("%i,%i\n", (int)nzbInfo->GetMinTime(), (int)nzbInfo->GetMaxTime());
+	outfile.Print("%i,%i,%i,%i\n", (int)nzbInfo->GetParFull(),
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetForceParFull() : 0,
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetForceRepair() : 0,
 		nzbInfo->GetExtraParBlocks());
 
-	fprintf(outfile, "%u,%u\n", nzbInfo->GetFullContentHash(), nzbInfo->GetFilteredContentHash());
+	outfile.Print("%u,%u\n", nzbInfo->GetFullContentHash(), nzbInfo->GetFilteredContentHash());
 
 	uint32 High1, Low1, High2, Low2, High3, Low3;
 	Util::SplitInt64(nzbInfo->GetSize(), &High1, &Low1);
 	Util::SplitInt64(nzbInfo->GetSuccessSize(), &High2, &Low2);
 	Util::SplitInt64(nzbInfo->GetFailedSize(), &High3, &Low3);
-	fprintf(outfile, "%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
+	outfile.Print("%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
 
 	Util::SplitInt64(nzbInfo->GetParSize(), &High1, &Low1);
 	Util::SplitInt64(nzbInfo->GetParSuccessSize(), &High2, &Low2);
 	Util::SplitInt64(nzbInfo->GetParFailedSize(), &High3, &Low3);
-	fprintf(outfile, "%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
+	outfile.Print("%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
 
-	fprintf(outfile, "%i,%i,%i\n", nzbInfo->GetTotalArticles(), nzbInfo->GetSuccessArticles(), nzbInfo->GetFailedArticles());
+	outfile.Print("%i,%i,%i\n", nzbInfo->GetTotalArticles(), nzbInfo->GetSuccessArticles(), nzbInfo->GetFailedArticles());
 
-	fprintf(outfile, "%s\n", nzbInfo->GetDupeKey());
-	fprintf(outfile, "%i,%i\n", (int)nzbInfo->GetDupeMode(), nzbInfo->GetDupeScore());
+	outfile.Print("%s\n", nzbInfo->GetDupeKey());
+	outfile.Print("%i,%i\n", (int)nzbInfo->GetDupeMode(), nzbInfo->GetDupeScore());
 
 	Util::SplitInt64(nzbInfo->GetDownloadedSize(), &High1, &Low1);
-	fprintf(outfile, "%u,%u,%i,%i,%i,%i,%i\n", High1, Low1, nzbInfo->GetDownloadSec(), nzbInfo->GetPostTotalSec(),
+	outfile.Print("%u,%u,%i,%i,%i,%i,%i\n", High1, Low1, nzbInfo->GetDownloadSec(), nzbInfo->GetPostTotalSec(),
 		nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec());
 
-	fprintf(outfile, "%i\n", (int)nzbInfo->GetCompletedFiles()->size());
+	outfile.Print("%i\n", (int)nzbInfo->GetCompletedFiles()->size());
 	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
 		CompletedFile* completedFile = *it;
-		fprintf(outfile, "%i,%i,%u,%s\n", completedFile->GetId(), (int)completedFile->GetStatus(),
+		outfile.Print("%i,%i,%u,%s\n", completedFile->GetId(), (int)completedFile->GetStatus(),
 			completedFile->GetCrc(), completedFile->GetFileName());
 	}
 
-	fprintf(outfile, "%i\n", (int)nzbInfo->GetParameters()->size());
+	outfile.Print("%i\n", (int)nzbInfo->GetParameters()->size());
 	for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 	{
 		NzbParameter* parameter = *it;
-		fprintf(outfile, "%s=%s\n", parameter->GetName(), parameter->GetValue());
+		outfile.Print("%s=%s\n", parameter->GetName(), parameter->GetValue());
 	}
 
-	fprintf(outfile, "%i\n", (int)nzbInfo->GetScriptStatuses()->size());
+	outfile.Print("%i\n", (int)nzbInfo->GetScriptStatuses()->size());
 	for (ScriptStatusList::iterator it = nzbInfo->GetScriptStatuses()->begin(); it != nzbInfo->GetScriptStatuses()->end(); it++)
 	{
 		ScriptStatus* scriptStatus = *it;
-		fprintf(outfile, "%i,%s\n", scriptStatus->GetStatus(), scriptStatus->GetName());
+		outfile.Print("%i,%s\n", scriptStatus->GetStatus(), scriptStatus->GetName());
 	}
 
 	SaveServerStats(nzbInfo->GetServerStats(), outfile);
@@ -515,19 +498,19 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, FILE* outfile)
 			size++;
 		}
 	}
-	fprintf(outfile, "%i\n", size);
+	outfile.Print("%i\n", size);
 	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* fileInfo = *it;
 		if (!fileInfo->GetDeleted())
 		{
-			fprintf(outfile, "%i,%i,%i,%i\n", fileInfo->GetId(), (int)fileInfo->GetPaused(),
+			outfile.Print("%i,%i,%i,%i\n", fileInfo->GetId(), (int)fileInfo->GetPaused(),
 				(int)fileInfo->GetTime(), (int)fileInfo->GetExtraPriority());
 		}
 	}
 }
 
-bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, int formatVersion)
+bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile, int formatVersion)
 {
 	char buf[10240];
 
@@ -544,36 +527,36 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%i\n", &kind) != 1) goto error;
 		nzbInfo->SetKind((NzbInfo::EKind)kind);
 
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		nzbInfo->SetUrl(buf);
 	}
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	nzbInfo->SetFilename(buf);
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	nzbInfo->SetDestDir(buf);
 
 	if (formatVersion >= 27)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		nzbInfo->SetFinalDir(buf);
 	}
 
 	if (formatVersion >= 5)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		nzbInfo->SetQueuedFilename(buf);
 	}
 
 	if (formatVersion >= 13)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		if (strlen(buf) > 0)
 		{
@@ -583,7 +566,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 
 	if (formatVersion >= 4)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		nzbInfo->SetCategory(buf);
 	}
@@ -838,7 +821,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 
 	if (formatVersion >= 31)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		if (formatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 		nzbInfo->SetDupeKey(buf);
@@ -878,7 +861,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
 		for (int i = 0; i < fileCount; i++)
 		{
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 			int id = 0;
@@ -916,7 +899,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%i\n", &parameterCount) != 1) goto error;
 		for (int i = 0; i < parameterCount; i++)
 		{
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 			char* value = strchr(buf, '=');
@@ -935,7 +918,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%i\n", &scriptCount) != 1) goto error;
 		for (int i = 0; i < scriptCount; i++)
 		{
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 			char* scriptName = strchr(buf, ',');
@@ -961,7 +944,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, FILE* infile, in
 		if (fscanf(infile, "%i\n", &logCount) != 1) goto error;
 		for (int i = 0; i < logCount; i++)
 		{
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		}
 	}
 
@@ -1023,7 +1006,7 @@ error:
 	return false;
 }
 
-bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, FILE* infile, int formatVersion)
+bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, DiskFile& infile, int formatVersion)
 {
 	debug("Loading file queue from disk");
 
@@ -1088,17 +1071,17 @@ error:
 	return false;
 }
 
-void DiskState::SaveServerStats(ServerStatList* serverStatList, FILE* outfile)
+void DiskState::SaveServerStats(ServerStatList* serverStatList, DiskFile& outfile)
 {
-	fprintf(outfile, "%i\n", (int)serverStatList->size());
+	outfile.Print("%i\n", (int)serverStatList->size());
 	for (ServerStatList::iterator it = serverStatList->begin(); it != serverStatList->end(); it++)
 	{
 		ServerStat* serverStat = *it;
-		fprintf(outfile, "%i,%i,%i\n", serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
+		outfile.Print("%i,%i,%i\n", serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
 	}
 }
 
-bool DiskState::LoadServerStats(ServerStatList* serverStatList, Servers* servers, FILE* infile)
+bool DiskState::LoadServerStats(ServerStatList* serverStatList, Servers* servers, DiskFile& infile)
 {
 	int statCount;
 	if (fscanf(infile, "%i\n", &statCount) != 1) goto error;
@@ -1138,44 +1121,44 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 {
 	debug("Saving FileInfo to disk");
 
-	FILE* outfile = fopen(filename, FOPEN_WB);
+	DiskFile outfile;
 
-	if (!outfile)
+	if (!outfile.Open(filename, FOPEN_WB))
 	{
 		error("Error saving diskstate: could not create file %s", filename);
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 3);
+	outfile.Print("%s%i\n", FORMATVERSION_SIGNATURE, 3);
 
-	fprintf(outfile, "%s\n", fileInfo->GetSubject());
-	fprintf(outfile, "%s\n", fileInfo->GetFilename());
+	outfile.Print("%s\n", fileInfo->GetSubject());
+	outfile.Print("%s\n", fileInfo->GetFilename());
 
 	uint32 High, Low;
 	Util::SplitInt64(fileInfo->GetSize(), &High, &Low);
-	fprintf(outfile, "%u,%u\n", High, Low);
+	outfile.Print("%u,%u\n", High, Low);
 
 	Util::SplitInt64(fileInfo->GetMissedSize(), &High, &Low);
-	fprintf(outfile, "%u,%u\n", High, Low);
+	outfile.Print("%u,%u\n", High, Low);
 
-	fprintf(outfile, "%i\n", (int)fileInfo->GetParFile());
-	fprintf(outfile, "%i,%i\n", fileInfo->GetTotalArticles(), fileInfo->GetMissedArticles());
+	outfile.Print("%i\n", (int)fileInfo->GetParFile());
+	outfile.Print("%i,%i\n", fileInfo->GetTotalArticles(), fileInfo->GetMissedArticles());
 
-	fprintf(outfile, "%i\n", (int)fileInfo->GetGroups()->size());
+	outfile.Print("%i\n", (int)fileInfo->GetGroups()->size());
 	for (FileInfo::Groups::iterator it = fileInfo->GetGroups()->begin(); it != fileInfo->GetGroups()->end(); it++)
 	{
-		fprintf(outfile, "%s\n", **it);
+		outfile.Print("%s\n", **it);
 	}
 
-	fprintf(outfile, "%i\n", (int)fileInfo->GetArticles()->size());
+	outfile.Print("%i\n", (int)fileInfo->GetArticles()->size());
 	for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 	{
 		ArticleInfo* articleInfo = *it;
-		fprintf(outfile, "%i,%i\n", articleInfo->GetPartNumber(), articleInfo->GetSize());
-		fprintf(outfile, "%s\n", articleInfo->GetMessageId());
+		outfile.Print("%i,%i\n", articleInfo->GetPartNumber(), articleInfo->GetSize());
+		outfile.Print("%s\n", articleInfo->GetMessageId());
 	}
 
-	fclose(outfile);
+	outfile.Close();
 	return true;
 }
 
@@ -1189,9 +1172,9 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 {
 	debug("Loading FileInfo from disk");
 
-	FILE* infile = fopen(filename, FOPEN_RB);
+	DiskFile infile;
 
-	if (!infile)
+	if (!infile.Open(filename, FOPEN_RB))
 	{
 		error("Error reading diskstate: could not open file %s", filename);
 		return false;
@@ -1200,7 +1183,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 	char buf[1024];
 	int formatVersion = 0;
 
-	if (fgets(buf, sizeof(buf), infile))
+	if (infile.ReadLine(buf, sizeof(buf)))
 	{
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		formatVersion = ParseFormatVersion(buf);
@@ -1217,13 +1200,13 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 
 	if (formatVersion >= 2)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	}
 
 	if (fileSummary) fileInfo->SetSubject(buf);
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	if (fileSummary) fileInfo->SetFilename(buf);
 
@@ -1262,7 +1245,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		if (fileSummary) fileInfo->GetGroups()->push_back(buf);
 	}
@@ -1281,7 +1264,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 			int PartNumber, PartSize;
 			if (fscanf(infile, "%i,%i\n", &PartNumber, &PartSize) != 2) goto error;
 
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 			ArticleInfo* articleInfo = new ArticleInfo();
@@ -1292,11 +1275,11 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 		}
 	}
 
-	fclose(infile);
+	infile.Close();
 	return true;
 
 error:
-	fclose(infile);
+	infile.Close();
 	error("Error reading diskstate for file %s", filename);
 	return false;
 }
@@ -1306,35 +1289,35 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	debug("Saving FileState to disk");
 
 	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
-	FILE* outfile = fopen(filename, FOPEN_WB);
+	DiskFile outfile;
 
-	if (!outfile)
+	if (!outfile.Open(filename, FOPEN_WB))
 	{
 		error("Error saving diskstate: could not create file %s", *filename);
 		return false;
 	}
 
-	fprintf(outfile, "%s%i\n", FORMATVERSION_SIGNATURE, 2);
+	outfile.Print("%s%i\n", FORMATVERSION_SIGNATURE, 2);
 
-	fprintf(outfile, "%i,%i\n", fileInfo->GetSuccessArticles(), fileInfo->GetFailedArticles());
+	outfile.Print("%i,%i\n", fileInfo->GetSuccessArticles(), fileInfo->GetFailedArticles());
 
 	uint32 High1, Low1, High2, Low2, High3, Low3;
 	Util::SplitInt64(fileInfo->GetRemainingSize(), &High1, &Low1);
 	Util::SplitInt64(fileInfo->GetSuccessSize(), &High2, &Low2);
 	Util::SplitInt64(fileInfo->GetFailedSize(), &High3, &Low3);
-	fprintf(outfile, "%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
+	outfile.Print("%u,%u,%u,%u,%u,%u\n", High1, Low1, High2, Low2, High3, Low3);
 
 	SaveServerStats(fileInfo->GetServerStats(), outfile);
 
-	fprintf(outfile, "%i\n", (int)fileInfo->GetArticles()->size());
+	outfile.Print("%i\n", (int)fileInfo->GetArticles()->size());
 	for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 	{
 		ArticleInfo* articleInfo = *it;
-		fprintf(outfile, "%i,%u,%i,%u\n", (int)articleInfo->GetStatus(), (uint32)articleInfo->GetSegmentOffset(),
+		outfile.Print("%i,%u,%i,%u\n", (int)articleInfo->GetStatus(), (uint32)articleInfo->GetSegmentOffset(),
 			articleInfo->GetSegmentSize(), (uint32)articleInfo->GetCrc());
 	}
 
-	fclose(outfile);
+	outfile.Close();
 	return true;
 }
 
@@ -1343,9 +1326,9 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	bool hasArticles = !fileInfo->GetArticles()->empty();
 
 	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
-	FILE* infile = fopen(filename, FOPEN_RB);
+	DiskFile infile;
 
-	if (!infile)
+	if (!infile.Open(filename, FOPEN_RB))
 	{
 		error("Error reading diskstate: could not open file %s", *filename);
 		return false;
@@ -1354,7 +1337,7 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	char buf[1024];
 	int formatVersion = 0;
 
-	if (fgets(buf, sizeof(buf), infile))
+	if (infile.ReadLine(buf, sizeof(buf)))
 	{
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		formatVersion = ParseFormatVersion(buf);
@@ -1434,11 +1417,11 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 
 	fileInfo->SetCompletedArticles(completedArticles);
 
-	fclose(infile);
+	infile.Close();
 	return true;
 
 error:
-	fclose(infile);
+	infile.Close();
 	error("Error reading diskstate for file %s", *filename);
 	return false;
 }
@@ -1473,7 +1456,7 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 	remove(filename);
 }
 
-bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, FILE* infile, int formatVersion)
+bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, DiskFile& infile, int formatVersion)
 {
 	debug("Loading post-queue from disk");
 
@@ -1526,12 +1509,12 @@ bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, 
 		postInfo->SetStage((PostInfo::EStage)stage);
 
 		// InfoName, ignore
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 
 		if (formatVersion < 22)
 		{
 			// ParFilename, ignore
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		}
 	}
 
@@ -1557,21 +1540,21 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 		return true;
 	}
 
-	FILE* infile = fopen(fileName, FOPEN_RB);
+	DiskFile infile;
 
-	if (!infile)
+	if (!infile.Open(fileName, FOPEN_RB))
 	{
 		error("Error reading diskstate: could not open file %s", *fileName);
 		return false;
 	}
 
 	char FileSignatur[128];
-	fgets(FileSignatur, sizeof(FileSignatur), infile);
+	infile.ReadLine(FileSignatur, sizeof(FileSignatur));
 	int formatVersion = ParseFormatVersion(FileSignatur);
 	if (formatVersion < 3 || formatVersion > 7)
 	{
 		error("Could not load diskstate due to file version mismatch");
-		fclose(infile);
+		infile.Close();
 		return false;
 	}
 
@@ -1583,7 +1566,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 		// find NZBInfo based on NZBFilename
@@ -1609,7 +1592,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 		nzbInfo->EnterPostProcess();
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		if (newNzbInfo)
 		{
@@ -1617,14 +1600,14 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 		}
 
 		// ParFilename, ignore
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 
 		// InfoName, ignore
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 
 		if (formatVersion >= 4)
 		{
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 			if (newNzbInfo)
 			{
@@ -1641,7 +1624,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 
 		if (formatVersion >= 5)
 		{
-			if (!fgets(buf, sizeof(buf), infile)) goto error;
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 			if (newNzbInfo)
 			{
@@ -1677,7 +1660,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 			if (fscanf(infile, "%i\n", &parameterCount) != 1) goto error;
 			for (int i = 0; i < parameterCount; i++)
 			{
-				if (!fgets(buf, sizeof(buf), infile)) goto error;
+				if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 				char* value = strchr(buf, '=');
@@ -1694,16 +1677,16 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 		}
 	}
 
-	fclose(infile);
+	infile.Close();
 	return true;
 
 error:
-	fclose(infile);
+	infile.Close();
 	error("Error reading diskstate for file %s", *fileName);
 	return false;
 }
 
-bool DiskState::LoadUrlQueue12(DownloadQueue* downloadQueue, FILE* infile, int formatVersion)
+bool DiskState::LoadUrlQueue12(DownloadQueue* downloadQueue, DiskFile& infile, int formatVersion)
 {
 	debug("Loading url-queue from disk");
 	int size;
@@ -1725,7 +1708,7 @@ error:
 	return false;
 }
 
-bool DiskState::LoadUrlInfo12(NzbInfo* nzbInfo, FILE* infile, int formatVersion)
+bool DiskState::LoadUrlInfo12(NzbInfo* nzbInfo, DiskFile& infile, int formatVersion)
 {
 	char buf[10240];
 
@@ -1747,21 +1730,21 @@ bool DiskState::LoadUrlInfo12(NzbInfo* nzbInfo, FILE* infile, int formatVersion)
 		nzbInfo->SetAddUrlPaused(addPaused);
 	}
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	nzbInfo->SetUrl(buf);
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	nzbInfo->SetFilename(buf);
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	nzbInfo->SetCategory(buf);
 
 	if (formatVersion >= 31)
 	{
-		if (!fgets(buf, sizeof(buf), infile)) goto error;
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 		if (formatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 		nzbInfo->SetDupeKey(buf);
@@ -1778,18 +1761,18 @@ error:
 	return false;
 }
 
-void DiskState::SaveDupInfo(DupInfo* dupInfo, FILE* outfile)
+void DiskState::SaveDupInfo(DupInfo* dupInfo, DiskFile& outfile)
 {
 	uint32 High, Low;
 	Util::SplitInt64(dupInfo->GetSize(), &High, &Low);
-	fprintf(outfile, "%i,%u,%u,%u,%u,%i,%i\n", (int)dupInfo->GetStatus(), High, Low,
+	outfile.Print("%i,%u,%u,%u,%u,%i,%i\n", (int)dupInfo->GetStatus(), High, Low,
 		dupInfo->GetFullContentHash(), dupInfo->GetFilteredContentHash(),
 		dupInfo->GetDupeScore(), (int)dupInfo->GetDupeMode());
-	fprintf(outfile, "%s\n", dupInfo->GetName());
-	fprintf(outfile, "%s\n", dupInfo->GetDupeKey());
+	outfile.Print("%s\n", dupInfo->GetName());
+	outfile.Print("%s\n", dupInfo->GetDupeKey());
 }
 
-bool DiskState::LoadDupInfo(DupInfo* dupInfo, FILE* infile, int formatVersion)
+bool DiskState::LoadDupInfo(DupInfo* dupInfo, DiskFile& infile, int formatVersion)
 {
 	char buf[1024];
 
@@ -1826,11 +1809,11 @@ bool DiskState::LoadDupInfo(DupInfo* dupInfo, FILE* infile, int formatVersion)
 	dupInfo->SetDupeScore(dupeScore);
 	dupInfo->SetDupeMode((EDupeMode)dupeMode);
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	dupInfo->SetName(buf);
 
-	if (!fgets(buf, sizeof(buf), infile)) goto error;
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	if (formatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 	dupInfo->SetDupeKey(buf);
@@ -1841,16 +1824,16 @@ error:
 	return false;
 }
 
-void DiskState::SaveHistory(DownloadQueue* downloadQueue, FILE* outfile)
+void DiskState::SaveHistory(DownloadQueue* downloadQueue, DiskFile& outfile)
 {
 	debug("Saving history to disk");
 
-	fprintf(outfile, "%i\n", (int)downloadQueue->GetHistory()->size());
+	outfile.Print("%i\n", (int)downloadQueue->GetHistory()->size());
 	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* historyInfo = *it;
 
-		fprintf(outfile, "%i,%i,%i\n", historyInfo->GetId(), (int)historyInfo->GetKind(), (int)historyInfo->GetTime());
+		outfile.Print("%i,%i,%i\n", historyInfo->GetId(), (int)historyInfo->GetKind(), (int)historyInfo->GetTime());
 
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb || historyInfo->GetKind() == HistoryInfo::hkUrl)
 		{
@@ -1863,7 +1846,7 @@ void DiskState::SaveHistory(DownloadQueue* downloadQueue, FILE* outfile)
 	}
 }
 
-bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Servers* servers, FILE* infile, int formatVersion)
+bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Servers* servers, DiskFile& infile, int formatVersion)
 {
 	debug("Loading history from disk");
 
@@ -2102,17 +2085,17 @@ bool DiskState::SaveFeeds(Feeds* feeds, FeedHistory* feedHistory)
 		return true;
 	}
 
-	FILE* outfile = stateFile.BeginWriteTransaction();
+	DiskFile* outfile = stateFile.BeginWriteTransaction();
 	if (!outfile)
 	{
 		return false;
 	}
 
 	// save status
-	SaveFeedStatus(feeds, outfile);
+	SaveFeedStatus(feeds, *outfile);
 
 	// save history
-	SaveFeedHistory(feedHistory, outfile);
+	SaveFeedHistory(feedHistory, *outfile);
 
 	// now rename to dest file name
 	return stateFile.FinishWriteTransaction();
@@ -2129,7 +2112,7 @@ bool DiskState::LoadFeeds(Feeds* feeds, FeedHistory* feedHistory)
 		return true;
 	}
 
-	FILE* infile = stateFile.BeginReadTransaction();
+	DiskFile* infile = stateFile.BeginReadTransaction();
 	if (!infile)
 	{
 		return false;
@@ -2139,10 +2122,10 @@ bool DiskState::LoadFeeds(Feeds* feeds, FeedHistory* feedHistory)
 	int formatVersion = stateFile.GetFileVersion();
 
 	// load feed status
-	if (!LoadFeedStatus(feeds, infile, formatVersion)) goto error;
+	if (!LoadFeedStatus(feeds, *infile, formatVersion)) goto error;
 
 	// load feed history
-	if (!LoadFeedHistory(feedHistory, infile, formatVersion)) goto error;
+	if (!LoadFeedHistory(feedHistory, *infile, formatVersion)) goto error;
 
 	ok = true;
 
@@ -2156,24 +2139,24 @@ error:
 	return ok;
 }
 
-bool DiskState::SaveFeedStatus(Feeds* feeds, FILE* outfile)
+bool DiskState::SaveFeedStatus(Feeds* feeds, DiskFile& outfile)
 {
 	debug("Saving feed status to disk");
 
-	fprintf(outfile, "%i\n", (int)feeds->size());
+	outfile.Print("%i\n", (int)feeds->size());
 	for (Feeds::iterator it = feeds->begin(); it != feeds->end(); it++)
 	{
 		FeedInfo* feedInfo = *it;
 
-		fprintf(outfile, "%s\n", feedInfo->GetUrl());
-		fprintf(outfile, "%u\n", feedInfo->GetFilterHash());
-		fprintf(outfile, "%i\n", (int)feedInfo->GetLastUpdate());
+		outfile.Print("%s\n", feedInfo->GetUrl());
+		outfile.Print("%u\n", feedInfo->GetFilterHash());
+		outfile.Print("%i\n", (int)feedInfo->GetLastUpdate());
 	}
 
 	return true;
 }
 
-bool DiskState::LoadFeedStatus(Feeds* feeds, FILE* infile, int formatVersion)
+bool DiskState::LoadFeedStatus(Feeds* feeds, DiskFile& infile, int formatVersion)
 {
 	debug("Loading feed status from disk");
 
@@ -2182,13 +2165,13 @@ bool DiskState::LoadFeedStatus(Feeds* feeds, FILE* infile, int formatVersion)
 	for (int i = 0; i < size; i++)
 	{
 		char url[1024];
-		if (!fgets(url, sizeof(url), infile)) goto error;
+		if (!infile.ReadLine(url, sizeof(url))) goto error;
 		if (url[0] != 0) url[strlen(url)-1] = 0; // remove traling '\n'
 
 		char filter[1024];
 		if (formatVersion == 2)
 		{
-			if (!fgets(filter, sizeof(filter), infile)) goto error;
+			if (!infile.ReadLine(filter, sizeof(filter))) goto error;
 			if (filter[0] != 0) filter[strlen(filter)-1] = 0; // remove traling '\n'
 		}
 
@@ -2222,23 +2205,23 @@ error:
 	return false;
 }
 
-bool DiskState::SaveFeedHistory(FeedHistory* feedHistory, FILE* outfile)
+bool DiskState::SaveFeedHistory(FeedHistory* feedHistory, DiskFile& outfile)
 {
 	debug("Saving feed history to disk");
 
-	fprintf(outfile, "%i\n", (int)feedHistory->size());
+	outfile.Print("%i\n", (int)feedHistory->size());
 	for (FeedHistory::iterator it = feedHistory->begin(); it != feedHistory->end(); it++)
 	{
 		FeedHistoryInfo* feedHistoryInfo = *it;
 
-		fprintf(outfile, "%i,%i\n", (int)feedHistoryInfo->GetStatus(), (int)feedHistoryInfo->GetLastSeen());
-		fprintf(outfile, "%s\n", feedHistoryInfo->GetUrl());
+		outfile.Print("%i,%i\n", (int)feedHistoryInfo->GetStatus(), (int)feedHistoryInfo->GetLastSeen());
+		outfile.Print("%s\n", feedHistoryInfo->GetUrl());
 	}
 
 	return true;
 }
 
-bool DiskState::LoadFeedHistory(FeedHistory* feedHistory, FILE* infile, int formatVersion)
+bool DiskState::LoadFeedHistory(FeedHistory* feedHistory, DiskFile& infile, int formatVersion)
 {
 	debug("Loading feed history from disk");
 
@@ -2252,7 +2235,7 @@ bool DiskState::LoadFeedHistory(FeedHistory* feedHistory, FILE* infile, int form
 		if (r != 2) goto error;
 
 		char url[1024];
-		if (!fgets(url, sizeof(url), infile)) goto error;
+		if (!infile.ReadLine(url, sizeof(url))) goto error;
 		if (url[0] != 0) url[strlen(url)-1] = 0; // remove traling '\n'
 
 		feedHistory->Add(url, (FeedHistoryInfo::EStatus)(status), (time_t)(lastSeen));
@@ -2450,17 +2433,17 @@ bool DiskState::SaveStats(Servers* servers, ServerVolumes* serverVolumes)
 		return true;
 	}
 
-	FILE* outfile = stateFile.BeginWriteTransaction();
+	DiskFile* outfile = stateFile.BeginWriteTransaction();
 	if (!outfile)
 	{
 		return false;
 	}
 
 	// save server names
-	SaveServerInfo(servers, outfile);
+	SaveServerInfo(servers, *outfile);
 
 	// save stat
-	SaveVolumeStat(serverVolumes, outfile);
+	SaveVolumeStat(serverVolumes, *outfile);
 
 	// now rename to dest file name
 	return stateFile.FinishWriteTransaction();
@@ -2477,7 +2460,7 @@ bool DiskState::LoadStats(Servers* servers, ServerVolumes* serverVolumes, bool* 
 		return true;
 	}
 
-	FILE* infile = stateFile.BeginReadTransaction();
+	DiskFile* infile = stateFile.BeginReadTransaction();
 	if (!infile)
 	{
 		return false;
@@ -2486,11 +2469,11 @@ bool DiskState::LoadStats(Servers* servers, ServerVolumes* serverVolumes, bool* 
 	bool ok = false;
 	int formatVersion = stateFile.GetFileVersion();
 
-	if (!LoadServerInfo(servers, infile, formatVersion, perfectMatch)) goto error;
+	if (!LoadServerInfo(servers, *infile, formatVersion, perfectMatch)) goto error;
 
 	if (formatVersion >=2)
 	{
-		if (!LoadVolumeStat(servers, serverVolumes, infile, formatVersion)) goto error;
+		if (!LoadVolumeStat(servers, serverVolumes, *infile, formatVersion)) goto error;
 	}
 
 	ok = true;
@@ -2505,19 +2488,19 @@ error:
 	return ok;
 }
 
-bool DiskState::SaveServerInfo(Servers* servers, FILE* outfile)
+bool DiskState::SaveServerInfo(Servers* servers, DiskFile& outfile)
 {
 	debug("Saving server info to disk");
 
-	fprintf(outfile, "%i\n", (int)servers->size());
+	outfile.Print("%i\n", (int)servers->size());
 	for (Servers::iterator it = servers->begin(); it != servers->end(); it++)
 	{
 		NewsServer* newsServer = *it;
 
-		fprintf(outfile, "%s\n", newsServer->GetName());
-		fprintf(outfile, "%s\n", newsServer->GetHost());
-		fprintf(outfile, "%i\n", newsServer->GetPort());
-		fprintf(outfile, "%s\n", newsServer->GetUser());
+		outfile.Print("%s\n", newsServer->GetName());
+		outfile.Print("%s\n", newsServer->GetHost());
+		outfile.Print("%i\n", newsServer->GetPort());
+		outfile.Print("%s\n", newsServer->GetUser());
 	}
 
 	return true;
@@ -2666,7 +2649,7 @@ void MatchServers(Servers* servers, ServerRefList* serverRefs)
  ***************************************************************************************
  */
 
-bool DiskState::LoadServerInfo(Servers* servers, FILE* infile, int formatVersion, bool* perfectMatch)
+bool DiskState::LoadServerInfo(Servers* servers, DiskFile& infile, int formatVersion, bool* perfectMatch)
 {
 	debug("Loading server info from disk");
 
@@ -2678,18 +2661,18 @@ bool DiskState::LoadServerInfo(Servers* servers, FILE* infile, int formatVersion
 	for (int i = 0; i < size; i++)
 	{
 		char name[1024];
-		if (!fgets(name, sizeof(name), infile)) goto error;
+		if (!infile.ReadLine(name, sizeof(name))) goto error;
 		if (name[0] != 0) name[strlen(name)-1] = 0; // remove traling '\n'
 
 		char host[200];
-		if (!fgets(host, sizeof(host), infile)) goto error;
+		if (!infile.ReadLine(host, sizeof(host))) goto error;
 		if (host[0] != 0) host[strlen(host)-1] = 0; // remove traling '\n'
 
 		int port;
 		if (fscanf(infile, "%i\n", &port) != 1) goto error;
 
 		char user[100];
-		if (!fgets(user, sizeof(user), infile)) goto error;
+		if (!infile.ReadLine(user, sizeof(user))) goto error;
 		if (user[0] != 0) user[strlen(user)-1] = 0; // remove traling '\n'
 
 		ServerRef* ref = new ServerRef();
@@ -2737,21 +2720,21 @@ error:
 	return false;
 }
 
-bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, FILE* outfile)
+bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, DiskFile& outfile)
 {
 	debug("Saving volume stats to disk");
 
-	fprintf(outfile, "%i\n", (int)serverVolumes->size());
+	outfile.Print("%i\n", (int)serverVolumes->size());
 	for (ServerVolumes::iterator it = serverVolumes->begin(); it != serverVolumes->end(); it++)
 	{
 		ServerVolume* serverVolume = *it;
 
-		fprintf(outfile, "%i,%i,%i\n", serverVolume->GetFirstDay(), (int)serverVolume->GetDataTime(), (int)serverVolume->GetCustomTime());
+		outfile.Print("%i,%i,%i\n", serverVolume->GetFirstDay(), (int)serverVolume->GetDataTime(), (int)serverVolume->GetCustomTime());
 
 		uint32 High1, Low1, High2, Low2;
 		Util::SplitInt64(serverVolume->GetTotalBytes(), &High1, &Low1);
 		Util::SplitInt64(serverVolume->GetCustomBytes(), &High2, &Low2);
-		fprintf(outfile, "%u,%u,%u,%u\n", High1, Low1, High2, Low2);
+		outfile.Print("%u,%u,%u,%u\n", High1, Low1, High2, Low2);
 
 		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume->BytesPerSeconds(),
 			serverVolume->BytesPerMinutes(), serverVolume->BytesPerHours(), serverVolume->BytesPerDays() };
@@ -2759,12 +2742,12 @@ bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, FILE* outfile)
 		{
 			ServerVolume::VolumeArray* volumeArray = VolumeArrays[i];
 
-			fprintf(outfile, "%i\n", (int)volumeArray->size());
+			outfile.Print("%i\n", (int)volumeArray->size());
 			for (ServerVolume::VolumeArray::iterator it2 = volumeArray->begin(); it2 != volumeArray->end(); it2++)
 			{
 				int64 bytes = *it2;
 				Util::SplitInt64(bytes, &High1, &Low1);
-				fprintf(outfile, "%u,%u\n", High1, Low1);
+				outfile.Print("%u,%u\n", High1, Low1);
 			}
 		}
 	}
@@ -2772,7 +2755,7 @@ bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, FILE* outfile)
 	return true;
 }
 
-bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, FILE* infile, int formatVersion)
+bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, DiskFile& infile, int formatVersion)
 {
 	debug("Loading volume stats from disk");
 
@@ -2848,14 +2831,14 @@ void DiskState::WriteCacheFlag()
 {
 	BString<1024> flagFilename("%s%s", g_Options->GetQueueDir(), "acache");
 
-	FILE* outfile = fopen(flagFilename, FOPEN_WB);
-	if (!outfile)
+	DiskFile outfile;
+	if (!outfile.Open(flagFilename, FOPEN_WB))
 	{
 		error("Error saving diskstate: Could not create file %s", *flagFilename);
 		return;
 	}
 
-	fclose(outfile);
+	outfile.Close();
 }
 
 void DiskState::DeleteCacheFlag()
@@ -2868,8 +2851,8 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 {
 	BString<1024> logFilename("%sn%i.log", g_Options->GetQueueDir(), nzbId);
 
-	FILE* outfile = fopen(logFilename, FOPEN_ABP);
-	if (!outfile)
+	DiskFile outfile;
+	if (!outfile.Open(logFilename, FOPEN_ABP))
 	{
 		error("Error saving log: Could not create file %s", *logFilename);
 		return;
@@ -2901,9 +2884,9 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 #endif
 	time[strlen(time) - 1] = '\0'; // trim LF
 
-	fprintf(outfile, "%s\t%u\t%s\t%s%s", *time, (int)tm, messageType[kind], *tmp2, LINE_ENDING);
+	outfile.Print("%s\t%u\t%s\t%s%s", *time, (int)tm, messageType[kind], *tmp2, LINE_ENDING);
 
-	fclose(outfile);
+	outfile.Close();
 }
 
 void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
@@ -2919,8 +2902,8 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 		return;
 	}
 
-	FILE* infile = fopen(logFilename, FOPEN_RB);
-	if (!infile)
+	DiskFile infile;
+	if (!infile.Open(logFilename, FOPEN_RB))
 	{
 		error("Error reading log: could not open file %s", *logFilename);
 		return;
@@ -2928,7 +2911,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 
 	int id = 0;
 	char line[1024];
-	while (fgets(line, sizeof(line), infile))
+	while (infile.ReadLine(line, sizeof(line)))
 	{
 		Util::TrimRight(line);
 
@@ -2974,6 +2957,6 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 	}
 
 exit:
-	fclose(infile);
+	infile.Close();
 	return;
 }

@@ -214,8 +214,8 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 		(!GetTerminated() || m_autoTerminated) &&
 		m_password.Empty() && !Util::EmptyStr(g_Options->GetUnpackPassFile()))
 	{
-		FILE* infile = fopen(g_Options->GetUnpackPassFile(), FOPEN_RB);
-		if (!infile)
+		DiskFile infile;
+		if (!infile.Open(g_Options->GetUnpackPassFile(), FOPEN_RB))
 		{
 			PrintMessage(Message::mkError, "Could not open file %s", g_Options->GetUnpackPassFile());
 			return;
@@ -224,7 +224,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 		char password[512];
 		while (!m_unpackOk && !m_unpackStartError && !m_unpackSpaceError &&
 			(m_unpackDecryptError || m_unpackPasswordError) &&
-			fgets(password, sizeof(password) - 1, infile))
+			infile.ReadLine(password, sizeof(password) - 1))
 		{
 			// trim trailing <CR> and <LF>
 			char* end = password + strlen(password) - 1;
@@ -245,7 +245,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 			}
 		}
 
-		fclose(infile);
+		infile.Close();
 		m_passListTried = !IsStopped() || m_autoTerminated;
 	}
 }
@@ -497,8 +497,8 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 
 	BString<1024> destFilename("%s%c%s", *m_unpackDir, PATH_SEPARATOR, *destBaseName);
 
-	FILE* outFile = fopen(destFilename, FOPEN_WBP);
-	if (!outFile)
+	DiskFile outFile;
+	if (!outFile.Open(destFilename, FOPEN_WBP))
 	{
 		PrintMessage(Message::mkError, "Could not create file %s: %s", *destFilename,
 			*FileSystem::GetLastErrorMessage());
@@ -506,7 +506,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	}
 	if (g_Options->GetWriteBuffer() > 0)
 	{
-		setvbuf(outFile, NULL, _IOFBF, g_Options->GetWriteBuffer() * 1024);
+		outFile.SetWriteBuffer(g_Options->GetWriteBuffer() * 1024);
 	}
 
 	int64 totalSize = firstSegmentSize * (count - 1) + difSegmentSize;
@@ -527,18 +527,18 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 			break;
 		}
 
-		FILE* inFile = fopen(fragFilename, FOPEN_RB);
-		if (inFile)
+		DiskFile inFile;
+		if (inFile.Open(fragFilename, FOPEN_RB))
 		{
 			int cnt = BUFFER_SIZE;
 			while (cnt == BUFFER_SIZE)
 			{
-				cnt = (int)fread(buffer, 1, BUFFER_SIZE, inFile);
-				fwrite(buffer, 1, cnt, outFile);
+				cnt = (int)inFile.Read(buffer, BUFFER_SIZE);
+				outFile.Write(buffer, cnt);
 				written += cnt;
 				m_postInfo->SetStageProgress(int(written * 1000 / totalSize));
 			}
-			fclose(inFile);
+			inFile.Close();
 
 			CString fragFilename;
 			fragFilename.Format("%s.%.3i", *destBaseName, i);
@@ -552,7 +552,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 		}
 	}
 
-	fclose(outFile);
+	outFile.Close();
 	free(buffer);
 
 	return ok;
@@ -698,12 +698,11 @@ bool UnpackController::FileHasRarSignature(const char* filename)
 	char fileSignature[8];
 
 	int cnt = 0;
-	FILE* infile;
-	infile = fopen(filename, FOPEN_RB);
-	if (infile)
+	DiskFile infile;
+	if (infile.Open(filename, FOPEN_RB))
 	{
-		cnt = (int)fread(fileSignature, 1, sizeof(fileSignature), infile);
-		fclose(infile);
+		cnt = (int)infile.Read(fileSignature, sizeof(fileSignature));
+		infile.Close();
 	}
 
 	bool rar = cnt == sizeof(fileSignature) &&

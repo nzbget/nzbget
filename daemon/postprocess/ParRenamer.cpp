@@ -293,8 +293,8 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 
 	const int blockSize = 16*1024;
 
-	FILE* file = fopen(filename, FOPEN_RB);
-	if (!file)
+	DiskFile file;
+	if (!file.Open(filename, FOPEN_RB))
 	{
 		PrintMessage(Message::mkError, "Could not open file %s", filename);
 		return;
@@ -304,15 +304,14 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 
 	void* buffer = malloc(blockSize);
 
-	int readBytes = fread(buffer, 1, blockSize, file);
-	int error = ferror(file);
-	if (readBytes != blockSize && error)
+	int readBytes = (int)file.Read(buffer, blockSize);
+	if (readBytes != blockSize && file.Error())
 	{
 		PrintMessage(Message::mkError, "Could not read file %s", filename);
 		return;
 	}
 
-	fclose(file);
+	file.Close();
 
 	Par2::MD5Hash hash16k;
 	Par2::MD5Context context;
@@ -359,8 +358,8 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 		return;
 	}
 
-	FILE* file = fopen(filename, FOPEN_RB);
-	if (!file)
+	DiskFile file;
+	if (!file.Open(filename, FOPEN_RB))
 	{
 		PrintMessage(Message::mkError, "Could not open file %s", filename);
 		return;
@@ -369,15 +368,14 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 	// load par2-header
 	Par2::PACKET_HEADER header;
 
-	int readBytes = fread(&header, 1, sizeof(header), file);
-	int error = ferror(file);
-	if (readBytes != sizeof(header) && error)
+	int readBytes = (int)file.Read(&header, sizeof(header));
+	if (readBytes != sizeof(header) && file.Error())
 	{
 		PrintMessage(Message::mkError, "Could not read file %s", filename);
 		return;
 	}
 
-	fclose(file);
+	file.Close();
 
 	// Check the packet header
 	if (Par2::packet_magic != header.magic ||          // not par2-file

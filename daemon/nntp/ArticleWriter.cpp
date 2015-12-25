@@ -58,12 +58,11 @@ ArticleWriter::~ArticleWriter()
 	}
 }
 
-void ArticleWriter::SetWriteBuffer(FILE* outFile, int recSize)
+void ArticleWriter::SetWriteBuffer(DiskFile& outFile, int recSize)
 {
 	if (g_Options->GetWriteBuffer() > 0)
 	{
-		setvbuf(outFile, NULL, _IOFBF,
-			recSize > 0 && recSize < g_Options->GetWriteBuffer() * 1024 ?
+		outFile.SetWriteBuffer(recSize > 0 && recSize < g_Options->GetWriteBuffer() * 1024 ?
 			recSize : g_Options->GetWriteBuffer() * 1024);
 	}
 }
@@ -77,7 +76,7 @@ void ArticleWriter::Prepare()
 bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 fileSize,
 	int64 articleOffset, int articleSize)
 {
-	m_outFile = NULL;
+	m_outFile.Close();
 	m_format = format;
 	m_articleOffset = articleOffset;
 	m_articleSize = articleSize ? articleSize : m_articleInfo->GetSize();
@@ -149,8 +148,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 	{
 		bool directWrite = g_Options->GetDirectWrite() && m_format == Decoder::efYenc;
 		const char* filename = directWrite ? m_outputFilename : m_tempFilename;
-		m_outFile = fopen(filename, directWrite ? FOPEN_RBP : FOPEN_WB);
-		if (!m_outFile)
+		if (!m_outFile.Open(filename, directWrite ? FOPEN_RBP : FOPEN_WB))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 				"Could not %s file %s: %s", directWrite ? "open" : "create", filename,
@@ -161,14 +159,14 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 
 		if (g_Options->GetDirectWrite() && m_format == Decoder::efYenc)
 		{
-			fseek(m_outFile, m_articleOffset, SEEK_SET);
+			m_outFile.Seek(m_articleOffset);
 		}
 	}
 
 	return true;
 }
 
-bool ArticleWriter::Write(char* bufffer, int len)
+bool ArticleWriter::Write(char* buffer, int len)
 {
 	if (g_Options->GetDecode())
 	{
@@ -182,20 +180,16 @@ bool ArticleWriter::Write(char* bufffer, int len)
 			detail("Decoding %s failed: article size mismatch", *m_infoName);
 			return false;
 		}
-		memcpy(m_articleData + m_articlePtr - len, bufffer, len);
+		memcpy(m_articleData + m_articlePtr - len, buffer, len);
 		return true;
 	}
 
-	return fwrite(bufffer, 1, len, m_outFile) > 0;
+	return m_outFile.Write(buffer, len) > 0;
 }
 
 void ArticleWriter::Finish(bool success)
 {
-	if (m_outFile)
-	{
-		fclose(m_outFile);
-		m_outFile = NULL;
-	}
+	m_outFile.Close();
 
 	if (!success)
 	{
@@ -362,14 +356,13 @@ void ArticleWriter::CompleteFileParts()
 
 	CString ofn = FileSystem::MakeUniqueFilename(nzbDestDir, m_fileInfo->GetFilename());
 
-	FILE* outfile = NULL;
+	DiskFile outfile;
 	BString<1024> tmpdestfile("%s.tmp", *ofn);
 
 	if (g_Options->GetDecode() && !directWrite)
 	{
 		remove(tmpdestfile);
-		outfile = fopen(tmpdestfile, FOPEN_WBP);
-		if (!outfile)
+		if (!outfile.Open(tmpdestfile, FOPEN_WBP))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 				"Could not create file %s: %s", *tmpdestfile, *FileSystem::GetLastErrorMessage());
@@ -378,8 +371,7 @@ void ArticleWriter::CompleteFileParts()
 	}
 	else if (directWrite && cached)
 	{
-		outfile = fopen(m_outputFilename, FOPEN_RBP);
-		if (!outfile)
+		if (!outfile.Open(m_outputFilename, FOPEN_RBP))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 				"Could not open file %s: %s", *m_outputFilename, *FileSystem::GetLastErrorMessage());
@@ -398,7 +390,7 @@ void ArticleWriter::CompleteFileParts()
 		}
 	}
 
-	if (outfile)
+	if (outfile.Active())
 	{
 		SetWriteBuffer(outfile, 0);
 	}
@@ -428,33 +420,33 @@ void ArticleWriter::CompleteFileParts()
 		}
 
 		if (g_Options->GetDecode() && !directWrite && pa->GetSegmentOffset() > -1 &&
-			pa->GetSegmentOffset() > ftell(outfile) && ftell(outfile) > -1)
+			pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1)
 		{
 			memset(buffer, 0, BUFFER_SIZE);
-			while (pa->GetSegmentOffset() > ftell(outfile) && ftell(outfile) > -1 &&
-				fwrite(buffer, 1, (std::min)((int)(pa->GetSegmentOffset() - ftell(outfile)), BUFFER_SIZE), outfile)) ;
+			while (pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1 &&
+				outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), BUFFER_SIZE))) ;
 		}
 
 		if (pa->GetSegmentContent())
 		{
-			fseek(outfile, pa->GetSegmentOffset(), SEEK_SET);
-			fwrite(pa->GetSegmentContent(), 1, pa->GetSegmentSize(), outfile);
+			outfile.Seek(pa->GetSegmentOffset());
+			outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
 			pa->DiscardSegment();
 			SetLastUpdateTimeNow();
 		}
 		else if (g_Options->GetDecode() && !directWrite)
 		{
-			FILE* infile = pa->GetResultFilename() ? fopen(pa->GetResultFilename(), FOPEN_RB) : NULL;
-			if (infile)
+			DiskFile infile;
+			if (pa->GetResultFilename() && infile.Open(pa->GetResultFilename(), FOPEN_RB))
 			{
 				int cnt = BUFFER_SIZE;
 				while (cnt == BUFFER_SIZE)
 				{
-					cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-					fwrite(buffer, 1, cnt, outfile);
+					cnt = (int)infile.Read(buffer, BUFFER_SIZE);
+					outfile.Write(buffer, cnt);
 					SetLastUpdateTimeNow();
 				}
-				fclose(infile);
+				infile.Close();
 			}
 			else
 			{
@@ -492,9 +484,9 @@ void ArticleWriter::CompleteFileParts()
 		m_flushing = false;
 	}
 
-	if (outfile)
+	if (outfile.Active())
 	{
-		fclose(outfile);
+		outfile.Close();
 		if (!directWrite && !FileSystem::MoveFile(tmpdestfile, ofn))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
@@ -551,10 +543,13 @@ void ArticleWriter::CompleteFileParts()
 		if (g_Options->GetBrokenLog())
 		{
 			BString<1024> brokenLogName("%s%c_brokenlog.txt", *nzbDestDir, (int)PATH_SEPARATOR);
-			FILE* file = fopen(brokenLogName, FOPEN_AB);
-			fprintf(file, "%s (%i/%i)%s", m_fileInfo->GetFilename(), m_fileInfo->GetSuccessArticles(),
-				m_fileInfo->GetTotalArticles(), LINE_ENDING);
-			fclose(file);
+			DiskFile file;
+			if (file.Open(brokenLogName, FOPEN_AB))
+			{
+				file.Print("%s (%i/%i)%s", m_fileInfo->GetFilename(), m_fileInfo->GetSuccessArticles(),
+					m_fileInfo->GetTotalArticles(), LINE_ENDING);
+				file.Close();
+			}
 		}
 
 		crc = 0;
@@ -588,7 +583,7 @@ void ArticleWriter::FlushCache()
 	detail("Flushing cache for %s", *m_infoName);
 
 	bool directWrite = g_Options->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
-	FILE* outfile = NULL;
+	DiskFile outfile;
 	bool needBufFile = false;
 	int flushedArticles = 0;
 	int64 flushedSize = 0;
@@ -619,10 +614,9 @@ void ArticleWriter::FlushCache()
 
 		ArticleInfo* pa = *it;
 
-		if (directWrite && !outfile)
+		if (directWrite && !outfile.Active())
 		{
-			outfile = fopen(m_fileInfo->GetOutputFilename(), FOPEN_RBP);
-			if (!outfile)
+			if (!outfile.Open(m_fileInfo->GetOutputFilename(), FOPEN_RBP))
 			{
 				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 					"Could not open file %s: %s", m_fileInfo->GetOutputFilename(),
@@ -637,8 +631,7 @@ void ArticleWriter::FlushCache()
 		if (!directWrite)
 		{
 			destFile.Format("%s.tmp", pa->GetResultFilename());
-			outfile = fopen(destFile, FOPEN_WB);
-			if (!outfile)
+			if (!outfile.Open(destFile, FOPEN_WB))
 			{
 				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 					"Could not create file %s: %s", *destFile,
@@ -648,7 +641,7 @@ void ArticleWriter::FlushCache()
 			needBufFile = true;
 		}
 
-		if (outfile && needBufFile)
+		if (outfile.Active() && needBufFile)
 		{
 			SetWriteBuffer(outfile, 0);
 			needBufFile = false;
@@ -656,10 +649,10 @@ void ArticleWriter::FlushCache()
 
 		if (directWrite)
 		{
-			fseek(outfile, pa->GetSegmentOffset(), SEEK_SET);
+			outfile.Seek(pa->GetSegmentOffset());
 		}
 
-		fwrite(pa->GetSegmentContent(), 1, pa->GetSegmentSize(), outfile);
+		outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
 
 		flushedSize += pa->GetSegmentSize();
 		flushedArticles++;
@@ -668,8 +661,7 @@ void ArticleWriter::FlushCache()
 
 		if (!directWrite)
 		{
-			fclose(outfile);
-			outfile = NULL;
+			outfile.Close();
 
 			if (!FileSystem::MoveFile(destFile, pa->GetResultFilename()))
 			{
@@ -680,10 +672,7 @@ void ArticleWriter::FlushCache()
 		}
 	}
 
-	if (outfile)
-	{
-		fclose(outfile);
-	}
+	outfile.Close();
 
 	g_ArticleCache->LockContent();
 	m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() - flushedArticles);
@@ -745,23 +734,21 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 			if (FileSystem::FileExists(brokenLogName))
 			{
 				// copy content to existing new file, then delete old file
-				FILE* outfile;
-				outfile = fopen(brokenLogName, FOPEN_AB);
-				if (outfile)
+				DiskFile outfile;
+				if (outfile.Open(brokenLogName, FOPEN_AB))
 				{
-					FILE* infile;
-					infile = fopen(oldBrokenLogName, FOPEN_RB);
-					if (infile)
+					DiskFile infile;
+					if (infile.Open(oldBrokenLogName, FOPEN_RB))
 					{
 						static const int BUFFER_SIZE = 1024 * 50;
 						int cnt = BUFFER_SIZE;
 						char* buffer = (char*)malloc(BUFFER_SIZE);
 						while (cnt == BUFFER_SIZE)
 						{
-							cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-							fwrite(buffer, 1, cnt, outfile);
+							cnt = (int)infile.Read(buffer, BUFFER_SIZE);
+							outfile.Write(buffer, cnt);
 						}
-						fclose(infile);
+						infile.Close();
 						free(buffer);
 						remove(oldBrokenLogName);
 					}
@@ -769,7 +756,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 					{
 						nzbInfo->PrintMessage(Message::mkError, "Could not open file %s", *oldBrokenLogName);
 					}
-					fclose(outfile);
+					outfile.Close();
 				}
 				else
 				{

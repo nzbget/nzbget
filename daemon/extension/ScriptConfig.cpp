@@ -117,9 +117,9 @@ ScriptConfig::~ScriptConfig()
 bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 {
 	// read config file
-	FILE* infile = fopen(g_Options->GetConfigFilename(), FOPEN_RB);
+	DiskFile infile;
 
-	if (!infile)
+	if (!infile.Open(g_Options->GetConfigFilename(), FOPEN_RB))
 	{
 		return false;
 	}
@@ -127,7 +127,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 	int bufLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename()) + 1;
 	char* buf = (char*)malloc(bufLen);
 
-	while (fgets(buf, bufLen - 1, infile))
+	while (infile.ReadLine(buf, bufLen - 1))
 	{
 		// remove trailing '\n' and '\r' and spaces
 		Util::TrimRight(buf);
@@ -149,7 +149,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 		}
 	}
 
-	fclose(infile);
+	infile.Close();
 	free(buf);
 
 	return true;
@@ -158,9 +158,9 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 {
 	// save to config file
-	FILE* infile = fopen(g_Options->GetConfigFilename(), FOPEN_RBP);
+	DiskFile infile;
 
-	if (!infile)
+	if (!infile.Open(g_Options->GetConfigFilename(), FOPEN_RBP))
 	{
 		return false;
 	}
@@ -172,14 +172,14 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	int fileLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename());
 	CString content;
 	content.Reserve(fileLen);
-	while (fgets(content, fileLen, infile))
+	while (infile.ReadLine(content, fileLen))
 	{
 		config.push_back(*content);
 	}
 	content.Clear();
 
 	// write config file back to disk, replace old values of existing options with new values
-	rewind(infile);
+	infile.Seek(0);
 	for (std::vector<CString>::iterator it = config.begin(); it != config.end(); it++)
 	{
 		CString& buf = *it;
@@ -197,17 +197,14 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 				Options::OptEntry *optEntry = optEntries->FindOption(optname);
 				if (optEntry)
 				{
-					fputs(optEntry->GetName(), infile);
-					fputs("=", infile);
-					fputs(optEntry->GetValue(), infile);
-					fputs("\n", infile);
+					infile.Print("%s=%s\n", optEntry->GetName(), optEntry->GetValue());
 					writtenOptions.insert(optEntry);
 				}
 			}
 		}
 		else
 		{
-			fputs(buf, infile);
+			infile.Print("%s", *buf);
 		}
 	}
 
@@ -218,16 +215,13 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 		std::set<Options::OptEntry*>::iterator fit = writtenOptions.find(optEntry);
 		if (fit == writtenOptions.end())
 		{
-			fputs(optEntry->GetName(), infile);
-			fputs("=", infile);
-			fputs(optEntry->GetValue(), infile);
-			fputs("\n", infile);
+			infile.Print("%s=%s\n", optEntry->GetName(), optEntry->GetValue());
 		}
 	}
 
 	// close and truncate the file
-	int pos = (int)ftell(infile);
-	fclose(infile);
+	int pos = (int)infile.Position();
+	infile.Close();
 
 	FileSystem::TruncateFile(g_Options->GetConfigFilename(), pos);
 
@@ -261,8 +255,8 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 	{
 		Script* script = *it;
 
-		FILE* infile = fopen(script->GetLocation(), FOPEN_RB);
-		if (!infile)
+		DiskFile infile;
+		if (!infile.Open(script->GetLocation(), FOPEN_RB))
 		{
 			ConfigTemplate* configTemplate = new ConfigTemplate(script, "");
 			configTemplates->push_back(configTemplate);
@@ -273,7 +267,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 		char buf[1024];
 		bool inConfig = false;
 
-		while (fgets(buf, sizeof(buf) - 1, infile))
+		while (infile.ReadLine(buf, sizeof(buf) - 1))
 		{
 			if (!strncmp(buf, BEGIN_SCRIPT_SIGNATURE, beginSignatureLen) &&
 				strstr(buf, END_SCRIPT_SIGNATURE) &&
@@ -299,7 +293,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 			}
 		}
 
-		fclose(infile);
+		infile.Close();
 
 		ConfigTemplate* configTemplate = new ConfigTemplate(script, templ);
 		configTemplates->push_back(configTemplate);
@@ -380,12 +374,12 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 			if (!FileSystem::DirectoryExists(fullFilename))
 			{
 				// check if the file contains pp-script-signature
-				FILE* infile = fopen(fullFilename, FOPEN_RB);
-				if (infile)
+				DiskFile infile;
+				if (infile.Open(fullFilename, FOPEN_RB))
 				{
 					// read first 10KB of the file and look for signature
-					int readBytes = fread(buffer, 1, bufSize, infile);
-					fclose(infile);
+					int readBytes = (int)infile.Read(buffer, bufSize);
+					infile.Close();
 					buffer[readBytes] = 0;
 
 					// split buffer into lines

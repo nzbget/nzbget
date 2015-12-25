@@ -1468,9 +1468,9 @@ void Options::LoadConfigFile()
 {
 	SetOption(OPTION_CONFIGFILE, m_configFilename);
 
-	FILE* infile = fopen(m_configFilename, FOPEN_RB);
+	DiskFile infile;
 
-	if (!infile)
+	if (!infile.Open(m_configFilename, FOPEN_RB))
 	{
 		ConfigError("Could not open file %s", *m_configFilename);
 		m_fatalError = true;
@@ -1482,7 +1482,7 @@ void Options::LoadConfigFile()
 	char* buf = (char*)malloc(bufLen);
 
 	int line = 0;
-	while (fgets(buf, bufLen - 1, infile))
+	while (infile.ReadLine(buf, bufLen - 1))
 	{
 		m_configLine = ++line;
 
@@ -1503,7 +1503,7 @@ void Options::LoadConfigFile()
 		SetOptionString(buf);
 	}
 
-	fclose(infile);
+	infile.Close();
 	free(buf);
 
 	m_configLine = 0;

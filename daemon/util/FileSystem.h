@@ -101,4 +101,35 @@ public:
 	const char*			Next();
 };
 
+class DiskFile
+{
+public:
+	enum ESeekOrigin
+	{
+		soSet,
+		soCur,
+		soEnd
+	};
+
+private:
+	FILE*				m_file = nullptr;
+
+public:
+						~DiskFile();
+	bool				Open(const char* filename, const char* mode);
+	bool				Close();
+	bool				Active() { return m_file != nullptr; }
+	int64				Read(void* buffer, int64 size);
+	int64				Write(const void* buffer, int64 size);
+	int64				Position();
+	int64				Seek(int64 position, ESeekOrigin origin = soSet);
+	bool				Eof();
+	bool				Error();
+	int64				Print(const char* format, ...) PRINTF_SYNTAX(2);
+	char*				ReadLine(char* buffer, int64 size);
+	bool				SetWriteBuffer(int size);
+	bool				Flush();
+	bool				Sync(CString& errmsg);
+};
+
 #endif

@@ -30,6 +30,7 @@
 #include "Observer.h"
 #include "Thread.h"
 #include "Connection.h"
+#include "FileSystem.h"
 #include "Util.h"
 
 class WebDownloader : public Thread, public Subject
@@ -56,7 +57,7 @@ private:
 	EStatus				m_status;
 	time_t				m_lastUpdateTime;
 	CString				m_infoName;
-	FILE*				m_outFile;
+	DiskFile			m_outFile;
 	int					m_contentLen;
 	bool				m_confirmedLength;
 	CString				m_originalFilename;

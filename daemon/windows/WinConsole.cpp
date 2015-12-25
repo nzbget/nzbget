@@ -912,15 +912,14 @@ void WinConsole::SetupConfigFile()
 		char* p = strstr(config, SIGNATURE);
 		if (p)
 		{
-			FILE* outfile = fopen(filename, FOPEN_WBP);
-			if (outfile)
+			DiskFile outfile;
+			if (outfile.Open(filename, FOPEN_WBP))
 			{
-				fwrite(config, 1, p - config, outfile);
-				fwrite("MainDir=", 1, 8, outfile);
-				fwrite(appDataPath, 1, strlen(appDataPath), outfile);
-
-				fwrite(p + strlen(SIGNATURE), 1, size - (p + strlen(SIGNATURE) - config) - 1, outfile);
-				fclose(outfile);
+				outfile.Write(config, p - config);
+				outfile.Write("MainDir=", 8);
+				outfile.Write(appDataPath, strlen(appDataPath));
+				outfile.Write(p + strlen(SIGNATURE), size - (p + strlen(SIGNATURE) - config) - 1);
+				outfile.Close();
 			}
 		}
 		free(config);
