@@ -196,6 +196,7 @@ nzbget_SOURCES += \
 endif
 
 AM_CPPFLAGS = \
+	-std=c++11 \
 	-I$(srcdir)/daemon/connect \
 	-I$(srcdir)/daemon/extension \
 	-I$(srcdir)/daemon/feed \
