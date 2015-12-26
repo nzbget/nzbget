@@ -1242,7 +1242,7 @@ void ParChecker::WriteBrokenLog(EStatus status)
 	if (status != psRepairNotNeeded || FileSystem::FileExists(brokenLogName))
 	{
 		DiskFile file;
-		if (file.Open(brokenLogName, FOPEN_AB))
+		if (file.Open(brokenLogName, DiskFile::omAppend))
 		{
 			if (status == psFailed)
 			{
@@ -1502,7 +1502,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 	}
 
 	DiskFile infile;
-	if (!infile.Open(filename, FOPEN_RB))
+	if (!infile.Open(filename, DiskFile::omRead))
 	{
 		PrintMessage(Message::mkError, "Could not open file %s: %s",
 			filename, *FileSystem::GetLastErrorMessage());

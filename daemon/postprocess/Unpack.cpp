@@ -215,7 +215,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 		m_password.Empty() && !Util::EmptyStr(g_Options->GetUnpackPassFile()))
 	{
 		DiskFile infile;
-		if (!infile.Open(g_Options->GetUnpackPassFile(), FOPEN_RB))
+		if (!infile.Open(g_Options->GetUnpackPassFile(), DiskFile::omRead))
 		{
 			PrintMessage(Message::mkError, "Could not open file %s", g_Options->GetUnpackPassFile());
 			return;
@@ -498,7 +498,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	BString<1024> destFilename("%s%c%s", *m_unpackDir, PATH_SEPARATOR, *destBaseName);
 
 	DiskFile outFile;
-	if (!outFile.Open(destFilename, FOPEN_WBP))
+	if (!outFile.Open(destFilename, DiskFile::omWrite))
 	{
 		PrintMessage(Message::mkError, "Could not create file %s: %s", *destFilename,
 			*FileSystem::GetLastErrorMessage());
@@ -528,7 +528,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 		}
 
 		DiskFile inFile;
-		if (inFile.Open(fragFilename, FOPEN_RB))
+		if (inFile.Open(fragFilename, DiskFile::omRead))
 		{
 			int cnt = BUFFER_SIZE;
 			while (cnt == BUFFER_SIZE)
@@ -699,7 +699,7 @@ bool UnpackController::FileHasRarSignature(const char* filename)
 
 	int cnt = 0;
 	DiskFile infile;
-	if (infile.Open(filename, FOPEN_RB))
+	if (infile.Open(filename, DiskFile::omRead))
 	{
 		cnt = (int)infile.Read(fileSignature, sizeof(fileSignature));
 		infile.Close();

@@ -101,7 +101,7 @@ bool StateFile::FileExists()
 
 DiskFile* StateFile::BeginWriteTransaction()
 {
-	if (!m_file.Open(m_tempFilename, FOPEN_WB))
+	if (!m_file.Open(m_tempFilename, DiskFile::omWrite))
 	{
 		error("Error saving diskstate: Could not create file %s: %s", *m_tempFilename,
 			*FileSystem::GetLastErrorMessage());
@@ -166,7 +166,7 @@ DiskFile* StateFile::BeginReadTransaction()
 		}
 	}
 
-	if (!m_file.Open(m_destFilename, FOPEN_RB))
+	if (!m_file.Open(m_destFilename, DiskFile::omRead))
 	{
 		error("Error reading diskstate: could not open file %s: %s", *m_destFilename,
 			*FileSystem::GetLastErrorMessage());
@@ -1123,7 +1123,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 
 	DiskFile outfile;
 
-	if (!outfile.Open(filename, FOPEN_WB))
+	if (!outfile.Open(filename, DiskFile::omWrite))
 	{
 		error("Error saving diskstate: could not create file %s", filename);
 		return false;
@@ -1174,7 +1174,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 
 	DiskFile infile;
 
-	if (!infile.Open(filename, FOPEN_RB))
+	if (!infile.Open(filename, DiskFile::omRead))
 	{
 		error("Error reading diskstate: could not open file %s", filename);
 		return false;
@@ -1291,7 +1291,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	DiskFile outfile;
 
-	if (!outfile.Open(filename, FOPEN_WB))
+	if (!outfile.Open(filename, DiskFile::omWrite))
 	{
 		error("Error saving diskstate: could not create file %s", *filename);
 		return false;
@@ -1328,7 +1328,7 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
 	DiskFile infile;
 
-	if (!infile.Open(filename, FOPEN_RB))
+	if (!infile.Open(filename, DiskFile::omRead))
 	{
 		error("Error reading diskstate: could not open file %s", *filename);
 		return false;
@@ -1542,7 +1542,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 
 	DiskFile infile;
 
-	if (!infile.Open(fileName, FOPEN_RB))
+	if (!infile.Open(fileName, DiskFile::omRead))
 	{
 		error("Error reading diskstate: could not open file %s", *fileName);
 		return false;
@@ -2832,7 +2832,7 @@ void DiskState::WriteCacheFlag()
 	BString<1024> flagFilename("%s%s", g_Options->GetQueueDir(), "acache");
 
 	DiskFile outfile;
-	if (!outfile.Open(flagFilename, FOPEN_WB))
+	if (!outfile.Open(flagFilename, DiskFile::omWrite))
 	{
 		error("Error saving diskstate: Could not create file %s", *flagFilename);
 		return;
@@ -2852,7 +2852,7 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 	BString<1024> logFilename("%sn%i.log", g_Options->GetQueueDir(), nzbId);
 
 	DiskFile outfile;
-	if (!outfile.Open(logFilename, FOPEN_ABP))
+	if (!outfile.Open(logFilename, DiskFile::omAppend))
 	{
 		error("Error saving log: Could not create file %s", *logFilename);
 		return;
@@ -2903,7 +2903,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 	}
 
 	DiskFile infile;
-	if (!infile.Open(logFilename, FOPEN_RB))
+	if (!infile.Open(logFilename, DiskFile::omRead))
 	{
 		error("Error reading log: could not open file %s", *logFilename);
 		return;

@@ -284,9 +284,7 @@ using namespace MSXML;
 #define FOPEN_RB "rbN"
 #define FOPEN_RBP "rb+N"
 #define FOPEN_WB "wbN"
-#define FOPEN_WBP "wb+N"
 #define FOPEN_AB "abN"
-#define FOPEN_ABP "ab+N"
 
 #ifdef DEBUG
 // redefine "exit" to avoid printing memory leaks report when terminated because of wrong command line switches
@@ -308,9 +306,7 @@ using namespace MSXML;
 #define FOPEN_RB "rb"
 #define FOPEN_RBP "rb+"
 #define FOPEN_WB "wb"
-#define FOPEN_WBP "wb+"
 #define FOPEN_AB "ab"
-#define FOPEN_ABP "ab+"
 #define CHILD_WATCHDOG 1
 
 #endif /* POSIX */

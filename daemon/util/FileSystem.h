@@ -104,6 +104,14 @@ public:
 class DiskFile
 {
 public:
+	enum EOpenMode
+	{
+		omRead,			// file must exist
+		omReadWrite,	// file must exist
+		omWrite,		// create new or overwrite existing
+		omAppend		// create new or append to existing
+	};
+
 	enum ESeekOrigin
 	{
 		soSet,
@@ -116,7 +124,7 @@ private:
 
 public:
 						~DiskFile();
-	bool				Open(const char* filename, const char* mode);
+	bool				Open(const char* filename, EOpenMode mode);
 	bool				Close();
 	bool				Active() { return m_file != nullptr; }
 	int64				Read(void* buffer, int64 size);

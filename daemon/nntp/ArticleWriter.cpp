@@ -148,7 +148,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 	{
 		bool directWrite = g_Options->GetDirectWrite() && m_format == Decoder::efYenc;
 		const char* filename = directWrite ? m_outputFilename : m_tempFilename;
-		if (!m_outFile.Open(filename, directWrite ? FOPEN_RBP : FOPEN_WB))
+		if (!m_outFile.Open(filename, directWrite ? DiskFile::omReadWrite : DiskFile::omWrite))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 				"Could not %s file %s: %s", directWrite ? "open" : "create", filename,
@@ -362,7 +362,7 @@ void ArticleWriter::CompleteFileParts()
 	if (g_Options->GetDecode() && !directWrite)
 	{
 		FileSystem::DeleteFile(tmpdestfile);
-		if (!outfile.Open(tmpdestfile, FOPEN_WBP))
+		if (!outfile.Open(tmpdestfile, DiskFile::omWrite))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 				"Could not create file %s: %s", *tmpdestfile, *FileSystem::GetLastErrorMessage());
@@ -371,7 +371,7 @@ void ArticleWriter::CompleteFileParts()
 	}
 	else if (directWrite && cached)
 	{
-		if (!outfile.Open(m_outputFilename, FOPEN_RBP))
+		if (!outfile.Open(m_outputFilename, DiskFile::omReadWrite))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 				"Could not open file %s: %s", *m_outputFilename, *FileSystem::GetLastErrorMessage());
@@ -437,7 +437,7 @@ void ArticleWriter::CompleteFileParts()
 		else if (g_Options->GetDecode() && !directWrite)
 		{
 			DiskFile infile;
-			if (pa->GetResultFilename() && infile.Open(pa->GetResultFilename(), FOPEN_RB))
+			if (pa->GetResultFilename() && infile.Open(pa->GetResultFilename(), DiskFile::omRead))
 			{
 				int cnt = BUFFER_SIZE;
 				while (cnt == BUFFER_SIZE)
@@ -544,7 +544,7 @@ void ArticleWriter::CompleteFileParts()
 		{
 			BString<1024> brokenLogName("%s%c_brokenlog.txt", *nzbDestDir, (int)PATH_SEPARATOR);
 			DiskFile file;
-			if (file.Open(brokenLogName, FOPEN_AB))
+			if (file.Open(brokenLogName, DiskFile::omAppend))
 			{
 				file.Print("%s (%i/%i)%s", m_fileInfo->GetFilename(), m_fileInfo->GetSuccessArticles(),
 					m_fileInfo->GetTotalArticles(), LINE_ENDING);
@@ -616,7 +616,7 @@ void ArticleWriter::FlushCache()
 
 		if (directWrite && !outfile.Active())
 		{
-			if (!outfile.Open(m_fileInfo->GetOutputFilename(), FOPEN_RBP))
+			if (!outfile.Open(m_fileInfo->GetOutputFilename(), DiskFile::omReadWrite))
 			{
 				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 					"Could not open file %s: %s", m_fileInfo->GetOutputFilename(),
@@ -631,7 +631,7 @@ void ArticleWriter::FlushCache()
 		if (!directWrite)
 		{
 			destFile.Format("%s.tmp", pa->GetResultFilename());
-			if (!outfile.Open(destFile, FOPEN_WB))
+			if (!outfile.Open(destFile, DiskFile::omWrite))
 			{
 				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 					"Could not create file %s: %s", *destFile,
@@ -735,10 +735,10 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 			{
 				// copy content to existing new file, then delete old file
 				DiskFile outfile;
-				if (outfile.Open(brokenLogName, FOPEN_AB))
+				if (outfile.Open(brokenLogName, DiskFile::omAppend))
 				{
 					DiskFile infile;
-					if (infile.Open(oldBrokenLogName, FOPEN_RB))
+					if (infile.Open(oldBrokenLogName, DiskFile::omRead))
 					{
 						static const int BUFFER_SIZE = 1024 * 50;
 						int cnt = BUFFER_SIZE;

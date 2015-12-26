@@ -378,7 +378,7 @@ bool FileSystem::CopyFile(const char* srcFilename, const char* dstFilename)
 		return false;
 	}
 
-	FILE* outfile = fopen(dstFilename, FOPEN_WBP);
+	FILE* outfile = fopen(dstFilename, FOPEN_WB);
 	if (!outfile)
 	{
 		fclose(infile);
@@ -855,9 +855,10 @@ DiskFile::~DiskFile()
 	}
 }
 
-bool DiskFile::Open(const char* filename, const char* mode)
+bool DiskFile::Open(const char* filename, EOpenMode mode)
 {
-	m_file = fopen(filename, mode);
+	m_file = fopen(filename, mode == omRead ? FOPEN_RB : mode == omReadWrite ?
+		FOPEN_RBP : mode == omWrite ? FOPEN_WB : FOPEN_AB);
 	return m_file;
 }
 

@@ -109,7 +109,7 @@ void Log::Filelog(const char* msg, ...)
 	m_lastWritten = rawtime;
 
 	DiskFile file;
-	if (file.Open(m_logFilename, FOPEN_ABP))
+	if (file.Open(m_logFilename, DiskFile::omAppend))
 	{
 #ifdef WIN32
 		uint64 processId = GetCurrentProcessId();

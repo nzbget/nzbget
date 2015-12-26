@@ -436,7 +436,7 @@ void NzbFile::ProcessFiles()
 void NzbFile::ReadPassword()
 {
 	DiskFile file;
-	if (!file.Open(m_fileName, FOPEN_RB))
+	if (!file.Open(m_fileName, DiskFile::omRead))
 	{
 		return;
 	}

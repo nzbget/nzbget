@@ -373,7 +373,7 @@ Signature::~Signature()
 bool Signature::ComputeInHash()
 {
 	DiskFile infile;
-	if (!infile.Open(m_inFilename, FOPEN_RB))
+	if (!infile.Open(m_inFilename, DiskFile::omRead))
 	{
 		return false;
 	}
@@ -397,7 +397,7 @@ bool Signature::ReadSignature()
 	BString<1024> sigTitle("\"RSA-SHA256(%s)\" : \"", FileSystem::BaseFileName(m_inFilename));
 
 	DiskFile infile;
-	if (!infile.Open(m_sigFilename, FOPEN_RB))
+	if (!infile.Open(m_sigFilename, DiskFile::omRead))
 	{
 		return false;
 	}

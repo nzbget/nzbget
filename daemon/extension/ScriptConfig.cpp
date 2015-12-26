@@ -119,7 +119,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 	// read config file
 	DiskFile infile;
 
-	if (!infile.Open(g_Options->GetConfigFilename(), FOPEN_RB))
+	if (!infile.Open(g_Options->GetConfigFilename(), DiskFile::omRead))
 	{
 		return false;
 	}
@@ -160,7 +160,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	// save to config file
 	DiskFile infile;
 
-	if (!infile.Open(g_Options->GetConfigFilename(), FOPEN_RBP))
+	if (!infile.Open(g_Options->GetConfigFilename(), DiskFile::omReadWrite))
 	{
 		return false;
 	}
@@ -256,7 +256,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 		Script* script = *it;
 
 		DiskFile infile;
-		if (!infile.Open(script->GetLocation(), FOPEN_RB))
+		if (!infile.Open(script->GetLocation(), DiskFile::omRead))
 		{
 			ConfigTemplate* configTemplate = new ConfigTemplate(script, "");
 			configTemplates->push_back(configTemplate);
@@ -375,7 +375,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 			{
 				// check if the file contains pp-script-signature
 				DiskFile infile;
-				if (infile.Open(fullFilename, FOPEN_RB))
+				if (infile.Open(fullFilename, DiskFile::omRead))
 				{
 					// read first 10KB of the file and look for signature
 					int readBytes = (int)infile.Read(buffer, bufSize);

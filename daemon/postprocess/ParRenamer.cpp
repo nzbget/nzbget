@@ -294,7 +294,7 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 	const int blockSize = 16*1024;
 
 	DiskFile file;
-	if (!file.Open(filename, FOPEN_RB))
+	if (!file.Open(filename, DiskFile::omRead))
 	{
 		PrintMessage(Message::mkError, "Could not open file %s", filename);
 		return;
@@ -359,7 +359,7 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 	}
 
 	DiskFile file;
-	if (!file.Open(filename, FOPEN_RB))
+	if (!file.Open(filename, DiskFile::omRead))
 	{
 		PrintMessage(Message::mkError, "Could not open file %s", filename);
 		return;

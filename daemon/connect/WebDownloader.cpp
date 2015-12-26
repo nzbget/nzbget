@@ -627,7 +627,7 @@ bool WebDownloader::PrepareFile()
 	// prepare file for writing
 
 	const char* filename = m_outputFilename;
-	if (!m_outFile.Open(filename, FOPEN_WB))
+	if (!m_outFile.Open(filename, DiskFile::omWrite))
 	{
 		error("Could not %s file %s", "create", filename);
 		return false;

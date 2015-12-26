@@ -913,7 +913,7 @@ void WinConsole::SetupConfigFile()
 		if (p)
 		{
 			DiskFile outfile;
-			if (outfile.Open(filename, FOPEN_WBP))
+			if (outfile.Open(filename, DiskFile::omWrite))
 			{
 				outfile.Write(config, p - config);
 				outfile.Write("MainDir=", 8);

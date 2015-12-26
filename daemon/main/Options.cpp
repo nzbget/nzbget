@@ -1470,7 +1470,7 @@ void Options::LoadConfigFile()
 
 	DiskFile infile;
 
-	if (!infile.Open(m_configFilename, FOPEN_RB))
+	if (!infile.Open(m_configFilename, DiskFile::omRead))
 	{
 		ConfigError("Could not open file %s", *m_configFilename);
 		m_fatalError = true;
