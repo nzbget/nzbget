@@ -1386,32 +1386,6 @@ BreakLoop:
 	return result;
 }
 
-#ifdef WIN32
-bool WebUtil::Utf8ToAnsi(char* buffer, int bufLen)
-{
-	WCHAR* wstr = (WCHAR*)malloc(bufLen * 2);
-	int errcode = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, wstr, bufLen);
-	if (errcode > 0)
-	{
-		errcode = WideCharToMultiByte(CP_ACP, 0, wstr, -1, buffer, bufLen, "_", NULL);
-	}
-	free(wstr);
-	return errcode > 0;
-}
-
-bool WebUtil::AnsiToUtf8(char* buffer, int bufLen)
-{
-	WCHAR* wstr = (WCHAR*)malloc(bufLen * 2);
-	int errcode = MultiByteToWideChar(CP_ACP, 0, buffer, -1, wstr, bufLen);
-	if (errcode > 0)
-	{
-		errcode = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, buffer, bufLen, NULL, NULL);
-	}
-	free(wstr);
-	return errcode > 0;
-}
-#endif
-
 CString WebUtil::Latin1ToUtf8(const char* str)
 {
 	CString res;

@@ -177,11 +177,6 @@ public:
 	 */
 	static CString UrlEncode(const char* raw);
 
-#ifdef WIN32
-	static bool Utf8ToAnsi(char* buffer, int bufLen);
-	static bool AnsiToUtf8(char* buffer, int bufLen);
-#endif
-
 	/*
 	 * Converts ISO-8859-1 (aka Latin-1) into UTF-8.
 	 */
