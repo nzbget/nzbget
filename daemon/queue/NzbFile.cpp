@@ -495,7 +495,7 @@ bool NzbFile::Parse()
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
 
-	_variant_t vFilename(*m_fileName);
+	_variant_t vFilename(*WString(*m_fileName));
 
 	// 1. first trying to load via filename without URL-encoding (certain charaters doesn't work when encoded)
 	VARIANT_BOOL success = doc->load(vFilename);
@@ -538,24 +538,23 @@ bool NzbFile::Parse()
 
 void NzbFile::EncodeUrl(const char* filename, char* url, int bufLen)
 {
-	BString<1024> utfFilename = filename;
-	WebUtil::AnsiToUtf8(utfFilename, utfFilename.Capacity());
+	WString widefilename(filename);
 
 	char* end = url + bufLen;
-	for (char* p = utfFilename; *p && url < end - 3; p++)
+	for (wchar_t* p = widefilename; *p && url < end - 3; p++)
 	{
-		char ch = *p;
+		wchar_t ch = *p;
 		if (('0' <= ch && ch <= '9') ||
 			('a' <= ch && ch <= 'z') ||
 			('A' <= ch && ch <= 'Z') ||
 			ch == '-' || ch == '.' || ch == '_' || ch == '~')
 		{
-			*url++ = ch;
+			*url++ = (char)ch;
 		}
 		else
 		{
 			*url++ = '%';
-			int a = (uchar)ch >> 4;
+			uint32 a = (uint32)ch >> 4;
 			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 			a = ch & 0xF;
 			*url++ = a > 9 ? a - 10 + 'A' : a + '0';

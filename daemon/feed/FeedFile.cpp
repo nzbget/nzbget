@@ -28,6 +28,7 @@
 #include "Log.h"
 #include "DownloadInfo.h"
 #include "Options.h"
+#include "FileSystem.h"
 #include "Util.h"
 
 FeedFile::FeedFile(const char* fileName)
@@ -117,14 +118,21 @@ FeedFile* FeedFile::Create(const char* fileName)
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
 
-	// filename needs to be properly encoded
-	char* url = (char*)malloc(strlen(fileName)*3 + 1);
-	EncodeUrl(fileName, url);
-	debug("url=\"%s\"", url);
-	_variant_t v(url);
-	free(url);
+	_variant_t vFilename(*WString(fileName));
 
-	VARIANT_BOOL success = doc->load(v);
+	// 1. first trying to load via filename without URL-encoding (certain charaters doesn't work when encoded)
+	VARIANT_BOOL success = doc->load(vFilename);
+	if (success == VARIANT_FALSE)
+	{
+		// 2. now trying filename encoded as URL
+		char url[2048];
+		EncodeUrl(fileName, url, 2048);
+		debug("url=\"%s\"", url);
+		_variant_t vUrl(url);
+
+		success = doc->load(vUrl);
+	}
+
 	if (success == VARIANT_FALSE)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
@@ -143,23 +151,28 @@ FeedFile* FeedFile::Create(const char* fileName)
 	return file;
 }
 
-void FeedFile::EncodeUrl(const char* filename, char* url)
+void FeedFile::EncodeUrl(const char* filename, char* url, int bufLen)
 {
-	while (char ch = *filename++)
+	WString widefilename(filename);
+
+	char* end = url + bufLen;
+	for (wchar_t* p = widefilename; *p && url < end - 3; p++)
 	{
+		wchar_t ch = *p;
 		if (('0' <= ch && ch <= '9') ||
 			('a' <= ch && ch <= 'z') ||
-			('A' <= ch && ch <= 'Z') )
+			('A' <= ch && ch <= 'Z') ||
+			ch == '-' || ch == '.' || ch == '_' || ch == '~')
 		{
-			*url++ = ch;
+			*url++ = (char)ch;
 		}
 		else
 		{
 			*url++ = '%';
-			int a = ch >> 4;
-			*url++ = a > 9 ? a - 10 + 'a' : a + '0';
+			uint32 a = (uint32)ch >> 4;
+			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 			a = ch & 0xF;
-			*url++ = a > 9 ? a - 10 + 'a' : a + '0';
+			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 		}
 	}
 	*url = NULL;

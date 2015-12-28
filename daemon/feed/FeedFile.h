@@ -40,7 +40,7 @@ private:
 	void				ParseSubject(FeedItemInfo* feedItemInfo);
 #ifdef WIN32
 	bool 				ParseFeed(IUnknown* nzb);
-	static void			EncodeUrl(const char* filename, char* url);
+	static void			EncodeUrl(const char* filename, char* url, int bufLen);
 #else
 	FeedItemInfo*		m_feedItemInfo;
 	StringBuilder		m_tagContent;
