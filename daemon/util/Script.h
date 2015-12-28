@@ -43,7 +43,7 @@ public:
 	void				InitFromCurrentProcess();
 	void				Append(char* string);
 #ifdef WIN32
-	char*				GetStrings();
+	wchar_t*			GetStrings();
 #else
 	char**				GetStrings();
 #endif

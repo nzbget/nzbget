@@ -125,7 +125,7 @@ void EnvironmentStrings::Append(char* string)
  * Returns environment block in format suitable for using with CreateProcess.
  * The allocated memory must be freed by caller using "free()".
  */
-char* EnvironmentStrings::GetStrings()
+wchar_t* EnvironmentStrings::GetStrings()
 {
 	int size = 1;
 	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
@@ -134,13 +134,17 @@ char* EnvironmentStrings::GetStrings()
 		size += strlen(var) + 1;
 	}
 
-	char* strings = (char*)malloc(size);
-	char* ptr = strings;
+	wchar_t* strings = (wchar_t*)malloc(size * 2);
+	wchar_t* ptr = strings;
 	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
 	{
 		char* var = *it;
-		strcpy(ptr, var);
-		ptr += strlen(var) + 1;
+
+		wchar_t wstr[2048];
+		MultiByteToWideChar(CP_UTF8, 0, var, -1, wstr, 2048);
+
+		wcscpy(ptr, wstr);
+		ptr += wcslen(wstr) + 1;
 	}
 	*ptr = '\0';
 
@@ -448,7 +452,8 @@ void ScriptController::BuildCommandLine(char* cmdLineBuf, int bufSize)
 		const char* arg = *argPtr;
 		int len = strlen(arg);
 		bool endsWithBackslash = arg[len - 1] == '\\';
-		snprintf(cmdLineBuf + usedLen, bufSize - usedLen, endsWithBackslash ? "\"%s\\\" " : "\"%s\" ", arg);
+		bool isDirectPath = !strncmp(arg, "\\\\?", 3);
+		snprintf(cmdLineBuf + usedLen, bufSize - usedLen, endsWithBackslash && ! isDirectPath ? "\"%s\\\" " : "\"%s\" ", arg);
 		usedLen += len + 3 + (endsWithBackslash ? 1 : 0);
 	}
 	cmdLineBuf[usedLen < bufSize ? usedLen - 1 : bufSize - 1] = '\0';
@@ -456,7 +461,7 @@ void ScriptController::BuildCommandLine(char* cmdLineBuf, int bufSize)
 #endif
 
 /*
-* Returns file descriptor of the read-pipe of -1 on error.
+* Returns file descriptor of the read-pipe or -1 on error.
 */
 int ScriptController::StartProcess()
 {
@@ -469,10 +474,20 @@ int ScriptController::StartProcess()
 		cmdLine = cmdLineBuf;
 	}
 
+	wchar_t wideCmdLine[2048];
+	MultiByteToWideChar(CP_UTF8, 0, cmdLine, -1, wideCmdLine, 2048);
+
+	bool longWorkingDir = strlen(m_workingDir) > 260 - 14;
+	wchar_t wideWorkingDir[1024];
+	MultiByteToWideChar(CP_UTF8, 0, longWorkingDir ? FileSystem::MakeLongPath(m_workingDir) : m_workingDir, -1, wideWorkingDir, 1024);
+	if (longWorkingDir)
+	{
+		GetShortPathNameW(wideWorkingDir, wideWorkingDir, 1024);
+	}
+
 	// create pipes to write and read data
 	HANDLE readPipe, writePipe;
-	SECURITY_ATTRIBUTES securityAttributes;
-	memset(&securityAttributes, 0, sizeof(securityAttributes));
+	SECURITY_ATTRIBUTES securityAttributes = { 0 };
 	securityAttributes.nLength = sizeof(securityAttributes);
 	securityAttributes.bInheritHandle = TRUE;
 
@@ -480,20 +495,20 @@ int ScriptController::StartProcess()
 
 	SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
 
-	STARTUPINFO startupInfo;
-	memset(&startupInfo, 0, sizeof(startupInfo));
+	STARTUPINFOW startupInfo = { 0 };
 	startupInfo.cb = sizeof(startupInfo);
 	startupInfo.dwFlags = STARTF_USESTDHANDLES;
 	startupInfo.hStdInput = 0;
 	startupInfo.hStdOutput = writePipe;
 	startupInfo.hStdError = writePipe;
 
-	PROCESS_INFORMATION processInfo;
-	memset(&processInfo, 0, sizeof(processInfo));
+	PROCESS_INFORMATION processInfo = { 0 };
 
-	char* environmentStrings = m_environmentStrings.GetStrings();
+	wchar_t* environmentStrings = m_environmentStrings.GetStrings();
 
-	BOOL ok = CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, environmentStrings, m_workingDir, &startupInfo, &processInfo);
+	BOOL ok = CreateProcessW(NULL, wideCmdLine, NULL, NULL, TRUE,
+		NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+		environmentStrings, wideWorkingDir, &startupInfo, &processInfo);
 	if (!ok)
 	{
 		DWORD errCode = GetLastError();
@@ -510,6 +525,10 @@ int ScriptController::StartProcess()
 		if (!FileSystem::FileExists(m_script))
 		{
 			PrintMessage(Message::mkError, "Could not find file %s", m_script);
+		}
+		if (wcslen(wideWorkingDir) > 260)
+		{
+			PrintMessage(Message::mkError, "Could not build short path for %s", m_workingDir);
 		}
 		free(environmentStrings);
 		CloseHandle(readPipe);
