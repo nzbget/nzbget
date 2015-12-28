@@ -354,10 +354,6 @@ void NzbInfo::SetUrl(const char* url)
 	if (!m_name)
 	{
 		CString nzbNicename = MakeNiceUrlName(url, m_filename);
-#ifdef WIN32
-		nzbNicename.Reserve(1024);
-		WebUtil::AnsiToUtf8(nzbNicename, 1024);
-#endif
 		SetName(nzbNicename);
 	}
 }
@@ -370,10 +366,6 @@ void NzbInfo::SetFilename(const char* filename)
 	if ((!m_name || !hadFilename) && !Util::EmptyStr(filename))
 	{
 		CString nzbNicename = MakeNiceNzbName(m_filename, true);
-#ifdef WIN32
-		nzbNicename.Reserve(1024);
-		WebUtil::AnsiToUtf8(nzbNicename, 1024);
-#endif
 		SetName(nzbNicename);
 	}
 }
@@ -426,10 +418,6 @@ void NzbInfo::BuildDestDirName()
 		destDir.Format("%s%s.#%i", g_Options->GetInterDir(), GetName(), GetId());
 	}
 
-#ifdef WIN32
-	WebUtil::Utf8ToAnsi(destDir, destDir.Length() + 1);
-#endif
-
 	SetDestDir(destDir);
 }
 
@@ -458,10 +446,6 @@ CString NzbInfo::BuildFinalDirName()
 	}
 
 	finalDir.Append(GetName());
-
-#ifdef WIN32
-	WebUtil::Utf8ToAnsi(finalDir, finalDir.Length() + 1);
-#endif
 
 	return finalDir;
 }

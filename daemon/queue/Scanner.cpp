@@ -478,14 +478,7 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 	if (nzbName && strlen(nzbName) > 0)
 	{
 		nzbInfo->SetName(NULL);
-#ifdef WIN32
-		char* ansiFilename = strdup(nzbName);
-		WebUtil::Utf8ToAnsi(ansiFilename, strlen(ansiFilename) + 1);
-		nzbInfo->SetFilename(ansiFilename);
-		free(ansiFilename);
-#else
 		nzbInfo->SetFilename(nzbName);
-#endif
 		nzbInfo->BuildDestDirName();
 	}
 
@@ -582,10 +575,6 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	// move file into NzbDir, make sure the file name is unique
 	BString<1024> validNzbName = FileSystem::BaseFileName(nzbName);
 	FileSystem::MakeValidFilename(validNzbName, '_', false);
-
-#ifdef WIN32
-	WebUtil::Utf8ToAnsi(validNzbName, validNzbName.Capacity());
-#endif
 
 	const char* extension = strrchr(nzbName, '.');
 	if (nzb && (!extension || strcasecmp(extension, ".nzb")))

@@ -69,15 +69,18 @@ public:
 
 	/* Flush disk buffers for file metadata (after file renaming) */
 	static bool FlushDirBuffers(const char* filename, CString& errmsg);
+
+	static CString MakeLongPath(const char* path);
 };
 
 class DirBrowser
 {
 private:
 #ifdef WIN32
-	WIN32_FIND_DATA		m_findData;
+	WIN32_FIND_DATAW	m_findData;
 	HANDLE				m_file;
 	bool				m_first;
+	CString				m_filename;
 #else
 	DIR*				m_dir;
 	struct dirent*		m_findData;
