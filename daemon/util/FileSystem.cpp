@@ -27,26 +27,16 @@
 #include "FileSystem.h"
 
 #ifdef WIN32
-struct WString
+WString::WString(const char* utfstr)
 {
-	wchar_t* m_path;
-	WString(wchar_t* path) : m_path(_wcsdup(path)) {}
-	~WString() { free(m_path); }
-	operator wchar_t*() const { return m_path; }
-};
+	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, NULL, 0);
+	m_data = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
+	MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, m_data, len);
+}
 
 WString MakeWPath(const char* utfpath)
 {
-	wchar_t wpath[1024];
-	int copied = MultiByteToWideChar(CP_UTF8, 0, FileSystem::MakeLongPath(utfpath), -1, wpath, 1024);
-	return wpath;
-}
-
-WString MakeWString(const char* str)
-{
-	wchar_t wstr[1024];
-	int copied = MultiByteToWideChar(CP_ACP, 0, str, -1, wstr, 1024);
-	return wstr;
+	return *FileSystem::MakeLongPath(utfpath);
 }
 
 CString WPathToCString(const wchar_t* wstr)
@@ -335,7 +325,7 @@ bool FileSystem::CreateSparseFile(const char* filename, int64 size, CString& err
 bool FileSystem::TruncateFile(const char* filename, int size)
 {
 #ifdef WIN32
-	FILE* file = _wfopen(MakeWPath(filename), MakeWString(FOPEN_RBP));
+	FILE* file = _wfopen(MakeWPath(filename), WString(FOPEN_RBP));
 	fseek(file, size, SEEK_SET);
 	bool ok = SetEndOfFile((HANDLE)_get_osfhandle(_fileno(file))) != 0;
 	fclose(file);
@@ -791,7 +781,7 @@ bool FileSystem::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 bool FileSystem::FlushDirBuffers(const char* filename, CString& errmsg)
 {
 #ifdef WIN32
-	FILE* file = _wfopen(MakeWPath(filename), MakeWString(FOPEN_RBP));
+	FILE* file = _wfopen(MakeWPath(filename), WString(FOPEN_RBP));
 #else
 	BString<1024> parentPath = filename;
 	char* p = (char*)strrchr(parentPath, PATH_SEPARATOR);
@@ -973,7 +963,7 @@ bool DiskFile::Open(const char* filename, EOpenMode mode)
 	const char* strmode = mode == omRead ? FOPEN_RB : mode == omReadWrite ?
 		FOPEN_RBP : mode == omWrite ? FOPEN_WB : FOPEN_AB;
 #ifdef WIN32
-	m_file = _wfopen(MakeWPath(filename), MakeWString(strmode));
+	m_file = _wfopen(MakeWPath(filename), WString(strmode));
 #else
 	m_file = fopen(filename, strmode);
 #endif

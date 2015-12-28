@@ -139,12 +139,9 @@ wchar_t* EnvironmentStrings::GetStrings()
 	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
 	{
 		char* var = *it;
-
-		wchar_t wstr[2048];
-		MultiByteToWideChar(CP_UTF8, 0, var, -1, wstr, 2048);
-
+		WString wstr(var);
 		wcscpy(ptr, wstr);
-		ptr += wcslen(wstr) + 1;
+		ptr += wstr.Length() + 1;
 	}
 	*ptr = '\0';
 
@@ -474,15 +471,11 @@ int ScriptController::StartProcess()
 		cmdLine = cmdLineBuf;
 	}
 
-	wchar_t wideCmdLine[2048];
-	MultiByteToWideChar(CP_UTF8, 0, cmdLine, -1, wideCmdLine, 2048);
-
 	bool longWorkingDir = strlen(m_workingDir) > 260 - 14;
-	wchar_t wideWorkingDir[1024];
-	MultiByteToWideChar(CP_UTF8, 0, longWorkingDir ? FileSystem::MakeLongPath(m_workingDir) : m_workingDir, -1, wideWorkingDir, 1024);
+	WString wideWorkingDir(longWorkingDir ? FileSystem::MakeLongPath(m_workingDir) : m_workingDir);
 	if (longWorkingDir)
 	{
-		GetShortPathNameW(wideWorkingDir, wideWorkingDir, 1024);
+		GetShortPathNameW(wideWorkingDir, wideWorkingDir, wideWorkingDir.Length() + 1);
 	}
 
 	// create pipes to write and read data
@@ -506,7 +499,7 @@ int ScriptController::StartProcess()
 
 	wchar_t* environmentStrings = m_environmentStrings.GetStrings();
 
-	BOOL ok = CreateProcessW(NULL, wideCmdLine, NULL, NULL, TRUE,
+	BOOL ok = CreateProcessW(NULL, WString(cmdLine), NULL, NULL, TRUE,
 		NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
 		environmentStrings, wideWorkingDir, &startupInfo, &processInfo);
 	if (!ok)
