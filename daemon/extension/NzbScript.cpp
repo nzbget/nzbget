@@ -43,12 +43,6 @@ void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, con
 		NzbParameter* parameter = *it;
 		const char* value = parameter->GetValue();
 
-#ifdef WIN32
-		char* ansiValue = strdup(value);
-		WebUtil::Utf8ToAnsi(ansiValue, strlen(ansiValue) + 1);
-		value = ansiValue;
-#endif
-
 		if (stripPrefix && !strncmp(parameter->GetName(), stripPrefix, prefixLen) && (int)strlen(parameter->GetName()) > prefixLen)
 		{
 			SetEnvVarSpecial("NZBPR", parameter->GetName() + prefixLen, value);
@@ -57,10 +51,6 @@ void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, con
 		{
 			SetEnvVarSpecial("NZBPR", parameter->GetName(), value);
 		}
-
-#ifdef WIN32
-		free(ansiValue);
-#endif
 	}
 }
 
