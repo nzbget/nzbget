@@ -229,7 +229,7 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 			if (!FileSystem::DirectoryExists(fullFilename))
 			{
 				m_progressLabel.Format("Checking file %s", filename);
-				m_stageProgress = m_curFile * 1000 / m_fileCount;
+				m_stageProgress = m_fileCount > 0 ? m_curFile * 1000 / m_fileCount : 1000;
 				UpdateProgress();
 				m_curFile++;
 
