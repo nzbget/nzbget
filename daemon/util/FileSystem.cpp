@@ -798,9 +798,17 @@ CString FileSystem::MakeExtendedPath(const char* path)
 #ifdef WIN32
 	if (strlen(path) > 260 - 14)
 	{
-		//TODO: UNC-paths require extra work
 		BString<1024> longpath;
-		longpath.Format("\\\\?\\%s", path);
+		if (path[0] == '\\' && path[1] == '\\')
+		{
+			// UNC path
+			longpath.Format("\\\\?\\UNC\\%s", path + 2);
+		}
+		else
+		{
+			// local path
+			longpath.Format("\\\\?\\%s", path);
+		}
 		return *longpath;
 	}
 	else
