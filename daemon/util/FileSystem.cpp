@@ -830,18 +830,6 @@ CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)
 	int copied = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, utfstr, 1024, NULL, NULL);
 	return utfstr;
 }
-
-CString FileSystem::AnsiPathToUtfPath(const char* ansipath)
-{
-	wchar_t wstr[1024];
-	char utfstr[1024];
-	int copied = MultiByteToWideChar(CP_ACP, 0, ansipath, -1, wstr, 1024);
-	if (copied > 0)
-	{
-		copied = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utfstr, 1024, NULL, NULL);
-	}
-	return copied > 0 ? utfstr : ansipath;
-}
 #endif
 
 

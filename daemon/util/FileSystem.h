@@ -79,7 +79,6 @@ public:
 #ifdef WIN32
 	static WString UtfPathToWidePath(const char* utfpath);
 	static CString WidePathToUtfPath(const wchar_t* wpath);
-	static CString AnsiPathToUtfPath(const char* ansipath);
 #endif
 };
 

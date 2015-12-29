@@ -19,7 +19,7 @@
 
 #include "nzbget.h"
 #include "par2cmdline.h"
-#include "FileSystem.h"
+#include "Util.h"
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
@@ -109,7 +109,7 @@ bool DescriptionPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &head
     return false;
 
 #ifdef WIN32
-	filename = *FileSystem::AnsiPathToUtfPath((char*)((FILEDESCRIPTIONPACKET*)packetdata)->name);
+	filename = *WebUtil::Latin1ToUtf8((char*)((FILEDESCRIPTIONPACKET*)packetdata)->name);
 #endif
 
   // Are the file and 16k hashes consistent
