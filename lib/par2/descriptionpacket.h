@@ -58,10 +58,8 @@ public:
   // Get the Hash values from the packet
   const MD5Hash& HashFull(void) const;
   const MD5Hash& Hash16k(void) const;
-#ifdef WIN32
 protected:
-	mutable string filename;
-#endif
+	string filename;
 };
 
 // Get the file id from the packet
@@ -87,14 +85,7 @@ inline u64 DescriptionPacket::FileSize(void) const
 // the packet.
 inline string DescriptionPacket::FileName(void) const
 {
-  assert(packetdata != 0);
-
-#ifdef WIN32
   return filename.c_str();
-#else
-//  return (char*)((const FILEDESCRIPTIONPACKET*)packetdata)->name();
-  return (char*)((const FILEDESCRIPTIONPACKET*)packetdata)->name;
-#endif
 }
 
 // Get the full file hash value from the packet

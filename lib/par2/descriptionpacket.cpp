@@ -108,9 +108,7 @@ bool DescriptionPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &head
                       (size_t)packet->header.length - sizeof(PACKET_HEADER)))
     return false;
 
-#ifdef WIN32
-	filename = *WebUtil::Latin1ToUtf8((char*)((FILEDESCRIPTIONPACKET*)packetdata)->name);
-#endif
+  filename = *WebUtil::Latin1ToUtf8((char*)((FILEDESCRIPTIONPACKET*)packetdata)->name);
 
   // Are the file and 16k hashes consistent
   if (packet->length <= 16384 && packet->hash16k != packet->hashfull)
