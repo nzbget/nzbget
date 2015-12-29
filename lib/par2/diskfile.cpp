@@ -19,6 +19,7 @@
 
 #include "nzbget.h"
 #include "par2cmdline.h"
+#include "FileSystem.h"
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
@@ -66,7 +67,7 @@ bool DiskFile::Create(string _filename, u64 _filesize)
   filesize = _filesize;
 
   // Create the file
-  hFile = ::CreateFileA(_filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, 0, NULL);
+  hFile = ::CreateFileW(FileSystem::UtfPathToWidePath(_filename.c_str()), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, 0, NULL);
   if (hFile == INVALID_HANDLE_VALUE)
   {
     DWORD error = ::GetLastError();
@@ -178,7 +179,7 @@ bool DiskFile::Open(string _filename, u64 _filesize)
   filename = _filename;
   filesize = _filesize;
 
-  hFile = ::CreateFileA(_filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+  hFile = ::CreateFileW(FileSystem::UtfPathToWidePath(_filename.c_str()), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
   if (hFile == INVALID_HANDLE_VALUE)
   {
     DWORD error = ::GetLastError();
@@ -323,17 +324,17 @@ list<string>* DiskFile::FindFiles(string path, string wildcard)
   list<string> *matches = new list<string>;
 
   wildcard = path + wildcard;
-  WIN32_FIND_DATA fd;
-  HANDLE h = ::FindFirstFile(wildcard.c_str(), &fd);
+  WIN32_FIND_DATAW fd;
+  HANDLE h = ::FindFirstFileW(FileSystem::UtfPathToWidePath(wildcard.c_str()), &fd);
   if (h != INVALID_HANDLE_VALUE)
   {
     do
     {
       if (0 == (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
       {
-        matches->push_back(path + fd.cFileName);
+        matches->push_back(path + *FileSystem::WidePathToUtfPath(fd.cFileName));
       }
-    } while (::FindNextFile(h, &fd));
+    } while (::FindNextFileW(h, &fd));
     ::FindClose(h);
   }
 
@@ -798,21 +799,13 @@ void DiskFile::SplitFilename(string filename, string &path, string &name)
 
 bool DiskFile::FileExists(string filename)
 {
-  struct stat st;
-  return ((0 == stat(filename.c_str(), &st)) && (0 != (st.st_mode & S_IFREG)));
+  return FileSystem::FileExists(filename.c_str());
 }
 
 u64 DiskFile::GetFileSize(string filename)
 {
-  struct stat st;
-  if ((0 == stat(filename.c_str(), &st)) && (0 != (st.st_mode & S_IFREG)))
-  {
-    return st.st_size;
-  }
-  else
-  {
-    return 0;
-  }
+  int64 size = FileSystem::FileSize(filename.c_str());
+  return size > 0 ? size : 0;
 }
 
 
@@ -885,21 +878,19 @@ string DiskFile::TranslateFilename(string filename)
 
 bool DiskFile::Rename(void)
 {
-  char newname[_MAX_PATH+1];
+  char newname[1024+1];
   u32 index = 0;
-
-  struct stat st;
 
   do
   {
-    int length = snprintf(newname, _MAX_PATH, "%s.%d", filename.c_str(), ++index);
-    if (length < 0 || length >= _MAX_PATH)
+    int length = snprintf(newname, 1024, "%s.%d", filename.c_str(), ++index);
+    if (length < 0 || length >= 1024)
     {
       cerr << filename << " cannot be renamed." << endl;
       return false;
     }
     newname[length] = 0;
-  } while (stat(newname, &st) == 0);
+  } while (FileSystem::FileExists(newname));
 
   return Rename(newname);
 }
@@ -912,7 +903,7 @@ bool DiskFile::Rename(string _filename)
   assert(file == 0);
 #endif
 
-  if (::rename(filename.c_str(), _filename.c_str()) == 0)
+  if (FileSystem::MoveFile(filename.c_str(), _filename.c_str()))
   {
     filename = _filename;
 

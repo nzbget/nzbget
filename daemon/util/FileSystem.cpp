@@ -26,28 +26,6 @@
 #include "nzbget.h"
 #include "FileSystem.h"
 
-#ifdef WIN32
-WString::WString(const char* utfstr)
-{
-	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, NULL, 0);
-	m_data = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
-	MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, m_data, len);
-}
-
-WString MakeWPath(const char* utfpath)
-{
-	return *FileSystem::MakeLongPath(utfpath);
-}
-
-CString WPathToCString(const wchar_t* wstr)
-{
-	char utfstr[1024];
-	int copied = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utfstr, 1024, NULL, NULL);
-	return utfstr;
-}
-#endif
-
-
 CString FileSystem::GetLastErrorMessage()
 {
 	BString<1024> msg;
@@ -109,7 +87,7 @@ bool FileSystem::ForceDirectories(const char* path, CString& errmsg)
 			}
 		}
 
-		if (_wmkdir(MakeWPath(normPath)) != 0 && errno != EEXIST)
+		if (_wmkdir(UtfPathToWidePath(normPath)) != 0 && errno != EEXIST)
 		{
 			errmsg.Format("could not create directory %s: %s", *normPath, *GetLastErrorMessage());
 			return false;
@@ -198,7 +176,7 @@ CString FileSystem::GetCurrentDirectory()
 #ifdef WIN32
 	wchar_t unistr[1024];
 	::GetCurrentDirectoryW(1024, unistr);
-	return WPathToCString(unistr);
+	return WidePathToUtfPath(unistr);
 #else
 	char str[1024];
 	getcwd(str, 1024);
@@ -209,7 +187,7 @@ CString FileSystem::GetCurrentDirectory()
 bool FileSystem::SetCurrentDirectory(const char* dirFilename)
 {
 #ifdef WIN32
-	return ::SetCurrentDirectoryW(MakeWPath(dirFilename));
+	return ::SetCurrentDirectoryW(UtfPathToWidePath(dirFilename));
 #else
 	return chdir(dirFilename) == 0;
 #endif
@@ -270,7 +248,7 @@ bool FileSystem::CreateSparseFile(const char* filename, int64 size, CString& err
 	errmsg.Clear();
 	bool ok = false;
 #ifdef WIN32
-	HANDLE hFile = CreateFileW(MakeWPath(filename), GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
+	HANDLE hFile = CreateFileW(UtfPathToWidePath(filename), GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		errmsg = GetLastErrorMessage();
@@ -325,7 +303,7 @@ bool FileSystem::CreateSparseFile(const char* filename, int64 size, CString& err
 bool FileSystem::TruncateFile(const char* filename, int size)
 {
 #ifdef WIN32
-	FILE* file = _wfopen(MakeWPath(filename), WString(FOPEN_RBP));
+	FILE* file = _wfopen(UtfPathToWidePath(filename), WString(FOPEN_RBP));
 	fseek(file, size, SEEK_SET);
 	bool ok = SetEndOfFile((HANDLE)_get_osfhandle(_fileno(file))) != 0;
 	fclose(file);
@@ -427,7 +405,7 @@ CString FileSystem::MakeUniqueFilename(const char* destDir, const char* basename
 bool FileSystem::MoveFile(const char* srcFilename, const char* dstFilename)
 {
 #ifdef WIN32
-	return _wrename(MakeWPath(srcFilename), MakeWPath(dstFilename)) == 0;
+	return _wrename(UtfPathToWidePath(srcFilename), UtfPathToWidePath(dstFilename)) == 0;
 #else
 	bool ok = rename(srcFilename, dstFilename) == 0;
 	if (!ok && errno == EXDEV)
@@ -472,7 +450,7 @@ bool FileSystem::CopyFile(const char* srcFilename, const char* dstFilename)
 bool FileSystem::DeleteFile(const char* filename)
 {
 #ifdef WIN32
-	return _wremove(MakeWPath(filename)) == 0;
+	return _wremove(UtfPathToWidePath(filename)) == 0;
 #else
 	return remove(filename) == 0;
 #endif
@@ -483,7 +461,7 @@ bool FileSystem::FileExists(const char* filename)
 #ifdef WIN32
 	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
 	WIN32_FIND_DATAW findData;
-	HANDLE handle = FindFirstFileW(MakeWPath(filename), &findData);
+	HANDLE handle = FindFirstFileW(UtfPathToWidePath(filename), &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
 		bool exists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
@@ -510,7 +488,7 @@ bool FileSystem::DirectoryExists(const char* dirFilename)
 #ifdef WIN32
 	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
 	WIN32_FIND_DATAW findData;
-	HANDLE handle = FindFirstFileW(MakeWPath(dirFilename), &findData);
+	HANDLE handle = FindFirstFileW(UtfPathToWidePath(dirFilename), &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
 		bool exists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
@@ -528,7 +506,7 @@ bool FileSystem::DirectoryExists(const char* dirFilename)
 bool FileSystem::CreateDirectory(const char* dirFilename)
 {
 #ifdef WIN32
-	_wmkdir(MakeWPath(dirFilename));
+	_wmkdir(UtfPathToWidePath(dirFilename));
 #else
 	mkdir(dirFilename, S_DIRMODE);
 #endif
@@ -538,7 +516,7 @@ bool FileSystem::CreateDirectory(const char* dirFilename)
 bool FileSystem::RemoveDirectory(const char* dirFilename)
 {
 #ifdef WIN32
-	return _wrmdir(MakeWPath(dirFilename)) == 0;
+	return _wrmdir(UtfPathToWidePath(dirFilename)) == 0;
 #else
 	return rmdir(dirFilename) == 0;
 #endif
@@ -585,7 +563,7 @@ int64 FileSystem::FileSize(const char* filename)
 #ifdef WIN32
 	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
 	WIN32_FIND_DATAW findData;
-	HANDLE handle = FindFirstFileW(MakeWPath(filename), &findData);
+	HANDLE handle = FindFirstFileW(UtfPathToWidePath(filename), &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
 		int64 size = ((int64)(findData.nFileSizeHigh) << 32) + findData.nFileSizeLow;
@@ -689,8 +667,8 @@ CString FileSystem::ExpandFileName(const char* filename)
 {
 #ifdef WIN32
 	wchar_t unistr[1024];
-	_wfullpath(unistr, MakeWPath(filename), 1024);
-	return WPathToCString(unistr);
+	_wfullpath(unistr, UtfPathToWidePath(filename), 1024);
+	return WidePathToUtfPath(unistr);
 #else
 	CString result;
 	result.Reserve(1024);
@@ -781,7 +759,7 @@ bool FileSystem::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 bool FileSystem::FlushDirBuffers(const char* filename, CString& errmsg)
 {
 #ifdef WIN32
-	FILE* file = _wfopen(MakeWPath(filename), WString(FOPEN_RBP));
+	FILE* file = _wfopen(UtfPathToWidePath(filename), WString(FOPEN_RBP));
 #else
 	BString<1024> parentPath = filename;
 	char* p = (char*)strrchr(parentPath, PATH_SEPARATOR);
@@ -815,7 +793,7 @@ void FileSystem::FixExecPermission(const char* filename)
 }
 #endif
 
-CString FileSystem::MakeLongPath(const char* path)
+CString FileSystem::MakeExtendedPath(const char* path)
 {
 #ifdef WIN32
 	if (strlen(path) > 260 - 14)
@@ -832,13 +810,48 @@ CString FileSystem::MakeLongPath(const char* path)
 	}
 }
 
+#ifdef WIN32
+WString FileSystem::UtfPathToWidePath(const char* utfpath)
+{
+	return *FileSystem::MakeExtendedPath(utfpath);
+}
+
+CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)
+{
+	char utfstr[1024];
+	int copied = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, utfstr, 1024, NULL, NULL);
+	return utfstr;
+}
+
+CString FileSystem::AnsiPathToUtfPath(const char* ansipath)
+{
+	wchar_t wstr[1024];
+	char utfstr[1024];
+	int copied = MultiByteToWideChar(CP_ACP, 0, ansipath, -1, wstr, 1024);
+	if (copied > 0)
+	{
+		copied = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utfstr, 1024, NULL, NULL);
+	}
+	return copied > 0 ? utfstr : ansipath;
+}
+#endif
+
 
 #ifdef WIN32
+WString::WString(const char* utfstr)
+{
+	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, NULL, 0);
+	m_data = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
+	MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, m_data, len);
+}
+#endif
 
+
+#ifdef WIN32
 DirBrowser::DirBrowser(const char* path)
 {
 	BString<1024> mask("%s%c*.*", path, (int)PATH_SEPARATOR);
-	m_file = FindFirstFileW(MakeWPath(mask), &m_findData);
+	m_file = FindFirstFileW(FileSystem::UtfPathToWidePath(mask), &m_findData);
 	m_first = true;
 }
 
@@ -864,7 +877,7 @@ const char* DirBrowser::InternNext()
 	}
 	if (ok)
 	{
-		m_filename = WPathToCString(m_findData.cFileName);
+		m_filename = FileSystem::WidePathToUtfPath(m_findData.cFileName);
 		return m_filename;
 	}
 	return NULL;
@@ -963,7 +976,7 @@ bool DiskFile::Open(const char* filename, EOpenMode mode)
 	const char* strmode = mode == omRead ? FOPEN_RB : mode == omReadWrite ?
 		FOPEN_RBP : mode == omWrite ? FOPEN_WB : FOPEN_AB;
 #ifdef WIN32
-	m_file = _wfopen(MakeWPath(filename), WString(strmode));
+	m_file = _wfopen(FileSystem::UtfPathToWidePath(filename), WString(strmode));
 #else
 	m_file = fopen(filename, strmode);
 #endif

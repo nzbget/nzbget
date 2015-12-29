@@ -28,6 +28,10 @@
 
 #include "NString.h"
 
+#ifdef WIN32
+class WString;
+#endif
+
 class FileSystem
 {
 public:
@@ -70,7 +74,13 @@ public:
 	/* Flush disk buffers for file metadata (after file renaming) */
 	static bool FlushDirBuffers(const char* filename, CString& errmsg);
 
-	static CString MakeLongPath(const char* path);
+	static CString MakeExtendedPath(const char* path);
+
+#ifdef WIN32
+	static WString UtfPathToWidePath(const char* utfpath);
+	static CString WidePathToUtfPath(const wchar_t* wpath);
+	static CString AnsiPathToUtfPath(const char* ansipath);
+#endif
 };
 
 class DirBrowser

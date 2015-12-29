@@ -471,9 +471,8 @@ int ScriptController::StartProcess()
 		cmdLine = cmdLineBuf;
 	}
 
-	bool longWorkingDir = strlen(m_workingDir) > 260 - 14;
-	WString wideWorkingDir(longWorkingDir ? FileSystem::MakeLongPath(m_workingDir) : m_workingDir);
-	if (longWorkingDir)
+	WString wideWorkingDir = FileSystem::UtfPathToWidePath(m_workingDir);
+	if (strlen(m_workingDir) > 260 - 14)
 	{
 		GetShortPathNameW(wideWorkingDir, wideWorkingDir, wideWorkingDir.Length() + 1);
 	}
