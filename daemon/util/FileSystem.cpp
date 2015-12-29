@@ -51,7 +51,7 @@ bool FileSystem::ForceDirectories(const char* path, CString& errmsg)
 	BString<1024> normPath = path;
 	NormalizePathSeparators(normPath);
 	int len = strlen(normPath);
-	if ((len > 0) && normPath[len - 1] == PATH_SEPARATOR && len > 3)
+	if (len > 3 && normPath[len - 1] == PATH_SEPARATOR)
 	{
 		normPath[len - 1] = '\0';
 	}
@@ -486,9 +486,9 @@ bool FileSystem::FileExists(const char* path, const char* filenameWithoutPath)
 bool FileSystem::DirectoryExists(const char* dirFilename)
 {
 #ifdef WIN32
-	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
 	WIN32_FIND_DATAW findData;
-	HANDLE handle = FindFirstFileW(UtfPathToWidePath(dirFilename), &findData);
+	// extra "\*" needed for network shares
+	HANDLE handle = FindFirstFileW(UtfPathToWidePath(BString<1024>("%s\\*", dirFilename)), &findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
 		bool exists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
