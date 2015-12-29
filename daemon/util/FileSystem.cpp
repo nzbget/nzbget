@@ -1017,7 +1017,7 @@ int64 DiskFile::Seek(int64 position, ESeekOrigin origin)
 {
 	return fseek(m_file, position,
 		origin == soCur ? SEEK_CUR :
-		origin == soEnd ? SEEK_END : SEEK_SET);
+		origin == soEnd ? SEEK_END : SEEK_SET) == 0;
 }
 
 bool DiskFile::Eof()
