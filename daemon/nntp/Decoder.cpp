@@ -171,7 +171,7 @@ BreakLoop:
 				pb += 6; //=strlen(" name=")
 				char* pe;
 				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-				m_articleFilename.Set(pb, pe - pb);
+				m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, pe - pb));
 			}
 			pb = strstr(buffer, " size=");
 			if (pb)
@@ -279,7 +279,7 @@ int UDecoder::DecodeBuffer(char* buffer, int len)
 			// extracting filename
 			char* pe;
 			for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-			m_articleFilename.Set(pb, pe - pb);
+			m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, pe - pb));
 
 			m_body = true;
 			return 0;
