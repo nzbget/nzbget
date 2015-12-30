@@ -52,6 +52,18 @@ dnl Do all tests with c++ compiler.
 dnl
 AC_LANG(C++)
 
+dnl
+dnl Determine compiler switches to support C++11 standard.
+dnl
+AC_MSG_CHECKING(whether to test compiler features)
+AC_ARG_ENABLE(cpp-check,
+	[AS_HELP_STRING([--disable-cpp-check], [disable check for C++11/C++14 compiler features])],
+	[ ENABLECPPCHECK=$enableval ],
+	[ ENABLECPPCHECK=yes] )
+AC_MSG_RESULT($ENABLECPPCHECK)
+if test "$ENABLECPPCHECK" = "yes"; then
+    AX_CXX_COMPILE_STDCXX(11,,)
+fi
 
 dnl
 dnl Checks for header files.

@@ -216,8 +216,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/util/Script.h daemon/util/Thread.cpp \
 	daemon/util/Thread.h daemon/util/Service.cpp \
 	daemon/util/Service.h daemon/util/FileSystem.cpp \
-	daemon/util/FileSystem.h daemon/util/Util.cpp daemon/util/Util.h \
-	code_revision.cpp lib/par2/commandline.cpp \
+	daemon/util/FileSystem.h daemon/util/Util.cpp \
+	daemon/util/Util.h code_revision.cpp lib/par2/commandline.cpp \
 	lib/par2/commandline.h lib/par2/crc.cpp lib/par2/crc.h \
 	lib/par2/creatorpacket.cpp lib/par2/creatorpacket.h \
 	lib/par2/criticalpacket.cpp lib/par2/criticalpacket.h \
@@ -358,6 +358,7 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
+HAVE_CXX11 = @HAVE_CXX11@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -500,8 +501,9 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/util/Script.h daemon/util/Thread.cpp \
 	daemon/util/Thread.h daemon/util/Service.cpp \
 	daemon/util/Service.h daemon/util/FileSystem.cpp \
-	daemon/util/FileSystem.h daemon/util/Util.cpp daemon/util/Util.h \
-	code_revision.cpp $(am__append_1) $(am__append_2)
+	daemon/util/FileSystem.h daemon/util/Util.cpp \
+	daemon/util/Util.h code_revision.cpp $(am__append_1) \
+	$(am__append_2)
 AM_CPPFLAGS = -I$(srcdir)/daemon/connect -I$(srcdir)/daemon/extension \
 	-I$(srcdir)/daemon/feed -I$(srcdir)/daemon/frontend \
 	-I$(srcdir)/daemon/main -I$(srcdir)/daemon/nntp \
