@@ -36,7 +36,7 @@ int FileInfo::m_idGen = 0;
 int FileInfo::m_idMax = 0;
 int NzbInfo::m_idGen = 0;
 int NzbInfo::m_idMax = 0;
-DownloadQueue* DownloadQueue::g_DownloadQueue = NULL;
+DownloadQueue* DownloadQueue::g_DownloadQueue = nullptr;
 bool DownloadQueue::g_Loaded = false;
 
 NzbParameterList::~NzbParameterList()
@@ -55,7 +55,7 @@ void NzbParameterList::Clear()
 
 void NzbParameterList::SetParameter(const char* name, const char* value)
 {
-	NzbParameter* parameter = NULL;
+	NzbParameter* parameter = nullptr;
 	bool deleteObj = !value || !*value;
 
 	for (iterator it = begin(); it != end(); it++)
@@ -100,7 +100,7 @@ NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 void NzbParameterList::CopyFrom(NzbParameterList* sourceParameters)
@@ -175,7 +175,7 @@ void ServerStatList::Clear()
 
 void ServerStatList::StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation)
 {
-	ServerStat* serverStat = NULL;
+	ServerStat* serverStat = nullptr;
 	for (iterator it = begin(); it != end(); it++)
 	{
 		ServerStat* serverStat1 = *it;
@@ -231,7 +231,7 @@ NzbInfo::NzbInfo() : m_fileList(true)
 	m_destDir = "";
 	m_finalDir = "";
 	m_category = "";
-	m_name = NULL;
+	m_name = nullptr;
 	m_fileCount = 0;
 	m_parkedFileCount = 0;
 	m_size = 0;
@@ -282,7 +282,7 @@ NzbInfo::NzbInfo() : m_fileList(true)
 	m_priority = 0;
 	m_activeDownloads = 0;
 	m_messages.clear();
-	m_postInfo = NULL;
+	m_postInfo = nullptr;
 	m_idMessageGen = 0;
 	m_id = ++m_idGen;
 	m_downloadedSize = 0;
@@ -567,7 +567,7 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 	}
 
 	m_logMutex.Lock();
-	Message* message = new Message(++m_idMessageGen, kind, time(NULL), text);
+	Message* message = new Message(++m_idMessageGen, kind, time(nullptr), text);
 	m_messages.push_back(message);
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetNzbLog())
@@ -661,7 +661,7 @@ void NzbInfo::EnterPostProcess()
 void NzbInfo::LeavePostProcess()
 {
 	delete m_postInfo;
-	m_postInfo = NULL;
+	m_postInfo = nullptr;
 	ClearMessages();
 }
 
@@ -673,11 +673,11 @@ void NzbInfo::SetActiveDownloads(int activeDownloads)
 	{
 		if (activeDownloads > 0)
 		{
-			m_downloadStartTime = time(NULL);
+			m_downloadStartTime = time(nullptr);
 		}
 		else
 		{
-			m_downloadSec += time(NULL) - m_downloadStartTime;
+			m_downloadSec += time(nullptr) - m_downloadStartTime;
 			m_downloadStartTime = 0;
 		}
 	}
@@ -887,7 +887,7 @@ NzbInfo* NzbList::Find(int id)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -895,7 +895,7 @@ ArticleInfo::ArticleInfo()
 {
 	//debug("Creating ArticleInfo");
 	m_size = 0;
-	m_segmentContent = NULL;
+	m_segmentContent = nullptr;
 	m_segmentOffset = 0;
 	m_segmentSize = 0;
 	m_status = aiUndefined;
@@ -921,7 +921,7 @@ void ArticleInfo::DiscardSegment()
 	if (m_segmentContent)
 	{
 		free(m_segmentContent);
-		m_segmentContent = NULL;
+		m_segmentContent = nullptr;
 		g_ArticleCache->Free(m_segmentSize);
 	}
 }
@@ -931,7 +931,7 @@ FileInfo::FileInfo(int id)
 {
 	debug("Creating FileInfo");
 
-	m_mutexOutputFile = NULL;
+	m_mutexOutputFile = nullptr;
 	m_filenameConfirmed = false;
 	m_size = 0;
 	m_remainingSize = 0;
@@ -948,7 +948,7 @@ FileInfo::FileInfo(int id)
 	m_completedArticles = 0;
 	m_parFile = false;
 	m_outputInitialized = false;
-	m_nzbInfo = NULL;
+	m_nzbInfo = nullptr;
 	m_extraPriority = false;
 	m_activeDownloads = 0;
 	m_autoDeleted = false;
@@ -1033,7 +1033,7 @@ void FileInfo::SetActiveDownloads(int activeDownloads)
 	else if (m_activeDownloads == 0 && m_mutexOutputFile)
 	{
 		delete m_mutexOutputFile;
-		m_mutexOutputFile = NULL;
+		m_mutexOutputFile = nullptr;
 	}
 }
 
@@ -1080,7 +1080,7 @@ PostInfo::PostInfo()
 {
 	debug("Creating PostInfo");
 
-	m_nzbInfo = NULL;
+	m_nzbInfo = nullptr;
 	m_working = false;
 	m_deleted = false;
 	m_requestParCheck = false;
@@ -1096,7 +1096,7 @@ PostInfo::PostInfo()
 	m_startTime = 0;
 	m_stageTime = 0;
 	m_stage = ptQueued;
-	m_postThread = NULL;
+	m_postThread = nullptr;
 }
 
 PostInfo::~ PostInfo()
@@ -1200,7 +1200,7 @@ HistoryInfo* HistoryList::Find(int id)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 

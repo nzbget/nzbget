@@ -43,7 +43,7 @@ void TestNzb(std::string testFilename)
 	REQUIRE(parsedOK == true);
 
 	FILE* infofile = fopen(infoFilename.c_str(), FOPEN_RB);
-	REQUIRE(infofile != NULL);
+	REQUIRE(infofile != nullptr);
 	char buffer[1024];
 
 	while (fgets(buffer, sizeof(buffer), infofile) && *buffer == '#') ;
@@ -57,7 +57,7 @@ void TestNzb(std::string testFilename)
 		while (fgets(buffer, sizeof(buffer), infofile) && *buffer == '#') ;
 		REQUIRE(*buffer);
 		FileInfo* fileInfo = nzbFile->GetNzbInfo()->GetFileList()->at(i);
-		REQUIRE(fileInfo != NULL);
+		REQUIRE(fileInfo != nullptr);
 		Util::TrimRight(buffer);
 		REQUIRE(std::string(fileInfo->GetFilename()) == std::string(buffer));
 	}
@@ -70,7 +70,7 @@ TEST_CASE("Nzb parser", "[NzbFile][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("SaveQueue=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	TestNzb("dotless");
 	TestNzb("plain");

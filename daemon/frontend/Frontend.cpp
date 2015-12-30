@@ -88,7 +88,7 @@ bool Frontend::PrepareData()
 				NzbInfo* nzbInfo = *it;
 				m_postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			}
-			downloadQueue->CalcRemainingSize(&m_remainingSize, NULL);
+			downloadQueue->CalcRemainingSize(&m_remainingSize, nullptr);
 			DownloadQueue::Unlock();
 
 		}
@@ -177,7 +177,7 @@ bool Frontend::ServerEditQueue(DownloadQueue::EEditAction action, int offset, in
 	else
 	{
 		DownloadQueue* downloadQueue = LockQueue();
-		bool ok = downloadQueue->EditEntry(id, action, offset, NULL);
+		bool ok = downloadQueue->EditEntry(id, action, offset, nullptr);
 		UnlockQueue();
 		return ok;
 	}
@@ -235,7 +235,7 @@ bool Frontend::RequestMessages()
 		return false;
 	}
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	if (ntohl(LogResponse.m_trailingDataLength) > 0)
 	{
 		buf = (char*)malloc(ntohl(LogResponse.m_trailingDataLength));
@@ -300,7 +300,7 @@ bool Frontend::RequestFileList()
 		return false;
 	}
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	if (ntohl(ListResponse.m_trailingDataLength) > 0)
 	{
 		buf = (char*)malloc(ntohl(ListResponse.m_trailingDataLength));
@@ -363,5 +363,5 @@ bool Frontend::RequestEditQueue(DownloadQueue::EEditAction action, int offset, i
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(action, offset, NULL, &id, 1, NULL, rmId);
+	return client.RequestServerEditQueue(action, offset, nullptr, &id, 1, nullptr, rmId);
 }

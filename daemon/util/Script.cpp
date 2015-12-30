@@ -66,8 +66,8 @@ public:
 void ChildWatchDog::Run()
 {
 	static const int WAIT_SECONDS = 60;
-	time_t start = time(NULL);
-	while (!IsStopped() && (time(NULL) - start) < WAIT_SECONDS)
+	time_t start = time(nullptr);
+	while (!IsStopped() && (time(nullptr) - start) < WAIT_SECONDS)
 	{
 		usleep(10 * 1000);
 	}
@@ -164,7 +164,7 @@ char** EnvironmentStrings::GetStrings()
 		*ptr = var;
 		ptr++;
 	}
-	*ptr = NULL;
+	*ptr = nullptr;
 
 	return strings;
 }
@@ -173,12 +173,12 @@ char** EnvironmentStrings::GetStrings()
 
 ScriptController::ScriptController()
 {
-	m_script = NULL;
-	m_workingDir = NULL;
-	m_args = NULL;
+	m_script = nullptr;
+	m_workingDir = nullptr;
+	m_args = nullptr;
 	m_freeArgs = false;
-	m_infoName = NULL;
-	m_logPrefix = NULL;
+	m_infoName = nullptr;
+	m_logPrefix = nullptr;
 	m_terminated = false;
 	m_detached = false;
 	m_processId = 0;
@@ -232,9 +232,9 @@ void ScriptController::SetIntEnvVar(const char* name, int value)
 }
 
 /**
- * If szStripPrefix is not NULL, only options, whose names start with the prefix
+ * If szStripPrefix is not nullptr, only options, whose names start with the prefix
  * are processed. The prefix is then stripped from the names.
- * If szStripPrefix is NULL, all options are processed; without stripping.
+ * If szStripPrefix is nullptr, all options are processed; without stripping.
  */
 void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 {
@@ -295,14 +295,14 @@ void ScriptController::PrepareArgs()
 			debug("Looking for associated program for %s", extension);
 			char command[512];
 			int bufLen = 512-1;
-			if (Util::RegReadStr(HKEY_CLASSES_ROOT, extension, NULL, command, &bufLen))
+			if (Util::RegReadStr(HKEY_CLASSES_ROOT, extension, nullptr, command, &bufLen))
 			{
 				command[bufLen] = '\0';
 				debug("Extension: %s", command);
 
 				bufLen = 512-1;
 				if (Util::RegReadStr(HKEY_CLASSES_ROOT, BString<1024>("%s\\shell\\open\\command", command),
-					NULL, command, &bufLen))
+					nullptr, command, &bufLen))
 				{
 					command[bufLen] = '\0';
 					debug("Command: %s", command);
@@ -325,14 +325,14 @@ void ScriptController::PrepareArgs()
 	if (!m_args)
 	{
 		m_stdArgs[0] = GetScript();
-		m_stdArgs[1] = NULL;
+		m_stdArgs[1] = nullptr;
 		SetArgs(m_stdArgs, false);
 	}
 }
 
 int ScriptController::Execute()
 {
-	PrepareEnvOptions(NULL);
+	PrepareEnvOptions(nullptr);
 	PrepareArgs();
 
 	int exitCode = 0;
@@ -498,7 +498,7 @@ int ScriptController::StartProcess()
 
 	wchar_t* environmentStrings = m_environmentStrings.GetStrings();
 
-	BOOL ok = CreateProcessW(NULL, WString(cmdLine), NULL, NULL, TRUE,
+	BOOL ok = CreateProcessW(nullptr, WString(cmdLine), nullptr, nullptr, TRUE,
 		NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
 		environmentStrings, wideWorkingDir, &startupInfo, &processInfo);
 	if (!ok)
@@ -506,7 +506,7 @@ int ScriptController::StartProcess()
 		DWORD errCode = GetLastError();
 		char errMsg[255];
 		errMsg[255 - 1] = '\0';
-		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errCode, 0, errMsg, 255, NULL))
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, errCode, 0, errMsg, 255, nullptr))
 		{
 			PrintMessage(Message::mkError, "Could not start %s: %s", m_infoName, errMsg);
 		}
@@ -702,7 +702,7 @@ void ScriptController::Detach()
 	debug("Detaching %s", m_infoName);
 	m_detached = true;
 	FILE* readpipe = m_readpipe;
-	m_readpipe = NULL;
+	m_readpipe = nullptr;
 	fclose(readpipe);
 }
 

@@ -38,7 +38,7 @@ ArticleDownloader::ArticleDownloader()
 {
 	debug("Creating ArticleDownloader");
 
-	m_connection = NULL;
+	m_connection = nullptr;
 	m_status = adUndefined;
 	m_format = Decoder::efUnknown;
 	m_downloadedSize = 0;
@@ -93,8 +93,8 @@ void ArticleDownloader::Run()
 	int remainedRetries = retries;
 	Servers failedServers;
 	failedServers.reserve(g_ServerPool->GetServers()->size());
-	NewsServer* wantServer = NULL;
-	NewsServer* lastServer = NULL;
+	NewsServer* wantServer = nullptr;
+	NewsServer* lastServer = nullptr;
 	int level = 0;
 	int serverConfigGeneration = g_ServerPool->GetGeneration();
 	bool force = m_fileInfo->GetNzbInfo()->GetForcePriority();
@@ -129,12 +129,12 @@ void ArticleDownloader::Run()
 
 		// check server retention
 		bool retentionFailure = m_connection->GetNewsServer()->GetRetention() > 0 &&
-			(time(NULL) - m_fileInfo->GetTime()) / 86400 > m_connection->GetNewsServer()->GetRetention();
+			(time(nullptr) - m_fileInfo->GetTime()) / 86400 > m_connection->GetNewsServer()->GetRetention();
 		if (retentionFailure)
 		{
 			detail("Article %s @ %s failed: out of server retention (file age: %i, configured retention: %i)",
 				*m_infoName, *m_connectionName,
-				(int)(time(NULL) - m_fileInfo->GetTime()) / 86400,
+				(int)(time(nullptr) - m_fileInfo->GetTime()) / 86400,
 				m_connection->GetNewsServer()->GetRetention());
 			status = adFailed;
 			FreeConnection(true);
@@ -186,7 +186,7 @@ void ArticleDownloader::Run()
 			g_ServerPool->BlockServer(lastServer);
 		}
 
-		wantServer = NULL;
+		wantServer = nullptr;
 		if (connected && status == adFailed && remainedRetries > 0 && !retentionFailure)
 		{
 			wantServer = lastServer;
@@ -288,14 +288,14 @@ void ArticleDownloader::Run()
 	}
 
 	SetStatus(status);
-	Notify(NULL);
+	Notify(nullptr);
 
 	debug("Exiting ArticleDownloader-loop");
 }
 
 ArticleDownloader::EStatus ArticleDownloader::Download()
 {
-	const char* response = NULL;
+	const char* response = nullptr;
 	EStatus status = adRunning;
 	m_writingStarted = false;
 	m_articleInfo->SetCrc(0);
@@ -509,7 +509,7 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response
 
 bool ArticleDownloader::Write(char* line, int len)
 {
-	const char* articleFilename = NULL;
+	const char* articleFilename = nullptr;
 	int64 articleFileSize = 0;
 	int64 articleOffset = 0;
 	int articleSize = 0;
@@ -562,7 +562,7 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 {
 	if (g_Options->GetDecode())
 	{
-		Decoder* decoder = NULL;
+		Decoder* decoder = nullptr;
 		if (m_format == Decoder::efYenc)
 		{
 			decoder = &m_yDecoder;
@@ -679,7 +679,7 @@ void ArticleDownloader::FreeConnection(bool keepConnected)
 		}
 		AddServerData();
 		g_ServerPool->FreeConnection(m_connection, true);
-		m_connection = NULL;
+		m_connection = nullptr;
 		m_connectionMutex.Unlock();
 	}
 }

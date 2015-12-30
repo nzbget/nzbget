@@ -230,7 +230,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 	}
 
 	int64 size = FileSystem::FileSize(fullFilename);
-	time_t current = time(NULL);
+	time_t current = time(nullptr);
 	bool canProcess = false;
 	bool inList = false;
 
@@ -279,7 +279,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
  */
 void Scanner::DropOldFiles()
 {
-	time_t current = time(NULL);
+	time_t current = time(nullptr);
 
 	int i = 0;
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); )
@@ -323,8 +323,8 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 	int dupeScore = 0;
 	EDupeMode dupeMode = dmScore;
 	EAddStatus addStatus = asSkipped;
-	QueueData* queueData = NULL;
-	NzbInfo* urlInfo = NULL;
+	QueueData* queueData = nullptr;
+	NzbInfo* urlInfo = nullptr;
 	int nzbId = 0;
 
 	for (QueueList::iterator it = m_queueList.begin(); it != m_queueList.end(); it++)
@@ -432,7 +432,7 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 		for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 		{
 			ScriptConfig::Script* script = *it;
-			parameters->SetParameter(BString<1024>("%s:", script->GetName()), NULL);
+			parameters->SetParameter(BString<1024>("%s:", script->GetName()), nullptr);
 		}
 	}
 
@@ -477,7 +477,7 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 
 	if (nzbName && strlen(nzbName) > 0)
 	{
-		nzbInfo->SetName(NULL);
+		nzbInfo->SetName(nullptr);
 		nzbInfo->SetFilename(nzbName);
 		nzbInfo->BuildDestDirName();
 	}
@@ -566,7 +566,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 			return asFailed;
 		}
 
-		// "buffer" doesn't end with NULL, therefore we can't search in it with "strstr"
+		// "buffer" doesn't end with nullptr, therefore we can't search in it with "strstr"
 		BString<1024> buf;
 		buf.Set(buffer, bufSize);
 		nzb = !strncmp(buf, "<?xml", 5) && strstr(buf, "<nzb");

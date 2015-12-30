@@ -67,7 +67,7 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 	unrar.m_filenameBuf = filenameBuf;
 	unrar.m_filenameBufLen = filenameBufLen;
 
-	char** cmdArgs = NULL;
+	char** cmdArgs = nullptr;
 	if (!Util::SplitCommandLine(g_Options->GetUnrarCmd(), &cmdArgs))
 	{
 		return false;
@@ -79,18 +79,18 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 	args[0] = unrarPath;
 	args[1] = "lt";
 	args[2] = "*.rar";
-	args[3] = NULL;
+	args[3] = nullptr;
 	unrar.SetArgs(args, false);
 	unrar.SetWorkingDir(directory);
 
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 
 	unrar.Start();
 
 	// wait up to iTimeoutSec for unrar output
 	while (unrar.IsRunning() &&
-		curTime + timeoutSec > time(NULL) &&
-		curTime >= time(NULL))					// in a case clock was changed
+		curTime + timeoutSec > time(nullptr) &&
+		curTime >= time(nullptr))					// in a case clock was changed
 	{
 		usleep(200 * 1000);
 	}

@@ -74,9 +74,9 @@ void WebProcessor::Init()
 
 WebProcessor::WebProcessor()
 {
-	m_connection = NULL;
-	m_request = NULL;
-	m_url = NULL;
+	m_connection = nullptr;
+	m_request = nullptr;
+	m_url = nullptr;
 }
 
 WebProcessor::~WebProcessor()
@@ -143,7 +143,7 @@ void WebProcessor::ParseHeaders()
 	// reading http header
 	char buffer[1024];
 	m_contentLen = 0;
-	while (char* p = m_connection->ReadLine(buffer, sizeof(buffer), NULL))
+	while (char* p = m_connection->ReadLine(buffer, sizeof(buffer), nullptr))
 	{
 		if (char* pe = strrchr(p, '\r')) *pe = '\0';
 		debug("header=%s", p);
@@ -452,7 +452,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"\r\n";
 
 #ifndef DISABLE_GZIP
-	char *gbuf = NULL;
+	char *gbuf = nullptr;
 	bool gzip = m_gzip && bodyLen > MAX_UNCOMPRESSED_SIZE;
 	if (gzip)
 	{
@@ -467,7 +467,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		else
 		{
 			free(gbuf);
-			gbuf = NULL;
+			gbuf = nullptr;
 			gzip = false;
 		}
 	}
@@ -513,7 +513,7 @@ void WebProcessor::SendFileResponse(const char* filename)
 		return;
 	}
 
-	// "LoadFileIntoBuffer" adds a trailing NULL, which we don't need here
+	// "LoadFileIntoBuffer" adds a trailing nullptr, which we don't need here
 	bodyLen--;
 
 	SendBodyResponse(body, bodyLen, DetectContentType(filename));
@@ -550,5 +550,5 @@ const char* WebProcessor::DetectContentType(const char* filename)
 			return "image/gif";
 		}
 	}
-	return NULL;
+	return nullptr;
 }

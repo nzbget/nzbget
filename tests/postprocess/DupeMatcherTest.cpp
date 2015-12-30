@@ -34,7 +34,7 @@
 
 TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 {
-	Options options(NULL, NULL);
+	Options options(nullptr, nullptr);
 
 	TestUtil::PrepareWorkingDir("DupeMatcher");
 

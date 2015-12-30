@@ -317,10 +317,10 @@ public:
 
 XmlRpcProcessor::XmlRpcProcessor()
 {
-	m_request = NULL;
+	m_request = nullptr;
 	m_protocol = rpUndefined;
 	m_httpMethod = hmPost;
-	m_contentType = NULL;
+	m_contentType = nullptr;
 }
 
 void XmlRpcProcessor::SetUrl(const char* url)
@@ -389,7 +389,7 @@ void XmlRpcProcessor::Dispatch()
 	}
 	else if (m_protocol == rpXmlRpc)
 	{
-		WebUtil::XmlParseTagValue(m_request, "methodName", methodName, sizeof(methodName), NULL);
+		WebUtil::XmlParseTagValue(m_request, "methodName", methodName, sizeof(methodName), nullptr);
 	}
 	else if (m_protocol == rpJsonRpc)
 	{
@@ -448,7 +448,7 @@ void XmlRpcProcessor::MutliCall()
 
 		char methodName[100];
 		methodName[0] = '\0';
-		WebUtil::XmlParseTagValue(nameEnd, "string", methodName, sizeof(methodName), NULL);
+		WebUtil::XmlParseTagValue(nameEnd, "string", methodName, sizeof(methodName), nullptr);
 		debug("MutliCall, MethodName=%s", methodName);
 
 		XmlCommand* command = CreateCommand(methodName);
@@ -484,13 +484,13 @@ void XmlRpcProcessor::MutliCall()
 		command->SetProtocol(rpXmlRpc);
 		command->PrepareParams();
 		command->Execute();
-		BuildResponse(command->GetResponse(), "", command->GetFault(), NULL);
+		BuildResponse(command->GetResponse(), "", command->GetFault(), nullptr);
 		delete command;
 	}
 	else
 	{
 		response.Append("</data></array>");
-		BuildResponse(response, "", false, NULL);
+		BuildResponse(response, "", false, nullptr);
 	}
 }
 
@@ -550,7 +550,7 @@ void XmlRpcProcessor::BuildResponse(const char* response, const char* callbackFu
 
 XmlCommand* XmlRpcProcessor::CreateCommand(const char* methodName)
 {
-	XmlCommand* command = NULL;
+	XmlCommand* command = nullptr;
 
 	if (m_userAccess == uaAdd &&
 		!(!strcasecmp(methodName, "append") || !strcasecmp(methodName, "appendurl") ||
@@ -740,9 +740,9 @@ XmlCommand* XmlRpcProcessor::CreateCommand(const char* methodName)
 
 XmlCommand::XmlCommand()
 {
-	m_request = NULL;
-	m_requestPtr = NULL;
-	m_callbackFunc = NULL;
+	m_request = nullptr;
+	m_requestPtr = nullptr;
+	m_callbackFunc = nullptr;
 	m_fault = false;
 	m_protocol = XmlRpcProcessor::rpUndefined;
 	m_response.Reserve(1024 * 10);
@@ -857,7 +857,7 @@ char* XmlCommand::XmlNextValue(char* xml, const char* tag, int* valueLength)
 			return tagContent;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 bool XmlCommand::NextParamAsInt(int* value)
@@ -1145,7 +1145,7 @@ void ScheduleResumeXmlCommand::Execute()
 		return;
 	}
 
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 
 	g_Options->SetResumeTime(curTime + seconds);
 
@@ -1351,7 +1351,7 @@ void StatusXmlCommand::Execute()
 	int64 freeDiskSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
-	int serverTime = time(NULL);
+	int serverTime = time(nullptr);
 	int resumeTime = g_Options->GetResumeTime();
 	bool feedActive = g_FeedCoordinator->HasActiveDownloads();
 	int queuedScripts = g_QueueScriptCoordinator->GetQueueSize();
@@ -1764,7 +1764,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 			BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
 			downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(),
 			nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ?
-				time(NULL) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
+				time(nullptr) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
 			nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
 	// Post-processing parameters
@@ -1867,7 +1867,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 	if (postInfo)
 	{
-		time_t curTime = time(NULL);
+		time_t curTime = time(nullptr);
 
 		AppendFmtResponse(itemStart, *EncodeStr(postInfo->GetProgressLabel()),
 			postInfo->GetStageProgress(),
@@ -1996,7 +1996,7 @@ const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 {
 	const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
 
-	const char* status = NULL;
+	const char* status = nullptr;
 
 	if (nzbInfo->GetPostInfo())
 	{
@@ -2080,7 +2080,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaHistoryMarkSuccess, "HistoryMarkSuccess" },
 	{ DownloadQueue::eaHistorySetCategory, "HistorySetCategory" },
 	{ DownloadQueue::eaHistorySetName, "HistorySetName" },
-	{ 0, NULL }
+	{ 0, nullptr }
 };
 
 void EditQueueXmlCommand::Execute()
@@ -2139,7 +2139,7 @@ void EditQueueXmlCommand::Execute()
 	}
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	bool ok = downloadQueue->EditList(&cIdList, NULL, DownloadQueue::mmId, (DownloadQueue::EEditAction)action, offset, editText);
+	bool ok = downloadQueue->EditList(&cIdList, nullptr, DownloadQueue::mmId, (DownloadQueue::EEditAction)action, offset, editText);
 	DownloadQueue::Unlock();
 
 	BuildBoolResponse(ok);
@@ -2205,7 +2205,7 @@ void DownloadXmlCommand::Execute()
 	DecodeStr(nzbContent);
 
 	bool addPaused = false;
-	char* dupeKey = NULL;
+	char* dupeKey = nullptr;
 	int dupeScore = 0;
 	EDupeMode dupeMode = dmScore;
 	if (NextParamAsBool(&addPaused))
@@ -2221,7 +2221,7 @@ void DownloadXmlCommand::Execute()
 			BuildErrorResponse(2, "Invalid parameter (DupeScore)");
 			return;
 		}
-		char* dupeModeStr = NULL;
+		char* dupeModeStr = nullptr;
 		if (!NextParamAsStr(&dupeModeStr) ||
 			(strcasecmp(dupeModeStr, "score") && strcasecmp(dupeModeStr, "all") && strcasecmp(dupeModeStr, "force")))
 		{
@@ -2240,8 +2240,8 @@ void DownloadXmlCommand::Execute()
 	NzbParameterList Params;
 	if (v13)
 	{
-		char* paramName = NULL;
-		char* paramValue = NULL;
+		char* paramName = nullptr;
+		char* paramValue = nullptr;
 		while (NextParamAsStr(&paramName))
 		{
 			if (!NextParamAsStr(&paramValue))
@@ -2294,8 +2294,8 @@ void DownloadXmlCommand::Execute()
 
 		int nzbId = -1;
 		g_Scanner->AddExternalFile(nzbFilename, category, priority,
-			dupeKey, dupeScore, dupeMode, Params.empty() ? NULL : &Params, addTop, addPaused, NULL,
-			NULL, nzbContent, len, &nzbId);
+			dupeKey, dupeScore, dupeMode, Params.empty() ? nullptr : &Params, addTop, addPaused, nullptr,
+			nullptr, nzbContent, len, &nzbId);
 
 		if (v13)
 		{
@@ -2527,7 +2527,7 @@ void HistoryXmlCommand::Execute()
 			continue;
 		}
 
-		NzbInfo* nzbInfo = NULL;
+		NzbInfo* nzbInfo = nullptr;
 
 		const char* status = DetectStatus(historyInfo);
 
@@ -2833,7 +2833,7 @@ void ViewFeedXmlCommand::Execute()
 {
 	bool ok = false;
 	bool includeNonMatching = false;
-	FeedItemInfos* feedItemInfos = NULL;
+	FeedItemInfos* feedItemInfos = nullptr;
 
 	if (m_preview)
 	{
@@ -2846,7 +2846,7 @@ void ViewFeedXmlCommand::Execute()
 		char* category;
 		int interval = 0;
 		int priority;
-		char* feedFilter = NULL;
+		char* feedFilter = nullptr;
 		char* cacheId;
 		int cacheTimeSec;
 
@@ -3083,7 +3083,7 @@ void ReadUrlXmlCommand::Execute()
 
 	if (ok)
 	{
-		char* fileContent = NULL;
+		char* fileContent = nullptr;
 		int fileContentLen = 0;
 		FileSystem::LoadFileIntoBuffer(tempFileName, &fileContent, &fileContentLen);
 		CString xmlContent = EncodeStr(fileContent);
@@ -3103,7 +3103,7 @@ void ReadUrlXmlCommand::Execute()
 // string checkupdates()
 void CheckUpdatesXmlCommand::Execute()
 {
-	char* updateInfo = NULL;
+	char* updateInfo = nullptr;
 	bool ok = g_Maintenance->CheckUpdates(&updateInfo);
 
 	if (ok)
@@ -3342,7 +3342,7 @@ void ResetServerVolumeXmlCommand::Execute()
 // struct[] loadlog(nzbid, logidfrom, logentries)
 void LoadLogXmlCommand::Execute()
 {
-	m_nzbInfo = NULL;
+	m_nzbInfo = nullptr;
 	m_nzbId = 0;
 	if (!NextParamAsInt(&m_nzbId))
 	{

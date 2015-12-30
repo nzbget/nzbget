@@ -34,7 +34,7 @@ WebDownloader::WebDownloader()
 {
 	debug("Creating WebDownloader");
 
-	m_connection = NULL;
+	m_connection = nullptr;
 	m_confirmedLength = false;
 	m_status = adUndefined;
 	m_force = false;
@@ -50,7 +50,7 @@ void WebDownloader::SetUrl(const char* url)
 void WebDownloader::SetStatus(EStatus status)
 {
 	m_status = status;
-	Notify(NULL);
+	Notify(nullptr);
 }
 
 void WebDownloader::Run()
@@ -346,7 +346,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 	int writtenLen = 0;
 
 #ifndef DISABLE_GZIP
-	m_gUnzipStream = NULL;
+	m_gUnzipStream = nullptr;
 	if (m_gzip)
 	{
 		m_gUnzipStream = new GUnzipStream(1024*10);
@@ -692,7 +692,7 @@ void WebDownloader::FreeConnection()
 			m_connection->Disconnect();
 		}
 		delete m_connection;
-		m_connection = NULL;
+		m_connection = nullptr;
 		m_connectionMutex.Unlock();
 	}
 }

@@ -51,7 +51,7 @@ void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 	PrintMessage(Message::mkInfo, "Executing feed-script %s for Feed%i", script->GetName(), m_feedId);
 
 	SetScript(script->GetLocation());
-	SetArgs(NULL, false);
+	SetArgs(nullptr, false);
 
 	SetInfoName(BString<1024>("feed-script %s for Feed%i", script->GetName(), m_feedId));
 	SetLogPrefix(script->GetDisplayName());
@@ -59,7 +59,7 @@ void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	Execute();
 
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 }
 
 void FeedScriptController::PrepareParams(const char* scriptName)
@@ -69,5 +69,5 @@ void FeedScriptController::PrepareParams(const char* scriptName)
 	SetEnvVar("NZBFP_FILENAME", m_feedFile);
 	SetIntEnvVar("NZBFP_FEEDID", m_feedId);
 
-	PrepareEnvScript(NULL, scriptName);
+	PrepareEnvScript(nullptr, scriptName);
 }

@@ -105,7 +105,7 @@ DiskFile* StateFile::BeginWriteTransaction()
 	{
 		error("Error saving diskstate: Could not create file %s: %s", *m_tempFilename,
 			*FileSystem::GetLastErrorMessage());
-		return NULL;
+		return nullptr;
 	}
 
 	m_file.Print("%s%i\n", FORMATVERSION_SIGNATURE, m_formatVersion);
@@ -162,7 +162,7 @@ DiskFile* StateFile::BeginReadTransaction()
 		{
 			error("Error restoring diskstate: Could not rename file %s to %s: %s",
 				*m_tempFilename, *m_destFilename, *FileSystem::GetLastErrorMessage());
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -170,7 +170,7 @@ DiskFile* StateFile::BeginReadTransaction()
 	{
 		error("Error reading diskstate: could not open file %s: %s", *m_destFilename,
 			*FileSystem::GetLastErrorMessage());
-		return NULL;
+		return nullptr;
 	}
 
 	char FileSignatur[128];
@@ -302,7 +302,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	if (formatVersion >= 9 && formatVersion < 43)
 	{
 		// load parked file-infos
-		if (!LoadFileQueue12(&nzbList, NULL, *infile, formatVersion)) goto error;
+		if (!LoadFileQueue12(&nzbList, nullptr, *infile, formatVersion)) goto error;
 	}
 
 	if (formatVersion < 29)
@@ -1467,7 +1467,7 @@ bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, 
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		PostInfo* postInfo = NULL;
+		PostInfo* postInfo = nullptr;
 		int nzbId = 0;
 		uint32 nzbIndex = 0, stage, dummy;
 		if (formatVersion < 19)
@@ -1490,7 +1490,7 @@ bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, 
 		if (formatVersion < 21 && stage > (int)PostInfo::ptVerifyingRepaired) stage++;
 		if (formatVersion < 20 && stage > (int)PostInfo::ptUnpacking) stage++;
 
-		NzbInfo* nzbInfo = NULL;
+		NzbInfo* nzbInfo = nullptr;
 
 		if (formatVersion < 43)
 		{
@@ -1570,7 +1570,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
 		// find NZBInfo based on NZBFilename
-		NzbInfo* nzbInfo = NULL;
+		NzbInfo* nzbInfo = nullptr;
 		for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
 		{
 			NzbInfo* nzbInfo2 = *it;
@@ -1854,7 +1854,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		HistoryInfo* historyInfo = NULL;
+		HistoryInfo* historyInfo = nullptr;
 		HistoryInfo::EKind kind = HistoryInfo::hkNzb;
 		int id = 0;
 		int time;
@@ -1882,7 +1882,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 
 		if (kind == HistoryInfo::hkNzb)
 		{
-			NzbInfo* nzbInfo = NULL;
+			NzbInfo* nzbInfo = nullptr;
 
 			if (formatVersion < 43)
 			{
@@ -1977,7 +1977,7 @@ NzbInfo* DiskState::FindNzbInfo(DownloadQueue* downloadQueue, int id)
 			return nzbInfo;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*
@@ -2763,7 +2763,7 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, D
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		ServerVolume* serverVolume = NULL;
+		ServerVolume* serverVolume = nullptr;
 
 		if (i == 0)
 		{
@@ -2799,10 +2799,10 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, D
 		if (serverVolume) serverVolume->SetTotalBytes(Util::JoinInt64(High1, Low1));
 		if (serverVolume) serverVolume->SetCustomBytes(Util::JoinInt64(High2, Low2));
 
-		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume ? serverVolume->BytesPerSeconds() : NULL,
-			serverVolume ? serverVolume->BytesPerMinutes() : NULL,
-			serverVolume ? serverVolume->BytesPerHours() : NULL,
-			serverVolume ? serverVolume->BytesPerDays() : NULL };
+		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume ? serverVolume->BytesPerSeconds() : nullptr,
+			serverVolume ? serverVolume->BytesPerMinutes() : nullptr,
+			serverVolume ? serverVolume->BytesPerHours() : nullptr,
+			serverVolume ? serverVolume->BytesPerDays() : nullptr };
 		for (int k=0; k < 4; k++)
 		{
 			ServerVolume::VolumeArray* volumeArray = VolumeArrays[k];
@@ -2873,7 +2873,7 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 		}
 	}
 
-	time_t tm = time(NULL);
+	time_t tm = time(nullptr);
 	time_t rawtime = tm + g_Options->GetTimeCorrection();
 
 	BString<100> time;

@@ -113,7 +113,7 @@ TEST_CASE("CString", "[NString][Quick]")
 	char* tmp2 = str2.Unbind();
 	REQUIRE(tmp2 == tmp);
 	REQUIRE(str2.Empty());
-	REQUIRE(*str2 == NULL);
+	REQUIRE(*str2 == nullptr);
 
 	CString str3("World 12345678901234567890");
 	char buf[50];
@@ -121,10 +121,10 @@ TEST_CASE("CString", "[NString][Quick]")
 	REQUIRE(!strcmp(buf, "Hi, World 12345678901234567890!: 21"));
 
 	CString str4;
-	REQUIRE(*str4 == NULL);
-	REQUIRE((char*)str4 == NULL);
-	REQUIRE((const char*)str4 == NULL);
-	REQUIRE(str4.Str() != NULL);
+	REQUIRE(*str4 == nullptr);
+	REQUIRE((char*)str4 == nullptr);
+	REQUIRE((const char*)str4 == nullptr);
+	REQUIRE(str4.Str() != nullptr);
 	REQUIRE(*str4.Str() == '\0');
 
 	CString str6;

@@ -30,9 +30,9 @@
 #include "FileSystem.h"
 
 /**
- * If szStripPrefix is not NULL, only pp-parameters, whose names start with the prefix
+ * If szStripPrefix is not nullptr, only pp-parameters, whose names start with the prefix
  * are processed. The prefix is then stripped from the names.
- * If szStripPrefix is NULL, all pp-parameters are processed; without stripping.
+ * If szStripPrefix is nullptr, all pp-parameters are processed; without stripping.
  */
 void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, const char* stripPrefix)
 {
@@ -58,7 +58,7 @@ void NzbScriptController::PrepareEnvScript(NzbParameterList* parameters, const c
 {
 	if (parameters)
 	{
-		PrepareEnvParameters(parameters, NULL);
+		PrepareEnvParameters(parameters, nullptr);
 	}
 
 	BString<1024> paramPrefix("%s:", scriptName);

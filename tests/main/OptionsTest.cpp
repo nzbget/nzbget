@@ -62,9 +62,9 @@ public:
 
 TEST_CASE("Options: initializing without configuration file", "[Options][Quick]")
 {
-	Options options(NULL, NULL);
+	Options options(nullptr, nullptr);
 
-	REQUIRE(options.GetConfigFilename() == NULL);
+	REQUIRE(options.GetConfigFilename() == nullptr);
 #ifdef WIN32
 	REQUIRE(strcmp(options.GetTempDir(), "nzbget/tmp") == 0);
 #else
@@ -78,9 +78,9 @@ TEST_CASE("Options: passing command line options", "[Options][Quick]")
 	cmdOpts.push_back("ControlUsername=my-user-name-1");
 	cmdOpts.push_back("ControlUsername=my-user-name-2");
 
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
-	REQUIRE(options.GetConfigFilename() == NULL);
+	REQUIRE(options.GetConfigFilename() == nullptr);
 	REQUIRE(strcmp(options.GetControlUsername(), "my-user-name-2") == 0);
 }
 

@@ -73,7 +73,7 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 	m_printUsage = false;
 
 	m_editQueueAction = 0;
-	m_editQueueIdList = NULL;
+	m_editQueueIdList = nullptr;
 	m_editQueueIdCount = 0;
 	m_editQueueOffset = 0;
 	m_addPriority = 0;
@@ -156,7 +156,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				m_configFilename = optarg;
 				break;
 			case 'n':
-				m_configFilename = NULL;
+				m_configFilename = nullptr;
 				m_noConfig = true;
 				break;
 			case 'h':
@@ -184,7 +184,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				while (true)
 				{
 					optind++;
-					optarg = optind > argc ? NULL : argv[optind-1];
+					optarg = optind > argc ? nullptr : argv[optind-1];
 					if (optarg && (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "U")))
 					{
 						// option ignored (but kept for compatibility)
@@ -284,7 +284,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				break;
 			case 'L':
 				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
+				optarg = optind > argc ? nullptr : argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
 					m_clientOperation = opClientRequestListFiles;
@@ -336,7 +336,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 			case 'P':
 			case 'U':
 				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
+				optarg = optind > argc ? nullptr : argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
 					m_clientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
@@ -709,7 +709,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				break;
 			case 'S':
 				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
+				optarg = optind > argc ? nullptr : argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
 					m_clientOperation = opClientRequestScanAsync;
@@ -983,7 +983,7 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 				}
 			}
 
-			optarg = strtok(NULL, ", ");
+			optarg = strtok(nullptr, ", ");
 		}
 
 		free(writableFileIdList);

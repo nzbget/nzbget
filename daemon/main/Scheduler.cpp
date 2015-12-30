@@ -112,7 +112,7 @@ void Scheduler::CheckTasks()
 
 	m_taskListMutex.Lock();
 
-	time_t current = time(NULL);
+	time_t current = time(nullptr);
 
 	if (!m_taskList.empty())
 	{
@@ -346,7 +346,7 @@ void Scheduler::FetchFeed(const char* feedList)
 void Scheduler::CheckScheduledResume()
 {
 	time_t resumeTime = g_Options->GetResumeTime();
-	time_t currentTime = time(NULL);
+	time_t currentTime = time(nullptr);
 	if (resumeTime > 0 && currentTime >= resumeTime)
 	{
 		info("Autoresume");

@@ -31,7 +31,7 @@
 static const int CONNECTION_READBUFFER_SIZE = 1024;
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
-Mutex* Connection::m_mutexGetHostByName = NULL;
+Mutex* Connection::m_mutexGetHostByName = nullptr;
 #endif
 #endif
 
@@ -140,7 +140,7 @@ Connection::Connection(const char* host, int port, bool tls)
 	m_broken = false;
 	m_gracefull = false;
 #ifndef DISABLE_TLS
-	m_tlsSocket = NULL;
+	m_tlsSocket = nullptr;
 	m_tlsError = false;
 #endif
 }
@@ -158,7 +158,7 @@ Connection::Connection(SOCKET socket, bool tls)
 	m_suppressErrors	= true;
 	m_readBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 #ifndef DISABLE_TLS
-	m_tlsSocket		= NULL;
+	m_tlsSocket		= nullptr;
 	m_tlsError			= false;
 #endif
 }
@@ -255,7 +255,7 @@ bool Connection::Bind()
 
 	m_broken = false;
 	m_socket = INVALID_SOCKET;
-	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
+	for (addr = addr_list; addr != nullptr; addr = addr->ai_next)
 	{
 		m_socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 #ifdef WIN32
@@ -380,7 +380,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 {
 	if (m_status != csConnected)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	char* inpBuffer = buffer;
@@ -395,7 +395,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 			bufAvail = recv(m_socket, m_readBuf, CONNECTION_READBUFFER_SIZE, 0);
 			if (bufAvail < 0)
 			{
-				ReportError("Could not receive data on socket", NULL, true, 0);
+				ReportError("Could not receive data on socket", nullptr, true, 0);
 				m_broken = true;
 				break;
 			}
@@ -449,7 +449,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 
 	if (inpBuffer == buffer)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return buffer;
@@ -461,17 +461,17 @@ Connection* Connection::Accept()
 
 	if (m_status != csListening)
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	SOCKET socket = accept(m_socket, NULL, NULL);
+	SOCKET socket = accept(m_socket, nullptr, nullptr);
 	if (socket == INVALID_SOCKET && m_status != csCancelled)
 	{
-		ReportError("Could not accept connection", NULL, true, 0);
+		ReportError("Could not accept connection", nullptr, true, 0);
 	}
 	if (socket == INVALID_SOCKET)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	Connection* con = new Connection(socket, m_tls);
@@ -489,7 +489,7 @@ int Connection::TryRecv(char* buffer, int size)
 
 	if (received < 0)
 	{
-		ReportError("Could not receive data on socket", NULL, true, 0);
+		ReportError("Could not receive data on socket", nullptr, true, 0);
 	}
 
 	return received;
@@ -521,7 +521,7 @@ bool Connection::Recv(char * buffer, int size)
 		// Did the recv succeed?
 		if (received <= 0)
 		{
-			ReportError("Could not receive data on socket", NULL, true, 0);
+			ReportError("Could not receive data on socket", nullptr, true, 0);
 			return false;
 		}
 		bufPtr += received;
@@ -556,7 +556,7 @@ bool Connection::DoConnect()
 	std::vector<SockAddr> triedAddr;
 	bool connected = false;
 
-	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
+	for (addr = addr_list; addr != nullptr; addr = addr->ai_next)
 	{
 		// don't try the same combinations of ai_family, ai_socktype, ai_protocol multiple times
 		SockAddr sa = { addr->ai_family, addr->ai_socktype, addr->ai_protocol };
@@ -642,7 +642,7 @@ bool Connection::DoConnect()
 	}
 
 #ifndef DISABLE_TLS
-	if (m_tls && !StartTls(true, NULL, NULL))
+	if (m_tls && !StartTls(true, nullptr, nullptr))
 	{
 		return false;
 	}
@@ -653,7 +653,7 @@ bool Connection::DoConnect()
 
 bool Connection::InitSocketOpts()
 {
-	char* optbuf = NULL;
+	char* optbuf = nullptr;
 	int optsize = 0;
 #ifdef WIN32
 	int MSecVal = m_timeout * 1000;
@@ -738,7 +738,7 @@ bool Connection::ConnectWithTimeout(void* address, int address_len)
 	//connect succeeded right away?
 	if (ret != 0)
 	{
-		ret = select(m_socket + 1, &rset, &wset, NULL, m_timeout ? &ts : NULL);
+		ret = select(m_socket + 1, &rset, &wset, nullptr, m_timeout ? &ts : nullptr);
 		//we are waiting for connect to complete now
 		if (ret < 0)
 		{
@@ -831,7 +831,7 @@ void Connection::Cancel()
 		int r = shutdown(m_socket, SHUT_RDWR);
 		if (r == -1)
 		{
-			ReportError("Could not shutdown connection", NULL, true, 0);
+			ReportError("Could not shutdown connection", nullptr, true, 0);
 		}
 	}
 }
@@ -855,10 +855,10 @@ void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool Pri
 		int ErrCode = WSAGetLastError();
 		char errMsg[1024];
 		errMsg[0] = '\0';
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, ErrCode, 0, errMsg, 1024, NULL);
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, ErrCode, 0, errMsg, 1024, nullptr);
 		errMsg[1024-1] = '\0';
 #else
-		const char *errMsg = NULL;
+		const char *errMsg = nullptr;
 		int ErrCode = herrno;
 		if (herrno == 0)
 		{
@@ -915,7 +915,7 @@ void Connection::CloseTls()
 	{
 		m_tlsSocket->Close();
 		delete m_tlsSocket;
-		m_tlsSocket = NULL;
+		m_tlsSocket = nullptr;
 	}
 }
 
@@ -977,22 +977,22 @@ in_addr_t Connection::ResolveHostAddr(const char* host)
 		char strbuf[1024];
 #ifdef HAVE_GETHOSTBYNAME_R_6
 		err = gethostbyname_r(host, &hinfobuf, strbuf, sizeof(strbuf), &hinfo, &h_errnop);
-		err = err || (hinfo == NULL); // error on null hinfo (means 'no entry')
+		err = err || (hinfo == nullptr); // error on null hinfo (means 'no entry')
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_5
 		hinfo = gethostbyname_r(host, &hinfobuf, strbuf, sizeof(strbuf), &h_errnop);
-		err = hinfo == NULL;
+		err = hinfo == nullptr;
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_3
 		//NOTE: gethostbyname_r with three parameters were not tested
 		struct hostent_data hinfo_data;
 		hinfo = gethostbyname_r((char*)host, (struct hostent*)hinfobuf, &hinfo_data);
-		err = hinfo == NULL;
+		err = hinfo == nullptr;
 #endif
 #else
 		m_mutexGetHostByName->Lock();
 		hinfo = gethostbyname(host);
-		err = hinfo == NULL;
+		err = hinfo == nullptr;
 #endif
 		if (err)
 		{

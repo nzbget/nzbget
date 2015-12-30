@@ -43,7 +43,7 @@ ServerVolume::ServerVolume()
 	m_dataTime = 0;
 	m_totalBytes = 0;
 	m_customBytes = 0;
-	m_customTime = time(NULL);
+	m_customTime = time(nullptr);
 	m_secSlot = 0;
 	m_minSlot = 0;
 	m_hourSlot = 0;
@@ -78,7 +78,7 @@ void ServerVolume::CalcSlots(time_t locCurTime)
 
 void ServerVolume::AddData(int bytes)
 {
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 	time_t locCurTime = curTime + g_Options->GetLocalTimeOffset();
 	time_t locDataTime = m_dataTime + g_Options->GetLocalTimeOffset();
 
@@ -149,7 +149,7 @@ void ServerVolume::AddData(int bytes)
 void ServerVolume::ResetCustom()
 {
 	m_customBytes = 0;
-	m_customTime = time(NULL);
+	m_customTime = time(nullptr);
 }
 
 void ServerVolume::LogDebugInfo()
@@ -221,7 +221,7 @@ StatMeter::~StatMeter()
 
 void StatMeter::Init()
 {
-	m_startServer = time(NULL);
+	m_startServer = time(nullptr);
 	m_lastCheck = m_startServer;
 	AdjustTimeOffset();
 
@@ -236,7 +236,7 @@ void StatMeter::Init()
 
 void StatMeter::AdjustTimeOffset()
 {
-	time_t utcTime = time(NULL);
+	time_t utcTime = time(nullptr);
 	tm tmSplittedTime;
 	gmtime_r(&utcTime, &tmSplittedTime);
 	tmSplittedTime.tm_isdst = -1;
@@ -255,7 +255,7 @@ void StatMeter::AdjustTimeOffset()
  */
 void StatMeter::IntervalCheck()
 {
-	time_t m_curTime = time(NULL);
+	time_t m_curTime = time(nullptr);
 	time_t diff = m_curTime - m_lastCheck;
 	if (diff > 60 || diff < 0)
 	{
@@ -290,17 +290,17 @@ void StatMeter::EnterLeaveStandBy(bool enter)
 	m_standBy = enter;
 	if (enter)
 	{
-		m_pausedFrom = time(NULL);
+		m_pausedFrom = time(nullptr);
 	}
 	else
 	{
 		if (m_startDownload == 0)
 		{
-			m_startDownload = time(NULL);
+			m_startDownload = time(nullptr);
 		}
 		else
 		{
-			m_startDownload += time(NULL) - m_pausedFrom;
+			m_startDownload += time(nullptr) - m_pausedFrom;
 		}
 		m_pausedFrom = 0;
 		ResetSpeedStat();
@@ -313,7 +313,7 @@ void StatMeter::CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, b
 	m_statMutex.Lock();
 	if (m_startServer > 0)
 	{
-		*upTimeSec = (int)(time(NULL) - m_startServer);
+		*upTimeSec = (int)(time(nullptr) - m_startServer);
 	}
 	else
 	{
@@ -326,7 +326,7 @@ void StatMeter::CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, b
 	}
 	else
 	{
-		*dnTimeSec = (int)(time(NULL) - m_startDownload);
+		*dnTimeSec = (int)(time(nullptr) - m_startDownload);
 	}
 	*allBytes = m_allBytes;
 	m_statMutex.Unlock();
@@ -340,7 +340,7 @@ int StatMeter::CalcCurrentDownloadSpeed()
 		return 0;
 	}
 
-	int timeDiff = (int)time(NULL) - m_speedStartTime * SPEEDMETER_SLOTSIZE;
+	int timeDiff = (int)time(nullptr) - m_speedStartTime * SPEEDMETER_SLOTSIZE;
 	if (timeDiff == 0)
 	{
 		return 0;
@@ -352,14 +352,14 @@ int StatMeter::CalcCurrentDownloadSpeed()
 // Amount of data downloaded in current second
 int StatMeter::CalcMomentaryDownloadSpeed()
 {
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 	int speed = curTime == m_curSecTime ? m_curSecBytes : 0;
 	return speed;
 }
 
 void StatMeter::AddSpeedReading(int bytes)
 {
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 	int nowSlot = (int)curTime / SPEEDMETER_SLOTSIZE;
 
 	if (g_Options->GetAccurateRate())
@@ -423,7 +423,7 @@ void StatMeter::AddSpeedReading(int bytes)
 
 void StatMeter::ResetSpeedStat()
 {
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 	m_speedStartTime = (int)curTime / SPEEDMETER_SLOTSIZE;
 	for (int i = 0; i < SPEEDMETER_SLOTS; i++)
 	{
@@ -441,13 +441,13 @@ void StatMeter::LogDebugInfo()
 {
 	info("   ---------- SpeedMeter");
 	int speed = CalcCurrentDownloadSpeed() / 1024;
-	int timeDiff = (int)time(NULL) - m_speedStartTime * SPEEDMETER_SLOTSIZE;
+	int timeDiff = (int)time(nullptr) - m_speedStartTime * SPEEDMETER_SLOTSIZE;
 	info("      Speed: %i", speed);
 	info("      SpeedStartTime: %i", m_speedStartTime);
 	info("      SpeedTotalBytes: %lli", m_speedTotalBytes);
 	info("      SpeedBytesIndex: %i", m_speedBytesIndex);
 	info("      AllBytes: %lli", m_allBytes);
-	info("      Time: %i", (int)time(NULL));
+	info("      Time: %i", (int)time(nullptr));
 	info("      TimeDiff: %i", timeDiff);
 	for (int i=0; i < SPEEDMETER_SLOTS; i++)
 	{

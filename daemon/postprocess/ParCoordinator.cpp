@@ -76,7 +76,7 @@ bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
 ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* filename,
 	uint32* crc, SegmentList* segments)
 {
-	CompletedFile* completedFile = NULL;
+	CompletedFile* completedFile = nullptr;
 
 	for (CompletedFiles::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
 	{
@@ -101,7 +101,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 	{
 		FileInfo* tmpFileInfo = new FileInfo(completedFile->GetId());
 
-		if (!g_DiskState->LoadFileState(tmpFileInfo, NULL, true))
+		if (!g_DiskState->LoadFileState(tmpFileInfo, nullptr, true))
 		{
 			delete tmpFileInfo;
 			return ParChecker::fsUnknown;
@@ -287,7 +287,7 @@ void ParCoordinator::PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	debug("ParCoordinator: Pausing pars");
 
 	downloadQueue->EditEntry(nzbInfo->GetId(),
-		DownloadQueue::eaGroupPauseExtraPars, 0, NULL);
+		DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
 }
 
 #ifndef DISABLE_PARCHECK
@@ -301,7 +301,7 @@ void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
 	m_parChecker.SetPostInfo(postInfo);
 	m_parChecker.SetDestDir(postInfo->GetNzbInfo()->GetDestDir());
 	m_parChecker.SetNzbName(postInfo->GetNzbInfo()->GetName());
-	m_parChecker.SetParTime(time(NULL));
+	m_parChecker.SetParTime(time(nullptr));
 	m_parChecker.SetDownloadSec(postInfo->GetNzbInfo()->GetDownloadSec());
 	m_parChecker.SetParQuick(g_Options->GetParQuick() && !postInfo->GetForceParFull());
 	m_parChecker.SetForceRepair(postInfo->GetForceRepair());
@@ -402,7 +402,7 @@ void ParCoordinator::ParCheckCompleted()
 
 	int waitTime = postInfo->GetNzbInfo()->GetDownloadSec() - m_parChecker.GetDownloadSec();
 	postInfo->SetStartTime(postInfo->GetStartTime() + (time_t)waitTime);
-	int parSec = (int)(time(NULL) - m_parChecker.GetParTime()) - waitTime;
+	int parSec = (int)(time(nullptr) - m_parChecker.GetParTime()) - waitTime;
 	postInfo->GetNzbInfo()->SetParSec(postInfo->GetNzbInfo()->GetParSec() + parSec);
 
 	postInfo->GetNzbInfo()->SetParFull(m_parChecker.GetParFull());
@@ -452,7 +452,7 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 		// this step selects par-files with exact number of blocks we need.
 		while (blockNeeded > 0)
 		{
-			BlockInfo* bestBlockInfo = NULL;
+			BlockInfo* bestBlockInfo = nullptr;
 			for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
 			{
 				BlockInfo* blockInfo = *it;
@@ -535,7 +535,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
 	char* baseParFilename = FileSystem::BaseFileName(parFilename);
 	int mainBaseLen = 0;
-	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, NULL))
+	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, nullptr))
 	{
 		// should not happen
 		nzbInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", baseParFilename);
@@ -549,7 +549,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	{
 		FileInfo* fileInfo = *it;
 		int blockCount = 0;
-		if (ParParser::ParseParFilename(fileInfo->GetFilename(), NULL, &blockCount) &&
+		if (ParParser::ParseParFilename(fileInfo->GetFilename(), nullptr, &blockCount) &&
 			blockCount > 0)
 		{
 			bool useFile = true;
@@ -617,7 +617,7 @@ void ParCoordinator::UpdateParCheckProgress()
 	postInfo->SetStageProgress(m_parChecker.GetStageProgress());
 	PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
 	PostInfo::EStage stage = StageKind[m_parChecker.GetStage()];
-	time_t current = time(NULL);
+	time_t current = time(nullptr);
 
 	if (postInfo->GetStage() != stage)
 	{
@@ -672,7 +672,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 		time_t startTime = postInfo->GetStartTime();
 		time_t parTime = m_parChecker.GetParTime();
 		time_t repairTime = m_parChecker.GetRepairTime();
-		time_t waitTime = time(NULL);
+		time_t waitTime = time(nullptr);
 
 		// wait until Post-processor is unpaused
 		while (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
@@ -681,7 +681,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 
 			// update time stamps
 
-			time_t delta = time(NULL) - waitTime;
+			time_t delta = time(nullptr) - waitTime;
 
 			if (stageTime > 0)
 			{
@@ -731,7 +731,7 @@ void ParCoordinator::UpdateParRenameProgress()
 	PostInfo* postInfo = m_parRenamer.GetPostInfo();
 	postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
 	postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
-	time_t current = time(NULL);
+	time_t current = time(nullptr);
 
 	if (postInfo->GetStage() != PostInfo::ptRenaming)
 	{

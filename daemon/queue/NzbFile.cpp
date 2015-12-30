@@ -45,8 +45,8 @@ NzbFile::NzbFile(const char* fileName, const char* category)
 
 #ifndef WIN32
 	m_hasPassword = false;
-	m_fileInfo = NULL;
-	m_article = NULL;
+	m_fileInfo = nullptr;
+	m_article = nullptr;
 #endif
 }
 
@@ -70,7 +70,7 @@ void NzbFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
 {
 	// make Article-List big enough
 	while ((int)fileInfo->GetArticles()->size() < articleInfo->GetPartNumber())
-		fileInfo->GetArticles()->push_back(NULL);
+		fileInfo->GetArticles()->push_back(nullptr);
 
 	int index = articleInfo->GetPartNumber() - 1;
 	if ((*fileInfo->GetArticles())[index])
@@ -479,7 +479,7 @@ void NzbFile::ReadPassword()
 #ifdef WIN32
 bool NzbFile::Parse()
 {
-	CoInitialize(NULL);
+	CoInitialize(nullptr);
 
 	HRESULT hr;
 
@@ -560,7 +560,7 @@ void NzbFile::EncodeUrl(const char* filename, char* url, int bufLen)
 			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 		}
 	}
-	*url = NULL;
+	*url = nullptr;
 }
 
 bool NzbFile::ParseNzb(IUnknown* nzb)
@@ -755,8 +755,8 @@ void NzbFile::Parse_EndElement(const char *name)
 	{
 		// Close the file element, add the new file to file-list
 		AddFileInfo(m_fileInfo);
-		m_fileInfo = NULL;
-		m_article = NULL;
+		m_fileInfo = nullptr;
+		m_article = nullptr;
 	}
 	else if (!strcmp("group", name))
 	{
@@ -780,7 +780,7 @@ void NzbFile::Parse_EndElement(const char *name)
 		// Get the #text part
 		BString<1024> id("<%s>", *m_tagContent);
 		m_article->SetMessageId(id);
-		m_article = NULL;
+		m_article = nullptr;
 	}
 	else if (!strcmp("meta", name) && m_hasPassword)
 	{

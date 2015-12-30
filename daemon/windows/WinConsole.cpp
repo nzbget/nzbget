@@ -78,10 +78,10 @@ BOOL WINAPI WinConsole::ConsoleCtrlHandler(DWORD dwCtrlType)
 
 WinConsole::WinConsole()
 {
-	m_initialArguments = NULL;
+	m_initialArguments = nullptr;
 	m_initialArgumentCount = 0;
-	m_defaultArguments = NULL;
-	m_iconData = NULL;
+	m_defaultArguments = nullptr;
+	m_iconData = nullptr;
 	m_modal = false;
 	m_autostart = false;
 	m_showTrayIcon = true;
@@ -123,7 +123,7 @@ void WinConsole::InitAppMode()
 		m_defaultArguments = (char**)malloc(sizeof(char*) * 3);
 		m_defaultArguments[0] = (*g_Arguments)[0];
 		m_defaultArguments[1] = "-s";
-		m_defaultArguments[2] = NULL;
+		m_defaultArguments[2] = nullptr;
 		g_Arguments = (char*(*)[])m_defaultArguments;
 		g_ArgumentCount = 2;
 		m_appMode = true;
@@ -165,7 +165,7 @@ void WinConsole::InitAppMode()
 					m_defaultArguments[p++] = (*g_Arguments)[i];
 				}
 			}
-			m_defaultArguments[p] = NULL;
+			m_defaultArguments[p] = nullptr;
 			g_Arguments = (char*(*)[])m_defaultArguments;
 			g_ArgumentCount = p;
 		}
@@ -206,7 +206,7 @@ void WinConsole::Run()
 	while (!IsStopped())
 	{
 		MSG msg;
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -241,16 +241,16 @@ void WinConsole::CreateResources()
 	m_menu = LoadMenu(m_instance, MAKEINTRESOURCE(IDR_TRAYMENU));
 	m_menu = GetSubMenu(m_menu, 0);
 
-	HDC hdc = GetDC(NULL);
+	HDC hdc = GetDC(nullptr);
 	long height = -MulDiv(8, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 	m_linkFont = CreateFont(height, 0, 0, 0, 0, 0, TRUE, 0, 0, 0, 0, 0, 0, "Tahoma");
 	height = -MulDiv(11, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 	m_nameFont = CreateFont(height, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "Tahoma");
 	height = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 	m_titleFont = CreateFont(height, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "Tahoma");
-	ReleaseDC(NULL, hdc);
+	ReleaseDC(nullptr, hdc);
 
-	m_handCursor = LoadCursor(NULL, IDC_HAND);
+	m_handCursor = LoadCursor(nullptr, IDC_HAND);
 	m_aboutIcon = (HICON)LoadImage(m_instance, MAKEINTRESOURCE(IDI_MAINICON), IMAGE_ICON, 64, 64, 0);
 	m_runningIcon = (HICON)LoadImage(m_instance, MAKEINTRESOURCE(IDI_MAINICON), IMAGE_ICON, 48, 48, 0);
 
@@ -274,7 +274,7 @@ void WinConsole::CreateTrayIcon()
 	RegisterClassEx(&wnd);
 
 	m_trayWindow = CreateWindowEx(0, className, "NZBGet", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-		CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, m_instance, NULL);
+		CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, m_instance, nullptr);
 
 	m_iconData = new NOTIFYICONDATA;
 	memset(m_iconData, 0, sizeof(NOTIFYICONDATA));
@@ -345,7 +345,7 @@ void WinConsole::ShowMenu()
 	GetCursorPos(&curPoint);
 	SetForegroundWindow(m_trayWindow);
 
-	UINT itemId = TrackPopupMenu(m_menu, TPM_RETURNCMD | TPM_NONOTIFY, curPoint.x, curPoint.y, 0, m_trayWindow, NULL);
+	UINT itemId = TrackPopupMenu(m_menu, TPM_RETURNCMD | TPM_NONOTIFY, curPoint.x, curPoint.y, 0, m_trayWindow, nullptr);
 
 	switch(itemId)
 	{
@@ -378,15 +378,15 @@ void WinConsole::ShowMenu()
 			break;
 
 		case ID_INFO_HOMEPAGE:
-			ShellExecute(0, "open", "http://nzbget.net", NULL, NULL, SW_SHOWNORMAL);
+			ShellExecute(0, "open", "http://nzbget.net", nullptr, nullptr, SW_SHOWNORMAL);
 			break;
 
 		case ID_INFO_DOWNLOADS:
-			ShellExecute(0, "open", "http://nzbget.net/download", NULL, NULL, SW_SHOWNORMAL);
+			ShellExecute(0, "open", "http://nzbget.net/download", nullptr, nullptr, SW_SHOWNORMAL);
 			break;
 
 		case ID_INFO_FORUM:
-			ShellExecute(0, "open", "http://nzbget.net/forum", NULL, NULL, SW_SHOWNORMAL);
+			ShellExecute(0, "open", "http://nzbget.net/forum", nullptr, nullptr, SW_SHOWNORMAL);
 			break;
 
 		case ID_ABOUT:
@@ -431,7 +431,7 @@ void WinConsole::ShowWebUI()
 	}
 
 	BString<1024> url("http://%s:%i", iP, g_Options->GetControlPort());
-	ShellExecute(0, "open", url, NULL, NULL, SW_SHOWNORMAL);
+	ShellExecute(0, "open", url, nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 void WinConsole::ShowInExplorer(const char* filename)
@@ -451,9 +451,9 @@ void WinConsole::ShowInExplorer(const char* filename)
 
 	WCHAR wszFileName2[MAX_PATH + 1];
 	MultiByteToWideChar(0, 0, fileName2, strlen(fileName2) + 1, wszFileName2, MAX_PATH);
-	CoInitialize(NULL);
+	CoInitialize(nullptr);
 	LPITEMIDLIST pidl;
-	HRESULT H = SHParseDisplayName(wszFileName2, NULL, &pidl, 0, NULL);
+	HRESULT H = SHParseDisplayName(wszFileName2, nullptr, &pidl, 0, nullptr);
 	H = SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
 }
 
@@ -497,11 +497,11 @@ BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			}
 			else if (LOWORD(wParam) == IDC_ABOUT_HOMEPAGE && HIWORD(wParam) == STN_CLICKED)
 			{
-				ShellExecute(0, "open", "http://nzbget.net", NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(0, "open", "http://nzbget.net", nullptr, nullptr, SW_SHOWNORMAL);
 			}
 			else if (LOWORD(wParam) == IDC_ABOUT_GPL && HIWORD(wParam) == STN_CLICKED)
 			{
-				ShellExecute(0, "open", "http://www.gnu.org/licenses/gpl-2.0.html", NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(0, "open", "http://www.gnu.org/licenses/gpl-2.0.html", nullptr, nullptr, SW_SHOWNORMAL);
 			}
 			return TRUE;
 
@@ -620,7 +620,7 @@ void WinConsole::SavePrefs()
 	if (m_autostart)
 	{
 		char filename[MAX_PATH + 1];
-		GetModuleFileName(NULL, filename, sizeof(filename));
+		GetModuleFileName(nullptr, filename, sizeof(filename));
 		BString<1024> startCommand("\"%s\" -s -app -auto", filename);
 		RegSetValueEx(hKey, "NZBGet", 0, REG_SZ, (BYTE*)(char*)startCommand, strlen(startCommand) + 1);
 	}
@@ -666,7 +666,7 @@ void WinConsole::LoadPrefs()
 	// Autostart-setting
 	if (RegOpenKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", &hKey) == ERROR_SUCCESS)
 	{
-		m_autostart = RegQueryValueEx(hKey, "NZBGet", 0, &typ, NULL, NULL) == ERROR_SUCCESS;
+		m_autostart = RegQueryValueEx(hKey, "NZBGet", 0, &typ, nullptr, nullptr) == ERROR_SUCCESS;
 		RegCloseKey(hKey);
 	}
 }
@@ -683,7 +683,7 @@ void WinConsole::ApplyPrefs()
 
 void WinConsole::CheckRunning()
 {
-	HWND hTrayWindow = FindWindow("NZBGet tray window", NULL);
+	HWND hTrayWindow = FindWindow("NZBGet tray window", nullptr);
 	if (hTrayWindow)
 	{
 		ShowRunningDialog();
@@ -701,7 +701,7 @@ void WinConsole::CheckRunning()
 void WinConsole::ShowRunningDialog()
 {
 	ShowWindow(GetConsoleWindow(), m_showConsole ? SW_SHOW : SW_HIDE);
-	HWND hTrayWindow = FindWindow("NZBGet tray window", NULL);
+	HWND hTrayWindow = FindWindow("NZBGet tray window", nullptr);
 	m_running = true;
 
 	int result = DialogBox(m_instance, MAKEINTRESOURCE(IDD_RUNNINGDIALOG), m_trayWindow, RunningDialogProcStat);
@@ -879,7 +879,7 @@ void WinConsole::ShowCategoryDir(int catIndex)
 
 void WinConsole::OpenConfigFileInTextEdit()
 {
-	ShellExecute(0, "open", "notepad.exe", BString<1024>("\"%s\"", g_Options->GetConfigFilename()), NULL, SW_SHOWNORMAL);
+	ShellExecute(0, "open", "notepad.exe", BString<1024>("\"%s\"", g_Options->GetConfigFilename()), nullptr, SW_SHOWNORMAL);
 }
 
 void WinConsole::SetupFirstStart()
@@ -893,7 +893,7 @@ void WinConsole::SetupConfigFile()
 	// create new config-file from config template
 
 	char commonAppDataPath[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, commonAppDataPath);
+	SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, commonAppDataPath);
 
 	BString<1024> filename("%s\\NZBGet\\nzbget.conf", commonAppDataPath);
 
@@ -905,7 +905,7 @@ void WinConsole::SetupConfigFile()
 
 	// set MainDir in the config-file
 	int size = 0;
-	char* config = NULL;
+	char* config = nullptr;
 	if (FileSystem::LoadFileIntoBuffer(filename, &config, &size))
 	{
 		const char* SIGNATURE = "MainDir=${AppDir}\\downloads";
@@ -935,7 +935,7 @@ void WinConsole::SetupScripts()
 	// copy default scripts
 
 	char appDataPath[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appDataPath);
+	SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, appDataPath);
 
 	BString<1024> destDir("%s\\NZBGet\\scripts", appDataPath);
 	FileSystem::CreateDirectory(destDir);
@@ -953,7 +953,7 @@ void WinConsole::SetupScripts()
 
 void WinConsole::ShowFactoryResetDialog()
 {
-	HWND hTrayWindow = FindWindow("NZBGet tray window", NULL);
+	HWND hTrayWindow = FindWindow("NZBGet tray window", nullptr);
 	m_running = true;
 
 	int result = DialogBox(m_instance, MAKEINTRESOURCE(IDD_FACTORYRESETDIALOG), m_trayWindow, FactoryResetDialogProcStat);
@@ -1002,7 +1002,7 @@ void WinConsole::ResetFactoryDefaults()
 	g_Options->SetPausePostProcess(true);
 
 	char commonAppDataPath[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, commonAppDataPath);
+	SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, commonAppDataPath);
 
 	// delete default directories
 	const char* DefDirs[] = {"nzb", "tmp", "queue", "scripts"};

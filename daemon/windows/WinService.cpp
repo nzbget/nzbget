@@ -28,7 +28,7 @@
 #include "WinService.h"
 
 extern void ExitProc();
-RunProc Run = NULL;
+RunProc Run = nullptr;
 
 char* strServiceName = "NZBGet";
 SERVICE_STATUS_HANDLE nServiceStatusHandle;
@@ -107,7 +107,7 @@ void StartService(RunProc RunProcPtr)
 	SERVICE_TABLE_ENTRY servicetable[]=
 	{
 		{strServiceName,(LPSERVICE_MAIN_FUNCTION)ServiceMain},
-		{NULL,NULL}
+		{nullptr,nullptr}
 	};
 	BOOL success = StartServiceCtrlDispatcher(servicetable);
 	if(!success)
@@ -126,7 +126,7 @@ void InstallService(int argc, char *argv[])
 	}
 
 	char exeName[1024];
-	GetModuleFileName(NULL, exeName, 1024);
+	GetModuleFileName(nullptr, exeName, 1024);
 	exeName[1024-1] = '\0';
 
 	BString<1024> cmdLine("%s -D", exeName);

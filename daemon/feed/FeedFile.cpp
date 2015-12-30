@@ -40,7 +40,7 @@ FeedFile::FeedFile(const char* fileName)
 	m_feedItemInfos->Retain();
 
 #ifndef WIN32
-	m_feedItemInfo = NULL;
+	m_feedItemInfo = nullptr;
 	m_tagContent.Clear();
 #endif
 }
@@ -102,7 +102,7 @@ void FeedFile::ParseSubject(FeedItemInfo* feedItemInfo)
 #ifdef WIN32
 FeedFile* FeedFile::Create(const char* fileName)
 {
-	CoInitialize(NULL);
+	CoInitialize(nullptr);
 
 	HRESULT hr;
 
@@ -110,7 +110,7 @@ FeedFile* FeedFile::Create(const char* fileName)
 	hr = doc.CreateInstance(MSXML::CLSID_DOMDocument);
 	if (FAILED(hr))
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	// Load the XML document file...
@@ -138,14 +138,14 @@ FeedFile* FeedFile::Create(const char* fileName)
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* errMsg = r;
 		error("Error parsing rss feed: %s", errMsg);
-		return NULL;
+		return nullptr;
 	}
 
 	FeedFile* file = new FeedFile(fileName);
 	if (!file->ParseFeed(doc))
 	{
 		delete file;
-		file = NULL;
+		file = nullptr;
 	}
 
 	return file;
@@ -175,7 +175,7 @@ void FeedFile::EncodeUrl(const char* filename, char* url, int bufLen)
 			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 		}
 	}
-	*url = NULL;
+	*url = nullptr;
 }
 
 bool FeedFile::ParseFeed(IUnknown* nzb)
@@ -380,7 +380,7 @@ FeedFile* FeedFile::Create(const char* fileName)
 	{
 		error("Failed to parse rss feed");
 		delete file;
-		file = NULL;
+		file = nullptr;
 	}
 
 	return file;
@@ -461,7 +461,7 @@ void FeedFile::Parse_EndElement(const char *name)
 	{
 		// Close the file element, add the new file to file-list
 		AddItem(m_feedItemInfo);
-		m_feedItemInfo = NULL;
+		m_feedItemInfo = nullptr;
 	}
 	else if (!strcmp("title", name) && m_feedItemInfo)
 	{

@@ -80,13 +80,13 @@ FeedItemInfo::Attr* FeedItemInfo::Attributes::Find(const char* name)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
 FeedItemInfo::FeedItemInfo()
 {
-	m_feedFilterHelper = NULL;
+	m_feedFilterHelper = nullptr;
 	m_category = "";
 	m_size = 0;
 	m_time = 0;
@@ -267,7 +267,7 @@ FeedHistoryInfo* FeedHistory::Find(const char* url)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 

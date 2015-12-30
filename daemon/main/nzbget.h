@@ -262,7 +262,7 @@ using namespace MSXML;
 #define	__S_ISTYPE(mode, mask)	(((mode) & _S_IFMT) == (mask))
 #define	S_ISDIR(mode)	 __S_ISTYPE((mode), _S_IFDIR)
 #define	S_ISREG(mode)	 __S_ISTYPE((mode), _S_IFREG)
-#define	S_DIRMODE NULL
+#define	S_DIRMODE nullptr
 #define usleep(usec) Sleep((usec) / 1000)
 #define socklen_t int
 #define SHUT_WR 0x01

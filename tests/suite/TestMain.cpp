@@ -57,7 +57,7 @@ int TestMain(int argc, char * argv[])
 		testsargv[i-1] = argv[i];
 	}
 	argc--;
-	testsargv[argc] = NULL;
+	testsargv[argc] = nullptr;
 
 	int ret = Catch::Session().run(argc, testsargv);
 	

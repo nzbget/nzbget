@@ -92,7 +92,7 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 	DownloadQueue::Unlock();
 
 	SetScript(script->GetLocation());
-	SetArgs(NULL, false);
+	SetArgs(nullptr, false);
 
 	BString<1024> infoName("post-process-script %s for %s", script->GetName(), m_postInfo->GetNzbInfo()->GetName());
 	SetInfoName(infoName);
@@ -106,7 +106,7 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	infoName[0] = 'P'; // uppercase
 
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 	ScriptStatus::EStatus status = AnalyseExitCode(exitCode);
 
 	// the locking is needed for accessing the members of NZBInfo
@@ -268,7 +268,7 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 		}
 		else if (!strncmp(msgText + 6, "MARK=BAD", 8))
 		{
-			SetLogPrefix(NULL);
+			SetLogPrefix(nullptr);
 			PrintMessage(Message::mkWarning, "Marking %s as bad", m_postInfo->GetNzbInfo()->GetName());
 			SetLogPrefix(m_script->GetDisplayName());
 			m_postInfo->GetNzbInfo()->SetMarkStatus(NzbInfo::ksBad);
@@ -291,7 +291,7 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 	{
 		time_t stageTime = m_postInfo->GetStageTime();
 		time_t startTime = m_postInfo->GetStartTime();
-		time_t waitTime = time(NULL);
+		time_t waitTime = time(nullptr);
 
 		// wait until Post-processor is unpaused
 		while (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
@@ -300,7 +300,7 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 
 			// update time stamps
 
-			time_t delta = time(NULL) - waitTime;
+			time_t delta = time(nullptr) - waitTime;
 
 			if (stageTime > 0)
 			{

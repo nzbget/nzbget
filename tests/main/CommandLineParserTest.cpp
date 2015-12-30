@@ -31,26 +31,26 @@
 
 TEST_CASE("Command line parser: initializing without configuration file", "[CommandLineParser][Quick]")
 {
-	const char* argv[] = {"nzbget", "-n", "-p", NULL};
+	const char* argv[] = {"nzbget", "-n", "-p", nullptr};
 	CommandLineParser commandLineParser(3, argv);
 
-	REQUIRE(commandLineParser.GetConfigFilename() == NULL);
+	REQUIRE(commandLineParser.GetConfigFilename() == nullptr);
 	REQUIRE(commandLineParser.GetClientOperation() == CommandLineParser::opClientNoOperation);
 }
 
 TEST_CASE("Command line parser: initializing with configuration file", "[CommandLineParser][Quick]")
 {
-	const char* argv[] = {"nzbget", "-c", "/home/user/nzbget.conf", "-p", NULL};
+	const char* argv[] = {"nzbget", "-c", "/home/user/nzbget.conf", "-p", nullptr};
 	CommandLineParser commandLineParser(4, argv);
 
-	REQUIRE(commandLineParser.GetConfigFilename() != NULL);
+	REQUIRE(commandLineParser.GetConfigFilename() != nullptr);
 	REQUIRE(strcmp(commandLineParser.GetConfigFilename(), "/home/user/nzbget.conf") == 0);
 	REQUIRE(commandLineParser.GetClientOperation() == CommandLineParser::opClientNoOperation);
 }
 
 TEST_CASE("Command line parser: server mode", "[CommandLineParser][Quick]")
 {
-	const char* argv[] = {"nzbget", "-n", "-s", NULL};
+	const char* argv[] = {"nzbget", "-n", "-s", nullptr};
 	CommandLineParser commandLineParser(3, argv);
 
 	REQUIRE(commandLineParser.GetServerMode() == true);
@@ -59,7 +59,7 @@ TEST_CASE("Command line parser: server mode", "[CommandLineParser][Quick]")
 
 TEST_CASE("Command line parser: passing pause", "[CommandLineParser][Quick]")
 {
-	const char* argv[] = {"nzbget", "-n", "-s", "-P", NULL};
+	const char* argv[] = {"nzbget", "-n", "-s", "-P", nullptr};
 	CommandLineParser commandLineParser(4, argv);
 
 	REQUIRE(commandLineParser.GetPauseDownload() == true);
@@ -67,7 +67,7 @@ TEST_CASE("Command line parser: passing pause", "[CommandLineParser][Quick]")
 
 TEST_CASE("Command line parser: extra option (1)", "[CommandLineParser][Quick]")
 {
-	const char* argv[] = {"nzbget", "-n", "-o", "myoption1=yes", "-o", "myoption2=no", "-p", NULL};
+	const char* argv[] = {"nzbget", "-n", "-o", "myoption1=yes", "-o", "myoption2=no", "-p", nullptr};
 	CommandLineParser commandLineParser(7, argv);
 
 	REQUIRE(commandLineParser.GetOptionList()->size() == 2);
@@ -78,7 +78,7 @@ TEST_CASE("Command line parser: extra option (1)", "[CommandLineParser][Quick]")
 
 TEST_CASE("Command line parser: extra option (2)", "[CommandLineParser][Quick]")
 {
-	const char* argv[] = {"nzbget", "-n", "-o", "myoption1=yes", "-o", "myoption2=no", "-o", "myoption1=no", "-p", NULL};
+	const char* argv[] = {"nzbget", "-n", "-o", "myoption1=yes", "-o", "myoption2=no", "-o", "myoption1=no", "-p", nullptr};
 	CommandLineParser commandLineParser(9, argv);
 
 	REQUIRE(commandLineParser.GetOptionList()->size() == 3);

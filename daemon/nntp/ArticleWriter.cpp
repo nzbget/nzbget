@@ -35,9 +35,9 @@ ArticleWriter::ArticleWriter()
 {
 	debug("Creating ArticleWriter");
 
-	m_resultFilename = NULL;
+	m_resultFilename = nullptr;
 	m_format = Decoder::efUnknown;
-	m_articleData = NULL;
+	m_articleData = nullptr;
 	m_duplicate = false;
 	m_flushing = false;
 }
@@ -224,7 +224,7 @@ void ArticleWriter::Finish(bool success)
 			m_articleInfo->AttachSegment(m_articleData, m_articleOffset, m_articlePtr);
 			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() + 1);
 			g_ArticleCache->UnlockContent();
-			m_articleData = NULL;
+			m_articleData = nullptr;
 		}
 		else
 		{
@@ -402,7 +402,7 @@ void ArticleWriter::CompleteFileParts()
 	}
 
 	static const int BUFFER_SIZE = 1024 * 64;
-	char* buffer = NULL;
+	char* buffer = nullptr;
 	bool firstArticle = true;
 	uint32 crc = 0;
 
@@ -809,14 +809,14 @@ ArticleCache::ArticleCache()
 {
 	m_allocated = 0;
 	m_flushing = false;
-	m_fileInfo = NULL;
+	m_fileInfo = nullptr;
 }
 
 void* ArticleCache::Alloc(int size)
 {
 	m_allocMutex.Lock();
 
-	void* p = NULL;
+	void* p = nullptr;
 	if (m_allocated + size <= (size_t)g_Options->GetArticleCache() * 1024 * 1024)
 	{
 		p = malloc(size);
@@ -929,7 +929,7 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 		articleWriter->SetInfoName(infoName);
 		articleWriter->FlushCache();
 		delete articleWriter;
-		m_fileInfo = NULL;
+		m_fileInfo = nullptr;
 		return true;
 	}
 

@@ -75,7 +75,7 @@ public:
 	const char* 		GetFileName() const { return m_fileName; }
 	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
 	const char*			GetPassword() { return m_password; }
-	void				DetachNzbInfo() { m_nzbInfo = NULL; }
+	void				DetachNzbInfo() { m_nzbInfo = nullptr; }
 
 	void				LogDebugInfo();
 };

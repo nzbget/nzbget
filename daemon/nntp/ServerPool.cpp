@@ -184,10 +184,10 @@ void ServerPool::InitConnections()
 
 NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers)
 {
-	PooledConnection* connection = NULL;
+	PooledConnection* connection = nullptr;
 	m_connectionsMutex.Lock();
 
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 
 	if (level < (int)m_levels.size() && m_levels[level] > 0)
 	{
@@ -280,7 +280,7 @@ void ServerPool::FreeConnection(NntpConnection* connection, bool used)
 void ServerPool::BlockServer(NewsServer* newsServer)
 {
 	m_connectionsMutex.Lock();
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 	bool newBlock = newsServer->GetBlockTime() != curTime;
 	newsServer->SetBlockTime(curTime);
 	m_connectionsMutex.Unlock();
@@ -295,7 +295,7 @@ void ServerPool::CloseUnusedConnections()
 {
 	m_connectionsMutex.Lock();
 
-	time_t curtime = ::time(NULL);
+	time_t curtime = ::time(nullptr);
 
 	// close and free all connections of servers which were disabled since the last check
 	int i = 0;
@@ -389,7 +389,7 @@ void ServerPool::LogDebugInfo()
 
 	m_connectionsMutex.Lock();
 
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 
 	info("    Servers: %i", (int)m_servers.size());
 	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)

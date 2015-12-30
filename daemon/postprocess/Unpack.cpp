@@ -80,7 +80,7 @@ void UnpackController::StartJob(PostInfo* postInfo)
 
 void UnpackController::Run()
 {
-	time_t start = time(NULL);
+	time_t start = time(nullptr);
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
@@ -111,7 +111,7 @@ void UnpackController::Run()
 	m_infoName.Format("unpack for %s", *m_name);
 	m_infoNameUp.Format("Unpack for %s", *m_name); // first letter in upper case
 
-	m_hasParFiles = ParParser::FindMainPars(m_destDir, NULL);
+	m_hasParFiles = ParParser::FindMainPars(m_destDir, nullptr);
 
 	if (unpack)
 	{
@@ -185,7 +185,7 @@ void UnpackController::Run()
 		}
 	}
 
-	int unpackSec = (int)(time(NULL) - start);
+	int unpackSec = (int)(time(nullptr) - start);
 	m_postInfo->GetNzbInfo()->SetUnpackSec(m_postInfo->GetNzbInfo()->GetUnpackSec() + unpackSec);
 
 	m_postInfo->SetWorking(false);
@@ -298,7 +298,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 
 	params.push_back(strdup(m_hasNonStdRarFiles ? "*.*" : "*.rar"));
 	params.push_back(strdup(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR))));
-	params.push_back(NULL);
+	params.push_back(nullptr);
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
 	SetLogPrefix("Unrar");
@@ -309,7 +309,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 
 	SetProgressLabel("");
 	int exitCode = Execute();
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 	SetProgressLabel("");
 
 	m_unpackOk = exitCode == 0 && m_allOkMessageReceived && !GetTerminated();
@@ -354,7 +354,7 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 
 	params.push_back(strdup(BString<1024>("-o%s", *m_unpackDir)));
 	params.push_back(strdup(multiVolumes ? "*.7z.001" : "*.7z"));
-	params.push_back(NULL);
+	params.push_back(nullptr);
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
 	ResetEnv();
@@ -366,7 +366,7 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 	SetLogPrefix("7-Zip");
 	SetProgressLabel("");
 	int exitCode = Execute();
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 	SetProgressLabel("");
 
 	m_unpackOk = exitCode == 0 && m_allOkMessageReceived && !GetTerminated();
@@ -386,7 +386,7 @@ bool UnpackController::PrepareCmdParams(const char* command, ParamList* params, 
 		return true;
 	}
 
-	char** cmdArgs = NULL;
+	char** cmdArgs = nullptr;
 	if (!Util::SplitCommandLine(command, &cmdArgs))
 	{
 		PrintMessage(Message::mkError, "Could not start %s, failed to parse command line: %s", infoName, command);
@@ -431,7 +431,7 @@ void UnpackController::JoinSplittedFiles()
 		}
 	}
 
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 	SetProgressLabel("");
 }
 
@@ -878,7 +878,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 	{
 		// reset start time for a case if user uses unpack-script to do some things
 		// (like sending Wake-On-Lan message) before executing unrar
-		m_postInfo->SetStageTime(time(NULL));
+		m_postInfo->SetStageTime(time(nullptr));
 	}
 
 	if (m_unpacker == upUnrar && !strncmp(msgText, "Unrar: Extracting ", 18))

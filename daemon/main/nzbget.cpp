@@ -82,32 +82,32 @@ void DisableCout();
 #endif
 void BootConfig();
 
-Thread* g_Frontend = NULL;
-CommandLineParser* g_CommandLineParser = NULL;
-ServerPool* g_ServerPool = NULL;
-QueueCoordinator* g_QueueCoordinator = NULL;
-UrlCoordinator* g_UrlCoordinator = NULL;
-RemoteServer* g_RemoteServer = NULL;
-RemoteServer* g_RemoteSecureServer = NULL;
-StatMeter* g_StatMeter = NULL;
-PrePostProcessor* g_PrePostProcessor = NULL;
-HistoryCoordinator* g_HistoryCoordinator = NULL;
-DupeCoordinator* g_DupeCoordinator = NULL;
-DiskState* g_DiskState = NULL;
-Scheduler* g_Scheduler = NULL;
-Scanner* g_Scanner = NULL;
-FeedCoordinator* g_FeedCoordinator = NULL;
-Maintenance* g_Maintenance = NULL;
-ArticleCache* g_ArticleCache = NULL;
-QueueScriptCoordinator* g_QueueScriptCoordinator = NULL;
-ServiceCoordinator* g_ServiceCoordinator = NULL;
-DiskService* g_DiskService = NULL;
+Thread* g_Frontend = nullptr;
+CommandLineParser* g_CommandLineParser = nullptr;
+ServerPool* g_ServerPool = nullptr;
+QueueCoordinator* g_QueueCoordinator = nullptr;
+UrlCoordinator* g_UrlCoordinator = nullptr;
+RemoteServer* g_RemoteServer = nullptr;
+RemoteServer* g_RemoteSecureServer = nullptr;
+StatMeter* g_StatMeter = nullptr;
+PrePostProcessor* g_PrePostProcessor = nullptr;
+HistoryCoordinator* g_HistoryCoordinator = nullptr;
+DupeCoordinator* g_DupeCoordinator = nullptr;
+DiskState* g_DiskState = nullptr;
+Scheduler* g_Scheduler = nullptr;
+Scanner* g_Scanner = nullptr;
+FeedCoordinator* g_FeedCoordinator = nullptr;
+Maintenance* g_Maintenance = nullptr;
+ArticleCache* g_ArticleCache = nullptr;
+QueueScriptCoordinator* g_QueueScriptCoordinator = nullptr;
+ServiceCoordinator* g_ServiceCoordinator = nullptr;
+DiskService* g_DiskService = nullptr;
 int g_ArgumentCount;
-char* (*g_EnvironmentVariables)[] = NULL;
-char* (*g_Arguments)[] = NULL;
+char* (*g_EnvironmentVariables)[] = nullptr;
+char* (*g_Arguments)[] = nullptr;
 bool g_Reloading = true;
 #ifdef WIN32
-WinConsole* g_WinConsole = NULL;
+WinConsole* g_WinConsole = nullptr;
 #endif
 
 /*
@@ -155,7 +155,7 @@ int main(int argc, char *argv[], char *argp[])
 	DisableCout();
 #endif
 
-	srand(time(NULL));
+	srand(time(nullptr));
 
 #ifdef WIN32
 	for (int i=0; i < argc; i++)
@@ -351,7 +351,7 @@ void Run(bool reload)
 				return;
 			}
 			g_Scanner->InitPPParameters(category, nzbFile->GetNzbInfo()->GetParameters(), false);
-			g_QueueCoordinator->AddNzbFileToQueue(nzbFile, NULL, false);
+			g_QueueCoordinator->AddNzbFileToQueue(nzbFile, nullptr, false);
 			delete nzbFile;
 		}
 
@@ -568,15 +568,15 @@ void ProcessClientRequest()
 	switch (g_CommandLineParser->GetClientOperation())
 	{
 		case CommandLineParser::opClientRequestListFiles:
-			Client->RequestServerList(true, false, g_CommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_CommandLineParser->GetEditQueueText() : NULL);
+			Client->RequestServerList(true, false, g_CommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_CommandLineParser->GetEditQueueText() : nullptr);
 			break;
 
 		case CommandLineParser::opClientRequestListGroups:
-			Client->RequestServerList(false, true, g_CommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_CommandLineParser->GetEditQueueText() : NULL);
+			Client->RequestServerList(false, true, g_CommandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? g_CommandLineParser->GetEditQueueText() : nullptr);
 			break;
 
 		case CommandLineParser::opClientRequestListStatus:
-			Client->RequestServerList(false, false, NULL);
+			Client->RequestServerList(false, false, nullptr);
 			break;
 
 		case CommandLineParser::opClientRequestDownloadPause:
@@ -741,49 +741,49 @@ void Cleanup()
 
 	debug("Deleting UrlCoordinator");
 	delete g_UrlCoordinator;
-	g_UrlCoordinator = NULL;
+	g_UrlCoordinator = nullptr;
 	debug("UrlCoordinator deleted");
 
 	debug("Deleting RemoteServer");
 	delete g_RemoteServer;
-	g_RemoteServer = NULL;
+	g_RemoteServer = nullptr;
 	debug("RemoteServer deleted");
 
 	debug("Deleting RemoteSecureServer");
 	delete g_RemoteSecureServer;
-	g_RemoteSecureServer = NULL;
+	g_RemoteSecureServer = nullptr;
 	debug("RemoteSecureServer deleted");
 
 	debug("Deleting PrePostProcessor");
 	delete g_PrePostProcessor;
-	g_PrePostProcessor = NULL;
+	g_PrePostProcessor = nullptr;
 	delete g_Scanner;
-	g_Scanner = NULL;
+	g_Scanner = nullptr;
 	debug("PrePostProcessor deleted");
 
 	debug("Deleting HistoryCoordinator");
 	delete g_HistoryCoordinator;
-	g_HistoryCoordinator = NULL;
+	g_HistoryCoordinator = nullptr;
 	debug("HistoryCoordinator deleted");
 
 	debug("Deleting DupeCoordinator");
 	delete g_DupeCoordinator;
-	g_DupeCoordinator = NULL;
+	g_DupeCoordinator = nullptr;
 	debug("DupeCoordinator deleted");
 
 	debug("Deleting Frontend");
 	delete g_Frontend;
-	g_Frontend = NULL;
+	g_Frontend = nullptr;
 	debug("Frontend deleted");
 
 	debug("Deleting QueueCoordinator");
 	delete g_QueueCoordinator;
-	g_QueueCoordinator = NULL;
+	g_QueueCoordinator = nullptr;
 	debug("QueueCoordinator deleted");
 
 	debug("Deleting DiskState");
 	delete g_DiskState;
-	g_DiskState = NULL;
+	g_DiskState = nullptr;
 	debug("DiskState deleted");
 
 	debug("Deleting Options");
@@ -802,7 +802,7 @@ void Cleanup()
 	if (g_CommandLineParser)
 	{
 		delete g_CommandLineParser;
-		g_CommandLineParser = NULL;
+		g_CommandLineParser = nullptr;
 	}
 	debug("CommandLineParser deleted");
 
@@ -810,53 +810,53 @@ void Cleanup()
 	if (g_ScriptConfig)
 	{
 		delete g_ScriptConfig;
-		g_ScriptConfig = NULL;
+		g_ScriptConfig = nullptr;
 	}
 	debug("ScriptConfig deleted");
 
 	debug("Deleting ServerPool");
 	delete g_ServerPool;
-	g_ServerPool = NULL;
+	g_ServerPool = nullptr;
 	debug("ServerPool deleted");
 
 	debug("Deleting Scheduler");
 	delete g_Scheduler;
-	g_Scheduler = NULL;
+	g_Scheduler = nullptr;
 	debug("Scheduler deleted");
 
 	debug("Deleting FeedCoordinator");
 	delete g_FeedCoordinator;
-	g_FeedCoordinator = NULL;
+	g_FeedCoordinator = nullptr;
 	debug("FeedCoordinator deleted");
 
 	debug("Deleting ArticleCache");
 	delete g_ArticleCache;
-	g_ArticleCache = NULL;
+	g_ArticleCache = nullptr;
 	debug("ArticleCache deleted");
 
 	debug("Deleting QueueScriptCoordinator");
 	delete g_QueueScriptCoordinator;
-	g_QueueScriptCoordinator = NULL;
+	g_QueueScriptCoordinator = nullptr;
 	debug("QueueScriptCoordinator deleted");
 
 	debug("Deleting Maintenance");
 	delete g_Maintenance;
-	g_Maintenance = NULL;
+	g_Maintenance = nullptr;
 	debug("Maintenance deleted");
 
 	debug("Deleting StatMeter");
 	delete g_StatMeter;
-	g_StatMeter = NULL;
+	g_StatMeter = nullptr;
 	debug("StatMeter deleted");
 
 	debug("Deleting ServiceCoordinator");
 	delete g_ServiceCoordinator;
-	g_ServiceCoordinator = NULL;
+	g_ServiceCoordinator = nullptr;
 	debug("ServiceCoordinator deleted");
 
 	debug("Deleting DiskService");
 	delete g_DiskService;
-	g_DiskService = NULL;
+	g_DiskService = nullptr;
 	debug("DiskService deleted");
 
 	if (!g_Reloading)
@@ -867,7 +867,7 @@ void Cleanup()
 
 #ifdef WIN32
 	delete g_WinConsole;
-	g_WinConsole = NULL;
+	g_WinConsole = nullptr;
 #endif
 
 	debug("Global objects cleaned up");

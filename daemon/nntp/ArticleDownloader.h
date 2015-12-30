@@ -101,7 +101,7 @@ public:
 	virtual void		Stop();
 	bool				Terminate();
 	time_t				GetLastUpdateTime() { return m_lastUpdateTime; }
-	void				SetLastUpdateTimeNow() { m_lastUpdateTime = ::time(NULL); }
+	void				SetLastUpdateTimeNow() { m_lastUpdateTime = ::time(nullptr); }
 	const char* 		GetArticleFilename() { return m_articleFilename; }
 	void				SetInfoName(const char* infoName);
 	const char*			GetInfoName() { return m_infoName; }

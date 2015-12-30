@@ -168,17 +168,17 @@ const char* PossibleConfigLocations[] =
 		"/usr/etc/nzbget.conf",
 		"/usr/local/etc/nzbget.conf",
 		"/opt/etc/nzbget.conf",
-		NULL
+		nullptr
 	};
 #endif
 
-Options* g_Options = NULL;
+Options* g_Options = nullptr;
 
 Options::OptEntry::OptEntry()
 {
-	m_name = NULL;
-	m_value = NULL;
-	m_defValue = NULL;
+	m_name = nullptr;
+	m_value = nullptr;
+	m_defValue = nullptr;
 	m_lineNo = 0;
 }
 
@@ -231,7 +231,7 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* name)
 {
 	if (!name)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	for (iterator it = begin(); it != end(); it++)
@@ -243,7 +243,7 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* name)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -268,7 +268,7 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 {
 	if (!name)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	for (iterator it = begin(); it != end(); it++)
@@ -297,7 +297,7 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -309,7 +309,7 @@ Options::Options(const char* exeName, const char* configFilename, bool noConfig,
 
 Options::Options(CmdOptList* commandLineOptions, Extender* extender)
 {
-	Init("nzbget/nzbget", NULL, true, commandLineOptions, true, extender);
+	Init("nzbget/nzbget", nullptr, true, commandLineOptions, true, extender);
 }
 
 void Options::Init(const char* exeName, const char* configFilename, bool noConfig,
@@ -464,7 +464,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 
 Options::~Options()
 {
-	g_Options = NULL;
+	g_Options = nullptr;
 }
 
 void Options::Dump()
@@ -643,7 +643,7 @@ void Options::InitOptFile()
 		if (!FileSystem::FileExists(filename))
 		{
 			char appDataPath[MAX_PATH];
-			SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appDataPath);
+			SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, appDataPath);
 			filename.Format("%s\\NZBGet\\nzbget.conf", appDataPath);
 
 			if (m_extender && !FileSystem::FileExists(filename))
@@ -767,7 +767,7 @@ void Options::InitOptions()
 	CheckDir(m_interDir, OPTION_INTERDIR, mainDir, true, false);
 	CheckDir(m_tempDir, OPTION_TEMPDIR, mainDir, false, true);
 	CheckDir(m_queueDir, OPTION_QUEUEDIR, mainDir, false, true);
-	CheckDir(m_webDir, OPTION_WEBDIR, NULL, true, false);
+	CheckDir(m_webDir, OPTION_WEBDIR, nullptr, true, false);
 	CheckDir(m_scriptDir, OPTION_SCRIPTDIR, mainDir, true, false);
 	CheckDir(m_nzbDir, OPTION_NZBDIR, mainDir, false, true);
 
@@ -955,7 +955,7 @@ int Options::ParseIntValue(const char* OptName, int base)
 		m_configLine = optEntry->GetLineNo();
 		ConfigError("Invalid value for option \"%s\": \"%s\"", OptName, optEntry->GetValue());
 		optEntry->SetValue(optEntry->GetDefValue());
-		val = strtol(optEntry->GetDefValue(), NULL, base);
+		val = strtol(optEntry->GetDefValue(), nullptr, base);
 	}
 
 	return val;
@@ -1045,7 +1045,7 @@ const char* Options::GetOption(const char* optname)
 		}
 		return optEntry->GetValue();
 	}
-	return NULL;
+	return nullptr;
 }
 
 void Options::InitServers()
@@ -1288,7 +1288,7 @@ void Options::InitScheduler()
 			BString<100>("Task%i.Command", n), CommandCount, CommandNames, CommandValues);
 
 		if (param && strlen(param) > 0 && taskCommand == scProcess &&
-			!Util::SplitCommandLine(param, NULL))
+			!Util::SplitCommandLine(param, nullptr))
 		{
 			ConfigError("Invalid value for option \"Task%i.Param\"", n);
 			continue;
@@ -1738,7 +1738,7 @@ void Options::ConvertOldOption(CString& option, CString& value)
 	if (!strcasecmp(option, "WriteBufferSize"))
 	{
 		option = "WriteBuffer";
-		int val = strtol(value, NULL, 10);
+		int val = strtol(value, nullptr, 10);
 		val = val == -1 ? 1024 : val / 1024;
 		value.Format("%i", val);
 	}

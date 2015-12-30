@@ -71,10 +71,10 @@ static int gcry_mutex_unlock(void **lock)
 }
 
 static struct gcry_thread_cbs gcry_threads_Mutex =
-{	GCRY_THREAD_OPTION_USER, NULL,
+{	GCRY_THREAD_OPTION_USER, nullptr,
 	gcry_mutex_init, gcry_mutex_destroy,
 	gcry_mutex_lock, gcry_mutex_unlock,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+	nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
 };
 
 #endif /* NEED_GCRYPT_LOCKING */
@@ -224,8 +224,8 @@ TlsSocket::TlsSocket(SOCKET socket, bool isClient, const char* certFile, const c
 	m_certFile = certFile;
 	m_keyFile = keyFile;
 	m_cipher = cipher;
-	m_context = NULL;
-	m_session = NULL;
+	m_context = nullptr;
+	m_session = nullptr;
 	m_suppressErrors = false;
 	m_initialized = false;
 	m_connected = false;
@@ -321,7 +321,7 @@ bool TlsSocket::Start()
 
 	const char* priority = !m_cipher.Empty() ? m_cipher : "NORMAL";
 
-	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, NULL);
+	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, nullptr);
 	if (m_retCode != 0)
 	{
 		ReportError("Could not select cipher for TLS session");
@@ -435,7 +435,7 @@ void TlsSocket::Close()
 		SSL_free((SSL*)m_session);
 #endif /* HAVE_OPENSSL */
 
-		m_session = NULL;
+		m_session = nullptr;
 	}
 
 	if (m_context)
@@ -448,7 +448,7 @@ void TlsSocket::Close()
 		SSL_CTX_free((SSL_CTX*)m_context);
 #endif /* HAVE_OPENSSL */
 
-		m_context = NULL;
+		m_context = nullptr;
 	}
 }
 

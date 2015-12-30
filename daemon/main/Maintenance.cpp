@@ -61,8 +61,8 @@ public:
 Maintenance::Maintenance()
 {
 	m_idMessageGen = 0;
-	m_updateScriptController = NULL;
-	m_updateScript = NULL;
+	m_updateScriptController = nullptr;
+	m_updateScript = nullptr;
 }
 
 Maintenance::~Maintenance()
@@ -86,7 +86,7 @@ Maintenance::~Maintenance()
 void Maintenance::ResetUpdateController()
 {
 	m_controllerMutex.Lock();
-	m_updateScriptController = NULL;
+	m_updateScriptController = nullptr;
 	m_controllerMutex.Unlock();
 }
 
@@ -105,7 +105,7 @@ void Maintenance::AddMessage(Message::EKind kind, time_t time, const char * text
 {
 	if (time == 0)
 	{
-		time = ::time(NULL);
+		time = ::time(nullptr);
 	}
 
 	m_logMutex.Lock();
@@ -117,7 +117,7 @@ void Maintenance::AddMessage(Message::EKind kind, time_t time, const char * text
 bool Maintenance::StartUpdate(EBranch branch)
 {
 	m_controllerMutex.Lock();
-	bool alreadyUpdating = m_updateScriptController != NULL;
+	bool alreadyUpdating = m_updateScriptController != nullptr;
 	m_controllerMutex.Unlock();
 
 	if (alreadyUpdating)
@@ -129,7 +129,7 @@ bool Maintenance::StartUpdate(EBranch branch)
 	if (m_updateScript)
 	{
 		free(m_updateScript);
-		m_updateScript = NULL;
+		m_updateScript = nullptr;
 	}
 
 	if (!ReadPackageInfoStr("install-script", &m_updateScript))
@@ -168,7 +168,7 @@ bool Maintenance::CheckUpdates(char** updateInfo)
 		return false;
 	}
 
-	*updateInfo = NULL;
+	*updateInfo = nullptr;
 	UpdateInfoScriptController::ExecuteScript(updateInfoScript, updateInfo);
 
 	free(updateInfoScript);
@@ -303,7 +303,7 @@ void UpdateScriptController::AddMessage(Message::EKind kind, const char* text)
 	}
 	else
 	{
-		g_Maintenance->AddMessage(kind, time(NULL), text);
+		g_Maintenance->AddMessage(kind, time(nullptr), text);
 		ScriptController::AddMessage(kind, text);
 	}
 }
@@ -361,7 +361,7 @@ Signature::Signature(const char *inFilename, const char *sigFilename, const char
 	m_inFilename = inFilename;
 	m_sigFilename = sigFilename;
 	m_pubKeyFilename = pubKeyFilename;
-	m_pubKey = NULL;
+	m_pubKey = nullptr;
 }
 
 Signature::~Signature()
@@ -447,10 +447,10 @@ bool Signature::ReadPubKey()
 		return false;
 	}
 	BIO* mem = BIO_new_mem_buf(keybuf, keybuflen);
-	m_pubKey = PEM_read_bio_RSA_PUBKEY(mem, NULL, NULL, NULL);
+	m_pubKey = PEM_read_bio_RSA_PUBKEY(mem, nullptr, nullptr, nullptr);
 	BIO_free(mem);
 	free(keybuf);
-	return m_pubKey != NULL;
+	return m_pubKey != nullptr;
 }
 
 bool Signature::Verify()

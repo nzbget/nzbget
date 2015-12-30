@@ -43,20 +43,20 @@ int		optind = 0; 	// global argv index
 
 int getopt(int argc, char *argv[], char *optstring)
 {
-	static char *next = NULL;
+	static char *next = nullptr;
 	if (optind == 0)
-		next = NULL;
+		next = nullptr;
 
-	optarg = NULL;
+	optarg = nullptr;
 
-	if (next == NULL || *next == '\0')
+	if (next == nullptr || *next == '\0')
 	{
 		if (optind == 0)
 			optind++;
 
 		if (optind >= argc || argv[optind][0] != '-' || argv[optind][1] == '\0')
 		{
-			optarg = NULL;
+			optarg = nullptr;
 			if (optind < argc)
 				optarg = argv[optind];
 			return -1;
@@ -65,7 +65,7 @@ int getopt(int argc, char *argv[], char *optstring)
 		if (strcmp(argv[optind], "--") == 0)
 		{
 			optind++;
-			optarg = NULL;
+			optarg = nullptr;
 			if (optind < argc)
 				optarg = argv[optind];
 			return -1;
@@ -79,7 +79,7 @@ int getopt(int argc, char *argv[], char *optstring)
 	char c = *next++;
 	char *cp = strchr(optstring, c);
 
-	if (cp == NULL || c == ':')
+	if (cp == nullptr || c == ':')
 	{
 		fprintf(stderr, "Invalid option %c", c);
 		return '?';
@@ -91,7 +91,7 @@ int getopt(int argc, char *argv[], char *optstring)
 		if (*next != '\0')
 		{
 			optarg = next;
-			next = NULL;
+			next = nullptr;
 		}
 		else if (optind < argc)
 		{
@@ -357,7 +357,7 @@ bool Util::SplitCommandLine(const char* commandLine, char*** argv)
 
 	if (argv)
 	{
-		pszArgList[argCount] = NULL;
+		pszArgList[argCount] = nullptr;
 		*argv = (char**)malloc((argCount + 1) * sizeof(char*));
 		memcpy(*argv, pszArgList, sizeof(char*) * (argCount + 1));
 	}
@@ -480,7 +480,7 @@ bool Util::RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, 
 	if (!RegOpenKeyEx(keyRoot, keyName, 0, KEY_READ, &subKey))
 	{
 		DWORD retBytes = *bufLen;
-		LONG ret = RegQueryValueEx(subKey, valueName, NULL, NULL, (LPBYTE)buffer, &retBytes);
+		LONG ret = RegQueryValueEx(subKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &retBytes);
 		*bufLen = retBytes;
 		RegCloseKey(subKey);
 		return ret == 0;
@@ -738,7 +738,7 @@ int64 Util::GetCurrentTicks()
 	return ((t-hzo)*1000000)/hz;
 #else
 	timeval t;
-	gettimeofday(&t, NULL);
+	gettimeofday(&t, nullptr);
 	return (int64)(t.tv_sec) * 1000000ll + (int64)(t.tv_usec);
 #endif
 }
@@ -972,7 +972,7 @@ const char* WebUtil::XmlFindTag(const char* xml, const char* tag, int* valueLeng
 
 	const char* pstart = strstr(xml, openTag);
 	const char* pstartend = strstr(xml, openCloseTag);
-	if (!pstart && !pstartend) return NULL;
+	if (!pstart && !pstartend) return nullptr;
 
 	if (pstartend && (!pstart || pstartend < pstart))
 	{
@@ -981,7 +981,7 @@ const char* WebUtil::XmlFindTag(const char* xml, const char* tag, int* valueLeng
 	}
 
 	const char* pend = strstr(pstart, closeTag);
-	if (!pend) return NULL;
+	if (!pend) return nullptr;
 
 	int tagLen = strlen(openTag);
 	*valueLength = (int)(pend - pstart - tagLen);
@@ -1215,7 +1215,7 @@ void WebUtil::JsonDecode(char* raw)
 							*output++ = '\t';
 							break;
 						case 'u':
-							*output++ = (char)strtol(p + 1, NULL, 16);
+							*output++ = (char)strtol(p + 1, nullptr, 16);
 							p += 4;
 							break;
 						default:
@@ -1241,7 +1241,7 @@ const char* WebUtil::JsonFindField(const char* jsonText, const char* fieldName, 
 	BString<100> openTag("\"%s\"", fieldName);
 
 	const char* pstart = strstr(jsonText, openTag);
-	if (!pstart) return NULL;
+	if (!pstart) return nullptr;
 
 	pstart += strlen(openTag);
 
@@ -1253,7 +1253,7 @@ const char* WebUtil::JsonNextValue(const char* jsonText, int* valueLength)
 	const char* pstart = jsonText;
 
 	while (*pstart && strchr(" ,[{:\r\n\t\f", *pstart)) pstart++;
-	if (!*pstart) return NULL;
+	if (!*pstart) return nullptr;
 
 	const char* pend = pstart;
 
@@ -1267,7 +1267,7 @@ const char* WebUtil::JsonNextValue(const char* jsonText, int* valueLength)
 	{
 		if (ch == '\\')
 		{
-			if (!*++pend || !*++pend) return NULL;
+			if (!*++pend || !*++pend) return nullptr;
 			ch = *pend;
 		}
 		if (str && ch == '"')
@@ -1491,7 +1491,7 @@ void URL::ParseUrl()
 
 	char* hostStart = protEnd + 3;
 	char* slash = strchr(hostStart, '/');
-	char* hostEnd = NULL;
+	char* hostEnd = nullptr;
 	char* amp = strchr(hostStart, '@');
 
 	if (amp && (!slash || amp < slash))
@@ -1556,7 +1556,7 @@ RegEx::RegEx(const char *pattern, int matchBufSize)
 	}
 	else
 	{
-		m_matches = NULL;
+		m_matches = nullptr;
 	}
 #else
 	m_valid = false;
@@ -1605,7 +1605,7 @@ int RegEx::GetMatchStart(int index)
 	regmatch_t* matches = (regmatch_t*)m_matches;
 	return matches[index].rm_so;
 #else
-	return NULL;
+	return nullptr;
 #endif
 }
 
@@ -1624,8 +1624,8 @@ WildMask::WildMask(const char *pattern, bool wantsPositions)
 {
 	m_pattern = strdup(pattern);
 	m_wantsPositions = wantsPositions;
-	m_wildStart = NULL;
-	m_wildLen = NULL;
+	m_wildStart = nullptr;
+	m_wildLen = nullptr;
 	m_arrLen = 0;
 }
 
@@ -1834,7 +1834,7 @@ GUnzipStream::GUnzipStream(int BufferSize)
 	if (ret != Z_OK)
 	{
 		free(m_zStream);
-		m_zStream = NULL;
+		m_zStream = nullptr;
 	}
 }
 
@@ -1902,7 +1902,7 @@ Tokenizer::Tokenizer(const char* dataString, const char* separators)
 	}
 
 	m_separators = separators;
-	m_savePtr = NULL;
+	m_savePtr = nullptr;
 	m_working = false;
 }
 
@@ -1910,7 +1910,7 @@ Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf)
 {
 	m_dataString = inplaceBuf ? dataString : strdup(dataString);
 	m_separators = separators;
-	m_savePtr = NULL;
+	m_savePtr = nullptr;
 	m_working = false;
 	m_inplaceBuf = inplaceBuf;
 }
@@ -1925,14 +1925,14 @@ Tokenizer::~Tokenizer()
 
 char* Tokenizer::Next()
 {
-	char* token = NULL;
+	char* token = nullptr;
 	while (!token || !*token)
 	{
-		token = strtok_r(m_working ? NULL : m_dataString, m_separators, &m_savePtr);
+		token = strtok_r(m_working ? nullptr : m_dataString, m_separators, &m_savePtr);
 		m_working = true;
 		if (!token)
 		{
-			return NULL;
+			return nullptr;
 		}
 		token = Util::Trim(token);
 	}

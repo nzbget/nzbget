@@ -199,7 +199,7 @@ bool GroupSorter::operator()(NzbInfo* nzbInfo1, NzbInfo* nzbInfo2) const
 
 void GroupSorter::AlignSelectedGroups()
 {
-	NzbInfo* lastNzbInfo = NULL;
+	NzbInfo* lastNzbInfo = nullptr;
 	uint32 lastNum = 0;
 	uint32 num = 0;
 	while (num < m_nzbList->size())
@@ -267,7 +267,7 @@ FileInfo* QueueEditor::FindFileInfo(int id)
 			}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*
@@ -364,7 +364,7 @@ bool QueueEditor::EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue:
 	m_downloadQueue = downloadQueue;
 	IdList cIdList;
 	cIdList.push_back(ID);
-	return InternEditList(NULL, &cIdList, action, offset, text);
+	return InternEditList(nullptr, &cIdList, action, offset, text);
 }
 
 bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode,
@@ -388,7 +388,7 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameLis
 		ok = BuildIdListFromNameList(idList, nameList, matchMode, action);
 	}
 
-	ok = ok && (InternEditList(NULL, idList, action, offset, text) || matchMode == DownloadQueue::mmRegEx);
+	ok = ok && (InternEditList(nullptr, idList, action, offset, text) || matchMode == DownloadQueue::mmRegEx);
 
 	m_downloadQueue->Save();
 
@@ -580,7 +580,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 						}
 					}
 					lastDestPos = index + workOffset;
-					itemList->push_back(new EditItem(fileInfo, NULL, workOffset));
+					itemList->push_back(new EditItem(fileInfo, nullptr, workOffset));
 				}
 			}
 		}
@@ -636,7 +636,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 					}
 				}
 				lastDestPos = index + workOffset;
-				itemList->push_back(new EditItem(NULL, nzbInfo, workOffset));
+				itemList->push_back(new EditItem(nullptr, nzbInfo, workOffset));
 			}
 		}
 	}
@@ -672,7 +672,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 				FileInfo* fileInfo = FindFileInfo(id);
 				if (fileInfo)
 				{
-					itemList->push_back(new EditItem(fileInfo, NULL, offset));
+					itemList->push_back(new EditItem(fileInfo, nullptr, offset));
 				}
 			}
 		}
@@ -707,7 +707,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 					NzbInfo* nzbInfo = *it2;
 					if (id == nzbInfo->GetId())
 					{
-						itemList->push_back(new EditItem(NULL, nzbInfo, offset));
+						itemList->push_back(new EditItem(nullptr, nzbInfo, offset));
 					}
 				}
 			}
@@ -730,7 +730,7 @@ bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, Do
 	{
 		const char* name = *it;
 
-		RegEx *regEx = NULL;
+		RegEx *regEx = nullptr;
 		if (matchMode == DownloadQueue::mmRegEx)
 		{
 			regEx = new RegEx(name);
@@ -799,7 +799,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
 	{
 		FileInfo* fileInfo = *it;
-		itemList.push_back(new EditItem(fileInfo, NULL, 0));
+		itemList.push_back(new EditItem(fileInfo, nullptr, 0));
 		allPaused &= fileInfo->GetPaused();
 	}
 
@@ -842,13 +842,13 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 		(DownloadQueue::EEditAction)0,
 		(DownloadQueue::EEditAction)0 };
 
-	bool ok = InternEditList(&itemList, NULL, GroupToFileMap[action], offset, text);
+	bool ok = InternEditList(&itemList, nullptr, GroupToFileMap[action], offset, text);
 
 	if ((action == DownloadQueue::eaGroupDelete || action == DownloadQueue::eaGroupDupeDelete || action == DownloadQueue::eaGroupFinalDelete) &&
 		// NZBInfo could have been destroyed already
 		m_downloadQueue->GetQueue()->Find(id))
 	{
-		DownloadQueue::Aspect deleteAspect = { DownloadQueue::eaNzbDeleted, m_downloadQueue, nzbInfo, NULL };
+		DownloadQueue::Aspect deleteAspect = { DownloadQueue::eaNzbDeleted, m_downloadQueue, nzbInfo, nullptr };
 		m_downloadQueue->Notify(&deleteAspect);
 	}
 
@@ -860,7 +860,7 @@ void QueueEditor::PauseParsInGroups(ItemList* itemList, bool extraParsOnly)
 	while (true)
 	{
 		FileList GroupFileList;
-		FileInfo* firstFileInfo = NULL;
+		FileInfo* firstFileInfo = nullptr;
 
 		for (ItemList::iterator it = itemList->begin(); it != itemList->end(); )
 		{
@@ -945,7 +945,7 @@ void QueueEditor::PausePars(FileList* fileList, bool extraParsOnly)
 		else
 		{
 			// pausing all Vol-files except the smallest one
-			FileInfo* smallest = NULL;
+			FileInfo* smallest = nullptr;
 			for (FileList::iterator it = Vols.begin(); it != Vols.end(); it++)
 			{
 				FileInfo* fileInfo = *it;
@@ -1139,7 +1139,7 @@ bool QueueEditor::SplitGroup(ItemList* itemList, const char* name)
 		delete item;
 	}
 
-	NzbInfo* newNzbInfo = NULL;
+	NzbInfo* newNzbInfo = nullptr;
 	bool ok = g_QueueCoordinator->SplitQueueEntries(m_downloadQueue, &fileList, name, &newNzbInfo);
 
 	return ok;

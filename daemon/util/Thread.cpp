@@ -38,7 +38,7 @@ Mutex::Mutex()
 	InitializeCriticalSection((CRITICAL_SECTION*)m_mutexObj);
 #else
 	m_mutexObj = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
-	pthread_mutex_init((pthread_mutex_t*)m_mutexObj, NULL);
+	pthread_mutex_init((pthread_mutex_t*)m_mutexObj, nullptr);
 #endif
 }
 
@@ -98,7 +98,7 @@ Thread::Thread()
 	debug("Creating Thread");
 
 #ifdef WIN32
-	m_threadObj = NULL;
+	m_threadObj = nullptr;
 #else
 	m_threadObj = (pthread_t*)malloc(sizeof(pthread_t));
 	*((pthread_t*)m_threadObj) = 0;
@@ -134,7 +134,7 @@ void Thread::Start()
 
 #ifdef WIN32
 	m_threadObj = (HANDLE)_beginthread(Thread::thread_handler, 0, (void *)this);
-	m_running = m_threadObj != NULL;
+	m_running = m_threadObj != nullptr;
 #else
 	pthread_attr_t m_attr;
 	pthread_attr_init(&m_attr);
@@ -212,7 +212,7 @@ void* Thread::thread_handler(void* object)
 	m_mutexThread->Unlock();
 
 #ifndef WIN32
-	return NULL;
+	return nullptr;
 #endif
 }
 

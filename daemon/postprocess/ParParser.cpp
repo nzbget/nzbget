@@ -38,7 +38,7 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 	while (const char* filename = dir.Next())
 	{
 		int baseLen = 0;
-		if (ParseParFilename(filename, &baseLen, NULL))
+		if (ParseParFilename(filename, &baseLen, nullptr))
 		{
 			if (!fileList)
 			{
@@ -68,8 +68,8 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 bool ParParser::SameParCollection(const char* filename1, const char* filename2)
 {
 	int baseLen1 = 0, baseLen2 = 0;
-	return ParseParFilename(filename1, &baseLen1, NULL) &&
-		ParseParFilename(filename2, &baseLen2, NULL) &&
+	return ParseParFilename(filename1, &baseLen1, nullptr) &&
+		ParseParFilename(filename2, &baseLen2, nullptr) &&
 		baseLen1 == baseLen2 &&
 		!strncasecmp(filename1, filename2, baseLen1);
 }

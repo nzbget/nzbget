@@ -32,7 +32,7 @@
 
 void SchedulerScriptController::StartScript(const char* param, bool externalProcess, int taskId)
 {
-	char** argv = NULL;
+	char** argv = nullptr;
 	if (externalProcess && !Util::SplitCommandLine(param, &argv))
 	{
 		error("Could not execute scheduled process-script, failed to parse command line: %s", param);
@@ -78,7 +78,7 @@ void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* script)
 	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", script->GetName(), m_taskId);
 
 	SetScript(script->GetLocation());
-	SetArgs(NULL, false);
+	SetArgs(nullptr, false);
 
 	BString<1024> infoName("scheduler-script %s for Task%i", script->GetName(), m_taskId);
 	SetInfoName(infoName);
@@ -88,7 +88,7 @@ void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	Execute();
 
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 }
 
 void SchedulerScriptController::PrepareParams(const char* scriptName)
@@ -97,7 +97,7 @@ void SchedulerScriptController::PrepareParams(const char* scriptName)
 
 	SetIntEnvVar("NZBSP_TASKID", m_taskId);
 
-	PrepareEnvScript(NULL, scriptName);
+	PrepareEnvScript(nullptr, scriptName);
 }
 
 void SchedulerScriptController::ExecuteExternalProcess()

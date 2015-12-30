@@ -97,7 +97,7 @@ void QueueScriptController::Run()
 {
 	ExecuteScript(m_script);
 
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 
 	if (m_markBad)
 	{
@@ -107,7 +107,7 @@ void QueueScriptController::Run()
 		{
 			PrintMessage(Message::mkWarning, "Cancelling download and deleting %s", *m_nzbName);
 			nzbInfo->SetDeleteStatus(NzbInfo::dsBad);
-			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, 0, NULL);
+			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, 0, nullptr);
 		}
 		DownloadQueue::Unlock();
 	}
@@ -121,7 +121,7 @@ void QueueScriptController::ExecuteScript(ScriptConfig::Script* script)
 		"Executing queue-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbName));
 
 	SetScript(script->GetLocation());
-	SetArgs(NULL, false);
+	SetArgs(nullptr, false);
 
 	BString<1024> infoName("queue-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbName));
 	SetInfoName(infoName);
@@ -132,7 +132,7 @@ void QueueScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	Execute();
 
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 }
 
 void QueueScriptController::PrepareParams(const char* scriptName)
@@ -199,7 +199,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 			NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
 			if (nzbInfo)
 			{
-				SetLogPrefix(NULL);
+				SetLogPrefix(nullptr);
 				PrintMessage(Message::mkWarning, "Marking %s as bad", *m_nzbName);
 				SetLogPrefix(m_script->GetDisplayName());
 				nzbInfo->SetMarkStatus(NzbInfo::ksBad);
@@ -227,7 +227,7 @@ QueueScriptCoordinator::QueueItem::QueueItem(int nzbId, ScriptConfig::Script* sc
 
 QueueScriptCoordinator::QueueScriptCoordinator()
 {
-	m_curItem = NULL;
+	m_curItem = nullptr;
 	m_stopped = false;
 }
 
@@ -280,7 +280,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 	}
 
 	// respect option "EventInterval"
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 	if (event == qeFileDownloaded &&
 		(g_Options->GetEventInterval() == -1 ||
 		 (g_Options->GetEventInterval() > 0 && curTime - nzbInfo->GetQueueScriptTime() > 0 &&
@@ -372,7 +372,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 				}
 			}
 
-			nzbInfo->SetQueueScriptTime(time(NULL));
+			nzbInfo->SetQueueScriptTime(time(nullptr));
 		}
 	}
 
@@ -409,8 +409,8 @@ void QueueScriptCoordinator::CheckQueue()
 
 	delete m_curItem;
 
-	m_curItem = NULL;
-	NzbInfo* curNzbInfo = NULL;
+	m_curItem = nullptr;
+	NzbInfo* curNzbInfo = nullptr;
 	Queue::iterator itCurItem = m_queue.end();
 
 	for (Queue::iterator it = m_queue.begin(); it != m_queue.end(); )

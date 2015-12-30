@@ -210,7 +210,7 @@ void BinRpcProcessor::Dispatch()
 		return;
 	}
 
-	BinCommand* command = NULL;
+	BinCommand* command = nullptr;
 
 	switch (ntohl(m_messageBase.m_type))
 	{
@@ -455,8 +455,8 @@ void DownloadBinCommand::Execute()
 	else
 	{
 		ok = g_Scanner->AddExternalFile(DownloadRequest.m_nzbFilename, DownloadRequest.m_category, priority,
-			DownloadRequest.m_dupeKey, dupeScore, (EDupeMode)dupeMode, NULL, addTop, addPaused,
-			NULL, NULL, nzbContent, bufLen, NULL) != Scanner::asFailed;
+			DownloadRequest.m_dupeKey, dupeScore, (EDupeMode)dupeMode, nullptr, addTop, addPaused,
+			nullptr, nullptr, nzbContent, bufLen, nullptr) != Scanner::asFailed;
 	}
 
 	SendBoolResponse(ok, BString<1024>(ok ? "Collection %s added to queue" :
@@ -481,7 +481,7 @@ void ListBinCommand::Execute()
 	ListResponse.m_entrySize = htonl(sizeof(SNzbListResponseFileEntry));
 	ListResponse.m_regExValid = 0;
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	int bufsize = 0;
 
 	if (ntohl(ListRequest.m_fileList))
@@ -490,7 +490,7 @@ void ListBinCommand::Execute()
 		bool matchGroup = ntohl(ListRequest.m_matchGroup);
 		const char* pattern = ListRequest.m_pattern;
 
-		RegEx *regEx = NULL;
+		RegEx *regEx = nullptr;
 		if (matchMode == rmRegEx)
 		{
 			regEx = new RegEx(pattern);
@@ -700,7 +700,7 @@ void ListBinCommand::Execute()
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 		}
 		int64 remainingSize;
-		downloadQueue->CalcRemainingSize(&remainingSize, NULL);
+		downloadQueue->CalcRemainingSize(&remainingSize, nullptr);
 		DownloadQueue::Unlock();
 
 		uint32 sizeHi, sizeLo;
@@ -865,7 +865,7 @@ void EditQueueBinCommand::Execute()
 		return;
 	}
 
-	char* text = textLen > 0 ? buf : NULL;
+	char* text = textLen > 0 ? buf : nullptr;
 	int32* ids = (int32*)(buf + textLen);
 	char* names = (buf + textLen + nrIdEntries * sizeof(int32));
 
@@ -893,8 +893,8 @@ void EditQueueBinCommand::Execute()
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	bool ok = downloadQueue->EditList(
-		nrIdEntries > 0 ? &cIdList : NULL,
-		nrNameEntries > 0 ? &cNameList : NULL,
+		nrIdEntries > 0 ? &cIdList : nullptr,
+		nrNameEntries > 0 ? &cNameList : nullptr,
 		(DownloadQueue::EMatchMode)matchMode, (DownloadQueue::EEditAction)action, offset, text);
 	DownloadQueue::Unlock();
 
@@ -931,7 +931,7 @@ void PostQueueBinCommand::Execute()
 	PostQueueResponse.m_messageBase.m_structSize = htonl(sizeof(PostQueueResponse));
 	PostQueueResponse.m_entrySize = htonl(sizeof(SNzbPostQueueResponseEntry));
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
@@ -958,7 +958,7 @@ void PostQueueBinCommand::Execute()
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
 
-	time_t curTime = time(NULL);
+	time_t curTime = time(nullptr);
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 
@@ -1090,7 +1090,7 @@ void HistoryBinCommand::Execute()
 	HistoryResponse.m_messageBase.m_structSize = htonl(sizeof(HistoryResponse));
 	HistoryResponse.m_entrySize = htonl(sizeof(SNzbHistoryResponseEntry));
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it

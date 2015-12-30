@@ -34,7 +34,7 @@
 
 RemoteClient::RemoteClient()
 {
-	m_connection	= NULL;
+	m_connection	= nullptr;
 	m_verbose		= true;
 
 	/*
@@ -145,7 +145,7 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 	const char* dupeKey, int dupeMode, int dupeScore)
 {
 	// Read the file into the buffer
-	char* buffer = NULL;
+	char* buffer = nullptr;
 	int length = 0;
 	bool isUrl = !strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7);
 	if (isUrl)
@@ -340,7 +340,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 		return false;
 	}
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	if (ntohl(ListResponse.m_trailingDataLength) > 0)
 	{
 		buf = (char*)malloc(ntohl(ListResponse.m_trailingDataLength));
@@ -679,7 +679,7 @@ bool RemoteClient::RequestServerLog(int lines)
 		return false;
 	}
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	if (ntohl(LogResponse.m_trailingDataLength) > 0)
 	{
 		buf = (char*)malloc(ntohl(LogResponse.m_trailingDataLength));
@@ -803,7 +803,7 @@ bool RemoteClient::RequestServerDumpDebug()
 bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
 	int* idList, int idCount, NameList* nameList, ERemoteMatchMode matchMode)
 {
-	if ((idCount <= 0 || idList == NULL) && (nameList == NULL || nameList->size() == 0))
+	if ((idCount <= 0 || idList == nullptr) && (nameList == nullptr || nameList->size() == 0))
 	{
 		printf("File(s) not specified\n");
 		return false;
@@ -977,7 +977,7 @@ bool RemoteClient::RequestPostQueue()
 		return false;
 	}
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	if (ntohl(PostQueueResponse.m_trailingDataLength) > 0)
 	{
 		buf = (char*)malloc(ntohl(PostQueueResponse.m_trailingDataLength));
@@ -1102,7 +1102,7 @@ bool RemoteClient::RequestHistory(bool withHidden)
 		return false;
 	}
 
-	char* buf = NULL;
+	char* buf = nullptr;
 	if (ntohl(HistoryResponse.m_trailingDataLength) > 0)
 	{
 		buf = (char*)malloc(ntohl(HistoryResponse.m_trailingDataLength));

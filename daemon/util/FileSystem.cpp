@@ -196,7 +196,7 @@ bool FileSystem::SetCurrentDirectory(const char* dirFilename)
 bool FileSystem::DirEmpty(const char* dirFilename)
 {
 	DirBrowser dir(dirFilename);
-	return dir.Next() == NULL;
+	return dir.Next() == nullptr;
 }
 
 bool FileSystem::LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength)
@@ -248,7 +248,7 @@ bool FileSystem::CreateSparseFile(const char* filename, int64 size, CString& err
 	errmsg.Clear();
 	bool ok = false;
 #ifdef WIN32
-	HANDLE hFile = CreateFileW(UtfPathToWidePath(filename), GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
+	HANDLE hFile = CreateFileW(UtfPathToWidePath(filename), GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, nullptr);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		errmsg = GetLastErrorMessage();
@@ -257,11 +257,11 @@ bool FileSystem::CreateSparseFile(const char* filename, int64 size, CString& err
 	// first try to create sparse file (supported only on NTFS partitions),
 	// it may fail but that's OK.
 	DWORD dwBytesReturned;
-	DeviceIoControl(hFile, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
+	DeviceIoControl(hFile, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dwBytesReturned, nullptr);
 
 	LARGE_INTEGER size64;
 	size64.QuadPart = size;
-	SetFilePointerEx(hFile, size64, NULL, FILE_END);
+	SetFilePointerEx(hFile, size64, nullptr, FILE_END);
 	SetEndOfFile(hFile);
 	CloseHandle(hFile);
 	ok = true;
@@ -698,7 +698,7 @@ CString FileSystem::GetExeFileName(const char* argv0)
 	exename[1024 - 1] = '\0';
 
 #ifdef WIN32
-	GetModuleFileName(NULL, exename, 1024);
+	GetModuleFileName(nullptr, exename, 1024);
 #else
 	// Linux
 	int r = readlink("/proc/self/exe", exename, 1024 - 1);
@@ -736,8 +736,8 @@ bool FileSystem::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 	{
 		errmsg.Reserve(1024);
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			errmsg, 1024, NULL);
+			nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			errmsg, 1024, nullptr);
 	}
 	return ok;
 #else
@@ -827,7 +827,7 @@ WString FileSystem::UtfPathToWidePath(const char* utfpath)
 CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)
 {
 	char utfstr[1024];
-	int copied = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, utfstr, 1024, NULL, NULL);
+	int copied = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, utfstr, 1024, nullptr, nullptr);
 	return utfstr;
 }
 #endif
@@ -836,7 +836,7 @@ CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)
 #ifdef WIN32
 WString::WString(const char* utfstr)
 {
-	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, NULL, 0);
+	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, nullptr, 0);
 	m_data = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
 	MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, m_data, len);
 }
@@ -876,7 +876,7 @@ const char* DirBrowser::InternNext()
 		m_filename = FileSystem::WidePathToUtfPath(m_findData.cFileName);
 		return m_filename;
 	}
-	return NULL;
+	return nullptr;
 }
 
 #else
@@ -930,7 +930,7 @@ const char* DirBrowser::InternNext()
 #ifdef DIRBROWSER_SNAPSHOT
 	if (m_snapshot)
 	{
-		return m_itSnapshot == m_snapshot.end() ? NULL : *m_itSnapshot++;
+		return m_itSnapshot == m_snapshot.end() ? nullptr : *m_itSnapshot++;
 	}
 	else
 #endif
@@ -943,14 +943,14 @@ const char* DirBrowser::InternNext()
 				return m_findData->d_name;
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 }
 #endif
 
 const char* DirBrowser::Next()
 {
-	const char* filename = NULL;
+	const char* filename = nullptr;
 	for (filename = InternNext(); filename && (!strcmp(filename, ".") || !strcmp(filename, "..")); )
 	{
 		filename = InternNext();
@@ -1041,7 +1041,7 @@ bool DiskFile::Error()
 
 bool DiskFile::SetWriteBuffer(int size)
 {
-	return setvbuf(m_file, NULL, _IOFBF, size) == 0;
+	return setvbuf(m_file, nullptr, _IOFBF, size) == 0;
 }
 
 bool DiskFile::Flush()

@@ -29,7 +29,7 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-Log* g_Log = NULL;
+Log* g_Log = nullptr;
 
 void Log::Init()
 {
@@ -39,7 +39,7 @@ void Log::Init()
 void Log::Final()
 {
 	delete g_Log;
-	g_Log = NULL;
+	g_Log = nullptr;
 }
 
 Log::Log()
@@ -90,7 +90,7 @@ void Log::Filelog(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	time_t rawtime = time(NULL) + g_Options->GetTimeCorrection();
+	time_t rawtime = time(nullptr) + g_Options->GetTimeCorrection();
 
 	char time[50];
 #ifdef HAVE_CTIME_R_3
@@ -316,7 +316,7 @@ void Log::Clear()
 
 void Log::AddMessage(Message::EKind kind, const char * text)
 {
-	Message* message = new Message(++m_idGen, kind, time(NULL), text);
+	Message* message = new Message(++m_idGen, kind, time(nullptr), text);
 	m_messages.push_back(message);
 
 	if (m_optInit && g_Options)
@@ -367,7 +367,7 @@ void Log::RotateLog()
 
 	BString<1024> fileMask("%s-####-##-##%s", baseName, *baseExt);
 
-	time_t curTime = time(NULL) + g_Options->GetTimeCorrection();
+	time_t curTime = time(nullptr) + g_Options->GetTimeCorrection();
 	int curDay = (int)curTime / 86400;
 	BString<1024> fullFilename;
 

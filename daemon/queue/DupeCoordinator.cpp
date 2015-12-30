@@ -150,7 +150,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	bool skip = false;
 	bool good = false;
 	bool sameContent = false;
-	const char* dupeName = NULL;
+	const char* dupeName = nullptr;
 
 	// find duplicates in history having exactly same content
 	// also: nzb-files having duplicates marked as good are skipped
@@ -297,7 +297,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 					info("Moving collection %s with lower duplicate score to history", queuedNzbInfo->GetName());
 					queuedNzbInfo->SetDeleteStatus(NzbInfo::dsDupe);
 					downloadQueue->EditEntry(queuedNzbInfo->GetId(),
-						DownloadQueue::eaGroupDelete, 0, NULL);
+						DownloadQueue::eaGroupDelete, 0, nullptr);
 					it = downloadQueue->GetQueue()->begin() + index;
 				}
 			}
@@ -386,7 +386,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 
 	// find dupe-backup with highest score, whose score is also higher than other
 	// success-duplicates and higher than already queued items
-	HistoryInfo* historyDupe = NULL;
+	HistoryInfo* historyDupe = nullptr;
 	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
 	{
 		HistoryInfo* historyInfo = *it;
@@ -455,8 +455,8 @@ void DupeCoordinator::HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* his
 		// mark as bad
 		const char* dupeKey = historyInfo->GetKind() == HistoryInfo::hkNzb ? historyInfo->GetNzbInfo()->GetDupeKey() :
 			historyInfo->GetKind() == HistoryInfo::hkDup ? historyInfo->GetDupInfo()->GetDupeKey() :
-			NULL;
-		ReturnBestDupe(downloadQueue, NULL, historyInfo->GetName(), dupeKey);
+			nullptr;
+		ReturnBestDupe(downloadQueue, nullptr, historyInfo->GetName(), dupeKey);
 	}
 }
 
@@ -464,10 +464,10 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* 
 {
 	const char* dupeKey = markHistoryInfo->GetKind() == HistoryInfo::hkNzb ? markHistoryInfo->GetNzbInfo()->GetDupeKey() :
 		markHistoryInfo->GetKind() == HistoryInfo::hkDup ? markHistoryInfo->GetDupInfo()->GetDupeKey() :
-		NULL;
+		nullptr;
 	const char* nzbName = markHistoryInfo->GetKind() == HistoryInfo::hkNzb ? markHistoryInfo->GetNzbInfo()->GetName() :
 		markHistoryInfo->GetKind() == HistoryInfo::hkDup ? markHistoryInfo->GetDupInfo()->GetName() :
-		NULL;
+		nullptr;
 	bool changed = false;
 	int index = 0;
 

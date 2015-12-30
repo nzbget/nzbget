@@ -381,8 +381,8 @@ ParChecker::ParChecker()
 	debug("Creating ParChecker");
 
 	m_status = psFailed;
-	m_parFilename = NULL;
-	m_repairer = NULL;
+	m_parFilename = nullptr;
+	m_repairer = nullptr;
 	m_fileProgress = 0;
 	m_stageProgress = 0;
 	m_extraFiles = 0;
@@ -405,7 +405,7 @@ ParChecker::~ParChecker()
 void ParChecker::Cleanup()
 {
 	delete (Repairer*)m_repairer;
-	m_repairer = NULL;
+	m_repairer = nullptr;
 
 	m_queuedParFiles.clear();
 	m_processedFiles.clear();
@@ -417,7 +417,7 @@ void ParChecker::Cleanup()
 	}
 	m_dupeSources.clear();
 
-	m_errMsg = NULL;
+	m_errMsg = nullptr;
 }
 
 void ParChecker::Run()
@@ -457,7 +457,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 			BString<1024> fullParFilename( "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, parFilename);
 
 			int baseLen = 0;
-			ParParser::ParseParFilename(parFilename, &baseLen, NULL);
+			ParParser::ParseParFilename(parFilename, &baseLen, nullptr);
 			BString<1024> infoName;
 			infoName.Set(parFilename, baseLen);
 
@@ -1412,7 +1412,7 @@ ParChecker::EFileStatus ParChecker::VerifyDataFile(void* diskfile, void* sourcef
 				for (std::deque<const Par2::VerificationHashEntry*>::iterator it = undoList.begin(); it != undoList.end(); it++)
 				{
 					const Par2::VerificationHashEntry* undoEntry = *it;
-					undoEntry->SetBlock(NULL, 0);
+					undoEntry->SetBlock(nullptr, 0);
 				}
 				return fsUnknown;
 			}

@@ -66,7 +66,7 @@ void ParCheckerMock::CorruptFile(const char* filename, int offset)
 	std::string fullfilename(TestUtil::WorkingDir() + "/" + filename);
 
 	FILE* file = fopen(fullfilename.c_str(), FOPEN_RBP);
-	REQUIRE(file != NULL);
+	REQUIRE(file != nullptr);
 
 	fseek(file, offset, SEEK_SET);
 	char b = 0;
@@ -85,7 +85,7 @@ ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* filename, ui
 		sm >> smfilename >> smcrc;
 		if (smfilename == filename)
 		{
-			*crc = strtoul(smcrc.c_str(), NULL, 16);
+			*crc = strtoul(smcrc.c_str(), nullptr, 16);
 			uint32 realCrc = CalcFileCrc((TestUtil::WorkingDir() + "/" + filename).c_str());
 			return *crc == realCrc ? ParChecker::fsSuccess : ParChecker::fsUnknown;
 		}
@@ -120,7 +120,7 @@ TEST_CASE("Par-checker: repair not needed", "[Par][ParChecker][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.Execute();
@@ -134,7 +134,7 @@ TEST_CASE("Par-checker: repair possible", "[Par][ParChecker][Slow][TestData]")
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);
@@ -149,7 +149,7 @@ TEST_CASE("Par-checker: repair successful", "[Par][ParChecker][Slow][TestData]")
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);
@@ -164,7 +164,7 @@ TEST_CASE("Par-checker: repair failed", "[Par][ParChecker][Slow][TestData]")
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);
@@ -184,7 +184,7 @@ TEST_CASE("Par-checker: quick verification repair not needed", "[Par][ParChecker
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.SetParQuick(true);
@@ -199,7 +199,7 @@ TEST_CASE("Par-checker: quick verification repair successful", "[Par][ParChecker
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.SetParQuick(true);
@@ -215,7 +215,7 @@ TEST_CASE("Par-checker: quick full verification repair successful", "[Par][ParCh
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.SetParQuick(true);
@@ -245,7 +245,7 @@ TEST_CASE("Par-checker: ignoring extensions", "[Par][ParChecker][Slow][TestData]
 		cmdOpts.push_back("ExtCleanupDisk=.dat");
 	}
 
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);

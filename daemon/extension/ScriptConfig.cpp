@@ -39,7 +39,7 @@ static const char* FEED_SCRIPT_SIGNATURE = "FEED";
 static const char* END_SCRIPT_SIGNATURE = " SCRIPT";
 static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
 
-ScriptConfig* g_ScriptConfig = NULL;
+ScriptConfig* g_ScriptConfig = nullptr;
 
 
 ScriptConfig::ConfigTemplate::ConfigTemplate(Script* script, const char* templ)
@@ -100,7 +100,7 @@ ScriptConfig::Script* ScriptConfig::Scripts::Find(const char* name)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -236,7 +236,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 	{
 		return false;
 	}
-	ConfigTemplate* configTemplate = new ConfigTemplate(NULL, buffer);
+	ConfigTemplate* configTemplate = new ConfigTemplate(nullptr, buffer);
 	configTemplates->push_back(configTemplate);
 	free(buffer);
 
@@ -414,7 +414,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 									scriptName = filename;
 								}
 
-								char* queueEvents = NULL;
+								char* queueEvents = nullptr;
 								if (queueScript)
 								{
 									while (char* line = tok.Next())

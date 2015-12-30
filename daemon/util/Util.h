@@ -46,9 +46,9 @@ public:
 	 * Split command line into arguments.
 	 * Uses spaces and single quotation marks as separators.
 	 * Returns bool if sucessful or false if bad escaping was detected.
-	 * Parameter "argv" may be NULL if only a syntax check is needed.
+	 * Parameter "argv" may be nullptr if only a syntax check is needed.
 	 * Parsed parameters returned in Array "argv", which contains at least one element.
-	 * The last element in array is NULL.
+	 * The last element in array is nullptr.
 	 * Restrictions: the number of arguments is limited to 100 and each argument must
 	 * be maximum 1024 chars long.
 	 * If these restrictions are exceeded, only first 100 arguments and only first 1024

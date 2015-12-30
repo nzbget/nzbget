@@ -43,8 +43,8 @@ PrePostProcessor::PrePostProcessor()
 	debug("Creating PrePostProcessor");
 
 	m_jobCount = 0;
-	m_curJob = NULL;
-	m_pauseReason = NULL;
+	m_curJob = nullptr;
+	m_pauseReason = nullptr;
 
 	m_downloadQueueObserver.m_owner = this;
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
@@ -104,7 +104,7 @@ void PrePostProcessor::Stop()
 		m_curJob->GetPostInfo()->GetPostThread())
 	{
 		Thread* postThread = m_curJob->GetPostInfo()->GetPostThread();
-		m_curJob->GetPostInfo()->SetPostThread(NULL);
+		m_curJob->GetPostInfo()->SetPostThread(nullptr);
 		postThread->SetAutoDestroy(true);
 		postThread->Stop();
 	}
@@ -382,7 +382,7 @@ void PrePostProcessor::CheckPostQueue()
 				{
 					postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 						"Downloading all remaining files for manual par-check for %s", postInfo->GetNzbInfo()->GetName());
-					downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, 0, NULL);
+					downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, 0, nullptr);
 					postInfo->SetStage(PostInfo::ptFinished);
 				}
 				else
@@ -407,7 +407,7 @@ void PrePostProcessor::CheckPostQueue()
 			}
 			else if (postInfo->GetStage() == PostInfo::ptFinished)
 			{
-				UpdatePauseState(false, NULL);
+				UpdatePauseState(false, nullptr);
 				JobCompleted(downloadQueue, postInfo);
 			}
 			else if (!g_Options->GetPausePostProcess())
@@ -423,12 +423,12 @@ void PrePostProcessor::CheckPostQueue()
 
 NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
 {
-	NzbInfo* nzbInfo = NULL;
+	NzbInfo* nzbInfo = nullptr;
 
 	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
 	{
 		NzbInfo* nzbInfo1 = *it;
-		if (nzbInfo1->GetPostInfo() && !g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), NULL) &&
+		if (nzbInfo1->GetPostInfo() && !g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
 			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
 			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()))
 		{
@@ -469,14 +469,14 @@ void PrePostProcessor::SanitisePostQueue(DownloadQueue* downloadQueue)
 void PrePostProcessor::DeletePostThread(PostInfo* postInfo)
 {
 	delete postInfo->GetPostThread();
-	postInfo->SetPostThread(NULL);
+	postInfo->SetPostThread(nullptr);
 }
 
 void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo)
 {
 	if (!postInfo->GetStartTime())
 	{
-		postInfo->SetStartTime(time(NULL));
+		postInfo->SetStartTime(time(nullptr));
 	}
 
 #ifndef DISABLE_PARCHECK
@@ -490,7 +490,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	else if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
 	{
-		if (ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), NULL))
+		if (ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
 		{
 			UpdatePauseState(g_Options->GetParPauseQueue(), "par-check");
 			m_parCoordinator.StartParCheckJob(postInfo);
@@ -510,7 +510,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		  postInfo->GetNzbInfo()->CalcHealth() < postInfo->GetNzbInfo()->CalcCriticalHealth(false) &&
 		  postInfo->GetNzbInfo()->CalcCriticalHealth(false) < 1000) ||
 		  postInfo->GetNzbInfo()->CalcHealth() == 0) &&
-		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), NULL))
+		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
 	{
 		if (postInfo->GetNzbInfo()->CalcHealth() == 0)
 		{
@@ -529,7 +529,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	}
 	else if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
 		postInfo->GetNzbInfo()->GetFailedSize() - postInfo->GetNzbInfo()->GetParFailedSize() > 0 &&
-		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), NULL))
+		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
 	{
 		postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 			"Collection %s with health %.1f%% needs par-check",
@@ -599,7 +599,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 
 	downloadQueue->Save();
 
-	postInfo->SetStageTime(time(NULL));
+	postInfo->SetStageTime(time(nullptr));
 
 	if (unpack)
 	{
@@ -629,7 +629,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 
 	if (postInfo->GetStartTime() > 0)
 	{
-		nzbInfo->SetPostTotalSec((int)(time(NULL) - postInfo->GetStartTime()));
+		nzbInfo->SetPostTotalSec((int)(time(nullptr) - postInfo->GetStartTime()));
 		postInfo->SetStartTime(0);
 	}
 
@@ -658,7 +658,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 		{
 			nzbInfo->PrintMessage(Message::mkInfo, "Cleaning up download queue for %s", nzbInfo->GetName());
 			nzbInfo->SetParCleanup(true);
-			downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupDelete, 0, NULL);
+			downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupDelete, 0, nullptr);
 		}
 
 		if (nzbInfo->GetUnpackCleanedUpDisk())
@@ -671,7 +671,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 
 	if (nzbInfo == m_curJob)
 	{
-		m_curJob = NULL;
+		m_curJob = nullptr;
 	}
 	m_jobCount--;
 

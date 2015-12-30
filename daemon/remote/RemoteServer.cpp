@@ -40,7 +40,7 @@ RemoteServer::RemoteServer(bool tls)
 	debug("Creating RemoteServer");
 
 	m_tls = tls;
-	m_connection = NULL;
+	m_connection = nullptr;
 }
 
 RemoteServer::~RemoteServer()
@@ -86,12 +86,12 @@ void RemoteServer::Run()
 		}
 
 		// Accept connections and store the new Connection
-		Connection* acceptedConnection = NULL;
+		Connection* acceptedConnection = nullptr;
 		if (bind)
 		{
 			acceptedConnection = m_connection->Accept();
 		}
-		if (!bind || acceptedConnection == NULL)
+		if (!bind || acceptedConnection == nullptr)
 		{
 			// Remote server could not bind or accept connection, waiting 1/2 sec and try again
 			if (IsStopped())
@@ -100,7 +100,7 @@ void RemoteServer::Run()
 			}
 			usleep(500 * 1000);
 			delete m_connection;
-			m_connection = NULL;
+			m_connection = nullptr;
 			continue;
 		}
 
@@ -179,7 +179,7 @@ void RequestProcessor::Run()
 	{
 		// HTTP request received
 		char buffer[1024];
-		if (m_connection->ReadLine(buffer, sizeof(buffer), NULL))
+		if (m_connection->ReadLine(buffer, sizeof(buffer), nullptr))
 		{
 			WebProcessor::EHttpMethod httpMethod = WebProcessor::hmGet;
 			char* url = buffer;

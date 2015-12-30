@@ -127,8 +127,8 @@ NCursesFrontend::NCursesFrontend()
 	// Setup curses
 #ifdef WIN32
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	m_screenBuffer = NULL;
-	m_oldScreenBuffer = NULL;
+	m_screenBuffer = nullptr;
+	m_oldScreenBuffer = nullptr;
 	m_colorAttr.clear();
 
 	CONSOLE_CURSOR_INFO ConsoleCursorInfo;
@@ -147,9 +147,9 @@ NCursesFrontend::NCursesFrontend()
 	m_useColor = true;
 #else
 	m_window = initscr();
-	if (m_window == NULL)
+	if (m_window == nullptr)
 	{
-		printf("ERROR: m_pWindow == NULL\n");
+		printf("ERROR: m_pWindow == nullptr\n");
 		exit(-1);
 	}
 	keypad(stdscr, true);
@@ -200,7 +200,7 @@ NCursesFrontend::~NCursesFrontend()
 	endwin();
 #endif
 	printf("\n");
-	SetHint(NULL);
+	SetHint(nullptr);
 }
 
 void NCursesFrontend::Run()
@@ -622,7 +622,7 @@ void NCursesFrontend::PrintKeyInputBar()
 
 	if (!m_hint.Empty())
 	{
-		time_t time = ::time(NULL);
+		time_t time = ::time(nullptr);
 		if (time - m_startHint < 5)
 		{
 			PlotLine(m_hint, inputBarRow, 0, NCURSES_COLORPAIR_HINT);
@@ -630,7 +630,7 @@ void NCursesFrontend::PrintKeyInputBar()
 		}
 		else
 		{
-			SetHint(NULL);
+			SetHint(nullptr);
 		}
 	}
 
@@ -648,7 +648,7 @@ void NCursesFrontend::PrintKeyInputBar()
 		break;
 	case editQueue:
 	{
-		const char* status = NULL;
+		const char* status = nullptr;
 		if (m_selectedQueueEntry > 0 && queueSize > 1 && m_selectedQueueEntry == queueSize - 1)
 		{
 			status = "(Q)uit | (E)xit | (P)ause | (D)elete | (U)p/(T)op";
@@ -683,7 +683,7 @@ void NCursesFrontend::SetHint(const char* hint)
 	m_hint = hint;
 	if (!m_hint.Empty())
 	{
-		m_startHint = time(NULL);
+		m_startHint = time(nullptr);
 	}
 }
 

@@ -47,7 +47,7 @@ TEST_CASE("Feed filter: one liners", "[FeedFilter][Quick]")
 	item.SetTitle("Game.of.Clowns.S02E06.REAL.1080p.HDTV.X264-Group.WEB-DL");
 	item.SetFilename("Game.of.Clowns.S02E06.REAL.1080p.HDTV.X264-Group.WEB-DL");
 	item.SetSize(1600*1024*1024);
-	item.SetTime(time(NULL) - 60*60*15);   // age: 15 hours
+	item.SetTime(time(nullptr) - 60*60*15);   // age: 15 hours
 	item.SetCategory("TV > HD");
 	item.SetRageId(123456);
 	item.SetSeason("02");

@@ -118,7 +118,7 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 			{
 				m_crc = true;
 				pb += 7 + (int)m_part; //=strlen(" crc32=") or strlen(" pcrc32=")
-				m_expectedCRC = strtoul(pb, NULL, 16);
+				m_expectedCRC = strtoul(pb, nullptr, 16);
 			}
 			pb = strstr(buffer, " size=");
 			if (pb)

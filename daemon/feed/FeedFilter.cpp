@@ -35,8 +35,8 @@ FeedFilter::Term::Term()
 	m_float = false;
 	m_intParam = 0;
 	m_fFloatParam = 0.0;
-	m_regEx = NULL;
-	m_refValues = NULL;
+	m_regEx = nullptr;
+	m_refValues = nullptr;
 }
 
 FeedFilter::Term::~Term()
@@ -46,7 +46,7 @@ FeedFilter::Term::~Term()
 
 bool FeedFilter::Term::Match(FeedItemInfo* feedItemInfo)
 {
-	const char* strValue = NULL;
+	const char* strValue = nullptr;
 	int64 intValue = 0;
 
 	if (!GetFieldData(m_field, feedItemInfo, &strValue, &intValue))
@@ -139,7 +139,7 @@ bool FeedFilter::Term::MatchText(const char* strValue)
 		Tokenizer tok(strValue, WORD_SEPARATORS);
 		while (const char* word = tok.Next())
 		{
-			WildMask mask(m_param, m_refValues != NULL);
+			WildMask mask(m_param, m_refValues != nullptr);
 			match = mask.Match(word);
 			if (match)
 			{
@@ -169,7 +169,7 @@ bool FeedFilter::Term::MatchText(const char* strValue)
 			format = "*%s";
 		}
 
-		WildMask mask(CString::FormatStr(format, *m_param), m_refValues != NULL);
+		WildMask mask(CString::FormatStr(format, *m_param), m_refValues != nullptr);
 		match = mask.Match(strValue);
 
 		if (match)
@@ -185,7 +185,7 @@ bool FeedFilter::Term::MatchRegex(const char* strValue)
 {
 	if (!m_regEx)
 	{
-		m_regEx = new RegEx(m_param, m_refValues == NULL ? 0 : 100);
+		m_regEx = new RegEx(m_param, m_refValues == nullptr ? 0 : 100);
 	}
 
 	bool found = m_regEx->Match(strValue);
@@ -226,10 +226,10 @@ bool FeedFilter::Term::Compile(char* token)
 		}
 	}
 
-	char *field = NULL;
+	char *field = nullptr;
 	m_command = fcText;
 
-	char* colon = NULL;
+	char* colon = nullptr;
 	if (ch != '@' && ch != '$' && ch != '<' && ch != '>' && ch != '=')
 	{
 		colon = strchr(token, ':');
@@ -289,7 +289,7 @@ bool FeedFilter::Term::Compile(char* token)
 
 	const char* strValue;
 	int64 intValue;
-	if (!GetFieldData(field, NULL, &strValue, &intValue))
+	if (!GetFieldData(field, nullptr, &strValue, &intValue))
 	{
 		return false;
 	}
@@ -306,32 +306,32 @@ bool FeedFilter::Term::Compile(char* token)
 }
 
 /*
- * If pFeedItemInfo is NULL, only field name is validated
+ * If pFeedItemInfo is nullptr, only field name is validated
  */
 bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInfo,
 	const char** StrValue, int64* IntValue)
 {
-	*StrValue = NULL;
+	*StrValue = nullptr;
 	*IntValue = 0;
 
 	if (!field || !strcasecmp(field, "title"))
 	{
-		*StrValue = feedItemInfo ? feedItemInfo->GetTitle() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetTitle() : nullptr;
 		return true;
 	}
 	else if (!strcasecmp(field, "filename"))
 	{
-		*StrValue = feedItemInfo ? feedItemInfo->GetFilename() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetFilename() : nullptr;
 		return true;
 	}
 	else if (!strcasecmp(field, "category"))
 	{
-		*StrValue = feedItemInfo ? feedItemInfo->GetCategory() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetCategory() : nullptr;
 		return true;
 	}
 	else if (!strcasecmp(field, "link") || !strcasecmp(field, "url"))
 	{
-		*StrValue = feedItemInfo ? feedItemInfo->GetUrl() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetUrl() : nullptr;
 		return true;
 	}
 	else if (!strcasecmp(field, "size"))
@@ -341,7 +341,7 @@ bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInf
 	}
 	else if (!strcasecmp(field, "age"))
 	{
-		*IntValue = feedItemInfo ? time(NULL) - feedItemInfo->GetTime() : 0;
+		*IntValue = feedItemInfo ? time(nullptr) - feedItemInfo->GetTime() : 0;
 		return true;
 	}
 	else if (!strcasecmp(field, "imdbid"))
@@ -356,7 +356,7 @@ bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInf
 	}
 	else if (!strcasecmp(field, "description"))
 	{
-		*StrValue = feedItemInfo ? feedItemInfo->GetDescription() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetDescription() : nullptr;
 		return true;
 	}
 	else if (!strcasecmp(field, "season"))
@@ -376,7 +376,7 @@ bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInf
 	}
 	else if (!strcasecmp(field, "dupekey"))
 	{
-		*StrValue = feedItemInfo ? feedItemInfo->GetDupeKey() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetDupeKey() : nullptr;
 		return true;
 	}
 	else if (!strcasecmp(field, "dupescore"))
@@ -386,7 +386,7 @@ bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInf
 	}
 	else if (!strcasecmp(field, "dupestatus"))
 	{
-		*StrValue = feedItemInfo ? feedItemInfo->GetDupeStatus() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetDupeStatus() : nullptr;
 		return true;
 	}
 	else if (!strncasecmp(field, "attr-", 5))
@@ -394,7 +394,7 @@ bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInf
 		if (feedItemInfo)
 		{
 			FeedItemInfo::Attr* attr = feedItemInfo->GetAttributes()->Find(field + 5);
-			*StrValue = attr ? attr->GetValue() : NULL;
+			*StrValue = attr ? attr->GetValue() : nullptr;
 		}
 		return true;
 	}
@@ -625,7 +625,7 @@ void FeedFilter::Rule::Compile(char* rule)
 }
 
 /* Checks if the rule starts with command and compiles it.
- * Returns a pointer to the next (first) term or NULL in a case of compilation error.
+ * Returns a pointer to the next (first) term or nullptr in a case of compilation error.
  */
 char* FeedFilter::Rule::CompileCommand(char* rule)
 {
@@ -675,7 +675,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 	if (!p)
 	{
 		// error
-		return NULL;
+		return nullptr;
 	}
 
 	// split command into tokens
@@ -704,7 +704,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 			if (!m_pause && !(!strcasecmp(value, "no") || !strcasecmp(value, "n")))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 		}
 		else if (!strcasecmp(option, "priority") || !strcasecmp(option, "pr") || !strcasecmp(option, "r"))
@@ -712,7 +712,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 			m_hasPriority = true;
 			m_priority = atoi(value);
@@ -722,7 +722,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 			m_hasAddPriority = true;
 			m_addPriority = atoi(value);
@@ -732,7 +732,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 			m_hasDupeScore = true;
 			m_dupeScore = atoi(value);
@@ -742,7 +742,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 			m_hasAddDupeScore = true;
 			m_addDupeScore = atoi(value);
@@ -777,7 +777,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 			else
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 		}
 		else if (!strcasecmp(option, "rageid"))
@@ -821,7 +821,7 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 bool FeedFilter::Rule::CompileTerm(char* termstr)
 {
 	Term* term = new Term();
-	term->SetRefValues(m_hasPatCategory || m_hasPatDupeKey || m_hasPatAddDupeKey ? &m_refValues : NULL);
+	term->SetRefValues(m_hasPatCategory || m_hasPatDupeKey || m_hasPatAddDupeKey ? &m_refValues : nullptr);
 	if (term->Compile(termstr))
 	{
 		m_terms.push_back(term);
@@ -971,7 +971,7 @@ const char* FeedFilter::Rule::GetRefValue(FeedItemInfo* feedItemInfo, const char
 		return m_refValues[index];
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 FeedFilter::FeedFilter(const char* filter)

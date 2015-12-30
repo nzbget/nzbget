@@ -195,7 +195,7 @@ void QueueCoordinator::Run()
 	{
 		bool downloadsChecked = false;
 		bool downloadStarted = false;
-		NntpConnection* connection = g_ServerPool->GetConnection(0, NULL, NULL);
+		NntpConnection* connection = g_ServerPool->GetConnection(0, nullptr, nullptr);
 		if (connection)
 		{
 			// start download for next article
@@ -324,7 +324,7 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	DownloadQueue::Aspect foundAspect = { DownloadQueue::eaNzbFound, downloadQueue, nzbInfo, NULL };
+	DownloadQueue::Aspect foundAspect = { DownloadQueue::eaNzbFound, downloadQueue, nzbInfo, nullptr };
 	downloadQueue->Notify(&foundAspect);
 
 	NzbInfo::EDeleteStatus deleteStatus = nzbInfo->GetDeleteStatus();
@@ -395,7 +395,7 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 
 	if (deleteStatus != NzbInfo::dsManual)
 	{
-		DownloadQueue::Aspect addedAspect = { DownloadQueue::eaNzbAdded, downloadQueue, nzbInfo, NULL };
+		DownloadQueue::Aspect addedAspect = { DownloadQueue::eaNzbAdded, downloadQueue, nzbInfo, nullptr };
 		downloadQueue->Notify(&addedAspect);
 	}
 
@@ -487,12 +487,12 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 	bool ok = false;
 
 	// pCheckedFiles stores
-	bool* checkedFiles = NULL;
-	time_t curDate = time(NULL);
+	bool* checkedFiles = nullptr;
+	time_t curDate = time(nullptr);
 
 	while (!ok)
 	{
-		fileInfo = NULL;
+		fileInfo = nullptr;
 		int num = 0;
 		int fileNum = 0;
 
@@ -875,7 +875,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 		warn("Pausing %s due to health %.1f%% below critical %.1f%%", fileInfo->GetNzbInfo()->GetName(),
 			fileInfo->GetNzbInfo()->CalcHealth() / 10.0, fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
 		fileInfo->GetNzbInfo()->SetHealthPaused(true);
-		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, 0, NULL);
+		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, 0, nullptr);
 	}
 	else if (g_Options->GetHealthCheck() == Options::hcDelete)
 	{
@@ -884,7 +884,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 			fileInfo->GetNzbInfo()->GetName(), fileInfo->GetNzbInfo()->CalcHealth() / 10.0,
 			fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
 		fileInfo->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsHealth);
-		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupDelete, 0, NULL);
+		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupDelete, 0, nullptr);
 	}
 }
 
@@ -919,7 +919,7 @@ void QueueCoordinator::ResetHangingDownloads()
 	}
 
 	DownloadQueue::Lock();
-	time_t tm = ::time(NULL);
+	time_t tm = ::time(nullptr);
 
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end();)
 	{
@@ -1141,7 +1141,7 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 		return false;
 	}
 
-	NzbInfo* srcNzbInfo = NULL;
+	NzbInfo* srcNzbInfo = nullptr;
 
 	for (FileList::iterator it = fileList->begin(); it != fileList->end(); it++)
 	{

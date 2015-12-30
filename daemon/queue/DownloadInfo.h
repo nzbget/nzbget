@@ -852,7 +852,7 @@ public:
 	int					GetId();
 	NzbInfo*			GetNzbInfo() { return (NzbInfo*)m_info; }
 	DupInfo*			GetDupInfo() { return (DupInfo*)m_info; }
-	void				DiscardNzbInfo() { m_info = NULL; }
+	void				DiscardNzbInfo() { m_info = nullptr; }
 	time_t				GetTime() { return m_time; }
 	void				SetTime(time_t time) { m_time = time; }
 	const char*			GetName();
@@ -956,7 +956,7 @@ private:
 protected:
 							DownloadQueue() : m_queue(true) {}
 	static void				Init(DownloadQueue* globalInstance) { g_DownloadQueue = globalInstance; }
-	static void				Final() { g_DownloadQueue = NULL; }
+	static void				Final() { g_DownloadQueue = nullptr; }
 	static void				Loaded() { g_Loaded = true; }
 
 public:

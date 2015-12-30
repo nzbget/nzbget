@@ -40,7 +40,7 @@ void PrintBacktrace(PCONTEXT context)
 	HANDLE hThread = GetCurrentThread();
 
 	char appDir[MAX_PATH + 1];
-	GetModuleFileName(NULL, appDir, sizeof(appDir));
+	GetModuleFileName(nullptr, appDir, sizeof(appDir));
 	char* end = strrchr(appDir, PATH_SEPARATOR);
 	if (end) *end = '\0';
 
@@ -94,7 +94,7 @@ void PrintBacktrace(PCONTEXT context)
 			return;
 		}
 
-		if (!StackWalk64(imageType, hProcess, hThread, &sfStackFrame, context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
+		if (!StackWalk64(imageType, hProcess, hThread, &sfStackFrame, context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr))
 		{
 			warn("Could not obtain detailed exception information: StackWalk64 failed");
 			return;
@@ -280,7 +280,7 @@ class SegFault
 public:
 	void DoSegFault()
 	{
-		char* N = NULL;
+		char* N = nullptr;
 		strcpy(N, "");
 	}
 };

@@ -54,7 +54,7 @@ void HistoryCoordinator::ServiceWork()
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	time_t minTime = time(NULL) - g_Options->GetKeepHistory() * 60*60*24;
+	time_t minTime = time(nullptr) - g_Options->GetKeepHistory() * 60*60*24;
 	bool changed = false;
 	int index = 0;
 
@@ -153,7 +153,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	}
 
 	HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
-	historyInfo->SetTime(time(NULL));
+	historyInfo->SetTime(time(nullptr));
 	downloadQueue->GetHistory()->push_front(historyInfo);
 	downloadQueue->GetQueue()->Remove(nzbInfo);
 
@@ -366,7 +366,7 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess)
 {
 	debug("Returning %s from history back to download queue", historyInfo->GetName());
-	NzbInfo* nzbInfo = NULL;
+	NzbInfo* nzbInfo = nullptr;
 	CString nicename = historyInfo->GetName();
 
 	if (reprocess && historyInfo->GetKind() != HistoryInfo::hkNzb)
@@ -407,7 +407,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 			nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetUnpackSec());
 			nzbInfo->SetUnpackSec(0);
 
-			if (ParParser::FindMainPars(nzbInfo->GetDestDir(), NULL))
+			if (ParParser::FindMainPars(nzbInfo->GetDestDir(), nullptr))
 			{
 				nzbInfo->SetParStatus(NzbInfo::psNone);
 				nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetParSec());
