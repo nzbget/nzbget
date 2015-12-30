@@ -175,7 +175,7 @@ void FeedFile::EncodeUrl(const char* filename, char* url, int bufLen)
 			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 		}
 	}
-	*url = nullptr;
+	*url = '\0';
 }
 
 bool FeedFile::ParseFeed(IUnknown* nzb)
