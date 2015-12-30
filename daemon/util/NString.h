@@ -71,7 +71,7 @@ public:
 	CString(const char* str, int len = 0) { Set(str, len); }
 	CString(CString&& other) noexcept { m_data = other.m_data; other.m_data = nullptr; }
 	CString(CString& other) = delete;
-	CString& operator=(CString&& other) { m_data = other.m_data; other.m_data = nullptr; return *this; }
+	CString& operator=(CString&& other) { free(m_data); m_data = other.m_data; other.m_data = nullptr; return *this; }
 	CString& operator=(const char* str) { Set(str); return *this; }
 	static CString FormatStr(const char* format, ...);
 	operator char*() const { return m_data; }
