@@ -111,6 +111,8 @@ private:
 		EDupeMode		m_dupeMode;
 		CString			m_series;
 		CString			m_rageId;
+		CString			m_tvdbId;
+		CString			m_tvmazeId;
 		bool			m_hasCategory;
 		bool			m_hasPriority;
 		bool			m_hasAddPriority;
@@ -125,6 +127,8 @@ private:
 		bool			m_hasPatAddDupeKey;
 		bool			m_hasSeries;
 		bool			m_hasRageId;
+		bool			m_hasTvdbId;
+		bool			m_hasTvmazeId;
 		CString			m_patCategory;
 		CString			m_patDupeKey;
 		CString			m_patAddDupeKey;
@@ -152,6 +156,8 @@ private:
 		int				GetAddDupeScore() { return m_addDupeScore; }
 		EDupeMode		GetDupeMode() { return m_dupeMode; }
 		const char*		GetRageId() { return m_rageId; }
+		const char*		GetTvdbId() { return m_tvdbId; }
+		const char*		GetTvmazeId() { return m_tvmazeId; }
 		const char*		GetSeries() { return m_series; }
 		bool			HasCategory() { return m_hasCategory; }
 		bool			HasPriority() { return m_hasPriority; }
@@ -163,6 +169,8 @@ private:
 		bool			HasAddDupeKey() { return m_hasAddDupeKey; }
 		bool			HasDupeMode() { return m_hasDupeMode; }
 		bool			HasRageId() { return m_hasRageId; }
+		bool			HasTvdbId() { return m_hasTvdbId; }
+		bool			HasTvmazeId() { return m_hasTvmazeId; }
 		bool			HasSeries() { return m_hasSeries; }
 		bool			Match(FeedItemInfo* feedItemInfo);
 		void			ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, const char* patStr);

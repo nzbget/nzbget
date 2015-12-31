@@ -354,6 +354,16 @@ bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInf
 		*IntValue = feedItemInfo ? feedItemInfo->GetRageId() : 0;
 		return true;
 	}
+	else if (!strcasecmp(field, "tvdbid"))
+	{
+		*IntValue = feedItemInfo ? feedItemInfo->GetTvdbId() : 0;
+		return true;
+	}
+	else if (!strcasecmp(field, "tvmazeid"))
+	{
+		*IntValue = feedItemInfo ? feedItemInfo->GetTvmazeId() : 0;
+		return true;
+	}
 	else if (!strcasecmp(field, "description"))
 	{
 		*StrValue = feedItemInfo ? feedItemInfo->GetDescription() : nullptr;
@@ -555,6 +565,8 @@ FeedFilter::Rule::Rule()
 	m_hasAddDupeKey = false;
 	m_hasDupeMode = false;
 	m_hasRageId = false;
+	m_hasTvdbId = false;
+	m_hasTvmazeId = false;
 	m_hasSeries = false;
 	m_hasPatCategory = false;
 	m_hasPatDupeKey = false;
@@ -784,6 +796,16 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 		{
 			m_hasRageId = true;
 			m_rageId = value;
+		}
+		else if (!strcasecmp(option, "tvdbid"))
+		{
+			m_hasTvdbId = true;
+			m_tvdbId = value;
+		}
+		else if (!strcasecmp(option, "tvmazeid"))
+		{
+			m_hasTvmazeId = true;
+			m_tvmazeId = value;
 		}
 		else if (!strcasecmp(option, "series"))
 		{
@@ -1095,9 +1117,9 @@ void FeedFilter::ApplyOptions(Rule* rule, FeedItemInfo* feedItemInfo)
 	{
 		feedItemInfo->SetDupeScore(feedItemInfo->GetDupeScore() + rule->GetAddDupeScore());
 	}
-	if (rule->HasRageId() || rule->HasSeries())
+	if (rule->HasRageId() || rule->HasTvdbId() || rule->HasTvmazeId() || rule->HasSeries())
 	{
-		feedItemInfo->BuildDupeKey(rule->GetRageId(), rule->GetSeries());
+		feedItemInfo->BuildDupeKey(rule->GetRageId(), rule->GetTvdbId(), rule->GetTvmazeId(), rule->GetSeries());
 	}
 	if (rule->HasDupeKey())
 	{

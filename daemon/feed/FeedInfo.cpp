@@ -92,6 +92,8 @@ FeedItemInfo::FeedItemInfo()
 	m_time = 0;
 	m_imdbId = 0;
 	m_rageId = 0;
+	m_tvdbId = 0;
+	m_tvmazeId = 0;
 	m_description = "";
 	m_seasonNum = 0;
 	m_episodeNum = 0;
@@ -136,21 +138,31 @@ void FeedItemInfo::AppendDupeKey(const char* extraDupeKey)
 	}
 }
 
-void FeedItemInfo::BuildDupeKey(const char* rageId, const char* series)
+void FeedItemInfo::BuildDupeKey(const char* rageId, const char* tvdbId, const char* tvmazeId, const char* series)
 {
-	int rageIdVal = rageId && *rageId ? atoi(rageId) : m_rageId;
+	int rageIdVal = !Util::EmptyStr(rageId) ? atoi(rageId) : m_rageId;
+	int tvdbIdVal = !Util::EmptyStr(tvdbId) ? atoi(tvdbId) : m_tvdbId;
+	int tvmazeIdVal = !Util::EmptyStr(tvmazeId) ? atoi(tvmazeId) : m_tvmazeId;
 
 	if (m_imdbId != 0)
 	{
 		m_dupeKey.Format("imdb=%i", m_imdbId);
 	}
-	else if (series && *series && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
+	else if (!Util::EmptyStr(series) && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
 	{
 		m_dupeKey.Format("series=%s-%s-%s", series, *m_season, *m_episode);
 	}
 	else if (rageIdVal != 0 && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
 	{
 		m_dupeKey.Format("rageid=%i-%s-%s", rageIdVal, *m_season, *m_episode);
+	}
+	else if (tvdbIdVal != 0 && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
+	{
+		m_dupeKey.Format("tvdbid=%i-%s-%s", tvdbIdVal, *m_season, *m_episode);
+	}
+	else if (tvmazeIdVal != 0 && GetSeasonNum() != 0 && GetEpisodeNum() != 0)
+	{
+		m_dupeKey.Format("tvmazeid=%i-%s-%s", tvmazeIdVal, *m_season, *m_episode);
 	}
 	else
 	{

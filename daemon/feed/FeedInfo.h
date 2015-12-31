@@ -147,6 +147,8 @@ private:
 	CString				m_category;
 	int					m_imdbId;
 	int					m_rageId;
+	int					m_tvdbId;
+	int					m_tvmazeId;
 	CString				m_description;
 	CString				m_season;
 	CString				m_episode;
@@ -186,6 +188,10 @@ public:
 	void				SetImdbId(int imdbId) { m_imdbId = imdbId; }
 	int					GetRageId() { return m_rageId; }
 	void				SetRageId(int rageId) { m_rageId = rageId; }
+	int					GetTvdbId() { return m_tvdbId; }
+	void				SetTvdbId(int tvdbId) { m_tvdbId = tvdbId; }
+	int					GetTvmazeId() { return m_tvmazeId; }
+	void				SetTvmazeId(int tvmazeId) { m_tvmazeId = tvmazeId; }
 	const char*			GetDescription() { return m_description; }
 	void				SetDescription(const char* description) { m_description = description ? description: ""; }
 	const char*			GetSeason() { return m_season; }
@@ -211,7 +217,7 @@ public:
 	const char*			GetDupeKey() { return m_dupeKey; }
 	void				SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey ? dupeKey : ""; }
 	void				AppendDupeKey(const char* extraDupeKey);
-	void				BuildDupeKey(const char* rageId, const char* series);
+	void				BuildDupeKey(const char* rageId, const char* tvdbId, const char* tvmazeId, const char* series);
 	int					GetDupeScore() { return m_dupeScore; }
 	void				SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
 	EDupeMode			GetDupeMode() { return m_dupeMode; }

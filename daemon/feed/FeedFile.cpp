@@ -316,6 +316,32 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			}
 		}
 
+		//<newznab:attr name="tdvdbid" value="33877"/>
+		tag = node->selectSingleNode("newznab:attr[@name='tvdbid']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t bval(attr->Gettext());
+				int val = atoi(bval);
+				feedItemInfo->SetTvdbId(val);
+			}
+		}
+
+		//<newznab:attr name="tvmazeid" value="33877"/>
+		tag = node->selectSingleNode("newznab:attr[@name='tvmazeid']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t bval(attr->Gettext());
+				int val = atoi(bval);
+				feedItemInfo->SetTvmazeId(val);
+			}
+		}
+
 		//<newznab:attr name="episode" value="E09"/>
 		//<newznab:attr name="episode" value="9"/>
 		tag = node->selectSingleNode("newznab:attr[@name='episode']");
@@ -437,6 +463,18 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 		else if (!strcmp("rageid", atts[1]))
 		{
 			m_feedItemInfo->SetRageId(atoi(atts[3]));
+		}
+
+		//<newznab:attr name="tvdbid" value="33877"/>
+		else if (!strcmp("tvdbid", atts[1]))
+		{
+			m_feedItemInfo->SetTvdbId(atoi(atts[3]));
+		}
+
+		//<newznab:attr name="tvmazeid" value="33877"/>
+		else if (!strcmp("tvmazeid", atts[1]))
+		{
+			m_feedItemInfo->SetTvmazeId(atoi(atts[3]));
 		}
 
 		//<newznab:attr name="episode" value="E09"/>

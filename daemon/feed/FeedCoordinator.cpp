@@ -429,7 +429,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 		feedItemInfo->SetDupeScore(0);
 		feedItemInfo->SetDupeMode(dmScore);
 		feedItemInfo->SetFeedFilterHelper(&m_filterHelper);
-		feedItemInfo->BuildDupeKey(nullptr, nullptr);
+		feedItemInfo->BuildDupeKey(nullptr, nullptr, nullptr, nullptr);
 		if (feedFilter)
 		{
 			feedFilter->Match(feedItemInfo);
