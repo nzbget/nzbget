@@ -1809,6 +1809,8 @@
 				<em>Force</em> - treat item as unique, ignore all duplicate checks.
 				For <em>Score</em> and <em>All</em> item is skipped if a duplicate marked as "good" exists in history.</td></tr>
 		<tr><td>rageid</td><td>generate duplicate key using this rageid (integer number) and season/episode numbers;</td></tr>
+		<tr><td>tvdbid</td><td>similar to rageid but uses tvdbid-field;</td></tr>
+		<tr><td>tvmazeid</td><td>similar to rageid but uses tvmazeid-field;</td></tr>
 		<tr><td>series</td><td>generate duplicate key using series identifier (any unique string) and season/episode numbers.</td></tr>
 		</tbody>
 		</table>
@@ -1875,7 +1877,7 @@
 		<li>Commands @ and $ are for use with text fields (title, filename, category,
 		link, description, dupekey, dupestatus).</li>
 		<li>Commands =, &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size, age,
-		imdbid, rageid, season, episode, priority, dupescore).</li>
+		imdbid, rageid, tvdbid, tvmazeid, season, episode, priority, dupescore).</li>
 		<li>Any newznab attribute (encoded as "newznab:attr" in the RSS feed) can be used
 		as search field with prefix "attr-", for example "attr-genre".</li>
 		</ul>

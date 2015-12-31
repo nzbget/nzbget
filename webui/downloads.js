@@ -777,6 +777,8 @@ var DownloadsUI = (new function($)
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
 	{
 		dupeKey = dupeKey.replace('rageid=', '');
+		dupeKey = dupeKey.replace('tvdbid=', '');
+		dupeKey = dupeKey.replace('tvmazeid=', '');
 		dupeKey = dupeKey.replace('imdb=', '');
 		dupeKey = dupeKey.replace('series=', '');
 		dupeKey = dupeKey.replace('nzb=', '#');
