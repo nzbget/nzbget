@@ -80,7 +80,7 @@ void UnpackController::StartJob(PostInfo* postInfo)
 
 void UnpackController::Run()
 {
-	time_t start = time(nullptr);
+	time_t start = Util::CurrentTime();
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
@@ -185,7 +185,7 @@ void UnpackController::Run()
 		}
 	}
 
-	int unpackSec = (int)(time(nullptr) - start);
+	int unpackSec = (int)(Util::CurrentTime() - start);
 	m_postInfo->GetNzbInfo()->SetUnpackSec(m_postInfo->GetNzbInfo()->GetUnpackSec() + unpackSec);
 
 	m_postInfo->SetWorking(false);
@@ -878,7 +878,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 	{
 		// reset start time for a case if user uses unpack-script to do some things
 		// (like sending Wake-On-Lan message) before executing unrar
-		m_postInfo->SetStageTime(time(nullptr));
+		m_postInfo->SetStageTime(Util::CurrentTime());
 	}
 
 	if (m_unpacker == upUnrar && !strncmp(msgText, "Unrar: Extracting ", 18))

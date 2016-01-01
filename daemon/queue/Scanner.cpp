@@ -230,7 +230,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 	}
 
 	int64 size = FileSystem::FileSize(fullFilename);
-	time_t current = time(nullptr);
+	time_t current = Util::CurrentTime();
 	bool canProcess = false;
 	bool inList = false;
 
@@ -279,7 +279,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
  */
 void Scanner::DropOldFiles()
 {
-	time_t current = time(nullptr);
+	time_t current = Util::CurrentTime();
 
 	int i = 0;
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); )

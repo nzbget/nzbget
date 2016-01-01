@@ -53,6 +53,11 @@ void WebDownloader::SetStatus(EStatus status)
 	Notify(nullptr);
 }
 
+void WebDownloader::SetLastUpdateTimeNow()
+{
+	m_lastUpdateTime = Util::CurrentTime();
+}
+
 void WebDownloader::Run()
 {
 	debug("Entering WebDownloader-loop");

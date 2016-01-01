@@ -75,6 +75,8 @@ public:
 
 	static void SetStandByMode(bool standBy);
 
+	static time_t CurrentTime();
+
 	/* cross platform version of GNU timegm, which is similar to mktime but takes an UTC time as parameter */
 	static time_t Timegm(tm const *t);
 

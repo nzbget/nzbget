@@ -1145,7 +1145,7 @@ void ScheduleResumeXmlCommand::Execute()
 		return;
 	}
 
-	time_t curTime = time(nullptr);
+	time_t curTime = Util::CurrentTime();
 
 	g_Options->SetResumeTime(curTime + seconds);
 
@@ -1351,7 +1351,7 @@ void StatusXmlCommand::Execute()
 	int64 freeDiskSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
-	int serverTime = time(nullptr);
+	int serverTime = Util::CurrentTime();
 	int resumeTime = g_Options->GetResumeTime();
 	bool feedActive = g_FeedCoordinator->HasActiveDownloads();
 	int queuedScripts = g_QueueScriptCoordinator->GetQueueSize();
@@ -1764,7 +1764,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 			BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
 			downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(),
 			nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ?
-				time(nullptr) - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
+				Util::CurrentTime() - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
 			nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
 	// Post-processing parameters
@@ -1867,7 +1867,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 	if (postInfo)
 	{
-		time_t curTime = time(nullptr);
+		time_t curTime = Util::CurrentTime();
 
 		AppendFmtResponse(itemStart, *EncodeStr(postInfo->GetProgressLabel()),
 			postInfo->GetStageProgress(),

@@ -2873,7 +2873,7 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 		}
 	}
 
-	time_t tm = time(nullptr);
+	time_t tm = Util::CurrentTime();
 	time_t rawtime = tm + g_Options->GetTimeCorrection();
 
 	BString<100> time;

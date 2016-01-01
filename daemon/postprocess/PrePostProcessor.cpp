@@ -476,7 +476,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 {
 	if (!postInfo->GetStartTime())
 	{
-		postInfo->SetStartTime(time(nullptr));
+		postInfo->SetStartTime(Util::CurrentTime());
 	}
 
 #ifndef DISABLE_PARCHECK
@@ -599,7 +599,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 
 	downloadQueue->Save();
 
-	postInfo->SetStageTime(time(nullptr));
+	postInfo->SetStageTime(Util::CurrentTime());
 
 	if (unpack)
 	{
@@ -629,7 +629,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 
 	if (postInfo->GetStartTime() > 0)
 	{
-		nzbInfo->SetPostTotalSec((int)(time(nullptr) - postInfo->GetStartTime()));
+		nzbInfo->SetPostTotalSec((int)(Util::CurrentTime() - postInfo->GetStartTime()));
 		postInfo->SetStartTime(0);
 	}
 

@@ -105,7 +105,7 @@ void Maintenance::AddMessage(Message::EKind kind, time_t time, const char * text
 {
 	if (time == 0)
 	{
-		time = ::time(nullptr);
+		time = Util::CurrentTime();
 	}
 
 	m_logMutex.Lock();
@@ -303,7 +303,7 @@ void UpdateScriptController::AddMessage(Message::EKind kind, const char* text)
 	}
 	else
 	{
-		g_Maintenance->AddMessage(kind, time(nullptr), text);
+		g_Maintenance->AddMessage(kind, Util::CurrentTime(), text);
 		ScriptController::AddMessage(kind, text);
 	}
 }

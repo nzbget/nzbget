@@ -90,7 +90,7 @@ void Log::Filelog(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	time_t rawtime = time(nullptr) + g_Options->GetTimeCorrection();
+	time_t rawtime = Util::CurrentTime() + g_Options->GetTimeCorrection();
 
 	char time[50];
 #ifdef HAVE_CTIME_R_3
@@ -316,7 +316,7 @@ void Log::Clear()
 
 void Log::AddMessage(Message::EKind kind, const char * text)
 {
-	Message* message = new Message(++m_idGen, kind, time(nullptr), text);
+	Message* message = new Message(++m_idGen, kind, Util::CurrentTime(), text);
 	m_messages.push_back(message);
 
 	if (m_optInit && g_Options)
@@ -367,7 +367,7 @@ void Log::RotateLog()
 
 	BString<1024> fileMask("%s-####-##-##%s", baseName, *baseExt);
 
-	time_t curTime = time(nullptr) + g_Options->GetTimeCorrection();
+	time_t curTime = Util::CurrentTime() + g_Options->GetTimeCorrection();
 	int curDay = (int)curTime / 86400;
 	BString<1024> fullFilename;
 

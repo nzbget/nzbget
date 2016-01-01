@@ -129,12 +129,12 @@ void ArticleDownloader::Run()
 
 		// check server retention
 		bool retentionFailure = m_connection->GetNewsServer()->GetRetention() > 0 &&
-			(time(nullptr) - m_fileInfo->GetTime()) / 86400 > m_connection->GetNewsServer()->GetRetention();
+			(Util::CurrentTime() - m_fileInfo->GetTime()) / 86400 > m_connection->GetNewsServer()->GetRetention();
 		if (retentionFailure)
 		{
 			detail("Article %s @ %s failed: out of server retention (file age: %i, configured retention: %i)",
 				*m_infoName, *m_connectionName,
-				(int)(time(nullptr) - m_fileInfo->GetTime()) / 86400,
+				(int)(Util::CurrentTime() - m_fileInfo->GetTime()) / 86400,
 				m_connection->GetNewsServer()->GetRetention());
 			status = adFailed;
 			FreeConnection(true);
@@ -624,6 +624,11 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 	{
 		return adFinished;
 	}
+}
+
+void ArticleDownloader::SetLastUpdateTimeNow()
+{
+	m_lastUpdateTime = Util::CurrentTime();
 }
 
 void ArticleDownloader::LogDebugInfo()

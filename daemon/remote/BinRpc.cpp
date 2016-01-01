@@ -958,7 +958,7 @@ void PostQueueBinCommand::Execute()
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
 
-	time_t curTime = time(nullptr);
+	time_t curTime = Util::CurrentTime();
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 

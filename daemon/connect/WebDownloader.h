@@ -99,7 +99,7 @@ public:
 	const char*			GetOutputFilename() { return m_outputFilename; }
 	void 				SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
 	time_t				GetLastUpdateTime() { return m_lastUpdateTime; }
-	void				SetLastUpdateTimeNow() { m_lastUpdateTime = ::time(nullptr); }
+	void				SetLastUpdateTimeNow();
 	bool				GetConfirmedLength() { return m_confirmedLength; }
 	const char*			GetOriginalFilename() { return m_originalFilename; }
 	void				SetForce(bool force) { m_force = force; }

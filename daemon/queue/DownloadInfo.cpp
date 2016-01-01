@@ -567,7 +567,7 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 	}
 
 	m_logMutex.Lock();
-	Message* message = new Message(++m_idMessageGen, kind, time(nullptr), text);
+	Message* message = new Message(++m_idMessageGen, kind, Util::CurrentTime(), text);
 	m_messages.push_back(message);
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetNzbLog())
@@ -673,11 +673,11 @@ void NzbInfo::SetActiveDownloads(int activeDownloads)
 	{
 		if (activeDownloads > 0)
 		{
-			m_downloadStartTime = time(nullptr);
+			m_downloadStartTime = Util::CurrentTime();
 		}
 		else
 		{
-			m_downloadSec += time(nullptr) - m_downloadStartTime;
+			m_downloadSec += Util::CurrentTime() - m_downloadStartTime;
 			m_downloadStartTime = 0;
 		}
 	}

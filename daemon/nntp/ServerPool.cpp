@@ -26,6 +26,7 @@
 
 #include "nzbget.h"
 #include "ServerPool.h"
+#include "Util.h"
 
 static const int CONNECTION_HOLD_SECODNS = 5;
 
@@ -34,6 +35,12 @@ ServerPool::PooledConnection::PooledConnection(NewsServer* server) : NntpConnect
 	m_inUse = false;
 	m_freeTime = 0;
 }
+
+void ServerPool::PooledConnection::SetFreeTimeNow()
+{
+	m_freeTime = Util::CurrentTime();
+}
+
 
 ServerPool::ServerPool()
 {
@@ -187,7 +194,7 @@ NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Ser
 	PooledConnection* connection = nullptr;
 	m_connectionsMutex.Lock();
 
-	time_t curTime = time(nullptr);
+	time_t curTime = Util::CurrentTime();
 
 	if (level < (int)m_levels.size() && m_levels[level] > 0)
 	{
@@ -280,7 +287,7 @@ void ServerPool::FreeConnection(NntpConnection* connection, bool used)
 void ServerPool::BlockServer(NewsServer* newsServer)
 {
 	m_connectionsMutex.Lock();
-	time_t curTime = time(nullptr);
+	time_t curTime = Util::CurrentTime();
 	bool newBlock = newsServer->GetBlockTime() != curTime;
 	newsServer->SetBlockTime(curTime);
 	m_connectionsMutex.Unlock();
@@ -295,7 +302,7 @@ void ServerPool::CloseUnusedConnections()
 {
 	m_connectionsMutex.Lock();
 
-	time_t curtime = ::time(nullptr);
+	time_t curtime = Util::CurrentTime();
 
 	// close and free all connections of servers which were disabled since the last check
 	int i = 0;
@@ -389,7 +396,7 @@ void ServerPool::LogDebugInfo()
 
 	m_connectionsMutex.Lock();
 
-	time_t curTime = time(nullptr);
+	time_t curTime = Util::CurrentTime();
 
 	info("    Servers: %i", (int)m_servers.size());
 	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)

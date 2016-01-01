@@ -291,7 +291,7 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 	{
 		time_t stageTime = m_postInfo->GetStageTime();
 		time_t startTime = m_postInfo->GetStartTime();
-		time_t waitTime = time(nullptr);
+		time_t waitTime = Util::CurrentTime();
 
 		// wait until Post-processor is unpaused
 		while (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
@@ -300,7 +300,7 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 
 			// update time stamps
 
-			time_t delta = time(nullptr) - waitTime;
+			time_t delta = Util::CurrentTime() - waitTime;
 
 			if (stageTime > 0)
 			{

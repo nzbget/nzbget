@@ -66,8 +66,8 @@ public:
 void ChildWatchDog::Run()
 {
 	static const int WAIT_SECONDS = 60;
-	time_t start = time(nullptr);
-	while (!IsStopped() && (time(nullptr) - start) < WAIT_SECONDS)
+	time_t start = Util::CurrentTime();
+	while (!IsStopped() && (Util::CurrentTime() - start) < WAIT_SECONDS)
 	{
 		usleep(10 * 1000);
 	}

@@ -301,7 +301,7 @@ void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
 	m_parChecker.SetPostInfo(postInfo);
 	m_parChecker.SetDestDir(postInfo->GetNzbInfo()->GetDestDir());
 	m_parChecker.SetNzbName(postInfo->GetNzbInfo()->GetName());
-	m_parChecker.SetParTime(time(nullptr));
+	m_parChecker.SetParTime(Util::CurrentTime());
 	m_parChecker.SetDownloadSec(postInfo->GetNzbInfo()->GetDownloadSec());
 	m_parChecker.SetParQuick(g_Options->GetParQuick() && !postInfo->GetForceParFull());
 	m_parChecker.SetForceRepair(postInfo->GetForceRepair());
@@ -402,7 +402,7 @@ void ParCoordinator::ParCheckCompleted()
 
 	int waitTime = postInfo->GetNzbInfo()->GetDownloadSec() - m_parChecker.GetDownloadSec();
 	postInfo->SetStartTime(postInfo->GetStartTime() + (time_t)waitTime);
-	int parSec = (int)(time(nullptr) - m_parChecker.GetParTime()) - waitTime;
+	int parSec = (int)(Util::CurrentTime() - m_parChecker.GetParTime()) - waitTime;
 	postInfo->GetNzbInfo()->SetParSec(postInfo->GetNzbInfo()->GetParSec() + parSec);
 
 	postInfo->GetNzbInfo()->SetParFull(m_parChecker.GetParFull());
@@ -617,7 +617,7 @@ void ParCoordinator::UpdateParCheckProgress()
 	postInfo->SetStageProgress(m_parChecker.GetStageProgress());
 	PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
 	PostInfo::EStage stage = StageKind[m_parChecker.GetStage()];
-	time_t current = time(nullptr);
+	time_t current = Util::CurrentTime();
 
 	if (postInfo->GetStage() != stage)
 	{
@@ -672,7 +672,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 		time_t startTime = postInfo->GetStartTime();
 		time_t parTime = m_parChecker.GetParTime();
 		time_t repairTime = m_parChecker.GetRepairTime();
-		time_t waitTime = time(nullptr);
+		time_t waitTime = Util::CurrentTime();
 
 		// wait until Post-processor is unpaused
 		while (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
@@ -681,7 +681,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 
 			// update time stamps
 
-			time_t delta = time(nullptr) - waitTime;
+			time_t delta = Util::CurrentTime() - waitTime;
 
 			if (stageTime > 0)
 			{
@@ -731,7 +731,7 @@ void ParCoordinator::UpdateParRenameProgress()
 	PostInfo* postInfo = m_parRenamer.GetPostInfo();
 	postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
 	postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
-	time_t current = time(nullptr);
+	time_t current = Util::CurrentTime();
 
 	if (postInfo->GetStage() != PostInfo::ptRenaming)
 	{

@@ -178,7 +178,7 @@ void UrlCoordinator::ResetHangingDownloads()
 	}
 
 	DownloadQueue::Lock();
-	time_t tm = time(nullptr);
+	time_t tm = Util::CurrentTime();
 
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end();)
 	{
@@ -404,7 +404,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 		!nzbInfo->GetAvoidHistory())
 	{
 		HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
-		historyInfo->SetTime(time(nullptr));
+		historyInfo->SetTime(Util::CurrentTime());
 		downloadQueue->GetHistory()->push_front(historyInfo);
 		deleteObj = false;
 	}
@@ -448,7 +448,7 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 	if (g_Options->GetKeepHistory() > 0 && !avoidHistory)
 	{
 		HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
-		historyInfo->SetTime(time(nullptr));
+		historyInfo->SetTime(Util::CurrentTime());
 		downloadQueue->GetHistory()->push_front(historyInfo);
 	}
 	else

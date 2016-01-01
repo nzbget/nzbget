@@ -489,6 +489,11 @@ bool Util::RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, 
 }
 #endif
 
+time_t Util::CurrentTime()
+{
+	return ::time(nullptr);
+}
+
 /* From boost */
 
 inline int is_leap(int year)

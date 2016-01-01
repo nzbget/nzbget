@@ -45,7 +45,7 @@ private:
 		bool			GetInUse() { return m_inUse; }
 		void			SetInUse(bool inUse) { m_inUse = inUse; }
 		time_t			GetFreeTime() { return m_freeTime; }
-		void			SetFreeTimeNow() { m_freeTime = ::time(nullptr); }
+		void			SetFreeTimeNow();
 	};
 
 	typedef std::vector<int>				Levels;

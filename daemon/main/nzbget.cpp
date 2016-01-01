@@ -155,7 +155,7 @@ int main(int argc, char *argv[], char *argp[])
 	DisableCout();
 #endif
 
-	srand(time(nullptr));
+	srand(Util::CurrentTime());
 
 #ifdef WIN32
 	for (int i=0; i < argc; i++)

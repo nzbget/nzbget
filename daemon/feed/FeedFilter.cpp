@@ -341,7 +341,7 @@ bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInf
 	}
 	else if (!strcasecmp(field, "age"))
 	{
-		*IntValue = feedItemInfo ? time(nullptr) - feedItemInfo->GetTime() : 0;
+		*IntValue = feedItemInfo ? Util::CurrentTime() - feedItemInfo->GetTime() : 0;
 		return true;
 	}
 	else if (!strcasecmp(field, "imdbid"))

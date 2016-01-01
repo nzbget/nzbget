@@ -488,7 +488,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 
 	// pCheckedFiles stores
 	bool* checkedFiles = nullptr;
-	time_t curDate = time(nullptr);
+	time_t curDate = Util::CurrentTime();
 
 	while (!ok)
 	{
@@ -919,7 +919,7 @@ void QueueCoordinator::ResetHangingDownloads()
 	}
 
 	DownloadQueue::Lock();
-	time_t tm = ::time(nullptr);
+	time_t tm = Util::CurrentTime();
 
 	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end();)
 	{

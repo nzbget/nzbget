@@ -280,7 +280,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 	}
 
 	// respect option "EventInterval"
-	time_t curTime = time(nullptr);
+	time_t curTime = Util::CurrentTime();
 	if (event == qeFileDownloaded &&
 		(g_Options->GetEventInterval() == -1 ||
 		 (g_Options->GetEventInterval() > 0 && curTime - nzbInfo->GetQueueScriptTime() > 0 &&
@@ -372,7 +372,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 				}
 			}
 
-			nzbInfo->SetQueueScriptTime(time(nullptr));
+			nzbInfo->SetQueueScriptTime(Util::CurrentTime());
 		}
 	}
 

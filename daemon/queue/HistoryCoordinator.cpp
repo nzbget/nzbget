@@ -54,7 +54,7 @@ void HistoryCoordinator::ServiceWork()
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	time_t minTime = time(nullptr) - g_Options->GetKeepHistory() * 60*60*24;
+	time_t minTime = Util::CurrentTime() - g_Options->GetKeepHistory() * 60*60*24;
 	bool changed = false;
 	int index = 0;
 
@@ -153,7 +153,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	}
 
 	HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
-	historyInfo->SetTime(time(nullptr));
+	historyInfo->SetTime(Util::CurrentTime());
 	downloadQueue->GetHistory()->push_front(historyInfo);
 	downloadQueue->GetQueue()->Remove(nzbInfo);
 

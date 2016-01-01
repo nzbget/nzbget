@@ -622,7 +622,7 @@ void NCursesFrontend::PrintKeyInputBar()
 
 	if (!m_hint.Empty())
 	{
-		time_t time = ::time(nullptr);
+		time_t time = Util::CurrentTime();
 		if (time - m_startHint < 5)
 		{
 			PlotLine(m_hint, inputBarRow, 0, NCURSES_COLORPAIR_HINT);
@@ -683,7 +683,7 @@ void NCursesFrontend::SetHint(const char* hint)
 	m_hint = hint;
 	if (!m_hint.Empty())
 	{
-		m_startHint = time(nullptr);
+		m_startHint = Util::CurrentTime();
 	}
 }
 
