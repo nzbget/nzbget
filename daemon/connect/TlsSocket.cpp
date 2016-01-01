@@ -319,7 +319,7 @@ bool TlsSocket::Start()
 
 	m_initialized = true;
 
-	const char* priority = !m_cipher.Empty() ? m_cipher : "NORMAL";
+	const char* priority = !m_cipher.Empty() ? m_cipher.Str() : "NORMAL";
 
 	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, nullptr);
 	if (m_retCode != 0)
