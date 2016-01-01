@@ -38,8 +38,6 @@ class Util
 {
 public:
 	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
-	static CString FormatSpeed(int bytesPerSecond);
-	static CString FormatSize(int64 fileSize);
 	static int64 GetCurrentTicks();
 
 	/*
@@ -79,6 +77,12 @@ public:
 
 	/* cross platform version of GNU timegm, which is similar to mktime but takes an UTC time as parameter */
 	static time_t Timegm(tm const *t);
+
+	static void FormatTime(time_t timeSec, char* buffer, int bufsize);
+	static CString FormatTime(time_t timeSec);
+
+	static CString FormatSpeed(int bytesPerSecond);
+	static CString FormatSize(int64 fileSize);
 
 	/*
 	 * Returns program version and revision number as string formatted like "0.7.0-r295".

@@ -647,14 +647,8 @@ bool WebDownloader::PrepareFile()
 
 void WebDownloader::LogDebugInfo()
 {
-	char time[50];
-#ifdef HAVE_CTIME_R_3
-		ctime_r(&m_lastUpdateTime, time, 50);
-#else
-		ctime_r(&m_lastUpdateTime, time);
-#endif
-
-	info("      Web-Download: status=%i, LastUpdateTime=%s, filename=%s", m_status, time, FileSystem::BaseFileName(m_outputFilename));
+	info("      Web-Download: status=%i, LastUpdateTime=%s, filename=%s", m_status,
+		*Util::FormatTime(m_lastUpdateTime), FileSystem::BaseFileName(m_outputFilename));
 }
 
 void WebDownloader::Stop()

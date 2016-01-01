@@ -93,13 +93,7 @@ void Log::Filelog(const char* msg, ...)
 	time_t rawtime = Util::CurrentTime() + g_Options->GetTimeCorrection();
 
 	char time[50];
-#ifdef HAVE_CTIME_R_3
-	ctime_r(&rawtime, time, 50);
-#else
-	ctime_r(&rawtime, time);
-#endif
-	time[50-1] = '\0';
-	time[strlen(time) - 1] = '\0'; // trim LF
+	Util::FormatTime(rawtime, time, 50);
 
 	if ((int)rawtime/86400 != (int)m_lastWritten/86400 && g_Options->GetWriteLog() == Options::wlRotate)
 	{

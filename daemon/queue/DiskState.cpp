@@ -2877,12 +2877,7 @@ void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* tex
 	time_t rawtime = tm + g_Options->GetTimeCorrection();
 
 	BString<100> time;
-#ifdef HAVE_CTIME_R_3
-	ctime_r(&rawtime, time, time.Capacity());
-#else
-	ctime_r(&rawtime, time);
-#endif
-	time[strlen(time) - 1] = '\0'; // trim LF
+	Util::FormatTime(rawtime, time, 100);
 
 	outfile.Print("%s\t%u\t%s\t%s%s", *time, (int)tm, messageType[kind], *tmp2, LINE_ENDING);
 

@@ -633,13 +633,8 @@ void ArticleDownloader::SetLastUpdateTimeNow()
 
 void ArticleDownloader::LogDebugInfo()
 {
-	char time[50];
-#ifdef HAVE_CTIME_R_3
-		ctime_r(&m_lastUpdateTime, time, 50);
-#else
-		ctime_r(&m_lastUpdateTime, time);
-#endif
-	info("      Download: status=%i, LastUpdateTime=%s, InfoName=%s", m_status, time, *m_infoName);
+	info("      Download: status=%i, LastUpdateTime=%s, InfoName=%s", m_status,
+		 *Util::FormatTime(m_lastUpdateTime), *m_infoName);
 }
 
 void ArticleDownloader::Stop()

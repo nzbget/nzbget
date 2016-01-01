@@ -260,6 +260,27 @@ CString Util::FormatSpeed(int bytesPerSecond)
 	return result;
 }
 
+void Util::FormatTime(time_t timeSec, char* buffer, int bufsize)
+{
+#ifdef HAVE_CTIME_R_3
+	ctime_r(&timeSec, buffer, bufsize);
+#else
+	ctime_r(&timeSec, buffer);
+#endif
+	buffer[bufsize-1] = '\0';
+
+	// trim LF
+	buffer[strlen(buffer) - 1] = '\0';
+}
+
+CString Util::FormatTime(time_t timeSec)
+{
+	CString result;
+	result.Reserve(50);
+	FormatTime(timeSec, result, 50);
+	return result;
+}
+
 bool Util::MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator)
 {
 	int filenameLen = strlen(filename);

@@ -520,21 +520,8 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 
 	if (m_showTimestamp)
 	{
-		int len = strlen(text) + 50;
-		text = (char*)malloc(len);
-
-		time_t rawtime = Msg->GetTime();
-		rawtime += g_Options->GetTimeCorrection();
-
-		BString<100> time;
-#ifdef HAVE_CTIME_R_3
-		ctime_r(&rawtime, time, time.Capacity());
-#else
-		ctime_r(&rawtime, time);
-#endif
-		time[strlen(time) - 1] = '\0'; // trim LF
-
-		text.Format("%s - %s", *time, Msg->GetText());
+		time_t rawtime = Msg->GetTime() + g_Options->GetTimeCorrection();
+		text.Format("%s - %s", *Util::FormatTime(rawtime), Msg->GetText());
 	}
 	else
 	{
