@@ -78,8 +78,6 @@ Maintenance::~Maintenance()
 		}
 	}
 
-	m_messages.Clear();
-
 	free(m_updateScript);
 }
 
@@ -109,8 +107,7 @@ void Maintenance::AddMessage(Message::EKind kind, time_t time, const char * text
 	}
 
 	m_logMutex.Lock();
-	Message* message = new Message(++m_idMessageGen, kind, time, text);
-	m_messages.push_back(message);
+	m_messages.emplace_back(++m_idMessageGen, kind, time, text);
 	m_logMutex.Unlock();
 }
 
@@ -148,7 +145,7 @@ bool Maintenance::StartUpdate(EBranch branch)
 		m_updateScript = strdup(BString<1024>("%s%c%s", g_Options->GetAppDir(), PATH_SEPARATOR, m_updateScript));
 	}
 
-	m_messages.Clear();
+	m_messages.clear();
 
 	m_updateScriptController = new UpdateScriptController();
 	m_updateScriptController->SetScript(m_updateScript);

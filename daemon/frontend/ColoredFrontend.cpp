@@ -96,10 +96,10 @@ void ColoredFrontend::PrintStatus()
 	m_needGoBack = true;
 }
 
-void ColoredFrontend::PrintMessage(Message * message)
+void ColoredFrontend::PrintMessage(Message& message)
 {
 #ifdef WIN32
-	switch (message->GetKind())
+	switch (message.GetKind())
 	{
 		case Message::mkDebug:
 			SetConsoleTextAttribute(m_console, 8);
@@ -123,13 +123,13 @@ void ColoredFrontend::PrintMessage(Message * message)
 			break;
 	}
 	SetConsoleTextAttribute(m_console, 7);
-	char* msg = strdup(message->GetText());
+	char* msg = strdup(message.GetText());
 	CharToOem(msg, msg);
 	printf(" %s\n", msg);
 	free(msg);
 #else
-	const char* msg = message->GetText();
-	switch (message->GetKind())
+	const char* msg = message.GetText();
+	switch (message.GetKind())
 	{
 		case Message::mkDebug:
 			printf("[DEBUG] %s\033[K\n", msg);

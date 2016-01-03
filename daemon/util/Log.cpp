@@ -276,49 +276,22 @@ void detail(const char* msg, ...)
 	g_Log->m_logMutex.Unlock();
 }
 
-//************************************************************
-// Message
-
-Message::Message(uint32 id, EKind kind, time_t time, const char* text)
-{
-	m_id = id;
-	m_kind = kind;
-	m_time = time;
-	m_text = text;
-}
-
-MessageList::~MessageList()
-{
-	Clear();
-}
-
-void MessageList::Clear()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-	clear();
-}
 
 void Log::Clear()
 {
 	m_logMutex.Lock();
-	m_messages.Clear();
+	m_messages.clear();
 	m_logMutex.Unlock();
 }
 
 void Log::AddMessage(Message::EKind kind, const char * text)
 {
-	Message* message = new Message(++m_idGen, kind, Util::CurrentTime(), text);
-	m_messages.push_back(message);
+	m_messages.emplace_back(++m_idGen, kind, Util::CurrentTime(), text);
 
 	if (m_optInit && g_Options)
 	{
 		while (m_messages.size() > (uint32)g_Options->GetLogBufferSize())
 		{
-			Message* message = m_messages.front();
-			delete message;
 			m_messages.pop_front();
 		}
 	}
@@ -425,9 +398,9 @@ void Log::InitOptions()
 
 	for (uint32 i = 0; i < m_messages.size(); )
 	{
-		Message* message = m_messages.at(i);
+		Message& message = m_messages.at(i);
 		Options::EMessageTarget target = Options::mtNone;
-		switch (message->GetKind())
+		switch (message.GetKind())
 		{
 			case Message::mkDebug:
 				target = g_Options->GetDebugTarget();
@@ -448,17 +421,16 @@ void Log::InitOptions()
 
 		if (target == Options::mtLog || target == Options::mtBoth)
 		{
-			Filelog("%s\t%s", messageType[message->GetKind()], message->GetText());
+			Filelog("%s\t%s", messageType[message.GetKind()], message.GetText());
 		}
 
 		if (target == Options::mtLog || target == Options::mtNone)
 		{
-			delete message;
 			m_messages.erase(m_messages.begin() + i);
 		}
 		else
 		{
-			message->m_id = ++m_idGen;
+			message.m_id = ++m_idGen;
 			i++;
 		}
 	}

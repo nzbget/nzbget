@@ -1409,7 +1409,7 @@ void LogXmlCommand::Execute()
 	if (m_idFrom > 0 && !messages->empty())
 	{
 		m_nrEntries = messages->size();
-		start = m_idFrom - messages->front()->GetId();
+		start = m_idFrom - messages->front().GetId();
 		if (start < 0)
 		{
 			start = 0;
@@ -1438,12 +1438,12 @@ void LogXmlCommand::Execute()
 
 	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
-		Message* message = (*messages)[i];
+		Message& message = (*messages)[i];
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-			message->GetId(), messageType[message->GetKind()], message->GetTime(),
-			*EncodeStr(message->GetText()));
+			message.GetId(), messageType[message.GetKind()], message.GetTime(),
+			*EncodeStr(message.GetText()));
 	}
 
 	UnlockMessages();
@@ -1895,12 +1895,12 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 			int index = 0;
 			for (uint32 i = (uint32)start; i < messages->size(); i++)
 			{
-				Message* message = (*messages)[i];
+				Message& message = (*messages)[i];
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-					message->GetId(), messageType[message->GetKind()], message->GetTime(),
-					*EncodeStr(message->GetText()));
+					message.GetId(), messageType[message.GetKind()], message.GetTime(),
+					*EncodeStr(message.GetText()));
 			}
 		}
 		postInfo->GetNzbInfo()->UnlockCachedMessages();

@@ -98,7 +98,7 @@ private:
 	void			ResetColWidths();
 	void			PrintGroupname(NzbInfo* nzbInfo, int row, bool selected, bool calcColWidth);
 	void			PrintTopHeader(char* header, int lineNr, bool upTime);
-	int				PrintMessage(Message* Msg, int row, int maxLines);
+	int				PrintMessage(Message& msg, int row, int maxLines);
 	void			PrintKeyInputBar();
 	void 			PrintStatus();
 	void			UpdateInput(int initialKey);

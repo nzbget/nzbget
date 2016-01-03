@@ -67,8 +67,8 @@ void LoggableFrontend::Update()
 	MessageList* messages = LockMessages();
 	if (!messages->empty())
 	{
-		Message* firstMessage = messages->front();
-		int start = m_neededLogFirstId - firstMessage->GetId() + 1;
+		Message& firstMessage = messages->front();
+		int start = m_neededLogFirstId - firstMessage.GetId() + 1;
 		if (start < 0)
 		{
 			PrintSkip();
@@ -77,7 +77,7 @@ void LoggableFrontend::Update()
 		for (uint32 i = (uint32)start; i < messages->size(); i++)
 		{
 			PrintMessage((*messages)[i]);
-			m_neededLogFirstId = (*messages)[i]->GetId();
+			m_neededLogFirstId = (*messages)[i].GetId();
 		}
 	}
 	UnlockMessages();
@@ -89,15 +89,15 @@ void LoggableFrontend::Update()
 	fflush(stdout);
 }
 
-void LoggableFrontend::PrintMessage(Message * message)
+void LoggableFrontend::PrintMessage(Message& message)
 {
 #ifdef WIN32
-	char* msg = strdup(message->GetText());
+	char* msg = strdup(message.GetText());
 	CharToOem(msg, msg);
 #else
-	const char* msg = message->GetText();
+	const char* msg = message.GetText();
 #endif
-	switch (message->GetKind())
+	switch (message.GetKind())
 	{
 		case Message::mkDebug:
 			printf("[DEBUG] %s\n", msg);

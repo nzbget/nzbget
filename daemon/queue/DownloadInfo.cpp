@@ -567,8 +567,7 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 	}
 
 	m_logMutex.Lock();
-	Message* message = new Message(++m_idMessageGen, kind, Util::CurrentTime(), text);
-	m_messages.push_back(message);
+	m_messages.emplace_back(++m_idMessageGen, kind, Util::CurrentTime(), text);
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetNzbLog())
 	{
@@ -578,8 +577,6 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 
 	while (m_messages.size() > (uint32)g_Options->GetLogBufferSize())
 	{
-		Message* message = m_messages.front();
-		delete message;
 		m_messages.pop_front();
 	}
 
@@ -603,7 +600,7 @@ void NzbInfo::PrintMessage(Message::EKind kind, const char* format, ...)
 void NzbInfo::ClearMessages()
 {
 	m_logMutex.Lock();
-	m_messages.Clear();
+	m_messages.clear();
 	m_cachedMessageCount = 0;
 	m_logMutex.Unlock();
 }

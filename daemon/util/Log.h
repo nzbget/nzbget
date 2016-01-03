@@ -64,21 +64,15 @@ private:
 	friend class Log;
 
 public:
-						Message(uint32 id, EKind kind, time_t time, const char* text);
+						Message(uint32 id, EKind kind, time_t time, const char* text) :
+							m_id(id), m_kind(kind), m_time(time), m_text(text) {}
 	uint32				GetId() { return m_id; }
 	EKind				GetKind() { return m_kind; }
 	time_t				GetTime() { return m_time; }
 	const char*			GetText() { return m_text; }
 };
 
-typedef std::deque<Message*> MessageListBase;
-
-class MessageList: public MessageListBase
-{
-public:
-						~MessageList();
-	void				Clear();
-};
+typedef std::deque<Message> MessageList;
 
 class Debuggable
 {

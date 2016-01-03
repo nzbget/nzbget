@@ -510,7 +510,7 @@ void NCursesFrontend::PrintMessages()
 	UnlockMessages();
 }
 
-int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
+int NCursesFrontend::PrintMessage(Message& msg, int row, int maxLines)
 {
 	const char* messageType[] = { "INFO    ", "WARNING ", "ERROR   ", "DEBUG   ", "DETAIL  "};
 	const int messageTypeColor[] = { NCURSES_COLORPAIR_INFO, NCURSES_COLORPAIR_WARNING,
@@ -520,12 +520,12 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 
 	if (m_showTimestamp)
 	{
-		time_t rawtime = Msg->GetTime() + g_Options->GetTimeCorrection();
-		text.Format("%s - %s", *Util::FormatTime(rawtime), Msg->GetText());
+		time_t rawtime = msg.GetTime() + g_Options->GetTimeCorrection();
+		text.Format("%s - %s", *Util::FormatTime(rawtime), msg.GetText());
 	}
 	else
 	{
-		text = Msg->GetText();
+		text = msg.GetText();
 	}
 
 	// replace some special characters with spaces
@@ -552,11 +552,11 @@ int NCursesFrontend::PrintMessage(Message* Msg, int row, int maxLines)
 		PlotLine(text + winWidth * i, r, 8, NCURSES_COLORPAIR_TEXT);
 		if (i == 0)
 		{
-			PlotText(messageType[Msg->GetKind()], r, 0, messageTypeColor[Msg->GetKind()], false);
+			PlotText(messageType[msg.GetKind()], r, 0, messageTypeColor[msg.GetKind()], false);
 		}
 		else
 		{
-			PlotText("        ", r, 0, messageTypeColor[Msg->GetKind()], false);
+			PlotText("        ", r, 0, messageTypeColor[msg.GetKind()], false);
 		}
 		lines++;
 	}

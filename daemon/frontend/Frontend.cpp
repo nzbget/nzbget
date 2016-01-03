@@ -100,7 +100,7 @@ void Frontend::FreeData()
 {
 	if (IsRemoteMode())
 	{
-		m_remoteMessages.Clear();
+		m_remoteMessages.clear();
 
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
 		downloadQueue->GetQueue()->Clear();
@@ -257,8 +257,7 @@ bool Frontend::RequestMessages()
 
 			char* text = bufPtr + sizeof(SNzbLogResponseEntry);
 
-			Message* message = new Message(ntohl(logAnswer->m_id), (Message::EKind)ntohl(logAnswer->m_kind), ntohl(logAnswer->m_time), text);
-			m_remoteMessages.push_back(message);
+			m_remoteMessages.emplace_back(ntohl(logAnswer->m_id), (Message::EKind)ntohl(logAnswer->m_kind), ntohl(logAnswer->m_time), text);
 
 			bufPtr += sizeof(SNzbLogResponseEntry) + ntohl(logAnswer->m_textLen);
 		}

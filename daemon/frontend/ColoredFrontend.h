@@ -41,7 +41,7 @@ private:
 
 protected:
 	virtual void 	BeforePrint();
-	virtual void	PrintMessage(Message* message);
+	virtual void	PrintMessage(Message& message);
 	virtual void 	PrintStatus();
 	virtual void 	PrintSkip();
 	virtual void	BeforeExit();

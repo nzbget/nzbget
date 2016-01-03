@@ -2947,8 +2947,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 		if (!p) goto exit;
 		char* text = p + 1;
 
-		Message* message = new Message(++id, kind, (time_t)time, text);
-		messages->push_back(message);
+		messages->emplace_back(++id, kind, (time_t)time, text);
 	}
 
 exit:

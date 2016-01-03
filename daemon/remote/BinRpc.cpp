@@ -762,7 +762,7 @@ void LogBinCommand::Execute()
 	}
 	if (idFrom > 0 && !messages->empty())
 	{
-		start = idFrom - messages->front()->GetId();
+		start = idFrom - messages->front().GetId();
 		if (start < 0)
 		{
 			start = 0;
@@ -778,8 +778,8 @@ void LogBinCommand::Execute()
 	int bufsize = nrEntries * sizeof(SNzbLogResponseEntry);
 	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
-		Message* message = (*messages)[i];
-		bufsize += strlen(message->GetText()) + 1;
+		Message& message = (*messages)[i];
+		bufsize += strlen(message.GetText()) + 1;
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
@@ -788,14 +788,14 @@ void LogBinCommand::Execute()
 	char* bufptr = buf;
 	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
-		Message* message = (*messages)[i];
+		Message& message = (*messages)[i];
 		SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufptr;
-		logAnswer->m_id = htonl(message->GetId());
-		logAnswer->m_kind = htonl(message->GetKind());
-		logAnswer->m_time = htonl((int)message->GetTime());
-		logAnswer->m_textLen = htonl(strlen(message->GetText()) + 1);
+		logAnswer->m_id = htonl(message.GetId());
+		logAnswer->m_kind = htonl(message.GetKind());
+		logAnswer->m_time = htonl((int)message.GetTime());
+		logAnswer->m_textLen = htonl(strlen(message.GetText()) + 1);
 		bufptr += sizeof(SNzbLogResponseEntry);
-		strcpy(bufptr, message->GetText());
+		strcpy(bufptr, message.GetText());
 		bufptr += ntohl(logAnswer->m_textLen);
 		// align struct to 4-bytes, needed by ARM-processor (and may be others)
 		if ((size_t)bufptr % 4 > 0)
