@@ -28,6 +28,7 @@ AC_CONFIG_AUX_DIR(posix)
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
+AM_MAINTAINER_MODE
 
 
 dnl
