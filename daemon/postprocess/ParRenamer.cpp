@@ -44,12 +44,6 @@ public:
 	friend class ParRenamer;
 };
 
-ParRenamer::FileHash::FileHash(const char* filename, const char* hash)
-{
-	m_filename = filename;
-	m_hash = hash;
-	m_fileExists = false;
-}
 
 ParRenamer::ParRenamer()
 {
@@ -62,27 +56,6 @@ ParRenamer::ParRenamer()
 	m_detectMissing = false;
 }
 
-ParRenamer::~ParRenamer()
-{
-	debug("Destroying ParRenamer");
-
-	Cleanup();
-}
-
-void ParRenamer::Cleanup()
-{
-	ClearHashList();
-}
-
-void ParRenamer::ClearHashList()
-{
-	for (FileHashList::iterator it = m_fileHashList.begin(); it != m_fileHashList.end(); it++)
-	{
-		delete *it;
-	}
-	m_fileHashList.clear();
-}
-
 void ParRenamer::Cancel()
 {
 	m_cancelled = true;
@@ -90,7 +63,6 @@ void ParRenamer::Cancel()
 
 void ParRenamer::Run()
 {
-	Cleanup();
 	m_cancelled = false;
 	m_fileCount = 0;
 	m_curFile = 0;
@@ -108,7 +80,7 @@ void ParRenamer::Run()
 	{
 		CString& destDir = *it;
 		debug("Checking %s", *destDir);
-		ClearHashList();
+		m_fileHashList.clear();
 		LoadParFiles(destDir);
 
 		if (m_fileHashList.empty())
@@ -141,7 +113,6 @@ void ParRenamer::Run()
 		PrintMessage(Message::mkInfo, "No renamed files found for %s", *m_infoName);
 	}
 
-	Cleanup();
 	Completed();
 }
 
@@ -207,8 +178,8 @@ void ParRenamer::LoadParFile(const char* parFilename)
 			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", parFilename);
 			continue;
 		}
-		m_fileHashList.push_back(new FileHash(sourceFile->GetDescriptionPacket()->FileName().c_str(),
-			sourceFile->GetDescriptionPacket()->Hash16k().print().c_str()));
+		m_fileHashList.emplace_back(sourceFile->GetDescriptionPacket()->FileName().c_str(),
+			sourceFile->GetDescriptionPacket()->Hash16k().print().c_str());
 		RegisterParredFile(sourceFile->GetDescriptionPacket()->FileName().c_str());
 	}
 
@@ -248,17 +219,17 @@ void ParRenamer::CheckMissing()
 {
 	for (FileHashList::iterator it = m_fileHashList.begin(); it != m_fileHashList.end(); it++)
 	{
-		FileHash* fileHash = *it;
-		if (!fileHash->GetFileExists())
+		FileHash& fileHash = *it;
+		if (!fileHash.GetFileExists())
 		{
-			if (Util::MatchFileExt(fileHash->GetFilename(), g_Options->GetParIgnoreExt(), ",;") ||
-				Util::MatchFileExt(fileHash->GetFilename(), g_Options->GetExtCleanupDisk(), ",;"))
+			if (Util::MatchFileExt(fileHash.GetFilename(), g_Options->GetParIgnoreExt(), ",;") ||
+				Util::MatchFileExt(fileHash.GetFilename(), g_Options->GetExtCleanupDisk(), ",;"))
 			{
-				PrintMessage(Message::mkInfo, "File %s is missing, ignoring", fileHash->GetFilename());
+				PrintMessage(Message::mkInfo, "File %s is missing, ignoring", fileHash.GetFilename());
 			}
 			else
 			{
-				PrintMessage(Message::mkInfo, "File %s is missing", fileHash->GetFilename());
+				PrintMessage(Message::mkInfo, "File %s is missing", fileHash.GetFilename());
 				m_hasMissedFiles = true;
 			}
 		}
@@ -322,15 +293,15 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 
 	for (FileHashList::iterator it = m_fileHashList.begin(); it != m_fileHashList.end(); it++)
 	{
-		FileHash* fileHash = *it;
-		if (!strcmp(fileHash->GetHash(), hash16k.print().c_str()))
+		FileHash& fileHash = *it;
+		if (!strcmp(fileHash.GetHash(), hash16k.print().c_str()))
 		{
-			debug("Found correct filename: %s", fileHash->GetFilename());
-			fileHash->SetFileExists(true);
+			debug("Found correct filename: %s", fileHash.GetFilename());
+			fileHash.SetFileExists(true);
 
-			BString<1024> dstFilename("%s%c%s", destDir, PATH_SEPARATOR, fileHash->GetFilename());
+			BString<1024> dstFilename("%s%c%s", destDir, PATH_SEPARATOR, fileHash.GetFilename());
 
-			if (!FileSystem::FileExists(dstFilename) && !IsSplittedFragment(filename, fileHash->GetFilename()))
+			if (!FileSystem::FileExists(dstFilename) && !IsSplittedFragment(filename, fileHash.GetFilename()))
 			{
 				RenameFile(filename, dstFilename);
 			}

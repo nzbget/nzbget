@@ -46,17 +46,18 @@ public:
 	private:
 		CString			m_filename;
 		CString			m_hash;
-		bool			m_fileExists;
+		bool			m_fileExists = false;
 
 	public:
-						FileHash(const char* filename, const char* hash);
+						FileHash(const char* filename, const char* hash) :
+							m_filename(filename), m_hash(hash) {}
 		const char*		GetFilename() { return m_filename; }
 		const char*		GetHash() { return m_hash; }
 		bool			GetFileExists() { return m_fileExists; }
 		void			SetFileExists(bool fileExists) { m_fileExists = fileExists; }
 	};
 
-	typedef std::deque<FileHash*>		FileHashList;
+	typedef std::deque<FileHash>		FileHashList;
 	typedef std::deque<CString>			DirList;
 
 private:
@@ -74,8 +75,6 @@ private:
 	bool				m_hasMissedFiles;
 	bool				m_detectMissing;
 
-	void				Cleanup();
-	void				ClearHashList();
 	void				BuildDirList(const char* destDir);
 	void				CheckDir(const char* destDir);
 	void				LoadParFiles(const char* destDir);
@@ -98,7 +97,6 @@ protected:
 
 public:
 						ParRenamer();
-	virtual				~ParRenamer();
 	virtual void		Run();
 	void				SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char*			GetInfoName() { return m_infoName; }
