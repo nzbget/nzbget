@@ -68,7 +68,7 @@ public:
 	bool			RequestServerSetDownloadRate(int rate);
 	bool			RequestServerDumpDebug();
 	bool 			RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
-						int* idList, int idCount, NameList* nameList, ERemoteMatchMode matchMode);
+						IdList* idList, NameList* nameList, ERemoteMatchMode matchMode);
 	bool			RequestServerLog(int lines);
 	bool			RequestServerShutdown();
 	bool			RequestServerReload();

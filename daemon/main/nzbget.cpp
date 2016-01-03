@@ -598,8 +598,8 @@ void ProcessClientRequest()
 		case CommandLineParser::opClientRequestEditQueue:
 			Client->RequestServerEditQueue((DownloadQueue::EEditAction)g_CommandLineParser->GetEditQueueAction(),
 				g_CommandLineParser->GetEditQueueOffset(), g_CommandLineParser->GetEditQueueText(),
-				g_CommandLineParser->GetEditQueueIdList(), g_CommandLineParser->GetEditQueueIdCount(),
-				g_CommandLineParser->GetEditQueueNameList(), (ERemoteMatchMode)g_CommandLineParser->GetMatchMode());
+				g_CommandLineParser->GetEditQueueIdList(), g_CommandLineParser->GetEditQueueNameList(),
+				(ERemoteMatchMode)g_CommandLineParser->GetMatchMode());
 			break;
 
 		case CommandLineParser::opClientRequestLog:

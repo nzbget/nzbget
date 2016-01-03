@@ -363,5 +363,6 @@ bool Frontend::RequestEditQueue(DownloadQueue::EEditAction action, int offset, i
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(action, offset, nullptr, &id, 1, nullptr, rmId);
+	IdList ids = { id };
+	return client.RequestServerEditQueue(action, offset, nullptr, &ids, nullptr, rmId);
 }

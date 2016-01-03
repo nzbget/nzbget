@@ -73,8 +73,6 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 	m_printUsage = false;
 
 	m_editQueueAction = 0;
-	m_editQueueIdList = nullptr;
-	m_editQueueIdCount = 0;
 	m_editQueueOffset = 0;
 	m_addPriority = 0;
 	m_addPaused = false;
@@ -105,23 +103,6 @@ CommandLineParser::CommandLineParser(int argc, const char* argv[])
 	{
 		InitFileArg(argc, argv);
 	}
-}
-
-CommandLineParser::~CommandLineParser()
-{
-	free(m_editQueueIdList);
-
-	for (NameList::iterator it = m_editQueueNameList.begin(); it != m_editQueueNameList.end(); it++)
-	{
-		free(*it);
-	}
-	m_editQueueNameList.clear();
-
-	for (NameList::iterator it = m_optionList.begin(); it != m_optionList.end(); it++)
-	{
-		free(*it);
-	}
-	m_optionList.clear();
 }
 
 void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
@@ -918,8 +899,7 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 
 void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind)
 {
-	std::vector<int> Ids;
-	Ids.clear();
+	m_editQueueIdList.clear();
 
 	while (optind < argc)
 	{
@@ -975,11 +955,11 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 			{
 				if (editQueueIdFrom < editQueueIdTo || editQueueIdTo == 0)
 				{
-					Ids.push_back(editQueueIdFrom + i);
+					m_editQueueIdList.push_back(editQueueIdFrom + i);
 				}
 				else
 				{
-					Ids.push_back(editQueueIdFrom - i);
+					m_editQueueIdList.push_back(editQueueIdFrom - i);
 				}
 			}
 
@@ -987,13 +967,6 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 		}
 
 		free(writableFileIdList);
-	}
-
-	m_editQueueIdCount = Ids.size();
-	m_editQueueIdList = (int*)malloc(sizeof(int) * m_editQueueIdCount);
-	for (int i = 0; i < m_editQueueIdCount; i++)
-	{
-		m_editQueueIdList[i] = Ids[i];
 	}
 }
 

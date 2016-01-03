@@ -65,7 +65,8 @@ public:
 		mmRegEx
 	};
 
-	typedef std::vector<char*>  NameList;
+	typedef std::vector<int>		IdList;
+	typedef std::vector<CString>	NameList;
 
 private:
 	bool				m_noConfig;
@@ -82,8 +83,7 @@ private:
 	NameList			m_optionList;
 	int					m_editQueueAction;
 	int					m_editQueueOffset;
-	int*				m_editQueueIdList;
-	int					m_editQueueIdCount;
+	IdList				m_editQueueIdList;
 	NameList			m_editQueueNameList;
 	EMatchMode			m_matchMode;
 	CString				m_editQueueText;
@@ -117,7 +117,6 @@ private:
 
 public:
 						CommandLineParser(int argc, const char* argv[]);
-						~CommandLineParser();
 
 	void				PrintUsage(const char* com);
 
@@ -131,8 +130,7 @@ public:
 	NameList*			GetOptionList() { return &m_optionList; }
 	int					GetEditQueueAction() { return m_editQueueAction; }
 	int					GetEditQueueOffset() { return m_editQueueOffset; }
-	int*				GetEditQueueIdList() { return m_editQueueIdList; }
-	int					GetEditQueueIdCount() { return m_editQueueIdCount; }
+	IdList*				GetEditQueueIdList() { return &m_editQueueIdList; }
 	NameList*			GetEditQueueNameList() { return &m_editQueueNameList; }
 	EMatchMode			GetMatchMode() { return m_matchMode; }
 	const char*			GetEditQueueText() { return m_editQueueText; }

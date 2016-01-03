@@ -801,9 +801,9 @@ bool RemoteClient::RequestServerDumpDebug()
 }
 
 bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
-	int* idList, int idCount, NameList* nameList, ERemoteMatchMode matchMode)
+	IdList* idList, NameList* nameList, ERemoteMatchMode matchMode)
 {
-	if ((idCount <= 0 || idList == nullptr) && (nameList == nullptr || nameList->size() == 0))
+	if ((idList == nullptr || idList->size() == 0) && (nameList == nullptr || nameList->size() == 0))
 	{
 		printf("File(s) not specified\n");
 		return false;
@@ -811,7 +811,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 
 	if (!InitConnection()) return false;
 
-	int idLength = sizeof(int32) * idCount;
+	int idLength = sizeof(int32) * idList->size();
 
 	int nameCount = 0;
 	int nameLength = 0;
@@ -839,7 +839,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	EditQueueRequest.m_matchMode = htonl(matchMode);
 	EditQueueRequest.m_offset = htonl((int)offset);
 	EditQueueRequest.m_textLen = htonl(textLen);
-	EditQueueRequest.m_nrTrailingIdEntries = htonl(idCount);
+	EditQueueRequest.m_nrTrailingIdEntries = htonl(idList->size());
 	EditQueueRequest.m_nrTrailingNameEntries = htonl(nameCount);
 	EditQueueRequest.m_trailingNameEntriesLen = htonl(nameLength);
 	EditQueueRequest.m_trailingDataLength = htonl(length);
@@ -853,9 +853,9 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 
 	int32* ids = (int32*)(trailingData + textLen);
 
-	for (int i = 0; i < idCount; i++)
+	for (int i = 0; i < idList->size(); i++)
 	{
-		ids[i] = htonl(idList[i]);
+		ids[i] = htonl(idList->at(i));
 	}
 
 	if (nameCount > 0)
