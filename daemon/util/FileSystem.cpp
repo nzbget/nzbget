@@ -894,9 +894,9 @@ DirBrowser::DirBrowser(const char* path)
 		DirBrowser dir(path, false);
 		while (const char* filename = dir.Next())
 		{
-			m_snapshot.push_back(strdup(filename));
+			m_snapshotFiles.emplace_back(filename);
 		}
-		m_itSnapshot = m_snapshot.begin();
+		m_snapshotIter = m_snapshotFiles.begin();
 	}
 	else
 #endif
@@ -908,14 +908,7 @@ DirBrowser::DirBrowser(const char* path)
 DirBrowser::~DirBrowser()
 {
 #ifdef DIRBROWSER_SNAPSHOT
-	if (m_snapshot)
-	{
-		for (FileList::iterator it = m_snapshot.begin(); it != m_snapshot.end(); it++)
-		{
-			delete *it;
-		}
-	}
-	else
+	if (!m_snapshot)
 #endif
 	{
 		if (m_dir)
@@ -930,7 +923,7 @@ const char* DirBrowser::InternNext()
 #ifdef DIRBROWSER_SNAPSHOT
 	if (m_snapshot)
 	{
-		return m_itSnapshot == m_snapshot.end() ? nullptr : *m_itSnapshot++;
+		return m_snapshotIter == m_snapshotFiles.end() ? nullptr : **m_snapshotIter++;
 	}
 	else
 #endif

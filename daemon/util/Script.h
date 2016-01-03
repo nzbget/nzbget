@@ -32,16 +32,15 @@
 class EnvironmentStrings
 {
 private:
-	typedef std::vector<char*>		Strings;
+	typedef std::vector<CString>		Strings;
 
 	Strings				m_strings;
 
 public:
-						EnvironmentStrings();
-						~EnvironmentStrings();
 	void				Clear();
 	void				InitFromCurrentProcess();
-	void				Append(char* string);
+	void				Append(const char* envstr);
+	void				Append(CString&& envstr);
 #ifdef WIN32
 	wchar_t*			GetStrings();
 #else

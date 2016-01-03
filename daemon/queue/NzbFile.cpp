@@ -188,9 +188,8 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 	// marks as non separatable token delimiters.
 	// then take the last token containing dot (".") as a filename
 
-	typedef std::list<char*> TokenList;
+	typedef std::vector<CString> TokenList;
 	TokenList tokens;
-	tokens.clear();
 
 	// tokenizing
 	char* p = subject;
@@ -206,8 +205,7 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 			int len = (int)(p - start);
 			if (len > 0)
 			{
-				CString token(start, len);
-				tokens.push_back(token.Unbind());
+				tokens.emplace_back(start, len);
 			}
 			start = p;
 			if (ch != '\"' || quot)
@@ -251,12 +249,6 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 			}
 		}
 		fileInfo->SetFilename(besttoken);
-
-		// free mem
-		for (TokenList::iterator it = tokens.begin(); it != tokens.end(); it++)
-		{
-			free(*it);
-		}
 	}
 	else
 	{

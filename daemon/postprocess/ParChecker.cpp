@@ -449,12 +449,12 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 
 	for (ParParser::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
-		char* parFilename = *it;
-		debug("Found par: %s", parFilename);
+		CString& parFilename = *it;
+		debug("Found par: %s", *parFilename);
 
 		if (!IsStopped() && !m_cancelled)
 		{
-			BString<1024> fullParFilename( "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, parFilename);
+			BString<1024> fullParFilename( "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, *parFilename);
 
 			int baseLen = 0;
 			ParParser::ParseParFilename(parFilename, &baseLen, nullptr);
@@ -477,8 +477,6 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 				WriteBrokenLog(status);
 			}
 		}
-
-		free(parFilename);
 	}
 
 	return allStatus;

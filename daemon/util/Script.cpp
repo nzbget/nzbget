@@ -81,21 +81,8 @@ void ChildWatchDog::Run()
 #endif
 
 
-EnvironmentStrings::EnvironmentStrings()
-{
-}
-
-EnvironmentStrings::~EnvironmentStrings()
-{
-	Clear();
-}
-
 void EnvironmentStrings::Clear()
 {
-	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
-	{
-		free(*it);
-	}
 	m_strings.clear();
 }
 
@@ -110,14 +97,19 @@ void EnvironmentStrings::InitFromCurrentProcess()
 		// Format: NZBXX_YYYY (XX are any two characters, YYYY are any number of any characters).
 		if (!(!strncmp(var, "NZB", 3) && strlen(var) > 5 && var[5] == '_'))
 		{
-			Append(strdup(var));
+			Append(var);
 		}
 	}
 }
 
-void EnvironmentStrings::Append(char* string)
+void EnvironmentStrings::Append(const char* envstr)
 {
-	m_strings.push_back(string);
+	m_strings.emplace_back(envstr);
+}
+
+void EnvironmentStrings::Append(CString&& envstr)
+{
+	m_strings.push_back(std::move(envstr));
 }
 
 #ifdef WIN32
@@ -222,7 +214,7 @@ void ScriptController::ResetEnv()
 
 void ScriptController::SetEnvVar(const char* name, const char* value)
 {
-	m_environmentStrings.Append(CString::FormatStr("%s=%s", name, value).Unbind());
+	m_environmentStrings.Append(CString::FormatStr("%s=%s", name, value));
 }
 
 void ScriptController::SetIntEnvVar(const char* name, int value)

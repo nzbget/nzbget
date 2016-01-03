@@ -29,7 +29,7 @@
 class ParParser
 {
 public:
-	typedef std::deque<char*>		ParFileList;
+	typedef std::vector<CString>	ParFileList;
 
 	static bool			FindMainPars(const char* path, ParFileList* fileList);
 	static bool			ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks);

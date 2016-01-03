@@ -525,8 +525,7 @@ void FeedFilter::Term::FillWildMaskRefValues(const char* strValue, WildMask* mas
 
 	for (int i = refOffset; i < mask->GetMatchCount(); i++)
 	{
-		CString value(strValue + mask->GetMatchStart(i), mask->GetMatchLen(i));
-		m_refValues->push_back(value.Unbind());
+		m_refValues->emplace_back(strValue + mask->GetMatchStart(i), mask->GetMatchLen(i));
 	}
 }
 
@@ -539,8 +538,7 @@ void FeedFilter::Term::FillRegExRefValues(const char* strValue, RegEx* regEx)
 
 	for (int i = 1; i < regEx->GetMatchCount(); i++)
 	{
-		CString value(strValue + regEx->GetMatchStart(i), regEx->GetMatchLen(i));
-		m_refValues->push_back(value.Unbind());
+		m_refValues->emplace_back(strValue + regEx->GetMatchStart(i), regEx->GetMatchLen(i));
 	}
 }
 
@@ -576,11 +574,6 @@ FeedFilter::Rule::Rule()
 FeedFilter::Rule::~Rule()
 {
 	for (TermList::iterator it = m_terms.begin(); it != m_terms.end(); it++)
-	{
-		delete *it;
-	}
-
-	for (RefValues::iterator it = m_refValues.begin(); it != m_refValues.end(); it++)
 	{
 		delete *it;
 	}
@@ -858,10 +851,6 @@ bool FeedFilter::Rule::CompileTerm(char* termstr)
 
 bool FeedFilter::Rule::Match(FeedItemInfo* feedItemInfo)
 {
-	for (RefValues::iterator it = m_refValues.begin(); it != m_refValues.end(); it++)
-	{
-		delete *it;
-	}
 	m_refValues.clear();
 
 	if (!MatchExpression(feedItemInfo))

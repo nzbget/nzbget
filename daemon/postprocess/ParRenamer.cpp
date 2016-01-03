@@ -177,11 +177,9 @@ void ParRenamer::LoadParFiles(const char* destDir)
 
 	for (ParParser::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
 	{
-		char* parFilename = *it;
-		BString<1024> fullParFilename("%s%c%s", destDir, PATH_SEPARATOR, parFilename);
+		CString& parFilename = *it;
+		BString<1024> fullParFilename("%s%c%s", destDir, PATH_SEPARATOR, *parFilename);
 		LoadParFile(fullParFilename);
-
-		free(*it);
 	}
 }
 

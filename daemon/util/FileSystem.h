@@ -97,9 +97,9 @@ private:
 
 #ifdef DIRBROWSER_SNAPSHOT
 	bool				m_snapshot;
-	typedef std::deque<char*>	FileList;
-	FileList			m_snapshot;
-	FileList::iterator	m_itSnapshot;
+	typedef std::deque<CString>	FileList;
+	FileList			m_snapshotFiles;
+	FileList::iterator	m_snapshotIter;
 #endif
 
 	const char*			InternNext();

@@ -40,18 +40,17 @@ private:
 		upSevenZip
 	};
 
-	typedef std::deque<CString>		FileListBase;
+	typedef std::vector<CString>		FileListBase;
 	class FileList : public FileListBase
 	{
 	public:
 		bool			Exists(const char* filename);
 	};
 
-	typedef std::vector<char*>		ParamListBase;
+	typedef std::vector<CString>		ParamListBase;
 	class ParamList : public ParamListBase
 	{
 	public:
-						~ParamList();
 		bool			Exists(const char* param);
 	};
 

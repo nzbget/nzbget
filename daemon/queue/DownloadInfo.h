@@ -779,7 +779,7 @@ public:
 
 typedef std::vector<int> IdList;
 
-typedef std::vector<char*> NameList;
+typedef std::vector<CString> NameList;
 
 class DupInfo
 {

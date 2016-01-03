@@ -95,6 +95,17 @@ void BString<size>::FormatV(const char* format, va_list ap)
 	vsnprintf(m_data, size, format, ap);
 }
 
+bool CString::operator==(const CString& other)
+{
+	return (!m_data && !other.m_data) ||
+		(m_data && other.m_data && !strcmp(m_data, other.m_data));
+}
+
+bool CString::operator==(const char* other)
+{
+	return (!m_data && !other) ||
+		(m_data && other && !strcmp(m_data, other));
+}
 
 void CString::Set(const char* str, int len)
 {

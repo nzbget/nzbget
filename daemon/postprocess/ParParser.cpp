@@ -58,7 +58,7 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 			}
 			if (!exists)
 			{
-				fileList->push_back(strdup(filename));
+				fileList->emplace_back(filename);
 			}
 		}
 	}

@@ -34,7 +34,7 @@
 class FeedFilter
 {
 private:
-	typedef std::deque<char*> RefValues;
+	typedef std::vector<CString> RefValues;
 
 	enum ETermCommand
 	{

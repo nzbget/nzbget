@@ -165,6 +165,12 @@ TEST_CASE("CString", "[NString][Quick]")
 	REQUIRE(!strcmp(str9, " Long without without spaces"));
 	str9.Replace("without", "");
 	REQUIRE(!strcmp(str9, " Long   spaces"));
+
+	str8 = "test string";
+	str9 = "test string";
+	REQUIRE(str8 == str9);
+	bool eq = str8 == "test string";
+	REQUIRE(eq);
 }
 
 TEST_CASE("StringBuilder", "[NString][Quick]")

@@ -73,6 +73,8 @@ public:
 	CString(CString& other) = delete;
 	CString& operator=(CString&& other) { free(m_data); m_data = other.m_data; other.m_data = nullptr; return *this; }
 	CString& operator=(const char* str) { Set(str); return *this; }
+	bool operator==(const CString& other);
+	bool operator==(const char* other);
 	static CString FormatStr(const char* format, ...);
 	operator char*() const { return m_data; }
 	char* operator*() const { return m_data; }

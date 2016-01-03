@@ -33,38 +33,12 @@
 
 bool UnpackController::FileList::Exists(const char* filename)
 {
-	for (iterator it = begin(); it != end(); it++)
-	{
-		const char* filename1 = *it;
-		if (!strcmp(filename1, filename))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-UnpackController::ParamList::~ParamList()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		free(*it);
-	}
+	return std::find(begin(), end(), filename) != end();
 }
 
 bool UnpackController::ParamList::Exists(const char* param)
 {
-	for (iterator it = begin(); it != end(); it++)
-	{
-		char* param1 = *it;
-		if (!strcmp(param1, param))
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return std::find(begin(), end(), param) != end();
 }
 
 void UnpackController::StartJob(PostInfo* postInfo)
@@ -277,28 +251,28 @@ void UnpackController::ExecuteUnrar(const char* password)
 
 	if (!params.Exists("x") && !params.Exists("e"))
 	{
-		params.push_back(strdup("x"));
+		params.emplace_back("x");
 	}
 
-	params.push_back(strdup("-y"));
+	params.emplace_back("-y");
 
 	if (!Util::EmptyStr(password))
 	{
-		params.push_back(strdup(BString<1024>("-p%s", password)));
+		params.push_back(CString::FormatStr("-p%s", password));
 	}
 	else
 	{
-		params.push_back(strdup("-p-"));
+		params.emplace_back("-p-");
 	}
 
 	if (!params.Exists("-o+") && !params.Exists("-o-"))
 	{
-		params.push_back(strdup("-o+"));
+		params.emplace_back("-o+");
 	}
 
-	params.push_back(strdup(m_hasNonStdRarFiles ? "*.*" : "*.rar"));
-	params.push_back(strdup(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR))));
-	params.push_back(nullptr);
+	params.emplace_back(m_hasNonStdRarFiles ? "*.*" : "*.rar");
+	params.push_back(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR)));
+	params.emplace_back(nullptr);
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
 	SetLogPrefix("Unrar");
@@ -338,23 +312,23 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 
 	if (!params.Exists("x") && !params.Exists("e"))
 	{
-		params.push_back(strdup("x"));
+		params.emplace_back("x");
 	}
 
-	params.push_back(strdup("-y"));
+	params.emplace_back("-y");
 
 	if (!Util::EmptyStr(password))
 	{
-		params.push_back(strdup(BString<1024>("-p%s", password)));
+		params.push_back(CString::FormatStr("-p%s", password));
 	}
 	else
 	{
-		params.push_back(strdup("-p-"));
+		params.emplace_back("-p-");
 	}
 
-	params.push_back(strdup(BString<1024>("-o%s", *m_unpackDir)));
-	params.push_back(strdup(multiVolumes ? "*.7z.001" : "*.7z"));
-	params.push_back(nullptr);
+	params.push_back(CString::FormatStr("-o%s", *m_unpackDir));
+	params.emplace_back(multiVolumes ? "*.7z.001" : "*.7z");
+	params.emplace_back(nullptr);
 	SetArgs((const char**)&params.front(), false);
 	SetScript(params.at(0));
 	ResetEnv();
@@ -382,7 +356,7 @@ bool UnpackController::PrepareCmdParams(const char* command, ParamList* params, 
 {
 	if (FileSystem::FileExists(command))
 	{
-		params->push_back(strdup(command));
+		params->emplace_back(command);
 		return true;
 	}
 
@@ -397,7 +371,7 @@ bool UnpackController::PrepareCmdParams(const char* command, ParamList* params, 
 
 	for (char** argPtr = cmdArgs; *argPtr; argPtr++)
 	{
-		params->push_back(*argPtr);
+		params->emplace_back(*argPtr);
 	}
 	free(cmdArgs);
 
