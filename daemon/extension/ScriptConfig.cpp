@@ -142,10 +142,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 		CString optvalue;
 		if (g_Options->SplitOptionString(buf, optname, optvalue))
 		{
-			Options::OptEntry* optEntry = new Options::OptEntry();
-			optEntry->SetName(optname);
-			optEntry->SetValue(optvalue);
-			optEntries->push_back(optEntry);
+			optEntries->emplace_back(optname, optvalue);
 		}
 	}
 
@@ -194,7 +191,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 			CString optvalue;
 			if (g_Options->SplitOptionString(buf, optname, optvalue))
 			{
-				Options::OptEntry *optEntry = optEntries->FindOption(optname);
+				Options::OptEntry* optEntry = optEntries->FindOption(optname);
 				if (optEntry)
 				{
 					infile.Print("%s=%s\n", optEntry->GetName(), optEntry->GetValue());
@@ -211,11 +208,11 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	// write new options
 	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* optEntry = *it;
-		std::set<Options::OptEntry*>::iterator fit = writtenOptions.find(optEntry);
+		Options::OptEntry& optEntry = *it;
+		std::set<Options::OptEntry*>::iterator fit = writtenOptions.find(&optEntry);
 		if (fit == writtenOptions.end())
 		{
-			infile.Print("%s=%s\n", optEntry->GetName(), optEntry->GetValue());
+			infile.Print("%s=%s\n", optEntry.GetName(), optEntry.GetValue());
 		}
 	}
 

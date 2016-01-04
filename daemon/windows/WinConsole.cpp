@@ -830,9 +830,9 @@ void WinConsole::BuildMenu()
 	int index = 0;
 	for (Options::Categories::iterator it = g_Options->GetCategories()->begin(); it != g_Options->GetCategories()->end(); it++, index++)
 	{
-		Options::Category* category = *it;
+		Options::Category& category = *it;
 
-		BString<1024> caption("Category %i: %s", index + 1, category->GetName());
+		BString<1024> caption("Category %i: %s", index + 1, category.GetName());
 
 		MENUITEMINFO item;
 		ZeroMemory(&item, sizeof(MENUITEMINFO));
@@ -857,18 +857,18 @@ BOOL DeleteMenu(
 
 void WinConsole::ShowCategoryDir(int catIndex)
 {
-	Options::Category* category = g_Options->GetCategories()->at(catIndex);
+	Options::Category& category = g_Options->GetCategories()->at(catIndex);
 
 	BString<1024> destDir;
 
-	if (!Util::EmptyStr(category->GetDestDir()))
+	if (!Util::EmptyStr(category.GetDestDir()))
 	{
-		destDir.Format("%s", category->GetDestDir());
+		destDir.Format("%s", category.GetDestDir());
 	}
 	else
 	{
 		BString<1024> categoryDir;
-		categoryDir.Set(category->GetName());
+		categoryDir.Set(category.GetName());
 		FileSystem::MakeValidFilename(categoryDir, '_', true);
 
 		destDir.Format("%s%s", g_Options->GetDestDir(), *categoryDir);

@@ -853,7 +853,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 
 	int32* ids = (int32*)(trailingData + textLen);
 
-	for (int i = 0; i < idList->size(); i++)
+	for (int i = 0; i < (int)idList->size(); i++)
 	{
 		ids[i] = htonl(idList->at(i));
 	}

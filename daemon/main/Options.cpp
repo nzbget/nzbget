@@ -174,21 +174,6 @@ const char* PossibleConfigLocations[] =
 
 Options* g_Options = nullptr;
 
-Options::OptEntry::OptEntry()
-{
-	m_name = nullptr;
-	m_value = nullptr;
-	m_defValue = nullptr;
-	m_lineNo = 0;
-}
-
-Options::OptEntry::OptEntry(const char* name, const char* value)
-{
-	m_name = name;
-	m_value = value;
-	m_lineNo = 0;
-}
-
 void Options::OptEntry::SetValue(const char* value)
 {
 	m_value = value;
@@ -219,14 +204,6 @@ bool Options::OptEntry::Restricted()
 	return restricted;
 }
 
-Options::OptEntries::~OptEntries()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
 Options::OptEntry* Options::OptEntries::FindOption(const char* name)
 {
 	if (!name)
@@ -236,33 +213,16 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* name)
 
 	for (iterator it = begin(); it != end(); it++)
 	{
-		OptEntry* optEntry = *it;
-		if (!strcasecmp(optEntry->GetName(), name))
+		OptEntry& optEntry = *it;
+		if (!strcasecmp(optEntry.GetName(), name))
 		{
-			return optEntry;
+			return &optEntry;
 		}
 	}
 
 	return nullptr;
 }
 
-
-Options::Category::Category(const char* name, const char* destDir, bool unpack, const char* postScript)
-{
-	m_name = name;
-	m_destDir = destDir;
-	m_unpack = unpack;
-	m_postScript = postScript;
-}
-
-
-Options::Categories::~Categories()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
 
 Options::Category* Options::Categories::FindCategory(const char* name, bool searchAliases)
 {
@@ -273,10 +233,10 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 
 	for (iterator it = begin(); it != end(); it++)
 	{
-		Category* category = *it;
-		if (!strcasecmp(category->GetName(), name))
+		Category& category = *it;
+		if (!strcasecmp(category.GetName(), name))
 		{
-			return category;
+			return &category;
 		}
 	}
 
@@ -284,14 +244,14 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 	{
 		for (iterator it = begin(); it != end(); it++)
 		{
-			Category* category = *it;
-			for (NameList::iterator it2 = category->GetAliases()->begin(); it2 != category->GetAliases()->end(); it2++)
+			Category& category = *it;
+			for (NameList::iterator it2 = category.GetAliases()->begin(); it2 != category.GetAliases()->end(); it2++)
 			{
 				const char* alias = *it2;
 				WildMask mask(alias);
 				if (mask.Match(name))
 				{
-					return category;
+					return &category;
 				}
 			}
 		}
@@ -471,8 +431,8 @@ void Options::Dump()
 {
 	for (OptEntries::iterator it = m_optEntries.begin(); it != m_optEntries.end(); it++)
 	{
-		OptEntry* optEntry = *it;
-		printf("%s = \"%s\"\n", optEntry->GetName(), optEntry->GetValue());
+		OptEntry& optEntry = *it;
+		printf("%s = \"%s\"\n", optEntry.GetName(), optEntry.GetValue());
 	}
 }
 
@@ -966,9 +926,8 @@ void Options::SetOption(const char* optname, const char* value)
 	OptEntry* optEntry = FindOption(optname);
 	if (!optEntry)
 	{
-		optEntry = new OptEntry();
-		optEntry->SetName(optname);
-		m_optEntries.push_back(optEntry);
+		m_optEntries.emplace_back(optname, nullptr);
+		optEntry = &m_optEntries.back();
 	}
 
 	CString curvalue;
@@ -1161,8 +1120,8 @@ void Options::InitCategories()
 				CheckDir(destDir, BString<100>("Category%i.DestDir", n), m_destDir, false, false);
 			}
 
-			Category* category = new Category(nname, destDir, unpack, npostscript);
-			m_categories.push_back(category);
+			m_categories.emplace_back(nname, destDir, unpack, npostscript);
+			Category& category = m_categories.back();
 
 			// split Aliases into tokens and create items for each token
 			if (naliases)
@@ -1170,7 +1129,7 @@ void Options::InitCategories()
 				Tokenizer tok(naliases, ",;");
 				while (const char* aliasName = tok.Next())
 				{
-					category->GetAliases()->push_back(aliasName);
+					category.GetAliases()->push_back(aliasName);
 				}
 			}
 		}

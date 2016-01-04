@@ -96,15 +96,15 @@ public:
 		CString			m_name;
 		CString			m_value;
 		CString			m_defValue;
-		int				m_lineNo;
+		int				m_lineNo = 0;
 
 		void			SetLineNo(int lineNo) { m_lineNo = lineNo; }
 
 		friend class Options;
 
 	public:
-						OptEntry();
-						OptEntry(const char* name, const char* value);
+						OptEntry(const char* name, const char* value) :
+							m_name(name), m_value(value) {}
 		void			SetName(const char* name) { m_name = name; }
 		const char*		GetName() { return m_name; }
 		void			SetValue(const char* value);
@@ -114,12 +114,11 @@ public:
 		bool			Restricted();
 	};
 
-	typedef std::vector<OptEntry*>  OptEntriesBase;
+	typedef std::deque<OptEntry>  OptEntriesBase;
 
 	class OptEntries: public OptEntriesBase
 	{
 	public:
-						~OptEntries();
 		OptEntry*		FindOption(const char* name);
 	};
 
@@ -136,7 +135,8 @@ public:
 		NameList		m_aliases;
 
 	public:
-						Category(const char* name, const char* destDir, bool unpack, const char* postScript);
+						Category(const char* name, const char* destDir, bool unpack, const char* postScript) :
+							m_name(name), m_destDir(destDir), m_unpack(unpack), m_postScript(postScript) {}
 		const char*		GetName() { return m_name; }
 		const char*		GetDestDir() { return m_destDir; }
 		bool			GetUnpack() { return m_unpack; }
@@ -144,12 +144,11 @@ public:
 		NameList*		GetAliases() { return &m_aliases; }
 	};
 
-	typedef std::vector<Category*>  CategoriesBase;
+	typedef std::deque<Category>  CategoriesBase;
 
 	class Categories: public CategoriesBase
 	{
 	public:
-						~Categories();
 		Category*		FindCategory(const char* name, bool searchAliases);
 	};
 

@@ -2661,14 +2661,14 @@ void ConfigXmlCommand::Execute()
 
 	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* optEntry = *it;
+		Options::OptEntry& optEntry = *it;
 
 		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
-			optEntry->Restricted() ? "***" : optEntry->GetValue());
+			optEntry.Restricted() ? "***" : optEntry.GetValue());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
-			*EncodeStr(optEntry->GetName()), *xmlValue);
+			*EncodeStr(optEntry.GetName()), *xmlValue);
 	}
 
 	g_Options->UnlockOptEntries();
@@ -2705,14 +2705,14 @@ void LoadConfigXmlCommand::Execute()
 
 	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* optEntry = *it;
+		Options::OptEntry& optEntry = *it;
 
 		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
-			optEntry->Restricted() ? "***" : optEntry->GetValue());
+			optEntry.Restricted() ? "***" : optEntry.GetValue());
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
-			*EncodeStr(optEntry->GetName()), *xmlValue);
+			*EncodeStr(optEntry.GetName()), *xmlValue);
 	}
 
 	delete optEntries;
@@ -2734,7 +2734,7 @@ void SaveConfigXmlCommand::Execute()
 	{
 		DecodeStr(name);
 		DecodeStr(value);
-		optEntries->push_back(new Options::OptEntry(name, value));
+		optEntries->emplace_back(name, value);
 	}
 
 	// save to config file

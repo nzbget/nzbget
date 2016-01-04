@@ -236,15 +236,16 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 
 	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
 	{
-		Options::OptEntry* optEntry = *it;
+		Options::OptEntry& optEntry = *it;
 
-		if (stripPrefix && !strncmp(optEntry->GetName(), stripPrefix, prefixLen) && (int)strlen(optEntry->GetName()) > prefixLen)
+		if (stripPrefix && !strncmp(optEntry.GetName(), stripPrefix, prefixLen) &&
+			(int)strlen(optEntry.GetName()) > prefixLen)
 		{
-			SetEnvVarSpecial("NZBPO", optEntry->GetName() + prefixLen, optEntry->GetValue());
+			SetEnvVarSpecial("NZBPO", optEntry.GetName() + prefixLen, optEntry.GetValue());
 		}
 		else if (!stripPrefix)
 		{
-			SetEnvVarSpecial("NZBOP", optEntry->GetName(), optEntry->GetValue());
+			SetEnvVarSpecial("NZBOP", optEntry.GetName(), optEntry.GetValue());
 		}
 	}
 
