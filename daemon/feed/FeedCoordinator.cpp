@@ -420,16 +420,16 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 
 	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
 	{
-		FeedItemInfo* feedItemInfo = *it;
-		feedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
-		feedItemInfo->SetMatchRule(0);
-		feedItemInfo->SetPauseNzb(feedInfo->GetPauseNzb());
-		feedItemInfo->SetPriority(feedInfo->GetPriority());
-		feedItemInfo->SetAddCategory(feedInfo->GetCategory());
-		feedItemInfo->SetDupeScore(0);
-		feedItemInfo->SetDupeMode(dmScore);
-		feedItemInfo->SetFeedFilterHelper(&m_filterHelper);
-		feedItemInfo->BuildDupeKey(nullptr, nullptr, nullptr, nullptr);
+		FeedItemInfo& feedItemInfo = *it;
+		feedItemInfo.SetMatchStatus(FeedItemInfo::msAccepted);
+		feedItemInfo.SetMatchRule(0);
+		feedItemInfo.SetPauseNzb(feedInfo->GetPauseNzb());
+		feedItemInfo.SetPriority(feedInfo->GetPriority());
+		feedItemInfo.SetAddCategory(feedInfo->GetCategory());
+		feedItemInfo.SetDupeScore(0);
+		feedItemInfo.SetDupeMode(dmScore);
+		feedItemInfo.SetFeedFilterHelper(&m_filterHelper);
+		feedItemInfo.BuildDupeKey(nullptr, nullptr, nullptr, nullptr);
 		if (feedFilter)
 		{
 			feedFilter->Match(feedItemInfo);
@@ -450,10 +450,10 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 
 	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
 	{
-		FeedItemInfo* feedItemInfo = *it;
-		if (feedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
+		FeedItemInfo& feedItemInfo = *it;
+		if (feedItemInfo.GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
-			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo->GetUrl());
+			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo.GetUrl());
 			FeedHistoryInfo::EStatus status = FeedHistoryInfo::hsUnknown;
 			if (firstFetch && feedInfo->GetBacklog())
 			{
@@ -473,7 +473,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 			}
 			else
 			{
-				m_feedHistory.Add(feedItemInfo->GetUrl(), status, Util::CurrentTime());
+				m_feedHistory.emplace_back(feedItemInfo.GetUrl(), status, Util::CurrentTime());
 			}
 		}
 	}
@@ -488,17 +488,17 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 	}
 }
 
-NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedItemInfo)
+NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedItemInfo)
 {
-	debug("Download %s from %s", feedItemInfo->GetUrl(), feedInfo->GetName());
+	debug("Download %s from %s", feedItemInfo.GetUrl(), feedInfo->GetName());
 
 	NzbInfo* nzbInfo = new NzbInfo();
 	nzbInfo->SetKind(NzbInfo::nkUrl);
 	nzbInfo->SetFeedId(feedInfo->GetId());
-	nzbInfo->SetUrl(feedItemInfo->GetUrl());
+	nzbInfo->SetUrl(feedItemInfo.GetUrl());
 
 	// add .nzb-extension if not present
-	BString<1024> nzbName = feedItemInfo->GetFilename();
+	BString<1024> nzbName = feedItemInfo.GetFilename();
 	char* ext = strrchr(nzbName, '.');
 	if (ext && !strcasecmp(ext, ".nzb"))
 	{
@@ -511,12 +511,12 @@ NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo* feedIt
 		nzbInfo->SetFilename(nzbName2);
 	}
 
-	nzbInfo->SetCategory(feedItemInfo->GetAddCategory());
-	nzbInfo->SetPriority(feedItemInfo->GetPriority());
-	nzbInfo->SetAddUrlPaused(feedItemInfo->GetPauseNzb());
-	nzbInfo->SetDupeKey(feedItemInfo->GetDupeKey());
-	nzbInfo->SetDupeScore(feedItemInfo->GetDupeScore());
-	nzbInfo->SetDupeMode(feedItemInfo->GetDupeMode());
+	nzbInfo->SetCategory(feedItemInfo.GetAddCategory());
+	nzbInfo->SetPriority(feedItemInfo.GetPriority());
+	nzbInfo->SetAddUrlPaused(feedItemInfo.GetPauseNzb());
+	nzbInfo->SetDupeKey(feedItemInfo.GetDupeKey());
+	nzbInfo->SetDupeScore(feedItemInfo.GetDupeScore());
+	nzbInfo->SetDupeMode(feedItemInfo.GetDupeMode());
 
 	return nzbInfo;
 }
@@ -617,12 +617,12 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 
 		for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
 		{
-			FeedItemInfo* feedItemInfo = *it;
-			feedItemInfo->SetStatus(firstFetch && feedInfo->GetBacklog() ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
-			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo->GetUrl());
+			FeedItemInfo& feedItemInfo = *it;
+			feedItemInfo.SetStatus(firstFetch && feedInfo->GetBacklog() ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
+			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo.GetUrl());
 			if (feedHistoryInfo)
 			{
-				feedItemInfo->SetStatus((FeedItemInfo::EStatus)feedHistoryInfo->GetStatus());
+				feedItemInfo.SetStatus((FeedItemInfo::EStatus)feedHistoryInfo->GetStatus());
 			}
 		}
 	}
@@ -675,7 +675,7 @@ void FeedCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
 		}
 		else
 		{
-			m_feedHistory.Add(queueAspect->nzbInfo->GetUrl(), FeedHistoryInfo::hsFetched, Util::CurrentTime());
+			m_feedHistory.emplace_back(queueAspect->nzbInfo->GetUrl(), FeedHistoryInfo::hsFetched, Util::CurrentTime());
 		}
 		m_save = true;
 		m_downloadsMutex.Unlock();
@@ -726,11 +726,10 @@ void FeedCoordinator::CleanupHistory()
 	int i = 0;
 	for (FeedHistory::iterator it = m_feedHistory.begin(); it != m_feedHistory.end(); )
 	{
-		FeedHistoryInfo* feedHistoryInfo = *it;
-		if (feedHistoryInfo->GetLastSeen() < borderDate)
+		FeedHistoryInfo& feedHistoryInfo = *it;
+		if (feedHistoryInfo.GetLastSeen() < borderDate)
 		{
-			detail("Deleting %s from feed history", feedHistoryInfo->GetUrl());
-			delete feedHistoryInfo;
+			detail("Deleting %s from feed history", feedHistoryInfo.GetUrl());
 			m_feedHistory.erase(it);
 			it = m_feedHistory.begin() + i;
 			m_save = true;

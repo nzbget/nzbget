@@ -123,18 +123,17 @@ public:
 		CString			m_name;
 		CString			m_value;
 	public:
-						Attr(const char* name, const char* value);
+						Attr(const char* name, const char* value) :
+							m_name(name ? name : ""), m_value(value ? value : "") {}
 		const char*		GetName() { return m_name; }
 		const char*		GetValue() { return m_value; }
 	};
 
-	typedef std::deque<Attr*>  AttributesBase;
+	typedef std::deque<Attr>  AttributesBase;
 
 	class Attributes: public AttributesBase
 	{
 	public:
-						~Attributes();
-		void			Add(const char* name, const char* value);
 		Attr*			Find(const char* name);
 	};
 
@@ -173,6 +172,7 @@ private:
 
 public:
 						FeedItemInfo();
+						FeedItemInfo(FeedItemInfo&&) = delete; // catch performance issues
 	void				SetFeedFilterHelper(FeedFilterHelper* feedFilterHelper) { m_feedFilterHelper = feedFilterHelper; }
 	const char*			GetTitle() { return m_title; }
 	void				SetTitle(const char* title) { m_title = title; }
@@ -226,7 +226,7 @@ public:
 	Attributes*			GetAttributes() { return &m_attributes; }
 };
 
-typedef std::deque<FeedItemInfo*>	FeedItemInfosBase;
+typedef std::deque<FeedItemInfo>	FeedItemInfosBase;
 
 class FeedItemInfos : public FeedItemInfosBase
 {
@@ -235,10 +235,8 @@ private:
 
 public:
 						FeedItemInfos();
-						~FeedItemInfos();
 	void				Retain();
 	void				Release();
-	void				Add(FeedItemInfo* feedItemInfo);
 };
 
 class FeedHistoryInfo
@@ -257,7 +255,8 @@ private:
 	time_t				m_lastSeen;
 
 public:
-						FeedHistoryInfo(const char* url, EStatus status, time_t lastSeen);
+						FeedHistoryInfo(const char* url, EStatus status, time_t lastSeen) :
+							m_url(url), m_status(status), m_lastSeen(lastSeen) {}
 	const char*			GetUrl() { return m_url; }
 	EStatus				GetStatus() { return m_status; }
 	void				SetStatus(EStatus Status) { m_status = Status; }
@@ -265,14 +264,11 @@ public:
 	void				SetLastSeen(time_t lastSeen) { m_lastSeen = lastSeen; }
 };
 
-typedef std::deque<FeedHistoryInfo*> FeedHistoryBase;
+typedef std::deque<FeedHistoryInfo> FeedHistoryBase;
 
 class FeedHistory : public FeedHistoryBase
 {
 public:
-						~FeedHistory();
-	void				Clear();
-	void				Add(const char* url, FeedHistoryInfo::EStatus status, time_t lastSeen);
 	void				Remove(const char* url);
 	FeedHistoryInfo*	Find(const char* url);
 };

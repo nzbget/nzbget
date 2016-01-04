@@ -81,7 +81,7 @@ private:
 						~Term();
 		void			SetRefValues(RefValues* refValues) { m_refValues = refValues; }
 		bool			Compile(char* token);
-		bool			Match(FeedItemInfo* feedItemInfo);
+		bool			Match(FeedItemInfo& feedItemInfo);
 		ETermCommand	GetCommand() { return m_command; }
 	};
 
@@ -139,7 +139,7 @@ private:
 		char*			CompileCommand(char* rule);
 		char*			CompileOptions(char* rule);
 		bool			CompileTerm(char* term);
-		bool			MatchExpression(FeedItemInfo* feedItemInfo);
+		bool			MatchExpression(FeedItemInfo& feedItemInfo);
 
 	public:
 						Rule();
@@ -173,9 +173,9 @@ private:
 		bool			HasTvdbId() { return m_hasTvdbId; }
 		bool			HasTvmazeId() { return m_hasTvmazeId; }
 		bool			HasSeries() { return m_hasSeries; }
-		bool			Match(FeedItemInfo* feedItemInfo);
-		void			ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, const char* patStr);
-		const char*		GetRefValue(FeedItemInfo* feedItemInfo, const char* varName);
+		bool			Match(FeedItemInfo& feedItemInfo);
+		void			ExpandRefValues(FeedItemInfo& feedItemInfo, CString* destStr, const char* patStr);
+		const char*		GetRefValue(FeedItemInfo& feedItemInfo, const char* varName);
 	};
 
 	typedef std::deque<Rule> RuleList;
@@ -185,11 +185,11 @@ private:
 
 	void				Compile(const char* filter);
 	void				CompileRule(char* rule);
-	void				ApplyOptions(Rule& rule, FeedItemInfo* feedItemInfo);
+	void				ApplyOptions(Rule& rule, FeedItemInfo& feedItemInfo);
 
 public:
 						FeedFilter(const char* filter);
-	void				Match(FeedItemInfo* feedItemInfo);
+	void				Match(FeedItemInfo& feedItemInfo);
 };
 
 #endif

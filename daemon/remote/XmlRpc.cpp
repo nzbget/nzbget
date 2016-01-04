@@ -2947,23 +2947,23 @@ void ViewFeedXmlCommand::Execute()
 
 	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
 	{
-		FeedItemInfo* feedItemInfo = *it;
+		FeedItemInfo& feedItemInfo = *it;
 
-		if (includeNonMatching || feedItemInfo->GetMatchStatus() == FeedItemInfo::msAccepted)
+		if (includeNonMatching || feedItemInfo.GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
 			uint32 sizeHi, sizeLo;
-			Util::SplitInt64(feedItemInfo->GetSize(), &sizeHi, &sizeLo);
-			int sizeMB = (int)(feedItemInfo->GetSize() / 1024 / 1024);
+			Util::SplitInt64(feedItemInfo.GetSize(), &sizeHi, &sizeLo);
+			int sizeMB = (int)(feedItemInfo.GetSize() / 1024 / 1024);
 
 			AppendCondResponse(",\n", IsJson() && index++ > 0);
 			AppendFmtResponse(IsJson() ? JSON_FEED_ITEM : XML_FEED_ITEM,
-				*EncodeStr(feedItemInfo->GetTitle()), *EncodeStr(feedItemInfo->GetFilename()),
-				*EncodeStr(feedItemInfo->GetUrl()), sizeLo, sizeHi, sizeMB,
-				*EncodeStr(feedItemInfo->GetCategory()), *EncodeStr(feedItemInfo->GetAddCategory()),
-				BoolToStr(feedItemInfo->GetPauseNzb()), feedItemInfo->GetPriority(), feedItemInfo->GetTime(),
-				matchStatusType[feedItemInfo->GetMatchStatus()], feedItemInfo->GetMatchRule(),
-				*EncodeStr(feedItemInfo->GetDupeKey()), feedItemInfo->GetDupeScore(),
-				dupeModeType[feedItemInfo->GetDupeMode()], statusType[feedItemInfo->GetStatus()]);
+				*EncodeStr(feedItemInfo.GetTitle()), *EncodeStr(feedItemInfo.GetFilename()),
+				*EncodeStr(feedItemInfo.GetUrl()), sizeLo, sizeHi, sizeMB,
+				*EncodeStr(feedItemInfo.GetCategory()), *EncodeStr(feedItemInfo.GetAddCategory()),
+				BoolToStr(feedItemInfo.GetPauseNzb()), feedItemInfo.GetPriority(), feedItemInfo.GetTime(),
+				matchStatusType[feedItemInfo.GetMatchStatus()], feedItemInfo.GetMatchRule(),
+				*EncodeStr(feedItemInfo.GetDupeKey()), feedItemInfo.GetDupeScore(),
+				dupeModeType[feedItemInfo.GetDupeMode()], statusType[feedItemInfo.GetStatus()]);
 		}
 	}
 

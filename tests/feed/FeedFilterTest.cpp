@@ -35,7 +35,7 @@ void TestFilter(FeedItemInfo* feedItemInfo, const char* filterDef, FeedItemInfo:
 	feedItemInfo->SetMatchRule(0);
 
 	FeedFilter filter(filterDef);
-	filter.Match(feedItemInfo);
+	filter.Match(*feedItemInfo);
 
 	INFO(filterDef);
 	REQUIRE(feedItemInfo->GetMatchStatus() == expectedMatch);

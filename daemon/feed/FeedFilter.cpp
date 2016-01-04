@@ -44,12 +44,12 @@ FeedFilter::Term::~Term()
 	delete m_regEx;
 }
 
-bool FeedFilter::Term::Match(FeedItemInfo* feedItemInfo)
+bool FeedFilter::Term::Match(FeedItemInfo& feedItemInfo)
 {
 	const char* strValue = nullptr;
 	int64 intValue = 0;
 
-	if (!GetFieldData(m_field, feedItemInfo, &strValue, &intValue))
+	if (!GetFieldData(m_field, &feedItemInfo, &strValue, &intValue))
 	{
 		return false;
 	}
@@ -837,7 +837,7 @@ bool FeedFilter::Rule::CompileTerm(char* termstr)
 	return ok;
 }
 
-bool FeedFilter::Rule::Match(FeedItemInfo* feedItemInfo)
+bool FeedFilter::Rule::Match(FeedItemInfo& feedItemInfo)
 {
 	m_refValues.clear();
 
@@ -862,7 +862,7 @@ bool FeedFilter::Rule::Match(FeedItemInfo* feedItemInfo)
 	return true;
 }
 
-bool FeedFilter::Rule::MatchExpression(FeedItemInfo* feedItemInfo)
+bool FeedFilter::Rule::MatchExpression(FeedItemInfo& feedItemInfo)
 {
 	char* expr = (char*)malloc(m_terms.size() + 1);
 
@@ -917,7 +917,7 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* feedItemInfo)
 	return match;
 }
 
-void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, CString* destStr, const char* patStr)
+void FeedFilter::Rule::ExpandRefValues(FeedItemInfo& feedItemInfo, CString* destStr, const char* patStr)
 {
 	CString curvalue = patStr;
 
@@ -951,17 +951,17 @@ void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* feedItemInfo, CString* dest
 	*destStr = std::move(curvalue);
 }
 
-const char* FeedFilter::Rule::GetRefValue(FeedItemInfo* feedItemInfo, const char* varName)
+const char* FeedFilter::Rule::GetRefValue(FeedItemInfo& feedItemInfo, const char* varName)
 {
 	if (!strcasecmp(varName, "season"))
 	{
-		feedItemInfo->GetSeasonNum(); // needed to parse title
-		return feedItemInfo->GetSeason() ? feedItemInfo->GetSeason() : "";
+		feedItemInfo.GetSeasonNum(); // needed to parse title
+		return feedItemInfo.GetSeason() ? feedItemInfo.GetSeason() : "";
 	}
 	else if (!strcasecmp(varName, "episode"))
 	{
-		feedItemInfo->GetEpisodeNum(); // needed to parse title
-		return feedItemInfo->GetEpisode() ? feedItemInfo->GetEpisode() : "";
+		feedItemInfo.GetEpisodeNum(); // needed to parse title
+		return feedItemInfo.GetEpisode() ? feedItemInfo.GetEpisode() : "";
 	}
 
 	int index = atoi(varName) - 1;
@@ -1005,7 +1005,7 @@ void FeedFilter::CompileRule(char* rulestr)
 	m_rules.back().Compile(rulestr);
 }
 
-void FeedFilter::Match(FeedItemInfo* feedItemInfo)
+void FeedFilter::Match(FeedItemInfo& feedItemInfo)
 {
 	int index = 0;
 	for (RuleList::iterator it = m_rules.begin(); it != m_rules.end(); it++)
@@ -1021,8 +1021,8 @@ void FeedFilter::Match(FeedItemInfo* feedItemInfo)
 				case frOptions:
 					if (match)
 					{
-						feedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
-						feedItemInfo->SetMatchRule(index);
+						feedItemInfo.SetMatchStatus(FeedItemInfo::msAccepted);
+						feedItemInfo.SetMatchRule(index);
 						ApplyOptions(rule, feedItemInfo);
 						if (rule.GetCommand() == frAccept)
 						{
@@ -1034,8 +1034,8 @@ void FeedFilter::Match(FeedItemInfo* feedItemInfo)
 				case frReject:
 					if (match)
 					{
-						feedItemInfo->SetMatchStatus(FeedItemInfo::msRejected);
-						feedItemInfo->SetMatchRule(index);
+						feedItemInfo.SetMatchStatus(FeedItemInfo::msRejected);
+						feedItemInfo.SetMatchRule(index);
 						return;
 					}
 					break;
@@ -1043,8 +1043,8 @@ void FeedFilter::Match(FeedItemInfo* feedItemInfo)
 				case frRequire:
 					if (!match)
 					{
-						feedItemInfo->SetMatchStatus(FeedItemInfo::msRejected);
-						feedItemInfo->SetMatchRule(index);
+						feedItemInfo.SetMatchStatus(FeedItemInfo::msRejected);
+						feedItemInfo.SetMatchRule(index);
 						return;
 					}
 					break;
@@ -1055,50 +1055,50 @@ void FeedFilter::Match(FeedItemInfo* feedItemInfo)
 		}
 	}
 
-	feedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
-	feedItemInfo->SetMatchRule(0);
+	feedItemInfo.SetMatchStatus(FeedItemInfo::msIgnored);
+	feedItemInfo.SetMatchRule(0);
 }
 
-void FeedFilter::ApplyOptions(Rule& rule, FeedItemInfo* feedItemInfo)
+void FeedFilter::ApplyOptions(Rule& rule, FeedItemInfo& feedItemInfo)
 {
 	if (rule.HasPause())
 	{
-		feedItemInfo->SetPauseNzb(rule.GetPause());
+		feedItemInfo.SetPauseNzb(rule.GetPause());
 	}
 	if (rule.HasCategory())
 	{
-		feedItemInfo->SetAddCategory(rule.GetCategory());
+		feedItemInfo.SetAddCategory(rule.GetCategory());
 	}
 	if (rule.HasPriority())
 	{
-		feedItemInfo->SetPriority(rule.GetPriority());
+		feedItemInfo.SetPriority(rule.GetPriority());
 	}
 	if (rule.HasAddPriority())
 	{
-		feedItemInfo->SetPriority(feedItemInfo->GetPriority() + rule.GetAddPriority());
+		feedItemInfo.SetPriority(feedItemInfo.GetPriority() + rule.GetAddPriority());
 	}
 	if (rule.HasDupeScore())
 	{
-		feedItemInfo->SetDupeScore(rule.GetDupeScore());
+		feedItemInfo.SetDupeScore(rule.GetDupeScore());
 	}
 	if (rule.HasAddDupeScore())
 	{
-		feedItemInfo->SetDupeScore(feedItemInfo->GetDupeScore() + rule.GetAddDupeScore());
+		feedItemInfo.SetDupeScore(feedItemInfo.GetDupeScore() + rule.GetAddDupeScore());
 	}
 	if (rule.HasRageId() || rule.HasTvdbId() || rule.HasTvmazeId() || rule.HasSeries())
 	{
-		feedItemInfo->BuildDupeKey(rule.GetRageId(), rule.GetTvdbId(), rule.GetTvmazeId(), rule.GetSeries());
+		feedItemInfo.BuildDupeKey(rule.GetRageId(), rule.GetTvdbId(), rule.GetTvmazeId(), rule.GetSeries());
 	}
 	if (rule.HasDupeKey())
 	{
-		feedItemInfo->SetDupeKey(rule.GetDupeKey());
+		feedItemInfo.SetDupeKey(rule.GetDupeKey());
 	}
 	if (rule.HasAddDupeKey())
 	{
-		feedItemInfo->AppendDupeKey(rule.GetAddDupeKey());
+		feedItemInfo.AppendDupeKey(rule.GetAddDupeKey());
 	}
 	if (rule.HasDupeMode())
 	{
-		feedItemInfo->SetDupeMode(rule.GetDupeMode());
+		feedItemInfo.SetDupeMode(rule.GetDupeMode());
 	}
 }

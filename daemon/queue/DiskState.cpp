@@ -2212,10 +2212,10 @@ bool DiskState::SaveFeedHistory(FeedHistory* feedHistory, DiskFile& outfile)
 	outfile.Print("%i\n", (int)feedHistory->size());
 	for (FeedHistory::iterator it = feedHistory->begin(); it != feedHistory->end(); it++)
 	{
-		FeedHistoryInfo* feedHistoryInfo = *it;
+		FeedHistoryInfo& feedHistoryInfo = *it;
 
-		outfile.Print("%i,%i\n", (int)feedHistoryInfo->GetStatus(), (int)feedHistoryInfo->GetLastSeen());
-		outfile.Print("%s\n", feedHistoryInfo->GetUrl());
+		outfile.Print("%i,%i\n", (int)feedHistoryInfo.GetStatus(), (int)feedHistoryInfo.GetLastSeen());
+		outfile.Print("%s\n", feedHistoryInfo.GetUrl());
 	}
 
 	return true;
@@ -2238,7 +2238,7 @@ bool DiskState::LoadFeedHistory(FeedHistory* feedHistory, DiskFile& infile, int 
 		if (!infile.ReadLine(url, sizeof(url))) goto error;
 		if (url[0] != 0) url[strlen(url)-1] = 0; // remove traling '\n'
 
-		feedHistory->Add(url, (FeedHistoryInfo::EStatus)(status), (time_t)(lastSeen));
+		feedHistory->emplace_back(url, (FeedHistoryInfo::EStatus)(status), (time_t)(lastSeen));
 	}
 
 	return true;

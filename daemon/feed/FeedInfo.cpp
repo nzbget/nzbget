@@ -49,34 +49,14 @@ FeedInfo::FeedInfo(int id, const char* name, const char* url, bool backlog, int 
 }
 
 
-FeedItemInfo::Attr::Attr(const char* name, const char* value)
-{
-	m_name = name ? name : "";
-	m_value = value ? value : "";
-}
-
-
-FeedItemInfo::Attributes::~Attributes()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
-void FeedItemInfo::Attributes::Add(const char* name, const char* value)
-{
-	push_back(new Attr(name, value));
-}
-
 FeedItemInfo::Attr* FeedItemInfo::Attributes::Find(const char* name)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		Attr* attr = *it;
-		if (!strcasecmp(attr->GetName(), name))
+		Attr& attr = *it;
+		if (!strcasecmp(attr.GetName(), name))
 		{
-			return attr;
+			return &attr;
 		}
 	}
 
@@ -227,41 +207,13 @@ const char* FeedItemInfo::GetDupeStatus()
 }
 
 
-FeedHistoryInfo::FeedHistoryInfo(const char* url, FeedHistoryInfo::EStatus status, time_t lastSeen)
-{
-	m_url = url;
-	m_status = status;
-	m_lastSeen = lastSeen;
-}
-
-
-FeedHistory::~FeedHistory()
-{
-	Clear();
-}
-
-void FeedHistory::Clear()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-	clear();
-}
-
-void FeedHistory::Add(const char* url, FeedHistoryInfo::EStatus status, time_t lastSeen)
-{
-	push_back(new FeedHistoryInfo(url, status, lastSeen));
-}
-
 void FeedHistory::Remove(const char* url)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		FeedHistoryInfo* feedHistoryInfo = *it;
-		if (!strcmp(feedHistoryInfo->GetUrl(), url))
+		FeedHistoryInfo& feedHistoryInfo = *it;
+		if (!strcmp(feedHistoryInfo.GetUrl(), url))
 		{
-			delete feedHistoryInfo;
 			erase(it);
 			break;
 		}
@@ -272,10 +224,10 @@ FeedHistoryInfo* FeedHistory::Find(const char* url)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		FeedHistoryInfo* feedHistoryInfo = *it;
-		if (!strcmp(feedHistoryInfo->GetUrl(), url))
+		FeedHistoryInfo& feedHistoryInfo = *it;
+		if (!strcmp(feedHistoryInfo.GetUrl(), url))
 		{
-			return feedHistoryInfo;
+			return &feedHistoryInfo;
 		}
 	}
 
@@ -290,16 +242,6 @@ FeedItemInfos::FeedItemInfos()
 	m_refCount = 0;
 }
 
-FeedItemInfos::~FeedItemInfos()
-{
-	debug("Destroing FeedItemInfos");
-
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
 void FeedItemInfos::Retain()
 {
 	m_refCount++;
@@ -312,9 +254,4 @@ void FeedItemInfos::Release()
 	{
 		delete this;
 	}
-}
-
-void FeedItemInfos::Add(FeedItemInfo* feedItemInfo)
-{
-	push_back(feedItemInfo);
 }

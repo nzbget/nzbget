@@ -36,8 +36,7 @@ private:
 	CString				m_fileName;
 
 						FeedFile(const char* fileName);
-	void				AddItem(FeedItemInfo* feedItemInfo);
-	void				ParseSubject(FeedItemInfo* feedItemInfo);
+	void				ParseSubject(FeedItemInfo& feedItemInfo);
 #ifdef WIN32
 	bool 				ParseFeed(IUnknown* nzb);
 	static void			EncodeUrl(const char* filename, char* url, int bufLen);
