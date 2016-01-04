@@ -58,7 +58,7 @@ private:
 		ETermCommand	m_command;
 		CString			m_param;
 		int64			m_intParam;
-		double			m_fFloatParam;
+		double			m_floatParam;
 		bool			m_float;
 		RegEx*			m_regEx;
 		RefValues*		m_refValues;
@@ -77,6 +77,7 @@ private:
 
 	public:
 						Term();
+						Term(Term&&) = delete; // catch performance issues
 						~Term();
 		void			SetRefValues(RefValues* refValues) { m_refValues = refValues; }
 		bool			Compile(char* token);
@@ -84,7 +85,7 @@ private:
 		ETermCommand	GetCommand() { return m_command; }
 	};
 
-	typedef std::deque<Term*> TermList;
+	typedef std::deque<Term> TermList;
 
 	enum ERuleCommand
 	{
@@ -142,7 +143,7 @@ private:
 
 	public:
 						Rule();
-						~Rule();
+						Rule(Rule&&) = delete; // catch performance issues
 		void			Compile(char* rule);
 		bool			IsValid() { return m_isValid; }
 		ERuleCommand	GetCommand() { return m_command; }
@@ -177,18 +178,17 @@ private:
 		const char*		GetRefValue(FeedItemInfo* feedItemInfo, const char* varName);
 	};
 
-	typedef std::deque<Rule*> RuleList;
+	typedef std::deque<Rule> RuleList;
 
 private:
 	RuleList			m_rules;
 
 	void				Compile(const char* filter);
 	void				CompileRule(char* rule);
-	void				ApplyOptions(Rule* rule, FeedItemInfo* feedItemInfo);
+	void				ApplyOptions(Rule& rule, FeedItemInfo* feedItemInfo);
 
 public:
 						FeedFilter(const char* filter);
-						~FeedFilter();
 	void				Match(FeedItemInfo* feedItemInfo);
 };
 

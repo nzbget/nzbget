@@ -34,7 +34,7 @@ FeedFilter::Term::Term()
 {
 	m_float = false;
 	m_intParam = 0;
-	m_fFloatParam = 0.0;
+	m_floatParam = 0.0;
 	m_regEx = nullptr;
 	m_refValues = nullptr;
 }
@@ -90,19 +90,19 @@ bool FeedFilter::Term::MatchValue(const char* strValue, int64 intValue)
 			return MatchRegex(strValue);
 
 		case fcEqual:
-			return m_float ? fFloatValue == m_fFloatParam : intValue == m_intParam;
+			return m_float ? fFloatValue == m_floatParam : intValue == m_intParam;
 
 		case fcLess:
-			return m_float ? fFloatValue < m_fFloatParam : intValue < m_intParam;
+			return m_float ? fFloatValue < m_floatParam : intValue < m_intParam;
 
 		case fcLessEqual:
-			return m_float ? fFloatValue <= m_fFloatParam : intValue <= m_intParam;
+			return m_float ? fFloatValue <= m_floatParam : intValue <= m_intParam;
 
 		case fcGreater:
-			return m_float ? fFloatValue > m_fFloatParam : intValue > m_intParam;
+			return m_float ? fFloatValue > m_floatParam : intValue > m_intParam;
 
 		case fcGreaterEqual:
-			return m_float ? fFloatValue >= m_fFloatParam : intValue >= m_intParam;
+			return m_float ? fFloatValue >= m_floatParam : intValue >= m_intParam;
 
 		default:
 			return false;
@@ -502,8 +502,8 @@ bool FeedFilter::Term::ParseAgeParam(const char* param)
 
 bool FeedFilter::Term::ParseNumericParam(const char* param)
 {
-	m_fFloatParam = atof(param);
-	m_intParam = (int64)m_fFloatParam;
+	m_floatParam = atof(param);
+	m_intParam = (int64)m_floatParam;
 	m_float = strchr(param, '.');
 
 	const char* p;
@@ -569,14 +569,6 @@ FeedFilter::Rule::Rule()
 	m_hasPatCategory = false;
 	m_hasPatDupeKey = false;
 	m_hasPatAddDupeKey = false;
-}
-
-FeedFilter::Rule::~Rule()
-{
-	for (TermList::iterator it = m_terms.begin(); it != m_terms.end(); it++)
-	{
-		delete *it;
-	}
 }
 
 void FeedFilter::Rule::Compile(char* rule)
@@ -835,18 +827,14 @@ char* FeedFilter::Rule::CompileOptions(char* rule)
 
 bool FeedFilter::Rule::CompileTerm(char* termstr)
 {
-	Term* term = new Term();
-	term->SetRefValues(m_hasPatCategory || m_hasPatDupeKey || m_hasPatAddDupeKey ? &m_refValues : nullptr);
-	if (term->Compile(termstr))
+	m_terms.emplace_back();
+	m_terms.back().SetRefValues(m_hasPatCategory || m_hasPatDupeKey || m_hasPatAddDupeKey ? &m_refValues : nullptr);
+	bool ok = m_terms.back().Compile(termstr);
+	if (!ok)
 	{
-		m_terms.push_back(term);
-		return true;
+		m_terms.pop_back();
 	}
-	else
-	{
-		delete term;
-		return false;
-	}
+	return ok;
 }
 
 bool FeedFilter::Rule::Match(FeedItemInfo* feedItemInfo)
@@ -881,8 +869,8 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* feedItemInfo)
 	int index = 0;
 	for (TermList::iterator it = m_terms.begin(); it != m_terms.end(); it++, index++)
 	{
-		Term* term = *it;
-		switch (term->GetCommand())
+		Term& term = *it;
+		switch (term.GetCommand())
 		{
 			case fcOpeningBrace:
 				expr[index] = '(';
@@ -897,7 +885,7 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* feedItemInfo)
 				break;
 
 			default:
-				expr[index] = term->Match(feedItemInfo) ? 'T' : 'F';
+				expr[index] = term.Match(feedItemInfo) ? 'T' : 'F';
 				break;
 		}
 	}
@@ -990,14 +978,6 @@ FeedFilter::FeedFilter(const char* filter)
 	Compile(filter);
 }
 
-FeedFilter::~FeedFilter()
-{
-	for (RuleList::iterator it = m_rules.begin(); it != m_rules.end(); it++)
-	{
-		delete *it;
-	}
-}
-
 void FeedFilter::Compile(const char* filter)
 {
 	debug("Compiling filter: %s", filter);
@@ -1021,9 +1001,8 @@ void FeedFilter::Compile(const char* filter)
 
 void FeedFilter::CompileRule(char* rulestr)
 {
-	Rule* rule = new Rule();
-	m_rules.push_back(rule);
-	rule->Compile(rulestr);
+	m_rules.emplace_back();
+	m_rules.back().Compile(rulestr);
 }
 
 void FeedFilter::Match(FeedItemInfo* feedItemInfo)
@@ -1031,12 +1010,12 @@ void FeedFilter::Match(FeedItemInfo* feedItemInfo)
 	int index = 0;
 	for (RuleList::iterator it = m_rules.begin(); it != m_rules.end(); it++)
 	{
-		Rule* rule = *it;
+		Rule& rule = *it;
 		index++;
-		if (rule->IsValid())
+		if (rule.IsValid())
 		{
-			bool match = rule->Match(feedItemInfo);
-			switch (rule->GetCommand())
+			bool match = rule.Match(feedItemInfo);
+			switch (rule.GetCommand())
 			{
 				case frAccept:
 				case frOptions:
@@ -1045,7 +1024,7 @@ void FeedFilter::Match(FeedItemInfo* feedItemInfo)
 						feedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
 						feedItemInfo->SetMatchRule(index);
 						ApplyOptions(rule, feedItemInfo);
-						if (rule->GetCommand() == frAccept)
+						if (rule.GetCommand() == frAccept)
 						{
 							return;
 						}
@@ -1080,46 +1059,46 @@ void FeedFilter::Match(FeedItemInfo* feedItemInfo)
 	feedItemInfo->SetMatchRule(0);
 }
 
-void FeedFilter::ApplyOptions(Rule* rule, FeedItemInfo* feedItemInfo)
+void FeedFilter::ApplyOptions(Rule& rule, FeedItemInfo* feedItemInfo)
 {
-	if (rule->HasPause())
+	if (rule.HasPause())
 	{
-		feedItemInfo->SetPauseNzb(rule->GetPause());
+		feedItemInfo->SetPauseNzb(rule.GetPause());
 	}
-	if (rule->HasCategory())
+	if (rule.HasCategory())
 	{
-		feedItemInfo->SetAddCategory(rule->GetCategory());
+		feedItemInfo->SetAddCategory(rule.GetCategory());
 	}
-	if (rule->HasPriority())
+	if (rule.HasPriority())
 	{
-		feedItemInfo->SetPriority(rule->GetPriority());
+		feedItemInfo->SetPriority(rule.GetPriority());
 	}
-	if (rule->HasAddPriority())
+	if (rule.HasAddPriority())
 	{
-		feedItemInfo->SetPriority(feedItemInfo->GetPriority() + rule->GetAddPriority());
+		feedItemInfo->SetPriority(feedItemInfo->GetPriority() + rule.GetAddPriority());
 	}
-	if (rule->HasDupeScore())
+	if (rule.HasDupeScore())
 	{
-		feedItemInfo->SetDupeScore(rule->GetDupeScore());
+		feedItemInfo->SetDupeScore(rule.GetDupeScore());
 	}
-	if (rule->HasAddDupeScore())
+	if (rule.HasAddDupeScore())
 	{
-		feedItemInfo->SetDupeScore(feedItemInfo->GetDupeScore() + rule->GetAddDupeScore());
+		feedItemInfo->SetDupeScore(feedItemInfo->GetDupeScore() + rule.GetAddDupeScore());
 	}
-	if (rule->HasRageId() || rule->HasTvdbId() || rule->HasTvmazeId() || rule->HasSeries())
+	if (rule.HasRageId() || rule.HasTvdbId() || rule.HasTvmazeId() || rule.HasSeries())
 	{
-		feedItemInfo->BuildDupeKey(rule->GetRageId(), rule->GetTvdbId(), rule->GetTvmazeId(), rule->GetSeries());
+		feedItemInfo->BuildDupeKey(rule.GetRageId(), rule.GetTvdbId(), rule.GetTvmazeId(), rule.GetSeries());
 	}
-	if (rule->HasDupeKey())
+	if (rule.HasDupeKey())
 	{
-		feedItemInfo->SetDupeKey(rule->GetDupeKey());
+		feedItemInfo->SetDupeKey(rule.GetDupeKey());
 	}
-	if (rule->HasAddDupeKey())
+	if (rule.HasAddDupeKey())
 	{
-		feedItemInfo->AppendDupeKey(rule->GetAddDupeKey());
+		feedItemInfo->AppendDupeKey(rule.GetAddDupeKey());
 	}
-	if (rule->HasDupeMode())
+	if (rule.HasDupeMode())
 	{
-		feedItemInfo->SetDupeMode(rule->GetDupeMode());
+		feedItemInfo->SetDupeMode(rule.GetDupeMode());
 	}
 }
