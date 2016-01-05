@@ -94,19 +94,21 @@ private:
 	protected:
 		virtual void	PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 	public:
-		PostDupeMatcher(PostInfo* postInfo):
-			DupeMatcher(postInfo->GetNzbInfo()->GetDestDir(),
-				postInfo->GetNzbInfo()->GetSize() - postInfo->GetNzbInfo()->GetParSize()),
-				m_postInfo(postInfo) {}
+						PostDupeMatcher(PostInfo* postInfo):
+							DupeMatcher(postInfo->GetNzbInfo()->GetDestDir(),
+								postInfo->GetNzbInfo()->GetSize() - postInfo->GetNzbInfo()->GetParSize()),
+								m_postInfo(postInfo) {}
 	};
 
 	struct BlockInfo
 	{
 		FileInfo*		m_fileInfo;
 		int				m_blockCount;
+						BlockInfo(FileInfo* fileInfo, int blockCount) :
+							m_fileInfo(fileInfo), m_blockCount(blockCount) {}
 	};
 
-	typedef std::list<BlockInfo*> 	Blocks;
+	typedef std::deque<BlockInfo> 	Blocks;
 
 	enum EJobKind
 	{
@@ -137,7 +139,7 @@ public:
 #ifndef DISABLE_PARCHECK
 	bool				AddPar(FileInfo* fileInfo, bool deleted);
 	void				FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
-							Blocks* blocks, bool strictParName, bool exactParName, int* blockFound);
+							Blocks& blocks, bool strictParName, bool exactParName, int* blockFound);
 	void				StartParCheckJob(PostInfo* postInfo);
 	void				StartParRenameJob(PostInfo* postInfo);
 	void				Stop();

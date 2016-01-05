@@ -431,16 +431,16 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 	int blockFound = 0;
 	int curBlockFound = 0;
 
-	FindPars(downloadQueue, nzbInfo, parFilename, &blocks, true, true, &curBlockFound);
+	FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, true, &curBlockFound);
 	blockFound += curBlockFound;
 	if (blockFound < blockNeeded)
 	{
-		FindPars(downloadQueue, nzbInfo, parFilename, &blocks, true, false, &curBlockFound);
+		FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, false, &curBlockFound);
 		blockFound += curBlockFound;
 	}
 	if (blockFound < blockNeeded)
 	{
-		FindPars(downloadQueue, nzbInfo, parFilename, &blocks, false, false, &curBlockFound);
+		FindPars(downloadQueue, nzbInfo, parFilename, blocks, false, false, &curBlockFound);
 		blockFound += curBlockFound;
 	}
 
@@ -453,13 +453,15 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 		while (blockNeeded > 0)
 		{
 			BlockInfo* bestBlockInfo = nullptr;
+			Blocks::iterator bestBlockIter;
 			for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
 			{
-				BlockInfo* blockInfo = *it;
-				if (blockInfo->m_blockCount <= blockNeeded &&
-				   (!bestBlockInfo || bestBlockInfo->m_blockCount < blockInfo->m_blockCount))
+				BlockInfo& blockInfo = *it;
+				if (blockInfo.m_blockCount <= blockNeeded &&
+				   (!bestBlockInfo || bestBlockInfo->m_blockCount < blockInfo.m_blockCount))
 				{
-					bestBlockInfo = blockInfo;
+					bestBlockInfo = &blockInfo;
+					bestBlockIter = it;
 				}
 			}
 			if (bestBlockInfo)
@@ -471,8 +473,7 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 					bestBlockInfo->m_fileInfo->SetExtraPriority(true);
 				}
 				blockNeeded -= bestBlockInfo->m_blockCount;
-				blocks.remove(bestBlockInfo);
-				delete bestBlockInfo;
+				blocks.erase(bestBlockIter);
 			}
 			else
 			{
@@ -487,14 +488,14 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 		// in most cases and we will not need the second step often
 		while (blockNeeded > 0)
 		{
-			BlockInfo* blockInfo = blocks.front();
-			if (blockInfo->m_fileInfo->GetPaused())
+			BlockInfo& blockInfo = blocks.front();
+			if (blockInfo.m_fileInfo->GetPaused())
 			{
-				m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, blockInfo->m_fileInfo->GetFilename());
-				blockInfo->m_fileInfo->SetPaused(false);
-				blockInfo->m_fileInfo->SetExtraPriority(true);
+				m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, blockInfo.m_fileInfo->GetFilename());
+				blockInfo.m_fileInfo->SetPaused(false);
+				blockInfo.m_fileInfo->SetExtraPriority(true);
 			}
-			blockNeeded -= blockInfo->m_blockCount;
+			blockNeeded -= blockInfo.m_blockCount;
 		}
 	}
 
@@ -516,19 +517,13 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 		*blockFoundOut = blockFound;
 	}
 
-	for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
-	{
-		delete *it;
-	}
-	blocks.clear();
-
 	bool ok = blockNeeded <= 0 || hasUnpausedParFiles;
 
 	return ok;
 }
 
 void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
-	Blocks* blocks, bool strictParName, bool exactParName, int* blockFound)
+	Blocks& blocks, bool strictParName, bool exactParName, int* blockFound)
 {
 	*blockFound = 0;
 
@@ -578,10 +573,10 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 			// check if file is not in the list already
 			if (useFile)
 			{
-				for (Blocks::iterator it = blocks->begin(); it != blocks->end(); it++)
+				for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
 				{
-					BlockInfo* blockInfo = *it;
-					if (blockInfo->m_fileInfo == fileInfo)
+					BlockInfo& blockInfo = *it;
+					if (blockInfo.m_fileInfo == fileInfo)
 					{
 						alreadyAdded = true;
 						break;
@@ -594,10 +589,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 			// then OK, we can use it
 			if (useFile && !alreadyAdded)
 			{
-				BlockInfo* blockInfo = new BlockInfo();
-				blockInfo->m_fileInfo = fileInfo;
-				blockInfo->m_blockCount = blockCount;
-				blocks->push_back(blockInfo);
+				blocks.emplace_back(fileInfo, blockCount);
 				*blockFound += blockCount;
 			}
 		}
