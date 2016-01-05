@@ -211,11 +211,6 @@ StatMeter::~StatMeter()
 
 	g_Log->UnregisterDebuggable(this);
 
-	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
-	{
-		delete *it;
-	}
-
 	debug("StatMeter destroyed");
 }
 
@@ -226,12 +221,6 @@ void StatMeter::Init()
 	AdjustTimeOffset();
 
 	m_serverVolumes.resize(1 + g_ServerPool->GetServers()->size());
-	m_serverVolumes[0] = new ServerVolume();
-	for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
-	{
-		NewsServer* server = *it;
-		m_serverVolumes[server->GetId()] = new ServerVolume();
-	}
 }
 
 void StatMeter::AdjustTimeOffset()
@@ -458,9 +447,9 @@ void StatMeter::LogDebugInfo()
 	int index = 0;
 	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++, index++)
 	{
-		ServerVolume* serverVolume = *it;
+		ServerVolume& serverVolume = *it;
 		info("      ServerVolume %i", index);
-		serverVolume->LogDebugInfo();
+		serverVolume.LogDebugInfo();
 	}
 	m_volumeMutex.Unlock();
 }
@@ -473,8 +462,8 @@ void StatMeter::AddServerData(int bytes, int serverId)
 	}
 
 	m_volumeMutex.Lock();
-	m_serverVolumes[0]->AddData(bytes);
-	m_serverVolumes[serverId]->AddData(bytes);
+	m_serverVolumes[0].AddData(bytes);
+	m_serverVolumes[serverId].AddData(bytes);
 	m_statChanged = true;
 	m_volumeMutex.Unlock();
 }
@@ -486,8 +475,8 @@ ServerVolumes* StatMeter::LockServerVolumes()
 	// update slots
 	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
 	{
-		ServerVolume* serverVolume = *it;
-		serverVolume->AddData(0);
+		ServerVolume& serverVolume = *it;
+		serverVolume.AddData(0);
 	}
 
 	return &m_serverVolumes;
@@ -519,8 +508,8 @@ bool StatMeter::Load(bool* perfectServerMatch)
 
 	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
 	{
-		ServerVolume* serverVolume = *it;
-		serverVolume->CalcSlots(serverVolume->GetDataTime() + g_Options->GetLocalTimeOffset());
+		ServerVolume& serverVolume = *it;
+		serverVolume.CalcSlots(serverVolume.GetDataTime() + g_Options->GetLocalTimeOffset());
 	}
 
 	m_volumeMutex.Unlock();

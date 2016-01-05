@@ -3248,25 +3248,25 @@ void ServerVolumesXmlCommand::Execute()
 
 	for (ServerVolumes::iterator it = serverVolumes->begin(); it != serverVolumes->end(); it++, index++)
 	{
-		ServerVolume* serverVolume = *it;
+		ServerVolume& serverVolume = *it;
 
 		uint32 totalSizeHi, totalSizeLo, totalSizeMB;
-		Util::SplitInt64(serverVolume->GetTotalBytes(), &totalSizeHi, &totalSizeLo);
-		totalSizeMB = (int)(serverVolume->GetTotalBytes() / 1024 / 1024);
+		Util::SplitInt64(serverVolume.GetTotalBytes(), &totalSizeHi, &totalSizeLo);
+		totalSizeMB = (int)(serverVolume.GetTotalBytes() / 1024 / 1024);
 
 		uint32 customSizeHi, customSizeLo, customSizeMB;
-		Util::SplitInt64(serverVolume->GetCustomBytes(), &customSizeHi, &customSizeLo);
-		customSizeMB = (int)(serverVolume->GetCustomBytes() / 1024 / 1024);
+		Util::SplitInt64(serverVolume.GetCustomBytes(), &customSizeHi, &customSizeLo);
+		customSizeMB = (int)(serverVolume.GetCustomBytes() / 1024 / 1024);
 
 		AppendCondResponse(",\n", IsJson() && index > 0);
 		AppendFmtResponse(IsJson() ? JSON_VOLUME_ITEM_START : XML_VOLUME_ITEM_START,
-				 index, (int)serverVolume->GetDataTime(), serverVolume->GetFirstDay(),
+				 index, (int)serverVolume.GetDataTime(), serverVolume.GetFirstDay(),
 				 totalSizeLo, totalSizeHi, totalSizeMB, customSizeLo, customSizeHi, customSizeMB,
-				 (int)serverVolume->GetCustomTime(), serverVolume->GetSecSlot(),
-				 serverVolume->GetMinSlot(), serverVolume->GetHourSlot(), serverVolume->GetDaySlot());
+				 (int)serverVolume.GetCustomTime(), serverVolume.GetSecSlot(),
+				 serverVolume.GetMinSlot(), serverVolume.GetHourSlot(), serverVolume.GetDaySlot());
 
-		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume->BytesPerSeconds(),
-			serverVolume->BytesPerMinutes(), serverVolume->BytesPerHours(), serverVolume->BytesPerDays() };
+		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume.BytesPerSeconds(),
+			serverVolume.BytesPerMinutes(), serverVolume.BytesPerHours(), serverVolume.BytesPerDays() };
 		const char* VolumeNames[] = { "BytesPerSeconds", "BytesPerMinutes", "BytesPerHours", "BytesPerDays" };
 
 		for (int i=0; i<4; i++)
@@ -3327,10 +3327,10 @@ void ResetServerVolumeXmlCommand::Execute()
 	int index = 0;
 	for (ServerVolumes::iterator it = serverVolumes->begin(); it != serverVolumes->end(); it++, index++)
 	{
-		ServerVolume* serverVolume = *it;
+		ServerVolume& serverVolume = *it;
 		if (index == serverId || serverId == -1)
 		{
-			serverVolume->ResetCustom();
+			serverVolume.ResetCustom();
 			ok = true;
 		}
 	}

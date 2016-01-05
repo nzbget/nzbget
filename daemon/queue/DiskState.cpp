@@ -2727,17 +2727,17 @@ bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, DiskFile& outfile)
 	outfile.Print("%i\n", (int)serverVolumes->size());
 	for (ServerVolumes::iterator it = serverVolumes->begin(); it != serverVolumes->end(); it++)
 	{
-		ServerVolume* serverVolume = *it;
+		ServerVolume& serverVolume = *it;
 
-		outfile.Print("%i,%i,%i\n", serverVolume->GetFirstDay(), (int)serverVolume->GetDataTime(), (int)serverVolume->GetCustomTime());
+		outfile.Print("%i,%i,%i\n", serverVolume.GetFirstDay(), (int)serverVolume.GetDataTime(), (int)serverVolume.GetCustomTime());
 
 		uint32 High1, Low1, High2, Low2;
-		Util::SplitInt64(serverVolume->GetTotalBytes(), &High1, &Low1);
-		Util::SplitInt64(serverVolume->GetCustomBytes(), &High2, &Low2);
+		Util::SplitInt64(serverVolume.GetTotalBytes(), &High1, &Low1);
+		Util::SplitInt64(serverVolume.GetCustomBytes(), &High2, &Low2);
 		outfile.Print("%u,%u,%u,%u\n", High1, Low1, High2, Low2);
 
-		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume->BytesPerSeconds(),
-			serverVolume->BytesPerMinutes(), serverVolume->BytesPerHours(), serverVolume->BytesPerDays() };
+		ServerVolume::VolumeArray* VolumeArrays[] = { serverVolume.BytesPerSeconds(),
+			serverVolume.BytesPerMinutes(), serverVolume.BytesPerHours(), serverVolume.BytesPerDays() };
 		for (int i=0; i < 4; i++)
 		{
 			ServerVolume::VolumeArray* volumeArray = VolumeArrays[i];
@@ -2767,7 +2767,7 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, D
 
 		if (i == 0)
 		{
-			serverVolume = serverVolumes->at(0);
+			serverVolume = &serverVolumes->at(0);
 		}
 		else
 		{
@@ -2776,7 +2776,7 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, D
 				NewsServer* newsServer = *it;
 				if (newsServer->GetStateId() == i)
 				{
-					serverVolume = serverVolumes->at(newsServer->GetId());
+					serverVolume = &serverVolumes->at(newsServer->GetId());
 				}
 			}
 		}

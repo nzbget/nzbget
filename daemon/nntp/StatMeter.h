@@ -76,7 +76,7 @@ public:
 	void				LogDebugInfo();
 };
 
-typedef std::vector<ServerVolume*>	ServerVolumes;
+typedef std::vector<ServerVolume>	ServerVolumes;
 
 class StatMeter : public Debuggable
 {
