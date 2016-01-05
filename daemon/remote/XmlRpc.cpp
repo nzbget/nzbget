@@ -2795,18 +2795,18 @@ void ConfigTemplatesXmlCommand::Execute()
 
 	for (ScriptConfig::ConfigTemplates::iterator it = configTemplates->begin(); it != configTemplates->end(); it++)
 	{
-		ScriptConfig::ConfigTemplate* configTemplate = *it;
+		ScriptConfig::ConfigTemplate& configTemplate = *it;
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
-			*EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetName() : ""),
-			*EncodeStr(configTemplate->GetScript() ? configTemplate->GetScript()->GetDisplayName() : ""),
-			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetPostScript()),
-			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetScanScript()),
-			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetQueueScript()),
-			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetSchedulerScript()),
-			BoolToStr(configTemplate->GetScript() && configTemplate->GetScript()->GetFeedScript()),
-			*EncodeStr(configTemplate->GetTemplate()));
+			*EncodeStr(configTemplate.GetScript()->GetName()),
+			*EncodeStr(configTemplate.GetScript()->GetDisplayName()),
+			BoolToStr(configTemplate.GetScript()->GetPostScript()),
+			BoolToStr(configTemplate.GetScript()->GetScanScript()),
+			BoolToStr(configTemplate.GetScript()->GetQueueScript()),
+			BoolToStr(configTemplate.GetScript()->GetSchedulerScript()),
+			BoolToStr(configTemplate.GetScript()->GetFeedScript()),
+			*EncodeStr(configTemplate.GetTemplate()));
 	}
 
 	if (loadFromDisk)

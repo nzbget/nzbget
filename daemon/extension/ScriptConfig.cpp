@@ -42,26 +42,6 @@ static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
 ScriptConfig* g_ScriptConfig = nullptr;
 
 
-ScriptConfig::ConfigTemplate::ConfigTemplate(Script* script, const char* templ)
-{
-	m_script = script;
-	m_template = templ ? templ : "";
-}
-
-ScriptConfig::ConfigTemplate::~ConfigTemplate()
-{
-	delete m_script;
-}
-
-ScriptConfig::ConfigTemplates::~ConfigTemplates()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
-
 ScriptConfig::Script::Script(const char* name, const char* location)
 {
 	m_name = name;
@@ -75,32 +55,18 @@ ScriptConfig::Script::Script(const char* name, const char* location)
 }
 
 
-ScriptConfig::Scripts::~Scripts()
-{
-	Clear();
-}
-
-void ScriptConfig::Scripts::Clear()
+ScriptConfig::Scripts::iterator ScriptConfig::Scripts::Find(const char* name)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		delete *it;
-	}
-	clear();
-}
-
-ScriptConfig::Script* ScriptConfig::Scripts::Find(const char* name)
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		Script* script = *it;
-		if (!strcmp(script->GetName(), name))
+		Script& script = *it;
+		if (!strcmp(script.GetName(), name))
 		{
-			return script;
+			return it;
 		}
 	}
 
-	return nullptr;
+	return end();
 }
 
 
@@ -108,10 +74,6 @@ ScriptConfig::ScriptConfig()
 {
 	InitScripts();
 	InitConfigTemplates();
-}
-
-ScriptConfig::~ScriptConfig()
-{
 }
 
 bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
@@ -233,8 +195,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 	{
 		return false;
 	}
-	ConfigTemplate* configTemplate = new ConfigTemplate(nullptr, buffer);
-	configTemplates->push_back(configTemplate);
+	configTemplates->emplace_back(Script("", ""), buffer);
 	free(buffer);
 
 	if (!g_Options->GetScriptDir())
@@ -250,13 +211,12 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 
 	for (Scripts::iterator it = scriptList.begin(); it != scriptList.end(); it++)
 	{
-		Script* script = *it;
+		Script& script = *it;
 
 		DiskFile infile;
-		if (!infile.Open(script->GetLocation(), DiskFile::omRead))
+		if (!infile.Open(script.GetLocation(), DiskFile::omRead))
 		{
-			ConfigTemplate* configTemplate = new ConfigTemplate(script, "");
-			configTemplates->push_back(configTemplate);
+			configTemplates->emplace_back(std::move(script), "");
 			continue;
 		}
 
@@ -292,12 +252,8 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 
 		infile.Close();
 
-		ConfigTemplate* configTemplate = new ConfigTemplate(script, templ);
-		configTemplates->push_back(configTemplate);
+		configTemplates->emplace_back(std::move(script), templ);
 	}
-
-	// clearing the list without deleting of objects, which are in pConfigTemplates now
-	scriptList.clear();
 
 	return true;
 }
@@ -326,29 +282,19 @@ void ScriptConfig::LoadScripts(Scripts* scripts)
 	LoadScriptDir(&tmpScripts, g_Options->GetScriptDir(), false);
 	tmpScripts.sort(CompareScripts);
 
-	// first add all scripts from m_szScriptOrder
+	// first add all scripts from ScriptOrder
 	Tokenizer tok(g_Options->GetScriptOrder(), ",;");
 	while (const char* scriptName = tok.Next())
 	{
-		Script* script = tmpScripts.Find(scriptName);
-		if (script)
+		Scripts::iterator pos = tmpScripts.Find(scriptName);
+		if (pos != tmpScripts.end())
 		{
-			tmpScripts.remove(script);
-			scripts->push_back(script);
+			scripts->splice(scripts->end(), tmpScripts, pos);
 		}
 	}
 
-	// second add all other scripts from scripts directory
-	for (Scripts::iterator it = tmpScripts.begin(); it != tmpScripts.end(); it++)
-	{
-		Script* script = *it;
-		if (!scripts->Find(script->GetName()))
-		{
-			scripts->push_back(script);
-		}
-	}
-
-	tmpScripts.clear();
+	// then add all other scripts from scripts directory
+	scripts->splice(scripts->end(), std::move(tmpScripts));
 
 	BuildScriptDisplayNames(scripts);
 }
@@ -424,14 +370,14 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 									}
 								}
 
-								Script* script = new Script(scriptName, fullFilename);
-								script->SetPostScript(postScript);
-								script->SetScanScript(scanScript);
-								script->SetQueueScript(queueScript);
-								script->SetSchedulerScript(schedulerScript);
-								script->SetFeedScript(feedScript);
-								script->SetQueueEvents(queueEvents);
-								scripts->push_back(script);
+								scripts->emplace_back(scriptName, fullFilename);
+								Script& script = scripts->back();
+								script.SetPostScript(postScript);
+								script.SetScanScript(scanScript);
+								script.SetQueueScript(queueScript);
+								script.SetSchedulerScript(schedulerScript);
+								script.SetFeedScript(feedScript);
+								script.SetQueueEvents(queueEvents);
 								break;
 							}
 						}
@@ -449,9 +395,9 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 	free(buffer);
 }
 
-bool ScriptConfig::CompareScripts(Script* script1, Script* script2)
+bool ScriptConfig::CompareScripts(Script& script1, Script& script2)
 {
-	return strcmp(script1->GetName(), script2->GetName()) < 0;
+	return strcmp(script1.GetName(), script2.GetName()) < 0;
 }
 
 void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
@@ -461,27 +407,27 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 
 	for (Scripts::iterator it = scripts->begin(); it != scripts->end(); it++)
 	{
-		Script* script = *it;
+		Script& script = *it;
 
-		BString<1024> shortName = script->GetName();
+		BString<1024> shortName = script.GetName();
 		if (char* ext = strrchr(shortName, '.')) *ext = '\0'; // strip file extension
 
 		const char* displayName = FileSystem::BaseFileName(shortName);
 
 		for (Scripts::iterator it2 = scripts->begin(); it2 != scripts->end(); it2++)
 		{
-			Script* script2 = *it2;
+			Script& script2 = *it2;
 
-			BString<1024> shortName2 = script2->GetName();
+			BString<1024> shortName2 = script2.GetName();
 			if (char* ext = strrchr(shortName2, '.')) *ext = '\0'; // strip file extension
 
 			const char* displayName2 = FileSystem::BaseFileName(shortName2);
 
-			if (!strcmp(displayName, displayName2) && script->GetName() != script2->GetName())
+			if (!strcmp(displayName, displayName2) && script.GetName() != script2.GetName())
 			{
 				if (!strcmp(shortName, shortName2))
 				{
-					displayName = script->GetName();
+					displayName = script.GetName();
 				}
 				else
 				{
@@ -491,6 +437,6 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 			}
 		}
 
-		script->SetDisplayName(displayName);
+		script.SetDisplayName(displayName);
 	}
 }

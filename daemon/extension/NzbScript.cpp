@@ -75,7 +75,7 @@ void NzbScriptController::ExecuteScriptList(const char* scriptList)
 {
 	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 	{
-		ScriptConfig::Script* script = *it;
+		ScriptConfig::Script& script = *it;
 
 		if (scriptList && *scriptList)
 		{
@@ -83,9 +83,9 @@ void NzbScriptController::ExecuteScriptList(const char* scriptList)
 			Tokenizer tok(scriptList, ",;");
 			while (const char* scriptName = tok.Next())
 			{
-				if (FileSystem::SameFilename(scriptName, script->GetName()))
+				if (FileSystem::SameFilename(scriptName, script.GetName()))
 				{
-					ExecuteScript(script);
+					ExecuteScript(&script);
 					break;
 				}
 			}

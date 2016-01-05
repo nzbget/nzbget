@@ -245,8 +245,8 @@ void QueueScriptCoordinator::InitOptions()
 	m_hasQueueScripts = false;
 	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 	{
-		ScriptConfig::Script* script = *it;
-		if (script->GetQueueScript())
+		ScriptConfig::Script& script = *it;
+		if (script.GetQueueScript())
 		{
 			m_hasQueueScripts = true;
 			break;
@@ -292,9 +292,9 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 
 	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 	{
-		ScriptConfig::Script* script = *it;
+		ScriptConfig::Script& script = *it;
 
-		if (!script->GetQueueScript())
+		if (!script.GetQueueScript())
 		{
 			continue;
 		}
@@ -309,7 +309,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 			Tokenizer tok(queueScript, ",;");
 			while (const char* scriptName = tok.Next())
 			{
-				if (FileSystem::SameFilename(scriptName, script->GetName()))
+				if (FileSystem::SameFilename(scriptName, script.GetName()))
 				{
 					useScript = true;
 					break;
@@ -331,7 +331,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 				{
 					BString<1024> scriptName = varname;
 					scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
-					if (FileSystem::SameFilename(scriptName, script->GetName()))
+					if (FileSystem::SameFilename(scriptName, script.GetName()))
 					{
 						useScript = true;
 						break;
@@ -340,7 +340,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 			}
 		}
 
-		useScript &= Util::EmptyStr(script->GetQueueEvents()) || strstr(script->GetQueueEvents(), QUEUE_EVENT_NAMES[event]);
+		useScript &= Util::EmptyStr(script.GetQueueEvents()) || strstr(script.GetQueueEvents(), QUEUE_EVENT_NAMES[event]);
 
 		if (useScript)
 		{
@@ -351,7 +351,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 				for (Queue::iterator it2 = m_queue.begin(); it2 != m_queue.end(); it2++)
 				{
 					QueueItem* queueItem = *it2;
-					if (queueItem->GetNzbId() == nzbInfo->GetId() && queueItem->GetScript() == script)
+					if (queueItem->GetNzbId() == nzbInfo->GetId() && queueItem->GetScript() == &script)
 					{
 						alreadyQueued = true;
 						break;
@@ -361,7 +361,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 
 			if (!alreadyQueued)
 			{
-				QueueItem* queueItem = new QueueItem(nzbInfo->GetId(), script, event);
+				QueueItem* queueItem = new QueueItem(nzbInfo->GetId(), &script, event);
 				if (m_curItem)
 				{
 					m_queue.push_back(queueItem);

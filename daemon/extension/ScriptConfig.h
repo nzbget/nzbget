@@ -47,6 +47,7 @@ public:
 
 	public:
 						Script(const char* name, const char* location);
+						Script(Script&&) = default;
 		const char*		GetName() { return m_name; }
 		const char*		GetLocation() { return m_location; }
 		void			SetDisplayName(const char* displayName) { m_displayName = displayName; }
@@ -65,38 +66,30 @@ public:
 		const char*		GetQueueEvents() { return m_queueEvents; }
 	};
 
-	typedef std::list<Script*>  ScriptsBase;
+	typedef std::list<Script>  ScriptsBase;
 
 	class Scripts: public ScriptsBase
 	{
 	public:
-						~Scripts();
-		void			Clear();
-		Script*			Find(const char* name);
+		Scripts::iterator	Find(const char* name);
 	};
 
 	class ConfigTemplate
 	{
 	private:
-		Script*			m_script;
+		Script			m_script;
 		CString			m_template;
 
 		friend class Options;
 
 	public:
-						ConfigTemplate(Script* script, const char* templ);
-						~ConfigTemplate();
-		Script*			GetScript() { return m_script; }
+						ConfigTemplate(Script&& script, const char* templ) :
+							m_script(std::move(script)), m_template(templ) {}
+		Script*			GetScript() { return &m_script; }
 		const char*		GetTemplate() { return m_template; }
 	};
 
-	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
-
-	class ConfigTemplates: public ConfigTemplatesBase
-	{
-	public:
-						~ConfigTemplates();
-	};
+	typedef std::deque<ConfigTemplate>  ConfigTemplates;
 
 private:
 	Scripts				m_scripts;
@@ -104,14 +97,13 @@ private:
 
 	void				InitScripts();
 	void				InitConfigTemplates();
-	static bool			CompareScripts(Script* script1, Script* script2);
+	static bool			CompareScripts(Script& script1, Script& script2);
 	void				LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir);
 	void				BuildScriptDisplayNames(Scripts* scripts);
 	void				LoadScripts(Scripts* scripts);
 
 public:
 						ScriptConfig();
-						~ScriptConfig();
 	Scripts*			GetScripts() { return &m_scripts; }
 	bool				LoadConfig(Options::OptEntries* optEntries);
 	bool				SaveConfig(Options::OptEntries* optEntries);

@@ -431,8 +431,8 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 	{
 		for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
 		{
-			ScriptConfig::Script* script = *it;
-			parameters->SetParameter(BString<1024>("%s:", script->GetName()), nullptr);
+			ScriptConfig::Script& script = *it;
+			parameters->SetParameter(BString<1024>("%s:", script.GetName()), nullptr);
 		}
 	}
 
