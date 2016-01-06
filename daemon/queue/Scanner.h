@@ -50,7 +50,8 @@ private:
 		time_t			m_lastChange;
 
 	public:
-						FileData(const char* filename);
+						FileData(const char* filename, int64 size, time_t lastChange) :
+							m_filename(filename), m_size(size), m_lastChange(lastChange) {}
 		const char*		GetFilename() { return m_filename; }
 		int64			GetSize() { return m_size; }
 		void			SetSize(int64 size) { m_size = size; }
@@ -58,7 +59,7 @@ private:
 		void			SetLastChange(time_t lastChange) { m_lastChange = lastChange; }
 	};
 
-	typedef std::deque<FileData*>		FileList;
+	typedef std::deque<FileData>		FileList;
 
 	class QueueData
 	{
@@ -97,7 +98,7 @@ private:
 		void				SetNzbId(int nzbId);
 	};
 
-	typedef std::deque<QueueData*>		QueueList;
+	typedef std::deque<QueueData>		QueueList;
 
 	bool				m_requestedNzbDirScan;
 	int					m_nzbDirInterval;
@@ -116,7 +117,6 @@ private:
 							const char* fullFilename, const char* category);
 	bool				CanProcessFile(const char* fullFilename, bool checkStat);
 	void				DropOldFiles();
-	void				ClearQueueList();
 
 protected:
 	virtual int			ServiceInterval() { return 200; }
@@ -124,7 +124,6 @@ protected:
 
 public:
 						Scanner();
-						~Scanner();
 	void				InitOptions();
 	void				ScanNzbDir(bool syncMode);
 	EAddStatus			AddExternalFile(const char* nzbName, const char* category, int priority,

@@ -33,14 +33,6 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-Scanner::FileData::FileData(const char* filename)
-{
-	m_filename = filename;
-	m_size = 0;
-	m_lastChange = 0;
-}
-
-
 Scanner::QueueData::QueueData(const char* filename, const char* nzbName, const char* category,
 	int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
 	NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
@@ -93,33 +85,11 @@ Scanner::Scanner()
 	m_scanScript = false;
 }
 
-Scanner::~Scanner()
-{
-	debug("Destroying Scanner");
-
-	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); it++)
-	{
-		delete *it;
-	}
-	m_fileList.clear();
-
-	ClearQueueList();
-}
-
 void Scanner::InitOptions()
 {
 	m_nzbDirInterval = g_Options->GetNzbDirInterval() * 1000;
 	const char* scanScript = g_Options->GetScanScript();
 	m_scanScript = scanScript && strlen(scanScript) > 0;
-}
-
-void Scanner::ClearQueueList()
-{
-	for (QueueList::iterator it = m_queueList.begin(); it != m_queueList.end(); it++)
-	{
-		delete *it;
-	}
-	m_queueList.clear();
 }
 
 void Scanner::ServiceWork()
@@ -169,7 +139,7 @@ void Scanner::ServiceWork()
 		}
 
 		DropOldFiles();
-		ClearQueueList();
+		m_queueList.clear();
 	}
 	m_nzbDirInterval += 200;
 
@@ -236,23 +206,22 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); it++)
 	{
-		FileData* fileData = *it;
-		if (!strcmp(fileData->GetFilename(), fullFilename))
+		FileData& fileData = *it;
+		if (!strcmp(fileData.GetFilename(), fullFilename))
 		{
 			inList = true;
-			if (fileData->GetSize() == size &&
-				current - fileData->GetLastChange() >= g_Options->GetNzbDirFileAge())
+			if (fileData.GetSize() == size &&
+				current - fileData.GetLastChange() >= g_Options->GetNzbDirFileAge())
 			{
 				canProcess = true;
-				delete fileData;
 				m_fileList.erase(it);
 			}
 			else
 			{
-				fileData->SetSize(size);
-				if (fileData->GetSize() != size)
+				fileData.SetSize(size);
+				if (fileData.GetSize() != size)
 				{
-					fileData->SetLastChange(current);
+					fileData.SetLastChange(current);
 				}
 			}
 			break;
@@ -261,10 +230,7 @@ bool Scanner::CanProcessFile(const char* fullFilename, bool checkStat)
 
 	if (!inList)
 	{
-		FileData* fileData = new FileData(fullFilename);
-		fileData->SetSize(size);
-		fileData->SetLastChange(current);
-		m_fileList.push_back(fileData);
+		m_fileList.emplace_back(fullFilename, size, current);
 	}
 
 	return canProcess;
@@ -284,15 +250,13 @@ void Scanner::DropOldFiles()
 	int i = 0;
 	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); )
 	{
-		FileData* fileData = *it;
-		if ((current - fileData->GetLastChange() >=
+		FileData& fileData = *it;
+		if ((current - fileData.GetLastChange() >=
 			(g_Options->GetNzbDirInterval() + g_Options->GetNzbDirFileAge()) * 2) ||
 			// can occur if the system clock was adjusted
-			current < fileData->GetLastChange())
+			current < fileData.GetLastChange())
 		{
-			debug("Removing file %s from scan file list", fileData->GetFilename());
-
-			delete fileData;
+			debug("Removing file %s from scan file list", fileData.GetFilename());
 			m_fileList.erase(it);
 			it = m_fileList.begin() + i;
 		}
@@ -329,10 +293,10 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 
 	for (QueueList::iterator it = m_queueList.begin(); it != m_queueList.end(); it++)
 	{
-		QueueData* queueData1 = *it;
-		if (FileSystem::SameFilename(queueData1->GetFilename(), fullFilename))
+		QueueData& queueData1 = *it;
+		if (FileSystem::SameFilename(queueData1.GetFilename(), fullFilename))
 		{
-			queueData = queueData1;
+			queueData = &queueData1;
 			free(nzbName);
 			nzbName = strdup(queueData->GetNzbName());
 			free(nzbCategory);
@@ -625,10 +589,9 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 
 	EAddStatus addStatus = asSkipped;
-	QueueData* queueData = new QueueData(scanFileName, nzbName, useCategory, priority,
+	m_queueList.emplace_back(scanFileName, nzbName, useCategory, priority,
 		dupeKey, dupeScore, dupeMode, parameters, addTop, addPaused, urlInfo,
 		&addStatus, nzbId);
-	m_queueList.push_back(queueData);
 
 	m_scanMutex.Unlock();
 
