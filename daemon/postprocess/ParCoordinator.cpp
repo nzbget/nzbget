@@ -110,9 +110,8 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 		for (FileInfo::Articles::iterator it = tmpFileInfo->GetArticles()->begin(); it != tmpFileInfo->GetArticles()->end(); it++)
 		{
 			ArticleInfo* pa = *it;
-			ParChecker::Segment* segment = new Segment(pa->GetStatus() == ArticleInfo::aiFinished,
+			segments->emplace_back(pa->GetStatus() == ArticleInfo::aiFinished,
 				pa->GetSegmentOffset(), pa->GetSegmentSize(), pa->GetCrc());
-			segments->push_back(segment);
 		}
 
 		delete tmpFileInfo;
@@ -149,7 +148,7 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 			if (useDupe)
 			{
 				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", FileSystem::BaseFileName(dupeNzbInfo->GetDestDir()));
-				dupeSourceList->push_back(new ParChecker::DupeSource(dupeNzbInfo->GetId(), dupeNzbInfo->GetDestDir()));
+				dupeSourceList->emplace_back(dupeNzbInfo->GetId(), dupeNzbInfo->GetDestDir());
 			}
 		}
 		if (dupeSourceList->empty())
@@ -168,20 +167,20 @@ void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceL
 	int totalExtraParBlocks = 0;
 	for (DupeSourceList::iterator it = dupeSourceList->begin(); it != dupeSourceList->end(); it++)
 	{
-		DupeSource* dupeSource = *it;
-		if (dupeSource->GetUsedBlocks() > 0)
+		DupeSource& dupeSource = *it;
+		if (dupeSource.GetUsedBlocks() > 0)
 		{
 			for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
 			{
 				HistoryInfo* historyInfo = *it;
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
-					historyInfo->GetNzbInfo()->GetId() == dupeSource->GetId())
+					historyInfo->GetNzbInfo()->GetId() == dupeSource.GetId())
 				{
-					historyInfo->GetNzbInfo()->SetExtraParBlocks(historyInfo->GetNzbInfo()->GetExtraParBlocks() - dupeSource->GetUsedBlocks());
+					historyInfo->GetNzbInfo()->SetExtraParBlocks(historyInfo->GetNzbInfo()->GetExtraParBlocks() - dupeSource.GetUsedBlocks());
 				}
 			}
 		}
-		totalExtraParBlocks += dupeSource->GetUsedBlocks();
+		totalExtraParBlocks += dupeSource.GetUsedBlocks();
 	}
 
 	m_postInfo->GetNzbInfo()->SetExtraParBlocks(m_postInfo->GetNzbInfo()->GetExtraParBlocks() + totalExtraParBlocks);

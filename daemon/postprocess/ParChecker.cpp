@@ -331,7 +331,7 @@ private:
 	const char* m_baseParFilename;
 public:
 	MissingFilesComparator(const char* baseParFilename) : m_baseParFilename(baseParFilename) {}
-	bool operator()(Par2::CommandLine::ExtraFile* first, Par2::CommandLine::ExtraFile* second) const;
+	bool operator()(Par2::CommandLine::ExtraFile& first, Par2::CommandLine::ExtraFile& second) const;
 };
 
 
@@ -339,40 +339,15 @@ public:
  * Files with the same name as in par-file (and a differnt extension) are
  * placed at the top of the list to be scanned first.
  */
-bool MissingFilesComparator::operator()(Par2::CommandLine::ExtraFile* file1, Par2::CommandLine::ExtraFile* file2) const
+bool MissingFilesComparator::operator()(Par2::CommandLine::ExtraFile& file1, Par2::CommandLine::ExtraFile& file2) const
 {
-	BString<1024> name1 = FileSystem::BaseFileName(file1->FileName().c_str());
+	BString<1024> name1 = FileSystem::BaseFileName(file1.FileName().c_str());
 	if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
 
-	BString<1024> name2 = FileSystem::BaseFileName(file2->FileName().c_str());
+	BString<1024> name2 = FileSystem::BaseFileName(file2.FileName().c_str());
 	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
 
 	return strcmp(name1, m_baseParFilename) == 0 && strcmp(name1, name2) != 0;
-}
-
-
-ParChecker::Segment::Segment(bool success, int64 offset, int size, uint32 crc)
-{
-	m_success = success;
-	m_offset = offset;
-	m_size = size;
-	m_crc = crc;
-}
-
-
-ParChecker::SegmentList::~SegmentList()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-}
-
-ParChecker::DupeSource::DupeSource(int id, const char* directory)
-{
-	m_id = id;
-	m_directory = directory;
-	m_usedBlocks = 0;
 }
 
 
@@ -410,11 +385,6 @@ void ParChecker::Cleanup()
 	m_queuedParFiles.clear();
 	m_processedFiles.clear();
 	m_sourceFiles.clear();
-
-	for (DupeSourceList::iterator it = m_dupeSources.begin(); it != m_dupeSources.end() ;it++)
-	{
-		delete *it;
-	}
 	m_dupeSources.clear();
 
 	m_errMsg = nullptr;
@@ -919,14 +889,14 @@ bool ParChecker::AddDupeFiles()
 
 			for (DupeSourceList::iterator it = m_dupeSources.begin(); it != m_dupeSources.end(); it++)
 			{
-				DupeSource* dupeSource = *it;
-				if (((Repairer*)m_repairer)->missingblockcount > 0 && FileSystem::DirectoryExists(dupeSource->GetDirectory()))
+				DupeSource& dupeSource = *it;
+				if (((Repairer*)m_repairer)->missingblockcount > 0 && FileSystem::DirectoryExists(dupeSource.GetDirectory()))
 				{
 					int wasBlocksMissing2 = ((Repairer*)m_repairer)->missingblockcount;
-					bool oneAdded = AddExtraFiles(false, true, dupeSource->GetDirectory());
+					bool oneAdded = AddExtraFiles(false, true, dupeSource.GetDirectory());
 					added |= oneAdded;
 					int blocksMissing2 = ((Repairer*)m_repairer)->missingblockcount;
-					dupeSource->SetUsedBlocks(dupeSource->GetUsedBlocks() + (wasBlocksMissing2 - blocksMissing2));
+					dupeSource.SetUsedBlocks(dupeSource.GetUsedBlocks() + (wasBlocksMissing2 - blocksMissing2));
 				}
 			}
 
@@ -956,7 +926,7 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 		PrintMessage(Message::mkInfo, "Performing extra par-scan for %s", *m_infoName);
 	}
 
-	std::list<Par2::CommandLine::ExtraFile*> extrafiles;
+	std::list<Par2::CommandLine::ExtraFile> extrafiles;
 
 	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
@@ -965,15 +935,14 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 			(externalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
 		{
 			BString<1024> fullfilename("%s%c%s", directory, PATH_SEPARATOR, filename);
-			extrafiles.push_back(new Par2::CommandLine::ExtraFile(*fullfilename, FileSystem::FileSize(fullfilename)));
+			extrafiles.emplace_back(*fullfilename, FileSystem::FileSize(fullfilename));
 		}
 	}
 
 	// Sort the list
-	char* baseParFilename = strdup(FileSystem::BaseFileName(m_parFilename));
+	CString baseParFilename = FileSystem::BaseFileName(m_parFilename);
 	if (char* ext = strrchr(baseParFilename, '.')) *ext = '\0'; // trim extension
 	extrafiles.sort(MissingFilesComparator(baseParFilename));
-	free(baseParFilename);
 
 	// Scan files
 	bool filesAdded = false;
@@ -982,17 +951,14 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 		m_extraFiles += extrafiles.size();
 		m_verifyingExtraFiles = true;
 
-		std::list<Par2::CommandLine::ExtraFile> extrafiles1;
-
 		// adding files one by one until all missing files are found
 
 		while (!IsStopped() && !m_cancelled && extrafiles.size() > 0)
 		{
-			Par2::CommandLine::ExtraFile* extraFile = extrafiles.front();
-			extrafiles.pop_front();
+			std::list<Par2::CommandLine::ExtraFile> extrafiles1;
+			extrafiles1.splice(extrafiles1.end(), extrafiles, extrafiles.begin());
 
-			extrafiles1.clear();
-			extrafiles1.push_back(*extraFile);
+			Par2::CommandLine::ExtraFile& extraFile = extrafiles1.front();
 
 			int wasFilesMissing = ((Repairer*)m_repairer)->missingfilecount;
 			int wasBlocksMissing = ((Repairer*)m_repairer)->missingblockcount;
@@ -1005,8 +971,8 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 
 			if (fileAdded && !externalDir)
 			{
-				PrintMessage(Message::mkInfo, "Found missing file %s", FileSystem::BaseFileName(extraFile->FileName().c_str()));
-				RegisterParredFile(FileSystem::BaseFileName(extraFile->FileName().c_str()));
+				PrintMessage(Message::mkInfo, "Found missing file %s", FileSystem::BaseFileName(extraFile.FileName().c_str()));
+				RegisterParredFile(FileSystem::BaseFileName(extraFile.FileName().c_str()));
 			}
 			else if (blockAdded)
 			{
@@ -1014,8 +980,6 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 			}
 
 			filesAdded |= fileAdded | blockAdded;
-
-			delete extraFile;
 
 			if (onlyMissing && ((Repairer*)m_repairer)->missingfilecount == 0)
 			{
@@ -1031,12 +995,6 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 		}
 
 		m_verifyingExtraFiles = false;
-
-		// free any remaining objects
-		for (std::list<Par2::CommandLine::ExtraFile*>::iterator it = extrafiles.begin(); it != extrafiles.end() ;it++)
-		{
-			delete *it;
-		}
 	}
 
 	return filesAdded;
@@ -1474,26 +1432,26 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 		Par2::u64 curOffset = 0;
 		for (SegmentList::iterator it = segments->begin(); it != segments->end(); it++)
 		{
-			Segment* segment = *it;
-			if (!blockOK && segment->GetSuccess() && segment->GetOffset() <= blockStart &&
-				segment->GetOffset() + segment->GetSize() >= blockStart)
+			Segment& segment = *it;
+			if (!blockOK && segment.GetSuccess() && segment.GetOffset() <= blockStart &&
+				segment.GetOffset() + segment.GetSize() >= blockStart)
 			{
 				blockOK = true;
-				curOffset = segment->GetOffset();
+				curOffset = segment.GetOffset();
 			}
 			if (blockOK)
 			{
-				if (!(segment->GetSuccess() && segment->GetOffset() == curOffset))
+				if (!(segment.GetSuccess() && segment.GetOffset() == curOffset))
 				{
 					blockOK = false;
 					break;
 				}
-				if (segment->GetOffset() + segment->GetSize() >= blockEnd)
+				if (segment.GetOffset() + segment.GetSize() >= blockEnd)
 				{
 					blockEndFound = true;
 					break;
 				}
-				curOffset = segment->GetOffset() + segment->GetSize();
+				curOffset = segment.GetOffset() + segment.GetSize();
 			}
 		}
 		validBlocks->at(i) = blockOK && blockEndFound;
@@ -1570,43 +1528,43 @@ bool ParChecker::SmartCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, S
 	bool started = false;
 	for (SegmentList::iterator it = segments->begin(); it != segments->end(); it++)
 	{
-		Segment* segment = *it;
+		Segment& segment = *it;
 
-		if (!started && segment->GetOffset() > start)
+		if (!started && segment.GetOffset() > start)
 		{
 			// read start of range from file
-			if (!DumbCalcFileRangeCrc(file, start, segment->GetOffset() - 1, &downloadCrc))
+			if (!DumbCalcFileRangeCrc(file, start, segment.GetOffset() - 1, &downloadCrc))
 			{
 				return false;
 			}
-			if (segment->GetOffset() + segment->GetSize() >= end)
+			if (segment.GetOffset() + segment.GetSize() >= end)
 			{
 				break;
 			}
 			started = true;
 		}
 
-		if (segment->GetOffset() >= start && segment->GetOffset() + segment->GetSize() <= end)
+		if (segment.GetOffset() >= start && segment.GetOffset() + segment.GetSize() <= end)
 		{
-			downloadCrc = !started ? segment->GetCrc() : Util::Crc32Combine(downloadCrc, segment->GetCrc(), (uint32)segment->GetSize());
+			downloadCrc = !started ? segment.GetCrc() : Util::Crc32Combine(downloadCrc, segment.GetCrc(), (uint32)segment.GetSize());
 			started = true;
 		}
 
-		if (segment->GetOffset() + segment->GetSize() == end)
+		if (segment.GetOffset() + segment.GetSize() == end)
 		{
 			break;
 		}
 
-		if (segment->GetOffset() + segment->GetSize() > end)
+		if (segment.GetOffset() + segment.GetSize() > end)
 		{
 			// read end of range from file
 			uint32 partialCrc = 0;
-			if (!DumbCalcFileRangeCrc(file, segment->GetOffset(), end, &partialCrc))
+			if (!DumbCalcFileRangeCrc(file, segment.GetOffset(), end, &partialCrc))
 			{
 				return false;
 			}
 
-			downloadCrc = Util::Crc32Combine(downloadCrc, (uint32)partialCrc, (uint32)(end - segment->GetOffset() + 1));
+			downloadCrc = Util::Crc32Combine(downloadCrc, (uint32)partialCrc, (uint32)(end - segment.GetOffset() + 1));
 
 			break;
 		}

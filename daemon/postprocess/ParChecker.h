@@ -69,37 +69,33 @@ public:
 		uint32				m_crc;
 
 	public:
-							Segment(bool success, int64 offset, int size, uint32 crc);
+							Segment(bool success, int64 offset, int size, uint32 crc) :
+								m_success(success), m_offset(offset), m_size(size), m_crc(crc) {}
 		bool 				GetSuccess() { return m_success; }
 		int64				GetOffset() { return m_offset; }
 		int 				GetSize() { return m_size; }
 		uint32				GetCrc() { return m_crc; }
 	};
 
-	typedef std::deque<Segment*>	SegmentListBase;
-
-	class SegmentList : public SegmentListBase
-	{
-	public:
-							~SegmentList();
-	};
+	typedef std::deque<Segment>		SegmentList;
 
 	class DupeSource
 	{
 	private:
 		int					m_id;
 		CString				m_directory;
-		int					m_usedBlocks;
+		int					m_usedBlocks = 0;
 
 	public:
-							DupeSource(int id, const char* directory);
+							DupeSource(int id, const char* directory) :
+								m_id(id), m_directory(directory) {}
 		int					GetId() { return m_id; }
 		const char*			GetDirectory() { return m_directory; }
 		int					GetUsedBlocks() { return m_usedBlocks; }
 		void				SetUsedBlocks(int usedBlocks) { m_usedBlocks = usedBlocks; }
 	};
 
-	typedef std::deque<DupeSource*>	DupeSourceList;
+	typedef std::deque<DupeSource>	DupeSourceList;
 
 	typedef std::deque<CString>		FileList;
 	typedef std::deque<void*>		SourceList;
