@@ -78,12 +78,12 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 {
 	CompletedFile* completedFile = nullptr;
 
-	for (CompletedFiles::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFileList::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
 	{
-		CompletedFile* completedFile2 = *it;
-		if (!strcasecmp(completedFile2->GetFileName(), filename))
+		CompletedFile& completedFile2 = *it;
+		if (!strcasecmp(completedFile2.GetFileName(), filename))
 		{
-			completedFile = completedFile2;
+			completedFile = &completedFile2;
 			break;
 		}
 	}
@@ -215,12 +215,12 @@ void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
  */
 void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
 {
-	for (CompletedFiles::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFileList::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
 	{
-		CompletedFile* completedFile = *it;
-		if (!strcasecmp(completedFile->GetFileName(), oldFilename))
+		CompletedFile& completedFile = *it;
+		if (!strcasecmp(completedFile.GetFileName(), oldFilename))
 		{
-			completedFile->SetFileName(newFileName);
+			completedFile.SetFileName(newFileName);
 			break;
 		}
 	}

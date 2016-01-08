@@ -40,16 +40,16 @@ void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, con
 
 	for (NzbParameterList::iterator it = parameters->begin(); it != parameters->end(); it++)
 	{
-		NzbParameter* parameter = *it;
-		const char* value = parameter->GetValue();
+		NzbParameter& parameter = *it;
+		const char* value = parameter.GetValue();
 
-		if (stripPrefix && !strncmp(parameter->GetName(), stripPrefix, prefixLen) && (int)strlen(parameter->GetName()) > prefixLen)
+		if (stripPrefix && !strncmp(parameter.GetName(), stripPrefix, prefixLen) && (int)strlen(parameter.GetName()) > prefixLen)
 		{
-			SetEnvVarSpecial("NZBPR", parameter->GetName() + prefixLen, value);
+			SetEnvVarSpecial("NZBPR", parameter.GetName() + prefixLen, value);
 		}
 		else if (!stripPrefix)
 		{
-			SetEnvVarSpecial("NZBPR", parameter->GetName(), value);
+			SetEnvVarSpecial("NZBPR", parameter.GetName(), value);
 		}
 	}
 }

@@ -1771,11 +1771,11 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	int paramIndex = 0;
 	for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 	{
-		NzbParameter* parameter = *it;
+		NzbParameter& parameter = *it;
 
 		AppendCondResponse(",\n", IsJson() && paramIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM,
-			*EncodeStr(parameter->GetName()), *EncodeStr(parameter->GetValue()));
+			*EncodeStr(parameter.GetName()), *EncodeStr(parameter.GetValue()));
 	}
 
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_SCRIPT_START : XML_NZB_ITEM_SCRIPT_START);
@@ -1784,11 +1784,11 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	int scriptIndex = 0;
 	for (ScriptStatusList::iterator it = nzbInfo->GetScriptStatuses()->begin(); it != nzbInfo->GetScriptStatuses()->end(); it++)
 	{
-		ScriptStatus* scriptStatus = *it;
+		ScriptStatus& scriptStatus = *it;
 
 		AppendCondResponse(",\n", IsJson() && scriptIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM,
-			*EncodeStr(scriptStatus->GetName()), *EncodeStr(scriptStatusName[scriptStatus->GetStatus()]));
+			*EncodeStr(scriptStatus.GetName()), *EncodeStr(scriptStatusName[scriptStatus.GetStatus()]));
 	}
 
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_STATS_START : XML_NZB_ITEM_STATS_START);
@@ -1797,11 +1797,11 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 	int statIndex = 0;
 	for (ServerStatList::iterator it = nzbInfo->GetCurrentServerStats()->begin(); it != nzbInfo->GetCurrentServerStats()->end(); it++)
 	{
-		ServerStat* serverStat = *it;
+		ServerStat& serverStat = *it;
 
 		AppendCondResponse(",\n", IsJson() && statIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
-				 serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
+				 serverStat.GetServerId(), serverStat.GetSuccessArticles(), serverStat.GetFailedArticles());
 	}
 
 	AppendResponse(IsJson() ? JSON_NZB_ITEM_END : XML_NZB_ITEM_END);

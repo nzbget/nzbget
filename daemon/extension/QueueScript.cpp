@@ -322,12 +322,12 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		{
 			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 			{
-				NzbParameter* parameter = *it;
-				const char* varname = parameter->GetName();
+				NzbParameter& parameter = *it;
+				const char* varname = parameter.GetName();
 				if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
-					(!strcasecmp(parameter->GetValue(), "yes") ||
-					 !strcasecmp(parameter->GetValue(), "on") ||
-					 !strcasecmp(parameter->GetValue(), "1")))
+					(!strcasecmp(parameter.GetValue(), "yes") ||
+					 !strcasecmp(parameter.GetValue(), "on") ||
+					 !strcasecmp(parameter.GetValue(), "1")))
 				{
 					BString<1024> scriptName = varname;
 					scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'

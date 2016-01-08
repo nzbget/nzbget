@@ -465,25 +465,25 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, DiskFile& outfile)
 		nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec());
 
 	outfile.Print("%i\n", (int)nzbInfo->GetCompletedFiles()->size());
-	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFileList::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
-		CompletedFile* completedFile = *it;
-		outfile.Print("%i,%i,%u,%s\n", completedFile->GetId(), (int)completedFile->GetStatus(),
-			completedFile->GetCrc(), completedFile->GetFileName());
+		CompletedFile& completedFile = *it;
+		outfile.Print("%i,%i,%u,%s\n", completedFile.GetId(), (int)completedFile.GetStatus(),
+			completedFile.GetCrc(), completedFile.GetFileName());
 	}
 
 	outfile.Print("%i\n", (int)nzbInfo->GetParameters()->size());
 	for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 	{
-		NzbParameter* parameter = *it;
-		outfile.Print("%s=%s\n", parameter->GetName(), parameter->GetValue());
+		NzbParameter& parameter = *it;
+		outfile.Print("%s=%s\n", parameter.GetName(), parameter.GetValue());
 	}
 
 	outfile.Print("%i\n", (int)nzbInfo->GetScriptStatuses()->size());
 	for (ScriptStatusList::iterator it = nzbInfo->GetScriptStatuses()->begin(); it != nzbInfo->GetScriptStatuses()->end(); it++)
 	{
-		ScriptStatus* scriptStatus = *it;
-		outfile.Print("%i,%s\n", scriptStatus->GetStatus(), scriptStatus->GetName());
+		ScriptStatus& scriptStatus = *it;
+		outfile.Print("%i,%s\n", scriptStatus.GetStatus(), scriptStatus.GetName());
 	}
 
 	SaveServerStats(nzbInfo->GetServerStats(), outfile);
@@ -621,7 +621,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		int scriptStatus;
 		if (fscanf(infile, "%i\n", &scriptStatus) != 1) goto error;
 		if (scriptStatus > 1) scriptStatus--;
-		nzbInfo->GetScriptStatuses()->Add("SCRIPT", (ScriptStatus::EStatus)scriptStatus);
+		nzbInfo->GetScriptStatuses()->emplace_back("SCRIPT", (ScriptStatus::EStatus)scriptStatus);
 	}
 
 	if (formatVersion >= 18)
@@ -677,7 +677,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		if (formatVersion < 23)
 		{
 			if (scriptStatus > 1) scriptStatus--;
-			nzbInfo->GetScriptStatuses()->Add("SCRIPT", (ScriptStatus::EStatus)scriptStatus);
+			nzbInfo->GetScriptStatuses()->emplace_back("SCRIPT", (ScriptStatus::EStatus)scriptStatus);
 		}
 	}
 
@@ -889,7 +889,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 				}
 			}
 
-			nzbInfo->GetCompletedFiles()->push_back(new CompletedFile(id, fileName, (CompletedFile::EStatus)status, crc));
+			nzbInfo->GetCompletedFiles()->emplace_back(id, fileName, (CompletedFile::EStatus)status, crc);
 		}
 	}
 
@@ -927,7 +927,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 				scriptName++;
 				int status = atoi(buf);
 				if (status > 1 && formatVersion < 25) status--;
-				nzbInfo->GetScriptStatuses()->Add(scriptName, (ScriptStatus::EStatus)status);
+				nzbInfo->GetScriptStatuses()->emplace_back(scriptName, (ScriptStatus::EStatus)status);
 			}
 		}
 	}
@@ -1076,8 +1076,8 @@ void DiskState::SaveServerStats(ServerStatList* serverStatList, DiskFile& outfil
 	outfile.Print("%i\n", (int)serverStatList->size());
 	for (ServerStatList::iterator it = serverStatList->begin(); it != serverStatList->end(); it++)
 	{
-		ServerStat* serverStat = *it;
-		outfile.Print("%i,%i,%i\n", serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles());
+		ServerStat& serverStat = *it;
+		outfile.Print("%i,%i,%i\n", serverStat.GetServerId(), serverStat.GetSuccessArticles(), serverStat.GetFailedArticles());
 	}
 }
 
@@ -1436,18 +1436,18 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 
 	BString<1024> filename;
 
-	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFileList::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
-		CompletedFile* completedFile = *it;
-		if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
+		CompletedFile& completedFile = *it;
+		if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
 		{
-			filename.Format("%s%i", g_Options->GetQueueDir(), completedFile->GetId());
+			filename.Format("%s%i", g_Options->GetQueueDir(), completedFile.GetId());
 			FileSystem::DeleteFile(filename);
 
-			filename.Format("%s%is", g_Options->GetQueueDir(), completedFile->GetId());
+			filename.Format("%s%is", g_Options->GetQueueDir(), completedFile.GetId());
 			FileSystem::DeleteFile(filename);
 
-			filename.Format("%s%ic", g_Options->GetQueueDir(), completedFile->GetId());
+			filename.Format("%s%ic", g_Options->GetQueueDir(), completedFile.GetId());
 			FileSystem::DeleteFile(filename);
 		}
 	}

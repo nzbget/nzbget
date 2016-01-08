@@ -518,10 +518,10 @@ void ListBinCommand::Execute()
 			// calculate required buffer size for pp-parameters
 			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 			{
-				NzbParameter* nzbParameter = *it;
+				NzbParameter& nzbParameter = *it;
 				bufsize += sizeof(SNzbListResponsePPPEntry);
-				bufsize += strlen(nzbParameter->GetName()) + 1;
-				bufsize += strlen(nzbParameter->GetValue()) + 1;
+				bufsize += strlen(nzbParameter.GetName()) + 1;
+				bufsize += strlen(nzbParameter.GetValue()) + 1;
 				// align struct to 4-bytes, needed by ARM-processor (and may be others)
 				bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 				nrPPPEntries++;
@@ -604,15 +604,15 @@ void ListBinCommand::Execute()
 			NzbInfo* nzbInfo = *it;
 			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 			{
-				NzbParameter* nzbParameter = *it;
+				NzbParameter& nzbParameter = *it;
 				SNzbListResponsePPPEntry* listAnswer = (SNzbListResponsePPPEntry*) bufptr;
-				listAnswer->m_nzbIndex	= htonl(nzbIndex);
-				listAnswer->m_nameLen		= htonl(strlen(nzbParameter->GetName()) + 1);
-				listAnswer->m_valueLen	= htonl(strlen(nzbParameter->GetValue()) + 1);
+				listAnswer->m_nzbIndex = htonl(nzbIndex);
+				listAnswer->m_nameLen = htonl(strlen(nzbParameter.GetName()) + 1);
+				listAnswer->m_valueLen = htonl(strlen(nzbParameter.GetValue()) + 1);
 				bufptr += sizeof(SNzbListResponsePPPEntry);
-				strcpy(bufptr, nzbParameter->GetName());
+				strcpy(bufptr, nzbParameter.GetName());
 				bufptr += ntohl(listAnswer->m_nameLen);
-				strcpy(bufptr, nzbParameter->GetValue());
+				strcpy(bufptr, nzbParameter.GetValue());
 				bufptr += ntohl(listAnswer->m_valueLen);
 				// align struct to 4-bytes, needed by ARM-processor (and may be others)
 				if ((size_t)bufptr % 4 > 0)

@@ -419,7 +419,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 		nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
 		nzbInfo->SetDeletePaused(false);
 		nzbInfo->SetMarkStatus(NzbInfo::ksNone);
-		nzbInfo->GetScriptStatuses()->Clear();
+		nzbInfo->GetScriptStatuses()->clear();
 		nzbInfo->SetParkedFileCount(0);
 		if (nzbInfo->GetMoveStatus() == NzbInfo::msFailure)
 		{
@@ -528,9 +528,9 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->SetRepairSec(0);
 	nzbInfo->SetUnpackSec(0);
 	nzbInfo->SetExtraParBlocks(0);
-	nzbInfo->ClearCompletedFiles();
-	nzbInfo->GetServerStats()->Clear();
-	nzbInfo->GetCurrentServerStats()->Clear();
+	nzbInfo->GetCompletedFiles()->clear();
+	nzbInfo->GetServerStats()->clear();
+	nzbInfo->GetCurrentServerStats()->clear();
 
 	nzbInfo->CopyFileList(nzbFile->GetNzbInfo());
 

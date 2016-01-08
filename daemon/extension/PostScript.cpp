@@ -55,10 +55,10 @@ void PostScriptController::Run()
 	DownloadQueue::Lock();
 	for (NzbParameterList::iterator it = m_postInfo->GetNzbInfo()->GetParameters()->begin(); it != m_postInfo->GetNzbInfo()->GetParameters()->end(); it++)
 	{
-		NzbParameter* parameter = *it;
-		const char* varname = parameter->GetName();
+		NzbParameter& parameter = *it;
+		const char* varname = parameter.GetName();
 		if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
-			(!strcasecmp(parameter->GetValue(), "yes") || !strcasecmp(parameter->GetValue(), "on") || !strcasecmp(parameter->GetValue(), "1")))
+			(!strcasecmp(parameter.GetValue(), "yes") || !strcasecmp(parameter.GetValue(), "on") || !strcasecmp(parameter.GetValue(), "1")))
 		{
 			CString scriptName(varname);
 			scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
@@ -66,7 +66,7 @@ void PostScriptController::Run()
 			scriptCommaList.Append(",");
 		}
 	}
-	m_postInfo->GetNzbInfo()->GetScriptStatuses()->Clear();
+	m_postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
 	DownloadQueue::Unlock();
 
 	ExecuteScriptList(scriptCommaList);
@@ -111,7 +111,7 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	m_postInfo->GetNzbInfo()->GetScriptStatuses()->Add(script->GetName(), status);
+	m_postInfo->GetNzbInfo()->GetScriptStatuses()->emplace_back(script->GetName(), status);
 	DownloadQueue::Unlock();
 }
 
@@ -173,13 +173,13 @@ void PostScriptController::PrepareParams(const char* scriptName)
 
 	for (ServerStatList::iterator it = m_postInfo->GetNzbInfo()->GetServerStats()->begin(); it != m_postInfo->GetNzbInfo()->GetServerStats()->end(); it++)
 	{
-		ServerStat* serverStat = *it;
+		ServerStat& serverStat = *it;
 
-		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_SUCCESSARTICLES", serverStat->GetServerId()),
-			serverStat->GetSuccessArticles());
+		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_SUCCESSARTICLES", serverStat.GetServerId()),
+			serverStat.GetSuccessArticles());
 
-		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_FAILEDARTICLES", serverStat->GetServerId()),
-			serverStat->GetFailedArticles());
+		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_FAILEDARTICLES", serverStat.GetServerId()),
+			serverStat.GetFailedArticles());
 	}
 
 	PrepareEnvScript(m_postInfo->GetNzbInfo()->GetParameters(), scriptName);

@@ -506,8 +506,8 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 				for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
 				{
 					parameters.Append(parameters.Empty() ? " (" : ", ");
-					NzbParameter* nzbParameter = *it;
-					parameters.AppendFmt("%s=%s", nzbParameter->GetName(), nzbParameter->GetValue());
+					NzbParameter& nzbParameter = *it;
+					parameters.AppendFmt("%s=%s", nzbParameter.GetName(), nzbParameter.GetValue());
 				}
 				if (!parameters.Empty())
 				{

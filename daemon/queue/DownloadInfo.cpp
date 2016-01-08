@@ -39,20 +39,6 @@ int NzbInfo::m_idMax = 0;
 DownloadQueue* DownloadQueue::g_DownloadQueue = nullptr;
 bool DownloadQueue::g_Loaded = false;
 
-NzbParameterList::~NzbParameterList()
-{
-	Clear();
-}
-
-void NzbParameterList::Clear()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-	clear();
-}
-
 void NzbParameterList::SetParameter(const char* name, const char* value)
 {
 	NzbParameter* parameter = nullptr;
@@ -60,16 +46,15 @@ void NzbParameterList::SetParameter(const char* name, const char* value)
 
 	for (iterator it = begin(); it != end(); it++)
 	{
-		NzbParameter* lookupParameter = *it;
-		if (!strcmp(lookupParameter->GetName(), name))
+		NzbParameter& lookupParameter = *it;
+		if (!strcmp(lookupParameter.GetName(), name))
 		{
 			if (deleteObj)
 			{
-				delete lookupParameter;
 				erase(it);
 				return;
 			}
-			parameter = lookupParameter;
+			parameter = &lookupParameter;
 			break;
 		}
 	}
@@ -79,24 +64,25 @@ void NzbParameterList::SetParameter(const char* name, const char* value)
 		return;
 	}
 
-	if (!parameter)
+	if (parameter)
 	{
-		parameter = new NzbParameter(name);
-		push_back(parameter);
+		parameter->SetValue(value);
 	}
-
-	parameter->SetValue(value);
+	else
+	{
+		emplace_back(name, value);
+	}
 }
 
 NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 {
 	for (iterator it = begin(); it != end(); it++)
 	{
-		NzbParameter* parameter = *it;
-		if ((caseSensitive && !strcmp(parameter->GetName(), name)) ||
-			(!caseSensitive && !strcasecmp(parameter->GetName(), name)))
+		NzbParameter& parameter = *it;
+		if ((caseSensitive && !strcmp(parameter.GetName(), name)) ||
+			(!caseSensitive && !strcasecmp(parameter.GetName(), name)))
 		{
-			return parameter;
+			return &parameter;
 		}
 	}
 
@@ -107,30 +93,11 @@ void NzbParameterList::CopyFrom(NzbParameterList* sourceParameters)
 {
 	for (iterator it = sourceParameters->begin(); it != sourceParameters->end(); it++)
 	{
-		NzbParameter* parameter = *it;
-		SetParameter(parameter->GetName(), parameter->GetValue());
+		NzbParameter& parameter = *it;
+		SetParameter(parameter.GetName(), parameter.GetValue());
 	}
 }
 
-
-ScriptStatusList::~ScriptStatusList()
-{
-	Clear();
-}
-
-void ScriptStatusList::Clear()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-	clear();
-}
-
-void ScriptStatusList::Add(const char* scriptName, ScriptStatus::EStatus status)
-{
-	push_back(new ScriptStatus(scriptName, status));
-}
 
 ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 {
@@ -138,12 +105,12 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 
 	for (iterator it = begin(); it != end(); it++)
 	{
-		ScriptStatus* scriptStatus = *it;
+		ScriptStatus& scriptStatus = *it;
 		// Failure-Status overrides Success-Status
-		if ((scriptStatus->GetStatus() == ScriptStatus::srSuccess && status == ScriptStatus::srNone) ||
-			(scriptStatus->GetStatus() == ScriptStatus::srFailure))
+		if ((scriptStatus.GetStatus() == ScriptStatus::srSuccess && status == ScriptStatus::srNone) ||
+			(scriptStatus.GetStatus() == ScriptStatus::srFailure))
 		{
-			status = scriptStatus->GetStatus();
+			status = scriptStatus.GetStatus();
 		}
 	}
 
@@ -151,45 +118,23 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 }
 
 
-ServerStat::ServerStat(int serverId)
-{
-	m_serverId = serverId;
-	m_successArticles = 0;
-	m_failedArticles = 0;
-}
-
-
-ServerStatList::~ServerStatList()
-{
-	Clear();
-}
-
-void ServerStatList::Clear()
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		delete *it;
-	}
-	clear();
-}
-
 void ServerStatList::StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation)
 {
 	ServerStat* serverStat = nullptr;
 	for (iterator it = begin(); it != end(); it++)
 	{
-		ServerStat* serverStat1 = *it;
-		if (serverStat1->GetServerId() == serverId)
+		ServerStat& serverStat1 = *it;
+		if (serverStat1.GetServerId() == serverId)
 		{
-			serverStat = serverStat1;
+			serverStat = &serverStat1;
 			break;
 		}
 	}
 
 	if (!serverStat)
 	{
-		serverStat = new ServerStat(serverId);
-		push_back(serverStat);
+		emplace_back(serverId);
+		serverStat = &back();
 	}
 
 	switch (statOperation)
@@ -215,8 +160,8 @@ void ServerStatList::ListOp(ServerStatList* serverStats, EStatOperation statOper
 {
 	for (iterator it = serverStats->begin(); it != serverStats->end(); it++)
 	{
-		ServerStat* serverStat = *it;
-		StatOp(serverStat->GetServerId(), serverStat->GetSuccessArticles(), serverStat->GetFailedArticles(), statOperation);
+		ServerStat& serverStat = *it;
+		StatOp(serverStat.GetServerId(), serverStat.GetSuccessArticles(), serverStat.GetFailedArticles(), statOperation);
 	}
 }
 
@@ -305,9 +250,6 @@ NzbInfo::~NzbInfo()
 	debug("Destroying NZBInfo");
 
 	delete m_postInfo;
-
-	ClearCompletedFiles();
-
 	m_fileList.Clear();
 }
 
@@ -336,15 +278,6 @@ void NzbInfo::ResetGenId(bool max)
 int NzbInfo::GenerateId()
 {
 	return ++m_idGen;
-}
-
-void NzbInfo::ClearCompletedFiles()
-{
-	for (CompletedFiles::iterator it = m_completedFiles.begin(); it != m_completedFiles.end(); it++)
-	{
-		delete *it;
-	}
-	m_completedFiles.clear();
 }
 
 void NzbInfo::SetUrl(const char* url)

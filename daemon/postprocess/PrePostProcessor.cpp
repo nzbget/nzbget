@@ -312,13 +312,13 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 		nzbInfo->GetDeleteStatus() == NzbInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk
-		for (CompletedFiles::reverse_iterator it = nzbInfo->GetCompletedFiles()->rbegin(); it != nzbInfo->GetCompletedFiles()->rend(); it++)
+		for (CompletedFileList::reverse_iterator it = nzbInfo->GetCompletedFiles()->rbegin(); it != nzbInfo->GetCompletedFiles()->rend(); it++)
 		{
-			CompletedFile* completedFile = *it;
-			BString<1024> fullFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile->GetFileName());
+			CompletedFile& completedFile = *it;
+			BString<1024> fullFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFileName());
 			if (FileSystem::FileExists(fullFileName))
 			{
-				detail("Deleting file %s", completedFile->GetFileName());
+				detail("Deleting file %s", completedFile.GetFileName());
 				FileSystem::DeleteFile(fullFileName);
 			}
 		}
@@ -368,7 +368,7 @@ void PrePostProcessor::CheckPostQueue()
 				postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psNone);
 				postInfo->SetRequestParCheck(false);
 				postInfo->SetStage(PostInfo::ptQueued);
-				postInfo->GetNzbInfo()->GetScriptStatuses()->Clear();
+				postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
 				DeletePostThread(postInfo);
 			}
 			else if (postInfo->GetRequestParCheck() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
@@ -663,7 +663,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 
 		if (nzbInfo->GetUnpackCleanedUpDisk())
 		{
-			nzbInfo->ClearCompletedFiles();
+			nzbInfo->GetCompletedFiles()->clear();
 		}
 
 		NzbCompleted(downloadQueue, nzbInfo, false);

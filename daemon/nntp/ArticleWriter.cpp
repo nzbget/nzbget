@@ -568,8 +568,8 @@ void ArticleWriter::CompleteFileParts()
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	m_fileInfo->GetNzbInfo()->GetCompletedFiles()->push_back(new CompletedFile(
-		m_fileInfo->GetId(), FileSystem::BaseFileName(ofn), fileStatus, crc));
+	m_fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(
+		m_fileInfo->GetId(), FileSystem::BaseFileName(ofn), fileStatus, crc);
 	if (strcmp(m_fileInfo->GetNzbInfo()->GetDestDir(), nzbDestDir))
 	{
 		// destination directory was changed during completion, need to move the file
@@ -700,18 +700,18 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	}
 
 	// move already downloaded files to new destination
-	for (CompletedFiles::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFileList::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
 	{
-		CompletedFile* completedFile = *it;
+		CompletedFile& completedFile = *it;
 
-		BString<1024> oldFileName("%s%c%s", oldDestDir, (int)PATH_SEPARATOR, completedFile->GetFileName());
-		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile->GetFileName());
+		BString<1024> oldFileName("%s%c%s", oldDestDir, (int)PATH_SEPARATOR, completedFile.GetFileName());
+		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFileName());
 
 		// check if file was not moved already
 		if (strcmp(oldFileName, newFileName))
 		{
 			// prevent overwriting of existing files
-			newFileName = FileSystem::MakeUniqueFilename(nzbInfo->GetDestDir(), completedFile->GetFileName());
+			newFileName = FileSystem::MakeUniqueFilename(nzbInfo->GetDestDir(), completedFile.GetFileName());
 
 			detail("Moving file %s to %s", *oldFileName, *newFileName);
 			if (!FileSystem::MoveFile(oldFileName, newFileName))

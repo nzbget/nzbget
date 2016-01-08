@@ -159,12 +159,12 @@ void QueueCoordinator::Load()
 					}
 				}
 
-				for (CompletedFiles::iterator it2 = nzbInfo->GetCompletedFiles()->begin(); it2 != nzbInfo->GetCompletedFiles()->end(); it2++)
+				for (CompletedFileList::iterator it2 = nzbInfo->GetCompletedFiles()->begin(); it2 != nzbInfo->GetCompletedFiles()->end(); it2++)
 				{
-					CompletedFile* completedFile = *it2;
-					if (completedFile->GetStatus() != CompletedFile::cfSuccess && completedFile->GetId() > 0)
+					CompletedFile& completedFile = *it2;
+					if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
 					{
-						FileInfo* fileInfo = new FileInfo(completedFile->GetId());
+						FileInfo* fileInfo = new FileInfo(completedFile.GetId());
 						if (g_DiskState->LoadFileState(fileInfo, g_ServerPool->GetServers(), false))
 						{
 							g_DiskState->SaveFileState(fileInfo, true);
@@ -1110,10 +1110,10 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 		destNzbInfo->GetDownloadStartTime() : srcNzbInfo->GetDownloadStartTime());
 
 	// reattach completed file items to new NZBInfo-object
-	for (CompletedFiles::iterator it = srcNzbInfo->GetCompletedFiles()->begin(); it != srcNzbInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFileList::iterator it = srcNzbInfo->GetCompletedFiles()->begin(); it != srcNzbInfo->GetCompletedFiles()->end(); it++)
 	{
-		CompletedFile* completedFile = *it;
-		destNzbInfo->GetCompletedFiles()->push_back(completedFile);
+		CompletedFile& completedFile = *it;
+		destNzbInfo->GetCompletedFiles()->push_back(std::move(completedFile));
 	}
 	srcNzbInfo->GetCompletedFiles()->clear();
 

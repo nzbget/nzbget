@@ -40,11 +40,11 @@ class ServerStat
 {
 private:
 	int					m_serverId;
-	int					m_successArticles;
-	int					m_failedArticles;
+	int					m_successArticles = 0;
+	int					m_failedArticles = 0;
 
 public:
-						ServerStat(int serverId);
+						ServerStat(int serverId) : m_serverId(serverId) {}
 	int					GetServerId() { return m_serverId; }
 	int					GetSuccessArticles() { return m_successArticles; }
 	void				SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
@@ -52,7 +52,7 @@ public:
 	void				SetFailedArticles(int failedArticles) { m_failedArticles = failedArticles; }
 };
 
-typedef std::vector<ServerStat*>	ServerStatListBase;
+typedef std::vector<ServerStat>		ServerStatListBase;
 
 class ServerStatList : public ServerStatListBase
 {
@@ -65,10 +65,8 @@ public:
 	};
 
 public:
-						~ServerStatList();
 	void				StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation);
 	void				ListOp(ServerStatList* serverStats, EStatOperation statOperation);
-	void				Clear();
 };
 
 class ArticleInfo
@@ -264,7 +262,7 @@ public:
 	uint32				GetCrc() { return m_crc; }
 };
 
-typedef std::deque<CompletedFile*>	CompletedFiles;
+typedef std::deque<CompletedFile>	CompletedFileList;
 
 class NzbParameter
 {
@@ -277,20 +275,19 @@ private:
 	friend class NzbParameterList;
 
 public:
-						NzbParameter(const char* name) : m_name(name) {}
+						NzbParameter(const char* name, const char* value) :
+							m_name(name), m_value(value) {}
 	const char*			GetName() { return m_name; }
 	const char*			GetValue() { return m_value; }
 };
 
-typedef std::deque<NzbParameter*> NzbParameterListBase;
+typedef std::deque<NzbParameter>	NzbParameterListBase;
 
 class NzbParameterList : public NzbParameterListBase
 {
 public:
-						~NzbParameterList();
 	void				SetParameter(const char* name, const char* value);
 	NzbParameter*		Find(const char* name, bool caseSensitive);
-	void				Clear();
 	void				CopyFrom(NzbParameterList* sourceParameters);
 };
 
@@ -311,20 +308,17 @@ private:
 	friend class ScriptStatusList;
 
 public:
-						ScriptStatus(const char* name, EStatus status)
-							: m_name(name), m_status(status) {}
+						ScriptStatus(const char* name, EStatus status) : 
+							m_name(name), m_status(status) {}
 	const char*			GetName() { return m_name; }
 	EStatus				GetStatus() { return m_status; }
 };
 
-typedef std::deque<ScriptStatus*> ScriptStatusListBase;
+typedef std::deque<ScriptStatus>	ScriptStatusListBase;
 
 class ScriptStatusList : public ScriptStatusListBase
 {
 public:
-						~ScriptStatusList();
-	void				Add(const char* scriptName, ScriptStatus::EStatus status);
-	void				Clear();
 	ScriptStatus::EStatus	CalcTotalStatus();
 };
 
@@ -455,7 +449,7 @@ private:
 	time_t				m_minTime;
 	time_t				m_maxTime;
 	int					m_priority;
-	CompletedFiles		m_completedFiles;
+	CompletedFileList	m_completedFiles;
 	ERenameStatus		m_renameStatus;
 	EParStatus			m_parStatus;
 	EUnpackStatus		m_unpackStatus;
@@ -585,8 +579,7 @@ public:
 	void				SetMaxTime(time_t maxTime) { m_maxTime = maxTime; }
 	void				BuildDestDirName();
 	CString				BuildFinalDirName();
-	CompletedFiles*		GetCompletedFiles() { return &m_completedFiles; }
-	void				ClearCompletedFiles();
+	CompletedFileList*	GetCompletedFiles() { return &m_completedFiles; }
 	ERenameStatus		GetRenameStatus() { return m_renameStatus; }
 	void				SetRenameStatus(ERenameStatus renameStatus) { m_renameStatus = renameStatus; }
 	EParStatus			GetParStatus() { return m_parStatus; }
