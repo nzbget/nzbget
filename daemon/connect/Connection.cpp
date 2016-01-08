@@ -249,7 +249,12 @@ bool Connection::Bind()
 	int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
 	if (res != 0)
 	{
-		ReportError("Could not resolve hostname %s", m_host, false, 0);
+		ReportError("Could not resolve hostname %s", m_host, true
+#ifndef WIN32
+			, res != EAI_SYSTEM ? res : 0
+			, res != EAI_SYSTEM ? gai_strerror(res) : nullptr
+#endif
+			);
 		return false;
 	}
 
@@ -301,7 +306,7 @@ bool Connection::Bind()
 	m_socket = socket(PF_INET, SOCK_STREAM, 0);
 	if (m_socket == INVALID_SOCKET)
 	{
-		ReportError("Socket creation failed for %s", m_host, true, 0);
+		ReportError("Socket creation failed for %s", m_host, true);
 		return false;
 	}
 
@@ -319,13 +324,13 @@ bool Connection::Bind()
 
 	if (m_socket == INVALID_SOCKET)
 	{
-		ReportError("Binding socket failed for %s", m_host, true, 0);
+		ReportError("Binding socket failed for %s", m_host, true);
 		return false;
 	}
 
 	if (listen(m_socket, 100) < 0)
 	{
-		ReportError("Listen on socket failed for %s", m_host, true, 0);
+		ReportError("Listen on socket failed for %s", m_host, true);
 		return false;
 	}
 
@@ -395,7 +400,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 			bufAvail = recv(m_socket, m_readBuf, CONNECTION_READBUFFER_SIZE, 0);
 			if (bufAvail < 0)
 			{
-				ReportError("Could not receive data on socket", nullptr, true, 0);
+				ReportError("Could not receive data on socket", nullptr, true);
 				m_broken = true;
 				break;
 			}
@@ -467,7 +472,7 @@ Connection* Connection::Accept()
 	SOCKET socket = accept(m_socket, nullptr, nullptr);
 	if (socket == INVALID_SOCKET && m_status != csCancelled)
 	{
-		ReportError("Could not accept connection", nullptr, true, 0);
+		ReportError("Could not accept connection", nullptr, true);
 	}
 	if (socket == INVALID_SOCKET)
 	{
@@ -489,7 +494,7 @@ int Connection::TryRecv(char* buffer, int size)
 
 	if (received < 0)
 	{
-		ReportError("Could not receive data on socket", nullptr, true, 0);
+		ReportError("Could not receive data on socket", nullptr, true);
 	}
 
 	return received;
@@ -521,7 +526,7 @@ bool Connection::Recv(char * buffer, int size)
 		// Did the recv succeed?
 		if (received <= 0)
 		{
-			ReportError("Could not receive data on socket", nullptr, true, 0);
+			ReportError("Could not receive data on socket", nullptr, true);
 			return false;
 		}
 		bufPtr += received;
@@ -549,7 +554,12 @@ bool Connection::DoConnect()
 	int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
 	if (res != 0)
 	{
-		ReportError("Could not resolve hostname %s", m_host, true, 0);
+		ReportError("Could not resolve hostname %s", m_host, true
+#ifndef WIN32
+					, res != EAI_SYSTEM ? res : 0
+					, res != EAI_SYSTEM ? gai_strerror(res) : nullptr
+#endif
+					);
 		return false;
 	}
 
@@ -591,12 +601,12 @@ bool Connection::DoConnect()
 
 	if (m_socket == INVALID_SOCKET && addr_list)
 	{
-		ReportError("Socket creation failed for %s", m_host, true, 0);
+		ReportError("Socket creation failed for %s", m_host, true);
 	}
 
 	if (!connected && m_socket != INVALID_SOCKET)
 	{
-		ReportError("Connection to %s failed", m_host, true, 0);
+		ReportError("Connection to %s failed", m_host, true);
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}
@@ -623,13 +633,13 @@ bool Connection::DoConnect()
 	m_socket = socket(PF_INET, SOCK_STREAM, 0);
 	if (m_socket == INVALID_SOCKET)
 	{
-		ReportError("Socket creation failed for %s", m_host, true, 0);
+		ReportError("Socket creation failed for %s", m_host, true);
 		return false;
 	}
 
 	if (!ConnectWithTimeout(&sSocketAddress, sizeof(sSocketAddress)))
 	{
-		ReportError("Connection to %s failed", m_host, true, 0);
+		ReportError("Connection to %s failed", m_host, true);
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 		return false;
@@ -669,13 +679,13 @@ bool Connection::InitSocketOpts()
 	int err = setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, optbuf, optsize);
 	if (err != 0)
 	{
-		ReportError("Socket initialization failed for %s", m_host, true, 0);
+		ReportError("Socket initialization failed for %s", m_host, true);
 		return false;
 	}
 	err = setsockopt(m_socket, SOL_SOCKET, SO_SNDTIMEO, optbuf, optsize);
 	if (err != 0)
 	{
-		ReportError("Socket initialization failed for %s", m_host, true, 0);
+		ReportError("Socket initialization failed for %s", m_host, true);
 		return false;
 	}
 	return true;
@@ -831,12 +841,12 @@ void Connection::Cancel()
 		int r = shutdown(m_socket, SHUT_RDWR);
 		if (r == -1)
 		{
-			ReportError("Could not shutdown connection", nullptr, true, 0);
+			ReportError("Could not shutdown connection", nullptr, true);
 		}
 	}
 }
 
-void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno)
+void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno, const char* herrMsg)
 {
 #ifndef DISABLE_TLS
 	if (m_tlsError)
@@ -858,14 +868,14 @@ void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool Pri
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, ErrCode, 0, errMsg, 1024, nullptr);
 		errMsg[1024-1] = '\0';
 #else
-		const char *errMsg = nullptr;
+		const char* errMsg = herrMsg;
 		int ErrCode = herrno;
 		if (herrno == 0)
 		{
 			ErrCode = errno;
 			errMsg = strerror(ErrCode);
 		}
-		else
+		else if (!herrMsg)
 		{
 			errMsg = hstrerror(ErrCode);
 		}

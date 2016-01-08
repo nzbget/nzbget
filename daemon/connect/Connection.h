@@ -98,7 +98,7 @@ protected:
 #endif
 
 						Connection(SOCKET socket, bool tls);
-	void				ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno);
+	void				ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno = 0, const char* herrMsg = nullptr);
 	virtual void		PrintError(const char* errMsg);
 	bool				DoConnect();
 	bool				DoDisconnect();
