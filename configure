@@ -694,7 +694,7 @@ am__fastdepCXX_TRUE
 am__fastdepCXX_FALSE
 TAR
 MAKE
-HAVE_CXX11
+HAVE_CXX14
 CXXCPP
 GREP
 EGREP
@@ -1304,7 +1304,7 @@ Optional Features:
 			  (and sometimes confusing) to the casual installer
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --disable-cpp-check     disable check for C++11/C++14 compiler features
+  --disable-cpp-check     disable check for C++14 compiler features
   --disable-largefile     omit support for large files
   --disable-curses        do not use curses (removes dependency from
                           curses-library)
@@ -3258,16 +3258,16 @@ fi
 echo "${ECHO_T}$ENABLECPPCHECK" >&6; }
 if test "$ENABLECPPCHECK" = "yes"; then
 
-      ax_cxx_compile_cxx11_required=true
+      ax_cxx_compile_cxx14_required=false
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   ac_success=no
-  { echo "$as_me:$LINENO: checking whether $CXX supports C++11 features by default" >&5
-echo $ECHO_N "checking whether $CXX supports C++11 features by default... $ECHO_C" >&6; }
-if test "${ax_cv_cxx_compile_cxx11+set}" = set; then
+  { echo "$as_me:$LINENO: checking whether $CXX supports C++14 features by default" >&5
+echo $ECHO_N "checking whether $CXX supports C++14 features by default... $ECHO_C" >&6; }
+if test "${ax_cv_cxx_compile_cxx14+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -3562,6 +3562,132 @@ namespace cxx11
 
 
 
+
+// If the compiler admits that it is not ready for C++14, why torture it?
+// Hopefully, this will speed up the test.
+
+#ifndef __cplusplus
+
+#error "This is not a C++ compiler"
+
+//check for full C++14 support (disabed)
+//#elif __cplusplus < 201402L
+
+// check for partial C++14 support (accept gcc 4.9)
+#elif __cplusplus < 201300L
+
+#error "This is not a C++14 compiler"
+
+#else
+
+namespace cxx14
+{
+
+  namespace test_polymorphic_lambdas
+  {
+
+    int
+    test()
+    {
+      const auto lambda = [](auto&&... args){
+        const auto istiny = [](auto x){
+          return (sizeof(x) == 1UL) ? 1 : 0;
+        };
+        const int aretiny[] = { istiny(args)... };
+        return aretiny[0];
+      };
+      return lambda(1, 1L, 1.0f, '1');
+    }
+
+  }
+
+  namespace test_binary_literals
+  {
+
+    constexpr auto ivii = 0b0000000000101010;
+    static_assert(ivii == 42, "wrong value");
+
+  }
+
+/*
+  namespace test_generalized_constexpr
+  {
+
+    template < typename CharT >
+    constexpr unsigned long
+    strlen_c(const CharT *const s) noexcept
+    {
+      auto length = 0UL;
+      for (auto p = s; *p; ++p)
+        ++length;
+      return length;
+    }
+
+    static_assert(strlen_c("") == 0UL, "");
+    static_assert(strlen_c("x") == 1UL, "");
+    static_assert(strlen_c("test") == 4UL, "");
+    static_assert(strlen_c("another\0test") == 7UL, "");
+
+  }
+*/
+
+  namespace test_lambda_init_capture
+  {
+
+    int
+    test()
+    {
+      auto x = 0;
+      const auto lambda1 = [a = x](int b){ return a + b; };
+      const auto lambda2 = [a = lambda1(x)](){ return a; };
+      return lambda2();
+    }
+
+  }
+
+  namespace test_digit_seperators
+  {
+
+    constexpr auto ten_million = 100'000'000;
+    static_assert(ten_million == 100000000, "");
+
+  }
+
+  namespace test_return_type_deduction
+  {
+
+    auto f(int& x) { return x; }
+    decltype(auto) g(int& x) { return x; }
+
+    template < typename T1, typename T2 >
+    struct is_same
+    {
+      static constexpr auto value = false;
+    };
+
+    template < typename T >
+    struct is_same<T, T>
+    {
+      static constexpr auto value = true;
+    };
+
+    int
+    test()
+    {
+      auto x = 0;
+      static_assert(is_same<int, decltype(f(x))>::value, "");
+      static_assert(is_same<int&, decltype(g(x))>::value, "");
+      return x;
+    }
+
+  }
+
+}  // namespace cxx14
+
+#endif  // __cplusplus >= 201402L
+
+
+
 _ACEOF
 rm -f conftest.$ac_objext
 if { (ac_try="$ac_compile"
@@ -3580,27 +3706,27 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test -z "$ac_cxx_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
-  ax_cv_cxx_compile_cxx11=yes
+  ax_cv_cxx_compile_cxx14=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ax_cv_cxx_compile_cxx11=no
+	ax_cv_cxx_compile_cxx14=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-{ echo "$as_me:$LINENO: result: $ax_cv_cxx_compile_cxx11" >&5
-echo "${ECHO_T}$ax_cv_cxx_compile_cxx11" >&6; }
-  if test x$ax_cv_cxx_compile_cxx11 = xyes; then
+{ echo "$as_me:$LINENO: result: $ax_cv_cxx_compile_cxx14" >&5
+echo "${ECHO_T}$ax_cv_cxx_compile_cxx14" >&6; }
+  if test x$ax_cv_cxx_compile_cxx14 = xyes; then
     ac_success=yes
   fi
 
     if test x$ac_success = xno; then
-                for switch in -std=c++11 -std=c++0x +std=c++11 "-h std=c++11"; do
-      cachevar=`echo "ax_cv_cxx_compile_cxx11_$switch" | $as_tr_sh`
-      { echo "$as_me:$LINENO: checking whether $CXX supports C++11 features with $switch" >&5
-echo $ECHO_N "checking whether $CXX supports C++11 features with $switch... $ECHO_C" >&6; }
+                for switch in -std=c++14 -std=c++0x +std=c++14 "-h std=c++14"; do
+      cachevar=`echo "ax_cv_cxx_compile_cxx14_$switch" | $as_tr_sh`
+      { echo "$as_me:$LINENO: checking whether $CXX supports C++14 features with $switch" >&5
+echo $ECHO_N "checking whether $CXX supports C++14 features with $switch... $ECHO_C" >&6; }
 if { as_var=$cachevar; eval "test \"\${$as_var+set}\" = set"; }; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -3895,6 +4021,132 @@ namespace cxx11
 }  // namespace cxx11
 
 #endif  // __cplusplus >= 201103L
+
+
+
+
+// If the compiler admits that it is not ready for C++14, why torture it?
+// Hopefully, this will speed up the test.
+
+#ifndef __cplusplus
+
+#error "This is not a C++ compiler"
+
+//check for full C++14 support (disabed)
+//#elif __cplusplus < 201402L
+
+// check for partial C++14 support (accept gcc 4.9)
+#elif __cplusplus < 201300L
+
+#error "This is not a C++14 compiler"
+
+#else
+
+namespace cxx14
+{
+
+  namespace test_polymorphic_lambdas
+  {
+
+    int
+    test()
+    {
+      const auto lambda = [](auto&&... args){
+        const auto istiny = [](auto x){
+          return (sizeof(x) == 1UL) ? 1 : 0;
+        };
+        const int aretiny[] = { istiny(args)... };
+        return aretiny[0];
+      };
+      return lambda(1, 1L, 1.0f, '1');
+    }
+
+  }
+
+  namespace test_binary_literals
+  {
+
+    constexpr auto ivii = 0b0000000000101010;
+    static_assert(ivii == 42, "wrong value");
+
+  }
+
+/*
+  namespace test_generalized_constexpr
+  {
+
+    template < typename CharT >
+    constexpr unsigned long
+    strlen_c(const CharT *const s) noexcept
+    {
+      auto length = 0UL;
+      for (auto p = s; *p; ++p)
+        ++length;
+      return length;
+    }
+
+    static_assert(strlen_c("") == 0UL, "");
+    static_assert(strlen_c("x") == 1UL, "");
+    static_assert(strlen_c("test") == 4UL, "");
+    static_assert(strlen_c("another\0test") == 7UL, "");
+
+  }
+*/
+
+  namespace test_lambda_init_capture
+  {
+
+    int
+    test()
+    {
+      auto x = 0;
+      const auto lambda1 = [a = x](int b){ return a + b; };
+      const auto lambda2 = [a = lambda1(x)](){ return a; };
+      return lambda2();
+    }
+
+  }
+
+  namespace test_digit_seperators
+  {
+
+    constexpr auto ten_million = 100'000'000;
+    static_assert(ten_million == 100000000, "");
+
+  }
+
+  namespace test_return_type_deduction
+  {
+
+    auto f(int& x) { return x; }
+    decltype(auto) g(int& x) { return x; }
+
+    template < typename T1, typename T2 >
+    struct is_same
+    {
+      static constexpr auto value = false;
+    };
+
+    template < typename T >
+    struct is_same<T, T>
+    {
+      static constexpr auto value = true;
+    };
+
+    int
+    test()
+    {
+      auto x = 0;
+      static_assert(is_same<int, decltype(f(x))>::value, "");
+      static_assert(is_same<int&, decltype(g(x))>::value, "");
+      return x;
+    }
+
+  }
+
+}  // namespace cxx14
+
+#endif  // __cplusplus >= 201402L
 
 
 
@@ -3939,10 +4191,10 @@ echo "${ECHO_T}$ac_res" >&6; }
   fi
 
     if test x$ac_success = xno; then
-    for switch in -std=gnu++11 -std=gnu++0x; do
-      cachevar=`echo "ax_cv_cxx_compile_cxx11_$switch" | $as_tr_sh`
-      { echo "$as_me:$LINENO: checking whether $CXX supports C++11 features with $switch" >&5
-echo $ECHO_N "checking whether $CXX supports C++11 features with $switch... $ECHO_C" >&6; }
+    for switch in -std=gnu++14 -std=gnu++0x; do
+      cachevar=`echo "ax_cv_cxx_compile_cxx14_$switch" | $as_tr_sh`
+      { echo "$as_me:$LINENO: checking whether $CXX supports C++14 features with $switch" >&5
+echo $ECHO_N "checking whether $CXX supports C++14 features with $switch... $ECHO_C" >&6; }
 if { as_var=$cachevar; eval "test \"\${$as_var+set}\" = set"; }; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -4237,6 +4489,132 @@ namespace cxx11
 }  // namespace cxx11
 
 #endif  // __cplusplus >= 201103L
+
+
+
+
+// If the compiler admits that it is not ready for C++14, why torture it?
+// Hopefully, this will speed up the test.
+
+#ifndef __cplusplus
+
+#error "This is not a C++ compiler"
+
+//check for full C++14 support (disabed)
+//#elif __cplusplus < 201402L
+
+// check for partial C++14 support (accept gcc 4.9)
+#elif __cplusplus < 201300L
+
+#error "This is not a C++14 compiler"
+
+#else
+
+namespace cxx14
+{
+
+  namespace test_polymorphic_lambdas
+  {
+
+    int
+    test()
+    {
+      const auto lambda = [](auto&&... args){
+        const auto istiny = [](auto x){
+          return (sizeof(x) == 1UL) ? 1 : 0;
+        };
+        const int aretiny[] = { istiny(args)... };
+        return aretiny[0];
+      };
+      return lambda(1, 1L, 1.0f, '1');
+    }
+
+  }
+
+  namespace test_binary_literals
+  {
+
+    constexpr auto ivii = 0b0000000000101010;
+    static_assert(ivii == 42, "wrong value");
+
+  }
+
+/*
+  namespace test_generalized_constexpr
+  {
+
+    template < typename CharT >
+    constexpr unsigned long
+    strlen_c(const CharT *const s) noexcept
+    {
+      auto length = 0UL;
+      for (auto p = s; *p; ++p)
+        ++length;
+      return length;
+    }
+
+    static_assert(strlen_c("") == 0UL, "");
+    static_assert(strlen_c("x") == 1UL, "");
+    static_assert(strlen_c("test") == 4UL, "");
+    static_assert(strlen_c("another\0test") == 7UL, "");
+
+  }
+*/
+
+  namespace test_lambda_init_capture
+  {
+
+    int
+    test()
+    {
+      auto x = 0;
+      const auto lambda1 = [a = x](int b){ return a + b; };
+      const auto lambda2 = [a = lambda1(x)](){ return a; };
+      return lambda2();
+    }
+
+  }
+
+  namespace test_digit_seperators
+  {
+
+    constexpr auto ten_million = 100'000'000;
+    static_assert(ten_million == 100000000, "");
+
+  }
+
+  namespace test_return_type_deduction
+  {
+
+    auto f(int& x) { return x; }
+    decltype(auto) g(int& x) { return x; }
+
+    template < typename T1, typename T2 >
+    struct is_same
+    {
+      static constexpr auto value = false;
+    };
+
+    template < typename T >
+    struct is_same<T, T>
+    {
+      static constexpr auto value = true;
+    };
+
+    int
+    test()
+    {
+      auto x = 0;
+      static_assert(is_same<int, decltype(f(x))>::value, "");
+      static_assert(is_same<int&, decltype(g(x))>::value, "");
+      return x;
+    }
+
+  }
+
+}  // namespace cxx14
+
+#endif  // __cplusplus >= 201402L
 
 
 
@@ -4286,22 +4664,22 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  if test x$ax_cxx_compile_cxx11_required = xtrue; then
+  if test x$ax_cxx_compile_cxx14_required = xtrue; then
     if test x$ac_success = xno; then
-      { { echo "$as_me:$LINENO: error: *** A compiler with support for C++11 language features is required." >&5
-echo "$as_me: error: *** A compiler with support for C++11 language features is required." >&2;}
+      { { echo "$as_me:$LINENO: error: *** A compiler with support for C++14 language features is required." >&5
+echo "$as_me: error: *** A compiler with support for C++14 language features is required." >&2;}
    { (exit 1); exit 1; }; }
     fi
   else
     if test x$ac_success = xno; then
-      HAVE_CXX11=0
-      { echo "$as_me:$LINENO: No compiler with C++11 support was found" >&5
-echo "$as_me: No compiler with C++11 support was found" >&6;}
+      HAVE_CXX14=0
+      { echo "$as_me:$LINENO: No compiler with C++14 support was found" >&5
+echo "$as_me: No compiler with C++14 support was found" >&6;}
     else
-      HAVE_CXX11=1
+      HAVE_CXX14=1
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_CXX11 1
+#define HAVE_CXX14 1
 _ACEOF
 
     fi
@@ -4309,6 +4687,11 @@ _ACEOF
 
   fi
 
+	if test "$HAVE_CXX14" != "1"; then
+		{ { echo "$as_me:$LINENO: error: \"A compiler with support for C++14 language features is required. For details visit http://nzbget.net/cpp14\"" >&5
+echo "$as_me: error: \"A compiler with support for C++14 language features is required. For details visit http://nzbget.net/cpp14\"" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 fi
 
 ac_ext=cpp
@@ -11092,7 +11475,7 @@ am__fastdepCXX_TRUE!$am__fastdepCXX_TRUE$ac_delim
 am__fastdepCXX_FALSE!$am__fastdepCXX_FALSE$ac_delim
 TAR!$TAR$ac_delim
 MAKE!$MAKE$ac_delim
-HAVE_CXX11!$HAVE_CXX11$ac_delim
+HAVE_CXX14!$HAVE_CXX14$ac_delim
 CXXCPP!$CXXCPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim

@@ -54,16 +54,19 @@ dnl
 AC_LANG(C++)
 
 dnl
-dnl Determine compiler switches to support C++11 standard.
+dnl Determine compiler switches to support C++14 standard.
 dnl
 AC_MSG_CHECKING(whether to test compiler features)
 AC_ARG_ENABLE(cpp-check,
-	[AS_HELP_STRING([--disable-cpp-check], [disable check for C++11/C++14 compiler features])],
+	[AS_HELP_STRING([--disable-cpp-check], [disable check for C++14 compiler features])],
 	[ ENABLECPPCHECK=$enableval ],
 	[ ENABLECPPCHECK=yes] )
 AC_MSG_RESULT($ENABLECPPCHECK)
 if test "$ENABLECPPCHECK" = "yes"; then
-    AX_CXX_COMPILE_STDCXX(11,,)
+	AX_CXX_COMPILE_STDCXX(14,,[optional])
+	if test "$HAVE_CXX14" != "1"; then
+		AC_MSG_ERROR("A compiler with support for C++14 language features is required. For details visit http://nzbget.net/cpp14")
+	fi
 fi
 
 dnl
