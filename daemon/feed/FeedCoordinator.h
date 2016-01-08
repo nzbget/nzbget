@@ -80,8 +80,8 @@ private:
 		virtual void		CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen);
 	};
 
-	typedef std::deque<FeedCacheItem*>	FeedCache;
-	typedef std::list<FeedDownloader*>	ActiveDownloads;
+	typedef std::list<FeedCacheItem>		FeedCache;
+	typedef std::deque<FeedDownloader*>		ActiveDownloads;
 
 private:
 	Feeds					m_feeds;

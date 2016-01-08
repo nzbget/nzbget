@@ -122,10 +122,6 @@ FeedCoordinator::~FeedCoordinator()
 	m_feeds.clear();
 
 	debug("Deleting FeedCache");
-	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); it++)
-	{
-		delete *it;
-	}
 	m_feedCache.clear();
 
 	debug("FeedCoordinator destroyed");
@@ -552,11 +548,11 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		m_downloadsMutex.Lock();
 		for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); it++)
 		{
-			FeedCacheItem* feedCacheItem = *it;
-			if (!strcmp(feedCacheItem->GetCacheId(), cacheId))
+			FeedCacheItem& feedCacheItem = *it;
+			if (!strcmp(feedCacheItem.GetCacheId(), cacheId))
 			{
-				feedCacheItem->SetLastUsage(Util::CurrentTime());
-				feedItemInfos = feedCacheItem->GetFeedItemInfos();
+				feedCacheItem.SetLastUsage(Util::CurrentTime());
+				feedItemInfos = feedCacheItem.GetFeedItemInfos();
 				feedItemInfos->Retain();
 				hasCache = true;
 				break;
@@ -632,9 +628,8 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 
 	if (cacheTimeSec > 0 && *cacheId != '\0' && !hasCache)
 	{
-		FeedCacheItem* feedCacheItem = new FeedCacheItem(url, cacheTimeSec, cacheId, Util::CurrentTime(), feedItemInfos);
 		m_downloadsMutex.Lock();
-		m_feedCache.push_back(feedCacheItem);
+		m_feedCache.emplace_back(url, cacheTimeSec, cacheId, Util::CurrentTime(), feedItemInfos);
 		m_downloadsMutex.Unlock();
 	}
 
@@ -751,22 +746,15 @@ void FeedCoordinator::CleanupCache()
 	m_downloadsMutex.Lock();
 
 	time_t curTime = Util::CurrentTime();
-	int i = 0;
-	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); )
+	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); it++)
 	{
-		FeedCacheItem* feedCacheItem = *it;
-		if (feedCacheItem->GetLastUsage() + feedCacheItem->GetCacheTimeSec() < curTime ||
-			feedCacheItem->GetLastUsage() > curTime)
+		FeedCacheItem& feedCacheItem = *it;
+		if (feedCacheItem.GetLastUsage() + feedCacheItem.GetCacheTimeSec() < curTime ||
+			feedCacheItem.GetLastUsage() > curTime)
 		{
-			debug("Deleting %s from feed cache", feedCacheItem->GetUrl());
-			delete feedCacheItem;
-			m_feedCache.erase(it);
-			it = m_feedCache.begin() + i;
-		}
-		else
-		{
-			it++;
-			i++;
+			debug("Deleting %s from feed cache", feedCacheItem.GetUrl());
+			FeedCache::iterator cur = it--;
+			m_feedCache.erase(cur);
 		}
 	}
 
