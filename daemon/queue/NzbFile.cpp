@@ -346,7 +346,7 @@ void NzbFile::CalcHashes()
 
 		// check file extension
 		bool skip = !fileInfo->GetParFile() &&
-			Util::MatchFileExt(fileInfo->GetFilename(), g_Options->GetExtCleanupDisk(), ",;");
+			Util::MatchFileExt(fileInfo->GetFilename(), g_Options->GetParIgnoreExt(), ",;");
 
 		for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
 		{

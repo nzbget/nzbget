@@ -235,14 +235,18 @@ TEST_CASE("Par-checker: ignoring extensions", "[Par][ParChecker][Slow][TestData]
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
 
+	ParChecker::EStatus expectedStatus;
+
 	SECTION("ParIgnoreExt")
 	{
 		cmdOpts.push_back("ParIgnoreExt=.dat");
+		expectedStatus = ParChecker::psRepairNotNeeded;
 	}
 
 	SECTION("ExtCleanupDisk")
 	{
 		cmdOpts.push_back("ExtCleanupDisk=.dat");
+		expectedStatus = ParChecker::psFailed;
 	}
 
 	Options options(&cmdOpts, nullptr);
@@ -258,5 +262,5 @@ TEST_CASE("Par-checker: ignoring extensions", "[Par][ParChecker][Slow][TestData]
 
 	parChecker.Execute();
 
-	REQUIRE(parChecker.GetStatus() == ParChecker::psRepairNotNeeded);
+	REQUIRE(parChecker.GetStatus() == expectedStatus);
 }

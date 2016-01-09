@@ -1126,8 +1126,7 @@ void ParChecker::signal_done(std::string str, int available, int total)
 				}
 			}
 
-			bool ignore = Util::MatchFileExt(filename, g_Options->GetParIgnoreExt(), ",;") ||
-				Util::MatchFileExt(filename, g_Options->GetExtCleanupDisk(), ",;");
+			bool ignore = Util::MatchFileExt(filename, g_Options->GetParIgnoreExt(), ",;");
 			m_hasDamagedFiles |= !ignore;
 
 			if (fileExists)
@@ -1168,8 +1167,7 @@ void ParChecker::CheckEmptyFiles()
 			const char* filename = filenameObj.c_str();
 			if (!Util::EmptyStr(filename) && !IsProcessedFile(filename))
 			{
-				bool ignore = Util::MatchFileExt(filename, g_Options->GetParIgnoreExt(), ",;") ||
-					Util::MatchFileExt(filename, g_Options->GetExtCleanupDisk(), ",;");
+				bool ignore = Util::MatchFileExt(filename, g_Options->GetParIgnoreExt(), ",;");
 				m_hasDamagedFiles |= !ignore;
 
 				int total = sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0;
