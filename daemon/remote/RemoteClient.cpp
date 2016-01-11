@@ -379,13 +379,10 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			int matches = 0;
 			int nrFileEntries = 0;
 
-			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 			{
-				NzbInfo* nzbInfo = *it;
-				for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+				for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 				{
-					FileInfo* fileInfo = *it2;
-
 					nrFileEntries++;
 
 					BString<100> completed;
@@ -466,10 +463,8 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			int matches = 0;
 			int nrFileEntries = 0;
 
-			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 			{
-				NzbInfo* nzbInfo = *it;
-
 				nrFileEntries += nzbInfo->GetFileList()->size();
 
 				int64 unpausedRemainingSize = nzbInfo->GetRemainingSize() - nzbInfo->GetPausedSize();
@@ -503,10 +498,9 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 				}
 
 				BString<1024> parameters;
-				for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+				for (NzbParameter& nzbParameter : *nzbInfo->GetParameters())
 				{
 					parameters.Append(parameters.Empty() ? " (" : ", ");
-					NzbParameter& nzbParameter = *it;
 					parameters.AppendFmt("%s=%s", nzbParameter.GetName(), nzbParameter.GetValue());
 				}
 				if (!parameters.Empty())
@@ -817,9 +811,8 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	int nameLength = 0;
 	if (nameList && nameList->size() > 0)
 	{
-		for (NameList::iterator it = nameList->begin(); it != nameList->end(); it++)
+		for (CString& name : *nameList)
 		{
-			const char *name = *it;
 			nameLength += strlen(name) + 1;
 			nameCount++;
 		}
@@ -861,9 +854,8 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	if (nameCount > 0)
 	{
 		char *names = trailingData + textLen + idLength;
-		for (NameList::iterator it = nameList->begin(); it != nameList->end(); it++)
+		for (CString& name : *nameList)
 		{
-			const char *name = *it;
 			int len = strlen(name);
 			strncpy(names, name, len + 1);
 			names += len + 1;

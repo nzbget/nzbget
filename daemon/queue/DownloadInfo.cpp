@@ -76,9 +76,8 @@ void NzbParameterList::SetParameter(const char* name, const char* value)
 
 NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 {
-	for (iterator it = begin(); it != end(); it++)
+	for (NzbParameter& parameter : *this)
 	{
-		NzbParameter& parameter = *it;
 		if ((caseSensitive && !strcmp(parameter.GetName(), name)) ||
 			(!caseSensitive && !strcasecmp(parameter.GetName(), name)))
 		{
@@ -91,9 +90,8 @@ NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 
 void NzbParameterList::CopyFrom(NzbParameterList* sourceParameters)
 {
-	for (iterator it = sourceParameters->begin(); it != sourceParameters->end(); it++)
+	for (NzbParameter& parameter : *sourceParameters)
 	{
-		NzbParameter& parameter = *it;
 		SetParameter(parameter.GetName(), parameter.GetValue());
 	}
 }
@@ -103,9 +101,8 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 {
 	ScriptStatus::EStatus status = ScriptStatus::srNone;
 
-	for (iterator it = begin(); it != end(); it++)
+	for (ScriptStatus& scriptStatus : *this)
 	{
-		ScriptStatus& scriptStatus = *it;
 		// Failure-Status overrides Success-Status
 		if ((scriptStatus.GetStatus() == ScriptStatus::srSuccess && status == ScriptStatus::srNone) ||
 			(scriptStatus.GetStatus() == ScriptStatus::srFailure))
@@ -121,9 +118,8 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 void ServerStatList::StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation)
 {
 	ServerStat* serverStat = nullptr;
-	for (iterator it = begin(); it != end(); it++)
+	for (ServerStat& serverStat1 : *this)
 	{
-		ServerStat& serverStat1 = *it;
 		if (serverStat1.GetServerId() == serverId)
 		{
 			serverStat = &serverStat1;
@@ -158,9 +154,8 @@ void ServerStatList::StatOp(int serverId, int successArticles, int failedArticle
 
 void ServerStatList::ListOp(ServerStatList* serverStats, EStatOperation statOperation)
 {
-	for (iterator it = serverStats->begin(); it != serverStats->end(); it++)
+	for (ServerStat& serverStat : *serverStats)
 	{
-		ServerStat& serverStat = *it;
 		StatOp(serverStat.GetServerId(), serverStat.GetSuccessArticles(), serverStat.GetFailedArticles(), statOperation);
 	}
 }
@@ -440,9 +435,8 @@ void NzbInfo::UpdateMinMaxTime()
 	m_maxTime = 0;
 
 	bool first = true;
-	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); it++)
+	for (FileInfo* fileInfo : m_fileList)
 	{
-		FileInfo* fileInfo = *it;
 		if (first)
 		{
 			m_minTime = fileInfo->GetTime();
@@ -542,9 +536,8 @@ void NzbInfo::CopyFileList(NzbInfo* srcNzbInfo)
 {
 	m_fileList.Clear();
 
-	for (FileList::iterator it = srcNzbInfo->GetFileList()->begin(); it != srcNzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *srcNzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		fileInfo->SetNzbInfo(this);
 		m_fileList.push_back(fileInfo);
 	}
@@ -778,9 +771,9 @@ NzbList::~NzbList()
 
 void NzbList::Clear()
 {
-	for (iterator it = begin(); it != end(); it++)
+	for (NzbInfo* nzbInfo : *this)
 	{
-		delete *it;
+		delete nzbInfo;
 	}
 	clear();
 }
@@ -808,9 +801,8 @@ void NzbList::Remove(NzbInfo* nzbInfo)
 
 NzbInfo* NzbList::Find(int id)
 {
-	for (iterator it = begin(); it != end(); it++)
+	for (NzbInfo* nzbInfo : *this)
 	{
-		NzbInfo* nzbInfo = *it;
 		if (nzbInfo->GetId() == id)
 		{
 			return nzbInfo;
@@ -898,9 +890,9 @@ FileInfo::~ FileInfo()
 
 void FileInfo::ClearArticles()
 {
-	for (Articles::iterator it = m_articles.begin(); it != m_articles.end() ;it++)
+	for (ArticleInfo* articleInfo : m_articles)
 	{
-		delete *it;
+		delete articleInfo;
 	}
 	m_articles.clear();
 }
@@ -978,9 +970,9 @@ FileList::~FileList()
 
 void FileList::Clear()
 {
-	for (iterator it = begin(); it != end(); it++)
+	for (FileInfo* fileInfo : *this)
 	{
-		delete *it;
+		delete fileInfo;
 	}
 	clear();
 }
@@ -1113,17 +1105,16 @@ const char* HistoryInfo::GetName()
 
 HistoryList::~HistoryList()
 {
-	for (iterator it = begin(); it != end(); it++)
+	for (HistoryInfo* historyInfo : *this)
 	{
-		delete *it;
+		delete historyInfo;
 	}
 }
 
 HistoryInfo* HistoryList::Find(int id)
 {
-	for (iterator it = begin(); it != end(); it++)
+	for (HistoryInfo* historyInfo : *this)
 	{
-		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetId() == id)
 		{
 			return historyInfo;
@@ -1150,12 +1141,10 @@ void DownloadQueue::CalcRemainingSize(int64* remaining, int64* remainingForced)
 	int64 remainingSize = 0;
 	int64 remainingForcedSize = 0;
 
-	for (NzbList::iterator it = m_queue.begin(); it != m_queue.end(); it++)
+	for (NzbInfo* nzbInfo : m_queue)
 	{
-		NzbInfo* nzbInfo = *it;
-		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it2;
 			if (!fileInfo->GetPaused() && !fileInfo->GetDeleted())
 			{
 				remainingSize += fileInfo->GetRemainingSize();

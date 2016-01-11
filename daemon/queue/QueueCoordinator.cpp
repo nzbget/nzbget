@@ -92,9 +92,9 @@ QueueCoordinator::~QueueCoordinator()
 	g_Log->UnregisterDebuggable(this);
 
 	debug("Deleting ArticleDownloaders");
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (ArticleDownloader* articleDownloader : m_activeDownloads)
 	{
-		delete *it;
+		delete articleDownloader;
 	}
 	m_activeDownloads.clear();
 
@@ -143,15 +143,12 @@ void QueueCoordinator::Load()
 		// re-save file states into diskstate to update server ids
 		if (g_Options->GetServerMode() && g_Options->GetSaveQueue())
 		{
-			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 			{
-				NzbInfo* nzbInfo = *it;
-
 				if (g_Options->GetContinuePartial())
 				{
-					for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+					for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 					{
-						FileInfo* fileInfo = *it2;
 						if (!fileInfo->GetArticles()->empty())
 						{
 							g_DiskState->SaveFileState(fileInfo, false);
@@ -159,9 +156,8 @@ void QueueCoordinator::Load()
 					}
 				}
 
-				for (CompletedFileList::iterator it2 = nzbInfo->GetCompletedFiles()->begin(); it2 != nzbInfo->GetCompletedFiles()->end(); it2++)
+				for (CompletedFile& completedFile : *nzbInfo->GetCompletedFiles())
 				{
-					CompletedFile& completedFile = *it2;
 					if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
 					{
 						FileInfo* fileInfo = new FileInfo(completedFile.GetId());
@@ -304,9 +300,8 @@ void QueueCoordinator::AdjustDownloadsLimit()
 	int downloadsLimit = 2;
 
 	// allow one thread per 0-level (main) and 1-level (backup) server connection
-	for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
+	for (NewsServer* newsServer : *g_ServerPool->GetServers())
 	{
-		NewsServer* newsServer = *it;
 		if ((newsServer->GetNormLevel() == 0 || newsServer->GetNormLevel() == 1) && newsServer->GetActive())
 		{
 			downloadsLimit += newsServer->GetMaxConnections();
@@ -332,9 +327,8 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 	if (deleteStatus != NzbInfo::dsNone)
 	{
 		bool allPaused = !nzbInfo->GetFileList()->empty();
-		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+		for (FileInfo* fileInfo: *nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it;
 			allPaused &= fileInfo->GetPaused();
 			if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 			{
@@ -416,17 +410,14 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 	FileList dupeList(true);
 
 	int index1 = 0;
-	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 	{
 		index1++;
-		FileInfo* fileInfo = *it;
-
 		bool dupe = false;
 		int index2 = 0;
-		for (FileList::iterator it2 =  nzbInfo->GetFileList()->begin(); it2 !=  nzbInfo->GetFileList()->end(); it2++)
+		for (FileInfo* fileInfo2 : *nzbInfo->GetFileList())
 		{
 			index2++;
-			FileInfo* fileInfo2 = *it2;
 			if (fileInfo != fileInfo2 &&
 				!strcmp(fileInfo->GetFilename(), fileInfo2->GetFilename()) &&
 				(fileInfo->GetSize() < fileInfo2->GetSize() ||
@@ -444,9 +435,8 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 		}
 	}
 
-	for (FileList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+	for (FileInfo* fileInfo : dupeList)
 	{
-		FileInfo* fileInfo = *it;
 		StatFileInfo(fileInfo, false);
 		nzbInfo->GetFileList()->Remove(fileInfo);
 		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
@@ -462,9 +452,9 @@ void QueueCoordinator::Stop()
 
 	debug("Stopping ArticleDownloads");
 	DownloadQueue::Lock();
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (ArticleDownloader* articleDownloader : m_activeDownloads)
 	{
-		(*it)->Stop();
+		articleDownloader->Stop();
 	}
 	DownloadQueue::Unlock();
 	debug("ArticleDownloads are notified");
@@ -496,12 +486,10 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 		int num = 0;
 		int fileNum = 0;
 
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
-			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+			for (FileInfo* fileInfo1 : *nzbInfo->GetFileList())
 			{
-				FileInfo* fileInfo1 = *it2;
 				if ((!checkedFiles || !checkedFiles[num]) &&
 					!fileInfo1->GetPaused() && !fileInfo1->GetDeleted() &&
 					(g_Options->GetPropagationDelay() == 0 ||
@@ -531,11 +519,11 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 		}
 
 		// check if the file has any articles left for download
-		for (FileInfo::Articles::iterator at = fileInfo->GetArticles()->begin(); at != fileInfo->GetArticles()->end(); at++)
+		for (ArticleInfo* article : *fileInfo->GetArticles())
 		{
-			articleInfo = *at;
-			if (articleInfo->GetStatus() == ArticleInfo::aiUndefined)
+			if (article->GetStatus() == ArticleInfo::aiUndefined)
 			{
+				articleInfo = article;
 				ok = true;
 				break;
 			}
@@ -547,9 +535,8 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			if (!checkedFiles)
 			{
 				int totalFileCount = 0;
-				for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+				for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 				{
-					NzbInfo* nzbInfo = *it;
 					totalFileCount += nzbInfo->GetFileList()->size();
 				}
 
@@ -692,9 +679,8 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 	CheckHealth(downloadQueue, fileInfo);
 
 	bool hasOtherDownloaders = false;
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (ArticleDownloader* downloader : m_activeDownloads)
 	{
-		ArticleDownloader* downloader = *it;
 		if (downloader != articleDownloader && downloader->GetFileInfo() == fileInfo)
 		{
 			hasOtherDownloaders = true;
@@ -815,9 +801,8 @@ void QueueCoordinator::DiscardDiskFile(FileInfo* fileInfo)
 
 	if (!g_Options->GetDirectWrite())
 	{
-		for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
+		for (ArticleInfo* pa : *fileInfo->GetArticles())
 		{
-			ArticleInfo* pa = *it;
 			if (pa->GetResultFilename())
 			{
 				FileSystem::DeleteFile(pa->GetResultFilename());
@@ -840,12 +825,10 @@ void QueueCoordinator::SavePartialState()
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 	{
-		NzbInfo* nzbInfo = *it;
-		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it2;
 			if (fileInfo->GetPartialChanged())
 			{
 				debug("Saving partial state for %s", fileInfo->GetFilename());
@@ -903,9 +886,8 @@ void QueueCoordinator::LogDebugInfo()
 
 	info("   ---------- QueueCoordinator");
 	info("    Active Downloads: %i, Limit: %i", (int)m_activeDownloads.size(), m_downloadsLimit);
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (ArticleDownloader* articleDownloader : m_activeDownloads)
 	{
-		ArticleDownloader* articleDownloader = *it;
 		articleDownloader->LogDebugInfo();
 	}
 	DownloadQueue::Unlock();
@@ -974,9 +956,8 @@ bool QueueCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, FileInfo* 
 {
 	fileInfo->SetDeleted(true);
 	bool downloading = false;
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (ArticleDownloader* articleDownloader : m_activeDownloads)
 	{
-		ArticleDownloader* articleDownloader = *it;
 		if (articleDownloader->GetFileInfo() == fileInfo)
 		{
 			downloading = true;
@@ -1061,9 +1042,8 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 	SetQueueEntryCategory(downloadQueue, srcNzbInfo, destNzbInfo->GetCategory());
 
 	// reattach file items to new NZBInfo-object
-	for (FileList::iterator it = srcNzbInfo->GetFileList()->begin(); it != srcNzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *srcNzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		fileInfo->SetNzbInfo(destNzbInfo);
 		destNzbInfo->GetFileList()->push_back(fileInfo);
 	}
@@ -1110,9 +1090,8 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 		destNzbInfo->GetDownloadStartTime() : srcNzbInfo->GetDownloadStartTime());
 
 	// reattach completed file items to new NZBInfo-object
-	for (CompletedFileList::iterator it = srcNzbInfo->GetCompletedFiles()->begin(); it != srcNzbInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFile& completedFile : *srcNzbInfo->GetCompletedFiles())
 	{
-		CompletedFile& completedFile = *it;
 		destNzbInfo->GetCompletedFiles()->push_back(std::move(completedFile));
 	}
 	srcNzbInfo->GetCompletedFiles()->clear();
@@ -1143,9 +1122,8 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 
 	NzbInfo* srcNzbInfo = nullptr;
 
-	for (FileList::iterator it = fileList->begin(); it != fileList->end(); it++)
+	for (FileInfo* fileInfo : *fileList)
 	{
-		FileInfo* fileInfo = *it;
 		if (fileInfo->GetActiveDownloads() > 0 || fileInfo->GetCompletedArticles() > 0)
 		{
 			error("Could not split %s. File is already (partially) downloaded", fileInfo->GetFilename());
@@ -1178,10 +1156,8 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 	srcNzbInfo->SetFullContentHash(0);
 	srcNzbInfo->SetFilteredContentHash(0);
 
-	for (FileList::iterator it = fileList->begin(); it != fileList->end(); it++)
+	for (FileInfo* fileInfo : *fileList)
 	{
-		FileInfo* fileInfo = *it;
-
 		DownloadQueue::Aspect aspect = { DownloadQueue::eaFileDeleted, downloadQueue, fileInfo->GetNzbInfo(), fileInfo };
 		downloadQueue->Notify(&aspect);
 

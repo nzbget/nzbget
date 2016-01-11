@@ -58,9 +58,9 @@ Scheduler::~Scheduler()
 {
 	debug("Destroying Scheduler");
 
-	for (TaskList::iterator it = m_taskList.begin(); it != m_taskList.end(); it++)
+	for (Task* task : m_taskList)
 	{
-		delete *it;
+		delete task;
 	}
 }
 
@@ -126,9 +126,8 @@ void Scheduler::CheckTasks()
 			m_lastCheck = current - 60*60*24*7;
 			m_executeProcess = false;
 
-			for (TaskList::iterator it = m_taskList.begin(); it != m_taskList.end(); it++)
+			for (Task* task : m_taskList)
 			{
-				Task* task = *it;
 				task->m_lastExecuted = 0;
 			}
 		}
@@ -150,9 +149,8 @@ void Scheduler::CheckTasks()
 
 		while (loop <= localCurrent)
 		{
-			for (TaskList::iterator it = m_taskList.begin(); it != m_taskList.end(); it++)
+			for (Task* task : m_taskList)
 			{
-				Task* task = *it;
 				if (task->m_lastExecuted != loop)
 				{
 					tm tmAppoint;
@@ -280,13 +278,13 @@ void Scheduler::PrintLog()
 	if (m_serverChanged)
 	{
 		int index = 0;
-		for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++, index++)
+		for (NewsServer* server : *g_ServerPool->GetServers())
 		{
-			NewsServer* server = *it;
 			if (server->GetActive() != m_serverStatusList[index])
 			{
 				info("Scheduler: %s %s", server->GetActive() ? "activating" : "deactivating", server->GetName());
 			}
+			index++;
 		}
 		g_ServerPool->Changed();
 	}
@@ -298,9 +296,8 @@ void Scheduler::EditServer(bool active, const char* serverList)
 	while (const char* serverRef = tok.Next())
 	{
 		int id = atoi(serverRef);
-		for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
+		for (NewsServer* server : *g_ServerPool->GetServers())
 		{
-			NewsServer* server = *it;
 			if ((id > 0 && server->GetId() == id) ||
 				!strcasecmp(server->GetName(), serverRef))
 			{
@@ -309,9 +306,8 @@ void Scheduler::EditServer(bool active, const char* serverList)
 					// store old server status for logging
 					m_serverStatusList.clear();
 					m_serverStatusList.reserve(g_ServerPool->GetServers()->size());
-					for (Servers::iterator it2 = g_ServerPool->GetServers()->begin(); it2 != g_ServerPool->GetServers()->end(); it2++)
+					for (NewsServer* server2 : *g_ServerPool->GetServers())
 					{
-						NewsServer* server2 = *it2;
 						m_serverStatusList.push_back(server2->GetActive());
 					}
 				}
@@ -329,9 +325,8 @@ void Scheduler::FetchFeed(const char* feedList)
 	while (const char* feedRef = tok.Next())
 	{
 		int id = atoi(feedRef);
-		for (Feeds::iterator it = g_FeedCoordinator->GetFeeds()->begin(); it != g_FeedCoordinator->GetFeeds()->end(); it++)
+		for (FeedInfo* feed : *g_FeedCoordinator->GetFeeds())
 		{
-			FeedInfo* feed = *it;
 			if (feed->GetId() == id ||
 				!strcasecmp(feed->GetName(), feedRef) ||
 				!strcasecmp("0", feedRef))

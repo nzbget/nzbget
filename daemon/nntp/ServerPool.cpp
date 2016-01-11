@@ -62,16 +62,16 @@ ServerPool::~ ServerPool()
 
 	m_levels.clear();
 
-	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)
+	for (NewsServer* server : m_servers)
 	{
-		delete *it;
+		delete server;
 	}
 	m_servers.clear();
 	m_sortedServers.clear();
 
-	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+	for (PooledConnection* connection : m_connections)
 	{
-		delete *it;
+		delete connection;
 	}
 	m_connections.clear();
 }
@@ -101,9 +101,8 @@ void ServerPool::NormalizeLevels()
 
 	// find minimum level
 	int minLevel = m_sortedServers.front()->GetLevel();
-	for (Servers::iterator it = m_sortedServers.begin(); it != m_sortedServers.end(); it++)
+	for (NewsServer* newsServer : m_sortedServers)
 	{
-		NewsServer* newsServer = *it;
 		if (newsServer->GetLevel() < minLevel)
 		{
 			minLevel = newsServer->GetLevel();
@@ -112,9 +111,8 @@ void ServerPool::NormalizeLevels()
 
 	m_maxNormLevel = 0;
 	int lastLevel = minLevel;
-	for (Servers::iterator it = m_sortedServers.begin(); it != m_sortedServers.end(); it++)
+	for (NewsServer* newsServer : m_sortedServers)
 	{
-		NewsServer* newsServer = *it;
 		if ((newsServer->GetActive() && newsServer->GetMaxConnections() > 0) ||
 			(newsServer->GetLevel() == minLevel))
 		{
@@ -146,9 +144,8 @@ void ServerPool::InitConnections()
 	NormalizeLevels();
 	m_levels.clear();
 
-	for (Servers::iterator it = m_sortedServers.begin(); it != m_sortedServers.end(); it++)
+	for (NewsServer* newsServer : m_sortedServers)
 	{
-		NewsServer* newsServer = *it;
 		newsServer->SetBlockTime(0);
 		int normLevel = newsServer->GetNormLevel();
 		if (newsServer->GetNormLevel() > -1)
@@ -162,9 +159,8 @@ void ServerPool::InitConnections()
 			{
 				int connections = 0;
 
-				for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+				for (PooledConnection* connection : m_connections)
 				{
-					PooledConnection* connection = *it;
 					if (connection->GetNewsServer() == newsServer)
 					{
 						connections++;
@@ -201,9 +197,8 @@ NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Ser
 		Connections candidates;
 		candidates.reserve(m_connections.size());
 
-		for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+		for (PooledConnection* candidateConnection : m_connections)
 		{
-			PooledConnection* candidateConnection = *it;
 			NewsServer* candidateServer = candidateConnection->GetNewsServer();
 			if (!candidateConnection->GetInUse() && candidateServer->GetActive() &&
 				candidateServer->GetNormLevel() == level &&
@@ -218,9 +213,8 @@ NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Ser
 				bool useConnection = true;
 				if (ignoreServers && !wantServer)
 				{
-					for (Servers::iterator it = ignoreServers->begin(); it != ignoreServers->end(); it++)
+					for (NewsServer* ignoreServer : *ignoreServers)
 					{
-						NewsServer* ignoreServer = *it;
 						if (ignoreServer == candidateServer ||
 							(ignoreServer->GetGroup() > 0 && ignoreServer->GetGroup() == candidateServer->GetGroup() &&
 							 ignoreServer->GetNormLevel() == candidateServer->GetNormLevel()))
@@ -339,9 +333,8 @@ void ServerPool::CloseUnusedConnections()
 		// check if we have in-use connections on the level
 		bool hasInUseConnections = false;
 		int inactiveTime = 0;
-		for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+		for (PooledConnection* connection : m_connections)
 		{
-			PooledConnection* connection = *it;
 			if (connection->GetNewsServer()->GetNormLevel() == level)
 			{
 				if (connection->GetInUse())
@@ -364,9 +357,8 @@ void ServerPool::CloseUnusedConnections()
 		// expired - close all connections of the level.
 		if (!hasInUseConnections && inactiveTime > CONNECTION_HOLD_SECODNS)
 		{
-			for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+			for (PooledConnection* connection : m_connections)
 			{
-				PooledConnection* connection = *it;
 				if (connection->GetNewsServer()->GetNormLevel() == level &&
 					connection->GetStatus() == Connection::csConnected)
 				{
@@ -399,9 +391,8 @@ void ServerPool::LogDebugInfo()
 	time_t curTime = Util::CurrentTime();
 
 	info("    Servers: %i", (int)m_servers.size());
-	for (Servers::iterator it = m_servers.begin(); it != m_servers.end(); it++)
+	for (NewsServer* newsServer : m_servers)
 	{
-		NewsServer*  newsServer = *it;
 		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", newsServer->GetId(), newsServer->GetName(),
 			newsServer->GetHost(), newsServer->GetLevel(), newsServer->GetNormLevel(),
 			newsServer->GetBlockTime() && newsServer->GetBlockTime() + m_retryInterval > curTime ?
@@ -410,16 +401,15 @@ void ServerPool::LogDebugInfo()
 
 	info("    Levels: %i", (int)m_levels.size());
 	int index = 0;
-	for (Levels::iterator it = m_levels.begin(); it != m_levels.end(); it++, index++)
+	for (int size : m_levels)
 	{
-		int  size = *it;
 		info("      %i: Free connections=%i", index, size);
+		index++;
 	}
 
 	info("    Connections: %i", (int)m_connections.size());
-	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+	for (PooledConnection* connection : m_connections)
 	{
-		PooledConnection*  connection = *it;
 		info("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", connection->GetNewsServer()->GetId(),
 			connection->GetNewsServer()->GetName(), connection->GetNewsServer()->GetHost(),
 			connection->GetNewsServer()->GetLevel(), connection->GetNewsServer()->GetNormLevel(),

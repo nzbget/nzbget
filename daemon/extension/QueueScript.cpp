@@ -234,18 +234,17 @@ QueueScriptCoordinator::QueueScriptCoordinator()
 QueueScriptCoordinator::~QueueScriptCoordinator()
 {
 	delete m_curItem;
-	for (Queue::iterator it = m_queue.begin(); it != m_queue.end(); it++ )
+	for (QueueItem* queueItem : m_queue)
 	{
-		delete *it;
+		delete queueItem;
 	}
 }
 
 void QueueScriptCoordinator::InitOptions()
 {
 	m_hasQueueScripts = false;
-	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
+	for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
 	{
-		ScriptConfig::Script& script = *it;
 		if (script.GetQueueScript())
 		{
 			m_hasQueueScripts = true;
@@ -290,10 +289,8 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		return;
 	}
 
-	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
+	for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
 	{
-		ScriptConfig::Script& script = *it;
-
 		if (!script.GetQueueScript())
 		{
 			continue;
@@ -320,9 +317,8 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		// check post-processing-scripts
 		if (!useScript)
 		{
-			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+			for (NzbParameter& parameter : *nzbInfo->GetParameters())
 			{
-				NzbParameter& parameter = *it;
 				const char* varname = parameter.GetName();
 				if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
 					(!strcasecmp(parameter.GetValue(), "yes") ||
@@ -348,9 +344,8 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 			if (event == qeFileDownloaded)
 			{
 				// check if this script is already queued for this nzb
-				for (Queue::iterator it2 = m_queue.begin(); it2 != m_queue.end(); it2++)
+				for (QueueItem* queueItem : m_queue)
 				{
-					QueueItem* queueItem = *it2;
 					if (queueItem->GetNzbId() == nzbInfo->GetId() && queueItem->GetScript() == &script)
 					{
 						alreadyQueued = true;
@@ -384,9 +379,8 @@ NzbInfo* QueueScriptCoordinator::FindNzbInfo(DownloadQueue* downloadQueue, int n
 	NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(nzbId);
 	if (!nzbInfo)
 	{
-		for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
+		for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
 		{
-			HistoryInfo* historyInfo = *it;
 			if (historyInfo->GetNzbInfo() && historyInfo->GetNzbInfo()->GetId() == nzbId)
 			{
 				nzbInfo = historyInfo->GetNzbInfo();
@@ -465,9 +459,8 @@ bool QueueScriptCoordinator::HasJob(int nzbId, bool* active)
 	}
 	if (!working)
 	{
-		for (Queue::iterator it = m_queue.begin(); it != m_queue.end(); it++)
+		for (QueueItem* queueItem : m_queue)
 		{
-			QueueItem* queueItem = *it;
 			working = queueItem->GetNzbId() == nzbId;
 			if (working)
 			{

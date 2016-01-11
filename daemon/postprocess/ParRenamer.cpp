@@ -76,9 +76,8 @@ void ParRenamer::Run()
 
 	BuildDirList(m_destDir);
 
-	for (DirList::iterator it = m_dirList.begin(); it != m_dirList.end(); it++)
+	for (CString& destDir : m_dirList)
 	{
-		CString& destDir = *it;
 		debug("Checking %s", *destDir);
 		m_fileHashList.clear();
 		LoadParFiles(destDir);
@@ -146,9 +145,8 @@ void ParRenamer::LoadParFiles(const char* destDir)
 	ParParser::ParFileList parFileList;
 	ParParser::FindMainPars(destDir, &parFileList);
 
-	for (ParParser::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
+	for (CString& parFilename : parFileList)
 	{
-		CString& parFilename = *it;
 		BString<1024> fullParFilename("%s%c%s", destDir, PATH_SEPARATOR, *parFilename);
 		LoadParFile(fullParFilename);
 	}
@@ -165,14 +163,14 @@ void ParRenamer::LoadParFile(const char* parFilename)
 		return;
 	}
 
-	for (map<Par2::MD5Hash, Par2::Par2RepairerSourceFile*>::iterator it = repairer->sourcefilemap.begin(); it != repairer->sourcefilemap.end(); it++)
+	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer->sourcefilemap)
 	{
 		if (m_cancelled)
 		{
 			break;
 		}
 
-		Par2::Par2RepairerSourceFile* sourceFile = (*it).second;
+		Par2::Par2RepairerSourceFile* sourceFile = entry.second;
 		if (!sourceFile || !sourceFile->GetDescriptionPacket())
 		{
 			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", parFilename);
@@ -217,9 +215,8 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 
 void ParRenamer::CheckMissing()
 {
-	for (FileHashList::iterator it = m_fileHashList.begin(); it != m_fileHashList.end(); it++)
+	for (FileHash& fileHash : m_fileHashList)
 	{
-		FileHash& fileHash = *it;
 		if (!fileHash.GetFileExists())
 		{
 			if (Util::MatchFileExt(fileHash.GetFilename(), g_Options->GetParIgnoreExt(), ",;"))
@@ -290,9 +287,8 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 
 	debug("file: %s; hash16k: %s", FileSystem::BaseFileName(filename), hash16k.print().c_str());
 
-	for (FileHashList::iterator it = m_fileHashList.begin(); it != m_fileHashList.end(); it++)
+	for (FileHash& fileHash : m_fileHashList)
 	{
-		FileHash& fileHash = *it;
 		if (!strcmp(fileHash.GetHash(), hash16k.print().c_str()))
 		{
 			debug("Found correct filename: %s", fileHash.GetFilename());

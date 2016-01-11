@@ -199,9 +199,9 @@ void TlsSocket::Final()
 
 #ifdef NEED_GCRYPT_LOCKING
 	// fixing memory leak in gcryptlib
-	for (Mutexes::iterator it = g_GCryptLibMutexes->begin(); it != g_GCryptLibMutexes->end(); it++)
+	for (Mutex* mutex : *g_GCryptLibMutexes)
 	{
-		delete *it;
+		delete mutex;
 	}
 	delete g_GCryptLibMutexes;
 #endif /* NEED_GCRYPT_LOCKING */

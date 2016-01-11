@@ -46,9 +46,8 @@ void Subject::Notify(void* aspect)
 {
 	debug("Notifying observers");
 
-	for (std::list<Observer*>::iterator it = m_observers.begin(); it != m_observers.end(); it++)
+	for (Observer* observer : m_observers)
 	{
-		Observer* Observer = *it;
-		Observer->Update(this, aspect);
+		observer->Update(this, aspect);
 	}
 }

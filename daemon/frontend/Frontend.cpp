@@ -83,9 +83,8 @@ bool Frontend::PrepareData()
 
 			DownloadQueue *downloadQueue = DownloadQueue::Lock();
 			m_postJobCount = 0;
-			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+			for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 			{
-				NzbInfo* nzbInfo = *it;
 				m_postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			}
 			downloadQueue->CalcRemainingSize(&m_remainingSize, nullptr);

@@ -85,9 +85,9 @@ UrlCoordinator::~UrlCoordinator()
 	g_Log->UnregisterDebuggable(this);
 
 	debug("Deleting UrlDownloaders");
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (UrlDownloader* urlDownloader : m_activeDownloads)
 	{
-		delete *it;
+		delete urlDownloader;
 	}
 	m_activeDownloads.clear();
 
@@ -161,9 +161,9 @@ void UrlCoordinator::Stop()
 
 	debug("Stopping UrlDownloads");
 	DownloadQueue::Lock();
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (UrlDownloader* urlDownloader : m_activeDownloads)
 	{
-		(*it)->Stop();
+		urlDownloader->Stop();
 	}
 	DownloadQueue::Unlock();
 	debug("UrlDownloads are notified");
@@ -215,9 +215,8 @@ void UrlCoordinator::LogDebugInfo()
 
 	DownloadQueue::Lock();
 	info("    Active Downloads: %i", (int)m_activeDownloads.size());
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (UrlDownloader* urlDownloader : m_activeDownloads)
 	{
-		UrlDownloader* urlDownloader = *it;
 		urlDownloader->LogDebugInfo();
 	}
 	DownloadQueue::Unlock();
@@ -249,9 +248,8 @@ NzbInfo* UrlCoordinator::GetNextUrl(DownloadQueue* downloadQueue)
 
 	NzbInfo* nzbInfo = nullptr;
 
-	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbInfo* nzbInfo1 : *downloadQueue->GetQueue())
 	{
-		NzbInfo* nzbInfo1 = *it;
 		if (nzbInfo1->GetKind() == NzbInfo::nkUrl &&
 			nzbInfo1->GetUrlStatus() == NzbInfo::lsNone &&
 			nzbInfo1->GetDeleteStatus() == NzbInfo::dsNone &&
@@ -428,9 +426,8 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 		nzbInfo->SetDeleting(true);
 		nzbInfo->SetAvoidHistory(avoidHistory);
 
-		for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+		for (UrlDownloader* urlDownloader : m_activeDownloads)
 		{
-			UrlDownloader* urlDownloader = *it;
 			if (urlDownloader->GetNzbInfo() == nzbInfo)
 			{
 				urlDownloader->Stop();

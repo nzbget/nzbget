@@ -65,9 +65,8 @@ void Log::LogDebugInfo()
 	info("--------------------------------------------");
 
 	m_debugMutex.Lock();
-	for (Debuggables::iterator it = m_debuggables.begin(); it != m_debuggables.end(); it++)
+	for (Debuggable* debuggable : m_debuggables)
 	{
-		Debuggable* debuggable = *it;
 		debuggable->LogDebugInfo();
 	}
 	m_debugMutex.Unlock();

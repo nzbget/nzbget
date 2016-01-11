@@ -217,17 +217,15 @@ void ArticleDownloader::Run()
 			// if all servers from all levels were tried, break the loop with failure status
 
 			bool allServersOnLevelFailed = true;
-			for (Servers::iterator it = g_ServerPool->GetServers()->begin(); it != g_ServerPool->GetServers()->end(); it++)
+			for (NewsServer* candidateServer : *g_ServerPool->GetServers())
 			{
-				NewsServer* candidateServer = *it;
 				if (candidateServer->GetNormLevel() == level)
 				{
 					bool serverFailed = !candidateServer->GetActive() || candidateServer->GetMaxConnections() == 0;
 					if (!serverFailed)
 					{
-						for (Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
+						for (NewsServer* ignoreServer : failedServers)
 						{
-							NewsServer* ignoreServer = *it;
 							if (ignoreServer == candidateServer ||
 								(ignoreServer->GetGroup() > 0 && ignoreServer->GetGroup() == candidateServer->GetGroup() &&
 								 ignoreServer->GetNormLevel() == candidateServer->GetNormLevel()))
@@ -303,9 +301,9 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	if (m_connection->GetNewsServer()->GetJoinGroup())
 	{
 		// change group
-		for (FileInfo::Groups::iterator it = m_fileInfo->GetGroups()->begin(); it != m_fileInfo->GetGroups()->end(); it++)
+		for (CString& group : *m_fileInfo->GetGroups())
 		{
-			response = m_connection->JoinGroup(*it);
+			response = m_connection->JoinGroup(group);
 			if (response && !strncmp(response, "2", 1))
 			{
 				break;

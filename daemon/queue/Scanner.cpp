@@ -291,9 +291,8 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 	NzbInfo* urlInfo = nullptr;
 	int nzbId = 0;
 
-	for (QueueList::iterator it = m_queueList.begin(); it != m_queueList.end(); it++)
+	for (QueueData& queueData1 : m_queueList)
 	{
-		QueueData& queueData1 = *it;
 		if (FileSystem::SameFilename(queueData1.GetFilename(), fullFilename))
 		{
 			queueData = &queueData1;
@@ -393,9 +392,8 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 
 	if (reset)
 	{
-		for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
+		for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
 		{
-			ScriptConfig::Script& script = *it;
 			parameters->SetParameter(BString<1024>("%s:", script.GetName()), nullptr);
 		}
 	}
@@ -464,9 +462,8 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 
 	nzbInfo->GetParameters()->CopyFrom(parameters);
 
-	for (::FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		fileInfo->SetPaused(addPaused);
 	}
 

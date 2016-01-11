@@ -108,16 +108,16 @@ FeedCoordinator::~FeedCoordinator()
 	g_Log->UnregisterDebuggable(this);
 
 	debug("Deleting FeedDownloaders");
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
-		delete *it;
+		delete feedDownloader;
 	}
 	m_activeDownloads.clear();
 
 	debug("Deleting Feeds");
-	for (Feeds::iterator it = m_feeds.begin(); it != m_feeds.end(); it++)
+	for (FeedInfo* feedInfo : m_feeds)
 	{
-		delete *it;
+		delete feedInfo;
 	}
 	m_feeds.clear();
 
@@ -169,9 +169,8 @@ void FeedCoordinator::Run()
 				{
 					m_force = false;
 					// check feed list and update feeds
-					for (Feeds::iterator it = m_feeds.begin(); it != m_feeds.end(); it++)
+					for (FeedInfo* feedInfo : m_feeds)
 					{
-						FeedInfo* feedInfo = *it;
 						if (((feedInfo->GetInterval() > 0 &&
 							(current - feedInfo->GetLastUpdate() >= feedInfo->GetInterval() * 60 ||
 							 current < feedInfo->GetLastUpdate())) ||
@@ -228,9 +227,9 @@ void FeedCoordinator::Stop()
 
 	debug("Stopping UrlDownloads");
 	m_downloadsMutex.Lock();
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
-		(*it)->Stop();
+		feedDownloader->Stop();
 	}
 	m_downloadsMutex.Unlock();
 	debug("UrlDownloads are notified");
@@ -281,9 +280,8 @@ void FeedCoordinator::LogDebugInfo()
 
 	m_downloadsMutex.Lock();
 	info("    Active Downloads: %i", (int)m_activeDownloads.size());
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
+	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
-		FeedDownloader* feedDownloader = *it;
 		feedDownloader->LogDebugInfo();
 	}
 	m_downloadsMutex.Unlock();
@@ -388,9 +386,8 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			m_downloadsMutex.Unlock();
 
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
-			for (NzbList::iterator it = addedNzbs.begin(); it != addedNzbs.end(); it++)
+			for (NzbInfo* nzbInfo : addedNzbs)
 			{
-				NzbInfo* nzbInfo = *it;
 				downloadQueue->GetQueue()->Add(nzbInfo, false);
 			}
 			downloadQueue->Save();
@@ -414,9 +411,8 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 		feedFilter = new FeedFilter(feedInfo->GetFilter());
 	}
 
-	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
+	for (FeedItemInfo& feedItemInfo : *feedItemInfos)
 	{
-		FeedItemInfo& feedItemInfo = *it;
 		feedItemInfo.SetMatchStatus(FeedItemInfo::msAccepted);
 		feedItemInfo.SetMatchRule(0);
 		feedItemInfo.SetPauseNzb(feedInfo->GetPauseNzb());
@@ -444,9 +440,8 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 	bool firstFetch = feedInfo->GetLastUpdate() == 0;
 	int added = 0;
 
-	for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
+	for (FeedItemInfo& feedItemInfo : *feedItemInfos)
 	{
-		FeedItemInfo& feedItemInfo = *it;
 		if (feedItemInfo.GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
 			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo.GetUrl());
@@ -546,9 +541,8 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 	if (cacheTimeSec > 0 && *cacheId != '\0')
 	{
 		m_downloadsMutex.Lock();
-		for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); it++)
+		for (FeedCacheItem& feedCacheItem : m_feedCache)
 		{
-			FeedCacheItem& feedCacheItem = *it;
 			if (!strcmp(feedCacheItem.GetCacheId(), cacheId))
 			{
 				feedCacheItem.SetLastUsage(Util::CurrentTime());
@@ -566,9 +560,8 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		m_downloadsMutex.Lock();
 
 		bool firstFetch = true;
-		for (Feeds::iterator it = m_feeds.begin(); it != m_feeds.end(); it++)
+		for (FeedInfo* feedInfo2 : m_feeds)
 		{
-			FeedInfo* feedInfo2 = *it;
 			if (!strcmp(feedInfo2->GetUrl(), feedInfo->GetUrl()) &&
 				!strcmp(feedInfo2->GetFilter(), feedInfo->GetFilter()) &&
 				feedInfo2->GetLastUpdate() > 0)
@@ -611,9 +604,8 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		feedItemInfos->Retain();
 		delete feedFile;
 
-		for (FeedItemInfos::iterator it = feedItemInfos->begin(); it != feedItemInfos->end(); it++)
+		for (FeedItemInfo& feedItemInfo : *feedItemInfos)
 		{
-			FeedItemInfo& feedItemInfo = *it;
 			feedItemInfo.SetStatus(firstFetch && feedInfo->GetBacklog() ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
 			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo.GetUrl());
 			if (feedHistoryInfo)
@@ -643,9 +635,8 @@ void FeedCoordinator::FetchFeed(int id)
 	debug("FetchFeeds");
 
 	m_downloadsMutex.Lock();
-	for (Feeds::iterator it = m_feeds.begin(); it != m_feeds.end(); it++)
+	for (FeedInfo* feedInfo : m_feeds)
 	{
-		FeedInfo* feedInfo = *it;
 		if (feedInfo->GetId() == id || id == 0)
 		{
 			feedInfo->SetFetch(true);
@@ -708,9 +699,8 @@ void FeedCoordinator::CleanupHistory()
 
 	time_t oldestUpdate = Util::CurrentTime();
 
-	for (Feeds::iterator it = m_feeds.begin(); it != m_feeds.end(); it++)
+	for (FeedInfo* feedInfo : m_feeds)
 	{
-		FeedInfo* feedInfo = *it;
 		if (feedInfo->GetLastUpdate() < oldestUpdate)
 		{
 			oldestUpdate = feedInfo->GetLastUpdate();
@@ -746,15 +736,20 @@ void FeedCoordinator::CleanupCache()
 	m_downloadsMutex.Lock();
 
 	time_t curTime = Util::CurrentTime();
-	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); it++)
+
+	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); )
 	{
 		FeedCacheItem& feedCacheItem = *it;
 		if (feedCacheItem.GetLastUsage() + feedCacheItem.GetCacheTimeSec() < curTime ||
 			feedCacheItem.GetLastUsage() > curTime)
 		{
 			debug("Deleting %s from feed cache", feedCacheItem.GetUrl());
-			FeedCache::iterator cur = it--;
-			m_feedCache.erase(cur);
+			m_feedCache.erase(it);
+			it = m_feedCache.begin();
+		}
+		else
+		{
+			it++;
 		}
 	}
 

@@ -120,17 +120,15 @@ void EnvironmentStrings::Append(CString&& envstr)
 wchar_t* EnvironmentStrings::GetStrings()
 {
 	int size = 1;
-	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
+	for (CString& var : m_strings)
 	{
-		char* var = *it;
 		size += strlen(var) + 1;
 	}
 
 	wchar_t* strings = (wchar_t*)malloc(size * 2);
 	wchar_t* ptr = strings;
-	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
+	for (CString& var : m_strings)
 	{
-		char* var = *it;
 		WString wstr(var);
 		wcscpy(ptr, wstr);
 		ptr += wstr.Length() + 1;
@@ -150,9 +148,8 @@ char** EnvironmentStrings::GetStrings()
 {
 	char** strings = (char**)malloc((m_strings.size() + 1) * sizeof(char*));
 	char** ptr = strings;
-	for (Strings::iterator it = m_strings.begin(); it != m_strings.end(); it++)
+	for (CString& var : m_strings)
 	{
-		char* var = *it;
 		*ptr = var;
 		ptr++;
 	}
@@ -234,10 +231,8 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 
 	Options::OptEntries* optEntries = g_Options->LockOptEntries();
 
-	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
+	for (Options::OptEntry& optEntry : *optEntries)
 	{
-		Options::OptEntry& optEntry = *it;
-
 		if (stripPrefix && !strncmp(optEntry.GetName(), stripPrefix, prefixLen) &&
 			(int)strlen(optEntry.GetName()) > prefixLen)
 		{
@@ -679,9 +674,8 @@ void ScriptController::Terminate()
 void ScriptController::TerminateAll()
 {
 	m_runningMutex.Lock();
-	for (RunningScripts::iterator it = m_runningScripts.begin(); it != m_runningScripts.end(); it++)
+	for (ScriptController* script : m_runningScripts)
 	{
-		ScriptController* script = *it;
 		if (script->m_processId && !script->m_detached)
 		{
 			script->Terminate();

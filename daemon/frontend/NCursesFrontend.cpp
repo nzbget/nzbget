@@ -373,9 +373,8 @@ int NCursesFrontend::CalcQueueSize()
 	}
 	else
 	{
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
 			queueSize += nzbInfo->GetFileList()->size();
 		}
 	}
@@ -696,17 +695,15 @@ void NCursesFrontend::PrintFileQueue()
 	int pausedFiles = 0;
 	int fileNum = 0;
 
-	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 	{
-		NzbInfo* nzbInfo = *it;
-		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++, fileNum++)
+		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it2;
-
 			if (fileNum >= m_queueScrollOffset && fileNum < m_queueScrollOffset + m_queueWinHeight -1)
 			{
 				PrintFilename(fileInfo, lineNr++, fileNum == m_selectedQueueEntry);
 			}
+			fileNum++;
 
 			if (fileInfo->GetPaused())
 			{
@@ -862,25 +859,25 @@ void NCursesFrontend::PrintGroupQueue()
 		ResetColWidths();
 		int calcLineNr = lineNr;
 		int i = 0;
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
 				PrintGroupname(nzbInfo, calcLineNr++, false, true);
 			}
+			i++;
 		}
 
 		int64 remaining = 0;
 		int64 paused = 0;
 		i = 0;
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, i++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
 				PrintGroupname(nzbInfo, lineNr++, i == m_selectedQueueEntry, false);
 			}
+			i++;
 			remaining += nzbInfo->GetRemainingSize();
 			paused += nzbInfo->GetPausedSize();
 		}
@@ -1057,20 +1054,19 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 		DownloadQueue* downloadQueue = LockQueue();
 
 		int fileNum = 0;
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
-			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++, fileNum++)
+			for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 			{
 				if (m_selectedQueueEntry == fileNum)
 				{
-					FileInfo* fileInfo = *it2;
 					ID = fileInfo->GetId();
 					if (action == DownloadQueue::eaFilePause)
 					{
 						action = !fileInfo->GetPaused() ? DownloadQueue::eaFilePause : DownloadQueue::eaFileResume;
 					}
 				}
+				fileNum++;
 			}
 		}
 

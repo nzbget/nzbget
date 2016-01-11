@@ -38,9 +38,8 @@ void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, con
 {
 	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	for (NzbParameterList::iterator it = parameters->begin(); it != parameters->end(); it++)
+	for (NzbParameter& parameter : *parameters)
 	{
-		NzbParameter& parameter = *it;
 		const char* value = parameter.GetValue();
 
 		if (stripPrefix && !strncmp(parameter.GetName(), stripPrefix, prefixLen) && (int)strlen(parameter.GetName()) > prefixLen)
@@ -73,10 +72,8 @@ void NzbScriptController::PrepareEnvScript(NzbParameterList* parameters, const c
 
 void NzbScriptController::ExecuteScriptList(const char* scriptList)
 {
-	for (ScriptConfig::Scripts::iterator it = g_ScriptConfig->GetScripts()->begin(); it != g_ScriptConfig->GetScripts()->end(); it++)
+	for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
 	{
-		ScriptConfig::Script& script = *it;
-
 		if (scriptList && *scriptList)
 		{
 			// split szScriptList into tokens

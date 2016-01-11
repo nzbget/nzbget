@@ -229,9 +229,8 @@ void HistoryCoordinator::PrepareEdit(DownloadQueue* downloadQueue, IdList* idLis
 	// this will later (on second step) avoid moving other items to download queue, if they are marked bad too.
 	if (action == DownloadQueue::eaHistoryMarkBad)
 	{
-		for (IdList::iterator itId = idList->begin(); itId != idList->end(); itId++)
+		for (int id : *idList)
 		{
-			int id = *itId;
 			HistoryInfo* historyInfo = downloadQueue->GetHistory()->Find(id);
 			if (historyInfo && historyInfo->GetKind() == HistoryInfo::hkNzb)
 			{
@@ -246,9 +245,8 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 	bool ok = false;
 	PrepareEdit(downloadQueue, idList, action);
 
-	for (IdList::iterator itId = idList->begin(); itId != idList->end(); itId++)
+	for (int id : *idList)
 	{
-		int id = *itId;
 		for (HistoryList::iterator itHistory = downloadQueue->GetHistory()->begin(); itHistory != downloadQueue->GetHistory()->end(); itHistory++)
 		{
 			HistoryInfo* historyInfo = *itHistory;
@@ -381,9 +379,8 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 
 		// unpark files
 		bool unparked = false;
-		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it;
 			detail("Unpark file %s", fileInfo->GetFilename());
 			unparked = true;
 		}
@@ -487,9 +484,8 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	info("Returning %s from history back to queue", nzbInfo->GetName());
 
-	for (FileList::iterator it = nzbFile->GetNzbInfo()->GetFileList()->begin(); it != nzbFile->GetNzbInfo()->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *nzbFile->GetNzbInfo()->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		fileInfo->SetPaused(paused);
 	}
 

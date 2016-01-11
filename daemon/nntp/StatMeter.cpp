@@ -445,11 +445,11 @@ void StatMeter::LogDebugInfo()
 
 	m_volumeMutex.Lock();
 	int index = 0;
-	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++, index++)
+	for (ServerVolume& serverVolume : m_serverVolumes)
 	{
-		ServerVolume& serverVolume = *it;
 		info("      ServerVolume %i", index);
 		serverVolume.LogDebugInfo();
+		index++;
 	}
 	m_volumeMutex.Unlock();
 }
@@ -473,9 +473,8 @@ ServerVolumes* StatMeter::LockServerVolumes()
 	m_volumeMutex.Lock();
 
 	// update slots
-	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
+	for (ServerVolume& serverVolume : m_serverVolumes)
 	{
-		ServerVolume& serverVolume = *it;
 		serverVolume.AddData(0);
 	}
 
@@ -506,9 +505,8 @@ bool StatMeter::Load(bool* perfectServerMatch)
 
 	bool ok = g_DiskState->LoadStats(g_ServerPool->GetServers(), &m_serverVolumes, perfectServerMatch);
 
-	for (ServerVolumes::iterator it = m_serverVolumes.begin(); it != m_serverVolumes.end(); it++)
+	for (ServerVolume& serverVolume : m_serverVolumes)
 	{
-		ServerVolume& serverVolume = *it;
 		serverVolume.CalcSlots(serverVolume.GetDataTime() + g_Options->GetLocalTimeOffset());
 	}
 

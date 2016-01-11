@@ -867,9 +867,8 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo& feedItemInfo)
 	char* expr = (char*)malloc(m_terms.size() + 1);
 
 	int index = 0;
-	for (TermList::iterator it = m_terms.begin(); it != m_terms.end(); it++, index++)
+	for (Term& term : m_terms)
 	{
-		Term& term = *it;
 		switch (term.GetCommand())
 		{
 			case fcOpeningBrace:
@@ -888,6 +887,7 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo& feedItemInfo)
 				expr[index] = term.Match(feedItemInfo) ? 'T' : 'F';
 				break;
 		}
+		index++;
 	}
 	expr[index] = '\0';
 
@@ -1008,9 +1008,8 @@ void FeedFilter::CompileRule(char* rulestr)
 void FeedFilter::Match(FeedItemInfo& feedItemInfo)
 {
 	int index = 0;
-	for (RuleList::iterator it = m_rules.begin(); it != m_rules.end(); it++)
+	for (Rule& rule : m_rules)
 	{
-		Rule& rule = *it;
 		index++;
 		if (rule.IsValid())
 		{

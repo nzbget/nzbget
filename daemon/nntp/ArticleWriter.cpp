@@ -411,9 +411,8 @@ void ArticleWriter::CompleteFileParts()
 		buffer = (char*)malloc(BUFFER_SIZE);
 	}
 
-	for (FileInfo::Articles::iterator it = m_fileInfo->GetArticles()->begin(); it != m_fileInfo->GetArticles()->end(); it++)
+	for (ArticleInfo* pa : *m_fileInfo->GetArticles())
 	{
-		ArticleInfo* pa = *it;
 		if (pa->GetStatus() != ArticleInfo::aiFinished)
 		{
 			continue;
@@ -522,9 +521,8 @@ void ArticleWriter::CompleteFileParts()
 
 	if (!directWrite)
 	{
-		for (FileInfo::Articles::iterator it = m_fileInfo->GetArticles()->begin(); it != m_fileInfo->GetArticles()->end(); it++)
+		for (ArticleInfo* pa : *m_fileInfo->GetArticles())
 		{
-			ArticleInfo* pa = *it;
 			FileSystem::DeleteFile(pa->GetResultFilename());
 		}
 	}
@@ -594,9 +592,8 @@ void ArticleWriter::FlushCache()
 	cachedArticles.reserve(m_fileInfo->GetArticles()->size());
 
 	g_ArticleCache->LockContent();
-	for (FileInfo::Articles::iterator it = m_fileInfo->GetArticles()->begin(); it != m_fileInfo->GetArticles()->end(); it++)
+	for (ArticleInfo* pa : *m_fileInfo->GetArticles())
 	{
-		ArticleInfo* pa = *it;
 		if (pa->GetSegmentContent())
 		{
 			cachedArticles.push_back(pa);
@@ -604,15 +601,13 @@ void ArticleWriter::FlushCache()
 	}
 	g_ArticleCache->UnlockContent();
 
-	for (FileInfo::Articles::iterator it = cachedArticles.begin(); it != cachedArticles.end(); it++)
+	for (ArticleInfo* pa : cachedArticles)
 	{
 		if (m_fileInfo->GetDeleted())
 		{
 			// the file was deleted during flushing: stop flushing immediately
 			break;
 		}
-
-		ArticleInfo* pa = *it;
 
 		if (directWrite && !outfile.Active())
 		{
@@ -700,10 +695,8 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	}
 
 	// move already downloaded files to new destination
-	for (CompletedFileList::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); it++)
+	for (CompletedFile& completedFile : *nzbInfo->GetCompletedFiles())
 	{
-		CompletedFile& completedFile = *it;
-
 		BString<1024> oldFileName("%s%c%s", oldDestDir, (int)PATH_SEPARATOR, completedFile.GetFileName());
 		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFileName());
 
@@ -780,9 +773,13 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	{
 		// check if there are pending writes into directory
 		bool pendingWrites = false;
-		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end() && !pendingWrites; it++)
+		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it;
+			if (!pendingWrites)
+			{
+				break;
+			}
+
 			if (fileInfo->GetActiveDownloads() > 0)
 			{
 				fileInfo->LockOutputFile();
@@ -906,12 +903,15 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 	BString<1024> infoName;
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end() && !m_fileInfo; it++)
+	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 	{
-		NzbInfo* nzbInfo = *it;
-		for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+		if (m_fileInfo)
 		{
-			FileInfo* fileInfo = *it2;
+			break;
+		}
+
+		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+		{
 			if (fileInfo->GetCachedArticles() > 0 && (fileInfo->GetActiveDownloads() == 0 || flushEverything))
 			{
 				m_fileInfo = fileInfo;

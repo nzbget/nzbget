@@ -504,9 +504,8 @@ void ListBinCommand::Execute()
 		int nrNzbEntries = downloadQueue->GetQueue()->size();
 		int nrPPPEntries = 0;
 		bufsize += nrNzbEntries * sizeof(SNzbListResponseNzbEntry);
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
 			bufsize += strlen(nzbInfo->GetFilename()) + 1;
 			bufsize += strlen(nzbInfo->GetName()) + 1;
 			bufsize += strlen(nzbInfo->GetDestDir()) + 1;
@@ -516,9 +515,8 @@ void ListBinCommand::Execute()
 			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 
 			// calculate required buffer size for pp-parameters
-			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+			for (NzbParameter& nzbParameter : *nzbInfo->GetParameters())
 			{
-				NzbParameter& nzbParameter = *it;
 				bufsize += sizeof(SNzbListResponsePPPEntry);
 				bufsize += strlen(nzbParameter.GetName()) + 1;
 				bufsize += strlen(nzbParameter.GetValue()) + 1;
@@ -530,12 +528,10 @@ void ListBinCommand::Execute()
 
 		// calculate required buffer size for files
 		int nrFileEntries = 0;
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
-			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+			for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 			{
-				FileInfo* fileInfo = *it2;
 				nrFileEntries++;
 				bufsize += sizeof(SNzbListResponseFileEntry);
 				bufsize += strlen(fileInfo->GetSubject()) + 1;
@@ -549,10 +545,8 @@ void ListBinCommand::Execute()
 		char* bufptr = buf;
 
 		// write nzb entries
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
-
 			SNzbListResponseNzbEntry* listAnswer = (SNzbListResponseNzbEntry*) bufptr;
 
 			uint32 sizeHi, sizeLo, remainingSizeHi, remainingSizeLo, pausedSizeHi, pausedSizeLo;
@@ -598,13 +592,12 @@ void ListBinCommand::Execute()
 		}
 
 		// write ppp entries
-		int nzbIndex = 1;
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++, nzbIndex++)
+		int nzbIndex = 0;
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
-			for (NzbParameterList::iterator it = nzbInfo->GetParameters()->begin(); it != nzbInfo->GetParameters()->end(); it++)
+			nzbIndex++;
+			for (NzbParameter& nzbParameter : *nzbInfo->GetParameters())
 			{
-				NzbParameter& nzbParameter = *it;
 				SNzbListResponsePPPEntry* listAnswer = (SNzbListResponsePPPEntry*) bufptr;
 				listAnswer->m_nzbIndex = htonl(nzbIndex);
 				listAnswer->m_nameLen = htonl(strlen(nzbParameter.GetName()) + 1);
@@ -625,13 +618,10 @@ void ListBinCommand::Execute()
 		}
 
 		// write file entries
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
-			for (FileList::iterator it2 = nzbInfo->GetFileList()->begin(); it2 != nzbInfo->GetFileList()->end(); it2++)
+			for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 			{
-				FileInfo* fileInfo = *it2;
-
 				uint32 sizeHi, sizeLo;
 				SNzbListResponseFileEntry* listAnswer = (SNzbListResponseFileEntry*) bufptr;
 				listAnswer->m_id = htonl(fileInfo->GetId());
@@ -694,9 +684,8 @@ void ListBinCommand::Execute()
 	{
 		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 		}
 		int64 remainingSize;
@@ -939,9 +928,8 @@ void PostQueueBinCommand::Execute()
 
 	// calculate required buffer size
 	int NrEntries = 0;
-	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbInfo* nzbInfo : *nzbList)
 	{
-		NzbInfo* nzbInfo = *it;
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
 		{
@@ -962,9 +950,8 @@ void PostQueueBinCommand::Execute()
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 
-	for (NzbList::iterator it = nzbList->begin(); it != nzbList->end(); it++)
+	for (NzbInfo* nzbInfo : *nzbList)
 	{
-		NzbInfo* nzbInfo = *it;
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
 		{
@@ -1098,18 +1085,16 @@ void HistoryBinCommand::Execute()
 
 	// calculate required buffer size for nzbs
 	int nrEntries = 0;
-	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
+	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
 	{
-		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
 			nrEntries++;
 		}
 	}
 	bufsize += nrEntries * sizeof(SNzbHistoryResponseEntry);
-	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
+	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
 	{
-		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
 			bufsize += strlen(historyInfo->GetName()) + 1;
@@ -1122,9 +1107,8 @@ void HistoryBinCommand::Execute()
 	char* bufptr = buf;
 
 	// write nzb entries
-	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
+	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
 	{
-		HistoryInfo* historyInfo = *it;
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
 			SNzbHistoryResponseEntry* listAnswer = (SNzbHistoryResponseEntry*) bufptr;

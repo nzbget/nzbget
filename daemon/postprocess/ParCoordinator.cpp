@@ -62,9 +62,8 @@ void ParCoordinator::PostParChecker::RegisterParredFile(const char* filename)
 
 bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
 {
-	for (PostInfo::ParredFiles::iterator it = m_postInfo->GetParredFiles()->begin(); it != m_postInfo->GetParredFiles()->end(); it++)
+	for (CString& parredFile : *m_postInfo->GetParredFiles())
 	{
-		const char* parredFile = *it;
 		if (!strcasecmp(parredFile, filename))
 		{
 			return true;
@@ -78,9 +77,8 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 {
 	CompletedFile* completedFile = nullptr;
 
-	for (CompletedFileList::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFile& completedFile2 : *m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
-		CompletedFile& completedFile2 = *it;
 		if (!strcasecmp(completedFile2.GetFileName(), filename))
 		{
 			completedFile = &completedFile2;
@@ -107,9 +105,8 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 			return ParChecker::fsUnknown;
 		}
 
-		for (FileInfo::Articles::iterator it = tmpFileInfo->GetArticles()->begin(); it != tmpFileInfo->GetArticles()->end(); it++)
+		for (ArticleInfo* pa : *tmpFileInfo->GetArticles())
 		{
-			ArticleInfo* pa = *it;
 			segments->emplace_back(pa->GetStatus() == ArticleInfo::aiFinished,
 				pa->GetSegmentOffset(), pa->GetSegmentSize(), pa->GetCrc());
 		}
@@ -137,9 +134,8 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 		PostDupeMatcher dupeMatcher(m_postInfo);
 		PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", m_postInfo->GetNzbInfo()->GetName());
 		bool sizeComparisonPossible = dupeMatcher.Prepare();
-		for (NzbList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+		for (NzbInfo* dupeNzbInfo : dupeList)
 		{
-			NzbInfo* dupeNzbInfo = *it;
 			if (sizeComparisonPossible)
 			{
 				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", FileSystem::BaseFileName(dupeNzbInfo->GetDestDir()));
@@ -165,14 +161,12 @@ void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceL
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	int totalExtraParBlocks = 0;
-	for (DupeSourceList::iterator it = dupeSourceList->begin(); it != dupeSourceList->end(); it++)
+	for (DupeSource& dupeSource : *dupeSourceList)
 	{
-		DupeSource& dupeSource = *it;
 		if (dupeSource.GetUsedBlocks() > 0)
 		{
-			for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
+			for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
 			{
-				HistoryInfo* historyInfo = *it;
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 					historyInfo->GetNzbInfo()->GetId() == dupeSource.GetId())
 				{
@@ -215,9 +209,8 @@ void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
  */
 void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
 {
-	for (CompletedFileList::iterator it = m_postInfo->GetNzbInfo()->GetCompletedFiles()->begin(); it != m_postInfo->GetNzbInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFile& completedFile : *m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
-		CompletedFile& completedFile = *it;
 		if (!strcasecmp(completedFile.GetFileName(), oldFilename))
 		{
 			completedFile.SetFileName(newFileName);
@@ -499,9 +492,8 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 	}
 
 	bool hasUnpausedParFiles = false;
-	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		if (fileInfo->GetParFile() && !fileInfo->GetPaused())
 		{
 			hasUnpausedParFiles = true;
@@ -539,9 +531,8 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	mainBaseFilename.Set(baseParFilename, mainBaseLen);
 	for (char* p = mainBaseFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		int blockCount = 0;
 		if (ParParser::ParseParFilename(fileInfo->GetFilename(), nullptr, &blockCount) &&
 			blockCount > 0)
@@ -572,9 +563,8 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 			// check if file is not in the list already
 			if (useFile)
 			{
-				for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
+				for (BlockInfo& blockInfo : blocks)
 				{
-					BlockInfo& blockInfo = *it;
 					if (blockInfo.m_fileInfo == fileInfo)
 					{
 						alreadyAdded = true;

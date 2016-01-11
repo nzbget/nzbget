@@ -53,9 +53,8 @@ void PostScriptController::Run()
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	for (NzbParameterList::iterator it = m_postInfo->GetNzbInfo()->GetParameters()->begin(); it != m_postInfo->GetNzbInfo()->GetParameters()->end(); it++)
+	for (NzbParameter& parameter : *m_postInfo->GetNzbInfo()->GetParameters())
 	{
-		NzbParameter& parameter = *it;
 		const char* varname = parameter.GetName();
 		if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
 			(!strcasecmp(parameter.GetValue(), "yes") || !strcasecmp(parameter.GetValue(), "on") || !strcasecmp(parameter.GetValue(), "1")))
@@ -171,10 +170,8 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	SetIntEnvVar("NZBPP_SUCCESSARTICLES", (int)m_postInfo->GetNzbInfo()->GetSuccessArticles());
 	SetIntEnvVar("NZBPP_FAILEDARTICLES", (int)m_postInfo->GetNzbInfo()->GetFailedArticles());
 
-	for (ServerStatList::iterator it = m_postInfo->GetNzbInfo()->GetServerStats()->begin(); it != m_postInfo->GetNzbInfo()->GetServerStats()->end(); it++)
+	for (ServerStat& serverStat : *m_postInfo->GetNzbInfo()->GetServerStats())
 	{
-		ServerStat& serverStat = *it;
-
 		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_SUCCESSARTICLES", serverStat.GetServerId()),
 			serverStat.GetSuccessArticles());
 

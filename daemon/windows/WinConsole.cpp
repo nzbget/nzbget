@@ -789,9 +789,8 @@ void WinConsole::UpdateTrayIcon()
 		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
 		int urlCount = 0;
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
 		}
@@ -828,10 +827,8 @@ void WinConsole::UpdateTrayIcon()
 void WinConsole::BuildMenu()
 {
 	int index = 0;
-	for (Options::Categories::iterator it = g_Options->GetCategories()->begin(); it != g_Options->GetCategories()->end(); it++, index++)
+	for (Options::Category& category : *g_Options->GetCategories())
 	{
-		Options::Category& category = *it;
-
 		BString<1024> caption("Category %i: %s", index + 1, category.GetName());
 
 		MENUITEMINFO item;
@@ -843,6 +840,8 @@ void WinConsole::BuildMenu()
 		item.wID = ID_SHOW_DESTDIR + 1000 + index;
 		item.dwTypeData = caption;
 		InsertMenuItem(GetSubMenu(m_menu, 1), 2 + index, TRUE, &item);
+
+		index++;
 	}
 
 /*

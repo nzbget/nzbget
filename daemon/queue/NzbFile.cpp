@@ -294,17 +294,15 @@ bool NzbFile::HasDuplicateFilenames()
  */
 void NzbFile::BuildFilenames()
 {
-	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		ParseSubject(fileInfo, true);
 	}
 
 	if (HasDuplicateFilenames())
 	{
-		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
+		for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it;
 			ParseSubject(fileInfo, false);
 		}
 	}
@@ -312,9 +310,8 @@ void NzbFile::BuildFilenames()
 	if (HasDuplicateFilenames())
 	{
 		m_nzbInfo->SetManyDupeFiles(true);
-		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
+		for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it;
 			fileInfo->SetFilename(fileInfo->GetSubject());
 		}
 	}
@@ -329,9 +326,9 @@ void NzbFile::CalcHashes()
 {
 	TempFileList fileList;
 
-	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
 	{
-		fileList.push_back(*it);
+		fileList.push_back(fileInfo);
 	}
 
 	fileList.sort(CompareFileInfo);
@@ -340,17 +337,14 @@ void NzbFile::CalcHashes()
 	uint32 filteredContentHash = 0;
 	int useForFilteredCount = 0;
 
-	for (TempFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
+	for (FileInfo* fileInfo : fileList)
 	{
-		FileInfo* fileInfo = *it;
-
 		// check file extension
 		bool skip = !fileInfo->GetParFile() &&
 			Util::MatchFileExt(fileInfo->GetFilename(), g_Options->GetParIgnoreExt(), ",;");
 
-		for (FileInfo::Articles::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); it++)
+		for (ArticleInfo* article: *fileInfo->GetArticles())
 		{
-			ArticleInfo* article = *it;
 			int len = strlen(article->GetMessageId());
 			fullContentHash = Util::HashBJ96(article->GetMessageId(), len, fullContentHash);
 			if (!skip)
@@ -375,9 +369,8 @@ void NzbFile::ProcessFiles()
 {
 	BuildFilenames();
 
-	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		fileInfo->MakeValidFilename();
 
 		BString<1024> loFileName = fileInfo->GetFilename();
@@ -407,9 +400,8 @@ void NzbFile::ProcessFiles()
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
-		for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
+		for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = *it;
 			g_DiskState->SaveFile(fileInfo);
 			fileInfo->ClearArticles();
 		}

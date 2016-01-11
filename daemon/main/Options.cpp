@@ -211,9 +211,8 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* name)
 		return nullptr;
 	}
 
-	for (iterator it = begin(); it != end(); it++)
+	for (OptEntry& optEntry : *this)
 	{
-		OptEntry& optEntry = *it;
 		if (!strcasecmp(optEntry.GetName(), name))
 		{
 			return &optEntry;
@@ -231,9 +230,8 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 		return nullptr;
 	}
 
-	for (iterator it = begin(); it != end(); it++)
+	for (Category& category : *this)
 	{
-		Category& category = *it;
 		if (!strcasecmp(category.GetName(), name))
 		{
 			return &category;
@@ -242,12 +240,10 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 
 	if (searchAliases)
 	{
-		for (iterator it = begin(); it != end(); it++)
+		for (Category& category : *this)
 		{
-			Category& category = *it;
-			for (NameList::iterator it2 = category.GetAliases()->begin(); it2 != category.GetAliases()->end(); it2++)
+			for (CString& alias : *category.GetAliases())
 			{
-				const char* alias = *it2;
 				WildMask mask(alias);
 				if (mask.Match(name))
 				{
@@ -429,9 +425,8 @@ Options::~Options()
 
 void Options::Dump()
 {
-	for (OptEntries::iterator it = m_optEntries.begin(); it != m_optEntries.end(); it++)
+	for (OptEntry& optEntry : m_optEntries)
 	{
-		OptEntry& optEntry = *it;
 		printf("%s = \"%s\"\n", optEntry.GetName(), optEntry.GetValue());
 	}
 }
@@ -1470,9 +1465,8 @@ void Options::LoadConfigFile()
 
 void Options::InitCommandLineOptions(CmdOptList* commandLineOptions)
 {
-	for (CmdOptList::iterator it = commandLineOptions->begin(); it != commandLineOptions->end(); it++)
+	for (const char* option : *commandLineOptions)
 	{
-		const char* option = *it;
 		SetOptionString(option);
 	}
 }

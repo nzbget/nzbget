@@ -57,9 +57,8 @@ void ServiceCoordinator::Run()
 
 	while (!IsStopped())
 	{
-		for (ServiceList::iterator it = m_services.begin(); it != m_services.end(); it++)
+		for (Service* service : m_services)
 		{
-			Service* service = *it;
 			if (curTick >= service->m_lastTick + service->ServiceInterval() ||	// interval expired
 				curTick == 0 ||													// first start
 				curTick + 10000 < service->m_lastTick)							// int overflow

@@ -139,10 +139,8 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 
 	// write config file back to disk, replace old values of existing options with new values
 	infile.Seek(0);
-	for (std::vector<CString>::iterator it = config.begin(); it != config.end(); it++)
+	for (CString& buf : config)
 	{
-		CString& buf = *it;
-
 		const char* eq = strchr(buf, '=');
 		if (eq && buf[0] != '#')
 		{
@@ -168,9 +166,8 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	}
 
 	// write new options
-	for (Options::OptEntries::iterator it = optEntries->begin(); it != optEntries->end(); it++)
+	for (Options::OptEntry& optEntry : *optEntries)
 	{
-		Options::OptEntry& optEntry = *it;
 		std::set<Options::OptEntry*>::iterator fit = writtenOptions.find(&optEntry);
 		if (fit == writtenOptions.end())
 		{
@@ -209,10 +206,8 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 	const int beginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
 	const int queueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
 
-	for (Scripts::iterator it = scriptList.begin(); it != scriptList.end(); it++)
+	for (Script& script : scriptList)
 	{
-		Script& script = *it;
-
 		DiskFile infile;
 		if (!infile.Open(script.GetLocation(), DiskFile::omRead))
 		{
@@ -405,19 +400,15 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 	// trying to use short name without path and extension.
 	// if there are other scripts with the same short name - using a longer name instead (with ot without extension)
 
-	for (Scripts::iterator it = scripts->begin(); it != scripts->end(); it++)
+	for (Script& script : *scripts)
 	{
-		Script& script = *it;
-
 		BString<1024> shortName = script.GetName();
 		if (char* ext = strrchr(shortName, '.')) *ext = '\0'; // strip file extension
 
 		const char* displayName = FileSystem::BaseFileName(shortName);
 
-		for (Scripts::iterator it2 = scripts->begin(); it2 != scripts->end(); it2++)
+		for (Script& script2 : *scripts)
 		{
-			Script& script2 = *it2;
-
 			BString<1024> shortName2 = script2.GetName();
 			if (char* ext = strrchr(shortName2, '.')) *ext = '\0'; // strip file extension
 

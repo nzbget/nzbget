@@ -425,9 +425,8 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
 {
 	NzbInfo* nzbInfo = nullptr;
 
-	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbInfo* nzbInfo1: *downloadQueue->GetQueue())
 	{
-		NzbInfo* nzbInfo1 = *it;
 		if (nzbInfo1->GetPostInfo() && !g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
 			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
 			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()))
@@ -446,9 +445,8 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
  */
 void PrePostProcessor::SanitisePostQueue(DownloadQueue* downloadQueue)
 {
-	for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
 	{
-		NzbInfo* nzbInfo = *it;
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (postInfo)
 		{
@@ -682,9 +680,8 @@ bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPar
 {
 	int deleted = 0;
 
-	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		if (fileInfo->GetDeleted())
 		{
 			deleted++;
@@ -707,9 +704,8 @@ bool PrePostProcessor::IsNzbFileDownloading(NzbInfo* nzbInfo)
 		return true;
 	}
 
-	for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
 	{
-		FileInfo* fileInfo = *it;
 		if (!fileInfo->GetPaused())
 		{
 			return true;
@@ -750,13 +746,10 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 {
 	bool ok = false;
 
-	for (IdList::iterator itId = idList->begin(); itId != idList->end(); itId++)
+	for (int id : *idList)
 	{
-		int id = *itId;
-
-		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
+		for (NzbInfo* nzbInfo: *downloadQueue->GetQueue())
 		{
-			NzbInfo* nzbInfo = *it;
 			PostInfo* postInfo = nzbInfo->GetPostInfo();
 			if (postInfo && nzbInfo->GetId() == id)
 			{
