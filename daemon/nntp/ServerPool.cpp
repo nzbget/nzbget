@@ -213,7 +213,7 @@ NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Ser
 				bool useConnection = true;
 				if (ignoreServers && !wantServer)
 				{
-					for (NewsServer* ignoreServer : *ignoreServers)
+					for (NewsServer* ignoreServer : ignoreServers)
 					{
 						if (ignoreServer == candidateServer ||
 							(ignoreServer->GetGroup() > 0 && ignoreServer->GetGroup() == candidateServer->GetGroup() &&

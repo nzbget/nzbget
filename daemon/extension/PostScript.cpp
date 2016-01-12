@@ -53,7 +53,7 @@ void PostScriptController::Run()
 
 	// the locking is needed for accessing the members of NZBInfo
 	DownloadQueue::Lock();
-	for (NzbParameter& parameter : *m_postInfo->GetNzbInfo()->GetParameters())
+	for (NzbParameter& parameter : m_postInfo->GetNzbInfo()->GetParameters())
 	{
 		const char* varname = parameter.GetName();
 		if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
@@ -170,7 +170,7 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	SetIntEnvVar("NZBPP_SUCCESSARTICLES", (int)m_postInfo->GetNzbInfo()->GetSuccessArticles());
 	SetIntEnvVar("NZBPP_FAILEDARTICLES", (int)m_postInfo->GetNzbInfo()->GetFailedArticles());
 
-	for (ServerStat& serverStat : *m_postInfo->GetNzbInfo()->GetServerStats())
+	for (ServerStat& serverStat : m_postInfo->GetNzbInfo()->GetServerStats())
 	{
 		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_SUCCESSARTICLES", serverStat.GetServerId()),
 			serverStat.GetSuccessArticles());

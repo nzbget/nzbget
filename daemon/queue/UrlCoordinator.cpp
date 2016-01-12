@@ -248,7 +248,7 @@ NzbInfo* UrlCoordinator::GetNextUrl(DownloadQueue* downloadQueue)
 
 	NzbInfo* nzbInfo = nullptr;
 
-	for (NzbInfo* nzbInfo1 : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo1 : downloadQueue->GetQueue())
 	{
 		if (nzbInfo1->GetKind() == NzbInfo::nkUrl &&
 			nzbInfo1->GetUrlStatus() == NzbInfo::lsNone &&

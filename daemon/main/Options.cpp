@@ -211,7 +211,7 @@ Options::OptEntry* Options::OptEntries::FindOption(const char* name)
 		return nullptr;
 	}
 
-	for (OptEntry& optEntry : *this)
+	for (OptEntry& optEntry : this)
 	{
 		if (!strcasecmp(optEntry.GetName(), name))
 		{
@@ -230,7 +230,7 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 		return nullptr;
 	}
 
-	for (Category& category : *this)
+	for (Category& category : this)
 	{
 		if (!strcasecmp(category.GetName(), name))
 		{
@@ -240,9 +240,9 @@ Options::Category* Options::Categories::FindCategory(const char* name, bool sear
 
 	if (searchAliases)
 	{
-		for (Category& category : *this)
+		for (Category& category : this)
 		{
-			for (CString& alias : *category.GetAliases())
+			for (CString& alias : category.GetAliases())
 			{
 				WildMask mask(alias);
 				if (mask.Match(name))

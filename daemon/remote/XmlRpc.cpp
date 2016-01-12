@@ -1309,7 +1309,7 @@ void StatusXmlCommand::Execute()
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	int postJobCount = 0;
 	int urlCount = 0;
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 		urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
@@ -1367,7 +1367,7 @@ void StatusXmlCommand::Execute()
 		BoolToStr(feedActive), queuedScripts);
 
 	int index = 0;
-	for (NewsServer* server : *g_ServerPool->GetServers())
+	for (NewsServer* server : g_ServerPool->GetServers())
 	{
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_NEWSSERVER_ITEM : XML_NEWSSERVER_ITEM,
@@ -1533,9 +1533,9 @@ void ListFilesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
-		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
 			if ((nzbId > 0 && nzbId == fileInfo->GetNzbInfo()->GetId()) ||
 				(nzbId == 0 && (idStart == 0 || (idStart <= fileInfo->GetId() && fileInfo->GetId() <= idEnd))))
@@ -1763,7 +1763,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 
 	// Post-processing parameters
 	int paramIndex = 0;
-	for (NzbParameter& parameter : *nzbInfo->GetParameters())
+	for (NzbParameter& parameter : nzbInfo->GetParameters())
 	{
 		AppendCondResponse(",\n", IsJson() && paramIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_PARAMETER_ITEM : XML_PARAMETER_ITEM,
@@ -1774,7 +1774,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 
 	// Script statuses
 	int scriptIndex = 0;
-	for (ScriptStatus& scriptStatus : *nzbInfo->GetScriptStatuses())
+	for (ScriptStatus& scriptStatus : nzbInfo->GetScriptStatuses())
 	{
 		AppendCondResponse(",\n", IsJson() && scriptIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_SCRIPT_ITEM : XML_SCRIPT_ITEM,
@@ -1785,7 +1785,7 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 
 	// Server stats
 	int statIndex = 0;
-	for (ServerStat& serverStat : *nzbInfo->GetCurrentServerStats())
+	for (ServerStat& serverStat : nzbInfo->GetCurrentServerStats())
 	{
 		AppendCondResponse(",\n", IsJson() && statIndex++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_STAT_ITEM : XML_STAT_ITEM,
@@ -1949,7 +1949,7 @@ void ListGroupsXmlCommand::Execute()
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		uint32 remainingSizeLo, remainingSizeHi, remainingSizeMB;
 		uint32 pausedSizeLo, pausedSizeHi, pausedSizeMB;
@@ -2331,7 +2331,7 @@ void PostQueueXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : *nzbList)
+	for (NzbInfo* nzbInfo : nzbList)
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
@@ -2503,7 +2503,7 @@ void HistoryXmlCommand::Execute()
 
 	int index = 0;
 
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkDup && !dup)
 		{
@@ -2603,7 +2603,7 @@ void UrlQueueXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 		{
@@ -2640,7 +2640,7 @@ void ConfigXmlCommand::Execute()
 
 	Options::OptEntries* optEntries = g_Options->LockOptEntries();
 
-	for (Options::OptEntry& optEntry : *optEntries)
+	for (Options::OptEntry& optEntry : optEntries)
 	{
 		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
 			optEntry.Restricted() ? "***" : optEntry.GetValue());
@@ -2770,7 +2770,7 @@ void ConfigTemplatesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (ScriptConfig::ConfigTemplate& configTemplate : *configTemplates)
+	for (ScriptConfig::ConfigTemplate& configTemplate : configTemplates)
 	{
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
@@ -2920,7 +2920,7 @@ void ViewFeedXmlCommand::Execute()
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	int index = 0;
 
-	for (FeedItemInfo& feedItemInfo : *feedItemInfos)
+	for (FeedItemInfo& feedItemInfo : feedItemInfos)
 	{
 		if (includeNonMatching || feedItemInfo.GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
@@ -2988,7 +2988,7 @@ void EditServerXmlCommand::Execute()
 			return;
 		}
 
-		for (NewsServer* server : *g_ServerPool->GetServers())
+		for (NewsServer* server : g_ServerPool->GetServers())
 		{
 			if (server->GetId() == id)
 			{
@@ -3218,7 +3218,7 @@ void ServerVolumesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (ServerVolume& serverVolume : *serverVolumes)
+	for (ServerVolume& serverVolume : serverVolumes)
 	{
 		uint32 totalSizeHi, totalSizeLo, totalSizeMB;
 		Util::SplitInt64(serverVolume.GetTotalBytes(), &totalSizeHi, &totalSizeLo);
@@ -3295,7 +3295,7 @@ void ResetServerVolumeXmlCommand::Execute()
 	bool ok = false;
 	ServerVolumes* serverVolumes = g_StatMeter->LockServerVolumes();
 	int index = 0;
-	for (ServerVolume& serverVolume : *serverVolumes)
+	for (ServerVolume& serverVolume : serverVolumes)
 	{
 		if (index == serverId || serverId == -1)
 		{

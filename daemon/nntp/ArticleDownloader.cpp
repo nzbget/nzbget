@@ -217,7 +217,7 @@ void ArticleDownloader::Run()
 			// if all servers from all levels were tried, break the loop with failure status
 
 			bool allServersOnLevelFailed = true;
-			for (NewsServer* candidateServer : *g_ServerPool->GetServers())
+			for (NewsServer* candidateServer : g_ServerPool->GetServers())
 			{
 				if (candidateServer->GetNormLevel() == level)
 				{
@@ -301,7 +301,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	if (m_connection->GetNewsServer()->GetJoinGroup())
 	{
 		// change group
-		for (CString& group : *m_fileInfo->GetGroups())
+		for (CString& group : m_fileInfo->GetGroups())
 		{
 			response = m_connection->JoinGroup(group);
 			if (response && !strncmp(response, "2", 1))

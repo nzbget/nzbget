@@ -76,7 +76,7 @@ void NzbParameterList::SetParameter(const char* name, const char* value)
 
 NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 {
-	for (NzbParameter& parameter : *this)
+	for (NzbParameter& parameter : this)
 	{
 		if ((caseSensitive && !strcmp(parameter.GetName(), name)) ||
 			(!caseSensitive && !strcasecmp(parameter.GetName(), name)))
@@ -90,7 +90,7 @@ NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
 
 void NzbParameterList::CopyFrom(NzbParameterList* sourceParameters)
 {
-	for (NzbParameter& parameter : *sourceParameters)
+	for (NzbParameter& parameter : sourceParameters)
 	{
 		SetParameter(parameter.GetName(), parameter.GetValue());
 	}
@@ -101,7 +101,7 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 {
 	ScriptStatus::EStatus status = ScriptStatus::srNone;
 
-	for (ScriptStatus& scriptStatus : *this)
+	for (ScriptStatus& scriptStatus : this)
 	{
 		// Failure-Status overrides Success-Status
 		if ((scriptStatus.GetStatus() == ScriptStatus::srSuccess && status == ScriptStatus::srNone) ||
@@ -118,7 +118,7 @@ ScriptStatus::EStatus ScriptStatusList::CalcTotalStatus()
 void ServerStatList::StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation)
 {
 	ServerStat* serverStat = nullptr;
-	for (ServerStat& serverStat1 : *this)
+	for (ServerStat& serverStat1 : this)
 	{
 		if (serverStat1.GetServerId() == serverId)
 		{
@@ -154,7 +154,7 @@ void ServerStatList::StatOp(int serverId, int successArticles, int failedArticle
 
 void ServerStatList::ListOp(ServerStatList* serverStats, EStatOperation statOperation)
 {
-	for (ServerStat& serverStat : *serverStats)
+	for (ServerStat& serverStat : serverStats)
 	{
 		StatOp(serverStat.GetServerId(), serverStat.GetSuccessArticles(), serverStat.GetFailedArticles(), statOperation);
 	}
@@ -536,7 +536,7 @@ void NzbInfo::CopyFileList(NzbInfo* srcNzbInfo)
 {
 	m_fileList.Clear();
 
-	for (FileInfo* fileInfo : *srcNzbInfo->GetFileList())
+	for (FileInfo* fileInfo : srcNzbInfo->GetFileList())
 	{
 		fileInfo->SetNzbInfo(this);
 		m_fileList.push_back(fileInfo);
@@ -771,7 +771,7 @@ NzbList::~NzbList()
 
 void NzbList::Clear()
 {
-	for (NzbInfo* nzbInfo : *this)
+	for (NzbInfo* nzbInfo : this)
 	{
 		delete nzbInfo;
 	}
@@ -801,7 +801,7 @@ void NzbList::Remove(NzbInfo* nzbInfo)
 
 NzbInfo* NzbList::Find(int id)
 {
-	for (NzbInfo* nzbInfo : *this)
+	for (NzbInfo* nzbInfo : this)
 	{
 		if (nzbInfo->GetId() == id)
 		{
@@ -970,7 +970,7 @@ FileList::~FileList()
 
 void FileList::Clear()
 {
-	for (FileInfo* fileInfo : *this)
+	for (FileInfo* fileInfo : this)
 	{
 		delete fileInfo;
 	}
@@ -1105,7 +1105,7 @@ const char* HistoryInfo::GetName()
 
 HistoryList::~HistoryList()
 {
-	for (HistoryInfo* historyInfo : *this)
+	for (HistoryInfo* historyInfo : this)
 	{
 		delete historyInfo;
 	}
@@ -1113,7 +1113,7 @@ HistoryList::~HistoryList()
 
 HistoryInfo* HistoryList::Find(int id)
 {
-	for (HistoryInfo* historyInfo : *this)
+	for (HistoryInfo* historyInfo : this)
 	{
 		if (historyInfo->GetId() == id)
 		{
@@ -1143,7 +1143,7 @@ void DownloadQueue::CalcRemainingSize(int64* remaining, int64* remainingForced)
 
 	for (NzbInfo* nzbInfo : m_queue)
 	{
-		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
 			if (!fileInfo->GetPaused() && !fileInfo->GetDeleted())
 			{

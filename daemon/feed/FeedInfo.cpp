@@ -51,7 +51,7 @@ FeedInfo::FeedInfo(int id, const char* name, const char* url, bool backlog, int 
 
 FeedItemInfo::Attr* FeedItemInfo::Attributes::Find(const char* name)
 {
-	for (Attr& attr : *this)
+	for (Attr& attr : this)
 	{
 		if (!strcasecmp(attr.GetName(), name))
 		{
@@ -221,7 +221,7 @@ void FeedHistory::Remove(const char* url)
 
 FeedHistoryInfo* FeedHistory::Find(const char* url)
 {
-	for (FeedHistoryInfo& feedHistoryInfo : *this)
+	for (FeedHistoryInfo& feedHistoryInfo : this)
 	{
 		if (!strcmp(feedHistoryInfo.GetUrl(), url))
 		{

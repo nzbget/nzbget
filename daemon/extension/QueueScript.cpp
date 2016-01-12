@@ -243,7 +243,7 @@ QueueScriptCoordinator::~QueueScriptCoordinator()
 void QueueScriptCoordinator::InitOptions()
 {
 	m_hasQueueScripts = false;
-	for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
+	for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
 	{
 		if (script.GetQueueScript())
 		{
@@ -289,7 +289,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		return;
 	}
 
-	for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
+	for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
 	{
 		if (!script.GetQueueScript())
 		{
@@ -317,7 +317,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		// check post-processing-scripts
 		if (!useScript)
 		{
-			for (NzbParameter& parameter : *nzbInfo->GetParameters())
+			for (NzbParameter& parameter : nzbInfo->GetParameters())
 			{
 				const char* varname = parameter.GetName();
 				if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
@@ -379,7 +379,7 @@ NzbInfo* QueueScriptCoordinator::FindNzbInfo(DownloadQueue* downloadQueue, int n
 	NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(nzbId);
 	if (!nzbInfo)
 	{
-		for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 		{
 			if (historyInfo->GetNzbInfo() && historyInfo->GetNzbInfo()->GetId() == nzbId)
 			{

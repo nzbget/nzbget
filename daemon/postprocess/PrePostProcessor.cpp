@@ -445,7 +445,7 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
  */
 void PrePostProcessor::SanitisePostQueue(DownloadQueue* downloadQueue)
 {
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (postInfo)
@@ -680,7 +680,7 @@ bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPar
 {
 	int deleted = 0;
 
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		if (fileInfo->GetDeleted())
 		{
@@ -704,7 +704,7 @@ bool PrePostProcessor::IsNzbFileDownloading(NzbInfo* nzbInfo)
 		return true;
 	}
 
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		if (!fileInfo->GetPaused())
 		{

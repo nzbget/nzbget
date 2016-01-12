@@ -392,7 +392,7 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 
 	if (reset)
 	{
-		for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
+		for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
 		{
 			parameters->SetParameter(BString<1024>("%s:", script.GetName()), nullptr);
 		}
@@ -462,7 +462,7 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 
 	nzbInfo->GetParameters()->CopyFrom(parameters);
 
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		fileInfo->SetPaused(addPaused);
 	}

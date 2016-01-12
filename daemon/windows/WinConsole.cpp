@@ -789,7 +789,7 @@ void WinConsole::UpdateTrayIcon()
 		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
 		int urlCount = 0;
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
@@ -827,7 +827,7 @@ void WinConsole::UpdateTrayIcon()
 void WinConsole::BuildMenu()
 {
 	int index = 0;
-	for (Options::Category& category : *g_Options->GetCategories())
+	for (Options::Category& category : g_Options->GetCategories())
 	{
 		BString<1024> caption("Category %i: %s", index + 1, category.GetName());
 

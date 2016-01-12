@@ -400,14 +400,14 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 	// trying to use short name without path and extension.
 	// if there are other scripts with the same short name - using a longer name instead (with ot without extension)
 
-	for (Script& script : *scripts)
+	for (Script& script : scripts)
 	{
 		BString<1024> shortName = script.GetName();
 		if (char* ext = strrchr(shortName, '.')) *ext = '\0'; // strip file extension
 
 		const char* displayName = FileSystem::BaseFileName(shortName);
 
-		for (Script& script2 : *scripts)
+		for (Script& script2 : scripts)
 		{
 			BString<1024> shortName2 = script2.GetName();
 			if (char* ext = strrchr(shortName2, '.')) *ext = '\0'; // strip file extension

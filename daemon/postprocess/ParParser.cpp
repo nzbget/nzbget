@@ -47,7 +47,7 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 
 			// check if the base file already added to list
 			bool exists = false;
-			for (CString& filename2 : *fileList)
+			for (CString& filename2 : fileList)
 			{
 				exists = SameParCollection(filename, filename2);
 				if (exists)

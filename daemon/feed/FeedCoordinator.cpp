@@ -411,7 +411,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 		feedFilter = new FeedFilter(feedInfo->GetFilter());
 	}
 
-	for (FeedItemInfo& feedItemInfo : *feedItemInfos)
+	for (FeedItemInfo& feedItemInfo : feedItemInfos)
 	{
 		feedItemInfo.SetMatchStatus(FeedItemInfo::msAccepted);
 		feedItemInfo.SetMatchRule(0);
@@ -440,7 +440,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInf
 	bool firstFetch = feedInfo->GetLastUpdate() == 0;
 	int added = 0;
 
-	for (FeedItemInfo& feedItemInfo : *feedItemInfos)
+	for (FeedItemInfo& feedItemInfo : feedItemInfos)
 	{
 		if (feedItemInfo.GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
@@ -604,7 +604,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		feedItemInfos->Retain();
 		delete feedFile;
 
-		for (FeedItemInfo& feedItemInfo : *feedItemInfos)
+		for (FeedItemInfo& feedItemInfo : feedItemInfos)
 		{
 			feedItemInfo.SetStatus(firstFetch && feedInfo->GetBacklog() ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
 			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo.GetUrl());

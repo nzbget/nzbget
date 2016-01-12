@@ -38,7 +38,7 @@ void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, con
 {
 	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	for (NzbParameter& parameter : *parameters)
+	for (NzbParameter& parameter : parameters)
 	{
 		const char* value = parameter.GetValue();
 
@@ -72,7 +72,7 @@ void NzbScriptController::PrepareEnvScript(NzbParameterList* parameters, const c
 
 void NzbScriptController::ExecuteScriptList(const char* scriptList)
 {
-	for (ScriptConfig::Script& script : *g_ScriptConfig->GetScripts())
+	for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
 	{
 		if (scriptList && *scriptList)
 		{

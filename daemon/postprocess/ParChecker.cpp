@@ -1410,7 +1410,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 		bool blockOK = false;
 		bool blockEndFound = false;
 		Par2::u64 curOffset = 0;
-		for (Segment& segment : *segments)
+		for (Segment& segment : segments)
 		{
 			if (!blockOK && segment.GetSuccess() && segment.GetOffset() <= blockStart &&
 				segment.GetOffset() + segment.GetSize() >= blockStart)
@@ -1505,7 +1505,7 @@ bool ParChecker::SmartCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, S
 {
 	uint32 downloadCrc = 0;
 	bool started = false;
-	for (Segment& segment : *segments)
+	for (Segment& segment : segments)
 	{
 		if (!started && segment.GetOffset() > start)
 		{

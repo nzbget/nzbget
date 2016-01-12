@@ -373,7 +373,7 @@ int NCursesFrontend::CalcQueueSize()
 	}
 	else
 	{
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			queueSize += nzbInfo->GetFileList()->size();
 		}
@@ -695,9 +695,9 @@ void NCursesFrontend::PrintFileQueue()
 	int pausedFiles = 0;
 	int fileNum = 0;
 
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
-		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
 			if (fileNum >= m_queueScrollOffset && fileNum < m_queueScrollOffset + m_queueWinHeight -1)
 			{
@@ -859,7 +859,7 @@ void NCursesFrontend::PrintGroupQueue()
 		ResetColWidths();
 		int calcLineNr = lineNr;
 		int i = 0;
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
@@ -871,7 +871,7 @@ void NCursesFrontend::PrintGroupQueue()
 		int64 remaining = 0;
 		int64 paused = 0;
 		i = 0;
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			if (i >= m_queueScrollOffset && i < m_queueScrollOffset + m_queueWinHeight -1)
 			{
@@ -1054,9 +1054,9 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 		DownloadQueue* downloadQueue = LockQueue();
 
 		int fileNum = 0;
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
-			for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
 			{
 				if (m_selectedQueueEntry == fileNum)
 				{

@@ -278,7 +278,7 @@ void Scheduler::PrintLog()
 	if (m_serverChanged)
 	{
 		int index = 0;
-		for (NewsServer* server : *g_ServerPool->GetServers())
+		for (NewsServer* server : g_ServerPool->GetServers())
 		{
 			if (server->GetActive() != m_serverStatusList[index])
 			{
@@ -296,7 +296,7 @@ void Scheduler::EditServer(bool active, const char* serverList)
 	while (const char* serverRef = tok.Next())
 	{
 		int id = atoi(serverRef);
-		for (NewsServer* server : *g_ServerPool->GetServers())
+		for (NewsServer* server : g_ServerPool->GetServers())
 		{
 			if ((id > 0 && server->GetId() == id) ||
 				!strcasecmp(server->GetName(), serverRef))
@@ -306,7 +306,7 @@ void Scheduler::EditServer(bool active, const char* serverList)
 					// store old server status for logging
 					m_serverStatusList.clear();
 					m_serverStatusList.reserve(g_ServerPool->GetServers()->size());
-					for (NewsServer* server2 : *g_ServerPool->GetServers())
+					for (NewsServer* server2 : g_ServerPool->GetServers())
 					{
 						m_serverStatusList.push_back(server2->GetActive());
 					}
@@ -325,7 +325,7 @@ void Scheduler::FetchFeed(const char* feedList)
 	while (const char* feedRef = tok.Next())
 	{
 		int id = atoi(feedRef);
-		for (FeedInfo* feed : *g_FeedCoordinator->GetFeeds())
+		for (FeedInfo* feed : g_FeedCoordinator->GetFeeds())
 		{
 			if (feed->GetId() == id ||
 				!strcasecmp(feed->GetName(), feedRef) ||

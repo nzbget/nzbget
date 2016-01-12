@@ -294,14 +294,14 @@ bool NzbFile::HasDuplicateFilenames()
  */
 void NzbFile::BuildFilenames()
 {
-	for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 	{
 		ParseSubject(fileInfo, true);
 	}
 
 	if (HasDuplicateFilenames())
 	{
-		for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 		{
 			ParseSubject(fileInfo, false);
 		}
@@ -310,7 +310,7 @@ void NzbFile::BuildFilenames()
 	if (HasDuplicateFilenames())
 	{
 		m_nzbInfo->SetManyDupeFiles(true);
-		for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 		{
 			fileInfo->SetFilename(fileInfo->GetSubject());
 		}
@@ -326,7 +326,7 @@ void NzbFile::CalcHashes()
 {
 	TempFileList fileList;
 
-	for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 	{
 		fileList.push_back(fileInfo);
 	}
@@ -369,7 +369,7 @@ void NzbFile::ProcessFiles()
 {
 	BuildFilenames();
 
-	for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 	{
 		fileInfo->MakeValidFilename();
 
@@ -400,7 +400,7 @@ void NzbFile::ProcessFiles()
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
-		for (FileInfo* fileInfo : *m_nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 		{
 			g_DiskState->SaveFile(fileInfo);
 			fileInfo->ClearArticles();

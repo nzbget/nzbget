@@ -358,7 +358,7 @@ void DiskState::CompleteNzbList12(DownloadQueue* downloadQueue, NzbList* nzbList
 		// here we renumber NZBIDs in order to keep them low.
 		NzbInfo::ResetGenId(false);
 		int id = 1;
-		for (NzbInfo* nzbInfo : *nzbList)
+		for (NzbInfo* nzbInfo : nzbList)
 		{
 			nzbInfo->SetId(id++);
 		}
@@ -369,7 +369,7 @@ void DiskState::CompleteDupList12(DownloadQueue* downloadQueue, int formatVersio
 {
 	NzbInfo::ResetGenId(true);
 
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkDup)
 		{
@@ -383,7 +383,7 @@ void DiskState::SaveNzbQueue(DownloadQueue* downloadQueue, DiskFile& outfile)
 	debug("Saving nzb list to disk");
 
 	outfile.Print("%i\n", (int)downloadQueue->GetQueue()->size());
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		SaveNzbInfo(nzbInfo, outfile);
 	}
@@ -460,20 +460,20 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, DiskFile& outfile)
 		nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec());
 
 	outfile.Print("%i\n", (int)nzbInfo->GetCompletedFiles()->size());
-	for (CompletedFile& completedFile : *nzbInfo->GetCompletedFiles())
+	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
 		outfile.Print("%i,%i,%u,%s\n", completedFile.GetId(), (int)completedFile.GetStatus(),
 			completedFile.GetCrc(), completedFile.GetFileName());
 	}
 
 	outfile.Print("%i\n", (int)nzbInfo->GetParameters()->size());
-	for (NzbParameter& parameter : *nzbInfo->GetParameters())
+	for (NzbParameter& parameter : nzbInfo->GetParameters())
 	{
 		outfile.Print("%s=%s\n", parameter.GetName(), parameter.GetValue());
 	}
 
 	outfile.Print("%i\n", (int)nzbInfo->GetScriptStatuses()->size());
-	for (ScriptStatus& scriptStatus : *nzbInfo->GetScriptStatuses())
+	for (ScriptStatus& scriptStatus : nzbInfo->GetScriptStatuses())
 	{
 		outfile.Print("%i,%s\n", scriptStatus.GetStatus(), scriptStatus.GetName());
 	}
@@ -482,7 +482,7 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, DiskFile& outfile)
 
 	// save file-infos
 	int size = 0;
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		if (!fileInfo->GetDeleted())
 		{
@@ -490,7 +490,7 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, DiskFile& outfile)
 		}
 	}
 	outfile.Print("%i\n", size);
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		if (!fileInfo->GetDeleted())
 		{
@@ -1064,7 +1064,7 @@ error:
 void DiskState::SaveServerStats(ServerStatList* serverStatList, DiskFile& outfile)
 {
 	outfile.Print("%i\n", (int)serverStatList->size());
-	for (ServerStat& serverStat : *serverStatList)
+	for (ServerStat& serverStat : serverStatList)
 	{
 		outfile.Print("%i,%i,%i\n", serverStat.GetServerId(), serverStat.GetSuccessArticles(), serverStat.GetFailedArticles());
 	}
@@ -1082,7 +1082,7 @@ bool DiskState::LoadServerStats(ServerStatList* serverStatList, Servers* servers
 		if (servers)
 		{
 			// find server (id could change if config file was edited)
-			for (NewsServer* newsServer : *servers)
+			for (NewsServer* newsServer : servers)
 			{
 				if (newsServer->GetStateId() == serverId)
 				{
@@ -1133,13 +1133,13 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 	outfile.Print("%i,%i\n", fileInfo->GetTotalArticles(), fileInfo->GetMissedArticles());
 
 	outfile.Print("%i\n", (int)fileInfo->GetGroups()->size());
-	for (CString& group : *fileInfo->GetGroups())
+	for (CString& group : fileInfo->GetGroups())
 	{
 		outfile.Print("%s\n", *group);
 	}
 
 	outfile.Print("%i\n", (int)fileInfo->GetArticles()->size());
-	for (ArticleInfo* articleInfo : *fileInfo->GetArticles())
+	for (ArticleInfo* articleInfo : fileInfo->GetArticles())
 	{
 		outfile.Print("%i,%i\n", articleInfo->GetPartNumber(), articleInfo->GetSize());
 		outfile.Print("%s\n", articleInfo->GetMessageId());
@@ -1297,7 +1297,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	SaveServerStats(fileInfo->GetServerStats(), outfile);
 
 	outfile.Print("%i\n", (int)fileInfo->GetArticles()->size());
-	for (ArticleInfo* articleInfo : *fileInfo->GetArticles())
+	for (ArticleInfo* articleInfo : fileInfo->GetArticles())
 	{
 		outfile.Print("%i,%u,%i,%u\n", (int)articleInfo->GetStatus(), (uint32)articleInfo->GetSegmentOffset(),
 			articleInfo->GetSegmentSize(), (uint32)articleInfo->GetCrc());
@@ -1414,14 +1414,14 @@ error:
 
 void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 {
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		DiscardFile(fileInfo, true, true, true);
 	}
 
 	BString<1024> filename;
 
-	for (CompletedFile& completedFile : *nzbInfo->GetCompletedFiles())
+	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
 		if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
 		{
@@ -1555,7 +1555,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 
 		// find NZBInfo based on NZBFilename
 		NzbInfo* nzbInfo = nullptr;
-		for (NzbInfo* nzbInfo2 : *nzbList)
+		for (NzbInfo* nzbInfo2 : nzbList)
 		{
 			if (!strcmp(nzbInfo2->GetFilename(), buf))
 			{
@@ -1812,7 +1812,7 @@ void DiskState::SaveHistory(DownloadQueue* downloadQueue, DiskFile& outfile)
 	debug("Saving history to disk");
 
 	outfile.Print("%i\n", (int)downloadQueue->GetHistory()->size());
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		outfile.Print("%i,%i,%i\n", historyInfo->GetId(), (int)historyInfo->GetKind(), (int)historyInfo->GetTime());
 
@@ -1933,7 +1933,7 @@ error:
 int DiskState::FindNzbInfoIndex(NzbList* nzbList, NzbInfo* nzbInfo)
 {
 	int nzbIndex = 0;
-	for (NzbInfo* nzbInfo2 : *nzbList)
+	for (NzbInfo* nzbInfo2 : nzbList)
 	{
 		nzbIndex++;
 		if (nzbInfo2 == nzbInfo)
@@ -1949,7 +1949,7 @@ int DiskState::FindNzbInfoIndex(NzbList* nzbList, NzbInfo* nzbInfo)
 */
 NzbInfo* DiskState::FindNzbInfo(DownloadQueue* downloadQueue, int id)
 {
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		if (nzbInfo->GetId() == id)
 		{
@@ -2123,7 +2123,7 @@ bool DiskState::SaveFeedStatus(Feeds* feeds, DiskFile& outfile)
 	debug("Saving feed status to disk");
 
 	outfile.Print("%i\n", (int)feeds->size());
-	for (FeedInfo* feedInfo : *feeds)
+	for (FeedInfo* feedInfo : feeds)
 	{
 		outfile.Print("%s\n", feedInfo->GetUrl());
 		outfile.Print("%u\n", feedInfo->GetFilterHash());
@@ -2161,7 +2161,7 @@ bool DiskState::LoadFeedStatus(Feeds* feeds, DiskFile& infile, int formatVersion
 		int lastUpdate = 0;
 		if (fscanf(infile, "%i\n", &lastUpdate) != 1) goto error;
 
-		for (FeedInfo* feedInfo : *feeds)
+		for (FeedInfo* feedInfo : feeds)
 		{
 			if (!strcmp(feedInfo->GetUrl(), url) &&
 				((formatVersion == 1) ||
@@ -2185,7 +2185,7 @@ bool DiskState::SaveFeedHistory(FeedHistory* feedHistory, DiskFile& outfile)
 	debug("Saving feed history to disk");
 
 	outfile.Print("%i\n", (int)feedHistory->size());
-	for (FeedHistoryInfo& feedHistoryInfo : *feedHistory)
+	for (FeedHistoryInfo& feedHistoryInfo : feedHistory)
 	{
 		outfile.Print("%i,%i\n", (int)feedHistoryInfo.GetStatus(), (int)feedHistoryInfo.GetLastSeen());
 		outfile.Print("%s\n", feedHistoryInfo.GetUrl());
@@ -2225,13 +2225,13 @@ error:
 void DiskState::CalcCriticalHealth(NzbList* nzbList)
 {
 	// build list of old NZBs which do not have critical health calculated
-	for (NzbInfo* nzbInfo : *nzbList)
+	for (NzbInfo* nzbInfo : nzbList)
 	{
 		if (nzbInfo->CalcCriticalHealth(false) == 1000)
 		{
 			debug("Calculating critical health for %s", nzbInfo->GetName());
 
-			for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
 			{
 				BString<1024> loFileName;
 				loFileName = fileInfo->GetFilename();
@@ -2250,12 +2250,12 @@ void DiskState::CalcCriticalHealth(NzbList* nzbList)
 
 void DiskState::CalcFileStats(DownloadQueue* downloadQueue, int formatVersion)
 {
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		CalcNzbFileStats(nzbInfo, formatVersion);
 	}
 
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 		{
@@ -2277,7 +2277,7 @@ void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 	int64 parSuccessSize = 0;
 	int64 parFailedSize = 0;
 
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		remainingSize += fileInfo->GetRemainingSize();
 		successArticles += fileInfo->GetSuccessArticles();
@@ -2332,9 +2332,9 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 		{
 			if (g_Options->GetContinuePartial() && !cacheWasActive)
 			{
-				for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+				for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 				{
-					for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+					for (FileInfo* fileInfo : nzbInfo->GetFileList())
 					{
 						if (fileInfo->GetId() == id)
 						{
@@ -2457,7 +2457,7 @@ bool DiskState::SaveServerInfo(Servers* servers, DiskFile& outfile)
 	debug("Saving server info to disk");
 
 	outfile.Print("%i\n", (int)servers->size());
-	for (NewsServer* newsServer : *servers)
+	for (NewsServer* newsServer : servers)
 	{
 		outfile.Print("%s\n", newsServer->GetName());
 		outfile.Print("%s\n", newsServer->GetHost());
@@ -2551,7 +2551,7 @@ void FindCandidates(NewsServer* newsServer, ServerRefList* refs, ECriteria crite
 void MatchServers(Servers* servers, ServerRefList* serverRefs)
 {
 	// Step 1: trying perfect match
-	for (NewsServer* newsServer : *servers)
+	for (NewsServer* newsServer : servers)
 	{
 		ServerRefList matchedRefs;
 		matchedRefs.insert(matchedRefs.begin(), serverRefs->begin(), serverRefs->end());
@@ -2570,7 +2570,7 @@ void MatchServers(Servers* servers, ServerRefList* serverRefs)
 	}
 
 	// Step 2: matching host, port, username and server-name
-	for (NewsServer* newsServer : *servers)
+	for (NewsServer* newsServer : servers)
 	{
 		if (!newsServer->GetStateId())
 		{
@@ -2655,7 +2655,7 @@ bool DiskState::LoadServerInfo(Servers* servers, DiskFile& infile, int formatVer
 	}
 
 	debug("******** MATCHING NEWS-SERVERS **********");
-	for (NewsServer* newsServer : *servers)
+	for (NewsServer* newsServer : servers)
 	{
 		*perfectMatch = *perfectMatch && newsServer->GetStateId();
 		debug("Server %i -> %i", newsServer->GetId(), newsServer->GetStateId());
@@ -2683,7 +2683,7 @@ bool DiskState::SaveVolumeStat(ServerVolumes* serverVolumes, DiskFile& outfile)
 	debug("Saving volume stats to disk");
 
 	outfile.Print("%i\n", (int)serverVolumes->size());
-	for (ServerVolume& serverVolume : *serverVolumes)
+	for (ServerVolume& serverVolume : serverVolumes)
 	{
 		outfile.Print("%i,%i,%i\n", serverVolume.GetFirstDay(), (int)serverVolume.GetDataTime(), (int)serverVolume.GetCustomTime());
 
@@ -2726,7 +2726,7 @@ bool DiskState::LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, D
 		}
 		else
 		{
-			for (NewsServer* newsServer : *servers)
+			for (NewsServer* newsServer : servers)
 			{
 				if (newsServer->GetStateId() == i)
 				{

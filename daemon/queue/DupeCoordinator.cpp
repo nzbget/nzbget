@@ -58,7 +58,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	debug("Checking duplicates for %s", nzbInfo->GetName());
 
 	// find duplicates in download queue with exactly same content
-	for (NzbInfo* queuedNzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* queuedNzbInfo : downloadQueue->GetQueue())
 	{
 		bool sameContent = (nzbInfo->GetFullContentHash() > 0 &&
 			nzbInfo->GetFullContentHash() == queuedNzbInfo->GetFullContentHash()) ||
@@ -102,7 +102,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	// take these properties from this item
 	if (Util::EmptyStr(nzbInfo->GetDupeKey()) && nzbInfo->GetDupeScore() == 0)
 	{
-		for (NzbInfo* queuedNzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* queuedNzbInfo : downloadQueue->GetQueue())
 		{
 			if (!strcmp(queuedNzbInfo->GetName(), nzbInfo->GetName()) &&
 				(!Util::EmptyStr(queuedNzbInfo->GetDupeKey()) || queuedNzbInfo->GetDupeScore() != 0))
@@ -117,7 +117,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	}
 	if (Util::EmptyStr(nzbInfo->GetDupeKey()) && nzbInfo->GetDupeScore() == 0)
 	{
-		for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 		{
 			if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 				!strcmp(historyInfo->GetNzbInfo()->GetName(), nzbInfo->GetName()) &&
@@ -152,7 +152,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	// find duplicates in history having exactly same content
 	// also: nzb-files having duplicates marked as good are skipped
 	// also (only in score mode): nzb-files having success-duplicates in dup-history but not having duplicates in recent history are skipped
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 			((nzbInfo->GetFullContentHash() > 0 &&
@@ -209,7 +209,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	if (!sameContent && !good && nzbInfo->GetDupeMode() == dmScore)
 	{
 		// nzb-files having success-duplicates in recent history (with different content) are added to history for backup
-		for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 		{
 			if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 				historyInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
@@ -322,7 +322,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 	// check if history (recent or dup) has other success-duplicates or good-duplicates
 	bool dupeFound = false;
 	int historyScore = 0;
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		bool goodDupe = false;
 
@@ -363,7 +363,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 	// check if duplicates exist in download queue
 	bool queueDupe = false;
 	int queueScore = 0;
-	for (NzbInfo* queuedNzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* queuedNzbInfo : downloadQueue->GetQueue())
 	{
 		if (queuedNzbInfo != nzbInfo &&
 			queuedNzbInfo->GetKind() == NzbInfo::nkNzb &&
@@ -379,7 +379,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 	// find dupe-backup with highest score, whose score is also higher than other
 	// success-duplicates and higher than already queued items
 	HistoryInfo* historyDupe = nullptr;
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 			historyInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
@@ -498,7 +498,7 @@ DupeCoordinator::EDupeStatus DupeCoordinator::GetDupeStatus(DownloadQueue* downl
 	EDupeStatus statuses = dsNone;
 
 	// find duplicates in download queue
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		if (SameNameOrKey(name, dupeKey, nzbInfo->GetName(), nzbInfo->GetDupeKey()))
 		{
@@ -514,7 +514,7 @@ DupeCoordinator::EDupeStatus DupeCoordinator::GetDupeStatus(DownloadQueue* downl
 	}
 
 	// find duplicates in history
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 			SameNameOrKey(name, dupeKey, historyInfo->GetNzbInfo()->GetName(), historyInfo->GetNzbInfo()->GetDupeKey()))
@@ -561,7 +561,7 @@ void DupeCoordinator::ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nz
 	}
 
 	// find duplicates in history
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 			historyInfo->GetNzbInfo()->GetDupeMode() != dmForce &&

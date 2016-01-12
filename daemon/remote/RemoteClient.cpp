@@ -379,9 +379,9 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			int matches = 0;
 			int nrFileEntries = 0;
 
-			for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 			{
-				for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+				for (FileInfo* fileInfo : nzbInfo->GetFileList())
 				{
 					nrFileEntries++;
 
@@ -463,7 +463,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			int matches = 0;
 			int nrFileEntries = 0;
 
-			for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 			{
 				nrFileEntries += nzbInfo->GetFileList()->size();
 
@@ -498,7 +498,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 				}
 
 				BString<1024> parameters;
-				for (NzbParameter& nzbParameter : *nzbInfo->GetParameters())
+				for (NzbParameter& nzbParameter : nzbInfo->GetParameters())
 				{
 					parameters.Append(parameters.Empty() ? " (" : ", ");
 					parameters.AppendFmt("%s=%s", nzbParameter.GetName(), nzbParameter.GetValue());
@@ -811,7 +811,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	int nameLength = 0;
 	if (nameList && nameList->size() > 0)
 	{
-		for (CString& name : *nameList)
+		for (CString& name : nameList)
 		{
 			nameLength += strlen(name) + 1;
 			nameCount++;
@@ -854,7 +854,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	if (nameCount > 0)
 	{
 		char *names = trailingData + textLen + idLength;
-		for (CString& name : *nameList)
+		for (CString& name : nameList)
 		{
 			int len = strlen(name);
 			strncpy(names, name, len + 1);

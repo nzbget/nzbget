@@ -62,7 +62,7 @@ void ParCoordinator::PostParChecker::RegisterParredFile(const char* filename)
 
 bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
 {
-	for (CString& parredFile : *m_postInfo->GetParredFiles())
+	for (CString& parredFile : m_postInfo->GetParredFiles())
 	{
 		if (!strcasecmp(parredFile, filename))
 		{
@@ -77,7 +77,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 {
 	CompletedFile* completedFile = nullptr;
 
-	for (CompletedFile& completedFile2 : *m_postInfo->GetNzbInfo()->GetCompletedFiles())
+	for (CompletedFile& completedFile2 : m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
 		if (!strcasecmp(completedFile2.GetFileName(), filename))
 		{
@@ -105,7 +105,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 			return ParChecker::fsUnknown;
 		}
 
-		for (ArticleInfo* pa : *tmpFileInfo->GetArticles())
+		for (ArticleInfo* pa : tmpFileInfo->GetArticles())
 		{
 			segments->emplace_back(pa->GetStatus() == ArticleInfo::aiFinished,
 				pa->GetSegmentOffset(), pa->GetSegmentSize(), pa->GetCrc());
@@ -161,11 +161,11 @@ void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceL
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	int totalExtraParBlocks = 0;
-	for (DupeSource& dupeSource : *dupeSourceList)
+	for (DupeSource& dupeSource : dupeSourceList)
 	{
 		if (dupeSource.GetUsedBlocks() > 0)
 		{
-			for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+			for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 			{
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 					historyInfo->GetNzbInfo()->GetId() == dupeSource.GetId())
@@ -209,7 +209,7 @@ void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
  */
 void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
 {
-	for (CompletedFile& completedFile : *m_postInfo->GetNzbInfo()->GetCompletedFiles())
+	for (CompletedFile& completedFile : m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
 		if (!strcasecmp(completedFile.GetFileName(), oldFilename))
 		{
@@ -492,7 +492,7 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 	}
 
 	bool hasUnpausedParFiles = false;
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		if (fileInfo->GetParFile() && !fileInfo->GetPaused())
 		{
@@ -531,7 +531,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	mainBaseFilename.Set(baseParFilename, mainBaseLen);
 	for (char* p = mainBaseFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		int blockCount = 0;
 		if (ParParser::ParseParFilename(fileInfo->GetFilename(), nullptr, &blockCount) &&

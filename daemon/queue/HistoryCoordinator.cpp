@@ -379,7 +379,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 
 		// unpark files
 		bool unparked = false;
-		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
 			detail("Unpark file %s", fileInfo->GetFilename());
 			unparked = true;
@@ -484,7 +484,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	info("Returning %s from history back to queue", nzbInfo->GetName());
 
-	for (FileInfo* fileInfo : *nzbFile->GetNzbInfo()->GetFileList())
+	for (FileInfo* fileInfo : nzbFile->GetNzbInfo()->GetFileList())
 	{
 		fileInfo->SetPaused(paused);
 	}

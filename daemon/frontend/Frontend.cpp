@@ -83,7 +83,7 @@ bool Frontend::PrepareData()
 
 			DownloadQueue *downloadQueue = DownloadQueue::Lock();
 			m_postJobCount = 0;
-			for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 			{
 				m_postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			}

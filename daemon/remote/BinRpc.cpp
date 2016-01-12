@@ -504,7 +504,7 @@ void ListBinCommand::Execute()
 		int nrNzbEntries = downloadQueue->GetQueue()->size();
 		int nrPPPEntries = 0;
 		bufsize += nrNzbEntries * sizeof(SNzbListResponseNzbEntry);
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			bufsize += strlen(nzbInfo->GetFilename()) + 1;
 			bufsize += strlen(nzbInfo->GetName()) + 1;
@@ -515,7 +515,7 @@ void ListBinCommand::Execute()
 			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 
 			// calculate required buffer size for pp-parameters
-			for (NzbParameter& nzbParameter : *nzbInfo->GetParameters())
+			for (NzbParameter& nzbParameter : nzbInfo->GetParameters())
 			{
 				bufsize += sizeof(SNzbListResponsePPPEntry);
 				bufsize += strlen(nzbParameter.GetName()) + 1;
@@ -528,9 +528,9 @@ void ListBinCommand::Execute()
 
 		// calculate required buffer size for files
 		int nrFileEntries = 0;
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
-			for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
 			{
 				nrFileEntries++;
 				bufsize += sizeof(SNzbListResponseFileEntry);
@@ -545,7 +545,7 @@ void ListBinCommand::Execute()
 		char* bufptr = buf;
 
 		// write nzb entries
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			SNzbListResponseNzbEntry* listAnswer = (SNzbListResponseNzbEntry*) bufptr;
 
@@ -593,10 +593,10 @@ void ListBinCommand::Execute()
 
 		// write ppp entries
 		int nzbIndex = 0;
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			nzbIndex++;
-			for (NzbParameter& nzbParameter : *nzbInfo->GetParameters())
+			for (NzbParameter& nzbParameter : nzbInfo->GetParameters())
 			{
 				SNzbListResponsePPPEntry* listAnswer = (SNzbListResponsePPPEntry*) bufptr;
 				listAnswer->m_nzbIndex = htonl(nzbIndex);
@@ -618,9 +618,9 @@ void ListBinCommand::Execute()
 		}
 
 		// write file entries
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
-			for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
 			{
 				uint32 sizeHi, sizeLo;
 				SNzbListResponseFileEntry* listAnswer = (SNzbListResponseFileEntry*) bufptr;
@@ -684,7 +684,7 @@ void ListBinCommand::Execute()
 	{
 		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
-		for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 		}
@@ -928,7 +928,7 @@ void PostQueueBinCommand::Execute()
 
 	// calculate required buffer size
 	int NrEntries = 0;
-	for (NzbInfo* nzbInfo : *nzbList)
+	for (NzbInfo* nzbInfo : nzbList)
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
@@ -950,7 +950,7 @@ void PostQueueBinCommand::Execute()
 	buf = (char*) malloc(bufsize);
 	char* bufptr = buf;
 
-	for (NzbInfo* nzbInfo : *nzbList)
+	for (NzbInfo* nzbInfo : nzbList)
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
@@ -1085,7 +1085,7 @@ void HistoryBinCommand::Execute()
 
 	// calculate required buffer size for nzbs
 	int nrEntries = 0;
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
@@ -1093,7 +1093,7 @@ void HistoryBinCommand::Execute()
 		}
 	}
 	bufsize += nrEntries * sizeof(SNzbHistoryResponseEntry);
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{
@@ -1107,7 +1107,7 @@ void HistoryBinCommand::Execute()
 	char* bufptr = buf;
 
 	// write nzb entries
-	for (HistoryInfo* historyInfo : *downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
 		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 		{

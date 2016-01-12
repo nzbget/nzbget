@@ -411,7 +411,7 @@ void ArticleWriter::CompleteFileParts()
 		buffer = (char*)malloc(BUFFER_SIZE);
 	}
 
-	for (ArticleInfo* pa : *m_fileInfo->GetArticles())
+	for (ArticleInfo* pa : m_fileInfo->GetArticles())
 	{
 		if (pa->GetStatus() != ArticleInfo::aiFinished)
 		{
@@ -521,7 +521,7 @@ void ArticleWriter::CompleteFileParts()
 
 	if (!directWrite)
 	{
-		for (ArticleInfo* pa : *m_fileInfo->GetArticles())
+		for (ArticleInfo* pa : m_fileInfo->GetArticles())
 		{
 			FileSystem::DeleteFile(pa->GetResultFilename());
 		}
@@ -592,7 +592,7 @@ void ArticleWriter::FlushCache()
 	cachedArticles.reserve(m_fileInfo->GetArticles()->size());
 
 	g_ArticleCache->LockContent();
-	for (ArticleInfo* pa : *m_fileInfo->GetArticles())
+	for (ArticleInfo* pa : m_fileInfo->GetArticles())
 	{
 		if (pa->GetSegmentContent())
 		{
@@ -695,7 +695,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	}
 
 	// move already downloaded files to new destination
-	for (CompletedFile& completedFile : *nzbInfo->GetCompletedFiles())
+	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
 		BString<1024> oldFileName("%s%c%s", oldDestDir, (int)PATH_SEPARATOR, completedFile.GetFileName());
 		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFileName());
@@ -773,7 +773,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	{
 		// check if there are pending writes into directory
 		bool pendingWrites = false;
-		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
 			if (!pendingWrites)
 			{
@@ -903,14 +903,14 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 	BString<1024> infoName;
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	for (NzbInfo* nzbInfo : *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		if (m_fileInfo)
 		{
 			break;
 		}
 
-		for (FileInfo* fileInfo : *nzbInfo->GetFileList())
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
 			if (fileInfo->GetCachedArticles() > 0 && (fileInfo->GetActiveDownloads() == 0 || flushEverything))
 			{
