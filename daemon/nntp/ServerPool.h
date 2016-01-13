@@ -62,7 +62,6 @@ private:
 	int					m_generation;
 
 	void				NormalizeLevels();
-	static bool			CompareServers(NewsServer* server1, NewsServer* server2);
 
 protected:
 	virtual void		LogDebugInfo();

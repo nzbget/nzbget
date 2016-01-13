@@ -324,32 +324,6 @@ void RepairThread::RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size
 }
 
 
-class MissingFilesComparator
-{
-private:
-	const char* m_baseParFilename;
-public:
-	MissingFilesComparator(const char* baseParFilename) : m_baseParFilename(baseParFilename) {}
-	bool operator()(Par2::CommandLine::ExtraFile& first, Par2::CommandLine::ExtraFile& second) const;
-};
-
-
-/*
- * Files with the same name as in par-file (and a differnt extension) are
- * placed at the top of the list to be scanned first.
- */
-bool MissingFilesComparator::operator()(Par2::CommandLine::ExtraFile& file1, Par2::CommandLine::ExtraFile& file2) const
-{
-	BString<1024> name1 = FileSystem::BaseFileName(file1.FileName().c_str());
-	if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
-
-	BString<1024> name2 = FileSystem::BaseFileName(file2.FileName().c_str());
-	if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
-
-	return strcmp(name1, m_baseParFilename) == 0 && strcmp(name1, name2) != 0;
-}
-
-
 ParChecker::ParChecker()
 {
 	debug("Creating ParChecker");
@@ -908,6 +882,28 @@ bool ParChecker::AddDupeFiles()
 	return added;
 }
 
+/*
+* Files with the same name as in par-file (and a differnt extension) are
+* placed at the top of the list to be scanned first.
+*/
+void ParChecker::SortExtraFiles(void* extrafiles)
+{
+	CString baseParFilename = FileSystem::BaseFileName(m_parFilename);
+	if (char* ext = strrchr(baseParFilename, '.')) *ext = '\0'; // trim extension
+
+	((std::list<Par2::CommandLine::ExtraFile>*)extrafiles)->sort(
+		[&baseParFilename](Par2::CommandLine::ExtraFile& file1, Par2::CommandLine::ExtraFile& file2)
+		{
+			BString<1024> name1 = FileSystem::BaseFileName(file1.FileName().c_str());
+			if (char* ext = strrchr(name1, '.')) *ext = '\0'; // trim extension
+
+			BString<1024> name2 = FileSystem::BaseFileName(file2.FileName().c_str());
+			if (char* ext = strrchr(name2, '.')) *ext = '\0'; // trim extension
+
+			return strcmp(name1, baseParFilename) == 0 && strcmp(name1, name2) != 0;
+		});
+}
+
 bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* directory)
 {
 	if (externalDir)
@@ -932,10 +928,7 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 		}
 	}
 
-	// Sort the list
-	CString baseParFilename = FileSystem::BaseFileName(m_parFilename);
-	if (char* ext = strrchr(baseParFilename, '.')) *ext = '\0'; // trim extension
-	extrafiles.sort(MissingFilesComparator(baseParFilename));
+	SortExtraFiles(&extrafiles);
 
 	// Scan files
 	bool filesAdded = false;

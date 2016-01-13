@@ -68,7 +68,7 @@ public:
 
 private:
 
-	typedef std::list<Task*>		TaskList;
+	typedef std::deque<Task*>		TaskList;
 	typedef std::vector<bool>		ServerStatusList;
 
 	TaskList			m_taskList;
@@ -85,7 +85,6 @@ private:
 
 	void				ExecuteTask(Task* task);
 	void				CheckTasks();
-	static bool			CompareTasks(Scheduler::Task* task1, Scheduler::Task* task2);
 	void				PrepareLog();
 	void				PrintLog();
 	void				EditServer(bool active, const char* serverList);

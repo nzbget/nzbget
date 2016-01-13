@@ -157,6 +157,7 @@ private:
 	EFileStatus			VerifyDataFile(void* diskfile, void* sourcefile, int* availableBlocks);
 	bool				VerifySuccessDataFile(void* diskfile, void* sourcefile, uint32 downloadCrc);
 	bool				VerifyPartialDataFile(void* diskfile, void* sourcefile, SegmentList* segments, ValidBlocks* validBlocks);
+	void				SortExtraFiles(void* extrafiles);
 	bool				SmartCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, SegmentList* segments,
 							uint32* downloadCrc);
 	bool				DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, uint32* downloadCrc);

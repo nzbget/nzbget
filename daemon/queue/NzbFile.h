@@ -32,9 +32,6 @@
 
 class NzbFile
 {
-public:
-	typedef std::list<FileInfo*>	TempFileList;
-
 private:
 	NzbInfo*			m_nzbInfo;
 	CString				m_fileName;

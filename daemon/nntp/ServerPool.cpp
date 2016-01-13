@@ -97,7 +97,11 @@ void ServerPool::NormalizeLevels()
 		return;
 	}
 
-	std::sort(m_sortedServers.begin(), m_sortedServers.end(), CompareServers);
+	std::sort(m_sortedServers.begin(), m_sortedServers.end(),
+		[](NewsServer* server1, NewsServer* server2)
+		{
+			return server1->GetLevel() < server2->GetLevel();
+		});
 
 	// find minimum level
 	int minLevel = m_sortedServers.front()->GetLevel();
@@ -128,11 +132,6 @@ void ServerPool::NormalizeLevels()
 			newsServer->SetNormLevel(-1);
 		}
 	}
-}
-
-bool ServerPool::CompareServers(NewsServer* server1, NewsServer* server2)
-{
-	return server1->GetLevel() < server2->GetLevel();
 }
 
 void ServerPool::InitConnections()

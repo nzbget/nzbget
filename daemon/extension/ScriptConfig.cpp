@@ -275,7 +275,12 @@ void ScriptConfig::LoadScripts(Scripts* scripts)
 
 	Scripts tmpScripts;
 	LoadScriptDir(&tmpScripts, g_Options->GetScriptDir(), false);
-	tmpScripts.sort(CompareScripts);
+
+	tmpScripts.sort(
+		[](Script& script1, Script& script2)
+		{
+			return strcmp(script1.GetName(), script2.GetName()) < 0;
+		});
 
 	// first add all scripts from ScriptOrder
 	Tokenizer tok(g_Options->GetScriptOrder(), ",;");
@@ -388,11 +393,6 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 	}
 
 	free(buffer);
-}
-
-bool ScriptConfig::CompareScripts(Script& script1, Script& script2)
-{
-	return strcmp(script1.GetName(), script2.GetName()) < 0;
 }
 
 void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)

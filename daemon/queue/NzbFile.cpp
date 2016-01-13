@@ -317,27 +317,26 @@ void NzbFile::BuildFilenames()
 	}
 }
 
-bool CompareFileInfo(FileInfo* first, FileInfo* second)
-{
-	return strcmp(first->GetFilename(), second->GetFilename()) > 0;
-}
-
 void NzbFile::CalcHashes()
 {
-	TempFileList fileList;
+	FileList sortedFiles;
 
 	for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 	{
-		fileList.push_back(fileInfo);
+		sortedFiles.push_back(fileInfo);
 	}
 
-	fileList.sort(CompareFileInfo);
+	std::sort(sortedFiles.begin(), sortedFiles.end(),
+		[](FileInfo* first, FileInfo* second)
+		{
+			return strcmp(first->GetFilename(), second->GetFilename()) > 0;
+		});
 
 	uint32 fullContentHash = 0;
 	uint32 filteredContentHash = 0;
 	int useForFilteredCount = 0;
 
-	for (FileInfo* fileInfo : fileList)
+	for (FileInfo* fileInfo : sortedFiles)
 	{
 		// check file extension
 		bool skip = !fileInfo->GetParFile() &&
@@ -356,7 +355,7 @@ void NzbFile::CalcHashes()
 	}
 
 	// if filtered hash is based on less than a half of files - do not use filtered hash at all
-	if (useForFilteredCount < (int)fileList.size() / 2)
+	if (useForFilteredCount < (int)sortedFiles.size() / 2)
 	{
 		filteredContentHash = 0;
 	}

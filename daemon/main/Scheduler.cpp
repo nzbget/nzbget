@@ -71,16 +71,17 @@ void Scheduler::AddTask(Task* task)
 	m_taskListMutex.Unlock();
 }
 
-bool Scheduler::CompareTasks(Scheduler::Task* task1, Scheduler::Task* task2)
-{
-	return (task1->m_hours < task2->m_hours) ||
-		((task1->m_hours == task2->m_hours) && (task1->m_minutes < task2->m_minutes));
-}
-
 void Scheduler::FirstCheck()
 {
 	m_taskListMutex.Lock();
-	m_taskList.sort(CompareTasks);
+
+	std::sort(m_taskList.begin(), m_taskList.end(),
+		[](Scheduler::Task* task1, Scheduler::Task* task2)
+		{
+			return (task1->m_hours < task2->m_hours) ||
+				((task1->m_hours == task2->m_hours) && (task1->m_minutes < task2->m_minutes));
+		});
+
 	m_taskListMutex.Unlock();
 
 	// check all tasks for the last week

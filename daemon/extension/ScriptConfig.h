@@ -97,7 +97,6 @@ private:
 
 	void				InitScripts();
 	void				InitConfigTemplates();
-	static bool			CompareScripts(Script& script1, Script& script2);
 	void				LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir);
 	void				BuildScriptDisplayNames(Scripts* scripts);
 	void				LoadScripts(Scripts* scripts);
