@@ -39,8 +39,6 @@ private:
 	void				HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQueue::EEditAction action, const char* text);
 	bool				HistorySetCategory(HistoryInfo* historyInfo, const char* text);
 	bool				HistorySetName(HistoryInfo* historyInfo, const char* text);
-	void				HistoryTransformToDup(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex);
-	void				SaveQueue(DownloadQueue* downloadQueue);
 	void				PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action);
 
 protected:

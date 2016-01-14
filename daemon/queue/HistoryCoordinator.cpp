@@ -140,18 +140,6 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 
 void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	//remove old item for the same NZB
-	for (HistoryList::iterator it = downloadQueue->GetHistory()->begin(); it != downloadQueue->GetHistory()->end(); it++)
-	{
-		HistoryInfo* historyInfo = *it;
-		if (historyInfo->GetNzbInfo() == nzbInfo)
-		{
-			delete historyInfo;
-			downloadQueue->GetHistory()->erase(it);
-			break;
-		}
-	}
-
 	HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
 	historyInfo->SetTime(Util::CurrentTime());
 	downloadQueue->GetHistory()->push_front(historyInfo);
@@ -173,7 +161,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 			}
 			else
 			{
-				// since we removed pNZBInfo from queue we need to take care of removing file infos marked for deletion
+				// since we removed nzbInfo from queue we need to take care of removing file infos marked for deletion
 				nzbInfo->GetFileList()->erase(it);
 				delete fileInfo;
 				it = nzbInfo->GetFileList()->begin() + parkedFiles;
