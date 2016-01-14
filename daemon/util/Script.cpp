@@ -195,11 +195,7 @@ ScriptController::~ScriptController()
 void ScriptController::UnregisterRunningScript()
 {
 	m_runningMutex.Lock();
-	RunningScripts::iterator it = std::find(m_runningScripts.begin(), m_runningScripts.end(), this);
-	if (it != m_runningScripts.end())
-	{
-		m_runningScripts.erase(it);
-	}
+	m_runningScripts.erase(std::remove(m_runningScripts.begin(), m_runningScripts.end(), this), m_runningScripts.end());
 	m_runningMutex.Unlock();
 }
 

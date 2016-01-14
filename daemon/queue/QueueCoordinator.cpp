@@ -355,15 +355,7 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 		if (urlInfo)
 		{
 			// insert at the URL position
-			for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); it++)
-			{
-				NzbInfo* posNzbInfo = *it;
-				if (posNzbInfo == urlInfo)
-				{
-					downloadQueue->GetQueue()->insert(it, nzbInfo);
-					break;
-				}
-			}
+			downloadQueue->GetQueue()->insert(std::find(downloadQueue->GetQueue()->begin(), downloadQueue->GetQueue()->end(), urlInfo), nzbInfo);
 		}
 		else if (addFirst)
 		{
