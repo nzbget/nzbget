@@ -265,17 +265,17 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 	if (event == qeNzbDownloaded)
 	{
 		// delete all other queued scripts for this nzb
-		for (Queue::iterator it = m_queue.begin(); it != m_queue.end(); )
-		{
-			QueueItem* queueItem = *it;
-			if (queueItem->GetNzbId() == nzbInfo->GetId())
+		m_queue.erase(std::remove_if(m_queue.begin(), m_queue.end(),
+			[nzbInfo](QueueItem* queueItem)
 			{
-				delete queueItem;
-				it = m_queue.erase(it);
-				continue;
-			}
-			it++;
-		}
+				if (queueItem->GetNzbId() == nzbInfo->GetId())
+				{
+					delete queueItem;
+					return true;
+				}
+				return false;
+			}),
+			m_queue.end());
 	}
 
 	// respect option "EventInterval"

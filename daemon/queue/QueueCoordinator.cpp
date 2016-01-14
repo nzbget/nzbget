@@ -903,47 +903,46 @@ void QueueCoordinator::ResetHangingDownloads()
 	DownloadQueue::Lock();
 	time_t tm = Util::CurrentTime();
 
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end();)
-	{
-		ArticleDownloader* articleDownloader = *it;
-
-		if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetArticleTimeout() + 1 &&
-		   articleDownloader->GetStatus() == ArticleDownloader::adRunning)
+	m_activeDownloads.erase(std::remove_if(m_activeDownloads.begin(), m_activeDownloads.end(),
+		[tm](ArticleDownloader* articleDownloader)
 		{
-			error("Cancelling hanging download %s @ %s", articleDownloader->GetInfoName(),
-				articleDownloader->GetConnectionName());
-			articleDownloader->Stop();
-		}
-
-		if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetTerminateTimeout() &&
-		   articleDownloader->GetStatus() == ArticleDownloader::adRunning)
-		{
-			ArticleInfo* articleInfo = articleDownloader->GetArticleInfo();
-			debug("Terminating hanging download %s", articleDownloader->GetInfoName());
-			if (articleDownloader->Terminate())
+			if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetArticleTimeout() + 1 &&
+				articleDownloader->GetStatus() == ArticleDownloader::adRunning)
 			{
-				error("Terminated hanging download %s @ %s", articleDownloader->GetInfoName(),
+				error("Cancelling hanging download %s @ %s", articleDownloader->GetInfoName(),
 					articleDownloader->GetConnectionName());
-				articleInfo->SetStatus(ArticleInfo::aiUndefined);
+				articleDownloader->Stop();
 			}
-			else
+
+			if (tm - articleDownloader->GetLastUpdateTime() > g_Options->GetTerminateTimeout() &&
+				articleDownloader->GetStatus() == ArticleDownloader::adRunning)
 			{
-				error("Could not terminate hanging download %s @ %s", articleDownloader->GetInfoName(),
-					  articleDownloader->GetConnectionName());
+				ArticleInfo* articleInfo = articleDownloader->GetArticleInfo();
+				debug("Terminating hanging download %s", articleDownloader->GetInfoName());
+				if (articleDownloader->Terminate())
+				{
+					error("Terminated hanging download %s @ %s", articleDownloader->GetInfoName(),
+						articleDownloader->GetConnectionName());
+					articleInfo->SetStatus(ArticleInfo::aiUndefined);
+				}
+				else
+				{
+					error("Could not terminate hanging download %s @ %s", articleDownloader->GetInfoName(),
+						articleDownloader->GetConnectionName());
+				}
+
+				articleDownloader->GetFileInfo()->SetActiveDownloads(articleDownloader->GetFileInfo()->GetActiveDownloads() - 1);
+				articleDownloader->GetFileInfo()->GetNzbInfo()->SetActiveDownloads(articleDownloader->GetFileInfo()->GetNzbInfo()->GetActiveDownloads() - 1);
+				articleDownloader->GetFileInfo()->GetNzbInfo()->SetDownloadedSize(articleDownloader->GetFileInfo()->GetNzbInfo()->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
+
+				// it's not safe to destroy pArticleDownloader, because the state of object is unknown
+				delete articleDownloader;
+
+				return true;
 			}
-			m_activeDownloads.erase(it);
-
-			articleDownloader->GetFileInfo()->SetActiveDownloads(articleDownloader->GetFileInfo()->GetActiveDownloads() - 1);
-			articleDownloader->GetFileInfo()->GetNzbInfo()->SetActiveDownloads(articleDownloader->GetFileInfo()->GetNzbInfo()->GetActiveDownloads() - 1);
-			articleDownloader->GetFileInfo()->GetNzbInfo()->SetDownloadedSize(articleDownloader->GetFileInfo()->GetNzbInfo()->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
-
-			// it's not safe to destroy pArticleDownloader, because the state of object is unknown
-			delete articleDownloader;
-			it = m_activeDownloads.begin();
-			continue;
-		}
-		it++;
-	}
+			return false;
+		}),
+		m_activeDownloads.end());
 
 	DownloadQueue::Unlock();
 }

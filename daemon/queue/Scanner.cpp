@@ -247,25 +247,20 @@ void Scanner::DropOldFiles()
 {
 	time_t current = Util::CurrentTime();
 
-	int i = 0;
-	for (FileList::iterator it = m_fileList.begin(); it != m_fileList.end(); )
-	{
-		FileData& fileData = *it;
-		if ((current - fileData.GetLastChange() >=
-			(g_Options->GetNzbDirInterval() + g_Options->GetNzbDirFileAge()) * 2) ||
-			// can occur if the system clock was adjusted
-			current < fileData.GetLastChange())
+	m_fileList.erase(std::remove_if(m_fileList.begin(), m_fileList.end(),
+		[current](FileData& fileData)
 		{
-			debug("Removing file %s from scan file list", fileData.GetFilename());
-			m_fileList.erase(it);
-			it = m_fileList.begin() + i;
-		}
-		else
-		{
-			it++;
-			i++;
-		}
-	}
+			if ((current - fileData.GetLastChange() >=
+				(g_Options->GetNzbDirInterval() + g_Options->GetNzbDirFileAge()) * 2) ||
+				// can occur if the system clock was adjusted
+				current < fileData.GetLastChange())
+			{
+				debug("Removing file %s from scan file list", fileData.GetFilename());
+				return true;
+			}
+			return false;
+		}),
+		m_fileList.end());
 }
 
 void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilename,

@@ -298,33 +298,24 @@ void ServerPool::CloseUnusedConnections()
 	time_t curtime = Util::CurrentTime();
 
 	// close and free all connections of servers which were disabled since the last check
-	int i = 0;
-	for (Connections::iterator it = m_connections.begin(); it != m_connections.end(); )
-	{
-		PooledConnection* connection = *it;
-		bool deleted = false;
-
-		if (!connection->GetInUse() &&
-			(connection->GetNewsServer()->GetNormLevel() == -1 ||
-			 !connection->GetNewsServer()->GetActive()))
+	m_connections.erase(std::remove_if(m_connections.begin(), m_connections.end(),
+		[](PooledConnection* connection)
 		{
-			debug("Closing (and deleting) unused connection to server%i", connection->GetNewsServer()->GetId());
-			if (connection->GetStatus() == Connection::csConnected)
+			if (!connection->GetInUse() &&
+				(connection->GetNewsServer()->GetNormLevel() == -1 ||
+				 !connection->GetNewsServer()->GetActive()))
 			{
-				connection->Disconnect();
+				debug("Closing (and deleting) unused connection to server%i", connection->GetNewsServer()->GetId());
+				if (connection->GetStatus() == Connection::csConnected)
+				{
+					connection->Disconnect();
+				}
+				delete connection;
+				return true;
 			}
-			delete connection;
-			m_connections.erase(it);
-			it = m_connections.begin() + i;
-			deleted = true;
-		}
-
-		if (!deleted)
-		{
-			it++;
-			i++;
-		}
-	}
+			return false;
+		}),
+		m_connections.end());
 
 	// close all opened connections on levels not having any in-use connections
 	for (int level = 0; level <= m_maxNormLevel; level++)

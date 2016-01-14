@@ -237,8 +237,8 @@ void FeedCoordinator::Stop()
 
 void FeedCoordinator::ResetHangingDownloads()
 {
-	const int TimeOut = g_Options->GetTerminateTimeout();
-	if (TimeOut == 0)
+	const int timeout = g_Options->GetTerminateTimeout();
+	if (timeout == 0)
 	{
 		return;
 	}
@@ -246,30 +246,31 @@ void FeedCoordinator::ResetHangingDownloads()
 	m_downloadsMutex.Lock();
 	time_t tm = Util::CurrentTime();
 
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end();)
-	{
-		FeedDownloader* feedDownloader = *it;
-		if (tm - feedDownloader->GetLastUpdateTime() > TimeOut &&
-		   feedDownloader->GetStatus() == FeedDownloader::adRunning)
+	m_activeDownloads.erase(std::remove_if(m_activeDownloads.begin(), m_activeDownloads.end(),
+		[timeout, tm](FeedDownloader* feedDownloader)
 		{
-			debug("Terminating hanging download %s", feedDownloader->GetInfoName());
-			if (feedDownloader->Terminate())
+			if (tm - feedDownloader->GetLastUpdateTime() > timeout &&
+				feedDownloader->GetStatus() == FeedDownloader::adRunning)
 			{
-				error("Terminated hanging download %s", feedDownloader->GetInfoName());
-				feedDownloader->GetFeedInfo()->SetStatus(FeedInfo::fsUndefined);
+				debug("Terminating hanging download %s", feedDownloader->GetInfoName());
+				if (feedDownloader->Terminate())
+				{
+					error("Terminated hanging download %s", feedDownloader->GetInfoName());
+					feedDownloader->GetFeedInfo()->SetStatus(FeedInfo::fsUndefined);
+				}
+				else
+				{
+					error("Could not terminate hanging download %s", feedDownloader->GetInfoName());
+				}
+
+				// it's not safe to destroy feedDownloader, because the state of object is unknown
+				delete feedDownloader;
+
+				return true;
 			}
-			else
-			{
-				error("Could not terminate hanging download %s", feedDownloader->GetInfoName());
-			}
-			m_activeDownloads.erase(it);
-			// it's not safe to destroy pFeedDownloader, because the state of object is unknown
-			delete feedDownloader;
-			it = m_activeDownloads.begin();
-			continue;
-		}
-		it++;
-	}
+			return false;
+		}),
+		m_activeDownloads.end());
 
 	m_downloadsMutex.Unlock();
 }
@@ -349,17 +350,9 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 		feedInfo->SetOutputFilename(feedDownloader->GetOutputFilename());
 	}
 
-	// delete Download from Queue
+	// remove downloader from downloader list
 	m_downloadsMutex.Lock();
-	for (ActiveDownloads::iterator it = m_activeDownloads.begin(); it != m_activeDownloads.end(); it++)
-	{
-		FeedDownloader* pa = *it;
-		if (pa == feedDownloader)
-		{
-			m_activeDownloads.erase(it);
-			break;
-		}
-	}
+	m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), feedDownloader));
 	m_downloadsMutex.Unlock();
 
 	if (statusOK)
@@ -708,23 +701,19 @@ void FeedCoordinator::CleanupHistory()
 	}
 
 	time_t borderDate = oldestUpdate - g_Options->GetFeedHistory() * 60*60*24;
-	int i = 0;
-	for (FeedHistory::iterator it = m_feedHistory.begin(); it != m_feedHistory.end(); )
-	{
-		FeedHistoryInfo& feedHistoryInfo = *it;
-		if (feedHistoryInfo.GetLastSeen() < borderDate)
+
+	m_feedHistory.erase(std::remove_if(m_feedHistory.begin(), m_feedHistory.end(),
+		[borderDate, this](FeedHistoryInfo& feedHistoryInfo)
 		{
-			detail("Deleting %s from feed history", feedHistoryInfo.GetUrl());
-			m_feedHistory.erase(it);
-			it = m_feedHistory.begin() + i;
-			m_save = true;
-		}
-		else
-		{
-			it++;
-			i++;
-		}
-	}
+			if (feedHistoryInfo.GetLastSeen() < borderDate)
+			{
+				detail("Deleting %s from feed history", feedHistoryInfo.GetUrl());
+				m_save = true;
+				return true;
+			}
+			return false;
+		}),
+		m_feedHistory.end());
 
 	m_downloadsMutex.Unlock();
 }
@@ -737,21 +726,17 @@ void FeedCoordinator::CleanupCache()
 
 	time_t curTime = Util::CurrentTime();
 
-	for (FeedCache::iterator it = m_feedCache.begin(); it != m_feedCache.end(); )
-	{
-		FeedCacheItem& feedCacheItem = *it;
-		if (feedCacheItem.GetLastUsage() + feedCacheItem.GetCacheTimeSec() < curTime ||
-			feedCacheItem.GetLastUsage() > curTime)
+	m_feedCache.remove_if(
+		[curTime](FeedCacheItem& feedCacheItem)
 		{
-			debug("Deleting %s from feed cache", feedCacheItem.GetUrl());
-			m_feedCache.erase(it);
-			it = m_feedCache.begin();
-		}
-		else
-		{
-			it++;
-		}
-	}
+			if (feedCacheItem.GetLastUsage() + feedCacheItem.GetCacheTimeSec() < curTime ||
+				feedCacheItem.GetLastUsage() > curTime)
+			{
+				debug("Deleting %s from feed cache", feedCacheItem.GetUrl());
+				return true;
+			}
+			return false;
+		});
 
 	m_downloadsMutex.Unlock();
 }

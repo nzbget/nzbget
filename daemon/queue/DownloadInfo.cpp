@@ -41,34 +41,23 @@ bool DownloadQueue::g_Loaded = false;
 
 void NzbParameterList::SetParameter(const char* name, const char* value)
 {
-	NzbParameter* parameter = nullptr;
-	bool deleteObj = !value || !*value;
+	bool emptyVal = Util::EmptyStr(value);
 
-	for (iterator it = begin(); it != end(); it++)
-	{
-		NzbParameter& lookupParameter = *it;
-		if (!strcmp(lookupParameter.GetName(), name))
+	iterator pos = std::find_if(begin(), end(),
+		[name](NzbParameter& parameter)
 		{
-			if (deleteObj)
-			{
-				erase(it);
-				return;
-			}
-			parameter = &lookupParameter;
-			break;
-		}
-	}
+			return !strcmp(parameter.GetName(), name);
+		});
 
-	if (deleteObj)
+	if (emptyVal && pos != end())
 	{
-		return;
+		erase(pos);
 	}
-
-	if (parameter)
+	else if (pos != end())
 	{
-		parameter->SetValue(value);
+		pos->SetValue(value);
 	}
-	else
+	else if (!emptyVal)
 	{
 		emplace_back(name, value);
 	}

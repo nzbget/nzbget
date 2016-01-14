@@ -2510,37 +2510,28 @@ void FindCandidates(NewsServer* newsServer, ServerRefList* refs, ECriteria crite
 	ServerRefList originalRefs;
 	originalRefs.insert(originalRefs.begin(), refs->begin(), refs->end());
 
-	int index = 0;
-	for (ServerRefList::iterator it = refs->begin(); it != refs->end(); )
-	{
-		ServerRef* ref = *it;
-		bool match = false;
-		switch(criteria)
+	refs->erase(std::remove_if(refs->begin(), refs->end(), 
+		[newsServer, criteria](ServerRef* ref)
 		{
-			case name:
-				match = !strcasecmp(newsServer->GetName(), ref->GetName());
-				break;
-			case host:
-				match = !strcasecmp(newsServer->GetHost(), ref->GetHost());
-				break;
-			case port:
-				match = newsServer->GetPort() == ref->GetPort();
-				break;
-			case user:
-				match = !strcasecmp(newsServer->GetUser(), ref->GetUser());
-				break;
-		}
-		if (match && !ref->GetMatched())
-		{
-			it++;
-			index++;
-		}
-		else
-		{
-			refs->erase(it);
-			it = refs->begin() + index;
-		}
-	}
+			bool match = false;
+			switch(criteria)
+			{
+				case name:
+					match = !strcasecmp(newsServer->GetName(), ref->GetName());
+					break;
+				case host:
+					match = !strcasecmp(newsServer->GetHost(), ref->GetHost());
+					break;
+				case port:
+					match = newsServer->GetPort() == ref->GetPort();
+					break;
+				case user:
+					match = !strcasecmp(newsServer->GetUser(), ref->GetUser());
+					break;
+			}
+			return !match || ref->GetMatched();
+		}),
+		refs->end());
 
 	if (refs->size() == 0 && keepIfNothing)
 	{
