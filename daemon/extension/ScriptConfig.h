@@ -66,13 +66,7 @@ public:
 		const char*		GetQueueEvents() { return m_queueEvents; }
 	};
 
-	typedef std::list<Script>  ScriptsBase;
-
-	class Scripts: public ScriptsBase
-	{
-	public:
-		Scripts::iterator	Find(const char* name);
-	};
+	typedef std::list<Script>  Scripts;
 
 	class ConfigTemplate
 	{

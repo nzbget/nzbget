@@ -55,21 +55,6 @@ ScriptConfig::Script::Script(const char* name, const char* location)
 }
 
 
-ScriptConfig::Scripts::iterator ScriptConfig::Scripts::Find(const char* name)
-{
-	for (iterator it = begin(); it != end(); it++)
-	{
-		Script& script = *it;
-		if (!strcmp(script.GetName(), name))
-		{
-			return it;
-		}
-	}
-
-	return end();
-}
-
-
 ScriptConfig::ScriptConfig()
 {
 	InitScripts();
@@ -286,7 +271,12 @@ void ScriptConfig::LoadScripts(Scripts* scripts)
 	Tokenizer tok(g_Options->GetScriptOrder(), ",;");
 	while (const char* scriptName = tok.Next())
 	{
-		Scripts::iterator pos = tmpScripts.Find(scriptName);
+		Scripts::iterator pos = std::find_if(tmpScripts.begin(), tmpScripts.end(),
+			[scriptName](Script& script)
+			{
+				return !strcmp(script.GetName(), scriptName);
+			});
+
 		if (pos != tmpScripts.end())
 		{
 			scripts->splice(scripts->end(), tmpScripts, pos);
