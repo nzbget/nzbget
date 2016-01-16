@@ -98,18 +98,16 @@ uint32 ParCheckerMock::CalcFileCrc(const char* filename)
 	FILE* infile = fopen(filename, FOPEN_RB);
 	REQUIRE(infile);
 
-	static const int BUFFER_SIZE = 1024 * 64;
-	uchar* buffer = (uchar*)malloc(BUFFER_SIZE);
+	CharBuffer buffer(1024 * 64);
 	uint32 downloadCrc = 0xFFFFFFFF;
 
-	int cnt = BUFFER_SIZE;
-	while (cnt == BUFFER_SIZE)
+	int cnt = buffer.Size();
+	while (cnt == buffer.Size())
 	{
-		cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-		downloadCrc = Util::Crc32m(downloadCrc, buffer, cnt);
+		cnt = (int)fread(buffer, 1, buffer.Size(), infile);
+		downloadCrc = Util::Crc32m(downloadCrc, (uchar*)(char*)buffer, cnt);
 	}
 
-	free(buffer);
 	fclose(infile);
 
 	downloadCrc ^= 0xFFFFFFFF;

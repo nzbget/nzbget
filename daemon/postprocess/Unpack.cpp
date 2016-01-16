@@ -486,8 +486,7 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	int64 totalSize = firstSegmentSize * (count - 1) + difSegmentSize;
 	int64 written = 0;
 
-	static const int BUFFER_SIZE = 1024 * 50;
-	char* buffer = (char*)malloc(BUFFER_SIZE);
+	CharBuffer buffer(1024 * 50);
 
 	bool ok = true;
 	for (int i = min; i <= max; i++)
@@ -504,10 +503,10 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 		DiskFile inFile;
 		if (inFile.Open(fragFilename, DiskFile::omRead))
 		{
-			int cnt = BUFFER_SIZE;
-			while (cnt == BUFFER_SIZE)
+			int cnt = buffer.Size();
+			while (cnt == buffer.Size())
 			{
-				cnt = (int)inFile.Read(buffer, BUFFER_SIZE);
+				cnt = (int)inFile.Read(buffer, buffer.Size());
 				outFile.Write(buffer, cnt);
 				written += cnt;
 				m_postInfo->SetStageProgress(int(written * 1000 / totalSize));
@@ -527,7 +526,6 @@ bool UnpackController::JoinFile(const char* fragBaseName)
 	}
 
 	outFile.Close();
-	free(buffer);
 
 	return ok;
 }

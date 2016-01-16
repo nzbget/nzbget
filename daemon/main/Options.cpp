@@ -1433,10 +1433,10 @@ void Options::LoadConfigFile()
 
 	m_configLine = 0;
 	int bufLen = (int)FileSystem::FileSize(m_configFilename) + 1;
-	char* buf = (char*)malloc(bufLen);
+	CharBuffer buf(bufLen);
 
 	int line = 0;
-	while (infile.ReadLine(buf, bufLen - 1))
+	while (infile.ReadLine(buf, buf.Size() - 1))
 	{
 		m_configLine = ++line;
 
@@ -1458,7 +1458,6 @@ void Options::LoadConfigFile()
 	}
 
 	infile.Close();
-	free(buf);
 
 	m_configLine = 0;
 }

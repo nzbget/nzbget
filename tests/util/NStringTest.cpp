@@ -182,3 +182,13 @@ TEST_CASE("StringBuilder", "[NString][Quick]")
 	str6.Append("67");
 	REQUIRE(!strcmp(str6, "Hello, WorldString5String567"));
 }
+
+TEST_CASE("CharBuffer", "[NString][Quick]")
+{
+	CharBuffer buf(1024);
+	REQUIRE(buf.Size() == 1024);
+	buf.Reserve(2048);
+	REQUIRE(buf.Size() == 2048);
+	buf.Clear();
+	REQUIRE(buf.Size() == 0);
+}

@@ -234,13 +234,12 @@ bool Frontend::RequestMessages()
 		return false;
 	}
 
-	char* buf = nullptr;
+	CharBuffer buf;
 	if (ntohl(LogResponse.m_trailingDataLength) > 0)
 	{
-		buf = (char*)malloc(ntohl(LogResponse.m_trailingDataLength));
-		if (!connection.Recv(buf, ntohl(LogResponse.m_trailingDataLength)))
+		buf.Reserve(ntohl(LogResponse.m_trailingDataLength));
+		if (!connection.Recv(buf, buf.Size()))
 		{
-			free(buf);
 			return false;
 		}
 	}
@@ -260,8 +259,6 @@ bool Frontend::RequestMessages()
 
 			bufPtr += sizeof(SNzbLogResponseEntry) + ntohl(logAnswer->m_textLen);
 		}
-
-		free(buf);
 	}
 
 	return true;
@@ -298,13 +295,12 @@ bool Frontend::RequestFileList()
 		return false;
 	}
 
-	char* buf = nullptr;
+	CharBuffer buf;
 	if (ntohl(ListResponse.m_trailingDataLength) > 0)
 	{
-		buf = (char*)malloc(ntohl(ListResponse.m_trailingDataLength));
-		if (!connection.Recv(buf, ntohl(ListResponse.m_trailingDataLength)))
+		buf.Reserve(ntohl(ListResponse.m_trailingDataLength));
+		if (!connection.Recv(buf, buf.Size()))
 		{
-			free(buf);
 			return false;
 		}
 	}
@@ -333,11 +329,6 @@ bool Frontend::RequestFileList()
 		DownloadQueue* downloadQueue = LockQueue();
 		client.BuildFileList(&ListResponse, buf, downloadQueue);
 		UnlockQueue();
-	}
-
-	if (buf)
-	{
-		free(buf);
 	}
 
 	return true;

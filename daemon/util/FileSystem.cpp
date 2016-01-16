@@ -430,19 +430,17 @@ bool FileSystem::CopyFile(const char* srcFilename, const char* dstFilename)
 		return false;
 	}
 
-	static const int BUFFER_SIZE = 1024 * 50;
-	char* buffer = (char*)malloc(BUFFER_SIZE);
+	CharBuffer buffer(1024 * 50);
 
-	int cnt = BUFFER_SIZE;
-	while (cnt == BUFFER_SIZE)
+	int cnt = buffer.Size();
+	while (cnt == buffer.Size())
 	{
-		cnt = (int)infile.Read(buffer, BUFFER_SIZE);
+		cnt = (int)infile.Read(buffer, buffer.Size());
 		outfile.Write(buffer, cnt);
 	}
 
 	infile.Close();
 	outfile.Close();
-	free(buffer);
 
 	return true;
 }

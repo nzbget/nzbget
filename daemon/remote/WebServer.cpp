@@ -435,13 +435,13 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"\r\n";
 
 #ifndef DISABLE_GZIP
-	char *gbuf = nullptr;
+	CharBuffer gbuf;
 	bool gzip = m_gzip && bodyLen > MAX_UNCOMPRESSED_SIZE;
 	if (gzip)
 	{
 		uint32 outLen = ZLib::GZipLen(bodyLen);
-		gbuf = (char*)malloc(outLen);
-		int gzippedLen = ZLib::GZip(body, bodyLen, gbuf, outLen);
+		gbuf.Reserve(outLen);
+		int gzippedLen = ZLib::GZip(body, bodyLen, *gbuf, outLen);
 		if (gzippedLen > 0 && gzippedLen < bodyLen)
 		{
 			body = gbuf;
@@ -449,8 +449,6 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		}
 		else
 		{
-			free(gbuf);
-			gbuf = nullptr;
 			gzip = false;
 		}
 	}
@@ -473,10 +471,6 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	// Send the request answer
 	m_connection->Send(responseHeader, responseHeader.Length());
 	m_connection->Send(body, bodyLen);
-
-#ifndef DISABLE_GZIP
-	free(gbuf);
-#endif
 }
 
 void WebProcessor::SendFileResponse(const char* filename)

@@ -342,8 +342,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	bool body = false;
 	bool end = false;
-	const int LineBufSize = 1024*10;
-	char* lineBuf = (char*)malloc(LineBufSize);
+	CharBuffer lineBuf(1024*10);
 	status = adRunning;
 
 	while (!IsStopped())
@@ -365,7 +364,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		}
 
 		int len = 0;
-		char* line = m_connection->ReadLine(lineBuf, LineBufSize, &len);
+		char* line = m_connection->ReadLine(lineBuf, lineBuf.Size(), &len);
 
 		g_StatMeter->AddSpeedReading(len);
 		if (g_Options->GetAccurateRate())
@@ -438,8 +437,6 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			break;
 		}
 	}
-
-	free(lineBuf);
 
 	if (!end && status == adRunning && !IsStopped())
 	{

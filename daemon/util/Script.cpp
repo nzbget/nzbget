@@ -350,14 +350,14 @@ int ScriptController::Execute()
 	watchDog->Start();
 #endif
 
-	char* buf = (char*)malloc(10240);
+	CharBuffer buf(1024 * 10);
 
 	debug("Entering pipe-loop");
 	bool firstLine = true;
 	bool startError = false;
 	while (!m_terminated && !m_detached && !feof(m_readpipe))
 	{
-		if (ReadLine(buf, 10240, m_readpipe) && m_readpipe)
+		if (ReadLine(buf, buf.Size(), m_readpipe) && m_readpipe)
 		{
 #ifdef CHILD_WATCHDOG
 			if (!childConfirmed)
@@ -391,7 +391,6 @@ int ScriptController::Execute()
 	delete watchDog;
 #endif
 
-	free(buf);
 	if (m_readpipe)
 	{
 		fclose(m_readpipe);

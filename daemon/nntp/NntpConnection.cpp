@@ -36,14 +36,9 @@ NntpConnection::NntpConnection(NewsServer* newsServer) : Connection(newsServer->
 {
 	m_newsServer = newsServer;
 	m_activeGroup = nullptr;
-	m_lineBuf = (char*)malloc(CONNECTION_LINEBUFFER_SIZE);
+	m_lineBuf.Reserve(CONNECTION_LINEBUFFER_SIZE);
 	m_authError = false;
 	SetCipher(newsServer->GetCipher());
-}
-
-NntpConnection::~NntpConnection()
-{
-	free(m_lineBuf);
 }
 
 const char* NntpConnection::Request(const char* req)
@@ -57,7 +52,7 @@ const char* NntpConnection::Request(const char* req)
 
 	WriteLine(req);
 
-	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, nullptr);
+	char* answer = ReadLine(m_lineBuf, m_lineBuf.Size(), nullptr);
 
 	if (!answer)
 	{
@@ -75,7 +70,7 @@ const char* NntpConnection::Request(const char* req)
 
 		//try again
 		WriteLine(req);
-		answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, nullptr);
+		answer = ReadLine(m_lineBuf, m_lineBuf.Size(), nullptr);
 	}
 
 	return answer;
@@ -104,7 +99,7 @@ bool NntpConnection::AuthInfoUser(int recur)
 
 	WriteLine(BString<1024>("AUTHINFO USER %s\r\n", m_newsServer->GetUser()));
 
-	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, nullptr);
+	char* answer = ReadLine(m_lineBuf, m_lineBuf.Size(), nullptr);
 	if (!answer)
 	{
 		ReportErrorAnswer("Authorization for %s (%s) failed: Connection closed by remote host", nullptr);
@@ -143,7 +138,7 @@ bool NntpConnection::AuthInfoPass(int recur)
 
 	WriteLine(BString<1024>("AUTHINFO PASS %s\r\n", m_newsServer->GetPassword()));
 
-	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, nullptr);
+	char* answer = ReadLine(m_lineBuf, m_lineBuf.Size(), nullptr);
 	if (!answer)
 	{
 		ReportErrorAnswer("Authorization failed for %s (%s): Connection closed by remote host", nullptr);
@@ -206,7 +201,7 @@ bool NntpConnection::Connect()
 		return false;
 	}
 
-	char* answer = ReadLine(m_lineBuf, CONNECTION_LINEBUFFER_SIZE, nullptr);
+	char* answer = ReadLine(m_lineBuf, m_lineBuf.Size(), nullptr);
 
 	if (!answer)
 	{

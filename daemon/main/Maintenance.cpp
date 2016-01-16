@@ -376,14 +376,12 @@ bool Signature::ComputeInHash()
 	}
 	SHA256_CTX sha256;
 	SHA256_Init(&sha256);
-	const int bufSize = 32*1024;
-	char* buffer = (char*)malloc(bufSize);
-	while(int bytesRead = (int)infile.Read(buffer, bufSize))
+	CharBuffer buffer(32*1024);
+	while(int bytesRead = (int)infile.Read(buffer, buffer.Size()))
 	{
 		SHA256_Update(&sha256, buffer, bytesRead);
 	}
 	SHA256_Final(m_inHash, &sha256);
-	free(buffer);
 	infile.Close();
 	return true;
 }

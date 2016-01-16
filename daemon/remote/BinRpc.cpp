@@ -414,12 +414,11 @@ void DownloadBinCommand::Execute()
 	}
 
 	int bufLen = ntohl(DownloadRequest.m_trailingDataLength);
-	char* nzbContent = (char*)malloc(bufLen);
+	CharBuffer nzbContent(bufLen);
 
-	if (!m_connection->Recv(nzbContent, bufLen))
+	if (!m_connection->Recv(nzbContent, nzbContent.Size()))
 	{
 		error("invalid request");
-		free(nzbContent);
 		return;
 	}
 
@@ -462,8 +461,6 @@ void DownloadBinCommand::Execute()
 	SendBoolResponse(ok, BString<1024>(ok ? "Collection %s added to queue" :
 		"Download Request failed for %s",
 		FileSystem::BaseFileName(DownloadRequest.m_nzbFilename)));
-
-	free(nzbContent);
 }
 
 void ListBinCommand::Execute()
@@ -481,7 +478,7 @@ void ListBinCommand::Execute()
 	ListResponse.m_entrySize = htonl(sizeof(SNzbListResponseFileEntry));
 	ListResponse.m_regExValid = 0;
 
-	char* buf = nullptr;
+	CharBuffer buf;
 	int bufsize = 0;
 
 	if (ntohl(ListRequest.m_fileList))
@@ -541,7 +538,7 @@ void ListBinCommand::Execute()
 			}
 		}
 
-		buf = (char*) malloc(bufsize);
+		buf.Reserve(bufsize);
 		char* bufptr = buf;
 
 		// write nzb entries
@@ -724,8 +721,6 @@ void ListBinCommand::Execute()
 	{
 		m_connection->Send(buf, bufsize);
 	}
-
-	free(buf);
 }
 
 void LogBinCommand::Execute()
@@ -773,7 +768,7 @@ void LogBinCommand::Execute()
 		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 	}
 
-	char* buf = (char*) malloc(bufsize);
+	CharBuffer buf(bufsize);
 	char* bufptr = buf;
 	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
@@ -812,8 +807,6 @@ void LogBinCommand::Execute()
 	{
 		m_connection->Send(buf, bufsize);
 	}
-
-	free(buf);
 }
 
 void EditQueueBinCommand::Execute()
@@ -839,12 +832,11 @@ void EditQueueBinCommand::Execute()
 		return;
 	}
 
-	char* buf = (char*)malloc(bufLength);
+	CharBuffer buf(bufLength);
 
-	if (!m_connection->Recv(buf, bufLength))
+	if (!m_connection->Recv(buf, buf.Size()))
 	{
 		error("invalid request");
-		free(buf);
 		return;
 	}
 
@@ -887,8 +879,6 @@ void EditQueueBinCommand::Execute()
 		(DownloadQueue::EMatchMode)matchMode, (DownloadQueue::EEditAction)action, offset, text);
 	DownloadQueue::Unlock();
 
-	free(buf);
-
 	if (ok)
 	{
 		SendBoolResponse(true, "Edit-Command completed successfully");
@@ -920,7 +910,6 @@ void PostQueueBinCommand::Execute()
 	PostQueueResponse.m_messageBase.m_structSize = htonl(sizeof(PostQueueResponse));
 	PostQueueResponse.m_entrySize = htonl(sizeof(SNzbPostQueueResponseEntry));
 
-	char* buf = nullptr;
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
@@ -947,7 +936,7 @@ void PostQueueBinCommand::Execute()
 	}
 
 	time_t curTime = Util::CurrentTime();
-	buf = (char*) malloc(bufsize);
+	CharBuffer buf(bufsize);
 	char* bufptr = buf;
 
 	for (NzbInfo* nzbInfo : nzbList)
@@ -1000,8 +989,6 @@ void PostQueueBinCommand::Execute()
 	{
 		m_connection->Send(buf, bufsize);
 	}
-
-	free(buf);
 }
 
 void WriteLogBinCommand::Execute()
@@ -1012,12 +999,11 @@ void WriteLogBinCommand::Execute()
 		return;
 	}
 
-	char* recvBuffer = (char*)malloc(ntohl(WriteLogRequest.m_trailingDataLength) + 1);
+	CharBuffer recvBuffer(ntohl(WriteLogRequest.m_trailingDataLength));
 
-	if (!m_connection->Recv(recvBuffer, ntohl(WriteLogRequest.m_trailingDataLength)))
+	if (!m_connection->Recv(recvBuffer, recvBuffer.Size()))
 	{
 		error("invalid request");
-		free(recvBuffer);
 		return;
 	}
 
@@ -1025,26 +1011,24 @@ void WriteLogBinCommand::Execute()
 	switch ((Message::EKind)ntohl(WriteLogRequest.m_kind))
 	{
 		case Message::mkDetail:
-			detail("%s", recvBuffer);
+			detail("%s", *recvBuffer);
 			break;
 		case Message::mkInfo:
-			info("%s", recvBuffer);
+			info("%s", *recvBuffer);
 			break;
 		case Message::mkWarning:
-			warn("%s", recvBuffer);
+			warn("%s", *recvBuffer);
 			break;
 		case Message::mkError:
-			error("%s", recvBuffer);
+			error("%s", *recvBuffer);
 			break;
 		case Message::mkDebug:
-			debug("%s", recvBuffer);
+			debug("%s", *recvBuffer);
 			break;
 		default:
 			OK = false;
 	}
 	SendBoolResponse(OK, OK ? "Message added to log" : "Invalid message-kind");
-
-	free(recvBuffer);
 }
 
 void ScanBinCommand::Execute()
@@ -1077,7 +1061,6 @@ void HistoryBinCommand::Execute()
 	HistoryResponse.m_messageBase.m_structSize = htonl(sizeof(HistoryResponse));
 	HistoryResponse.m_entrySize = htonl(sizeof(SNzbHistoryResponseEntry));
 
-	char* buf = nullptr;
 	int bufsize = 0;
 
 	// Make a data structure and copy all the elements of the list into it
@@ -1103,7 +1086,7 @@ void HistoryBinCommand::Execute()
 		}
 	}
 
-	buf = (char*) malloc(bufsize);
+	CharBuffer buf(bufsize);
 	char* bufptr = buf;
 
 	// write nzb entries
@@ -1168,6 +1151,4 @@ void HistoryBinCommand::Execute()
 	{
 		m_connection->Send(buf, bufsize);
 	}
-
-	free(buf);
 }

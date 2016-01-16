@@ -55,7 +55,7 @@ protected:
 	SOCKET				m_socket;
 	bool				m_tls;
 	CString				m_cipher;
-	char*				m_readBuf;
+	CharBuffer			m_readBuf;
 	int					m_bufAvail;
 	char*				m_bufPtr;
 	EStatus				m_status;

@@ -339,13 +339,12 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 		return false;
 	}
 
-	char* buf = nullptr;
+	CharBuffer buf;
 	if (ntohl(ListResponse.m_trailingDataLength) > 0)
 	{
-		buf = (char*)malloc(ntohl(ListResponse.m_trailingDataLength));
-		if (!m_connection->Recv(buf, ntohl(ListResponse.m_trailingDataLength)))
+		buf.Reserve(ntohl(ListResponse.m_trailingDataLength));
+		if (!m_connection->Recv(buf, buf.Size()))
 		{
-			free(buf);
 			return false;
 		}
 	}
@@ -355,7 +354,6 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 	if (pattern && !ListResponse.m_regExValid)
 	{
 		printf("Error in regular expression\n");
-		free(buf);
 		return false;
 	}
 
@@ -554,8 +552,6 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 		}
 	}
 
-	free(buf);
-
 	int64 remaining = Util::JoinInt64(ntohl(ListResponse.m_remainingSizeHi), ntohl(ListResponse.m_remainingSizeLo));
 
 	if (!files && !groups)
@@ -672,13 +668,12 @@ bool RemoteClient::RequestServerLog(int lines)
 		return false;
 	}
 
-	char* buf = nullptr;
+	CharBuffer buf;
 	if (ntohl(LogResponse.m_trailingDataLength) > 0)
 	{
-		buf = (char*)malloc(ntohl(LogResponse.m_trailingDataLength));
-		if (!m_connection->Recv(buf, ntohl(LogResponse.m_trailingDataLength)))
+		buf.Reserve(ntohl(LogResponse.m_trailingDataLength));
+		if (!m_connection->Recv(buf, buf.Size()))
 		{
-			free(buf);
 			return false;
 		}
 	}
@@ -723,8 +718,6 @@ bool RemoteClient::RequestServerLog(int lines)
 		}
 
 		printf("-----------------------------------\n");
-
-		free(buf);
 	}
 
 	return true;
@@ -836,7 +829,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 	EditQueueRequest.m_trailingNameEntriesLen = htonl(nameLength);
 	EditQueueRequest.m_trailingDataLength = htonl(length);
 
-	char* trailingData = (char*)malloc(length);
+	CharBuffer trailingData(length);
 
 	if (textLen > 0)
 	{
@@ -872,8 +865,6 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 		OK = ReceiveBoolResponse();
 		m_connection->Disconnect();
 	}
-
-	free(trailingData);
 
 	m_connection->Disconnect();
 	return OK;
@@ -968,13 +959,12 @@ bool RemoteClient::RequestPostQueue()
 		return false;
 	}
 
-	char* buf = nullptr;
+	CharBuffer buf;
 	if (ntohl(PostQueueResponse.m_trailingDataLength) > 0)
 	{
-		buf = (char*)malloc(ntohl(PostQueueResponse.m_trailingDataLength));
-		if (!m_connection->Recv(buf, ntohl(PostQueueResponse.m_trailingDataLength)))
+		buf.Reserve(ntohl(PostQueueResponse.m_trailingDataLength));
+		if (!m_connection->Recv(buf, buf.Size()))
 		{
-			free(buf);
 			return false;
 		}
 	}
@@ -1012,8 +1002,6 @@ bool RemoteClient::RequestPostQueue()
 				ntohl(postQueueAnswer->m_infoNameLen) + ntohl(postQueueAnswer->m_destDirLen) +
 				ntohl(postQueueAnswer->m_progressLabelLen);
 		}
-
-		free(buf);
 
 		printf("-----------------------------------\n");
 	}
@@ -1093,13 +1081,12 @@ bool RemoteClient::RequestHistory(bool withHidden)
 		return false;
 	}
 
-	char* buf = nullptr;
+	CharBuffer buf;
 	if (ntohl(HistoryResponse.m_trailingDataLength) > 0)
 	{
-		buf = (char*)malloc(ntohl(HistoryResponse.m_trailingDataLength));
-		if (!m_connection->Recv(buf, ntohl(HistoryResponse.m_trailingDataLength)))
+		buf.Reserve(ntohl(HistoryResponse.m_trailingDataLength));
+		if (!m_connection->Recv(buf, buf.Size()))
 		{
-			free(buf);
 			return false;
 		}
 	}
@@ -1153,8 +1140,6 @@ bool RemoteClient::RequestHistory(bool withHidden)
 		printf("-----------------------------------\n");
 		printf("Items: %i\n", ntohl(HistoryResponse.m_nrTrailingEntries));
 	}
-
-	free(buf);
 
 	return true;
 }

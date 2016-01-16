@@ -291,8 +291,7 @@ void ScriptConfig::LoadScripts(Scripts* scripts)
 
 void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir)
 {
-	int bufSize = 1024*10;
-	char* buffer = (char*)malloc(bufSize+1);
+	CharBuffer buffer(1024*10 + 1);
 
 	const int beginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
 	const int queueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
@@ -311,7 +310,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 				if (infile.Open(fullFilename, DiskFile::omRead))
 				{
 					// read first 10KB of the file and look for signature
-					int readBytes = (int)infile.Read(buffer, bufSize);
+					int readBytes = (int)infile.Read(buffer, buffer.Size());
 					infile.Close();
 					buffer[readBytes] = '\0';
 
@@ -381,8 +380,6 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 			}
 		}
 	}
-
-	free(buffer);
 }
 
 void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)

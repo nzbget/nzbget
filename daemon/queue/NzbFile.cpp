@@ -431,8 +431,7 @@ void NzbFile::ReadPassword()
 
 	// reading first 4KB of the file
 
-	// allocate memory to contain the whole file.
-	char* buf = (char*)malloc(4096);
+	CharBuffer buf(4096);
 
 	size = size < 4096 ? size : 4096;
 
@@ -455,8 +454,6 @@ void NzbFile::ReadPassword()
 			m_password = metaPassword;
 		}
 	}
-
-	free(buf);
 }
 
 #ifdef WIN32

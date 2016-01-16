@@ -36,7 +36,7 @@ class NntpConnection : public Connection
 private:
 	NewsServer*			m_newsServer;
 	CString				m_activeGroup;
-	char*				m_lineBuf;
+	CharBuffer			m_lineBuf;
 	bool				m_authError;
 
 	void				Clear();
@@ -47,7 +47,6 @@ private:
 
 public:
 						NntpConnection(NewsServer* newsServer);
-	virtual				~NntpConnection();
 	virtual bool 		Connect();
 	virtual bool		Disconnect();
 	NewsServer*			GetNewsServer() { return m_newsServer; }

@@ -1554,20 +1554,17 @@ bool ParChecker::DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, ui
 		return false;
 	}
 
-	static const int BUFFER_SIZE = 1024 * 64;
-	uchar* buffer = (uchar*)malloc(BUFFER_SIZE);
+	CharBuffer buffer(1024 * 64);
 	uint32 downloadCrc = 0xFFFFFFFF;
 
-	int cnt = BUFFER_SIZE;
-	while (cnt == BUFFER_SIZE && start < end)
+	int cnt = buffer.Size();
+	while (cnt == buffer.Size() && start < end)
 	{
-		int needBytes = end - start + 1 > BUFFER_SIZE ? BUFFER_SIZE : (int)(end - start + 1);
+		int needBytes = end - start + 1 > buffer.Size() ? buffer.Size() : (int)(end - start + 1);
 		cnt = (int)file.Read(buffer, needBytes);
-		downloadCrc = Util::Crc32m(downloadCrc, buffer, cnt);
+		downloadCrc = Util::Crc32m(downloadCrc, (uchar*)(char*)buffer, cnt);
 		start += cnt;
 	}
-
-	free(buffer);
 
 	downloadCrc ^= 0xFFFFFFFF;
 

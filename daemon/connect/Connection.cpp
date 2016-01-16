@@ -135,7 +135,7 @@ Connection::Connection(const char* host, int port, bool tls)
 	m_bufAvail = 0;
 	m_timeout = 60;
 	m_suppressErrors = true;
-	m_readBuf = (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
+	m_readBuf.Reserve(CONNECTION_READBUFFER_SIZE + 1);
 	m_totalBytesRead = 0;
 	m_broken = false;
 	m_gracefull = false;
@@ -149,17 +149,17 @@ Connection::Connection(SOCKET socket, bool tls)
 {
 	debug("Creating Connection");
 
-	m_port				= 0;
-	m_tls				= tls;
-	m_status			= csConnected;
-	m_socket			= socket;
-	m_bufAvail			= 0;
-	m_timeout			= 60;
-	m_suppressErrors	= true;
-	m_readBuf			= (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
+	m_port = 0;
+	m_tls = tls;
+	m_status = csConnected;
+	m_socket = socket;
+	m_bufAvail = 0;
+	m_timeout = 60;
+	m_suppressErrors = true;
+	m_readBuf.Reserve(CONNECTION_READBUFFER_SIZE + 1);
 #ifndef DISABLE_TLS
-	m_tlsSocket		= nullptr;
-	m_tlsError			= false;
+	m_tlsSocket = nullptr;
+	m_tlsError = false;
 #endif
 }
 
@@ -169,7 +169,6 @@ Connection::~Connection()
 
 	Disconnect();
 
-	free(m_readBuf);
 #ifndef DISABLE_TLS
 	delete m_tlsSocket;
 #endif
@@ -397,7 +396,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 	{
 		if (!bufAvail)
 		{
-			bufAvail = recv(m_socket, m_readBuf, CONNECTION_READBUFFER_SIZE, 0);
+			bufAvail = recv(m_socket, m_readBuf, m_readBuf.Size() - 1, 0);
 			if (bufAvail < 0)
 			{
 				ReportError("Could not receive data on socket", nullptr, true);

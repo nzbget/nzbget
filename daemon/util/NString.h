@@ -122,14 +122,35 @@ public:
 	char* Unbind();
 };
 
+/*
+ Plain char-buffer for I/O operations.
+*/
+class CharBuffer
+{
+protected:
+	char* m_data = nullptr;
+	int m_size = 0;
+public:
+	CharBuffer() {}
+	CharBuffer(int size) : m_size(size) { m_data = (char*)malloc(size); }
+	~CharBuffer() { free(m_data); }
+	int Size() { return m_size; }
+	void Reserve(int size) { m_data = (char*)realloc(m_data, size); m_size = size; }
+	void Clear() { free(m_data); m_data = nullptr; m_size = 0; }
+	operator char*() const { return m_data; }
+	char* operator*() const { return m_data; }
+};
+
 #ifdef DEBUG
+// helper declarations to identify incorrect calls to "free" at compile time
 #ifdef WIN32
-// helper declaration to identify incorrect calls to "free(CString)" at compile time
 void _free_dbg(CString str, int ignore);
 void _free_dbg(StringBuilder str, int ignore);
+void _free_dbg(CharBuffer str, int ignore);
 #else
 void free(CString str);
 void free(StringBuilder str);
+void free(CharBuffer str);
 #endif
 #endif
 

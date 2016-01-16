@@ -401,14 +401,13 @@ void ArticleWriter::CompleteFileParts()
 		m_flushing = true;
 	}
 
-	static const int BUFFER_SIZE = 1024 * 64;
-	char* buffer = nullptr;
+	CharBuffer buffer;
 	bool firstArticle = true;
 	uint32 crc = 0;
 
 	if (g_Options->GetDecode() && !directWrite)
 	{
-		buffer = (char*)malloc(BUFFER_SIZE);
+		buffer.Reserve(1024 * 64);
 	}
 
 	for (ArticleInfo* pa : m_fileInfo->GetArticles())
@@ -421,9 +420,9 @@ void ArticleWriter::CompleteFileParts()
 		if (g_Options->GetDecode() && !directWrite && pa->GetSegmentOffset() > -1 &&
 			pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1)
 		{
-			memset(buffer, 0, BUFFER_SIZE);
+			memset(buffer, 0, buffer.Size());
 			while (pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1 &&
-				outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), BUFFER_SIZE))) ;
+				outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), buffer.Size()))) ;
 		}
 
 		if (pa->GetSegmentContent())
@@ -438,10 +437,10 @@ void ArticleWriter::CompleteFileParts()
 			DiskFile infile;
 			if (pa->GetResultFilename() && infile.Open(pa->GetResultFilename(), DiskFile::omRead))
 			{
-				int cnt = BUFFER_SIZE;
-				while (cnt == BUFFER_SIZE)
+				int cnt = buffer.Size();
+				while (cnt == buffer.Size())
 				{
-					cnt = (int)infile.Read(buffer, BUFFER_SIZE);
+					cnt = (int)infile.Read(buffer, buffer.Size());
 					outfile.Write(buffer, cnt);
 					SetLastUpdateTimeNow();
 				}
@@ -475,7 +474,7 @@ void ArticleWriter::CompleteFileParts()
 		}
 	}
 
-	free(buffer);
+	buffer.Clear();
 
 	if (cached)
 	{
@@ -733,16 +732,14 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 					DiskFile infile;
 					if (infile.Open(oldBrokenLogName, DiskFile::omRead))
 					{
-						static const int BUFFER_SIZE = 1024 * 50;
-						int cnt = BUFFER_SIZE;
-						char* buffer = (char*)malloc(BUFFER_SIZE);
-						while (cnt == BUFFER_SIZE)
+						CharBuffer buffer(1024 * 50);
+						int cnt = buffer.Size();
+						while (cnt == buffer.Size())
 						{
-							cnt = (int)infile.Read(buffer, BUFFER_SIZE);
+							cnt = (int)infile.Read(buffer, buffer.Size());
 							outfile.Write(buffer, cnt);
 						}
 						infile.Close();
-						free(buffer);
 						FileSystem::DeleteFile(oldBrokenLogName);
 					}
 					else

@@ -280,8 +280,7 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 	EStatus Status = adRunning;
 
 	m_confirmedLength = false;
-	const int LineBufSize = 1024*10;
-	char* lineBuf = (char*)malloc(LineBufSize);
+	CharBuffer lineBuf(1024*10);
 	m_contentLen = -1;
 	bool firstLine = true;
 	m_gzip = false;
@@ -294,7 +293,7 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 		SetLastUpdateTimeNow();
 
 		int len = 0;
-		char* line = m_connection->ReadLine(lineBuf, LineBufSize, &len);
+		char* line = m_connection->ReadLine(lineBuf, lineBuf.Size(), &len);
 
 		if (firstLine)
 		{
@@ -335,8 +334,6 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 		}
 	}
 
-	free(lineBuf);
-
 	return Status;
 }
 
@@ -346,8 +343,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 
 	m_outFile.Close();
 	bool end = false;
-	const int LineBufSize = 1024*10;
-	char* lineBuf = (char*)malloc(LineBufSize);
+	CharBuffer lineBuf(1024*10);
 	int writtenLen = 0;
 
 #ifndef DISABLE_GZIP
@@ -368,7 +364,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 		m_connection->ReadBuffer(&buffer, &len);
 		if (len == 0)
 		{
-			len = m_connection->TryRecv(lineBuf, LineBufSize);
+			len = m_connection->TryRecv(lineBuf, lineBuf.Size());
 			buffer = lineBuf;
 		}
 
@@ -404,8 +400,6 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 			break;
 		}
 	}
-
-	free(lineBuf);
 
 #ifndef DISABLE_GZIP
 	delete m_gUnzipStream;

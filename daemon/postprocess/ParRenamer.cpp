@@ -256,8 +256,6 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 {
 	debug("Computing hash for %s", filename);
 
-	const int blockSize = 16*1024;
-
 	DiskFile file;
 	if (!file.Open(filename, DiskFile::omRead))
 	{
@@ -266,11 +264,11 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 	}
 
 	// load first 16K of the file into buffer
+	static const int blockSize = 16*1024;
+	CharBuffer buffer(blockSize);
 
-	void* buffer = malloc(blockSize);
-
-	int readBytes = (int)file.Read(buffer, blockSize);
-	if (readBytes != blockSize && file.Error())
+	int readBytes = (int)file.Read(buffer, buffer.Size());
+	if (readBytes != buffer.Size() && file.Error())
 	{
 		PrintMessage(Message::mkError, "Could not read file %s", filename);
 		return;
@@ -282,8 +280,6 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 	Par2::MD5Context context;
 	context.Update(buffer, readBytes);
 	context.Final(hash16k);
-
-	free(buffer);
 
 	debug("file: %s; hash16k: %s", FileSystem::BaseFileName(filename), hash16k.print().c_str());
 
