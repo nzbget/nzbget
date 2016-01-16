@@ -75,7 +75,7 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 	CString buf;
 	buf.Reserve(fileLen);
 
-	while (infile.ReadLine(buf, buf.Capacity() + 1))
+	while (infile.ReadLine(buf, fileLen + 1))
 	{
 		// remove trailing '\n' and '\r' and spaces
 		Util::TrimRight(buf);
@@ -116,7 +116,7 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	int fileLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename()) + 1;
 	CString content;
 	content.Reserve(fileLen);
-	while (infile.ReadLine(content, content.Capacity() + 1))
+	while (infile.ReadLine(content, fileLen + 1))
 	{
 		config.push_back(*content);
 	}

@@ -80,7 +80,6 @@ public:
 	char* operator*() const { return m_data; }
 	const char* Str() const { return m_data ? m_data : ""; }
 	int Length() const { return m_data ? (int)strlen(m_data) : 0; }
-	int Capacity() const { return Length(); }
 	bool Empty() const { return !m_data || !*m_data; }
 	void Clear() { free(m_data); m_data = nullptr; }
 	void Reserve(int capacity);
