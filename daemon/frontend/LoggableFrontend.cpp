@@ -92,8 +92,9 @@ void LoggableFrontend::Update()
 void LoggableFrontend::PrintMessage(Message& message)
 {
 #ifdef WIN32
-	char* msg = strdup(message.GetText());
-	CharToOem(msg, msg);
+	CString cmsg = message.GetText();
+	CharToOem(cmsg, cmsg);
+	const char* msg = cmsg;
 #else
 	const char* msg = message.GetText();
 #endif
@@ -115,9 +116,6 @@ void LoggableFrontend::PrintMessage(Message& message)
 			printf("[DETAIL] %s\n", msg);
 			break;
 	}
-#ifdef WIN32
-	free(msg);
-#endif
 }
 
 void LoggableFrontend::PrintSkip()

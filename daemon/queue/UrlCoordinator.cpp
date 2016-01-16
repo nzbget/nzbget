@@ -40,15 +40,13 @@ void UrlDownloader::ProcessHeader(const char* line)
 
 	if (!strncmp(line, "X-DNZB-Category:", 16))
 	{
-		char* category = strdup(line + 16);
-		m_category = Util::Trim(category);
-		free(category);
+		m_category = Util::Trim(CString(line + 16));
 
 		debug("Category: %s", *m_category);
 	}
 	else if (!strncmp(line, "X-DNZB-", 7))
 	{
-		char* modLine = strdup(line);
+		CString modLine = line;
 		char* value = strchr(modLine, ':');
 		if (value)
 		{
@@ -57,14 +55,13 @@ void UrlDownloader::ProcessHeader(const char* line)
 			while (*value == ' ') value++;
 			Util::Trim(value);
 
-			debug("X-DNZB: %s", modLine);
+			debug("X-DNZB: %s", *modLine);
 			debug("Value: %s", value);
 
 			BString<100> paramName("*DNZB:%s", modLine + 7);
 			CString paramValue = WebUtil::Latin1ToUtf8(value);
 			m_nzbInfo->GetParameters()->SetParameter(paramName, paramValue);
 		}
-		free(modLine);
 	}
 }
 

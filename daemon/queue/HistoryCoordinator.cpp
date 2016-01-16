@@ -119,9 +119,8 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 
 	// QueuedFile may contain one filename or several filenames separated
 	// with "|"-character (for merged groups)
-	char* filename = strdup(nzbInfo->GetQueuedFilename());
+	CString filename = nzbInfo->GetQueuedFilename();
 	char* end = filename - 1;
-
 	while (end)
 	{
 		char* name1 = end + 1;
@@ -134,8 +133,6 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 			FileSystem::DeleteFile(name1);
 		}
 	}
-
-	free(filename);
 }
 
 void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
@@ -536,8 +533,7 @@ bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const cha
 		return false;
 	}
 
-	char* str = strdup(text);
-
+	CString str = text;
 	char* value = strchr(str, '=');
 	if (value)
 	{
@@ -549,8 +545,6 @@ bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const cha
 	{
 		error("Could not set post-process-parameter for %s: invalid argument: %s", historyInfo->GetNzbInfo()->GetName(), text);
 	}
-
-	free(str);
 
 	return true;
 }

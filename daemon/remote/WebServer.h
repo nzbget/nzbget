@@ -48,8 +48,8 @@ public:
 
 private:
 	Connection*			m_connection;
-	char*				m_request;
-	char*				m_url;
+	CString				m_request;
+	CString				m_url;
 	EHttpMethod			m_httpMethod;
 	EUserAccess			m_userAccess;
 	bool				m_gzip;
@@ -74,11 +74,10 @@ private:
 
 public:
 						WebProcessor();
-						~WebProcessor();
 	static void			Init();
 	void				Execute();
 	void				SetConnection(Connection* connection) { m_connection = connection; }
-	void				SetUrl(const char* url);
+	void				SetUrl(const char* url) { m_url = url; }
 	void				SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
 };
 

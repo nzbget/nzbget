@@ -123,10 +123,9 @@ void ColoredFrontend::PrintMessage(Message& message)
 			break;
 	}
 	SetConsoleTextAttribute(m_console, 7);
-	char* msg = strdup(message.GetText());
+	CString msg = message.GetText();
 	CharToOem(msg, msg);
-	printf(" %s\n", msg);
-	free(msg);
+	printf(" %s\n", *msg);
 #else
 	const char* msg = message.GetText();
 	switch (message.GetKind())

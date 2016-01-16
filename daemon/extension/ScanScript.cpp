@@ -31,9 +31,9 @@
 #include "FileSystem.h"
 
 void ScanScriptController::ExecuteScripts(const char* nzbFilename,
-	const char* url, const char* directory, char** nzbName, char** category,
+	const char* url, const char* directory, CString* nzbName, CString* category,
 	int* priority, NzbParameterList* parameters, bool* addTop, bool* addPaused,
-	char** dupeKey, int* dupeScore, EDupeMode* dupeMode)
+	CString* dupeKey, int* dupeScore, EDupeMode* dupeMode)
 {
 	ScanScriptController* scriptController = new ScanScriptController();
 
@@ -86,7 +86,7 @@ void ScanScriptController::PrepareParams(const char* scriptName)
 
 	SetEnvVar("NZBNP_FILENAME", m_nzbFilename);
 	SetEnvVar("NZBNP_URL", m_url);
-	SetEnvVar("NZBNP_NZBNAME", strlen(*m_nzbName) > 0 ? *m_nzbName : FileSystem::BaseFileName(m_nzbFilename));
+	SetEnvVar("NZBNP_NZBNAME", strlen(*m_nzbName) > 0 ? **m_nzbName : FileSystem::BaseFileName(m_nzbFilename));
 	SetEnvVar("NZBNP_CATEGORY", *m_category);
 	SetIntEnvVar("NZBNP_PRIORITY", *m_priority);
 	SetIntEnvVar("NZBNP_TOP", *m_addTop ? 1 : 0);
@@ -118,13 +118,11 @@ void ScanScriptController::AddMessage(Message::EKind kind, const char* text)
 		debug("Command %s detected", msgText + 6);
 		if (!strncmp(msgText + 6, "NZBNAME=", 8))
 		{
-			free(*m_nzbName);
-			*m_nzbName = strdup(msgText + 6 + 8);
+			*m_nzbName = msgText + 6 + 8;
 		}
 		else if (!strncmp(msgText + 6, "CATEGORY=", 9))
 		{
-			free(*m_category);
-			*m_category = strdup(msgText + 6 + 9);
+			*m_category = msgText + 6 + 9;
 			g_Scanner->InitPPParameters(*m_category, m_parameters, true);
 		}
 		else if (!strncmp(msgText + 6, "NZBPR_", 6))
@@ -155,8 +153,7 @@ void ScanScriptController::AddMessage(Message::EKind kind, const char* text)
 		}
 		else if (!strncmp(msgText + 6, "DUPEKEY=", 8))
 		{
-			free(*m_dupeKey);
-			*m_dupeKey = strdup(msgText + 6 + 8);
+			*m_dupeKey = msgText + 6 + 8;
 		}
 		else if (!strncmp(msgText + 6, "DUPESCORE=", 10))
 		{

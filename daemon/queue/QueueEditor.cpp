@@ -1158,8 +1158,7 @@ void QueueEditor::SetNzbParameter(NzbInfo* nzbInfo, const char* paramString)
 {
 	debug("QueueEditor: setting nzb parameter '%s' for '%s'", paramString, FileSystem::BaseFileName(nzbInfo->GetFilename()));
 
-	char* str = strdup(paramString);
-
+	CString str = paramString;
 	char* value = strchr(str, '=');
 	if (value)
 	{
@@ -1171,8 +1170,6 @@ void QueueEditor::SetNzbParameter(NzbInfo* nzbInfo, const char* paramString)
 	{
 		error("Could not set nzb parameter for %s: invalid argument: %s", nzbInfo->GetName(), paramString);
 	}
-
-	free(str);
 }
 
 void QueueEditor::SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, const char* text)

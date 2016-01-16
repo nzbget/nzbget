@@ -75,19 +75,6 @@ void WebProcessor::Init()
 WebProcessor::WebProcessor()
 {
 	m_connection = nullptr;
-	m_request = nullptr;
-	m_url = nullptr;
-}
-
-WebProcessor::~WebProcessor()
-{
-	free(m_request);
-	free(m_url);
-}
-
-void WebProcessor::SetUrl(const char* url)
-{
-	m_url = strdup(url);
 }
 
 void WebProcessor::Execute()
@@ -122,7 +109,7 @@ void WebProcessor::Execute()
 	if (m_httpMethod == hmPost)
 	{
 		// reading http body (request content)
-		m_request = (char*)malloc(m_contentLen + 1);
+		m_request.Reserve(m_contentLen);
 		m_request[m_contentLen] = '\0';
 
 		if (!m_connection->Recv(m_request, m_contentLen))
@@ -130,7 +117,7 @@ void WebProcessor::Execute()
 			error("Invalid-request: could not read data");
 			return;
 		}
-		debug("Request=%s", m_request);
+		debug("Request=%s", *m_request);
 	}
 
 	debug("request received from %s", m_connection->GetRemoteAddr());
@@ -180,7 +167,7 @@ void WebProcessor::ParseHeaders()
 		}
 	}
 
-	debug("URL=%s", m_url);
+	debug("URL=%s", *m_url);
 	debug("Authorization=%s", m_authInfo);
 	debug("X-Auth-Token=%s", m_authToken);
 }
@@ -191,14 +178,12 @@ void WebProcessor::ParseUrl()
 	// http://localhost:6789/nzbget/username:password/jsonrpc -> http://localhost:6789/username:password/jsonrpc
 	if (!strncmp(m_url, "/nzbget/", 8))
 	{
-		char* _OldUrl = m_url;
-		m_url = strdup(m_url + 7);
-		free(_OldUrl);
+		m_url = CString(m_url + 7);
 	}
 	// http://localhost:6789/nzbget -> http://localhost:6789
 	if (!strcmp(m_url, "/nzbget"))
 	{
-		SendRedirectResponse(BString<1024>("%s/", m_url));
+		SendRedirectResponse(BString<1024>("%s/", *m_url));
 		return;
 	}
 
@@ -221,12 +206,10 @@ void WebProcessor::ParseUrl()
 		}
 		strncpy(m_authInfo, pstart, len);
 		m_authInfo[len] = '\0';
-		char* _OldUrl = m_url;
-		m_url = strdup(pend);
-		free(_OldUrl);
+		m_url = CString(pend);
 	}
 
-	debug("Final URL=%s", m_url);
+	debug("Final URL=%s", *m_url);
 }
 
 bool WebProcessor::CheckCredentials()
@@ -302,7 +285,7 @@ bool WebProcessor::IsAuthorizedIp(const char* remoteAddr)
 
 void WebProcessor::Dispatch()
 {
-	if (*m_url != '/')
+	if (m_url[0] != '/')
 	{
 		SendErrorResponse(ERR_HTTP_BAD_REQUEST, true);
 		return;
@@ -405,7 +388,7 @@ void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
 
 	if (printWarning)
 	{
-		warn("Web-Server: %s, Resource: %s", errCode, m_url);
+		warn("Web-Server: %s, Resource: %s", errCode, *m_url);
 	}
 
 	BString<1024> responseBody("<html><head><title>%s</title></head><body>Error: %s</body></html>",

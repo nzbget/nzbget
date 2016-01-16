@@ -71,10 +71,11 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 		return false;
 	}
 
-	int bufLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename()) + 1;
-	char* buf = (char*)malloc(bufLen);
+	int fileLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename());
+	CString buf;
+	buf.Reserve(fileLen);
 
-	while (infile.ReadLine(buf, bufLen - 1))
+	while (infile.ReadLine(buf, buf.Capacity() + 1))
 	{
 		// remove trailing '\n' and '\r' and spaces
 		Util::TrimRight(buf);
@@ -94,7 +95,6 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 	}
 
 	infile.Close();
-	free(buf);
 
 	return true;
 }
@@ -113,10 +113,10 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 	std::set<Options::OptEntry*> writtenOptions;
 
 	// read config file into memory array
-	int fileLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename());
+	int fileLen = (int)FileSystem::FileSize(g_Options->GetConfigFilename()) + 1;
 	CString content;
 	content.Reserve(fileLen);
-	while (infile.ReadLine(content, fileLen))
+	while (infile.ReadLine(content, content.Capacity() + 1))
 	{
 		config.push_back(*content);
 	}
@@ -313,7 +313,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 					// read first 10KB of the file and look for signature
 					int readBytes = (int)infile.Read(buffer, bufSize);
 					infile.Close();
-					buffer[readBytes] = 0;
+					buffer[readBytes] = '\0';
 
 					// split buffer into lines
 					Tokenizer tok(buffer, "\n\r", true);

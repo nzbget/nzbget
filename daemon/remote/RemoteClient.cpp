@@ -123,17 +123,16 @@ bool RemoteClient::ReceiveBoolResponse()
 	}
 
 	int textLen = ntohl(BoolResponse.m_trailingDataLength);
-	char* buf = (char*)malloc(textLen);
+	CString buf;
+	buf.Reserve(textLen);
 	read = m_connection->Recv(buf, textLen);
 	if (!read)
 	{
 		printf("No response or invalid response (timeout, not nzbget-server or wrong nzbget-server version)\n");
-		free(buf);
 		return false;
 	}
 
-	printf("server returned: %s\n", buf);
-	free(buf);
+	printf("server returned: %s\n", *buf);
 	return ntohl(BoolResponse.m_success);
 }
 

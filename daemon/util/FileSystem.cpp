@@ -671,7 +671,7 @@ CString FileSystem::ExpandFileName(const char* filename)
 	return WidePathToUtfPath(unistr);
 #else
 	CString result;
-	result.Reserve(1024);
+	result.Reserve(1024 - 1);
 	if (filename[0] != '\0' && filename[0] != '/')
 	{
 		char curDir[MAX_PATH + 1];
@@ -694,8 +694,8 @@ CString FileSystem::ExpandFileName(const char* filename)
 CString FileSystem::GetExeFileName(const char* argv0)
 {
 	CString exename;
-	exename.Reserve(1024);
-	exename[1024 - 1] = '\0';
+	exename.Reserve(1024 - 1);
+	exename[1024] = '\0';
 
 #ifdef WIN32
 	GetModuleFileName(nullptr, exename, 1024);
@@ -734,7 +734,7 @@ bool FileSystem::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 	BOOL ok = ::FlushFileBuffers((HANDLE)_get_osfhandle(fileDescriptor));
 	if (!ok)
 	{
-		errmsg.Reserve(1024);
+		errmsg.Reserve(1024 - 1);
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 			errmsg, 1024, nullptr);

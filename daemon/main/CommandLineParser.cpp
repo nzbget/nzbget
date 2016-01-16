@@ -881,7 +881,7 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 		else
 		{
 			// TEST
-			m_argFilename.Reserve(1024);
+			m_argFilename.Reserve(1024 - 1);
 			getcwd(m_argFilename, 1024);
 			m_argFilename.AppendFmt("/%s", fileName);
 		}

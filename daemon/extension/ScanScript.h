@@ -34,13 +34,13 @@ private:
 	const char*			m_nzbFilename;
 	const char*			m_url;
 	const char*			m_directory;
-	char**				m_nzbName;
-	char**				m_category;
+	CString*			m_nzbName;
+	CString*			m_category;
 	int*				m_priority;
 	NzbParameterList*	m_parameters;
 	bool*				m_addTop;
 	bool*				m_addPaused;
-	char**				m_dupeKey;
+	CString*			m_dupeKey;
 	int*				m_dupeScore;
 	EDupeMode*			m_dupeMode;
 	int					m_prefixLen;
@@ -53,9 +53,9 @@ protected:
 
 public:
 	static void			ExecuteScripts(const char* nzbFilename, const char* url,
-							const char* directory, char** nzbName, char** category, int* priority,
+							const char* directory, CString* nzbName, CString* category, int* priority,
 							NzbParameterList* parameters, bool* addTop, bool* addPaused,
-							char** dupeKey, int* dupeScore, EDupeMode* dupeMode);
+							CString* dupeKey, int* dupeScore, EDupeMode* dupeMode);
 };
 
 #endif

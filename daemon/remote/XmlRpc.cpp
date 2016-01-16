@@ -745,7 +745,7 @@ XmlCommand::XmlCommand()
 	m_callbackFunc = nullptr;
 	m_fault = false;
 	m_protocol = XmlRpcProcessor::rpUndefined;
-	m_response.Reserve(1024 * 10);
+	m_response.Reserve(1024 * 10 - 1);
 }
 
 bool XmlCommand::IsJson()

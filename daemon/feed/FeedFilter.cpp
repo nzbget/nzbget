@@ -864,7 +864,8 @@ bool FeedFilter::Rule::Match(FeedItemInfo& feedItemInfo)
 
 bool FeedFilter::Rule::MatchExpression(FeedItemInfo& feedItemInfo)
 {
-	char* expr = (char*)malloc(m_terms.size() + 1);
+	CString expr;
+	expr.Reserve(m_terms.size());
 
 	int index = 0;
 	for (Term& term : m_terms)
@@ -912,8 +913,7 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo& feedItemInfo)
 		Util::ReduceStr(expr, "(F)", "F");
 	}
 
-	bool match = *expr && *expr == 'T' && expr[1] == '\0';
-	free(expr);
+	bool match = expr.Length() == 1 && expr[0] == 'T';
 	return match;
 }
 
