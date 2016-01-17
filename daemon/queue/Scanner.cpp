@@ -155,6 +155,12 @@ void Scanner::CheckIncomingNzbs(const char* directory, const char* category, boo
 	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
+		if (filename[0] == '.')
+		{
+			// skip hidden files
+			continue;
+		}
+
 		BString<1024> fullfilename("%s%s", directory, filename);
 		bool isDirectory = FileSystem::DirectoryExists(fullfilename);
 		// check subfolders
