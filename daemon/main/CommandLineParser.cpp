@@ -150,7 +150,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				m_printOptions = true;
 				break;
 			case 'o':
-				m_optionList.push_back(strdup(optarg));
+				m_optionList.push_back(optarg);
 				break;
 			case 's':
 				m_serverMode = true;
@@ -903,7 +903,7 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 
 	while (optind < argc)
 	{
-		char* writableFileIdList = strdup(argv[optind++]);
+		CString writableFileIdList = argv[optind++];
 
 		char* optarg = strtok(writableFileIdList, ", ");
 		while (optarg)
@@ -965,8 +965,6 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 
 			optarg = strtok(nullptr, ", ");
 		}
-
-		free(writableFileIdList);
 	}
 }
 
@@ -974,7 +972,7 @@ void CommandLineParser::ParseFileNameList(int argc, const char* argv[], int opti
 {
 	while (optind < argc)
 	{
-		m_editQueueNameList.push_back(strdup(argv[optind++]));
+		m_editQueueNameList.push_back(argv[optind++]);
 	}
 }
 
