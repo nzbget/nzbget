@@ -846,7 +846,7 @@ void EditQueueBinCommand::Execute()
 		return;
 	}
 
-	char* text = textLen > 0 ? buf : nullptr;
+	char* text = textLen > 0 ? *buf : nullptr;
 	int32* ids = (int32*)(buf + textLen);
 	char* names = (buf + textLen + nrIdEntries * sizeof(int32));
 
