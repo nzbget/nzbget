@@ -310,7 +310,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 				if (infile.Open(fullFilename, DiskFile::omRead))
 				{
 					// read first 10KB of the file and look for signature
-					int readBytes = (int)infile.Read(buffer, buffer.Size());
+					int readBytes = (int)infile.Read(buffer, buffer.Size() - 1);
 					infile.Close();
 					buffer[readBytes] = '\0';
 
