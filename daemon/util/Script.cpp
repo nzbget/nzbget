@@ -445,6 +445,12 @@ void ScriptController::BuildCommandLine(char* cmdLineBuf, int bufSize)
 */
 int ScriptController::StartProcess()
 {
+	CString workingDir = m_workingDir;
+	if (workingDir.Empty())
+	{
+		workingDir = FileSystem::GetCurrentDirectory();
+	}
+
 #ifdef WIN32
 	char* cmdLine = m_cmdLine;
 	char cmdLineBuf[2048];
@@ -454,8 +460,8 @@ int ScriptController::StartProcess()
 		cmdLine = cmdLineBuf;
 	}
 
-	WString wideWorkingDir = FileSystem::UtfPathToWidePath(m_workingDir);
-	if (strlen(m_workingDir) > 260 - 14)
+	WString wideWorkingDir = FileSystem::UtfPathToWidePath(workingDir);
+	if (strlen(workingDir) > 260 - 14)
 	{
 		GetShortPathNameW(wideWorkingDir, wideWorkingDir, wideWorkingDir.Length() + 1);
 	}
@@ -503,7 +509,7 @@ int ScriptController::StartProcess()
 		}
 		if (wcslen(wideWorkingDir) > 260)
 		{
-			PrintMessage(Message::mkError, "Could not build short path for %s", m_workingDir);
+			PrintMessage(Message::mkError, "Could not build short path for %s", workingDir);
 		}
 		free(environmentStrings);
 		CloseHandle(readPipe);
@@ -573,7 +579,7 @@ int ScriptController::StartProcess()
 		fflush(stdout);
 #endif
 
-		chdir(m_workingDir);
+		chdir(workingDir);
 		environ = environmentStrings;
 		execvp(m_script, (char* const*)m_args);
 
