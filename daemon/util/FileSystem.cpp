@@ -693,7 +693,7 @@ CString FileSystem::GetExeFileName(const char* argv0)
 {
 	CString exename;
 	exename.Reserve(1024 - 1);
-	exename[1024] = '\0';
+	exename[1024 - 1] = '\0';
 
 #ifdef WIN32
 	GetModuleFileName(nullptr, exename, 1024);
