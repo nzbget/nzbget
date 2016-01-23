@@ -358,8 +358,8 @@ CString NzbInfo::BuildFinalDirName()
 		BString<1024> categoryDir;
 		categoryDir = m_category;
 		FileSystem::MakeValidFilename(categoryDir, '_', true);
-		// we can't format using "finalDir.Format" because one of the parameter is "finalDir" itself.
-		finalDir = BString<1024>("%s%c%s", *finalDir, PATH_SEPARATOR, *categoryDir);
+		// we can't format with "finalDir.Format" because one of the parameter is "finalDir" itself.
+		finalDir = CString::FormatStr("%s%c%s", *finalDir, PATH_SEPARATOR, *categoryDir);
 	}
 
 	finalDir.AppendFmt("%c%s", PATH_SEPARATOR, GetName());
