@@ -149,8 +149,9 @@ void CleanupController::Run()
 
 	m_destDir = m_postInfo->GetNzbInfo()->GetDestDir();
 
-	bool interDir = strlen(g_Options->GetInterDir()) > 0 &&
-		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
+	bool interDir = !Util::EmptyStr(g_Options->GetInterDir()) &&
+		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
+		m_destDir[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
 	if (interDir)
 	{
 		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();

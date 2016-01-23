@@ -281,7 +281,7 @@ bool ArticleWriter::CreateOutputFile(int64 size)
 
 void ArticleWriter::BuildOutputFilename()
 {
-	BString<1024> filename("%s%i.%03i", g_Options->GetTempDir(),
+	BString<1024> filename("%s%c%i.%03i", g_Options->GetTempDir(), PATH_SEPARATOR,
 		m_fileInfo->GetId(), m_articleInfo->GetPartNumber());
 
 	m_articleInfo->SetResultFilename(filename);

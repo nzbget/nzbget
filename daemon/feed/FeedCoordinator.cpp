@@ -310,11 +310,11 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
 	BString<1024> outFilename;
 	if (feedInfo->GetId() > 0)
 	{
-		outFilename.Format("%sfeed-%i.tmp", g_Options->GetTempDir(), feedInfo->GetId());
+		outFilename.Format("%s%cfeed-%i.tmp", g_Options->GetTempDir(), PATH_SEPARATOR, feedInfo->GetId());
 	}
 	else
 	{
-		outFilename.Format("%sfeed-%i-%i.tmp", g_Options->GetTempDir(), (int)Util::CurrentTime(), rand());
+		outFilename.Format("%s%cfeed-%i-%i.tmp", g_Options->GetTempDir(), PATH_SEPARATOR, (int)Util::CurrentTime(), rand());
 	}
 	feedDownloader->SetOutputFilename(outFilename);
 

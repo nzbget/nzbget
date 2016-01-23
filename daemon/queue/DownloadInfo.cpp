@@ -332,7 +332,7 @@ void NzbInfo::BuildDestDirName()
 	}
 	else
 	{
-		destDir.Format("%s%s.#%i", g_Options->GetInterDir(), GetName(), GetId());
+		destDir.Format("%s%c%s.#%i", g_Options->GetInterDir(), PATH_SEPARATOR, GetName(), GetId());
 	}
 
 	SetDestDir(destDir);
@@ -341,12 +341,12 @@ void NzbInfo::BuildDestDirName()
 CString NzbInfo::BuildFinalDirName()
 {
 	CString finalDir = g_Options->GetDestDir();
-	bool useCategory = m_category && m_category[0] != '\0';
+	bool useCategory = !Util::EmptyStr(m_category);
 
 	if (useCategory)
 	{
 		Options::Category *category = g_Options->FindCategory(m_category, false);
-		if (category && category->GetDestDir() && category->GetDestDir()[0] != '\0')
+		if (category && !Util::EmptyStr(category->GetDestDir()))
 		{
 			finalDir = category->GetDestDir();
 			useCategory = false;
@@ -359,10 +359,10 @@ CString NzbInfo::BuildFinalDirName()
 		categoryDir = m_category;
 		FileSystem::MakeValidFilename(categoryDir, '_', true);
 		// we can't format using "finalDir.Format" because one of the parameter is "finalDir" itself.
-		finalDir = BString<1024>("%s%s%c", *finalDir, *categoryDir, PATH_SEPARATOR);
+		finalDir = BString<1024>("%s%c%s", *finalDir, PATH_SEPARATOR, *categoryDir);
 	}
 
-	finalDir.Append(GetName());
+	finalDir.AppendFmt("%c%s", PATH_SEPARATOR, GetName());
 
 	return finalDir;
 }

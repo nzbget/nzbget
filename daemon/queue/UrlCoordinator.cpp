@@ -272,7 +272,8 @@ void UrlCoordinator::StartUrlDownload(NzbInfo* nzbInfo)
 	urlDownloader->SetUrl(nzbInfo->GetUrl());
 	urlDownloader->SetForce(g_Options->GetUrlForce());
 	urlDownloader->SetInfoName(nzbInfo->MakeNiceUrlName(nzbInfo->GetUrl(), nzbInfo->GetFilename()));
-	urlDownloader->SetOutputFilename(BString<1024>("%surl-%i.tmp", g_Options->GetTempDir(), nzbInfo->GetId()));
+	urlDownloader->SetOutputFilename(BString<1024>("%s%curl-%i.tmp",
+		g_Options->GetTempDir(), PATH_SEPARATOR, nzbInfo->GetId()));
 
 	nzbInfo->SetActiveDownloads(1);
 	nzbInfo->SetUrlStatus(NzbInfo::lsRunning);

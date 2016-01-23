@@ -161,13 +161,11 @@ void Scanner::CheckIncomingNzbs(const char* directory, const char* category, boo
 			continue;
 		}
 
-		BString<1024> fullfilename("%s%s", directory, filename);
+		BString<1024> fullfilename("%s%c%s", directory, PATH_SEPARATOR, filename);
 		bool isDirectory = FileSystem::DirectoryExists(fullfilename);
 		// check subfolders
 		if (isDirectory)
 		{
-			fullfilename[strlen(fullfilename) + 1] = '\0';
-			fullfilename.AppendFmt("%c", PATH_SEPARATOR);
 			const char* useCategory = filename;
 			BString<1024> subCategory;
 			if (strlen(category) > 0)
@@ -509,7 +507,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 		int num = 1;
 		while (num == 1 || FileSystem::FileExists(tempFileName))
 		{
-			tempFileName.Format("%snzb-%i.tmp", g_Options->GetTempDir(), num);
+			tempFileName.Format("%s%cnzb-%i.tmp", g_Options->GetTempDir(), PATH_SEPARATOR, num);
 			num++;
 		}
 
@@ -535,7 +533,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 		validNzbName.Append(".nzb");
 	}
 
-	BString<1024> scanFileName("%s%s", g_Options->GetNzbDir(), *validNzbName);
+	BString<1024> scanFileName("%s%c%s", g_Options->GetNzbDir(), PATH_SEPARATOR, *validNzbName);
 
 	char *ext = strrchr(validNzbName, '.');
 	if (ext)
@@ -549,11 +547,13 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	{
 		if (ext)
 		{
-			scanFileName.Format("%s%s_%i.%s", g_Options->GetNzbDir(), *validNzbName, num, ext);
+			scanFileName.Format("%s%c%s_%i.%s", g_Options->GetNzbDir(),
+				PATH_SEPARATOR, *validNzbName, num, ext);
 		}
 		else
 		{
-			scanFileName.Format("%s%s_%i", g_Options->GetNzbDir(), *validNzbName, num);
+			scanFileName.Format("%s%c%s_%i", g_Options->GetNzbDir(),
+				PATH_SEPARATOR, *validNzbName, num);
 		}
 		num++;
 	}

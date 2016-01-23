@@ -677,9 +677,10 @@ void Options::CheckDir(CString& dir, const char* optionName,
 
 	dir = tempdir;
 	FileSystem::NormalizePathSeparators((char*)dir);
-	if (dir[dir.Length() - 1] != PATH_SEPARATOR)
+	if (!Util::EmptyStr(dir) && dir[dir.Length() - 1] == PATH_SEPARATOR)
 	{
-		dir.AppendFmt("%c", (int)PATH_SEPARATOR);
+		// remove trailing slash
+		dir[dir.Length() - 1] = '\0';
 	}
 
 	if (!(dir[0] == PATH_SEPARATOR || dir[0] == ALT_PATH_SEPARATOR ||

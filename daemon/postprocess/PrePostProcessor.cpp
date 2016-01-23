@@ -570,7 +570,8 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psManual &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
 		!Util::EmptyStr(g_Options->GetInterDir()) &&
-		!strncmp(postInfo->GetNzbInfo()->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
+		!strncmp(postInfo->GetNzbInfo()->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
+		postInfo->GetNzbInfo()->GetDestDir()[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
 
 	bool postScript = true;
 

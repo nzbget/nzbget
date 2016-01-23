@@ -85,8 +85,8 @@ public:
 StateFile::StateFile(const char* filename, int formatVersion)
 {
 	m_formatVersion = formatVersion;
-	m_destFilename.Format("%s%s", g_Options->GetQueueDir(), filename);
-	m_tempFilename.Format("%s%s.new", g_Options->GetQueueDir(), filename);
+	m_destFilename.Format("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, filename);
+	m_tempFilename.Format("%s%c%s.new", g_Options->GetQueueDir(), PATH_SEPARATOR, filename);
 }
 
 void StateFile::Discard()
@@ -966,7 +966,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 				nzbInfo->SetPriority(priority);
 			}
 
-			BString<1024> fileName("%s%i", g_Options->GetQueueDir(), id);
+			BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, id);
 			FileInfo* fileInfo = new FileInfo();
 			bool res = LoadFileInfo(fileInfo, fileName, true, false);
 			if (res)
@@ -1025,7 +1025,7 @@ bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, DiskFile& i
 		}
 		if (nzbIndex > nzbList->size()) goto error;
 
-		BString<1024> fileName("%s%i", g_Options->GetQueueDir(), id);
+		BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, id);
 		FileInfo* fileInfo = new FileInfo();
 		bool res = LoadFileInfo(fileInfo, fileName, true, false);
 		if (res)
@@ -1101,7 +1101,7 @@ error:
 
 bool DiskState::SaveFile(FileInfo* fileInfo)
 {
-	BString<1024> fileName("%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
+	BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
 	return SaveFileInfo(fileInfo, fileName);
 }
 
@@ -1151,7 +1151,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, const char* filename)
 
 bool DiskState::LoadArticles(FileInfo* fileInfo)
 {
-	BString<1024> fileName("%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
+	BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
 	return LoadFileInfo(fileInfo, fileName, false, true);
 }
 
@@ -1275,7 +1275,8 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 {
 	debug("Saving FileState to disk");
 
-	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
+	BString<1024> filename("%s%c%i%s", g_Options->GetQueueDir(), PATH_SEPARATOR,
+		fileInfo->GetId(), completed ? "c" : "s");
 	DiskFile outfile;
 
 	if (!outfile.Open(filename, DiskFile::omWrite))
@@ -1311,7 +1312,8 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 {
 	bool hasArticles = !fileInfo->GetArticles()->empty();
 
-	BString<1024> filename("%s%i%s", g_Options->GetQueueDir(), fileInfo->GetId(), completed ? "c" : "s");
+	BString<1024> filename("%s%c%i%s", g_Options->GetQueueDir(), PATH_SEPARATOR,
+		fileInfo->GetId(), completed ? "c" : "s");
 	DiskFile infile;
 
 	if (!infile.Open(filename, DiskFile::omRead))
@@ -1425,18 +1427,18 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 	{
 		if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
 		{
-			filename.Format("%s%i", g_Options->GetQueueDir(), completedFile.GetId());
+			filename.Format("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, completedFile.GetId());
 			FileSystem::DeleteFile(filename);
 
-			filename.Format("%s%is", g_Options->GetQueueDir(), completedFile.GetId());
+			filename.Format("%s%c%is", g_Options->GetQueueDir(), PATH_SEPARATOR, completedFile.GetId());
 			FileSystem::DeleteFile(filename);
 
-			filename.Format("%s%ic", g_Options->GetQueueDir(), completedFile.GetId());
+			filename.Format("%s%c%ic", g_Options->GetQueueDir(), PATH_SEPARATOR, completedFile.GetId());
 			FileSystem::DeleteFile(filename);
 		}
 	}
 
-	filename.Format("%sn%i.log", g_Options->GetQueueDir(), nzbInfo->GetId());
+	filename.Format("%s%cn%i.log", g_Options->GetQueueDir(), PATH_SEPARATOR, nzbInfo->GetId());
 	FileSystem::DeleteFile(filename);
 }
 
@@ -1517,7 +1519,7 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 {
 	debug("Loading post-queue from disk");
 
-	BString<1024> fileName("%s%s", g_Options->GetQueueDir(), "postq");
+	BString<1024> fileName("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "postq");
 
 	if (!FileSystem::FileExists(fileName))
 	{
@@ -1966,7 +1968,7 @@ void DiskState::DiscardDownloadQueue()
 {
 	debug("Discarding queue");
 
-	BString<1024> fullFilename("%s%s", g_Options->GetQueueDir(), "queue");
+	BString<1024> fullFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "queue");
 	FileSystem::DeleteFile(fullFilename);
 
 	DirBrowser dir(g_Options->GetQueueDir());
@@ -1984,15 +1986,15 @@ void DiskState::DiscardDownloadQueue()
 		}
 		if (onlyNums)
 		{
-			fullFilename.Format("%s%s", g_Options->GetQueueDir(), filename);
+			fullFilename.Format("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, filename);
 			FileSystem::DeleteFile(fullFilename);
 
 			// delete file state file
-			fullFilename.Format("%s%ss", g_Options->GetQueueDir(), filename);
+			fullFilename.Format("%s%c%ss", g_Options->GetQueueDir(), PATH_SEPARATOR, filename);
 			FileSystem::DeleteFile(fullFilename);
 
 			// delete failed info file
-			fullFilename.Format("%s%sc", g_Options->GetQueueDir(), filename);
+			fullFilename.Format("%s%c%sc", g_Options->GetQueueDir(), PATH_SEPARATOR, filename);
 			FileSystem::DeleteFile(fullFilename);
 		}
 	}
@@ -2002,7 +2004,7 @@ bool DiskState::DownloadQueueExists()
 {
 	debug("Checking if a saved queue exists on disk");
 
-	BString<1024> fileName("%s%s", g_Options->GetQueueDir(), "queue");
+	BString<1024> fileName("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "queue");
 	return FileSystem::FileExists(fileName);
 }
 
@@ -2013,21 +2015,21 @@ void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePart
 	// info and articles file
 	if (deleteData)
 	{
-		fileName.Format("%s%i", g_Options->GetQueueDir(), fileInfo->GetId());
+		fileName.Format("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
 		FileSystem::DeleteFile(fileName);
 	}
 
 	// partial state file
 	if (deletePartialState)
 	{
-		fileName.Format("%s%is", g_Options->GetQueueDir(), fileInfo->GetId());
+		fileName.Format("%s%c%is", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
 		FileSystem::DeleteFile(fileName);
 	}
 
 	// completed state file
 	if (deleteCompletedState)
 	{
-		fileName.Format("%s%ic", g_Options->GetQueueDir(), fileInfo->GetId());
+		fileName.Format("%s%c%ic", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
 		FileSystem::DeleteFile(fileName);
 	}
 }
@@ -2041,7 +2043,7 @@ void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 		if (strstr(filename, ".tmp") || strstr(filename, ".dec") ||
 			(sscanf(filename, "%i.%i", &id, &part) == 2))
 		{
-			BString<1024> fullFilename("%s%s", g_Options->GetTempDir(), filename);
+			BString<1024> fullFilename("%s%c%s", g_Options->GetTempDir(), PATH_SEPARATOR, filename);
 			FileSystem::DeleteFile(fullFilename);
 		}
 	}
@@ -2320,7 +2322,7 @@ void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 
 bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers)
 {
-	BString<1024> cacheFlagFilename("%s%s", g_Options->GetQueueDir(), "acache");
+	BString<1024> cacheFlagFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "acache");
 	bool cacheWasActive = FileSystem::FileExists(cacheFlagFilename);
 
 	DirBrowser dir(g_Options->GetQueueDir());
@@ -2346,7 +2348,7 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 			}
 			else
 			{
-				BString<1024> fullFilename("%s%s", g_Options->GetQueueDir(), filename);
+				BString<1024> fullFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, filename);
 				FileSystem::DeleteFile(fullFilename);
 			}
 		}
@@ -2774,7 +2776,7 @@ error:
 
 void DiskState::WriteCacheFlag()
 {
-	BString<1024> flagFilename("%s%s", g_Options->GetQueueDir(), "acache");
+	BString<1024> flagFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "acache");
 
 	DiskFile outfile;
 	if (!outfile.Open(flagFilename, DiskFile::omWrite))
@@ -2788,13 +2790,13 @@ void DiskState::WriteCacheFlag()
 
 void DiskState::DeleteCacheFlag()
 {
-	BString<1024> flagFilename("%s%s", g_Options->GetQueueDir(), "acache");
+	BString<1024> flagFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "acache");
 	FileSystem::DeleteFile(flagFilename);
 }
 
 void DiskState::AppendNzbMessage(int nzbId, Message::EKind kind, const char* text)
 {
-	BString<1024> logFilename("%sn%i.log", g_Options->GetQueueDir(), nzbId);
+	BString<1024> logFilename("%s%cn%i.log", g_Options->GetQueueDir(), PATH_SEPARATOR, nzbId);
 
 	DiskFile outfile;
 	if (!outfile.Open(logFilename, DiskFile::omAppend))
@@ -2835,7 +2837,7 @@ void DiskState::LoadNzbMessages(int nzbId, MessageList* messages)
 	//   - Other threads may be writing into the log-file at any time;
 	//   - The log-file may also be deleted from another thread;
 
-	BString<1024> logFilename("%sn%i.log", g_Options->GetQueueDir(), nzbId);
+	BString<1024> logFilename("%s%cn%i.log", g_Options->GetQueueDir(), PATH_SEPARATOR, nzbId);
 
 	if (!FileSystem::FileExists(logFilename))
 	{

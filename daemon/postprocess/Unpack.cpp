@@ -590,8 +590,9 @@ void UnpackController::RequestParCheck(bool forceRepair)
 
 void UnpackController::CreateUnpackDir()
 {
-	m_interDir = strlen(g_Options->GetInterDir()) > 0 &&
-		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir()));
+	m_interDir = !Util::EmptyStr(g_Options->GetInterDir()) &&
+		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
+		m_destDir[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
 	if (m_interDir)
 	{
 		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();

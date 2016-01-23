@@ -334,7 +334,7 @@ void WebProcessor::Dispatch()
 		defRes = "index.html";
 	}
 
-	BString<1024> disk_filename("%s%s%s", g_Options->GetWebDir(), m_url + 1, defRes);
+	BString<1024> disk_filename("%s%s%s", g_Options->GetWebDir(), m_url, defRes);
 
 	SendFileResponse(disk_filename);
 }

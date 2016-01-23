@@ -3036,7 +3036,7 @@ void ReadUrlXmlCommand::Execute()
 	int num = 1;
 	while (num == 1 || FileSystem::FileExists(tempFileName))
 	{
-		tempFileName.Format("%sreadurl-%i.tmp", g_Options->GetTempDir(), num);
+		tempFileName.Format("%s%creadurl-%i.tmp", g_Options->GetTempDir(), PATH_SEPARATOR, num);
 		num++;
 	}
 
