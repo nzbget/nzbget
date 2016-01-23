@@ -537,6 +537,10 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 				StatDupeSources(&m_dupeSources);
 				DeleteLeftovers();
 			}
+			else
+			{
+				status = psFailed;
+			}
 		}
 		else
 		{
