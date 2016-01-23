@@ -436,24 +436,21 @@ void WinConsole::ShowWebUI()
 
 void WinConsole::ShowInExplorer(const char* filename)
 {
-	char fileName2[MAX_PATH + 1];
-	strncpy(fileName2, filename, MAX_PATH);
-	fileName2[MAX_PATH] = '\0';
+	BString<1024> fileName2 = filename;
 	FileSystem::NormalizePathSeparators(fileName2);
-	if (*fileName2 && fileName2[strlen(fileName2) - 1] == PATH_SEPARATOR) fileName2[strlen(fileName2) - 1] = '\0'; // trim slash
 
 	if (!FileSystem::FileExists(fileName2) && !FileSystem::DirectoryExists(fileName2))
 	{
-		BString<1024> message("Directory or file %s doesn't exist (yet).", fileName2);
+		BString<1024> message("Directory or file %s doesn't exist (yet).", *fileName2);
 		MessageBox(m_trayWindow, message, "Information", MB_ICONINFORMATION);
 		return;
 	}
 
-	WCHAR wszFileName2[MAX_PATH + 1];
-	MultiByteToWideChar(0, 0, fileName2, strlen(fileName2) + 1, wszFileName2, MAX_PATH);
+	WString wideFilename = FileSystem::UtfPathToWidePath(fileName2);
+
 	CoInitialize(nullptr);
 	LPITEMIDLIST pidl;
-	HRESULT H = SHParseDisplayName(wszFileName2, nullptr, &pidl, 0, nullptr);
+	HRESULT H = SHParseDisplayName(wideFilename, nullptr, &pidl, 0, nullptr);
 	H = SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
 }
 
@@ -862,15 +859,13 @@ void WinConsole::ShowCategoryDir(int catIndex)
 
 	if (!Util::EmptyStr(category.GetDestDir()))
 	{
-		destDir.Format("%s", category.GetDestDir());
+		destDir = category.GetDestDir();
 	}
 	else
 	{
-		BString<1024> categoryDir;
-		categoryDir.Set(category.GetName());
+		BString<1024> categoryDir = category.GetName();
 		FileSystem::MakeValidFilename(categoryDir, '_', true);
-
-		destDir.Format("%s%s", g_Options->GetDestDir(), *categoryDir);
+		destDir.Format("%s%c%s", g_Options->GetDestDir(), PATH_SEPARATOR, *categoryDir);
 	}
 
 	ShowInExplorer(destDir);
