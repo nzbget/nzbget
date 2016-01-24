@@ -301,7 +301,7 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 	{
 		if (filename[0] != '.' && filename[0] != '_')
 		{
-			BString<1024> fullFilename("%s%s", directory, filename);
+			BString<1024> fullFilename("%s%c%s", directory, PATH_SEPARATOR, filename);
 
 			if (!FileSystem::DirectoryExists(fullFilename))
 			{
@@ -375,7 +375,6 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 			}
 			else if (!isSubDir)
 			{
-				fullFilename.Format("%s%s%c", directory, filename, PATH_SEPARATOR);
 				LoadScriptDir(scripts, fullFilename, true);
 			}
 		}
