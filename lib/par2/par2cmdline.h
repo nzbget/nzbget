@@ -141,6 +141,11 @@ typedef enum Result
 
 } Result;
 
+class NullStreamBuf : public std::streambuf {};
+extern NullStreamBuf nullStreamBuf;
+extern std::ostream cout;
+extern std::ostream cerr;
+
 } // end namespace Par2
 
 #define LONGMULTIPLY

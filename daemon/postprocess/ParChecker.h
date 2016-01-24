@@ -104,6 +104,18 @@ public:
 	friend class Repairer;
 
 private:
+	class StreamBuf : public std::streambuf
+	{
+	private:
+		ParChecker*		m_owner;
+		Message::EKind	m_kind;
+		StringBuilder	m_buffer;
+	public:
+						StreamBuf(ParChecker* owner, Message::EKind kind) : m_owner(owner), m_kind(kind) {}
+		virtual int		overflow(int ch) override;
+	};
+
+private:
 	CString				m_infoName;
 	CString				m_destDir;
 	CString				m_nzbName;
@@ -133,6 +145,8 @@ private:
 	bool				m_forceRepair;
 	bool				m_parFull;
 	DupeSourceList		m_dupeSources;
+	StreamBuf			m_parOutStream{this, Message::mkDetail};
+	StreamBuf			m_parErrStream{this, Message::mkError};
 
 	void				Cleanup();
 	EStatus				RunParCheckAll();

@@ -31,6 +31,10 @@ static char THIS_FILE[]=__FILE__;
 namespace Par2
 {
 
+NullStreamBuf nullStreamBuf;
+std::ostream cout(&nullStreamBuf);
+std::ostream cerr(&nullStreamBuf);
+
 CommandLine::ExtraFile::ExtraFile(void)
 : filename()
 , filesize(0)

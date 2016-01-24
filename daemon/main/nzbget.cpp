@@ -77,9 +77,6 @@ void ProcessSigVerify();
 #ifndef WIN32
 void Daemonize();
 #endif
-#ifndef DISABLE_PARCHECK
-void DisableCout();
-#endif
 void BootConfig();
 
 Thread* g_Frontend = nullptr;
@@ -149,10 +146,6 @@ int main(int argc, char *argv[], char *argp[])
 
 #ifdef WIN32
 	InstallUninstallServiceCheck(argc, argv);
-#endif
-
-#ifndef DISABLE_PARCHECK
-	DisableCout();
 #endif
 
 	srand(Util::CurrentTime());
@@ -951,20 +944,3 @@ void Daemonize()
 	signal(SIGTTIN, SIG_IGN);
 }
 #endif
-
-#ifndef DISABLE_PARCHECK
-class NullStreamBuf : public std::streambuf
-{
-public:
-	int sputc ( char c ) { return (int) c; }
-} NullStreamBufInstance;
-
-void DisableCout()
-{
-	// libpar2 prints messages to c++ standard output stream (std::cout).
-	// However we do not want these messages to be printed.
-	// Since we do not use std::cout in nzbget we just disable it.
-	std::cout.rdbuf(&NullStreamBufInstance);
-}
-#endif
-

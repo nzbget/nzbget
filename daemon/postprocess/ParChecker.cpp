@@ -123,16 +123,16 @@ Par2::Result Repairer::PreProcess(const char *parFilename)
 			basename[1] = '\0';
 		}
 
-		const char* argv[] = { "par2", "r", "-v", "-v", memParam, parFilename, wildcardParam };
-		if (!commandLine.Parse(7, (char**)argv))
+		const char* argv[] = { "par2", "r", "-v", memParam, parFilename, wildcardParam };
+		if (!commandLine.Parse(6, (char**)argv))
 		{
 			return Par2::eInvalidCommandLineArguments;
 		}
 	}
 	else
 	{
-		const char* argv[] = { "par2", "r", "-v", "-v", memParam, parFilename };
-		if (!commandLine.Parse(6, (char**)argv))
+		const char* argv[] = { "par2", "r", "-v", memParam, parFilename };
+		if (!commandLine.Parse(5, (char**)argv))
 		{
 			return Par2::eInvalidCommandLineArguments;
 		}
@@ -324,6 +324,47 @@ void RepairThread::RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size
 }
 
 
+int ParChecker::StreamBuf::overflow(int ch)
+{
+	if (ch == '\n' || ch == '\r')
+	{
+		char* msg = (char*)*m_buffer;
+
+		// make par2-logging less verbose
+		bool extraDebug = !msg || strchr(msg, '%') ||
+			!strncmp(msg, "Loading", 7) ||
+			(!strncmp(msg, "Target: ", 8) && strcmp(msg + strlen(msg) - 5, "found"));
+
+		if (msg)
+		{
+			if (!strncmp(msg, "You have ", 9))
+			{
+				msg += 9;
+			}
+
+			if (extraDebug)
+			{
+				debug("Par: %s", msg);
+			}
+			else
+			{
+				m_owner->PrintMessage(m_kind, "Par: %s", msg);
+			}
+		}
+
+		m_buffer.Clear();
+	}
+	else
+	{
+		char bf[2];
+		bf[0] = (char)ch;
+		bf[1] = '\0';
+		m_buffer.Append(bf);
+	}
+	return (int)ch;
+}
+
+
 ParChecker::ParChecker()
 {
 	debug("Creating ParChecker");
@@ -365,6 +406,9 @@ void ParChecker::Cleanup()
 
 void ParChecker::Run()
 {
+	Par2::cout.rdbuf(&m_parOutStream);
+	Par2::cerr.rdbuf(&m_parErrStream);
+
 	m_status = RunParCheckAll();
 
 	if (m_status == psRepairNotNeeded && m_parQuick && m_forceRepair && !m_cancelled)
@@ -375,6 +419,9 @@ void ParChecker::Run()
 	}
 
 	Completed();
+
+	Par2::cout.rdbuf(&Par2::nullStreamBuf);
+	Par2::cerr.rdbuf(&Par2::nullStreamBuf);
 }
 
 ParChecker::EStatus ParChecker::RunParCheckAll()
