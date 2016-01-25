@@ -57,6 +57,9 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+build_triplet = @build@
+host_triplet = @host@
+target_triplet = @target@
 bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_PAR2_TRUE@am__append_1 = \
 @WITH_PAR2_TRUE@	lib/par2/commandline.cpp \
@@ -120,13 +123,13 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	-I$(srcdir)/lib/catch \
 @WITH_TESTS_TRUE@	-I$(srcdir)/tests/suite
 
-subdir = .
 DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
 	$(dist_exampleconf_DATA) $(nobase_dist_scripts_SCRIPTS) \
 	$(nobase_dist_webui_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/configure COPYING ChangeLog posix/depcomp \
-	posix/install-sh posix/missing
+	$(top_srcdir)/configure COPYING ChangeLog posix/config.guess \
+	posix/config.sub posix/depcomp posix/install-sh posix/missing
+subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -399,13 +402,21 @@ am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
 bindir = @bindir@
+build = @build@
 build_alias = @build_alias@
+build_cpu = @build_cpu@
+build_os = @build_os@
+build_vendor = @build_vendor@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+host = @host@
 host_alias = @host_alias@
+host_cpu = @host_cpu@
+host_os = @host_os@
+host_vendor = @host_vendor@
 htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
@@ -428,7 +439,11 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
+target = @target@
 target_alias = @target_alias@
+target_cpu = @target_cpu@
+target_os = @target_os@
+target_vendor = @target_vendor@
 nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TlsSocket.cpp \
 	daemon/connect/TlsSocket.h daemon/connect/WebDownloader.cpp \

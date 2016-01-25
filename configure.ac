@@ -25,6 +25,7 @@
 AC_PREREQ(2.59)
 AC_INIT(nzbget, 17.0-testing, hugbug@users.sourceforge.net)
 AC_CONFIG_AUX_DIR(posix)
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
