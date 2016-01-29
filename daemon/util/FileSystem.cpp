@@ -486,10 +486,13 @@ bool FileSystem::DirectoryExists(const char* dirFilename)
 #ifdef WIN32
 	WIN32_FIND_DATAW findData;
 	// extra "\*" needed for network shares
-	HANDLE handle = FindFirstFileW(UtfPathToWidePath(BString<1024>("%s\\*", dirFilename)), &findData);
+	HANDLE handle = FindFirstFileW(UtfPathToWidePath(
+		BString<1024>(dirFilename && dirFilename[strlen(dirFilename) - 1] == PATH_SEPARATOR ? "%s*" : "%s\\*", dirFilename)),
+		&findData);
 	if (handle != INVALID_HANDLE_VALUE)
 	{
-		bool exists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+		bool exists = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) ||
+			(strlen(dirFilename) == 3 && dirFilename[1] == ':');
 		FindClose(handle);
 		return exists;
 	}
