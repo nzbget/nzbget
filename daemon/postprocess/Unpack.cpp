@@ -60,6 +60,7 @@ void UnpackController::Run()
 	DownloadQueue::Lock();
 
 	m_destDir = m_postInfo->GetNzbInfo()->GetDestDir();
+	m_finalDir = m_postInfo->GetNzbInfo()->GetFinalDir();
 	m_name = m_postInfo->GetNzbInfo()->GetName();
 	m_cleanedUpDisk = false;
 	m_finalDirCreated = false;
@@ -590,19 +591,25 @@ void UnpackController::RequestParCheck(bool forceRepair)
 
 void UnpackController::CreateUnpackDir()
 {
-	m_interDir = !Util::EmptyStr(g_Options->GetInterDir()) &&
-		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
-		m_destDir[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
-	if (m_interDir)
+	const char* destDir = m_destDir;
+
+	bool useInterDir = !Util::EmptyStr(g_Options->GetInterDir()) &&
+		!strncmp(m_postInfo->GetNzbInfo()->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
+		m_postInfo->GetNzbInfo()->GetDestDir()[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
+
+	if (useInterDir && m_finalDir.Empty())
 	{
 		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
-		m_unpackDir.Format("%s%c%s", *m_finalDir, PATH_SEPARATOR, "_unpack");
+
+		DownloadQueue::Lock();
+		m_postInfo->GetNzbInfo()->SetFinalDir(m_finalDir);
+		DownloadQueue::Unlock();
+
+		destDir = m_finalDir;
 		m_finalDirCreated = !FileSystem::DirectoryExists(m_finalDir);
 	}
-	else
-	{
-		m_unpackDir.Format("%s%c%s", *m_destDir, PATH_SEPARATOR, "_unpack");
-	}
+
+	m_unpackDir.Format("%s%c%s", destDir, PATH_SEPARATOR, "_unpack");
 
 	CString errmsg;
 	if (!FileSystem::ForceDirectories(m_unpackDir, errmsg))
@@ -610,7 +617,6 @@ void UnpackController::CreateUnpackDir()
 		PrintMessage(Message::mkError, "Could not create directory %s: %s", *m_unpackDir, *errmsg);
 	}
 }
-
 
 void UnpackController::CheckArchiveFiles(bool scanNonStdFiles)
 {

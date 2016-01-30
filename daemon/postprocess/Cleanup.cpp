@@ -53,9 +53,14 @@ void MoveController::Run()
 	SetInfoName(infoName);
 
 	m_interDir = m_postInfo->GetNzbInfo()->GetDestDir();
-	m_destDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
+	m_destDir = m_postInfo->GetNzbInfo()->GetFinalDir();
 
 	DownloadQueue::Unlock();
+
+	if (m_destDir.Empty())
+	{
+		m_destDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
+	}
 
 	PrintMessage(Message::mkInfo, "Moving completed files for %s", *nzbName);
 
@@ -69,6 +74,7 @@ void MoveController::Run()
 		// save new dest dir
 		DownloadQueue::Lock();
 		m_postInfo->GetNzbInfo()->SetDestDir(m_destDir);
+		m_postInfo->GetNzbInfo()->SetFinalDir("");
 		m_postInfo->GetNzbInfo()->SetMoveStatus(NzbInfo::msSuccess);
 		DownloadQueue::Unlock();
 	}
@@ -147,31 +153,20 @@ void CleanupController::Run()
 	BString<1024> infoName("cleanup for %s", m_postInfo->GetNzbInfo()->GetName());
 	SetInfoName(infoName);
 
-	m_destDir = m_postInfo->GetNzbInfo()->GetDestDir();
-
-	bool interDir = !Util::EmptyStr(g_Options->GetInterDir()) &&
-		!strncmp(m_destDir, g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
-		m_destDir[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
-	if (interDir)
-	{
-		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
-	}
-	else
-	{
-		m_finalDir = "";
-	}
+	CString destDir = m_postInfo->GetNzbInfo()->GetDestDir();
+	CString finalDir = m_postInfo->GetNzbInfo()->GetFinalDir();
 
 	DownloadQueue::Unlock();
 
 	PrintMessage(Message::mkInfo, "Cleaning up %s", *nzbName);
 
 	bool deleted = false;
-	bool ok = Cleanup(m_destDir, &deleted);
+	bool ok = Cleanup(destDir, &deleted);
 
-	if (ok && m_finalDir[0] != '\0')
+	if (ok && !finalDir.Empty())
 	{
 		bool deleted2 = false;
-		ok = Cleanup(m_finalDir, &deleted2);
+		ok = Cleanup(finalDir, &deleted2);
 		deleted = deleted || deleted2;
 	}
 

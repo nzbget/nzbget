@@ -860,6 +860,9 @@ void WinConsole::ShowCategoryDir(int catIndex)
 	if (!Util::EmptyStr(category.GetDestDir()))
 	{
 		destDir = category.GetDestDir();
+		// Taking the first path from the list
+		if (char* p = strchr(destDir, ';')) *p = '\0';
+		if (char* p = strchr(destDir, ',')) *p = '\0';
 	}
 	else
 	{

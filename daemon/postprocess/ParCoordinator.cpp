@@ -309,11 +309,10 @@ void ParCoordinator::StartParRenameJob(PostInfo* postInfo)
 {
 	const char* destDir = postInfo->GetNzbInfo()->GetDestDir();
 
-	CString finalDir;
-	if (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess)
+	if (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
+		!Util::EmptyStr(postInfo->GetNzbInfo()->GetFinalDir()))
 	{
-		finalDir = postInfo->GetNzbInfo()->BuildFinalDirName();
-		destDir = finalDir;
+		destDir = postInfo->GetNzbInfo()->GetFinalDir();
 	}
 
 	m_currentJob = jkParRename;

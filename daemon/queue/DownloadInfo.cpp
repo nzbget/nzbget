@@ -324,33 +324,47 @@ CString NzbInfo::MakeNiceUrlName(const char* urlStr, const char* nzbFilename)
 
 void NzbInfo::BuildDestDirName()
 {
-	CString destDir;
-
 	if (Util::EmptyStr(g_Options->GetInterDir()))
 	{
-		destDir = BuildFinalDirName();
+		m_destDir = BuildFinalDirName();
 	}
 	else
 	{
-		destDir.Format("%s%c%s.#%i", g_Options->GetInterDir(), PATH_SEPARATOR, GetName(), GetId());
+		m_destDir.Format("%s%c%s.#%i", g_Options->GetInterDir(), PATH_SEPARATOR, GetName(), GetId());
 	}
-
-	SetDestDir(destDir);
 }
 
 CString NzbInfo::BuildFinalDirName()
 {
 	CString finalDir = g_Options->GetDestDir();
-	bool useCategory = !Util::EmptyStr(m_category);
+	bool useCategory = !m_category.Empty();
 
 	if (useCategory)
 	{
-		Options::Category *category = g_Options->FindCategory(m_category, false);
+		Options::Category* category = g_Options->FindCategory(m_category, false);
 		if (category && !Util::EmptyStr(category->GetDestDir()))
 		{
 			finalDir = category->GetDestDir();
 			useCategory = false;
 		}
+	}
+
+	if (strchr(finalDir, ';') || strchr(finalDir, ','))
+	{
+		// Choose path with max free size
+		struct PathInfo { CString path; int64 freeSize; };
+		std::vector<PathInfo> paths;
+		Tokenizer tok(finalDir, ";,", true);
+		while (const char* path = tok.Next())
+		{
+			paths.push_back(PathInfo({path, FileSystem::FreeDiskSize(path)}));
+		}
+		std::sort(paths.begin(), paths.end(),
+			[](PathInfo& a, PathInfo& b)
+			{
+				return a.freeSize >= b.freeSize;
+			});
+		finalDir = std::move(paths.front().path);
 	}
 
 	if (g_Options->GetAppendCategoryDir() && useCategory)

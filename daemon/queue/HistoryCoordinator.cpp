@@ -408,6 +408,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 			nzbInfo->SetMoveStatus(NzbInfo::msNone);
 		}
 		nzbInfo->SetReprocess(reprocess);
+		nzbInfo->SetFinalDir("");
 	}
 
 	if (historyInfo->GetKind() == HistoryInfo::hkUrl)
