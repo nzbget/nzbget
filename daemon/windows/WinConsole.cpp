@@ -354,7 +354,11 @@ void WinConsole::ShowMenu()
 			break;
 
 		case ID_SHOW_DESTDIR:
-			ShowInExplorer(g_Options->GetDestDir());
+			CString firstDestDir = g_Options->GetDestDir();
+			// Taking the first path from the list
+			if (char* p = strpbrk(firstDestDir, ";,")) *p = '\0';
+
+			ShowInExplorer(firstDestDir);
 			break;
 
 		case ID_SHOW_INTERDIR:
@@ -861,14 +865,17 @@ void WinConsole::ShowCategoryDir(int catIndex)
 	{
 		destDir = category.GetDestDir();
 		// Taking the first path from the list
-		if (char* p = strchr(destDir, ';')) *p = '\0';
-		if (char* p = strchr(destDir, ',')) *p = '\0';
+		if (char* p = strpbrk(destDir, ";,")) *p = '\0';
 	}
 	else
 	{
+		BString<1024> firstDestDir = g_Options->GetDestDir();
+		// Taking the first path from the list
+		if (char* p = strpbrk(firstDestDir, ";,")) *p = '\0';
+
 		BString<1024> categoryDir = category.GetName();
 		FileSystem::MakeValidFilename(categoryDir, '_', true);
-		destDir.Format("%s%c%s", g_Options->GetDestDir(), PATH_SEPARATOR, *categoryDir);
+		destDir.Format("%s%c%s", firstDestDir, PATH_SEPARATOR, *categoryDir);
 	}
 
 	ShowInExplorer(destDir);

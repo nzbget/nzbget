@@ -1347,7 +1347,12 @@ void StatusXmlCommand::Execute()
 	Util::SplitInt64(allBytes, &downloadedSizeHi, &downloadedSizeLo);
 	int averageDownloadRate = (int)(downloadTimeSec > 0 ? allBytes / downloadTimeSec : 0);
 	uint32 freeDiskSpaceHi, freeDiskSpaceLo;
-	int64 freeDiskSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
+
+	CString firstDestDir = g_Options->GetDestDir();
+	// Taking the first path from the list
+	if (char* p = strpbrk(firstDestDir, ";,")) *p = '\0';
+	int64 freeDiskSpace = FileSystem::FreeDiskSize(firstDestDir);
+
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
 	int serverTime = Util::CurrentTime();

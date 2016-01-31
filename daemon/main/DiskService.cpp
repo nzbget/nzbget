@@ -60,10 +60,14 @@ void DiskService::ServiceWork()
 
 void DiskService::CheckDiskSpace()
 {
-	int64 freeSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
+	CString firstDestDir = g_Options->GetDestDir();
+	// Taking the first path from the list
+	if (char* p = strpbrk(firstDestDir, ";,")) *p = '\0';
+
+	int64 freeSpace = FileSystem::FreeDiskSize(firstDestDir);
 	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 	{
-		warn("Low disk space on %s. Pausing download", g_Options->GetDestDir());
+		warn("Low disk space on %s. Pausing download", *firstDestDir);
 		g_Options->SetPauseDownload(true);
 	}
 

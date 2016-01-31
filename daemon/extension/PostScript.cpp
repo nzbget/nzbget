@@ -38,7 +38,6 @@ void PostScriptController::StartJob(PostInfo* postInfo)
 {
 	PostScriptController* scriptController = new PostScriptController();
 	scriptController->m_postInfo = postInfo;
-	scriptController->SetWorkingDir(g_Options->GetDestDir());
 	scriptController->SetAutoDestroy(false);
 	scriptController->m_prefixLen = 0;
 

@@ -168,17 +168,10 @@ int main(int argc, char *argv[], char *argp[])
 
 void RunMain()
 {
-	// we need to save and later restore current directory each time
-	// the program is reloaded (RPC-Method "reload") in order for
-	// config to properly load in a case relative paths are used
-	// in command line
-	CString curDir = FileSystem::GetCurrentDirectory();
-
 	bool reload = false;
 	while (g_Reloading)
 	{
 		g_Reloading = false;
-		FileSystem::SetCurrentDirectory(curDir);
 		Run(reload);
 		reload = true;
 	}
@@ -890,9 +883,6 @@ void Daemonize()
 	int d = open("/dev/null", O_RDWR);
 	dup(d);
 	dup(d);
-
-	// change running directory
-	chdir(g_Options->GetDestDir());
 
 	// set up lock-file
 	int lfp = -1;
