@@ -60,6 +60,7 @@ public:
 	static void TrimRight(char* str);
 	static char* Trim(char* str);
 	static bool EmptyStr(const char* str) { return !str || !*str; }
+	static std::vector<CString> SplitStr(const char* str, const char* separators);
 
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
 	static char* ReduceStr(char* str, const char* from, const char* to);

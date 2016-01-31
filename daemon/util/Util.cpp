@@ -424,6 +424,17 @@ char* Util::ReduceStr(char* str, const char* from, const char* to)
 	return str;
 }
 
+std::vector<CString> Util::SplitStr(const char* str, const char* separators)
+{
+	std::vector<CString> result;
+	Tokenizer tok(str, separators);
+	while (const char* substr = tok.Next())
+	{
+		result.emplace_back(substr);
+	}
+	return result;
+}
+
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */
