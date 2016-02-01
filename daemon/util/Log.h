@@ -113,7 +113,7 @@ private:
 #ifdef HAVE_VARIADIC_MACROS
 	friend void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...);
 #else
-	friend void debug(const char* msg, ...) PRINTF_SYNTAX(2);
+	friend void debug(const char* msg, ...);
 #endif
 #endif
 
