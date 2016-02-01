@@ -213,7 +213,18 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 	}
 	else
 	{
-		ScriptController::AddMessage(kind, text);
+		DownloadQueue* downloadQueue = DownloadQueue::Lock();
+		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
+		if (nzbInfo)
+		{
+			nzbInfo->AddMessage(kind, text);
+		}
+		DownloadQueue::Unlock();
+
+		if (!nzbInfo)
+		{
+			ScriptController::AddMessage(kind, text);
+		}
 	}
 }
 
