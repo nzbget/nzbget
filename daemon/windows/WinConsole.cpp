@@ -354,12 +354,14 @@ void WinConsole::ShowMenu()
 			break;
 
 		case ID_SHOW_DESTDIR:
-			CString firstDestDir = g_Options->GetDestDir();
-			// Taking the first path from the list
-			if (char* p = strpbrk(firstDestDir, ";,")) *p = '\0';
+			{
+				CString firstDestDir = g_Options->GetDestDir();
+				// Taking the first path from the list
+				if (char* p = strpbrk(firstDestDir, ";,")) *p = '\0';
 
-			ShowInExplorer(firstDestDir);
-			break;
+				ShowInExplorer(firstDestDir);
+				break;
+			}
 
 		case ID_SHOW_INTERDIR:
 			ShowInExplorer(g_Options->GetInterDir());
