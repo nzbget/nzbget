@@ -192,6 +192,17 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 				error("Invalid command \"%s\" received from %s", msgText, GetInfoName());
 			}
 		}
+		else if (!strncmp(msgText + 6, "DIRECTORY=", 10) &&
+			m_event == QueueScriptCoordinator::qeNzbDownloaded)
+		{
+			DownloadQueue* downloadQueue = DownloadQueue::Lock();
+			NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
+			if (nzbInfo)
+			{
+				nzbInfo->SetFinalDir(msgText + 6 + 10);
+			}
+			DownloadQueue::Unlock();
+		}
 		else if (!strncmp(msgText + 6, "MARK=BAD", 8))
 		{
 			m_markBad = true;
