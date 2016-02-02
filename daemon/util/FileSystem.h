@@ -59,7 +59,6 @@ public:
 	static bool SetCurrentDirectory(const char* dirFilename);
 	static int64 FileSize(const char* filename);
 	static int64 FreeDiskSize(const char* path);
-	static int64 FreeDiskSize(std::vector<CString> paths);
 	static bool DirEmpty(const char* dirFilename);
 	static bool RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, CString& newName);
 #ifndef WIN32

@@ -349,24 +349,6 @@ CString NzbInfo::BuildFinalDirName()
 		}
 	}
 
-	if (strchr(finalDir, ';') || strchr(finalDir, ','))
-	{
-		// Choose path with max free size
-		struct PathInfo { CString path; int64 freeSize; };
-		std::vector<PathInfo> paths;
-		Tokenizer tok(finalDir, ";,", true);
-		while (const char* path = tok.Next())
-		{
-			paths.push_back(PathInfo({path, FileSystem::FreeDiskSize(path)}));
-		}
-		std::sort(paths.begin(), paths.end(),
-			[](PathInfo& a, PathInfo& b)
-			{
-				return a.freeSize >= b.freeSize;
-			});
-		finalDir = std::move(paths.front().path);
-	}
-
 	if (g_Options->GetAppendCategoryDir() && useCategory)
 	{
 		BString<1024> categoryDir;

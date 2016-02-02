@@ -597,16 +597,6 @@ int64 FileSystem::FreeDiskSize(const char* path)
 	return -1;
 }
 
-int64 FileSystem::FreeDiskSize(std::vector<CString> paths)
-{
-	int64 total = 0;
-	for (CString& path : paths)
-	{
-		total += FreeDiskSize(path);
-	}
-	return total;
-}
-
 bool FileSystem::RenameBak(const char* filename, const char* bakPart, bool removeOldExtension, CString& newName)
 {
 	BString<1024> changedFilename;
