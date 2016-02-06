@@ -409,22 +409,22 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 
 	info("Adding collection %s to queue", basename);
 
-	NzbFile* nzbFile = new NzbFile(filename, category);
-	bool ok = nzbFile->Parse();
+	NzbFile nzbFile(filename, category);
+	bool ok = nzbFile.Parse();
 	if (!ok)
 	{
 		error("Could not add collection %s to queue", basename);
 	}
 
 	CString bakname2;
-	if (!FileSystem::RenameBak(filename, nzbFile ? "queued" : "error", false, bakname2))
+	if (!FileSystem::RenameBak(filename, ok ? "queued" : "error", false, bakname2))
 	{
 		ok = false;
 		error("Could not rename file %s to %s: %s", filename, *bakname2,
 			*FileSystem::GetLastErrorMessage());
 	}
 
-	NzbInfo* nzbInfo = nzbFile->GetNzbInfo();
+	NzbInfo* nzbInfo = nzbFile.GetNzbInfo();
 	nzbInfo->SetQueuedFilename(bakname2);
 
 	if (nzbName && strlen(nzbName) > 0)
@@ -445,9 +445,9 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 		nzbInfo->SetFeedId(urlInfo->GetFeedId());
 	}
 
-	if (nzbFile->GetPassword())
+	if (nzbFile.GetPassword())
 	{
-		nzbInfo->GetParameters()->SetParameter("*Unpack:Password", nzbFile->GetPassword());
+		nzbInfo->GetParameters()->SetParameter("*Unpack:Password", nzbFile.GetPassword());
 	}
 
 	nzbInfo->GetParameters()->CopyFrom(parameters);
@@ -459,20 +459,18 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 
 	if (ok)
 	{
-		g_QueueCoordinator->AddNzbFileToQueue(nzbFile, urlInfo, addTop);
+		g_QueueCoordinator->AddNzbFileToQueue(&nzbFile, urlInfo, addTop);
 	}
 	else if (!urlInfo)
 	{
-		nzbFile->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsScan);
-		g_QueueCoordinator->AddNzbFileToQueue(nzbFile, urlInfo, addTop);
+		nzbFile.GetNzbInfo()->SetDeleteStatus(NzbInfo::dsScan);
+		g_QueueCoordinator->AddNzbFileToQueue(&nzbFile, urlInfo, addTop);
 	}
 
 	if (nzbId)
 	{
 		*nzbId = nzbInfo->GetId();
 	}
-
-	delete nzbFile;
 
 	return ok;
 }

@@ -309,25 +309,23 @@ void UpdateInfoScriptController::ExecuteScript(const char* script, char** update
 {
 	detail("Executing update-info-script %s", FileSystem::BaseFileName(script));
 
-	UpdateInfoScriptController* scriptController = new UpdateInfoScriptController();
-	scriptController->SetScript(script);
+	UpdateInfoScriptController scriptController;
+	scriptController.SetScript(script);
 
 	BString<1024> infoName("update-info-script %s", FileSystem::BaseFileName(script));
-	scriptController->SetInfoName(infoName);
+	scriptController.SetInfoName(infoName);
 
 	BString<1024> logPrefix = FileSystem::BaseFileName(script);
 	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
-	scriptController->SetLogPrefix(logPrefix);
-	scriptController->m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
+	scriptController.SetLogPrefix(logPrefix);
+	scriptController.m_prefixLen = strlen(logPrefix) + 2; // 2 = strlen(": ");
 
-	scriptController->Execute();
+	scriptController.Execute();
 
-	if (!scriptController->m_updateInfo.Empty())
+	if (!scriptController.m_updateInfo.Empty())
 	{
-		*updateInfo = strdup(scriptController->m_updateInfo);
+		*updateInfo = strdup(scriptController.m_updateInfo);
 	}
-
-	delete scriptController;
 }
 
 void UpdateInfoScriptController::AddMessage(Message::EKind kind, const char* text)

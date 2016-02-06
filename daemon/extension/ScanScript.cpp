@@ -35,25 +35,22 @@ void ScanScriptController::ExecuteScripts(const char* nzbFilename,
 	int* priority, NzbParameterList* parameters, bool* addTop, bool* addPaused,
 	CString* dupeKey, int* dupeScore, EDupeMode* dupeMode)
 {
-	ScanScriptController* scriptController = new ScanScriptController();
+	ScanScriptController scriptController;
+	scriptController.m_nzbFilename = nzbFilename;
+	scriptController.m_url = url;
+	scriptController.m_directory = directory;
+	scriptController.m_nzbName = nzbName;
+	scriptController.m_category = category;
+	scriptController.m_parameters = parameters;
+	scriptController.m_priority = priority;
+	scriptController.m_addTop = addTop;
+	scriptController.m_addPaused = addPaused;
+	scriptController.m_dupeKey = dupeKey;
+	scriptController.m_dupeScore = dupeScore;
+	scriptController.m_dupeMode = dupeMode;
+	scriptController.m_prefixLen = 0;
 
-	scriptController->m_nzbFilename = nzbFilename;
-	scriptController->m_url = url;
-	scriptController->m_directory = directory;
-	scriptController->m_nzbName = nzbName;
-	scriptController->m_category = category;
-	scriptController->m_parameters = parameters;
-	scriptController->m_priority = priority;
-	scriptController->m_addTop = addTop;
-	scriptController->m_addPaused = addPaused;
-	scriptController->m_dupeKey = dupeKey;
-	scriptController->m_dupeScore = dupeScore;
-	scriptController->m_dupeMode = dupeMode;
-	scriptController->m_prefixLen = 0;
-
-	scriptController->ExecuteScriptList(g_Options->GetScanScript());
-
-	delete scriptController;
+	scriptController.ExecuteScriptList(g_Options->GetScanScript());
 }
 
 void ScanScriptController::ExecuteScript(ScriptConfig::Script* script)

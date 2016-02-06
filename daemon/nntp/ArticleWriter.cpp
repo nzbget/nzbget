@@ -921,11 +921,10 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 
 	if (m_fileInfo)
 	{
-		ArticleWriter* articleWriter = new ArticleWriter();
-		articleWriter->SetFileInfo(m_fileInfo);
-		articleWriter->SetInfoName(infoName);
-		articleWriter->FlushCache();
-		delete articleWriter;
+		ArticleWriter articleWriter;
+		articleWriter.SetFileInfo(m_fileInfo);
+		articleWriter.SetInfoName(infoName);
+		articleWriter.FlushCache();
 		m_fileInfo = nullptr;
 		return true;
 	}

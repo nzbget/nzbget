@@ -31,14 +31,11 @@
 
 void FeedScriptController::ExecuteScripts(const char* feedScript, const char* feedFile, int feedId)
 {
-	FeedScriptController* scriptController = new FeedScriptController();
+	FeedScriptController scriptController;
+	scriptController.m_feedFile = feedFile;
+	scriptController.m_feedId = feedId;
 
-	scriptController->m_feedFile = feedFile;
-	scriptController->m_feedId = feedId;
-
-	scriptController->ExecuteScriptList(feedScript);
-
-	delete scriptController;
+	scriptController.ExecuteScriptList(feedScript);
 }
 
 void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)

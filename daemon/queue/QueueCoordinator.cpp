@@ -160,12 +160,11 @@ void QueueCoordinator::Load()
 				{
 					if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
 					{
-						FileInfo* fileInfo = new FileInfo(completedFile.GetId());
-						if (g_DiskState->LoadFileState(fileInfo, g_ServerPool->GetServers(), false))
+						FileInfo fileInfo(completedFile.GetId());
+						if (g_DiskState->LoadFileState(&fileInfo, g_ServerPool->GetServers(), false))
 						{
-							g_DiskState->SaveFileState(fileInfo, true);
+							g_DiskState->SaveFileState(&fileInfo, true);
 						}
-						delete fileInfo;
 					}
 				}
 			}

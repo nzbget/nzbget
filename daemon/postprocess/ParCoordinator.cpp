@@ -97,21 +97,18 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 	if (completedFile->GetStatus() == CompletedFile::cfPartial && completedFile->GetId() > 0 &&
 		!m_postInfo->GetNzbInfo()->GetReprocess())
 	{
-		FileInfo* tmpFileInfo = new FileInfo(completedFile->GetId());
+		FileInfo tmpFileInfo(completedFile->GetId());
 
-		if (!g_DiskState->LoadFileState(tmpFileInfo, nullptr, true))
+		if (!g_DiskState->LoadFileState(&tmpFileInfo, nullptr, true))
 		{
-			delete tmpFileInfo;
 			return ParChecker::fsUnknown;
 		}
 
-		for (ArticleInfo* pa : tmpFileInfo->GetArticles())
+		for (ArticleInfo* pa : tmpFileInfo.GetArticles())
 		{
 			segments->emplace_back(pa->GetStatus() == ArticleInfo::aiFinished,
 				pa->GetSegmentOffset(), pa->GetSegmentSize(), pa->GetCrc());
 		}
-
-		delete tmpFileInfo;
 	}
 
 	return completedFile->GetStatus() == CompletedFile::cfSuccess ? ParChecker::fsSuccess :

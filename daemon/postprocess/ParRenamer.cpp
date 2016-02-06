@@ -119,9 +119,9 @@ void ParRenamer::BuildDirList(const char* destDir)
 {
 	m_dirList.push_back(destDir);
 
-	DirBrowser* dirBrowser = new DirBrowser(destDir);
+	DirBrowser dirBrowser(destDir);
 
-	while (const char* filename = dirBrowser->Next())
+	while (const char* filename = dirBrowser.Next())
 	{
 		if (!m_cancelled)
 		{
@@ -136,8 +136,6 @@ void ParRenamer::BuildDirList(const char* destDir)
 			}
 		}
 	}
-
-	delete dirBrowser;
 }
 
 void ParRenamer::LoadParFiles(const char* destDir)
@@ -154,16 +152,15 @@ void ParRenamer::LoadParFiles(const char* destDir)
 
 void ParRenamer::LoadParFile(const char* parFilename)
 {
-	ParRenamerRepairer* repairer = new ParRenamerRepairer();
+	ParRenamerRepairer repairer;
 
-	if (!repairer->LoadPacketsFromFile(parFilename))
+	if (!repairer.LoadPacketsFromFile(parFilename))
 	{
 		PrintMessage(Message::mkWarning, "Could not load par2-file %s", parFilename);
-		delete repairer;
 		return;
 	}
 
-	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer->sourcefilemap)
+	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer.sourcefilemap)
 	{
 		if (m_cancelled)
 		{
@@ -180,8 +177,6 @@ void ParRenamer::LoadParFile(const char* parFilename)
 			sourceFile->GetDescriptionPacket()->Hash16k().print().c_str());
 		RegisterParredFile(sourceFile->GetDescriptionPacket()->FileName().c_str());
 	}
-
-	delete repairer;
 }
 
 void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
