@@ -168,10 +168,6 @@ Connection::~Connection()
 	debug("Destroying Connection");
 
 	Disconnect();
-
-#ifndef DISABLE_TLS
-	delete m_tlsSocket;
-#endif
 }
 
 void Connection::SetSuppressErrors(bool suppressErrors)
@@ -911,8 +907,7 @@ bool Connection::StartTls(bool isClient, const char* certFile, const char* keyFi
 {
 	debug("Starting TLS");
 
-	delete m_tlsSocket;
-	m_tlsSocket = new ConTlsSocket(m_socket, isClient, certFile, keyFile, m_cipher, this);
+	m_tlsSocket = std::make_unique<ConTlsSocket>(m_socket, isClient, certFile, keyFile, m_cipher, this);
 	m_tlsSocket->SetSuppressErrors(m_suppressErrors);
 
 	return m_tlsSocket->Start();
@@ -923,8 +918,7 @@ void Connection::CloseTls()
 	if (m_tlsSocket)
 	{
 		m_tlsSocket->Close();
-		delete m_tlsSocket;
-		m_tlsSocket = nullptr;
+		m_tlsSocket.reset();
 	}
 }
 

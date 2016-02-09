@@ -35,13 +35,7 @@ FeedFilter::Term::Term()
 	m_float = false;
 	m_intParam = 0;
 	m_floatParam = 0.0;
-	m_regEx = nullptr;
 	m_refValues = nullptr;
-}
-
-FeedFilter::Term::~Term()
-{
-	delete m_regEx;
 }
 
 bool FeedFilter::Term::Match(FeedItemInfo& feedItemInfo)
@@ -185,13 +179,13 @@ bool FeedFilter::Term::MatchRegex(const char* strValue)
 {
 	if (!m_regEx)
 	{
-		m_regEx = new RegEx(m_param, m_refValues == nullptr ? 0 : 100);
+		m_regEx = std::make_unique<RegEx>(m_param, m_refValues == nullptr ? 0 : 100);
 	}
 
 	bool found = m_regEx->Match(strValue);
 	if (found)
 	{
-		FillRegExRefValues(strValue, m_regEx);
+		FillRegExRefValues(strValue, m_regEx.get());
 	}
 	return found;
 }

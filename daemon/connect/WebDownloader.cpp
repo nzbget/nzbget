@@ -246,7 +246,7 @@ WebDownloader::EStatus WebDownloader::CreateConnection(URL *url)
 
 	bool tls = !strcasecmp(url->GetProtocol(), "https");
 
-	m_connection = new Connection(url->GetHost(), port, tls);
+	m_connection = std::make_unique<Connection>(url->GetHost(), port, tls);
 
 	return adRunning;
 }
@@ -347,10 +347,10 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 	int writtenLen = 0;
 
 #ifndef DISABLE_GZIP
-	m_gUnzipStream = nullptr;
+	m_gUnzipStream.reset();
 	if (m_gzip)
 	{
-		m_gUnzipStream = new GUnzipStream(1024*10);
+		m_gUnzipStream = std::make_unique<GUnzipStream>(1024*10);
 	}
 #endif
 
@@ -402,7 +402,7 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 	}
 
 #ifndef DISABLE_GZIP
-	delete m_gUnzipStream;
+	m_gUnzipStream.reset();
 #endif
 
 	m_outFile.Close();
@@ -661,7 +661,7 @@ void WebDownloader::Stop()
 
 bool WebDownloader::Terminate()
 {
-	Connection* connection = m_connection;
+	std::unique_ptr<Connection> connection = std::move(m_connection);
 	bool terminated = Kill();
 	if (terminated && connection)
 	{
@@ -669,7 +669,7 @@ bool WebDownloader::Terminate()
 		connection->SetSuppressErrors(true);
 		connection->Cancel();
 		connection->Disconnect();
-		delete connection;
+		connection.reset();
 	}
 	return terminated;
 }
@@ -684,8 +684,7 @@ void WebDownloader::FreeConnection()
 		{
 			m_connection->Disconnect();
 		}
-		delete m_connection;
-		m_connection = nullptr;
+		m_connection.reset();
 		m_connectionMutex.Unlock();
 	}
 }

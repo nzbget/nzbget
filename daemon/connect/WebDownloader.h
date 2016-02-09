@@ -52,7 +52,7 @@ public:
 private:
 	CString				m_url;
 	CString				m_outputFilename;
-	Connection* 		m_connection;
+	std::unique_ptr<Connection>		m_connection;
 	Mutex			 	m_connectionMutex;
 	EStatus				m_status;
 	time_t				m_lastUpdateTime;
@@ -67,7 +67,7 @@ private:
 	bool				m_gzip;
 	bool				m_retry;
 #ifndef DISABLE_GZIP
-	GUnzipStream*		m_gUnzipStream;
+	std::unique_ptr<GUnzipStream>	m_gUnzipStream;
 #endif
 
 	void				SetStatus(EStatus status);

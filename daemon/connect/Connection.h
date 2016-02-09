@@ -88,8 +88,8 @@ protected:
 							TlsSocket(socket, isClient, certFile, keyFile, cipher), m_owner(owner) {}
 	};
 
-	ConTlsSocket*		m_tlsSocket;
-	bool				m_tlsError;
+	std::unique_ptr<ConTlsSocket>	m_tlsSocket;
+	bool							m_tlsError;
 #endif
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R

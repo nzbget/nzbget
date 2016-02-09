@@ -60,7 +60,7 @@ private:
 		int64			m_intParam;
 		double			m_floatParam;
 		bool			m_float;
-		RegEx*			m_regEx;
+		std::unique_ptr<RegEx>		m_regEx;
 		RefValues*		m_refValues;
 
 		bool			GetFieldData(const char* field, FeedItemInfo* feedItemInfo,
@@ -78,7 +78,6 @@ private:
 	public:
 						Term();
 						Term(Term&&) = delete; // catch performance issues
-						~Term();
 		void			SetRefValues(RefValues* refValues) { m_refValues = refValues; }
 		bool			Compile(char* token);
 		bool			Match(FeedItemInfo& feedItemInfo);

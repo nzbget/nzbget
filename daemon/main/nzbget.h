@@ -199,6 +199,7 @@ using namespace MSXML;
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 #ifdef HAVE_LIBGNUTLS
 #include <gnutls/gnutls.h>

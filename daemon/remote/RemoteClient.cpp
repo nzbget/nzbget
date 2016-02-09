@@ -32,32 +32,6 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-RemoteClient::RemoteClient()
-{
-	m_connection	= nullptr;
-	m_verbose		= true;
-
-	/*
-	printf("sizeof(SNZBRequestBase)=%i\n", sizeof(SNZBRequestBase));
-	printf("sizeof(SNZBDownloadRequest)=%i\n", sizeof(SNZBDownloadRequest));
-	printf("sizeof(SNZBListRequest)=%i\n", sizeof(SNZBListRequest));
-	printf("sizeof(SNZBListResponse)=%i\n", sizeof(SNZBListResponse));
-	printf("sizeof(SNZBListResponseFileEntry)=%i\n", sizeof(SNZBListResponseFileEntry));
-	printf("sizeof(SNZBLogRequest)=%i\n", sizeof(SNZBLogRequest));
-	printf("sizeof(SNZBLogResponse)=%i\n", sizeof(SNZBLogResponse));
-	printf("sizeof(SNZBLogResponseEntry)=%i\n", sizeof(SNZBLogResponseEntry));
-	printf("sizeof(SNZBPauseUnpauseRequest)=%i\n", sizeof(SNZBPauseUnpauseRequest));
-	printf("sizeof(SNZBSetDownloadRateRequest)=%i\n", sizeof(SNZBSetDownloadRateRequest));
-	printf("sizeof(SNZBEditQueueRequest)=%i\n", sizeof(SNZBEditQueueRequest));
-	printf("sizeof(SNZBDumpDebugRequest)=%i\n", sizeof(SNZBDumpDebugRequest));
-	*/
-}
-
-RemoteClient::~RemoteClient()
-{
-	delete m_connection;
-}
-
 void RemoteClient::printf(const char * msg,...)
 {
 	if (m_verbose)
@@ -82,7 +56,7 @@ bool RemoteClient::InitConnection()
 	const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
 
 	// Create a connection to the server
-	m_connection = new Connection(controlIp, g_Options->GetControlPort(), false);
+	m_connection = std::make_unique<Connection>(controlIp, g_Options->GetControlPort(), false);
 
 	bool OK = m_connection->Connect();
 	if (!OK)

@@ -47,8 +47,8 @@ private:
 		bool		m_match;
 	};
 
-	Connection* 	m_connection;
-	bool			m_verbose;
+	std::unique_ptr<Connection>		m_connection;
+	bool			m_verbose = true;
 
 	bool			InitConnection();
 	void			InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
@@ -57,8 +57,6 @@ private:
 	void			perror(const char* msg);
 
 public:
-					RemoteClient();
-					~RemoteClient();
 	void			SetVerbose(bool verbose) { m_verbose = verbose; };
 	bool 			RequestServerDownload(const char* nzbFilename, const char* nzbContent, const char* category,
 						bool addFirst, bool addPaused, int priority,
