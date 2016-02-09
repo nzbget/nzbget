@@ -459,18 +459,17 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 		return;
 	}
 
-	NzbFile* nzbFile = new NzbFile(nzbInfo->GetQueuedFilename(), "");
-	if (!nzbFile->Parse())
+	NzbFile nzbFile(nzbInfo->GetQueuedFilename(), "");
+	if (!nzbFile.Parse())
 	{
 		error("Could not return %s from history back to queue: could not parse nzb-file",
 			nzbInfo->GetName());
-		delete nzbFile;
 		return;
 	}
 
 	info("Returning %s from history back to queue", nzbInfo->GetName());
 
-	for (FileInfo* fileInfo : nzbFile->GetNzbInfo()->GetFileList())
+	for (FileInfo* fileInfo : nzbFile.GetNzbInfo()->GetFileList())
 	{
 		fileInfo->SetPaused(paused);
 	}
@@ -514,10 +513,9 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->GetServerStats()->clear();
 	nzbInfo->GetCurrentServerStats()->clear();
 
-	nzbInfo->CopyFileList(nzbFile->GetNzbInfo());
+	nzbInfo->CopyFileList(nzbFile.GetNzbInfo());
 
 	g_QueueCoordinator->CheckDupeFileInfos(nzbInfo);
-	delete nzbFile;
 
 	HistoryReturn(downloadQueue, itHistory, historyInfo, false);
 

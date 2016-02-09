@@ -329,16 +329,14 @@ void Run(bool reload)
 		if (!g_CommandLineParser->GetServerMode())
 		{
 			const char* category = g_CommandLineParser->GetAddCategory() ? g_CommandLineParser->GetAddCategory() : "";
-			NzbFile* nzbFile = new NzbFile(g_CommandLineParser->GetArgFilename(), category);
-			if (!nzbFile->Parse())
+			NzbFile nzbFile(g_CommandLineParser->GetArgFilename(), category);
+			if (!nzbFile.Parse())
 			{
 				printf("Parsing NZB-document %s failed\n\n", g_CommandLineParser->GetArgFilename() ? g_CommandLineParser->GetArgFilename() : "N/A");
-				delete nzbFile;
 				return;
 			}
-			g_Scanner->InitPPParameters(category, nzbFile->GetNzbInfo()->GetParameters(), false);
-			g_QueueCoordinator->AddNzbFileToQueue(nzbFile, nullptr, false);
-			delete nzbFile;
+			g_Scanner->InitPPParameters(category, nzbFile.GetNzbInfo()->GetParameters(), false);
+			g_QueueCoordinator->AddNzbFileToQueue(&nzbFile, nullptr, false);
 		}
 
 		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
