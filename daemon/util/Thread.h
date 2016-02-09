@@ -42,7 +42,7 @@ public:
 class Thread
 {
 private:
-	static Mutex*			m_mutexThread;
+	static std::unique_ptr<Mutex>	m_threadMutex;
 	static int				m_threadCount;
 	void*	 				m_threadObj;
 	bool 					m_running;

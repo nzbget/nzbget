@@ -93,7 +93,7 @@ protected:
 #endif
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
-	static Mutex*		m_mutexGetHostByName;
+	static std::unique_ptr<Mutex>	m_getHostByNameMutex;
 #endif
 #endif
 

@@ -28,7 +28,7 @@
 #include "Thread.h"
 
 int Thread::m_threadCount = 1; // take the main program thread into account
-Mutex* Thread::m_mutexThread;
+std::unique_ptr<Mutex> Thread::m_threadMutex;
 
 
 Mutex::Mutex()
@@ -83,14 +83,14 @@ void Thread::Init()
 {
 	debug("Initializing global thread data");
 
-	m_mutexThread = new Mutex();
+	m_threadMutex = std::make_unique<Mutex>();
 }
 
 void Thread::Final()
 {
 	debug("Finalizing global thread data");
 
-	delete m_mutexThread;
+	m_threadMutex.reset();
 }
 
 Thread::Thread()
@@ -130,7 +130,7 @@ void Thread::Start()
 	// We lock mutex m_pMutexThread on calling pthread_create; the started thread
 	// then also try to lock the mutex (see thread_handler) and therefore
 	// must wait until we unlock it
-	m_mutexThread->Lock();
+	m_threadMutex->Lock();
 
 #ifdef WIN32
 	m_threadObj = (HANDLE)_beginthread(Thread::thread_handler, 0, (void *)this);
@@ -144,7 +144,7 @@ void Thread::Start()
 	pthread_attr_destroy(&m_attr);
 #endif
 
-	m_mutexThread->Unlock();
+	m_threadMutex->Unlock();
 }
 
 void Thread::Stop()
@@ -165,7 +165,7 @@ bool Thread::Kill()
 {
 	debug("Killing Thread");
 
-	m_mutexThread->Lock();
+	m_threadMutex->Lock();
 
 #ifdef WIN32
 	bool terminated = TerminateThread((HANDLE)m_threadObj, 0) != 0;
@@ -177,7 +177,7 @@ bool Thread::Kill()
 	{
 		m_threadCount--;
 	}
-	m_mutexThread->Unlock();
+	m_threadMutex->Unlock();
 	return terminated;
 }
 
@@ -187,9 +187,9 @@ void __cdecl Thread::thread_handler(void* object)
 void* Thread::thread_handler(void* object)
 #endif
 {
-	m_mutexThread->Lock();
+	m_threadMutex->Lock();
 	m_threadCount++;
-	m_mutexThread->Unlock();
+	m_threadMutex->Unlock();
 
 	debug("Entering Thread-func");
 
@@ -207,9 +207,9 @@ void* Thread::thread_handler(void* object)
 		delete thread;
 	}
 
-	m_mutexThread->Lock();
+	m_threadMutex->Lock();
 	m_threadCount--;
-	m_mutexThread->Unlock();
+	m_threadMutex->Unlock();
 
 #ifndef WIN32
 	return nullptr;
@@ -218,8 +218,8 @@ void* Thread::thread_handler(void* object)
 
 int Thread::GetThreadCount()
 {
-	m_mutexThread->Lock();
+	m_threadMutex->Lock();
 	int threadCount = m_threadCount;
-	m_mutexThread->Unlock();
+	m_threadMutex->Unlock();
 	return threadCount;
 }

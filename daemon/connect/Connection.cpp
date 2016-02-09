@@ -31,7 +31,7 @@
 static const int CONNECTION_READBUFFER_SIZE = 1024;
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
-Mutex* Connection::m_mutexGetHostByName = nullptr;
+std::unique_ptr<Mutex> Connection::m_getHostByNameMutex;
 #endif
 #endif
 
@@ -99,7 +99,7 @@ void Connection::Init()
 
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
-	m_mutexGetHostByName = new Mutex();
+	m_getHostByNameMutex = std::make_unique<Mutex>();
 #endif
 #endif
 }
@@ -118,7 +118,7 @@ void Connection::Final()
 
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
-	delete m_mutexGetHostByName;
+	m_getHostByNameMutex.reset();
 #endif
 #endif
 }
@@ -993,14 +993,14 @@ in_addr_t Connection::ResolveHostAddr(const char* host)
 		err = hinfo == nullptr;
 #endif
 #else
-		m_mutexGetHostByName->Lock();
+		m_getHostByNameMutex->Lock();
 		hinfo = gethostbyname(host);
 		err = hinfo == nullptr;
 #endif
 		if (err)
 		{
 #ifndef HAVE_GETHOSTBYNAME_R
-			m_mutexGetHostByName->Unlock();
+			m_getHostByNameMutex->Unlock();
 #endif
 			ReportError("Could not resolve hostname %s", host, true, h_errnop);
 			return INADDR_NONE;
@@ -1009,7 +1009,7 @@ in_addr_t Connection::ResolveHostAddr(const char* host)
 		memcpy(&uaddr, hinfo->h_addr_list[0], sizeof(uaddr));
 
 #ifndef HAVE_GETHOSTBYNAME_R
-		m_mutexGetHostByName->Unlock();
+		m_getHostByNameMutex->Unlock();
 #endif
 	}
 	return uaddr;
