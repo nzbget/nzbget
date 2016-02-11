@@ -33,12 +33,11 @@
 class RemoteServer : public Thread
 {
 private:
-	bool				m_tls;
-	Connection*			m_connection;
+	bool							m_tls;
+	std::unique_ptr<Connection>		m_connection;
 
 public:
-						RemoteServer(bool tls);
-						~RemoteServer();
+						RemoteServer(bool tls) : m_tls(tls) {}
 	virtual void		Run();
 	virtual void 		Stop();
 };

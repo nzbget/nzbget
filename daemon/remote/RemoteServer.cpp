@@ -35,21 +35,6 @@
 //*****************************************************************
 // RemoteServer
 
-RemoteServer::RemoteServer(bool tls)
-{
-	debug("Creating RemoteServer");
-
-	m_tls = tls;
-	m_connection = nullptr;
-}
-
-RemoteServer::~RemoteServer()
-{
-	debug("Destroying RemoteServer");
-
-	delete m_connection;
-}
-
 void RemoteServer::Run()
 {
 	debug("Entering RemoteServer-loop");
@@ -77,7 +62,7 @@ void RemoteServer::Run()
 
 		if (!m_connection)
 		{
-			m_connection = new Connection(g_Options->GetControlIp(),
+			m_connection = std::make_unique<Connection>(g_Options->GetControlIp(),
 				m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(),
 				m_tls);
 			m_connection->SetTimeout(g_Options->GetUrlTimeout());
@@ -98,9 +83,8 @@ void RemoteServer::Run()
 			{
 				break;
 			}
+			m_connection.reset();
 			usleep(500 * 1000);
-			delete m_connection;
-			m_connection = nullptr;
 			continue;
 		}
 
