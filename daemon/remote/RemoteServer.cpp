@@ -71,12 +71,12 @@ void RemoteServer::Run()
 		}
 
 		// Accept connections and store the new Connection
-		Connection* acceptedConnection = nullptr;
+		std::unique_ptr<Connection> acceptedConnection;
 		if (bind)
 		{
 			acceptedConnection = m_connection->Accept();
 		}
-		if (!bind || acceptedConnection == nullptr)
+		if (!bind || !acceptedConnection)
 		{
 			// Remote server could not bind or accept connection, waiting 1/2 sec and try again
 			if (IsStopped())
@@ -90,7 +90,7 @@ void RemoteServer::Run()
 
 		RequestProcessor* commandThread = new RequestProcessor();
 		commandThread->SetAutoDestroy(true);
-		commandThread->SetConnection(acceptedConnection);
+		commandThread->SetConnection(std::move(acceptedConnection));
 #ifndef DISABLE_TLS
 		commandThread->SetTls(m_tls);
 #endif
@@ -124,7 +124,6 @@ void RemoteServer::Stop()
 RequestProcessor::~RequestProcessor()
 {
 	m_connection->Disconnect();
-	delete m_connection;
 }
 
 void RequestProcessor::Run()
@@ -154,7 +153,7 @@ void RequestProcessor::Run()
 		// binary request received
 		ok = true;
 		BinRpcProcessor processor;
-		processor.SetConnection(m_connection);
+		processor.SetConnection(m_connection.get());
 		processor.Execute();
 	}
 	else if (!strncmp((char*)&signature, "POST", 4) ||
@@ -185,7 +184,7 @@ void RequestProcessor::Run()
 			debug("url: %s", url);
 
 			WebProcessor processor;
-			processor.SetConnection(m_connection);
+			processor.SetConnection(m_connection.get());
 			processor.SetUrl(url);
 			processor.SetHttpMethod(httpMethod);
 			processor.Execute();

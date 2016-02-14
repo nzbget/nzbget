@@ -414,7 +414,7 @@ void XmlRpcProcessor::Dispatch()
 	}
 	else
 	{
-		XmlCommand* command = CreateCommand(methodName);
+		std::unique_ptr<XmlCommand> command = CreateCommand(methodName);
 		command->SetRequest(request);
 		command->SetProtocol(m_protocol);
 		command->SetHttpMethod(m_httpMethod);
@@ -422,7 +422,6 @@ void XmlRpcProcessor::Dispatch()
 		command->PrepareParams();
 		command->Execute();
 		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), requestId);
-		delete command;
 	}
 }
 
@@ -451,7 +450,7 @@ void XmlRpcProcessor::MutliCall()
 		WebUtil::XmlParseTagValue(nameEnd, "string", methodName, sizeof(methodName), nullptr);
 		debug("MutliCall, MethodName=%s", methodName);
 
-		XmlCommand* command = CreateCommand(methodName);
+		std::unique_ptr<XmlCommand> command = CreateCommand(methodName);
 		command->SetRequest(requestPtr);
 		command->Execute();
 
@@ -471,21 +470,18 @@ void XmlRpcProcessor::MutliCall()
 			response.Append("</data></array>");
 		}
 
-		delete command;
-
 		requestPtr = callEnd + 9; //strlen("</struct>")
 		callEnd = strstr(requestPtr, "</struct>");
 	}
 
 	if (error)
 	{
-		XmlCommand* command = new ErrorXmlCommand(4, "Parse error");
-		command->SetRequest(m_request);
-		command->SetProtocol(rpXmlRpc);
-		command->PrepareParams();
-		command->Execute();
-		BuildResponse(command->GetResponse(), "", command->GetFault(), nullptr);
-		delete command;
+		ErrorXmlCommand command(4, "Parse error");
+		command.SetRequest(m_request);
+		command.SetProtocol(rpXmlRpc);
+		command.PrepareParams();
+		command.Execute();
+		BuildResponse(command.GetResponse(), "", command.GetFault(), nullptr);
 	}
 	else
 	{
@@ -548,187 +544,187 @@ void XmlRpcProcessor::BuildResponse(const char* response, const char* callbackFu
 	m_contentType = xmlRpc ? "text/xml" : "application/json";
 }
 
-XmlCommand* XmlRpcProcessor::CreateCommand(const char* methodName)
+std::unique_ptr<XmlCommand> XmlRpcProcessor::CreateCommand(const char* methodName)
 {
-	XmlCommand* command = nullptr;
+	std::unique_ptr<XmlCommand> command;
 
 	if (m_userAccess == uaAdd &&
 		!(!strcasecmp(methodName, "append") || !strcasecmp(methodName, "appendurl") ||
 		 !strcasecmp(methodName, "version")))
 	{
-		command = new ErrorXmlCommand(401, "Access denied");
+		command = std::make_unique<ErrorXmlCommand>(401, "Access denied");
 		warn("Received request \"%s\" from add-user, access denied", methodName);
 	}
 	else if (m_userAccess == uaRestricted && !strcasecmp(methodName, "saveconfig"))
 	{
-		command = new ErrorXmlCommand(401, "Access denied");
+		command = std::make_unique<ErrorXmlCommand>(401, "Access denied");
 		warn("Received request \"%s\" from restricted user, access denied", methodName);
 	}
 	else if (!strcasecmp(methodName, "pause") || !strcasecmp(methodName, "pausedownload") ||
 		!strcasecmp(methodName, "pausedownload2"))
 	{
-		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paDownload);
+		command = std::make_unique<PauseUnpauseXmlCommand>(true, PauseUnpauseXmlCommand::paDownload);
 	}
 	else if (!strcasecmp(methodName, "resume") || !strcasecmp(methodName, "resumedownload") ||
 		!strcasecmp(methodName, "resumedownload2"))
 	{
-		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paDownload);
+		command = std::make_unique<PauseUnpauseXmlCommand>(false, PauseUnpauseXmlCommand::paDownload);
 	}
 	else if (!strcasecmp(methodName, "shutdown"))
 	{
-		command = new ShutdownXmlCommand();
+		command = std::make_unique<ShutdownXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "reload"))
 	{
-		command = new ReloadXmlCommand();
+		command = std::make_unique<ReloadXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "version"))
 	{
-		command = new VersionXmlCommand();
+		command = std::make_unique<VersionXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "dump"))
 	{
-		command = new DumpDebugXmlCommand();
+		command = std::make_unique<DumpDebugXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "rate"))
 	{
-		command = new SetDownloadRateXmlCommand();
+		command = std::make_unique<SetDownloadRateXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "status"))
 	{
-		command = new StatusXmlCommand();
+		command = std::make_unique<StatusXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "log"))
 	{
-		command = new LogXmlCommand();
+		command = std::make_unique<LogXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "listfiles"))
 	{
-		command = new ListFilesXmlCommand();
+		command = std::make_unique<ListFilesXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "listgroups"))
 	{
-		command = new ListGroupsXmlCommand();
+		command = std::make_unique<ListGroupsXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "editqueue"))
 	{
-		command = new EditQueueXmlCommand();
+		command = std::make_unique<EditQueueXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "append") || !strcasecmp(methodName, "appendurl"))
 	{
-		command = new DownloadXmlCommand();
+		command = std::make_unique<DownloadXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "postqueue"))
 	{
-		command = new PostQueueXmlCommand();
+		command = std::make_unique<PostQueueXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "writelog"))
 	{
-		command = new WriteLogXmlCommand();
+		command = std::make_unique<WriteLogXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "clearlog"))
 	{
-		command = new ClearLogXmlCommand();
+		command = std::make_unique<ClearLogXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "loadlog"))
 	{
-		command = new LoadLogXmlCommand();
+		command = std::make_unique<LoadLogXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "scan"))
 	{
-		command = new ScanXmlCommand();
+		command = std::make_unique<ScanXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "pausepost"))
 	{
-		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paPostProcess);
+		command = std::make_unique<PauseUnpauseXmlCommand>(true, PauseUnpauseXmlCommand::paPostProcess);
 	}
 	else if (!strcasecmp(methodName, "resumepost"))
 	{
-		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paPostProcess);
+		command = std::make_unique<PauseUnpauseXmlCommand>(false, PauseUnpauseXmlCommand::paPostProcess);
 	}
 	else if (!strcasecmp(methodName, "pausescan"))
 	{
-		command = new PauseUnpauseXmlCommand(true, PauseUnpauseXmlCommand::paScan);
+		command = std::make_unique<PauseUnpauseXmlCommand>(true, PauseUnpauseXmlCommand::paScan);
 	}
 	else if (!strcasecmp(methodName, "resumescan"))
 	{
-		command = new PauseUnpauseXmlCommand(false, PauseUnpauseXmlCommand::paScan);
+		command = std::make_unique<PauseUnpauseXmlCommand>(false, PauseUnpauseXmlCommand::paScan);
 	}
 	else if (!strcasecmp(methodName, "scheduleresume"))
 	{
-		command = new ScheduleResumeXmlCommand();
+		command = std::make_unique<ScheduleResumeXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "history"))
 	{
-		command = new HistoryXmlCommand();
+		command = std::make_unique<HistoryXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "urlqueue"))
 	{
-		command = new UrlQueueXmlCommand();
+		command = std::make_unique<UrlQueueXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "config"))
 	{
-		command = new ConfigXmlCommand();
+		command = std::make_unique<ConfigXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "loadconfig"))
 	{
-		command = new LoadConfigXmlCommand();
+		command = std::make_unique<LoadConfigXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "saveconfig"))
 	{
-		command = new SaveConfigXmlCommand();
+		command = std::make_unique<SaveConfigXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "configtemplates"))
 	{
-		command = new ConfigTemplatesXmlCommand();
+		command = std::make_unique<ConfigTemplatesXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "viewfeed"))
 	{
-		command = new ViewFeedXmlCommand(false);
+		command = std::make_unique<ViewFeedXmlCommand>(false);
 	}
 	else if (!strcasecmp(methodName, "previewfeed"))
 	{
-		command = new ViewFeedXmlCommand(true);
+		command = std::make_unique<ViewFeedXmlCommand>(true);
 	}
 	else if (!strcasecmp(methodName, "fetchfeed"))
 	{
-		command = new FetchFeedXmlCommand();
+		command = std::make_unique<FetchFeedXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "editserver"))
 	{
-		command = new EditServerXmlCommand();
+		command = std::make_unique<EditServerXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "readurl"))
 	{
-		command = new ReadUrlXmlCommand();
+		command = std::make_unique<ReadUrlXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "checkupdates"))
 	{
-		command = new CheckUpdatesXmlCommand();
+		command = std::make_unique<CheckUpdatesXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "startupdate"))
 	{
-		command = new StartUpdateXmlCommand();
+		command = std::make_unique<StartUpdateXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "logupdate"))
 	{
-		command = new LogUpdateXmlCommand();
+		command = std::make_unique<LogUpdateXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "servervolumes"))
 	{
-		command = new ServerVolumesXmlCommand();
+		command = std::make_unique<ServerVolumesXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "resetservervolume"))
 	{
-		command = new ResetServerVolumeXmlCommand();
+		command = std::make_unique<ResetServerVolumeXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "testserver"))
 	{
-		command = new TestServerXmlCommand();
+		command = std::make_unique<TestServerXmlCommand>();
 	}
 	else
 	{
-		command = new ErrorXmlCommand(1, "Invalid procedure");
+		command = std::make_unique<ErrorXmlCommand>(1, "Invalid procedure");
 	}
 
 	return command;
@@ -3040,7 +3036,7 @@ void ReadUrlXmlCommand::Execute()
 		num++;
 	}
 
-	WebDownloader* downloader = new WebDownloader();
+	std::unique_ptr<WebDownloader> downloader = std::make_unique<WebDownloader>();
 	downloader->SetUrl(url);
 	downloader->SetForce(true);
 	downloader->SetRetry(false);
@@ -3051,7 +3047,7 @@ void ReadUrlXmlCommand::Execute()
 	WebDownloader::EStatus status = downloader->DownloadWithRedirects(5);
 	bool ok = status == WebDownloader::adFinished;
 
-	delete downloader;
+	downloader.reset();
 
 	if (ok)
 	{
@@ -3382,18 +3378,16 @@ void TestServerXmlCommand::Execute()
 	}
 
 	NewsServer server(0, true, "test server", host, port, username, password, false, encryption, cipher, 1, 0, 0, 0);
-	TestConnection* connection = new TestConnection(&server, this);
-	connection->SetTimeout(timeout == 0 ? g_Options->GetArticleTimeout() : timeout);
-	connection->SetSuppressErrors(false);
+	TestConnection connection(&server, this);
+	connection.SetTimeout(timeout == 0 ? g_Options->GetArticleTimeout() : timeout);
+	connection.SetSuppressErrors(false);
 
-	bool ok = connection->Connect();
+	bool ok = connection.Connect();
 
 	BString<1024> content(IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
 		ok ? "" : m_errText.Empty() ? "Unknown error" : *m_errText);
 
 	AppendResponse(content);
-
-	delete connection;
 }
 
 void TestServerXmlCommand::PrintError(const char* errMsg)

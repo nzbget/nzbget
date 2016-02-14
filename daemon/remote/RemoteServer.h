@@ -46,13 +46,13 @@ class RequestProcessor : public Thread
 {
 private:
 	bool				m_tls;
-	Connection*			m_connection;
+	std::unique_ptr<Connection>		m_connection;
 
 public:
 						~RequestProcessor();
 	virtual void		Run();
 	void				SetTls(bool tls) { m_tls = tls; }
-	void				SetConnection(Connection* connection) { m_connection = connection; }
+	void				SetConnection(std::unique_ptr<Connection>&& connection) { m_connection = std::move(connection); }
 };
 
 #endif

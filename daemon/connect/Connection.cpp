@@ -455,7 +455,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 	return buffer;
 }
 
-Connection* Connection::Accept()
+std::unique_ptr<Connection> Connection::Accept()
 {
 	debug("Accepting connection");
 
@@ -474,9 +474,7 @@ Connection* Connection::Accept()
 		return nullptr;
 	}
 
-	Connection* con = new Connection(socket, m_tls);
-
-	return con;
+	return std::make_unique<Connection>(socket, m_tls);
 }
 
 int Connection::TryRecv(char* buffer, int size)

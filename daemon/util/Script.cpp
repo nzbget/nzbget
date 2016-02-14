@@ -344,10 +344,10 @@ int ScriptController::Execute()
 
 #ifdef CHILD_WATCHDOG
 	debug("Creating child watchdog");
-	ChildWatchDog* watchDog = new ChildWatchDog();
-	watchDog->SetAutoDestroy(false);
-	watchDog->SetProcessId(m_processId);
-	watchDog->Start();
+	ChildWatchDog watchDog;
+	watchDog.SetAutoDestroy(false);
+	watchDog.SetProcessId(m_processId);
+	watchDog.Start();
 #endif
 
 	CharBuffer buf(1024 * 10);
@@ -363,7 +363,7 @@ int ScriptController::Execute()
 			if (!childConfirmed)
 			{
 				childConfirmed = true;
-				watchDog->Stop();
+				watchDog.Stop();
 				debug("Child confirmed");
 				continue;
 			}
@@ -382,13 +382,12 @@ int ScriptController::Execute()
 	debug("Destroying WatchDog");
 	if (!childConfirmed)
 	{
-		watchDog->Stop();
+		watchDog.Stop();
 	}
-	while (watchDog->IsRunning())
+	while (watchDog.IsRunning())
 	{
 		usleep(5 * 1000);
 	}
-	delete watchDog;
 #endif
 
 	if (m_readpipe)

@@ -376,20 +376,18 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameLis
 	m_downloadQueue = downloadQueue;
 	bool ok = true;
 
+	std::unique_ptr<IdList> nameIdList;
+
 	if (nameList)
 	{
-		idList = new IdList();
+		nameIdList = std::make_unique<IdList>();
+		idList = nameIdList.get();
 		ok = BuildIdListFromNameList(idList, nameList, matchMode, action);
 	}
 
 	ok = ok && (InternEditList(nullptr, idList, action, offset, text) || matchMode == DownloadQueue::mmRegEx);
 
 	m_downloadQueue->Save();
-
-	if (nameList)
-	{
-		delete idList;
-	}
 
 	return ok;
 }
@@ -714,13 +712,12 @@ bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, Do
 
 	for (CString& name : nameList)
 	{
-		RegEx *regEx = nullptr;
+		std::unique_ptr<RegEx> regEx;
 		if (matchMode == DownloadQueue::mmRegEx)
 		{
-			regEx = new RegEx(name);
+			regEx = std::make_unique<RegEx>(name);
 			if (!regEx->IsValid())
 			{
-				delete regEx;
 				return false;
 			}
 		}
@@ -758,8 +755,6 @@ bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, Do
 				}
 			}
 		}
-
-		delete regEx;
 
 		if (!found && (matchMode == DownloadQueue::mmName))
 		{

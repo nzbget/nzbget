@@ -362,16 +362,16 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			FeedScriptController::ExecuteScripts(
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId());
-			FeedFile* feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
+			std::unique_ptr<FeedFile> feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
 			FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
 			NzbList addedNzbs;
 
 			m_downloadsMutex.Lock();
-			if (feedFile)
+			if (feedFile->Parse())
 			{
 				ProcessFeed(feedInfo, feedFile->GetFeedItemInfos(), &addedNzbs);
-				delete feedFile;
+				feedFile.reset();
 			}
 			feedInfo->SetLastUpdate(Util::CurrentTime());
 			feedInfo->SetForce(false);
@@ -398,10 +398,11 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 {
 	debug("Filtering feed %s", feedInfo->GetName());
 
-	FeedFilter* feedFilter = nullptr;
-	if (feedInfo->GetFilter() && strlen(feedInfo->GetFilter()) > 0)
+	std::unique_ptr<FeedFilter> feedFilter;
+
+	if (!Util::EmptyStr(feedInfo->GetFilter()))
 	{
-		feedFilter = new FeedFilter(feedInfo->GetFilter());
+		feedFilter = std::make_unique<FeedFilter>(feedInfo->GetFilter());
 	}
 
 	for (FeedItemInfo& feedItemInfo : feedItemInfos)
@@ -420,8 +421,6 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 			feedFilter->Match(feedItemInfo);
 		}
 	}
-
-	delete feedFilter;
 }
 
 void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NzbList* addedNzbs)
@@ -525,7 +524,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 {
 	debug("Preview feed %s", name);
 
-	FeedInfo* feedInfo = new FeedInfo(id, name, url, backlog, interval,
+	std::unique_ptr<FeedInfo> feedInfo = std::make_unique<FeedInfo>(id, name, url, backlog, interval,
 		filter, pauseNzb, category, priority, feedScript);
 	feedInfo->SetPreview(true);
 
@@ -564,7 +563,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 			}
 		}
 
-		StartFeedDownload(feedInfo, true);
+		StartFeedDownload(feedInfo.get(), true);
 		m_downloadsMutex.Unlock();
 
 		// wait until the download in a separate thread completes
@@ -575,27 +574,26 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 
 		// now can process the feed
 
-		FeedFile* feedFile = nullptr;
+		std::unique_ptr<FeedFile> feedFile;
 
 		if (feedInfo->GetStatus() == FeedInfo::fsFinished)
 		{
 			FeedScriptController::ExecuteScripts(
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId());
-			feedFile = FeedFile::Create(feedInfo->GetOutputFilename());
+			feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
 		}
 
 		FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
-		if (!feedFile)
+		if (!feedFile || !feedFile->Parse())
 		{
-			delete feedInfo;
 			return false;
 		}
 
 		feedItemInfos = feedFile->GetFeedItemInfos();
 		feedItemInfos->Retain();
-		delete feedFile;
+		feedFile.reset();
 
 		for (FeedItemInfo& feedItemInfo : feedItemInfos)
 		{
@@ -608,8 +606,8 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		}
 	}
 
-	FilterFeed(feedInfo, feedItemInfos);
-	delete feedInfo;
+	FilterFeed(feedInfo.get(), feedItemInfos);
+	feedInfo.reset();
 
 	if (cacheTimeSec > 0 && *cacheId != '\0' && !hasCache)
 	{

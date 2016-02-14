@@ -210,64 +210,64 @@ void BinRpcProcessor::Dispatch()
 		return;
 	}
 
-	BinCommand* command = nullptr;
+	std::unique_ptr<BinCommand> command;
 
 	switch (ntohl(m_messageBase.m_type))
 	{
 		case rrDownload:
-			command = new DownloadBinCommand();
+			command = std::make_unique<DownloadBinCommand>();
 			break;
 
 		case rrList:
-			command = new ListBinCommand();
+			command = std::make_unique<ListBinCommand>();
 			break;
 
 		case rrLog:
-			command = new LogBinCommand();
+			command = std::make_unique<LogBinCommand>();
 			break;
 
 		case rrPauseUnpause:
-			command = new PauseUnpauseBinCommand();
+			command = std::make_unique<PauseUnpauseBinCommand>();
 			break;
 
 		case rrEditQueue:
-			command = new EditQueueBinCommand();
+			command = std::make_unique<EditQueueBinCommand>();
 			break;
 
 		case rrSetDownloadRate:
-			command = new SetDownloadRateBinCommand();
+			command = std::make_unique<SetDownloadRateBinCommand>();
 			break;
 
 		case rrDumpDebug:
-			command = new DumpDebugBinCommand();
+			command = std::make_unique<DumpDebugBinCommand>();
 			break;
 
 		case rrShutdown:
-			command = new ShutdownBinCommand();
+			command = std::make_unique<ShutdownBinCommand>();
 			break;
 
 		case rrReload:
-			command = new ReloadBinCommand();
+			command = std::make_unique<ReloadBinCommand>();
 			break;
 
 		case rrVersion:
-			command = new VersionBinCommand();
+			command = std::make_unique<VersionBinCommand>();
 			break;
 
 		case rrPostQueue:
-			command = new PostQueueBinCommand();
+			command = std::make_unique<PostQueueBinCommand>();
 			break;
 
 		case rrWriteLog:
-			command = new WriteLogBinCommand();
+			command = std::make_unique<WriteLogBinCommand>();
 			break;
 
 		case rrScan:
-			command = new ScanBinCommand();
+			command = std::make_unique<ScanBinCommand>();
 			break;
 
 		case rrHistory:
-			command = new HistoryBinCommand();
+			command = std::make_unique<HistoryBinCommand>();
 			break;
 
 		default:
@@ -280,7 +280,6 @@ void BinRpcProcessor::Dispatch()
 		command->SetConnection(m_connection);
 		command->SetMessageBase(&m_messageBase);
 		command->Execute();
-		delete command;
 	}
 }
 

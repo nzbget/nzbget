@@ -97,7 +97,6 @@ protected:
 #endif
 #endif
 
-						Connection(SOCKET socket, bool tls);
 	void				ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno = 0, const char* herrMsg = nullptr);
 	virtual void		PrintError(const char* errMsg);
 	bool				DoConnect();
@@ -115,6 +114,7 @@ protected:
 
 public:
 						Connection(const char* host, int port, bool tls);
+						Connection(SOCKET socket, bool tls);
 	virtual 			~Connection();
 	static void			Init();
 	static void			Final();
@@ -127,7 +127,7 @@ public:
 	char*				ReadLine(char* buffer, int size, int* bytesRead);
 	void				ReadBuffer(char** buffer, int *bufLen);
 	int					WriteLine(const char* buffer);
-	Connection*			Accept();
+	std::unique_ptr<Connection>		Accept();
 	void				Cancel();
 	const char*			GetHost() { return m_host; }
 	int					GetPort() { return m_port; }

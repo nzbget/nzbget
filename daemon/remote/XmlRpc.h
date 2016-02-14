@@ -66,7 +66,7 @@ private:
 	StringBuilder		m_response;
 
 	void				Dispatch();
-	XmlCommand*			CreateCommand(const char* methodName);
+	std::unique_ptr<XmlCommand>		CreateCommand(const char* methodName);
 	void				MutliCall();
 	void				BuildResponse(const char* response, const char* callbackFunc, bool fault, const char* requestId);
 

@@ -91,7 +91,7 @@ void FeedFile::ParseSubject(FeedItemInfo& feedItemInfo)
 }
 
 #ifdef WIN32
-FeedFile* FeedFile::Create(const char* fileName)
+bool FeedFile::Parse()
 {
 	CoInitialize(nullptr);
 
@@ -101,7 +101,7 @@ FeedFile* FeedFile::Create(const char* fileName)
 	hr = doc.CreateInstance(MSXML::CLSID_DOMDocument);
 	if (FAILED(hr))
 	{
-		return nullptr;
+		return false;
 	}
 
 	// Load the XML document file...
@@ -129,17 +129,12 @@ FeedFile* FeedFile::Create(const char* fileName)
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* errMsg = r;
 		error("Error parsing rss feed: %s", errMsg);
-		return nullptr;
+		return false;
 	}
 
-	FeedFile* file = new FeedFile(fileName);
-	if (!file->ParseFeed(doc))
-	{
-		delete file;
-		file = nullptr;
-	}
+	bool ok = ParseFeed(doc);
 
-	return file;
+	return ok;
 }
 
 void FeedFile::EncodeUrl(const char* filename, char* url, int bufLen)
@@ -378,10 +373,8 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 
 #else
 
-FeedFile* FeedFile::Create(const char* fileName)
+bool FeedFile::Parse()
 {
-	FeedFile* file = new FeedFile(fileName);
-
 	xmlSAXHandler SAX_handler = {0};
 	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
 	SAX_handler.endElement = reinterpret_cast<endElementSAXFunc>(SAX_EndElement);
@@ -389,18 +382,17 @@ FeedFile* FeedFile::Create(const char* fileName)
 	SAX_handler.error = reinterpret_cast<errorSAXFunc>(SAX_error);
 	SAX_handler.getEntity = reinterpret_cast<getEntitySAXFunc>(SAX_getEntity);
 
-	file->m_ignoreNextError = false;
+	m_ignoreNextError = false;
 
-	int ret = xmlSAXUserParseFile(&SAX_handler, file, fileName);
+	int ret = xmlSAXUserParseFile(&SAX_handler, this, m_fileName);
 
 	if (ret != 0)
 	{
 		error("Failed to parse rss feed");
-		delete file;
-		file = nullptr;
+		return false;
 	}
 
-	return file;
+	return true;
 }
 
 void FeedFile::Parse_StartElement(const char *name, const char **atts)

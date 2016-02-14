@@ -35,7 +35,6 @@ private:
 	FeedItemInfos*		m_feedItemInfos;
 	CString				m_fileName;
 
-						FeedFile(const char* fileName);
 	void				ParseSubject(FeedItemInfo& feedItemInfo);
 #ifdef WIN32
 	bool 				ParseFeed(IUnknown* nzb);
@@ -57,8 +56,9 @@ private:
 #endif
 
 public:
+						FeedFile(const char* fileName);
 	virtual 			~FeedFile();
-	static FeedFile*	Create(const char* fileName);
+	bool				Parse();
 	FeedItemInfos*		GetFeedItemInfos() { return m_feedItemInfos; }
 
 	void				LogDebugInfo();
