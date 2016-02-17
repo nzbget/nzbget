@@ -38,10 +38,11 @@ public:
 		FileInfo*	m_fileInfo;
 		NzbInfo*	m_nzbInfo;
 
-		EditItem(FileInfo* fileInfo, NzbInfo* nzbInfo, int offset);
+					EditItem(FileInfo* fileInfo, NzbInfo* nzbInfo, int offset) :
+						m_fileInfo(fileInfo), m_nzbInfo(nzbInfo), m_offset(offset) {}
 	};
 
-	typedef std::vector<EditItem*> ItemList;
+	typedef std::vector<EditItem> ItemList;
 
 private:
 	DownloadQueue*			m_downloadQueue;

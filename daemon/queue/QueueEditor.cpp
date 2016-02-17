@@ -147,10 +147,10 @@ bool GroupSorter::operator()(NzbInfo* nzbInfo1, NzbInfo* nzbInfo2) const
 	bool sortItem1 = m_sortItemList->empty();
 	bool sortItem2 = m_sortItemList->empty();
 
-	for (QueueEditor::EditItem* item : m_sortItemList)
+	for (QueueEditor::EditItem& item : m_sortItemList)
 	{
-		sortItem1 |= item->m_nzbInfo == nzbInfo1;
-		sortItem2 |= item->m_nzbInfo == nzbInfo2;
+		sortItem1 |= item.m_nzbInfo == nzbInfo1;
+		sortItem2 |= item.m_nzbInfo == nzbInfo2;
 	}
 
 	if (!sortItem1 || !sortItem2)
@@ -206,9 +206,9 @@ void GroupSorter::AlignSelectedGroups()
 		NzbInfo* nzbInfo = m_nzbList->at(num);
 
 		bool selected = false;
-		for (QueueEditor::EditItem* item : m_sortItemList)
+		for (QueueEditor::EditItem& item : m_sortItemList)
 		{
-			if (item->m_nzbInfo == nzbInfo)
+			if (item.m_nzbInfo == nzbInfo)
 			{
 				selected = true;
 				break;
@@ -233,13 +233,6 @@ void GroupSorter::AlignSelectedGroups()
 	}
 }
 
-
-QueueEditor::EditItem::EditItem(FileInfo* fileInfo, NzbInfo* nzbInfo, int offset)
-{
-	m_fileInfo = fileInfo;
-	m_nzbInfo = nzbInfo;
-	m_offset = offset;
-}
 
 QueueEditor::QueueEditor()
 {
@@ -423,74 +416,74 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 			break;
 
 		default:
-			for (EditItem* item : itemList)
+			for (EditItem& item : itemList)
 			{
 				switch (action)
 				{
 					case DownloadQueue::eaFilePause:
-						PauseUnpauseEntry(item->m_fileInfo, true);
+						PauseUnpauseEntry(item.m_fileInfo, true);
 						break;
 
 					case DownloadQueue::eaFileResume:
-						PauseUnpauseEntry(item->m_fileInfo, false);
+						PauseUnpauseEntry(item.m_fileInfo, false);
 						break;
 
 					case DownloadQueue::eaFileMoveOffset:
 					case DownloadQueue::eaFileMoveTop:
 					case DownloadQueue::eaFileMoveBottom:
-						MoveEntry(item->m_fileInfo, item->m_offset);
+						MoveEntry(item.m_fileInfo, item.m_offset);
 						break;
 
 					case DownloadQueue::eaFileDelete:
-						DeleteEntry(item->m_fileInfo);
+						DeleteEntry(item.m_fileInfo);
 						break;
 
 					case DownloadQueue::eaGroupSetPriority:
-						SetNzbPriority(item->m_nzbInfo, text);
+						SetNzbPriority(item.m_nzbInfo, text);
 						break;
 
 					case DownloadQueue::eaGroupSetCategory:
 					case DownloadQueue::eaGroupApplyCategory:
-						SetNzbCategory(item->m_nzbInfo, text, action == DownloadQueue::eaGroupApplyCategory);
+						SetNzbCategory(item.m_nzbInfo, text, action == DownloadQueue::eaGroupApplyCategory);
 						break;
 
 					case DownloadQueue::eaGroupSetName:
-						SetNzbName(item->m_nzbInfo, text);
+						SetNzbName(item.m_nzbInfo, text);
 						break;
 
 					case DownloadQueue::eaGroupSetDupeKey:
 					case DownloadQueue::eaGroupSetDupeScore:
 					case DownloadQueue::eaGroupSetDupeMode:
-						SetNzbDupeParam(item->m_nzbInfo, action, text);
+						SetNzbDupeParam(item.m_nzbInfo, action, text);
 						break;
 
 					case DownloadQueue::eaGroupSetParameter:
-						SetNzbParameter(item->m_nzbInfo, text);
+						SetNzbParameter(item.m_nzbInfo, text);
 						break;
 
 					case DownloadQueue::eaGroupMoveTop:
 					case DownloadQueue::eaGroupMoveBottom:
 					case DownloadQueue::eaGroupMoveOffset:
-						MoveGroup(item->m_nzbInfo, item->m_offset);
+						MoveGroup(item.m_nzbInfo, item.m_offset);
 						break;
 
 					case DownloadQueue::eaGroupPause:
 					case DownloadQueue::eaGroupResume:
 					case DownloadQueue::eaGroupPauseAllPars:
 					case DownloadQueue::eaGroupPauseExtraPars:
-						EditGroup(item->m_nzbInfo, action, offset, text);
+						EditGroup(item.m_nzbInfo, action, offset, text);
 						break;
 
 					case DownloadQueue::eaGroupDelete:
 					case DownloadQueue::eaGroupDupeDelete:
 					case DownloadQueue::eaGroupFinalDelete:
-						if (item->m_nzbInfo->GetKind() == NzbInfo::nkUrl)
+						if (item.m_nzbInfo->GetKind() == NzbInfo::nkUrl)
 						{
-							DeleteUrl(item->m_nzbInfo, action);
+							DeleteUrl(item.m_nzbInfo, action);
 						}
 						else
 						{
-							EditGroup(item->m_nzbInfo, action, offset, text);
+							EditGroup(item.m_nzbInfo, action, offset, text);
 						}
 
 
@@ -498,7 +491,6 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 						// suppress compiler warning "enumeration not handled in switch"
 						break;
 				}
-				delete item;
 			}
 	}
 
@@ -570,7 +562,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 						}
 					}
 					lastDestPos = index + workOffset;
-					itemList->push_back(new EditItem(fileInfo, nullptr, workOffset));
+					itemList->emplace_back(fileInfo, nullptr, workOffset);
 				}
 			}
 		}
@@ -626,7 +618,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 					}
 				}
 				lastDestPos = index + workOffset;
-				itemList->push_back(new EditItem(nullptr, nzbInfo, workOffset));
+				itemList->emplace_back(nullptr, nzbInfo, workOffset);
 			}
 		}
 	}
@@ -659,7 +651,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 				FileInfo* fileInfo = FindFileInfo(id);
 				if (fileInfo)
 				{
-					itemList->push_back(new EditItem(fileInfo, nullptr, offset));
+					itemList->emplace_back(fileInfo, nullptr, offset);
 				}
 			}
 		}
@@ -691,7 +683,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 				{
 					if (id == nzbInfo->GetId())
 					{
-						itemList->push_back(new EditItem(nullptr, nzbInfo, offset));
+						itemList->emplace_back(nullptr, nzbInfo, offset);
 					}
 				}
 			}
@@ -774,7 +766,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 	// collecting files belonging to group
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		itemList.push_back(new EditItem(fileInfo, nullptr, 0));
+		itemList.emplace_back(fileInfo, nullptr, 0);
 		allPaused &= fileInfo->GetPaused();
 	}
 
@@ -839,16 +831,15 @@ void QueueEditor::PauseParsInGroups(ItemList* itemList, bool extraParsOnly)
 
 		for (ItemList::iterator it = itemList->begin(); it != itemList->end(); )
 		{
-			EditItem* item = *it;
+			EditItem& item = *it;
 			if (!firstFileInfo ||
-				(firstFileInfo->GetNzbInfo() == item->m_fileInfo->GetNzbInfo()))
+				(firstFileInfo->GetNzbInfo() == item.m_fileInfo->GetNzbInfo()))
 			{
-				GroupFileList.push_back(item->m_fileInfo);
+				GroupFileList.push_back(item.m_fileInfo);
 				if (!firstFileInfo)
 				{
-					firstFileInfo = item->m_fileInfo;
+					firstFileInfo = item.m_fileInfo;
 				}
-				delete item;
 				itemList->erase(it);
 				it = itemList->begin();
 				continue;
@@ -1074,22 +1065,20 @@ bool QueueEditor::MergeGroups(ItemList* itemList)
 
 	bool ok = true;
 
-	EditItem* destItem = itemList->front();
+	EditItem& destItem = itemList->front();
 
-	for (EditItem* item : itemList)
+	for (EditItem& item : itemList)
 	{
-		if (item->m_nzbInfo != destItem->m_nzbInfo)
+		if (item.m_nzbInfo != destItem.m_nzbInfo)
 		{
-			debug("merge %s to %s", item->m_nzbInfo->GetFilename(), destItem->m_nzbInfo->GetFilename());
-			if (g_QueueCoordinator->MergeQueueEntries(m_downloadQueue, destItem->m_nzbInfo, item->m_nzbInfo))
+			debug("merge %s to %s", item.m_nzbInfo->GetFilename(), destItem.m_nzbInfo->GetFilename());
+			if (g_QueueCoordinator->MergeQueueEntries(m_downloadQueue, destItem.m_nzbInfo, item.m_nzbInfo))
 			{
 				ok = false;
 			}
 		}
-		delete item;
 	}
 
-	delete destItem;
 	return ok;
 }
 
@@ -1102,10 +1091,9 @@ bool QueueEditor::SplitGroup(ItemList* itemList, const char* name)
 
 	FileList fileList(false);
 
-	for (EditItem* item : itemList)
+	for (EditItem& item : itemList)
 	{
-		fileList.push_back(item->m_fileInfo);
-		delete item;
+		fileList.push_back(item.m_fileInfo);
 	}
 
 	NzbInfo* newNzbInfo = nullptr;
@@ -1127,14 +1115,14 @@ void QueueEditor::ReorderFiles(ItemList* itemList)
 		return;
 	}
 
-	EditItem* firstItem = itemList->front();
-	NzbInfo* nzbInfo = firstItem->m_fileInfo->GetNzbInfo();
+	EditItem& firstItem = itemList->front();
+	NzbInfo* nzbInfo = firstItem.m_fileInfo->GetNzbInfo();
 	uint32 insertPos = 0;
 
 	// now can reorder
-	for (EditItem* item : itemList)
+	for (EditItem& item : itemList)
 	{
-		FileInfo* fileInfo = item->m_fileInfo;
+		FileInfo* fileInfo = item.m_fileInfo;
 
 		// move file item
 		FileList::iterator it2 = std::find(nzbInfo->GetFileList()->begin(), nzbInfo->GetFileList()->end(), fileInfo);
@@ -1144,8 +1132,6 @@ void QueueEditor::ReorderFiles(ItemList* itemList)
 			nzbInfo->GetFileList()->insert(nzbInfo->GetFileList()->begin() + insertPos, fileInfo);
 			insertPos++;
 		}
-
-		delete item;
 	}
 }
 
