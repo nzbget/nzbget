@@ -42,7 +42,7 @@ Mutex::Mutex()
 #endif
 }
 
-Mutex::~ Mutex()
+Mutex::~Mutex()
 {
 #ifdef WIN32
 	DeleteCriticalSection((CRITICAL_SECTION*)m_mutexObj);

@@ -172,8 +172,6 @@ const char* PossibleConfigLocations[] =
 	};
 #endif
 
-Options* g_Options = nullptr;
-
 void Options::OptEntry::SetValue(const char* value)
 {
 	m_value = value;
@@ -278,6 +276,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	m_configErrors = false;
 	m_configLine = 0;
 	m_serverMode = false;
+	m_daemonMode = false;
 	m_remoteClientMode = false;
 	m_fatalError = false;
 

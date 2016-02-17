@@ -39,8 +39,6 @@ static const char* FEED_SCRIPT_SIGNATURE = "FEED";
 static const char* END_SCRIPT_SIGNATURE = " SCRIPT";
 static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
 
-ScriptConfig* g_ScriptConfig = nullptr;
-
 
 ScriptConfig::Script::Script(const char* name, const char* location)
 {
@@ -55,7 +53,7 @@ ScriptConfig::Script::Script(const char* name, const char* location)
 }
 
 
-ScriptConfig::ScriptConfig()
+void ScriptConfig::InitOptions()
 {
 	InitScripts();
 	InitConfigTemplates();

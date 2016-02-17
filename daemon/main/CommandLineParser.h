@@ -159,6 +159,4 @@ public:
 	bool				GetPauseDownload() const { return m_pauseDownload; }
 };
 
-extern CommandLineParser* g_CommandLineParser;
-
 #endif

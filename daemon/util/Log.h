@@ -99,8 +99,6 @@ private:
 	bool				m_extraDebug;
 #endif
 
-						Log();
-						~Log();
 	void				Filelog(const char* msg, ...) PRINTF_SYNTAX(2);
 	void				AddMessage(Message::EKind kind, const char* text);
 	void				RotateLog();
@@ -118,9 +116,9 @@ private:
 #endif
 
 public:
-	static void			Init();
-	static void			Final();
-	MessageList*		LockMessages();
+						Log();
+						~Log();
+						MessageList*		LockMessages();
 	void				UnlockMessages();
 	void				Clear();
 	void				ResetLog();

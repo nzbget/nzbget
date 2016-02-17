@@ -29,21 +29,10 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-Log* g_Log = nullptr;
-
-void Log::Init()
-{
-	g_Log = new Log();
-}
-
-void Log::Final()
-{
-	delete g_Log;
-	g_Log = nullptr;
-}
-
 Log::Log()
 {
+	g_Log = this;
+
 	m_messages.clear();
 	m_idGen = 0;
 	m_optInit = false;
@@ -55,7 +44,7 @@ Log::Log()
 
 Log::~Log()
 {
-	Clear();
+	g_Log = nullptr;
 }
 
 void Log::LogDebugInfo()

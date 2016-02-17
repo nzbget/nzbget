@@ -28,7 +28,6 @@
 #include "FileSystem.h"
 #include "Maintenance.h"
 #include "Options.h"
-#include "CommandLineParser.h"
 
 extern void ExitProc();
 extern int g_ArgumentCount;
@@ -255,7 +254,7 @@ void UpdateScriptController::Run()
 	const char* branchName[] = { "STABLE", "TESTING", "DEVEL" };
 	SetEnvVar("NZBUP_BRANCH", branchName[m_branch]);
 
-	SetEnvVar("NZBUP_RUNMODE", g_CommandLineParser->GetDaemonMode() ? "DAEMON" : "SERVER");
+	SetEnvVar("NZBUP_RUNMODE", g_Options->GetDaemonMode() ? "DAEMON" : "SERVER");
 
 	for (int i = 0; i < g_ArgumentCount; i++)
 	{

@@ -102,6 +102,4 @@ public:
 	void				AddTask(Task* task);
 };
 
-extern Scheduler* g_Scheduler;
-
 #endif

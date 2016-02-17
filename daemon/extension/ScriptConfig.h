@@ -96,7 +96,7 @@ private:
 	void				LoadScripts(Scripts* scripts);
 
 public:
-						ScriptConfig();
+	void				InitOptions();
 	Scripts*			GetScripts() { return &m_scripts; }
 	bool				LoadConfig(Options::OptEntries* optEntries);
 	bool				SaveConfig(Options::OptEntries* optEntries);

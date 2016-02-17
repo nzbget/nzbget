@@ -281,6 +281,7 @@ private:
 
 	// Current state
 	bool				m_serverMode;
+	bool				m_daemonMode;
 	bool				m_remoteClientMode;
 	bool				m_pauseDownload;
 	bool				m_pausePostProcess;
@@ -439,6 +440,8 @@ public:
 	// Current state
 	void				SetServerMode(bool serverMode) { m_serverMode = serverMode; }
 	bool				GetServerMode() { return m_serverMode; }
+	void				SetDaemonMode(bool daemonMode) { m_daemonMode = daemonMode; }
+	bool				GetDaemonMode() { return m_daemonMode; }
 	void				SetRemoteClientMode(bool remoteClientMode) { m_remoteClientMode = remoteClientMode; }
 	bool				GetRemoteClientMode() { return m_remoteClientMode; }
 	void				SetPauseDownload(bool pauseDownload) { m_pauseDownload = pauseDownload; }

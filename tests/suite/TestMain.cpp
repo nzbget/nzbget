@@ -37,7 +37,7 @@
 int TestMain(int argc, char * argv[])
 {
 	TestUtil::Init(argv[0]);
-	Log::Init();
+	Log log;
 	Thread::Init();
 
 	if (argc == 1)
@@ -63,7 +63,6 @@ int TestMain(int argc, char * argv[])
 	
 	free(testsargv);
 	Thread::Final();
-	Log::Final();
 	TestUtil::Final();
 
 	return ret;
