@@ -313,54 +313,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 
 	for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
 	{
-		if (!script.GetQueueScript())
-		{
-			continue;
-		}
-
-		bool useScript = false;
-
-		// check queue-scripts
-		const char* queueScript = g_Options->GetQueueScript();
-		if (!Util::EmptyStr(queueScript))
-		{
-			// split szQueueScript into tokens
-			Tokenizer tok(queueScript, ",;");
-			while (const char* scriptName = tok.Next())
-			{
-				if (FileSystem::SameFilename(scriptName, script.GetName()))
-				{
-					useScript = true;
-					break;
-				}
-			}
-		}
-
-		// check post-processing-scripts
-		if (!useScript)
-		{
-			for (NzbParameter& parameter : nzbInfo->GetParameters())
-			{
-				const char* varname = parameter.GetName();
-				if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
-					(!strcasecmp(parameter.GetValue(), "yes") ||
-					 !strcasecmp(parameter.GetValue(), "on") ||
-					 !strcasecmp(parameter.GetValue(), "1")))
-				{
-					BString<1024> scriptName = varname;
-					scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
-					if (FileSystem::SameFilename(scriptName, script.GetName()))
-					{
-						useScript = true;
-						break;
-					}
-				}
-			}
-		}
-
-		useScript &= Util::EmptyStr(script.GetQueueEvents()) || strstr(script.GetQueueEvents(), QUEUE_EVENT_NAMES[event]);
-
-		if (useScript)
+		if (UsableScript(script, nzbInfo, event))
 		{
 			bool alreadyQueued = false;
 			if (event == qeFileDownloaded)
@@ -394,6 +347,80 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 	}
 
 	m_queueMutex.Unlock();
+}
+
+bool QueueScriptCoordinator::UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event)
+{
+	if (!script.GetQueueScript())
+	{
+		return false;
+	}
+
+	if (!Util::EmptyStr(script.GetQueueEvents()) && !strstr(script.GetQueueEvents(), QUEUE_EVENT_NAMES[event]))
+	{
+		return false;
+	}
+
+	// check queue-scripts
+	const char* queueScript = g_Options->GetQueueScript();
+	if (!Util::EmptyStr(queueScript))
+	{
+		Tokenizer tok(queueScript, ",;");
+		while (const char* scriptName = tok.Next())
+		{
+			if (FileSystem::SameFilename(scriptName, script.GetName()))
+			{
+				return true;
+			}
+		}
+	}
+
+	// check post-processing-scripts assigned for that nzb
+	for (NzbParameter& parameter : nzbInfo->GetParameters())
+	{
+		const char* varname = parameter.GetName();
+		if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
+			(!strcasecmp(parameter.GetValue(), "yes") ||
+			 !strcasecmp(parameter.GetValue(), "on") ||
+			 !strcasecmp(parameter.GetValue(), "1")))
+		{
+			BString<1024> scriptName = varname;
+			scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
+			if (FileSystem::SameFilename(scriptName, script.GetName()))
+			{
+				return true;
+			}
+		}
+	}
+
+	// for URL-events the post-processing scripts are not assigned yet;
+	// instead we take the default post-processing scripts for the category (or global)
+	if (event == qeUrlCompleted)
+	{
+		const char* postScript = g_Options->GetPostScript();
+		if (!Util::EmptyStr(nzbInfo->GetCategory()))
+		{
+			Options::Category* categoryObj = g_Options->FindCategory(nzbInfo->GetCategory(), false);
+			if (categoryObj && !Util::EmptyStr(categoryObj->GetPostScript()))
+			{
+				postScript = categoryObj->GetPostScript();
+			}
+		}
+
+		if (!Util::EmptyStr(postScript))
+		{
+			Tokenizer tok(postScript, ",;");
+			while (const char* scriptName = tok.Next())
+			{
+				if (FileSystem::SameFilename(scriptName, script.GetName()))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 NzbInfo* QueueScriptCoordinator::FindNzbInfo(DownloadQueue* downloadQueue, int nzbId)

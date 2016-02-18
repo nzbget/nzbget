@@ -65,6 +65,7 @@ private:
 
 	void				StartScript(NzbInfo* nzbInfo, QueueItem* queueItem);
 	NzbInfo*			FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
+	bool				UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
 
 public:
 						QueueScriptCoordinator();
