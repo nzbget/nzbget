@@ -109,7 +109,7 @@ bool FeedFile::Parse()
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
 
-	_variant_t vFilename(*WString(fileName));
+	_variant_t vFilename(*WString(m_fileName));
 
 	// 1. first trying to load via filename without URL-encoding (certain charaters doesn't work when encoded)
 	VARIANT_BOOL success = doc->load(vFilename);
@@ -117,7 +117,7 @@ bool FeedFile::Parse()
 	{
 		// 2. now trying filename encoded as URL
 		char url[2048];
-		EncodeUrl(fileName, url, 2048);
+		EncodeUrl(m_fileName, url, 2048);
 		debug("url=\"%s\"", url);
 		_variant_t vUrl(url);
 
