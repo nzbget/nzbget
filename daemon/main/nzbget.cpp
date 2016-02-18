@@ -245,6 +245,7 @@ void NZBGet::Init()
 	if (!m_reloading)
 	{
 		Thread::Init();
+		Connection::Init();
 	}
 
 	CreateGlobals();
@@ -285,11 +286,6 @@ void NZBGet::Init()
 	else if (m_commandLineParser->GetRemoteClientMode())
 	{
 		info("nzbget %s remote-mode", Util::VersionRevision());
-	}
-
-	if (!m_reloading)
-	{
-		Connection::Init();
 	}
 
 	m_reloading = false;
