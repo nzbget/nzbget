@@ -657,12 +657,15 @@ void NZBGet::Run(bool reload)
 	StartRemoteServer();
 	StartFrontend();
 
-	if (!m_commandLineParser->GetServerMode())
+	if (!m_commandLineParser->GetRemoteClientMode())
 	{
-		ProcessStandalone();
-	}
+		if (!m_commandLineParser->GetServerMode())
+		{
+			ProcessStandalone();
+		}
 
-	DoMainLoop();
+		DoMainLoop();
+	}
 
 	ScriptController::TerminateAll();
 
