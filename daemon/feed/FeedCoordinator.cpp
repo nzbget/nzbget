@@ -362,13 +362,15 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			FeedScriptController::ExecuteScripts(
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId());
+
 			std::unique_ptr<FeedFile> feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
+			bool parsed = feedFile->Parse();
 			FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
 			NzbList addedNzbs;
 
 			m_downloadsMutex.Lock();
-			if (feedFile->Parse())
+			if (parsed)
 			{
 				ProcessFeed(feedInfo, feedFile->GetFeedItemInfos(), &addedNzbs);
 				feedFile.reset();
@@ -584,9 +586,10 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 			feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
 		}
 
+		bool parsed = feedFile && feedFile->Parse();
 		FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
-		if (!feedFile || !feedFile->Parse())
+		if (!parsed)
 		{
 			return false;
 		}
