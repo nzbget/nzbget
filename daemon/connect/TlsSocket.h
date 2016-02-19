@@ -48,6 +48,9 @@ private:
 
 	void				ReportError(const char* errMsg);
 
+	static void			Final();
+	friend class TlsSocketFinalizer;
+
 protected:
 	virtual void		PrintError(const char* errMsg);
 
@@ -55,7 +58,6 @@ public:
 						TlsSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher);
 	virtual				~TlsSocket();
 	static void			Init();
-	static void			Final();
 	bool				Start();
 	void				Close();
 	int					Send(const char* buffer, int size);

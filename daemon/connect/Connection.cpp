@@ -35,6 +35,17 @@ std::unique_ptr<Mutex> Connection::m_getHostByNameMutex;
 #endif
 #endif
 
+class ConnectionFinalizer
+{
+public:
+	~ConnectionFinalizer()
+	{
+		Connection::Final();
+	}
+};
+
+std::unique_ptr<ConnectionFinalizer> m_connectionFinalizer;
+
 void closesocket_gracefully(SOCKET socket)
 {
 	char buf[1024];
@@ -93,33 +104,19 @@ void Connection::Init()
 	}
 #endif
 
-#ifndef DISABLE_TLS
-	TlsSocket::Init();
-#endif
-
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
 	m_getHostByNameMutex = std::make_unique<Mutex>();
 #endif
 #endif
+
+	m_connectionFinalizer = std::make_unique<ConnectionFinalizer>();
 }
 
 void Connection::Final()
 {
-	debug("Finalizing global connection data");
-
 #ifdef WIN32
 	WSACleanup();
-#endif
-
-#ifndef DISABLE_TLS
-	TlsSocket::Final();
-#endif
-
-#ifndef HAVE_GETADDRINFO
-#ifndef HAVE_GETHOSTBYNAME_R
-	m_getHostByNameMutex.reset();
-#endif
 #endif
 }
 

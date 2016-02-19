@@ -59,7 +59,6 @@ public:
 							Thread();
 	virtual 				~Thread();
 	static void				Init();
-	static void				Final();
 
 	virtual void 			Start();
 	virtual void 			Stop();

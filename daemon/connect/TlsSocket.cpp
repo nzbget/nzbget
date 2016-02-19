@@ -31,6 +31,16 @@
 #include "Thread.h"
 #include "Log.h"
 
+class TlsSocketFinalizer
+{
+public:
+	~TlsSocketFinalizer()
+	{
+		TlsSocket::Final();
+	}
+};
+
+std::unique_ptr<TlsSocketFinalizer> m_tlsSocketFinalizer;
 
 #ifdef HAVE_LIBGNUTLS
 #ifdef NEED_GCRYPT_LOCKING
@@ -188,12 +198,12 @@ void TlsSocket::Init()
 	CRYPTO_set_dynlock_lock_callback(openssl_dynlock_lock);
 
 #endif /* HAVE_OPENSSL */
+
+	m_tlsSocketFinalizer = std::make_unique<TlsSocketFinalizer>();
 }
 
 void TlsSocket::Final()
 {
-	debug("Finalizing TLS library");
-
 #ifdef HAVE_LIBGNUTLS
 	gnutls_global_deinit();
 

@@ -62,7 +62,6 @@ int TestMain(int argc, char * argv[])
 	int ret = Catch::Session().run(argc, testsargv);
 	
 	free(testsargv);
-	Thread::Final();
 	TestUtil::Final();
 
 	return ret;

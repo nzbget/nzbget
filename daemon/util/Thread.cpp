@@ -86,13 +86,6 @@ void Thread::Init()
 	m_threadMutex = std::make_unique<Mutex>();
 }
 
-void Thread::Final()
-{
-	debug("Finalizing global thread data");
-
-	m_threadMutex.reset();
-}
-
 Thread::Thread()
 {
 	debug("Creating Thread");

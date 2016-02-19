@@ -246,6 +246,9 @@ void NZBGet::Init()
 	{
 		Thread::Init();
 		Connection::Init();
+#ifndef DISABLE_TLS
+		TlsSocket::Init();
+#endif
 	}
 
 	CreateGlobals();
@@ -407,12 +410,6 @@ void NZBGet::Cleanup()
 	{
 		info("Deleting lock file");
 		FileSystem::DeleteFile(m_options->GetLockFile());
-	}
-
-	if (!m_reloading)
-	{
-		Connection::Final();
-		Thread::Final();
 	}
 
 	g_UrlCoordinator = nullptr;

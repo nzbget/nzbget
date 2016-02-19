@@ -40,6 +40,10 @@
 
 class Connection
 {
+private:
+	static void			Final();
+	friend class ConnectionFinalizer;
+
 public:
 	enum EStatus
 	{
@@ -117,7 +121,6 @@ public:
 						Connection(SOCKET socket, bool tls);
 	virtual 			~Connection();
 	static void			Init();
-	static void			Final();
 	virtual bool 		Connect();
 	virtual bool		Disconnect();
 	bool				Bind();
