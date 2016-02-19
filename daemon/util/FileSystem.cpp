@@ -705,12 +705,14 @@ CString FileSystem::GetExeFileName(const char* argv0)
 	int r = readlink("/proc/self/exe", exename, 1024 - 1);
 	if (r > 0)
 	{
+		exename[r] = '\0';
 		return exename;
 	}
 	// FreeBSD
 	r = readlink("/proc/curproc/file", exename, 1024 - 1);
 	if (r > 0)
 	{
+		exename[r] = '\0';
 		return exename;
 	}
 
