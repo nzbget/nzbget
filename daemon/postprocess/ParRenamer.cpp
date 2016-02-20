@@ -56,6 +56,12 @@ ParRenamer::ParRenamer()
 	m_detectMissing = false;
 }
 
+void ParRenamer::Cleanup()
+{
+	m_dirList.clear();
+	m_fileHashList.clear();
+}
+
 void ParRenamer::Cancel()
 {
 	m_cancelled = true;
@@ -63,6 +69,7 @@ void ParRenamer::Cancel()
 
 void ParRenamer::Run()
 {
+	Cleanup();
 	m_cancelled = false;
 	m_fileCount = 0;
 	m_curFile = 0;
@@ -112,6 +119,7 @@ void ParRenamer::Run()
 		PrintMessage(Message::mkInfo, "No renamed files found for %s", *m_infoName);
 	}
 
+	Cleanup();
 	Completed();
 }
 

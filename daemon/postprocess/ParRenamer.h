@@ -85,6 +85,7 @@ private:
 	bool				IsSplittedFragment(const char* filename, const char* correctName);
 	void				CheckMissing();
 	void				RenameFile(const char* srcFilename, const char* destFileName);
+	void				Cleanup();
 
 protected:
 	virtual void		UpdateProgress() {}
