@@ -477,9 +477,8 @@ void WebProcessor::SendFileResponse(const char* filename)
 {
 	debug("serving file: %s", filename);
 
-	char *body;
-	int bodyLen;
-	if (!FileSystem::LoadFileIntoBuffer(filename, &body, &bodyLen))
+	CharBuffer body;
+	if (!FileSystem::LoadFileIntoBuffer(filename, body, false))
 	{
 		// do not print warnings "404 not found" for certain files
 		bool ignorable = !strcmp(filename, "package-info.json") ||
@@ -490,12 +489,7 @@ void WebProcessor::SendFileResponse(const char* filename)
 		return;
 	}
 
-	// "LoadFileIntoBuffer" adds a trailing nullptr, which we don't need here
-	bodyLen--;
-
-	SendBodyResponse(body, bodyLen, DetectContentType(filename));
-
-	free(body);
+	SendBodyResponse(body, body.Size(), DetectContentType(filename));
 }
 
 const char* WebProcessor::DetectContentType(const char* filename)

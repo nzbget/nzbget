@@ -895,8 +895,8 @@ void WinConsole::SetupConfigFile()
 
 	// set MainDir in the config-file
 	int size = 0;
-	char* config = nullptr;
-	if (FileSystem::LoadFileIntoBuffer(filename, &config, &size))
+	CharBuffer config;
+	if (FileSystem::LoadFileIntoBuffer(filename, config, true))
 	{
 		const char* SIGNATURE = "MainDir=${AppDir}\\downloads";
 		char* p = strstr(config, SIGNATURE);
@@ -908,11 +908,10 @@ void WinConsole::SetupConfigFile()
 				outfile.Write(config, p - config);
 				outfile.Write("MainDir=", 8);
 				outfile.Write(appDataPath, strlen(appDataPath));
-				outfile.Write(p + strlen(SIGNATURE), size - (p + strlen(SIGNATURE) - config) - 1);
+				outfile.Write(p + strlen(SIGNATURE), config.Size() - 1 - (p + strlen(SIGNATURE) - config) - 1);
 				outfile.Close();
 			}
 		}
-		free(config);
 	}
 
 	// create default destination directory (which is not created on start automatically)

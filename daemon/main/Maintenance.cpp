@@ -176,9 +176,8 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 {
 	BString<1024> fileName("%s%cpackage-info.json", g_Options->GetWebDir(), PATH_SEPARATOR);
 
-	char* packageInfo;
-	int packageInfoLen;
-	if (!FileSystem::LoadFileIntoBuffer(fileName, &packageInfo, &packageInfoLen))
+	CharBuffer packageInfo;
+	if (!FileSystem::LoadFileIntoBuffer(fileName, packageInfo, true))
 	{
 		error("Could not load file %s", *fileName);
 		return false;
@@ -190,7 +189,6 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	if (!p)
 	{
 		error("Could not parse file %s", *fileName);
-		free(packageInfo);
 		return false;
 	}
 
@@ -198,7 +196,6 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	if (!p)
 	{
 		error("Could not parse file %s", *fileName);
-		free(packageInfo);
 		return false;
 	}
 
@@ -207,7 +204,6 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	if (!pend)
 	{
 		error("Could not parse file %s", *fileName);
-		free(packageInfo);
 		return false;
 	}
 
@@ -215,7 +211,6 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	if (len >= sizeof(fileName))
 	{
 		error("Could not parse file %s", *fileName);
-		free(packageInfo);
 		return false;
 	}
 
@@ -224,8 +219,6 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 	(*value)[len] = '\0';
 
 	WebUtil::JsonDecode(*value);
-
-	free(packageInfo);
 
 	return true;
 }
@@ -432,16 +425,14 @@ bool Signature::ReadSignature()
 // Read public key from file (m_szPubKeyFilename) into memory
 bool Signature::ReadPubKey()
 {
-	char* keybuf;
-	int keybuflen;
-	if (!FileSystem::LoadFileIntoBuffer(m_pubKeyFilename, &keybuf, &keybuflen))
+	CharBuffer keybuf;
+	if (!FileSystem::LoadFileIntoBuffer(m_pubKeyFilename, keybuf, false))
 	{
 		return false;
 	}
-	BIO* mem = BIO_new_mem_buf(keybuf, keybuflen);
+	BIO* mem = BIO_new_mem_buf(keybuf, keybuf.Size());
 	m_pubKey = PEM_read_bio_RSA_PUBKEY(mem, nullptr, nullptr, nullptr);
 	BIO_free(mem);
-	free(keybuf);
 	return m_pubKey != nullptr;
 }
 

@@ -169,14 +169,12 @@ bool ScriptConfig::SaveConfig(Options::OptEntries* optEntries)
 
 bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 {
-	char* buffer;
-	int length;
-	if (!FileSystem::LoadFileIntoBuffer(g_Options->GetConfigTemplate(), &buffer, &length))
+	CharBuffer buffer;
+	if (!FileSystem::LoadFileIntoBuffer(g_Options->GetConfigTemplate(), buffer, true))
 	{
 		return false;
 	}
 	configTemplates->emplace_back(Script("", ""), buffer);
-	free(buffer);
 
 	if (!g_Options->GetScriptDir())
 	{

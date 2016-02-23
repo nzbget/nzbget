@@ -118,7 +118,7 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 	const char* dupeKey, int dupeMode, int dupeScore)
 {
 	// Read the file into the buffer
-	char* buffer = nullptr;
+	CharBuffer buffer;
 	int length = 0;
 	bool isUrl = !strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7);
 	if (isUrl)
@@ -127,12 +127,12 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 	}
 	else
 	{
-		if (!FileSystem::LoadFileIntoBuffer(nzbContent, &buffer, &length))
+		if (!FileSystem::LoadFileIntoBuffer(nzbContent, buffer, false))
 		{
 			printf("Could not load file %s\n", nzbContent);
 			return false;
 		}
-		length--;
+		length = buffer.Size();
 	}
 
 	bool OK = InitConnection();
@@ -184,9 +184,6 @@ bool RemoteClient::RequestServerDownload(const char* nzbFilename, const char* nz
 			m_connection->Disconnect();
 		}
 	}
-
-	// Cleanup
-	free(buffer);
 
 	return OK;
 }

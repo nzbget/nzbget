@@ -199,10 +199,10 @@ bool FileSystem::DirEmpty(const char* dirFilename)
 	return dir.Next() == nullptr;
 }
 
-bool FileSystem::LoadFileIntoBuffer(const char* fileName, char** buffer, int* bufferLength)
+bool FileSystem::LoadFileIntoBuffer(const char* filename, CharBuffer& buffer, bool addTrailingNull)
 {
 	DiskFile file;
-	if (!file.Open(fileName, DiskFile::omRead))
+	if (!file.Open(filename, DiskFile::omRead))
 	{
 		return false;
 	}
@@ -213,26 +213,24 @@ bool FileSystem::LoadFileIntoBuffer(const char* fileName, char** buffer, int* bu
 	file.Seek(0);
 
 	// allocate memory to contain the whole file.
-	*buffer = (char*) malloc(size + 1);
-	if (!*buffer)
-	{
-		return false;
-	}
+	buffer.Reserve(size + (addTrailingNull ? 1 : 0));
 
 	// copy the file into the buffer.
-	file.Read(*buffer, size);
+	file.Read(buffer, size);
 	file.Close();
 
-	(*buffer)[size] = 0;
-	*bufferLength = size + 1;
+	if (addTrailingNull)
+	{
+		buffer[size] = 0;
+	}
 
 	return true;
 }
 
-bool FileSystem::SaveBufferIntoFile(const char* fileName, const char* buffer, int bufLen)
+bool FileSystem::SaveBufferIntoFile(const char* filename, const char* buffer, int bufLen)
 {
 	DiskFile file;
-	if (!file.Open(fileName, DiskFile::omWrite))
+	if (!file.Open(filename, DiskFile::omWrite))
 	{
 		return false;
 	}

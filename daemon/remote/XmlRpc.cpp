@@ -3051,11 +3051,9 @@ void ReadUrlXmlCommand::Execute()
 
 	if (ok)
 	{
-		char* fileContent = nullptr;
-		int fileContentLen = 0;
-		FileSystem::LoadFileIntoBuffer(tempFileName, &fileContent, &fileContentLen);
+		CharBuffer fileContent;
+		FileSystem::LoadFileIntoBuffer(tempFileName, fileContent, true);
 		CString xmlContent = EncodeStr(fileContent);
-		free(fileContent);
 		AppendResponse(IsJson() ? "\"" : "<string>");
 		AppendResponse(xmlContent);
 		AppendResponse(IsJson() ? "\"" : "</string>");
