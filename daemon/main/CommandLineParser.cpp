@@ -109,10 +109,11 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 {
 	m_clientOperation = opClientNoOperation; // default
 
-	char** argv = (char**)malloc(sizeof(char*) * argc);
+	std::vector<CString> argv;
+	argv.reserve(argc);
 	for (int i = 0; i < argc; i++)
 	{
-		argv[i] = strdup(const_argv[i]);
+		argv.emplace_back(const_argv[i]);
 	}
 
 	// reset getopt
@@ -124,9 +125,9 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 
 #ifdef HAVE_GETOPT_LONG
 		int option_index  = 0;
-		c = getopt_long(argc, argv, short_options, long_options, &option_index);
+		c = getopt_long(argc, (char**)argv.data(), short_options, long_options, &option_index);
 #else
-		c = getopt(argc, argv, short_options);
+		c = getopt(argc, (char**)argv.data(), short_options);
 #endif
 
 		if (c == -1) break;
@@ -165,7 +166,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				while (true)
 				{
 					optind++;
-					optarg = optind > argc ? nullptr : argv[optind-1];
+					optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 					if (optarg && (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "U")))
 					{
 						// option ignored (but kept for compatibility)
@@ -196,7 +197,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						m_addCategory = argv[optind-1];
+						m_addCategory = std::move(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "N"))
 					{
@@ -206,7 +207,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						m_addNzbFilename = argv[optind-1];
+						m_addNzbFilename = std::move(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "DK"))
 					{
@@ -216,7 +217,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						m_addDupeKey = argv[optind-1];
+						m_addDupeKey = std::move(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "DS"))
 					{
@@ -265,7 +266,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				break;
 			case 'L':
 				optind++;
-				optarg = optind > argc ? nullptr : argv[optind-1];
+				optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
 					m_clientOperation = opClientRequestListFiles;
@@ -311,13 +312,13 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						ReportError("Could not parse value of option 'L'");
 						return;
 					}
-					m_editQueueText = argv[optind-1];
+					m_editQueueText = std::move(argv[optind-1]);
 				}
 				break;
 			case 'P':
 			case 'U':
 				optind++;
-				optarg = optind > argc ? nullptr : argv[optind-1];
+				optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
 					m_clientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
@@ -480,7 +481,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = argv[optind-1];
+						m_editQueueText = std::move(argv[optind-1]);
 
 						if (!strchr(m_editQueueText, '='))
 						{
@@ -553,7 +554,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = argv[optind-1];
+						m_editQueueText = std::move(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "N"))
 					{
@@ -570,7 +571,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = argv[optind-1];
+						m_editQueueText = std::move(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "M"))
 					{
@@ -591,7 +592,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = argv[optind-1];
+						m_editQueueText = std::move(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "O"))
 					{
@@ -608,7 +609,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = argv[optind-1];
+						m_editQueueText = std::move(argv[optind-1]);
 
 						if (!strchr(m_editQueueText, '='))
 						{
@@ -631,7 +632,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_editQueueText = argv[optind-1];
+						m_editQueueText = std::move(argv[optind-1]);
 
 						if (atoi(m_editQueueText) == 0 && strcmp("0", m_editQueueText))
 						{
@@ -690,7 +691,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				break;
 			case 'S':
 				optind++;
-				optarg = optind > argc ? nullptr : argv[optind-1];
+				optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
 					m_clientOperation = opClientRequestScanAsync;
@@ -711,12 +712,6 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				return;
 		}
 	}
-
-	for (int i = 0; i < argc; i++)
-	{
-		free(argv[i]);
-	}
-	free(argv);
 
 	if (m_serverMode && m_clientOperation == opClientRequestDownloadPause)
 	{
