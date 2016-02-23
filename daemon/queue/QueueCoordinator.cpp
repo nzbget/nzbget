@@ -467,21 +467,19 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 
 	bool ok = false;
 
-	// pCheckedFiles stores
-	bool* checkedFiles = nullptr;
+	std::vector<FileInfo*> checkedFiles;
 	time_t curDate = Util::CurrentTime();
 
 	while (!ok)
 	{
 		fileInfo = nullptr;
-		int num = 0;
-		int fileNum = 0;
 
 		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
 			for (FileInfo* fileInfo1 : nzbInfo->GetFileList())
 			{
-				if ((!checkedFiles || !checkedFiles[num]) &&
+				if ((checkedFiles.empty() ||
+					 std::find(checkedFiles.begin(), checkedFiles.end(), fileInfo1) == checkedFiles.end()) &&
 					!fileInfo1->GetPaused() && !fileInfo1->GetDeleted() &&
 					(g_Options->GetPropagationDelay() == 0 ||
 					 (int)fileInfo1->GetTime() < (int)curDate - g_Options->GetPropagationDelay()) &&
@@ -492,9 +490,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 					 (fileInfo1->GetExtraPriority() > fileInfo->GetExtraPriority())))
 				{
 					fileInfo = fileInfo1;
-					fileNum = num;
 				}
-				num++;
 			}
 		}
 
@@ -522,30 +518,11 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 
 		if (!ok)
 		{
-			// the file doesn't have any articles left for download, we mark the file as such
-			if (!checkedFiles)
-			{
-				int totalFileCount = 0;
-				for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-				{
-					totalFileCount += nzbInfo->GetFileList()->size();
-				}
-
-				if (totalFileCount > 0)
-				{
-					int arrSize = sizeof(bool) * totalFileCount;
-					checkedFiles = (bool*)malloc(arrSize);
-					memset(checkedFiles, false, arrSize);
-				}
-			}
-			if (checkedFiles)
-			{
-				checkedFiles[fileNum] = true;
-			}
+			// the file doesn't have any articles left for download
+			checkedFiles.reserve(100);
+			checkedFiles.push_back(fileInfo);
 		}
 	}
-
-	free(checkedFiles);
 
 	return ok;
 }
