@@ -215,9 +215,11 @@ public:
 class RegEx
 {
 private:
-	void*				m_context;
+#ifdef HAVE_REGEX_H
+	regex_t				m_context;
+	regmatch_t*			m_matches;
+#endif
 	bool				m_valid;
-	void*				m_matches;
 	int					m_matchBufSize;
 
 public:
@@ -233,18 +235,18 @@ public:
 class WildMask
 {
 private:
-	char*				m_pattern;
+	typedef std::vector<int> IntList;
+
+	CString				m_pattern;
 	bool				m_wantsPositions;
 	int					m_wildCount;
-	int*				m_wildStart;
-	int*				m_wildLen;
-	int					m_arrLen;
+	IntList				m_wildStart;
+	IntList				m_wildLen;
 
 	void				ExpandArray();
 
 public:
 						WildMask(const char* pattern, bool wantsPositions = false);
-						~WildMask();
 	bool				Match(const char* text);
 	int					GetMatchCount() { return m_wildCount; }
 	int					GetMatchStart(int index) { return m_wildStart[index]; }

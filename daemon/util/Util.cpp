@@ -1569,15 +1569,15 @@ void URL::ParseUrl()
 	m_valid = true;
 }
 
+
 RegEx::RegEx(const char *pattern, int matchBufSize)
 {
 #ifdef HAVE_REGEX_H
-	m_context = malloc(sizeof(regex_t));
-	m_valid = regcomp((regex_t*)m_context, pattern, REG_EXTENDED | REG_ICASE | (matchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
+	m_valid = regcomp(&m_context, pattern, REG_EXTENDED | REG_ICASE | (matchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
 	m_matchBufSize = matchBufSize;
 	if (matchBufSize > 0)
 	{
-		m_matches = malloc(sizeof(regmatch_t) * matchBufSize);
+		m_matches = new regmatch_t[matchBufSize];
 	}
 	else
 	{
@@ -1591,16 +1591,15 @@ RegEx::RegEx(const char *pattern, int matchBufSize)
 RegEx::~RegEx()
 {
 #ifdef HAVE_REGEX_H
-	regfree((regex_t*)m_context);
-	free(m_context);
-	free(m_matches);
+	regfree(&m_context);
+	delete[] m_matches;
 #endif
 }
 
 bool RegEx::Match(const char *str)
 {
 #ifdef HAVE_REGEX_H
-	return m_valid ? regexec((regex_t*)m_context, str, m_matchBufSize, (regmatch_t*)m_matches, 0) == 0 : false;
+	return m_valid ? regexec(&m_context, str, m_matchBufSize, m_matches, 0) == 0 : false;
 #else
 	return false;
 #endif
@@ -1612,8 +1611,7 @@ int RegEx::GetMatchCount()
 	int count = 0;
 	if (m_matches)
 	{
-		regmatch_t* matches = (regmatch_t*)m_matches;
-		while (count < m_matchBufSize && matches[count].rm_so > -1)
+		while (count < m_matchBufSize && m_matches[count].rm_so > -1)
 		{
 			count++;
 		}
@@ -1627,8 +1625,7 @@ int RegEx::GetMatchCount()
 int RegEx::GetMatchStart(int index)
 {
 #ifdef HAVE_REGEX_H
-	regmatch_t* matches = (regmatch_t*)m_matches;
-	return matches[index].rm_so;
+	return m_matches[index].rm_so;
 #else
 	return nullptr;
 #endif
@@ -1637,8 +1634,7 @@ int RegEx::GetMatchStart(int index)
 int RegEx::GetMatchLen(int index)
 {
 #ifdef HAVE_REGEX_H
-	regmatch_t* matches = (regmatch_t*)m_matches;
-	return matches[index].rm_eo - matches[index].rm_so;
+	return m_matches[index].rm_eo - m_matches[index].rm_so;
 #else
 	return 0;
 #endif
@@ -1647,39 +1643,30 @@ int RegEx::GetMatchLen(int index)
 
 WildMask::WildMask(const char *pattern, bool wantsPositions)
 {
-	m_pattern = strdup(pattern);
+	m_pattern = pattern;
 	m_wantsPositions = wantsPositions;
-	m_wildStart = nullptr;
-	m_wildLen = nullptr;
-	m_arrLen = 0;
-}
-
-WildMask::~WildMask()
-{
-	free(m_pattern);
-	free(m_wildStart);
-	free(m_wildLen);
 }
 
 void WildMask::ExpandArray()
 {
 	m_wildCount++;
-	if (m_wildCount > m_arrLen)
-	{
-		m_arrLen += 100;
-		m_wildStart = (int*)realloc(m_wildStart, sizeof(*m_wildStart) * m_arrLen);
-		m_wildLen = (int*)realloc(m_wildLen, sizeof(*m_wildLen) * m_arrLen);
-	}
+	m_wildStart.resize(m_wildCount);
+	m_wildLen.resize(m_wildCount);
 }
 
 // Based on code from http://bytes.com/topic/c/answers/212179-string-matching
 // Extended to save positions of matches.
 bool WildMask::Match(const char* text)
 {
+	m_wildCount = 0;
+	m_wildStart.clear();
+	m_wildStart.reserve(100);
+	m_wildLen.clear();
+	m_wildLen.reserve(100);
+
 	const char* pat = m_pattern;
 	const char* str = text;
 	const char *spos, *wpos;
-	m_wildCount = 0;
 	bool qmark = false;
 	bool star = false;
 

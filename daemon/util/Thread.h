@@ -30,7 +30,11 @@
 class Mutex
 {
 private:
-	void*					m_mutexObj;
+#ifdef WIN32
+	CRITICAL_SECTION		m_mutexObj;
+#else
+	pthread_mutex_t			m_mutexObj;
+#endif
 
 public:
 							Mutex();
@@ -44,7 +48,11 @@ class Thread
 private:
 	static std::unique_ptr<Mutex>	m_threadMutex;
 	static int				m_threadCount;
-	void*	 				m_threadObj;
+#ifdef WIN32
+	HANDLE	 				m_threadObj;
+#else
+	pthread_t 				m_threadObj;
+#endif
 	bool 					m_running;
 	bool					m_stopped;
 	bool					m_autoDestroy;

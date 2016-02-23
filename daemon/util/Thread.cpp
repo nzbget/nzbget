@@ -34,47 +34,44 @@ std::unique_ptr<Mutex> Thread::m_threadMutex;
 Mutex::Mutex()
 {
 #ifdef WIN32
-	m_mutexObj = (CRITICAL_SECTION*)malloc(sizeof(CRITICAL_SECTION));
-	InitializeCriticalSection((CRITICAL_SECTION*)m_mutexObj);
+	InitializeCriticalSection(&m_mutexObj);
 #else
-	m_mutexObj = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
-	pthread_mutex_init((pthread_mutex_t*)m_mutexObj, nullptr);
+	pthread_mutex_init(&m_mutexObj, nullptr);
 #endif
 }
 
 Mutex::~Mutex()
 {
 #ifdef WIN32
-	DeleteCriticalSection((CRITICAL_SECTION*)m_mutexObj);
+	DeleteCriticalSection(&m_mutexObj);
 #else
-	pthread_mutex_destroy((pthread_mutex_t*)m_mutexObj);
+	pthread_mutex_destroy(&m_mutexObj);
 #endif
-	free(m_mutexObj);
 }
 
 void Mutex::Lock()
 {
 #ifdef WIN32
-	EnterCriticalSection((CRITICAL_SECTION*)m_mutexObj);
+	EnterCriticalSection(&m_mutexObj);
 #ifdef DEBUG
 	// CriticalSections on Windows can be locked many times from the same thread,
 	// but we do not want this and must treat such situations as errors and detect them.
-	if (((CRITICAL_SECTION*)m_mutexObj)->RecursionCount > 1)
+	if (m_mutexObj.RecursionCount > 1)
 	{
 		error("Internal program error: inconsistent thread-lock detected");
 	}
 #endif
 #else
-	pthread_mutex_lock((pthread_mutex_t*)m_mutexObj);
+	pthread_mutex_lock(&m_mutexObj);
 #endif
 }
 
 void Mutex::Unlock()
 {
 #ifdef WIN32
-	LeaveCriticalSection((CRITICAL_SECTION*)m_mutexObj);
+	LeaveCriticalSection(&m_mutexObj);
 #else
-	pthread_mutex_unlock((pthread_mutex_t*)m_mutexObj);
+	pthread_mutex_unlock(&m_mutexObj);
 #endif
 }
 
@@ -90,12 +87,7 @@ Thread::Thread()
 {
 	debug("Creating Thread");
 
-#ifdef WIN32
-	m_threadObj = nullptr;
-#else
-	m_threadObj = (pthread_t*)malloc(sizeof(pthread_t));
-	*((pthread_t*)m_threadObj) = 0;
-#endif
+	m_threadObj = 0;
 	m_running = false;
 	m_stopped = false;
 	m_autoDestroy = false;
@@ -104,9 +96,6 @@ Thread::Thread()
 Thread::~Thread()
 {
 	debug("Destroying Thread");
-#ifndef WIN32
-	free(m_threadObj);
-#endif
 }
 
 void Thread::Start()
@@ -126,14 +115,14 @@ void Thread::Start()
 	m_threadMutex->Lock();
 
 #ifdef WIN32
-	m_threadObj = (HANDLE)_beginthread(Thread::thread_handler, 0, (void *)this);
-	m_running = m_threadObj != nullptr;
+	m_threadObj = (HANDLE)_beginthread(Thread::thread_handler, 0, (void*)this);
+	m_running = m_threadObj != 0;
 #else
 	pthread_attr_t m_attr;
 	pthread_attr_init(&m_attr);
 	pthread_attr_setdetachstate(&m_attr, PTHREAD_CREATE_DETACHED);
 	pthread_attr_setinheritsched(&m_attr , PTHREAD_INHERIT_SCHED);
-	m_running = !pthread_create((pthread_t*)m_threadObj, &m_attr, Thread::thread_handler, (void *) this);
+	m_running = !pthread_create(&m_threadObj, &m_attr, Thread::thread_handler, (void *) this);
 	pthread_attr_destroy(&m_attr);
 #endif
 
@@ -161,9 +150,9 @@ bool Thread::Kill()
 	m_threadMutex->Lock();
 
 #ifdef WIN32
-	bool terminated = TerminateThread((HANDLE)m_threadObj, 0) != 0;
+	bool terminated = TerminateThread(m_threadObj, 0) != 0;
 #else
-	bool terminated = pthread_cancel(*(pthread_t*)m_threadObj) == 0;
+	bool terminated = pthread_cancel(m_threadObj) == 0;
 #endif
 
 	if (terminated)

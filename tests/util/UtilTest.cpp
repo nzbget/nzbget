@@ -73,3 +73,13 @@ TEST_CASE("WebUtil: URLEncode", "[Util][Quick]")
 
 	REQUIRE(strcmp(testString, correctedUrl) == 0);
 }
+
+TEST_CASE("Util: WildMask", "[Util][Quick]")
+{
+	WildMask mask("*.par2", true);
+	REQUIRE_FALSE(mask.Match("Debian V7 6 64 bit OS.nzb"));
+	REQUIRE_FALSE(mask.Match("Debian V7 6 64 bit OS.par2.nzb"));
+	REQUIRE(mask.Match("Debian V7 6 64 bit OS.par2"));
+	REQUIRE(mask.Match(".par2"));
+	REQUIRE_FALSE(mask.Match("par2"));
+}
