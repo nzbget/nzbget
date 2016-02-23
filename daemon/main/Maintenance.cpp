@@ -61,7 +61,6 @@ Maintenance::Maintenance()
 {
 	m_idMessageGen = 0;
 	m_updateScriptController = nullptr;
-	m_updateScript = nullptr;
 }
 
 Maintenance::~Maintenance()
@@ -76,8 +75,6 @@ Maintenance::~Maintenance()
 			usleep(20*1000);
 		}
 	}
-
-	free(m_updateScript);
 }
 
 void Maintenance::ResetUpdateController()
@@ -122,13 +119,7 @@ bool Maintenance::StartUpdate(EBranch branch)
 		return false;
 	}
 
-	if (m_updateScript)
-	{
-		free(m_updateScript);
-		m_updateScript = nullptr;
-	}
-
-	if (!ReadPackageInfoStr("install-script", &m_updateScript))
+	if (!ReadPackageInfoStr("install-script", m_updateScript))
 	{
 		return false;
 	}
@@ -140,8 +131,7 @@ bool Maintenance::StartUpdate(EBranch branch)
 #endif
 		)
 	{
-		free(m_updateScript);
-		m_updateScript = strdup(BString<1024>("%s%c%s", g_Options->GetAppDir(), PATH_SEPARATOR, m_updateScript));
+		m_updateScript = CString::FormatStr("%s%c%s", g_Options->GetAppDir(), PATH_SEPARATOR, *m_updateScript);
 	}
 
 	m_messages.clear();
@@ -156,23 +146,20 @@ bool Maintenance::StartUpdate(EBranch branch)
 	return true;
 }
 
-bool Maintenance::CheckUpdates(char** updateInfo)
+bool Maintenance::CheckUpdates(CString& updateInfo)
 {
-	char* updateInfoScript;
-	if (!ReadPackageInfoStr("update-info-script", &updateInfoScript))
+	CString updateInfoScript;
+	if (!ReadPackageInfoStr("update-info-script", updateInfoScript))
 	{
 		return false;
 	}
 
-	*updateInfo = nullptr;
 	UpdateInfoScriptController::ExecuteScript(updateInfoScript, updateInfo);
 
-	free(updateInfoScript);
-
-	return *updateInfo;
+	return updateInfo.Length() > 0;
 }
 
-bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
+bool Maintenance::ReadPackageInfoStr(const char* key, CString& value)
 {
 	BString<1024> fileName("%s%cpackage-info.json", g_Options->GetWebDir(), PATH_SEPARATOR);
 
@@ -214,11 +201,11 @@ bool Maintenance::ReadPackageInfoStr(const char* key, char** value)
 		return false;
 	}
 
-	*value = (char*)malloc(len+1);
-	strncpy(*value, p, len);
-	(*value)[len] = '\0';
+	value.Reserve(len);
+	strncpy(value, p, len);
+	value[len] = '\0';
 
-	WebUtil::JsonDecode(*value);
+	WebUtil::JsonDecode(value);
 
 	return true;
 }
@@ -297,7 +284,7 @@ void UpdateScriptController::AddMessage(Message::EKind kind, const char* text)
 	}
 }
 
-void UpdateInfoScriptController::ExecuteScript(const char* script, char** updateInfo)
+void UpdateInfoScriptController::ExecuteScript(const char* script, CString& updateInfo)
 {
 	detail("Executing update-info-script %s", FileSystem::BaseFileName(script));
 
@@ -316,7 +303,7 @@ void UpdateInfoScriptController::ExecuteScript(const char* script, char** update
 
 	if (!scriptController.m_updateInfo.Empty())
 	{
-		*updateInfo = strdup(scriptController.m_updateInfo);
+		updateInfo = scriptController.m_updateInfo;
 	}
 }
 

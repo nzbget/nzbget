@@ -3069,13 +3069,12 @@ void ReadUrlXmlCommand::Execute()
 // string checkupdates()
 void CheckUpdatesXmlCommand::Execute()
 {
-	char* updateInfo = nullptr;
-	bool ok = g_Maintenance->CheckUpdates(&updateInfo);
+	CString updateInfo;
+	bool ok = g_Maintenance->CheckUpdates(updateInfo);
 
 	if (ok)
 	{
 		CString xmlContent = EncodeStr(updateInfo);
-		free(updateInfo);
 		AppendResponse(IsJson() ? "\"" : "<string>");
 		AppendResponse(xmlContent);
 		AppendResponse(IsJson() ? "\"" : "</string>");

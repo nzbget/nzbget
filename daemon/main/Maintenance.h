@@ -41,9 +41,9 @@ private:
 	Mutex				m_controllerMutex;
 	int					m_idMessageGen;
 	UpdateScriptController*	m_updateScriptController;
-	char*				m_updateScript;
+	CString				m_updateScript;
 
-	bool				ReadPackageInfoStr(const char* key, char** value);
+	bool				ReadPackageInfoStr(const char* key, CString& value);
 
 public:
 	enum EBranch
@@ -60,7 +60,7 @@ public:
 	void				UnlockMessages();
 	bool				StartUpdate(EBranch branch);
 	void				ResetUpdateController();
-	bool				CheckUpdates(char** updateInfo);
+	bool				CheckUpdates(CString& updateInfo);
 	static bool			VerifySignature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
 };
 
@@ -90,7 +90,7 @@ protected:
 	virtual void		AddMessage(Message::EKind kind, const char* text);
 
 public:
-	static void			ExecuteScript(const char* script, char** updateInfo);
+	static void			ExecuteScript(const char* script, CString& updateInfo);
 };
 
 #endif
