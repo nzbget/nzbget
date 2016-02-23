@@ -1242,7 +1242,7 @@ void Options::InitScheduler()
 			BString<100>("Task%i.Command", n), CommandCount, CommandNames, CommandValues);
 
 		if (param && strlen(param) > 0 && taskCommand == scProcess &&
-			!Util::SplitCommandLine(param, nullptr))
+			Util::SplitCommandLine(param).empty())
 		{
 			ConfigError("Invalid value for option \"Task%i.Param\"", n);
 			continue;

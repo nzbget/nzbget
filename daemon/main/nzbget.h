@@ -196,6 +196,7 @@ using namespace MSXML;
 #include <list>
 #include <set>
 #include <map>
+#include <iterator>
 #include <algorithm>
 #include <iostream>
 #include <fstream>

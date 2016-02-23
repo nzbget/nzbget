@@ -361,8 +361,8 @@ bool UnpackController::PrepareCmdParams(const char* command, ParamList* params, 
 		return true;
 	}
 
-	char** cmdArgs = nullptr;
-	if (!Util::SplitCommandLine(command, &cmdArgs))
+	std::vector<CString> cmdArgs = Util::SplitCommandLine(command);
+	if (cmdArgs.empty())
 	{
 		PrintMessage(Message::mkError, "Could not start %s, failed to parse command line: %s", infoName, command);
 		m_unpackOk = false;
@@ -370,11 +370,7 @@ bool UnpackController::PrepareCmdParams(const char* command, ParamList* params, 
 		return false;
 	}
 
-	for (char** argPtr = cmdArgs; *argPtr; argPtr++)
-	{
-		params->emplace_back(*argPtr);
-	}
-	free(cmdArgs);
+	std::move(cmdArgs.begin(), cmdArgs.end(), std::back_inserter(*params));
 
 	return true;
 }

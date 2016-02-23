@@ -32,8 +32,8 @@
 
 void SchedulerScriptController::StartScript(const char* param, bool externalProcess, int taskId)
 {
-	char** argv = nullptr;
-	if (externalProcess && !Util::SplitCommandLine(param, &argv))
+	std::vector<CString> argv;
+	if (externalProcess && (argv = Util::SplitCommandLine(param)).empty())
 	{
 		error("Could not execute scheduled process-script, failed to parse command line: %s", param);
 		return;
@@ -48,7 +48,8 @@ void SchedulerScriptController::StartScript(const char* param, bool externalProc
 	if (externalProcess)
 	{
 		scriptController->SetScript(argv[0]);
-		scriptController->SetArgs((const char**)argv, true);
+		scriptController->m_args = std::move(argv);
+		scriptController->SetArgs((const char**)scriptController->m_args.data(), false);
 	}
 
 	scriptController->SetAutoDestroy(true);

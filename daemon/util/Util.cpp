@@ -306,11 +306,10 @@ bool Util::MatchFileExt(const char* filename, const char* extensionList, const c
 	return false;
 }
 
-bool Util::SplitCommandLine(const char* commandLine, char*** argv)
+std::vector<CString> Util::SplitCommandLine(const char* commandLine)
 {
-	int argCount = 0;
+	std::vector<CString> result;
 	char buf[1024];
-	char* pszArgList[100];
 	uint32 len = 0;
 	bool escaping = false;
 	bool space = true;
@@ -358,15 +357,11 @@ bool Util::SplitCommandLine(const char* commandLine, char*** argv)
 			}
 		}
 
-		if ((space || !*p) && len > 0 && argCount < 100)
+		if ((space || !*p) && len > 0)
 		{
 			//add token
 			buf[len] = '\0';
-			if (argv)
-			{
-				pszArgList[argCount] = strdup(buf);
-			}
-			(argCount)++;
+			result.emplace_back(buf);
 			len = 0;
 		}
 
@@ -376,14 +371,7 @@ bool Util::SplitCommandLine(const char* commandLine, char*** argv)
 		}
 	}
 
-	if (argv)
-	{
-		pszArgList[argCount] = nullptr;
-		*argv = (char**)malloc((argCount + 1) * sizeof(char*));
-		memcpy(*argv, pszArgList, sizeof(char*) * (argCount + 1));
-	}
-
-	return argCount > 0;
+	return result;
 }
 
 void Util::TrimRight(char* str)

@@ -67,12 +67,12 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 	unrar.m_filenameBuf = filenameBuf;
 	unrar.m_filenameBufLen = filenameBufLen;
 
-	char** cmdArgs = nullptr;
-	if (!Util::SplitCommandLine(g_Options->GetUnrarCmd(), &cmdArgs))
+	std::vector<CString> cmdArgs = Util::SplitCommandLine(g_Options->GetUnrarCmd());
+	if (cmdArgs.empty())
 	{
 		return false;
 	}
-	const char* unrarPath = *cmdArgs;
+	const char* unrarPath = cmdArgs[0];
 	unrar.SetScript(unrarPath);
 
 	const char* args[4];
@@ -105,12 +105,6 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 	{
 		usleep(200 * 1000);
 	}
-
-	for (char** argPtr = cmdArgs; *argPtr; argPtr++)
-	{
-		free(*argPtr);
-	}
-	free(cmdArgs);
 
 	*maxSize = unrar.m_maxSize;
 	*compressed = unrar.m_compressed;

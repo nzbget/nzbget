@@ -43,16 +43,9 @@ public:
 	/*
 	 * Split command line into arguments.
 	 * Uses spaces and single quotation marks as separators.
-	 * Returns bool if sucessful or false if bad escaping was detected.
-	 * Parameter "argv" may be nullptr if only a syntax check is needed.
-	 * Parsed parameters returned in Array "argv", which contains at least one element.
-	 * The last element in array is nullptr.
-	 * Restrictions: the number of arguments is limited to 100 and each argument must
-	 * be maximum 1024 chars long.
-	 * If these restrictions are exceeded, only first 100 arguments and only first 1024
-	 * for each argument are returned (the function still returns "true").
+	 * May return empty list if bad escaping was detected.
 	 */
-	static bool SplitCommandLine(const char* commandLine, char*** argv);
+	static std::vector<CString> SplitCommandLine(const char* commandLine);
 
 	static int64 JoinInt64(uint32 Hi, uint32 Lo);
 	static void SplitInt64(int64 Int64, uint32* Hi, uint32* Lo);
