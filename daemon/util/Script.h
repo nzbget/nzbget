@@ -42,9 +42,9 @@ public:
 	void				Append(const char* envstr);
 	void				Append(CString&& envstr);
 #ifdef WIN32
-	wchar_t*			GetStrings();
+	std::unique_ptr<wchar_t[]>	GetStrings();
 #else
-	char**				GetStrings();
+	std::vector<char*>			GetStrings();
 #endif
 };
 

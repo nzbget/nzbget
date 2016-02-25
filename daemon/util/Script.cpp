@@ -115,18 +115,18 @@ void EnvironmentStrings::Append(CString&& envstr)
 #ifdef WIN32
 /*
  * Returns environment block in format suitable for using with CreateProcess.
- * The allocated memory must be freed by caller using "free()".
  */
-wchar_t* EnvironmentStrings::GetStrings()
+std::unique_ptr<wchar_t[]> EnvironmentStrings::GetStrings()
 {
 	int size = 1;
 	for (CString& var : m_strings)
 	{
-		size += strlen(var) + 1;
+		size += var.Length() + 1;
 	}
 
-	wchar_t* strings = (wchar_t*)malloc(size * 2);
-	wchar_t* ptr = strings;
+	std::unique_ptr<wchar_t[]> strings = std::make_unique<wchar_t[]>(size * 2);
+
+	wchar_t* ptr = strings.get();
 	for (CString& var : m_strings)
 	{
 		WString wstr(var);
@@ -141,20 +141,14 @@ wchar_t* EnvironmentStrings::GetStrings()
 #else
 
 /*
- * Returns environment block in format suitable for using with execve
- * The allocated memory must be freed by caller using "free()".
+ * Returns environment block in format suitable for using with execve.
  */
-char** EnvironmentStrings::GetStrings()
+std::vector<char*> EnvironmentStrings::GetStrings()
 {
-	char** strings = (char**)malloc((m_strings.size() + 1) * sizeof(char*));
-	char** ptr = strings;
-	for (CString& var : m_strings)
-	{
-		*ptr = var;
-		ptr++;
-	}
-	*ptr = nullptr;
-
+	std::vector<char*> strings;
+	strings.reserve(m_strings.size() + 1);
+	std::copy(m_strings.begin(), m_strings.end(), std::back_inserter(strings));
+	strings.push_back(nullptr);
 	return strings;
 }
 #endif
@@ -474,11 +468,11 @@ int ScriptController::StartProcess()
 
 	PROCESS_INFORMATION processInfo = { 0 };
 
-	wchar_t* environmentStrings = m_environmentStrings.GetStrings();
+	std::unique_ptr<wchar_t[]> environmentStrings = m_environmentStrings.GetStrings();
 
 	BOOL ok = CreateProcessW(nullptr, WString(cmdLine), nullptr, nullptr, TRUE,
 		NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-		environmentStrings, wideWorkingDir, &startupInfo, &processInfo);
+		environmentStrings.get(), wideWorkingDir, &startupInfo, &processInfo);
 	if (!ok)
 	{
 		DWORD errCode = GetLastError();
@@ -500,13 +494,10 @@ int ScriptController::StartProcess()
 		{
 			PrintMessage(Message::mkError, "Could not build short path for %s", workingDir);
 		}
-		free(environmentStrings);
 		CloseHandle(readPipe);
 		CloseHandle(writePipe);
 		return -1;
 	}
-
-	free(environmentStrings);
 
 	debug("Child Process-ID: %i", (int)processInfo.dwProcessId);
 
@@ -531,7 +522,7 @@ int ScriptController::StartProcess()
 		return -1;
 	}
 
-	char** environmentStrings = m_environmentStrings.GetStrings();
+	std::vector<char*> environmentStrings = m_environmentStrings.GetStrings();
 
 	pipein = p[0];
 	pipeout = p[1];
@@ -542,7 +533,6 @@ int ScriptController::StartProcess()
 	if (pid == -1)
 	{
 		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_infoName, errno);
-		free(environmentStrings);
 		close(pipein);
 		close(pipeout);
 		return -1;
@@ -569,7 +559,7 @@ int ScriptController::StartProcess()
 #endif
 
 		chdir(workingDir);
-		environ = environmentStrings;
+		environ = environmentStrings.data();
 		m_args.emplace_back(nullptr);
 
 		execvp(m_script, (char* const*)m_args.data());
@@ -592,8 +582,6 @@ int ScriptController::StartProcess()
 	// continue the first instance
 	debug("forked");
 	debug("Child Process-ID: %i", (int)pid);
-
-	free(environmentStrings);
 
 	m_processId = pid;
 
