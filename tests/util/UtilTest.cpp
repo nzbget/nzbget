@@ -83,3 +83,43 @@ TEST_CASE("Util: WildMask", "[Util][Quick]")
 	REQUIRE(mask.Match(".par2"));
 	REQUIRE_FALSE(mask.Match("par2"));
 }
+
+TEST_CASE("Util: RegEx", "[Util][Quick]")
+{
+	RegEx regExRar(".*\\.rar$");
+	RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
+	RegEx regExSevenZip(".*\\.7z$|.*\\.7z\\.[0-9]+$");
+	RegEx regExNumExt(".*\\.[0-9]+$");
+
+	REQUIRE(regExRar.Match("filename.rar"));
+	REQUIRE(regExRar.Match("filename.part001.rar"));
+	REQUIRE_FALSE(regExRar.Match("filename.rar.txt"));
+
+	REQUIRE_FALSE(regExRarMultiSeq.Match("filename.rar"));
+	REQUIRE(regExRarMultiSeq.Match("filename.r01"));
+	REQUIRE(regExRarMultiSeq.Match("filename.r99"));
+	REQUIRE_FALSE(regExRarMultiSeq.Match("filename.r001"));
+	REQUIRE(regExRarMultiSeq.Match("filename.s01"));
+	REQUIRE(regExRarMultiSeq.Match("filename.t99"));
+
+	REQUIRE(regExSevenZip.Match("filename.7z"));
+	REQUIRE_FALSE(regExSevenZip.Match("filename.7z.rar"));
+	REQUIRE(regExSevenZip.Match("filename.7z.1"));
+	REQUIRE(regExSevenZip.Match("filename.7z.001"));
+	REQUIRE(regExSevenZip.Match("filename.7z.123"));
+	REQUIRE(regExSevenZip.Match("filename.7z.999"));
+
+	REQUIRE(regExNumExt.Match("filename.7z.1"));
+	REQUIRE(regExNumExt.Match("filename.7z.9"));
+	REQUIRE(regExNumExt.Match("filename.7z.001"));
+	REQUIRE(regExNumExt.Match("filename.7z.123"));
+	REQUIRE(regExNumExt.Match("filename.7z.999"));
+
+	const char* testStr = "My.Show.Name.S01E02.ABC.720";
+	RegEx seasonEpisode(".*S([0-9]+)E([0-9]+).*");
+	REQUIRE(seasonEpisode.IsValid());
+	REQUIRE(seasonEpisode.Match(testStr));
+	REQUIRE(seasonEpisode.GetMatchCount() == 3);
+	REQUIRE(seasonEpisode.GetMatchStart(1) == 14);
+	REQUIRE(seasonEpisode.GetMatchLen(1) == 2);
+}

@@ -217,7 +217,7 @@ class RegEx
 private:
 #ifdef HAVE_REGEX_H
 	regex_t				m_context;
-	regmatch_t*			m_matches;
+	std::unique_ptr<regmatch_t[]>	m_matches;
 #endif
 	bool				m_valid;
 	int					m_matchBufSize;
@@ -226,7 +226,7 @@ public:
 						RegEx(const char *pattern, int matchBufSize = 100);
 						~RegEx();
 	bool				IsValid() { return m_valid; }
-	bool				Match(const char *str);
+	bool				Match(const char* str);
 	int					GetMatchCount();
 	int					GetMatchStart(int index);
 	int					GetMatchLen(int index);

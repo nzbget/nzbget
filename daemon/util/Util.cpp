@@ -1577,7 +1577,7 @@ RegEx::RegEx(const char *pattern, int matchBufSize)
 	m_matchBufSize = matchBufSize;
 	if (matchBufSize > 0)
 	{
-		m_matches = new regmatch_t[matchBufSize];
+		m_matches = std::make_unique<regmatch_t[]>(matchBufSize);
 	}
 	else
 	{
@@ -1592,14 +1592,13 @@ RegEx::~RegEx()
 {
 #ifdef HAVE_REGEX_H
 	regfree(&m_context);
-	delete[] m_matches;
 #endif
 }
 
 bool RegEx::Match(const char *str)
 {
 #ifdef HAVE_REGEX_H
-	return m_valid ? regexec(&m_context, str, m_matchBufSize, m_matches, 0) == 0 : false;
+	return m_valid ? regexec(&m_context, str, m_matchBufSize, m_matches.get(), 0) == 0 : false;
 #else
 	return false;
 #endif
@@ -1639,7 +1638,6 @@ int RegEx::GetMatchLen(int index)
 	return 0;
 #endif
 }
-
 
 WildMask::WildMask(const char *pattern, bool wantsPositions)
 {
