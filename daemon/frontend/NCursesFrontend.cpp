@@ -127,9 +127,6 @@ NCursesFrontend::NCursesFrontend()
 	// Setup curses
 #ifdef WIN32
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	m_screenBuffer = nullptr;
-	m_oldScreenBuffer = nullptr;
-	m_colorAttr.clear();
 
 	CONSOLE_CURSOR_INFO ConsoleCursorInfo;
 	GetConsoleCursorInfo(hConsole, &ConsoleCursorInfo);
@@ -183,11 +180,6 @@ NCursesFrontend::NCursesFrontend()
 NCursesFrontend::~NCursesFrontend()
 {
 #ifdef WIN32
-	free(m_screenBuffer);
-	free(m_oldScreenBuffer);
-
-	m_colorAttr.clear();
-
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_CURSOR_INFO ConsoleCursorInfo;
 	GetConsoleCursorInfo(hConsole, &ConsoleCursorInfo);
@@ -328,11 +320,9 @@ void NCursesFrontend::CalcWindowSizes()
 	if (nrRows != m_screenHeight || nrColumns != m_screenWidth)
 	{
 #ifdef WIN32
-		m_screenBufferSize = nrRows * nrColumns * sizeof(CHAR_INFO);
-		m_screenBuffer = (CHAR_INFO*)realloc(m_screenBuffer, m_screenBufferSize);
-		memset(m_screenBuffer, 0, m_screenBufferSize);
-		m_oldScreenBuffer = (CHAR_INFO*)realloc(m_oldScreenBuffer, m_screenBufferSize);
-		memset(m_oldScreenBuffer, 0, m_screenBufferSize);
+		int screenAreaSize = nrRows * nrColumns;
+		m_screenBuffer.resize(screenAreaSize);
+		m_oldScreenBuffer.resize(screenAreaSize);
 #else
 		curses_clear();
 #endif
@@ -430,7 +420,12 @@ void NCursesFrontend::PlotText(const char * string, int row, int pos, int colorP
 void NCursesFrontend::RefreshScreen()
 {
 #ifdef WIN32
-	bool bufChanged = memcmp(m_screenBuffer, m_oldScreenBuffer, m_screenBufferSize);
+	bool bufChanged = !std::equal(m_screenBuffer.begin(), m_screenBuffer.end(), m_oldScreenBuffer.begin(), m_oldScreenBuffer.end(),
+		[](CHAR_INFO& a, CHAR_INFO& b)
+		{
+			return a.Char.AsciiChar == b.Char.AsciiChar && a.Attributes == b.Attributes;
+		});
+
 	if (bufChanged)
 	{
 		COORD BufSize;
@@ -444,13 +439,13 @@ void NCursesFrontend::RefreshScreen()
 		HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 		CONSOLE_SCREEN_BUFFER_INFO BufInfo;
 		GetConsoleScreenBufferInfo(hConsole, &BufInfo);
-		WriteConsoleOutput(hConsole, m_screenBuffer, BufSize, BufCoord, &BufInfo.srWindow);
+		WriteConsoleOutput(hConsole, m_screenBuffer.data(), BufSize, BufCoord, &BufInfo.srWindow);
 
 		BufInfo.dwCursorPosition.X = BufInfo.srWindow.Right;
 		BufInfo.dwCursorPosition.Y = BufInfo.srWindow.Bottom;
 		SetConsoleCursorPosition(hConsole, BufInfo.dwCursorPosition);
 
-		memcpy(m_oldScreenBuffer, m_screenBuffer, m_screenBufferSize);
+		m_oldScreenBuffer = m_screenBuffer;
 	}
 #else
 	// Cursor placement

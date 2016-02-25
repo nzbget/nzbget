@@ -71,9 +71,8 @@ private:
 	int					m_inputValue;
 
 #ifdef WIN32
-	CHAR_INFO*			m_screenBuffer;
-	CHAR_INFO*			m_oldScreenBuffer;
-	int					m_screenBufferSize;
+	std::vector<CHAR_INFO>	m_screenBuffer;
+	std::vector<CHAR_INFO>	m_oldScreenBuffer;
 	std::vector<WORD>	m_colorAttr;
 #else
 	void* 				m_window;  //  WINDOW*
