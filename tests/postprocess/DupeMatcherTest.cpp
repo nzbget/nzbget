@@ -32,7 +32,7 @@
 #include "FileSystem.h"
 #include "TestUtil.h"
 
-TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
+TEST_CASE("Dupe matcher", "[Par][DupeMatcher][Slow][TestData]")
 {
 	Options options(nullptr, nullptr);
 
@@ -61,6 +61,8 @@ TEST_CASE("Disk matcher", "[Par][DupeMatcher][Slow][TestData]")
 
 	// now test
 	int64 expectedSize = FileSystem::FileSize((dupe1 + "/testfile.dat").c_str());
+
+	INFO("This test requires working unrar 5 in search path");
 
 	DupeMatcher dupe1Matcher(dupe1.c_str(), expectedSize);
 	CHECK(dupe1Matcher.Prepare());

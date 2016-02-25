@@ -220,8 +220,9 @@ nzbget_SOURCES += \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
 	tests/postprocess/ParRenamerTest.cpp \
+	tests/postprocess/DupeMatcherTest.cpp \
 	tests/queue/NzbFileTest.cpp \
-	tests/util/NStringTest.cpp
+	tests/util/NStringTest.cpp \
 	tests/util/UtilTest.cpp
 
 AM_CPPFLAGS += \
