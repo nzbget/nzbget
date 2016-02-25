@@ -32,10 +32,9 @@
 class SchedulerScriptController : public Thread, public NzbScriptController
 {
 private:
-	CString					m_script;
-	bool					m_externalProcess;
-	int						m_taskId;
-	std::vector<CString>	m_args;
+	CString				m_script;
+	bool				m_externalProcess;
+	int					m_taskId;
 
 	void				PrepareParams(const char* scriptName);
 	void				ExecuteExternalProcess();

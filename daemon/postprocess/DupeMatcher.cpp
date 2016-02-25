@@ -74,13 +74,7 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 	}
 	const char* unrarPath = cmdArgs[0];
 	unrar.SetScript(unrarPath);
-
-	const char* args[4];
-	args[0] = unrarPath;
-	args[1] = "lt";
-	args[2] = "*.rar";
-	args[3] = nullptr;
-	unrar.SetArgs(args, false);
+	unrar.SetArgs({unrarPath, "lt", "*.rar"});
 	unrar.SetWorkingDir(directory);
 
 	time_t curTime = Util::CurrentTime();

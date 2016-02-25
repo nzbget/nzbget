@@ -48,8 +48,7 @@ void SchedulerScriptController::StartScript(const char* param, bool externalProc
 	if (externalProcess)
 	{
 		scriptController->SetScript(argv[0]);
-		scriptController->m_args = std::move(argv);
-		scriptController->SetArgs((const char**)scriptController->m_args.data(), false);
+		scriptController->SetArgs(std::move(argv));
 	}
 
 	scriptController->SetAutoDestroy(true);
@@ -79,7 +78,6 @@ void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* script)
 	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", script->GetName(), m_taskId);
 
 	SetScript(script->GetLocation());
-	SetArgs(nullptr, false);
 
 	BString<1024> infoName("scheduler-script %s for Task%i", script->GetName(), m_taskId);
 	SetInfoName(infoName);

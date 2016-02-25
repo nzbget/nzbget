@@ -90,7 +90,6 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 	DownloadQueue::Unlock();
 
 	SetScript(script->GetLocation());
-	SetArgs(nullptr, false);
 
 	BString<1024> infoName("post-process-script %s for %s", script->GetName(), m_postInfo->GetNzbInfo()->GetName());
 	SetInfoName(infoName);

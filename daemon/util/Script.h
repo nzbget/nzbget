@@ -51,11 +51,11 @@ public:
 class ScriptController
 {
 private:
+	typedef std::vector<CString> ArgList;
+
 	const char*			m_script;
+	ArgList				m_args;
 	const char*			m_workingDir;
-	const char**		m_args;
-	bool				m_freeArgs;
-	const char*			m_stdArgs[2];
 	const char*			m_infoName;
 	const char*			m_logPrefix;
 	EnvironmentStrings	m_environmentStrings;
@@ -101,13 +101,14 @@ public:
 	void				SetScript(const char* script) { m_script = script; }
 	const char*			GetScript() { return m_script; }
 	void				SetWorkingDir(const char* workingDir) { m_workingDir = workingDir; }
-	void				SetArgs(const char** args, bool freeArgs) { m_args = args; m_freeArgs = freeArgs; }
+	void				SetArgs(ArgList&& args) { m_args = std::move(args); }
 	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
 	const char*			GetInfoName() { return m_infoName; }
 	void				SetLogPrefix(const char* logPrefix) { m_logPrefix = logPrefix; }
 	void				SetEnvVar(const char* name, const char* value);
 	void				SetEnvVarSpecial(const char* prefix, const char* name, const char* value);
 	void				SetIntEnvVar(const char* name, int value);
+	void				Reset();
 };
 
 #endif

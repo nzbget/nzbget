@@ -63,7 +63,6 @@ void ScanScriptController::ExecuteScript(ScriptConfig::Script* script)
 	PrintMessage(Message::mkInfo, "Executing scan-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbFilename));
 
 	SetScript(script->GetLocation());
-	SetArgs(nullptr, false);
 
 	BString<1024> infoName("scan-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbFilename));
 	SetInfoName(infoName);

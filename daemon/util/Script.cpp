@@ -164,8 +164,6 @@ ScriptController::ScriptController()
 {
 	m_script = nullptr;
 	m_workingDir = nullptr;
-	m_args = nullptr;
-	m_freeArgs = false;
 	m_infoName = nullptr;
 	m_logPrefix = nullptr;
 	m_terminated = false;
@@ -180,15 +178,6 @@ ScriptController::ScriptController()
 
 ScriptController::~ScriptController()
 {
-	if (m_freeArgs)
-	{
-		for (const char** argPtr = m_args; *argPtr; argPtr++)
-		{
-			free((char*)*argPtr);
-		}
-		free(m_args);
-	}
-
 	UnregisterRunningScript();
 }
 
@@ -269,7 +258,7 @@ void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, co
 void ScriptController::PrepareArgs()
 {
 #ifdef WIN32
-	if (!m_args)
+	if (m_args.empty())
 	{
 		// Special support for script languages:
 		// automatically find the app registered for this extension and run it
@@ -278,40 +267,42 @@ void ScriptController::PrepareArgs()
 		{
 			debug("Looking for associated program for %s", extension);
 			char command[512];
-			int bufLen = 512-1;
+			int bufLen = 512 - 1;
 			if (Util::RegReadStr(HKEY_CLASSES_ROOT, extension, nullptr, command, &bufLen))
 			{
 				command[bufLen] = '\0';
 				debug("Extension: %s", command);
 
-				bufLen = 512-1;
+				bufLen = 512 - 1;
 				if (Util::RegReadStr(HKEY_CLASSES_ROOT, BString<1024>("%s\\shell\\open\\command", command),
 					nullptr, command, &bufLen))
 				{
 					command[bufLen] = '\0';
 					debug("Command: %s", command);
 
-					DWORD_PTR args[] = { (DWORD_PTR)GetScript(), (DWORD_PTR)0 };
+					DWORD_PTR args[] = {(DWORD_PTR)GetScript(), (DWORD_PTR)0};
 					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, command, 0, 0,
-									  m_cmdLine, sizeof(m_cmdLine), (va_list*)args))
+						m_cmdLine, sizeof(m_cmdLine), (va_list*)args))
 					{
 						debug("CmdLine: %s", m_cmdLine);
 						return;
 					}
 				}
 			}
-			warn("Could not found associated program for %s. Trying to execute %s directly",
+			warn("Could not find associated program for %s. Trying to execute %s directly",
 				extension, FileSystem::BaseFileName(GetScript()));
 		}
 	}
 #endif
-
-	if (!m_args)
+	if (m_args.empty())
 	{
-		m_stdArgs[0] = GetScript();
-		m_stdArgs[1] = nullptr;
-		SetArgs(m_stdArgs, false);
+		m_args.emplace_back(GetScript());
 	}
+}
+
+void ScriptController::Reset()
+{
+	SetArgs({});
 }
 
 int ScriptController::Execute()
@@ -426,9 +417,8 @@ int ScriptController::Execute()
 void ScriptController::BuildCommandLine(char* cmdLineBuf, int bufSize)
 {
 	int usedLen = 0;
-	for (const char** argPtr = m_args; *argPtr; argPtr++)
+	for (const char* arg : m_args)
 	{
-		const char* arg = *argPtr;
 		int len = strlen(arg);
 		bool endsWithBackslash = arg[len - 1] == '\\';
 		bool isDirectPath = !strncmp(arg, "\\\\?", 3);
@@ -453,7 +443,7 @@ int ScriptController::StartProcess()
 #ifdef WIN32
 	char* cmdLine = m_cmdLine;
 	char cmdLineBuf[2048];
-	if (m_args)
+	if (!m_args.empty())
 	{
 		BuildCommandLine(cmdLineBuf, sizeof(cmdLineBuf));
 		cmdLine = cmdLineBuf;
@@ -580,14 +570,16 @@ int ScriptController::StartProcess()
 
 		chdir(workingDir);
 		environ = environmentStrings;
-		execvp(m_script, (char* const*)m_args);
+		m_args.emplace_back(nullptr);
+
+		execvp(m_script, (char* const*)m_args.data());
 
 		if (errno == EACCES)
 		{
 			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_script);
 			fflush(stdout);
 			FileSystem::FixExecPermission(m_script);
-			execvp(m_script, (char* const*)m_args);
+			execvp(m_script, (char* const*)m_args.data());
 		}
 
 		// NOTE: the text "[ERROR] Could not start " is checked later,

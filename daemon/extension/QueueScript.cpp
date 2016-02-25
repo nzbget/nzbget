@@ -121,7 +121,6 @@ void QueueScriptController::ExecuteScript(ScriptConfig::Script* script)
 		"Executing queue-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbName));
 
 	SetScript(script->GetLocation());
-	SetArgs(nullptr, false);
 
 	BString<1024> infoName("queue-script %s for %s", script->GetName(), FileSystem::BaseFileName(m_nzbName));
 	SetInfoName(infoName);

@@ -273,9 +273,8 @@ void UnpackController::ExecuteUnrar(const char* password)
 
 	params.emplace_back(m_hasNonStdRarFiles ? "*.*" : "*.rar");
 	params.push_back(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR)));
-	params.emplace_back(nullptr);
-	SetArgs((const char**)&params.front(), false);
-	SetScript(params.at(0));
+	SetScript(params[0]);
+	SetArgs(std::move(params));
 	SetLogPrefix("Unrar");
 	ResetEnv();
 
@@ -329,9 +328,8 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 
 	params.push_back(CString::FormatStr("-o%s", *m_unpackDir));
 	params.emplace_back(multiVolumes ? "*.7z.001" : "*.7z");
-	params.emplace_back(nullptr);
-	SetArgs((const char**)&params.front(), false);
-	SetScript(params.at(0));
+	SetScript(params[0]);
+	SetArgs(std::move(params));
 	ResetEnv();
 
 	m_allOkMessageReceived = false;
