@@ -1639,6 +1639,7 @@ int RegEx::GetMatchLen(int index)
 #endif
 }
 
+
 WildMask::WildMask(const char *pattern, bool wantsPositions)
 {
 	m_pattern = pattern;
@@ -1798,8 +1799,7 @@ bool WildMask::Match(const char* text)
 #ifndef DISABLE_GZIP
 uint32 ZLib::GZipLen(int inputBufferLength)
 {
-	z_stream zstr;
-	memset(&zstr, 0, sizeof(zstr));
+	z_stream zstr{0};
 	return (uint32)deflateBound(&zstr, inputBufferLength);
 }
 
@@ -1834,56 +1834,49 @@ uint32 ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* outputBu
 GUnzipStream::GUnzipStream(int BufferSize)
 {
 	m_bufferSize = BufferSize;
-	m_zStream = malloc(sizeof(z_stream));
-	m_outputBuffer = malloc(BufferSize);
-
-	memset(m_zStream, 0, sizeof(z_stream));
+	m_outputBuffer = std::make_unique<Bytef[]>(BufferSize);
+	m_zStream = {0};
+	m_active = false;
 
 	/* add 16 to MAX_WBITS to enforce gzip format */
-	int ret = inflateInit2(((z_stream*)m_zStream), MAX_WBITS + 16);
-	if (ret != Z_OK)
-	{
-		free(m_zStream);
-		m_zStream = nullptr;
-	}
+	int ret = inflateInit2(&m_zStream, MAX_WBITS + 16);
+	m_active = ret == Z_OK;
 }
 
 GUnzipStream::~GUnzipStream()
 {
-	if (m_zStream)
+	if (m_active)
 	{
-		inflateEnd(((z_stream*)m_zStream));
-		free(m_zStream);
+		inflateEnd(&m_zStream);
 	}
-	free(m_outputBuffer);
 }
 
 void GUnzipStream::Write(const void *inputBuffer, int inputBufferLength)
 {
-	((z_stream*)m_zStream)->next_in = (Bytef*)inputBuffer;
-	((z_stream*)m_zStream)->avail_in = inputBufferLength;
+	m_zStream.next_in = (Bytef*)inputBuffer;
+	m_zStream.avail_in = inputBufferLength;
 }
 
 GUnzipStream::EStatus GUnzipStream::Read(const void **outputBuffer, int *outputBufferLength)
 {
-	((z_stream*)m_zStream)->next_out = (Bytef*)m_outputBuffer;
-	((z_stream*)m_zStream)->avail_out = m_bufferSize;
+	m_zStream.next_out = (Bytef*)m_outputBuffer.get();
+	m_zStream.avail_out = m_bufferSize;
 
 	*outputBufferLength = 0;
 
-	if (!m_zStream)
+	if (!m_active)
 	{
 		return zlError;
 	}
 
-	int ret = inflate(((z_stream*)m_zStream), Z_NO_FLUSH);
+	int ret = inflate(&m_zStream, Z_NO_FLUSH);
 
 	switch (ret)
 	{
 		case Z_STREAM_END:
 		case Z_OK:
-			*outputBufferLength = m_bufferSize - ((z_stream*)m_zStream)->avail_out;
-			*outputBuffer = m_outputBuffer;
+			*outputBufferLength = m_bufferSize - m_zStream.avail_out;
+			*outputBuffer = m_outputBuffer.get();
 			return ret == Z_STREAM_END ? zlFinished : zlOK;
 
 		case Z_BUF_ERROR:
@@ -1892,7 +1885,6 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **outputBuffer, int *outputB
 
 	return zlError;
 }
-
 #endif
 
 Tokenizer::Tokenizer(const char* dataString, const char* separators)

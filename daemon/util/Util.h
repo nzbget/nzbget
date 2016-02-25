@@ -280,9 +280,10 @@ public:
 	};
 
 private:
-	void*				m_zStream;
-	void*				m_outputBuffer;
-	int					m_bufferSize;
+	z_stream					m_zStream;
+	std::unique_ptr<Bytef[]>	m_outputBuffer;
+	int							m_bufferSize;
+	bool						m_active;
 
 public:
 						GUnzipStream(int BufferSize);
