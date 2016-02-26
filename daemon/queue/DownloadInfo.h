@@ -69,6 +69,13 @@ public:
 	void				ListOp(ServerStatList* serverStats, EStatOperation statOperation);
 };
 
+class SegmentData
+{
+public:
+	virtual char*	GetData() = 0;
+	virtual			~SegmentData() {}
+};
+
 class ArticleInfo
 {
 public:
@@ -84,7 +91,7 @@ private:
 	int					m_partNumber;
 	CString				m_messageId;
 	int					m_size;
-	char*				m_segmentContent;
+	std::unique_ptr<SegmentData>	m_segmentContent;
 	int64				m_segmentOffset;
 	int					m_segmentSize;
 	EStatus				m_status;
@@ -93,16 +100,15 @@ private:
 
 public:
 						ArticleInfo();
-						~ArticleInfo();
 	void 				SetPartNumber(int s) { m_partNumber = s; }
 	int 				GetPartNumber() { return m_partNumber; }
 	const char* 		GetMessageId() { return m_messageId; }
 	void 				SetMessageId(const char* messageId) { m_messageId = messageId; }
 	void 				SetSize(int size) { m_size = size; }
 	int 				GetSize() { return m_size; }
-	void				AttachSegment(char* content, int64 offset, int size);
+	void				AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size);
 	void				DiscardSegment();
-	const char* 		GetSegmentContent() { return m_segmentContent; }
+	const char* 		GetSegmentContent() { return m_segmentContent ? m_segmentContent->GetData() : nullptr; }
 	void				SetSegmentOffset(int64 segmentOffset) { m_segmentOffset = segmentOffset; }
 	int64				GetSegmentOffset() { return m_segmentOffset; }
 	void 				SetSegmentSize(int segmentSize) { m_segmentSize = segmentSize; }

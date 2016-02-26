@@ -31,6 +31,25 @@
 #include "Decoder.h"
 #include "FileSystem.h"
 
+class CachedSegmentData : public SegmentData
+{
+private:
+	char*			m_data = nullptr;
+	int				m_size = 0;
+
+	friend class  ArticleCache;
+
+public:
+					CachedSegmentData() {}
+					CachedSegmentData(char* data, int size) : m_data(data), m_size(size) {}
+					CachedSegmentData(const CachedSegmentData&) = delete;
+					CachedSegmentData(CachedSegmentData&& other) :
+						m_data(other.m_data), m_size(other.m_size) { other.m_data = nullptr; other.m_size = 0; }
+	CachedSegmentData&	operator=(CachedSegmentData&& other);
+	virtual			~CachedSegmentData();
+	virtual char*	GetData() { return m_data; }
+};
+
 class ArticleWriter
 {
 private:
@@ -41,7 +60,7 @@ private:
 	CString				m_outputFilename;
 	const char*			m_resultFilename;
 	Decoder::EFormat	m_format;
-	char*				m_articleData;
+	CachedSegmentData	m_articleData;
 	int64				m_articleOffset;
 	int					m_articleSize;
 	int					m_articlePtr;
@@ -87,9 +106,9 @@ private:
 public:
 						ArticleCache();
 	virtual void		Run();
-	void*				Alloc(int size);
-	void*				Realloc(void* buf, int oldSize, int newSize);
-	void				Free(int size);
+	CachedSegmentData	Alloc(int size);
+	bool				Realloc(CachedSegmentData* segment, int newSize);
+	void				Free(CachedSegmentData* segment);
 	void				LockFlush();
 	void				UnlockFlush();
 	void				LockContent() { m_contentMutex.Lock(); }

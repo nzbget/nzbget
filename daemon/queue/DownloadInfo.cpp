@@ -26,7 +26,6 @@
 
 #include "nzbget.h"
 #include "DownloadInfo.h"
-#include "ArticleWriter.h"
 #include "DiskState.h"
 #include "Options.h"
 #include "Util.h"
@@ -802,35 +801,22 @@ ArticleInfo::ArticleInfo()
 {
 	//debug("Creating ArticleInfo");
 	m_size = 0;
-	m_segmentContent = nullptr;
 	m_segmentOffset = 0;
 	m_segmentSize = 0;
 	m_status = aiUndefined;
 	m_crc = 0;
 }
 
-ArticleInfo::~ ArticleInfo()
+void ArticleInfo::AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size)
 {
-	//debug("Destroying ArticleInfo");
-	DiscardSegment();
-}
-
-void ArticleInfo::AttachSegment(char* content, int64 offset, int size)
-{
-	DiscardSegment();
-	m_segmentContent = content;
+	m_segmentContent = std::move(content);
 	m_segmentOffset = offset;
 	m_segmentSize = size;
 }
 
 void ArticleInfo::DiscardSegment()
 {
-	if (m_segmentContent)
-	{
-		free(m_segmentContent);
-		m_segmentContent = nullptr;
-		g_ArticleCache->Free(m_segmentSize);
-	}
+	m_segmentContent.reset();
 }
 
 

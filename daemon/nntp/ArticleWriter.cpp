@@ -31,13 +31,28 @@
 #include "Util.h"
 #include "FileSystem.h"
 
+CachedSegmentData::~CachedSegmentData()
+{
+	g_ArticleCache->Free(this);
+}
+
+CachedSegmentData& CachedSegmentData::operator=(CachedSegmentData&& other)
+{
+	g_ArticleCache->Free(this);
+	m_data = other.m_data;
+	m_size = other.m_size;
+	other.m_data = nullptr;
+	other.m_size = 0;
+	return *this;
+}
+
+
 ArticleWriter::ArticleWriter()
 {
 	debug("Creating ArticleWriter");
 
 	m_resultFilename = nullptr;
 	m_format = Decoder::efUnknown;
-	m_articleData = nullptr;
 	m_duplicate = false;
 	m_flushing = false;
 }
@@ -45,12 +60,6 @@ ArticleWriter::ArticleWriter()
 ArticleWriter::~ArticleWriter()
 {
 	debug("Destroying ArticleWriter");
-
-	if (m_articleData)
-	{
-		free(m_articleData);
-		g_ArticleCache->Free(m_articleSize);
-	}
 
 	if (m_flushing)
 	{
@@ -124,27 +133,21 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 	if (g_Options->GetArticleCache() > 0 && g_Options->GetDecode() &&
 		(!g_Options->GetDirectWrite() || m_format == Decoder::efYenc))
 	{
-		if (m_articleData)
-		{
-			free(m_articleData);
-			g_ArticleCache->Free(m_articleSize);
-		}
+		m_articleData = g_ArticleCache->Alloc(m_articleSize);
 
-		m_articleData = (char*)g_ArticleCache->Alloc(m_articleSize);
-
-		while (!m_articleData && g_ArticleCache->GetFlushing())
+		while (!m_articleData.GetData() && g_ArticleCache->GetFlushing())
 		{
 			usleep(5 * 1000);
-			m_articleData = (char*)g_ArticleCache->Alloc(m_articleSize);
+			m_articleData = g_ArticleCache->Alloc(m_articleSize);
 		}
 
-		if (!m_articleData)
+		if (!m_articleData.GetData())
 		{
 			detail("Article cache is full, using disk for %s", *m_infoName);
 		}
 	}
 
-	if (!m_articleData)
+	if (!m_articleData.GetData())
 	{
 		bool directWrite = g_Options->GetDirectWrite() && m_format == Decoder::efYenc;
 		const char* filename = directWrite ? m_outputFilename : m_tempFilename;
@@ -173,14 +176,14 @@ bool ArticleWriter::Write(char* buffer, int len)
 		m_articlePtr += len;
 	}
 
-	if (g_Options->GetDecode() && m_articleData)
+	if (g_Options->GetDecode() && m_articleData.GetData())
 	{
 		if (m_articlePtr > m_articleSize)
 		{
 			detail("Decoding %s failed: article size mismatch", *m_infoName);
 			return false;
 		}
-		memcpy(m_articleData + m_articlePtr - len, buffer, len);
+		memcpy(m_articleData.GetData() + m_articlePtr - len, buffer, len);
 		return true;
 	}
 
@@ -202,7 +205,7 @@ void ArticleWriter::Finish(bool success)
 
 	if (g_Options->GetDecode())
 	{
-		if (!directWrite && !m_articleData)
+		if (!directWrite && !m_articleData.GetData())
 		{
 			if (!FileSystem::MoveFile(m_tempFilename, m_resultFilename))
 			{
@@ -214,17 +217,16 @@ void ArticleWriter::Finish(bool success)
 
 		FileSystem::DeleteFile(m_tempFilename);
 
-		if (m_articleData)
+		if (m_articleData.GetData())
 		{
 			if (m_articleSize != m_articlePtr)
 			{
-				m_articleData = (char*)g_ArticleCache->Realloc(m_articleData, m_articleSize, m_articlePtr);
+				g_ArticleCache->Realloc(&m_articleData, m_articlePtr);
 			}
 			g_ArticleCache->LockContent();
-			m_articleInfo->AttachSegment(m_articleData, m_articleOffset, m_articlePtr);
+			m_articleInfo->AttachSegment(std::make_unique<CachedSegmentData>(std::move(m_articleData)), m_articleOffset, m_articlePtr);
 			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() + 1);
 			g_ArticleCache->UnlockContent();
-			m_articleData = nullptr;
 		}
 		else
 		{
@@ -806,10 +808,9 @@ ArticleCache::ArticleCache()
 	m_fileInfo = nullptr;
 }
 
-void* ArticleCache::Alloc(int size)
+CachedSegmentData ArticleCache::Alloc(int size)
 {
 	m_allocMutex.Lock();
-
 	void* p = nullptr;
 	if (m_allocated + size <= (size_t)g_Options->GetArticleCache() * 1024 * 1024)
 	{
@@ -825,36 +826,36 @@ void* ArticleCache::Alloc(int size)
 	}
 	m_allocMutex.Unlock();
 
-	return p;
+	return CachedSegmentData((char*)p, size);
 }
 
-void* ArticleCache::Realloc(void* buf, int oldSize, int newSize)
+bool ArticleCache::Realloc(CachedSegmentData* segment, int newSize)
 {
 	m_allocMutex.Lock();
-
-	void* p = realloc(buf, newSize);
+	void* p = realloc(segment->m_data, newSize);
 	if (p)
 	{
-		m_allocated += newSize - oldSize;
-	}
-	else
-	{
-		p = buf;
+		m_allocated += newSize - segment->m_size;
 	}
 	m_allocMutex.Unlock();
 
 	return p;
 }
 
-void ArticleCache::Free(int size)
+void ArticleCache::Free(CachedSegmentData* segment)
 {
-	m_allocMutex.Lock();
-	m_allocated -= size;
-	if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
+	if (segment->m_size)
 	{
-		g_DiskState->DeleteCacheFlag();
+		free(segment->m_data);
+
+		m_allocMutex.Lock();
+		m_allocated -= segment->m_size;
+		if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
+		{
+			g_DiskState->DeleteCacheFlag();
+		}
+		m_allocMutex.Unlock();
 	}
-	m_allocMutex.Unlock();
 }
 
 void ArticleCache::LockFlush()
