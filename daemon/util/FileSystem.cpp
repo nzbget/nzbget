@@ -835,16 +835,6 @@ CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)
 
 
 #ifdef WIN32
-WString::WString(const char* utfstr)
-{
-	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, nullptr, 0);
-	m_data = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
-	MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, m_data, len);
-}
-#endif
-
-
-#ifdef WIN32
 DirBrowser::DirBrowser(const char* path)
 {
 	BString<1024> mask("%s%c*.*", path, (int)PATH_SEPARATOR);

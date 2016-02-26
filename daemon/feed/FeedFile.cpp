@@ -28,7 +28,6 @@
 #include "Log.h"
 #include "DownloadInfo.h"
 #include "Options.h"
-#include "FileSystem.h"
 #include "Util.h"
 
 FeedFile::FeedFile(const char* fileName)

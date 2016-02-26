@@ -97,6 +97,26 @@ public:
 	void TrimRight();
 };
 
+#ifdef WIN32
+/*
+Wide-character string, Windows specific.
+*/
+class WString
+{
+private:
+	wchar_t* m_data = nullptr;
+public:
+	WString(wchar_t* wstr) : m_data(_wcsdup(wstr)) {}
+	WString(const char* utfstr);
+	~WString() { free(m_data); }
+	WString(WString&& other) noexcept { m_data = other.m_data; other.m_data = nullptr; }
+	WString(WString& other) = delete;
+	operator wchar_t*() const { return m_data; }
+	wchar_t* operator*() const { return m_data; }
+	int Length() { return wcslen(m_data); }
+};
+#endif
+
 /*
  StringBuilder preallocates storage space and is best suitable for often "Append"s.
 */

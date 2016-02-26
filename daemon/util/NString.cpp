@@ -280,6 +280,16 @@ void CString::TrimRight()
 }
 
 
+#ifdef WIN32
+WString::WString(const char* utfstr)
+{
+	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, nullptr, 0);
+	m_data = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
+	MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, m_data, len);
+}
+#endif
+
+
 void StringBuilder::Clear()
 {
 	free(m_data);
