@@ -303,7 +303,6 @@ private:
 	void				InitFeeds();
 	void				InitCommandLineOptions(CmdOptList* commandLineOptions);
 	void				CheckOptions();
-	void				Dump();
 	int					ParseEnumValue(const char* OptName, int argc, const char* argn[], const int argv[]);
 	int					ParseIntValue(const char* OptName, int base);
 	OptEntry*			FindOption(const char* optname);

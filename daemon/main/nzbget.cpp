@@ -208,6 +208,7 @@ private:
 	void				BootConfig();
 	void				CreateGlobals();
 	void				Cleanup();
+	void				PrintOptions();
 	bool				ProcessDirect();
 	void				ProcessClientRequest();
 	void				ProcessWebGet();
@@ -456,6 +457,12 @@ bool NZBGet::ProcessDirect()
 	if (m_commandLineParser->GetClientOperation() != CommandLineParser::opClientNoOperation)
 	{
 		ProcessClientRequest();
+		return true;
+	}
+
+	if (m_commandLineParser->GetPrintOptions())
+	{
+		PrintOptions();
 		return true;
 	}
 
@@ -838,6 +845,16 @@ void NZBGet::Stop(bool reload)
 #endif
 		}
 	}
+}
+
+void NZBGet::PrintOptions()
+{
+	Options::OptEntries* options = m_options->LockOptEntries();
+	for (Options::OptEntry& optEntry : options)
+	{
+		printf("%s = \"%s\"\n", optEntry.GetName(), optEntry.GetValue());
+	}
+	m_options->UnlockOptEntries();
 }
 
 #ifndef WIN32

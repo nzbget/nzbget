@@ -422,14 +422,6 @@ Options::~Options()
 	g_Options = nullptr;
 }
 
-void Options::Dump()
-{
-	for (OptEntry& optEntry : m_optEntries)
-	{
-		printf("%s = \"%s\"\n", optEntry.GetName(), optEntry.GetValue());
-	}
-}
-
 void Options::ConfigError(const char* msg, ...)
 {
 	char tmp2[1024];
