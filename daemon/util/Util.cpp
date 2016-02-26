@@ -1891,16 +1891,15 @@ Tokenizer::Tokenizer(const char* dataString, const char* separators)
 {
 	// an optimization to avoid memory allocation for short data string (shorten than 1024 chars)
 	int len = strlen(dataString);
-	if (len < m_defaultBuf.Capacity())
+	if (len < m_shortString.Capacity())
 	{
-		m_defaultBuf.Set(dataString);
-		m_dataString = m_defaultBuf;
-		m_inplaceBuf = true;
+		m_shortString.Set(dataString);
+		m_dataString = m_shortString;
 	}
 	else
 	{
-		m_dataString = strdup(dataString);
-		m_inplaceBuf = false;
+		m_longString.Set(dataString);
+		m_dataString = m_longString;
 	}
 
 	m_separators = separators;
@@ -1910,18 +1909,16 @@ Tokenizer::Tokenizer(const char* dataString, const char* separators)
 
 Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf)
 {
-	m_dataString = inplaceBuf ? dataString : strdup(dataString);
-	m_separators = separators;
-	m_savePtr = nullptr;
-	m_working = false;
-	m_inplaceBuf = inplaceBuf;
-}
-
-Tokenizer::~Tokenizer()
-{
-	if (!m_inplaceBuf)
+	if (inplaceBuf)
 	{
-		free(m_dataString);
+		m_dataString = dataString;
+		m_separators = separators;
+		m_savePtr = nullptr;
+		m_working = false;
+	}
+	else
+	{
+		Tokenizer::Tokenizer(dataString, separators);
 	}
 }
 

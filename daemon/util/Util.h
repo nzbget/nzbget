@@ -305,9 +305,9 @@ public:
 class Tokenizer
 {
 private:
-	BString<1024>		m_defaultBuf;
+	BString<1024>		m_shortString;
+	CString				m_longString;
 	char*				m_dataString;
-	bool				m_inplaceBuf;
 	const char*			m_separators;
 	char*				m_savePtr;
 	bool				m_working;
@@ -315,7 +315,6 @@ private:
 public:
 						Tokenizer(const char* dataString, const char* separators);
 						Tokenizer(char* dataString, const char* separators, bool inplaceBuf);
-						~Tokenizer();
 	char*				Next();
 };
 
