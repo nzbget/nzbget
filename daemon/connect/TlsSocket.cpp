@@ -97,18 +97,18 @@ static struct gcry_thread_cbs gcry_threads_Mutex =
  * Mutexes for OpenSSL
  */
 
-Mutex* *g_OpenSSLMutexes;
+std::vector<Mutex> g_OpenSSLMutexes;
 
-static void openssl_locking(int mode, int n, const char *file, int line)
+static void openssl_locking(int mode, int n, const char* file, int line)
 {
-	Mutex* mutex = g_OpenSSLMutexes[n];
+	Mutex& mutex = g_OpenSSLMutexes[n];
 	if (mode & CRYPTO_LOCK)
 	{
-		mutex->Lock();
+		mutex.Lock();
 	}
 	else
 	{
-		mutex->Unlock();
+		mutex.Unlock();
 	}
 }
 
@@ -180,12 +180,7 @@ void TlsSocket::Init()
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	int maxMutexes = CRYPTO_num_locks();
-	g_OpenSSLMutexes = (Mutex**)malloc(sizeof(Mutex*)*maxMutexes);
-	for (int i=0; i < maxMutexes; i++)
-	{
-		g_OpenSSLMutexes[i] = new Mutex();
-	}
+	g_OpenSSLMutexes.resize(CRYPTO_num_locks());
 
 	SSL_load_error_strings();
 	SSL_library_init();
@@ -218,12 +213,7 @@ void TlsSocket::Final()
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	int maxMutexes = CRYPTO_num_locks();
-	for (int i=0; i < maxMutexes; i++)
-	{
-		delete g_OpenSSLMutexes[i];
-	}
-	free(g_OpenSSLMutexes);
+	g_OpenSSLMutexes.clear();
 #endif /* HAVE_OPENSSL */
 }
 
