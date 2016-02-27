@@ -1889,7 +1889,7 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **outputBuffer, int *outputB
 
 Tokenizer::Tokenizer(const char* dataString, const char* separators)
 {
-	// an optimization to avoid memory allocation for short data string (shorten than 1024 chars)
+	// an optimization to avoid memory allocation for short data string
 	int len = strlen(dataString);
 	if (len < m_shortString.Capacity())
 	{
@@ -1912,14 +1912,16 @@ Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf)
 	if (inplaceBuf)
 	{
 		m_dataString = dataString;
-		m_separators = separators;
-		m_savePtr = nullptr;
-		m_working = false;
 	}
 	else
 	{
-		Tokenizer::Tokenizer(dataString, separators);
+		m_longString.Set(dataString);
+		m_dataString = m_longString;
 	}
+
+	m_separators = separators;
+	m_savePtr = nullptr;
+	m_working = false;
 }
 
 char* Tokenizer::Next()
