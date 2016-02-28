@@ -52,12 +52,12 @@ private:
 	CString				m_category;
 	CString				m_feedScript;
 	int					m_priority;
-	time_t				m_lastUpdate;
-	bool				m_preview;
-	EStatus				m_status;
+	time_t				m_lastUpdate = 0;
+	bool				m_preview = false;
+	EStatus				m_status = fsUndefined;
 	CString				m_outputFilename;
-	bool				m_fetch;
-	bool				m_force;
+	bool				m_fetch = false;
+	bool				m_force = false;
 	bool				m_backlog;
 
 public:
@@ -141,37 +141,37 @@ private:
 	CString				m_title;
 	CString				m_filename;
 	CString				m_url;
-	time_t				m_time;
-	int64				m_size;
-	CString				m_category;
-	int					m_imdbId;
-	int					m_rageId;
-	int					m_tvdbId;
-	int					m_tvmazeId;
-	CString				m_description;
+	time_t				m_time = 0;
+	int64				m_size = 0;
+	CString				m_category = "";
+	int					m_imdbId = 0;
+	int					m_rageId = 0;
+	int					m_tvdbId = 0;
+	int					m_tvmazeId = 0;
+	CString				m_description = "";
 	CString				m_season;
 	CString				m_episode;
-	int					m_seasonNum;
-	int					m_episodeNum;
-	bool				m_seasonEpisodeParsed;
-	CString				m_addCategory;
-	bool				m_pauseNzb;
-	int					m_priority;
-	EStatus				m_status;
-	EMatchStatus		m_matchStatus;
-	int					m_matchRule;
+	int					m_seasonNum = 0;
+	int					m_episodeNum = 0;
+	bool				m_seasonEpisodeParsed = false;
+	CString				m_addCategory = "";
+	bool				m_pauseNzb = false;
+	int					m_priority = 0;
+	EStatus				m_status = isUnknown;
+	EMatchStatus		m_matchStatus = msIgnored;
+	int					m_matchRule = 0;
 	CString				m_dupeKey;
-	int					m_dupeScore;
-	EDupeMode			m_dupeMode;
+	int					m_dupeScore = 0;
+	EDupeMode			m_dupeMode = dmScore;
 	CString				m_dupeStatus;
-	FeedFilterHelper*	m_feedFilterHelper;
+	FeedFilterHelper*	m_feedFilterHelper = nullptr;
 	Attributes			m_attributes;
 
 	int					ParsePrefixedInt(const char *value);
 	void				ParseSeasonEpisode();
 
 public:
-						FeedItemInfo();
+						FeedItemInfo() {}
 						FeedItemInfo(FeedItemInfo&&) = delete; // catch performance issues
 	void				SetFeedFilterHelper(FeedFilterHelper* feedFilterHelper) { m_feedFilterHelper = feedFilterHelper; }
 	const char*			GetTitle() { return m_title; }

@@ -30,12 +30,6 @@
 
 static const int CONNECTION_HOLD_SECODNS = 5;
 
-ServerPool::PooledConnection::PooledConnection(NewsServer* server) : NntpConnection(server)
-{
-	m_inUse = false;
-	m_freeTime = 0;
-}
-
 void ServerPool::PooledConnection::SetFreeTimeNow()
 {
 	m_freeTime = Util::CurrentTime();
@@ -45,11 +39,6 @@ void ServerPool::PooledConnection::SetFreeTimeNow()
 ServerPool::ServerPool()
 {
 	debug("Creating ServerPool");
-
-	m_maxNormLevel = 0;
-	m_timeout = 60;
-	m_generation = 0;
-	m_retryInterval = 0;
 
 	g_Log->RegisterDebuggable(this);
 }

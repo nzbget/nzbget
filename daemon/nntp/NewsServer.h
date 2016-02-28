@@ -33,7 +33,7 @@ class NewsServer
 {
 private:
 	int				m_id;
-	int				m_stateId;
+	int				m_stateId = 0;
 	bool			m_active;
 	CString			m_name;
 	int				m_group;
@@ -48,7 +48,7 @@ private:
 	bool			m_tls;
 	CString			m_cipher;
 	int				m_retention;
-	time_t			m_blockTime;
+	time_t			m_blockTime = 0;
 
 public:
 					NewsServer(int id, bool active, const char* name, const char* host, int port,

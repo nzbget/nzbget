@@ -194,9 +194,10 @@ private:
 	CString				m_password;
 	CString				m_host;
 	CString				m_resource;
-	int					m_port;
-	bool				m_tls;
-	bool				m_valid;
+	int					m_port = 0;
+	bool				m_tls = false;
+	bool				m_valid = false;
+
 	void				ParseUrl();
 
 public:
@@ -246,7 +247,8 @@ private:
 	void				ExpandArray();
 
 public:
-						WildMask(const char* pattern, bool wantsPositions = false);
+						WildMask(const char* pattern, bool wantsPositions = false):
+							m_pattern(pattern), m_wantsPositions(wantsPositions) {}
 	bool				Match(const char* text);
 	int					GetMatchCount() { return m_wildCount; }
 	int					GetMatchStart(int index) { return m_wildStart[index]; }
@@ -280,10 +282,10 @@ public:
 	};
 
 private:
-	z_stream					m_zStream;
+	z_stream					m_zStream = {0};
 	std::unique_ptr<Bytef[]>	m_outputBuffer;
 	int							m_bufferSize;
-	bool						m_active;
+	bool						m_active = false;
 
 public:
 						GUnzipStream(int BufferSize);
@@ -309,8 +311,8 @@ private:
 	CString				m_longString;
 	char*				m_dataString;
 	const char*			m_separators;
-	char*				m_savePtr;
-	bool				m_working;
+	char*				m_savePtr = nullptr;
+	bool				m_working = false;
 
 public:
 						Tokenizer(const char* dataString, const char* separators);

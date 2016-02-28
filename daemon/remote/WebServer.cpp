@@ -72,11 +72,6 @@ void WebProcessor::Init()
 	}
 }
 
-WebProcessor::WebProcessor()
-{
-	m_connection = nullptr;
-}
-
 void WebProcessor::Execute()
 {
 	m_gzip =false;

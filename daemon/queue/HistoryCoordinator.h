@@ -46,8 +46,6 @@ protected:
 	virtual void		ServiceWork();
 
 public:
-						HistoryCoordinator();
-	virtual				~HistoryCoordinator();
 	void				AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	bool				EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
 	void				DeleteDiskFiles(NzbInfo* nzbInfo);

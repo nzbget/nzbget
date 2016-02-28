@@ -92,9 +92,9 @@ private:
 	Debuggables			m_debuggables;
 	Mutex				m_debugMutex;
 	CString				m_logFilename;
-	uint32				m_idGen;
-	time_t				m_lastWritten;
-	bool				m_optInit;
+	uint32				m_idGen = 0;
+	time_t				m_lastWritten = 0;
+	bool				m_optInit = false;
 #ifdef DEBUG
 	bool				m_extraDebug;
 #endif

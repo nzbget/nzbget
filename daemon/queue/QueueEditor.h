@@ -72,8 +72,6 @@ private:
 	void					MoveGroup(NzbInfo* nzbInfo, int offset);
 
 public:
-							QueueEditor();
-							~QueueEditor();
 	bool					EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text);
 	bool					EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action, int offset, const char* text);
 };

@@ -33,21 +33,15 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-NzbFile::NzbFile(const char* fileName, const char* category)
+NzbFile::NzbFile(const char* fileName, const char* category) :
+	m_fileName(fileName)
 {
 	debug("Creating NZBFile");
 
-	m_fileName = fileName;
 	m_nzbInfo = new NzbInfo();
 	m_nzbInfo->SetFilename(fileName);
 	m_nzbInfo->SetCategory(category);
 	m_nzbInfo->BuildDestDirName();
-
-#ifndef WIN32
-	m_hasPassword = false;
-	m_fileInfo = nullptr;
-	m_article = nullptr;
-#endif
 }
 
 NzbFile::~NzbFile()

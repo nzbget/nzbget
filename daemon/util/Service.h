@@ -31,7 +31,7 @@
 class Service
 {
 private:
-	int					m_lastTick;
+	int					m_lastTick = 0;
 
 protected:
 	virtual int			ServiceInterval() = 0;

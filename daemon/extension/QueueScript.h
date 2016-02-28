@@ -59,16 +59,15 @@ private:
 
 	Queue				m_queue;
 	Mutex				m_queueMutex;
-	QueueItem*			m_curItem;
-	bool				m_hasQueueScripts;
-	bool				m_stopped;
+	QueueItem*			m_curItem = nullptr;
+	bool				m_hasQueueScripts = false;
+	bool				m_stopped = false;
 
 	void				StartScript(NzbInfo* nzbInfo, QueueItem* queueItem);
 	NzbInfo*			FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
 	bool				UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
 
 public:
-						QueueScriptCoordinator();
 						~QueueScriptCoordinator();
 	void				Stop() { m_stopped = true; }
 	void				InitOptions();

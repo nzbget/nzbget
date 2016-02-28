@@ -32,10 +32,9 @@ class Observer;
 class Subject
 {
 private:
-	std::list<Observer*> 	m_observers;
+	std::vector<Observer*> 	m_observers;
 
 public:
-					Subject();
 	void 			Attach(Observer* observer);
 	void 			Detach(Observer* observer);
 	void 			Notify(void* aspect);

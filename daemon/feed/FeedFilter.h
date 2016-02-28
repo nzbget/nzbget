@@ -57,11 +57,11 @@ private:
 		CString			m_field;
 		ETermCommand	m_command;
 		CString			m_param;
-		int64			m_intParam;
-		double			m_floatParam;
-		bool			m_float;
+		int64			m_intParam = 0;
+		double			m_floatParam = 0.0;
+		bool			m_float = false;
 		std::unique_ptr<RegEx>		m_regEx;
-		RefValues*		m_refValues;
+		RefValues*		m_refValues = nullptr;
 
 		bool			GetFieldData(const char* field, FeedItemInfo* feedItemInfo,
 							const char** StrValue, int64* IntValue);
@@ -76,7 +76,7 @@ private:
 		void			FillRegExRefValues(const char* strValue, RegEx* regEx);
 
 	public:
-						Term();
+						Term() {}
 						Term(Term&&) = delete; // catch performance issues
 		void			SetRefValues(RefValues* refValues) { m_refValues = refValues; }
 		bool			Compile(char* token);
@@ -98,37 +98,37 @@ private:
 	class Rule
 	{
 	private:
-		bool			m_isValid;
-		ERuleCommand	m_command;
+		bool			m_isValid = false;
+		ERuleCommand	m_command = frAccept;
 		CString			m_category;
-		int				m_priority;
-		int				m_addPriority;
-		bool			m_pause;
+		int				m_priority = 0;
+		int				m_addPriority = 0;
+		bool			m_pause = false;
 		int				m_dupeScore;
-		int				m_addDupeScore;
+		int				m_addDupeScore = 0;
 		CString			m_dupeKey;
 		CString			m_addDupeKey;
-		EDupeMode		m_dupeMode;
+		EDupeMode		m_dupeMode = dmScore;
 		CString			m_series;
 		CString			m_rageId;
 		CString			m_tvdbId;
 		CString			m_tvmazeId;
-		bool			m_hasCategory;
-		bool			m_hasPriority;
-		bool			m_hasAddPriority;
-		bool			m_hasPause;
-		bool			m_hasDupeScore;
-		bool			m_hasAddDupeScore;
-		bool			m_hasDupeKey;
-		bool			m_hasAddDupeKey;
-		bool			m_hasDupeMode;
-		bool			m_hasPatCategory;
-		bool			m_hasPatDupeKey;
-		bool			m_hasPatAddDupeKey;
-		bool			m_hasSeries;
-		bool			m_hasRageId;
-		bool			m_hasTvdbId;
-		bool			m_hasTvmazeId;
+		bool			m_hasCategory = false;
+		bool			m_hasPriority = false;
+		bool			m_hasAddPriority = false;
+		bool			m_hasPause = false;
+		bool			m_hasDupeScore = false;
+		bool			m_hasAddDupeScore = false;
+		bool			m_hasDupeKey = false;
+		bool			m_hasAddDupeKey = false;
+		bool			m_hasDupeMode = false;
+		bool			m_hasPatCategory = false;
+		bool			m_hasPatDupeKey = false;
+		bool			m_hasPatAddDupeKey = false;
+		bool			m_hasSeries = false;
+		bool			m_hasRageId = false;
+		bool			m_hasTvdbId = false;
+		bool			m_hasTvmazeId = false;
 		CString			m_patCategory;
 		CString			m_patDupeKey;
 		CString			m_patAddDupeKey;
@@ -141,7 +141,7 @@ private:
 		bool			MatchExpression(FeedItemInfo& feedItemInfo);
 
 	public:
-						Rule();
+						Rule() {}
 						Rule(Rule&&) = delete; // catch performance issues
 		void			Compile(char* rule);
 		bool			IsValid() { return m_isValid; }

@@ -246,12 +246,6 @@ QueueScriptCoordinator::QueueItem::QueueItem(int nzbId, ScriptConfig::Script* sc
 	m_event = event;
 }
 
-QueueScriptCoordinator::QueueScriptCoordinator()
-{
-	m_curItem = nullptr;
-	m_stopped = false;
-}
-
 QueueScriptCoordinator::~QueueScriptCoordinator()
 {
 	delete m_curItem;

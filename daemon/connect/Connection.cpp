@@ -120,26 +120,13 @@ void Connection::Final()
 #endif
 }
 
-Connection::Connection(const char* host, int port, bool tls)
+Connection::Connection(const char* host, int port, bool tls) :
+	m_host(host), m_port(port), m_tls(tls)
+
 {
 	debug("Creating Connection");
 
-	m_host = host;
-	m_port = port;
-	m_tls = tls;
-	m_status = csDisconnected;
-	m_socket = INVALID_SOCKET;
-	m_bufAvail = 0;
-	m_timeout = 60;
-	m_suppressErrors = true;
 	m_readBuf.Reserve(CONNECTION_READBUFFER_SIZE + 1);
-	m_totalBytesRead = 0;
-	m_broken = false;
-	m_gracefull = false;
-#ifndef DISABLE_TLS
-	m_tlsSocket = nullptr;
-	m_tlsError = false;
-#endif
 }
 
 Connection::Connection(SOCKET socket, bool tls)

@@ -873,13 +873,13 @@ const char* DirBrowser::InternNext()
 #else
 
 #ifdef DIRBROWSER_SNAPSHOT
-DirBrowser::DirBrowser(const char* path, bool snapshot)
+DirBrowser::DirBrowser(const char* path, bool snapshot) :
+	m_snapshot(snapshot)
 #else
 DirBrowser::DirBrowser(const char* path)
 #endif
 {
 #ifdef DIRBROWSER_SNAPSHOT
-	m_snapshot = snapshot;
 	if (m_snapshot)
 	{
 		DirBrowser dir(path, false);

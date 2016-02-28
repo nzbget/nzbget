@@ -58,14 +58,14 @@ private:
 	DiskFile			m_outFile;
 	CString				m_tempFilename;
 	CString				m_outputFilename;
-	const char*			m_resultFilename;
-	Decoder::EFormat	m_format;
+	const char*			m_resultFilename = nullptr;
+	Decoder::EFormat	m_format = Decoder::efUnknown;
 	CachedSegmentData	m_articleData;
 	int64				m_articleOffset;
 	int					m_articleSize;
 	int					m_articlePtr;
-	bool				m_flushing;
-	bool				m_duplicate;
+	bool				m_flushing = false;
+	bool				m_duplicate = false;
 	CString				m_infoName;
 
 	bool				CreateOutputFile(int64 size);
@@ -76,7 +76,6 @@ protected:
 	virtual void		SetLastUpdateTimeNow() {}
 
 public:
-						ArticleWriter();
 						~ArticleWriter();
 	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
 	void				SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }

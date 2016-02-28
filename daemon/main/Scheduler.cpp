@@ -33,27 +33,6 @@
 #include "FeedCoordinator.h"
 #include "SchedulerScript.h"
 
-Scheduler::Task::Task(int id, int hours, int minutes, int weekDaysBits, ECommand command, const char* param)
-{
-	m_id = id;
-	m_hours = hours;
-	m_minutes = minutes;
-	m_weekDaysBits = weekDaysBits;
-	m_command = command;
-	m_param = param;
-	m_lastExecuted = 0;
-}
-
-
-Scheduler::Scheduler()
-{
-	debug("Creating Scheduler");
-
-	m_firstChecked = false;
-	m_lastCheck = 0;
-	m_taskList.clear();
-}
-
 Scheduler::~Scheduler()
 {
 	debug("Destroying Scheduler");

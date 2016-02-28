@@ -235,7 +235,6 @@ ParCoordinator::ParCoordinator()
 	debug("Creating ParCoordinator");
 
 #ifndef DISABLE_PARCHECK
-	m_stopped = false;
 	m_parChecker.m_owner = this;
 	m_parRenamer.m_owner = this;
 #endif

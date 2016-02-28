@@ -797,16 +797,6 @@ NzbInfo* NzbList::Find(int id)
 }
 
 
-ArticleInfo::ArticleInfo()
-{
-	//debug("Creating ArticleInfo");
-	m_size = 0;
-	m_segmentOffset = 0;
-	m_segmentSize = 0;
-	m_status = aiUndefined;
-	m_crc = 0;
-}
-
 void ArticleInfo::AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size)
 {
 	m_segmentContent = std::move(content);
@@ -819,36 +809,6 @@ void ArticleInfo::DiscardSegment()
 	m_segmentContent.reset();
 }
 
-
-FileInfo::FileInfo(int id)
-{
-	debug("Creating FileInfo");
-
-	m_mutexOutputFile = nullptr;
-	m_filenameConfirmed = false;
-	m_size = 0;
-	m_remainingSize = 0;
-	m_missedSize = 0;
-	m_successSize = 0;
-	m_failedSize = 0;
-	m_totalArticles = 0;
-	m_missedArticles = 0;
-	m_failedArticles = 0;
-	m_successArticles = 0;
-	m_time = 0;
-	m_paused = false;
-	m_deleted = false;
-	m_completedArticles = 0;
-	m_parFile = false;
-	m_outputInitialized = false;
-	m_nzbInfo = nullptr;
-	m_extraPriority = false;
-	m_activeDownloads = 0;
-	m_autoDeleted = false;
-	m_cachedArticles = 0;
-	m_partialChanged = false;
-	m_id = id ? id : ++m_idGen;
-}
 
 FileInfo::~ FileInfo()
 {
@@ -954,60 +914,16 @@ void FileList::Remove(FileInfo* fileInfo)
 }
 
 
-CompletedFile::CompletedFile(int id, const char* fileName, EStatus status, uint32 crc)
-{
-	m_id = id;
+CompletedFile::CompletedFile(int id, const char* fileName, EStatus status, uint32 crc) :
+	m_id(id), m_fileName(fileName), m_status(status), m_crc(crc)
 
+{
 	if (FileInfo::m_idMax < m_id)
 	{
 		FileInfo::m_idMax = m_id;
 	}
-
-	m_fileName = fileName;
-	m_status = status;
-	m_crc = crc;
 }
 
-
-PostInfo::PostInfo()
-{
-	debug("Creating PostInfo");
-
-	m_nzbInfo = nullptr;
-	m_working = false;
-	m_deleted = false;
-	m_requestParCheck = false;
-	m_forceParFull = false;
-	m_forceRepair = false;
-	m_parRepaired = false;
-	m_unpackTried = false;
-	m_passListTried = false;
-	m_lastUnpackStatus = 0;
-	m_progressLabel = "";
-	m_fileProgress = 0;
-	m_stageProgress = 0;
-	m_startTime = 0;
-	m_stageTime = 0;
-	m_stage = ptQueued;
-	m_postThread = nullptr;
-}
-
-PostInfo::~ PostInfo()
-{
-	debug("Destroying PostInfo");
-}
-
-
-DupInfo::DupInfo()
-{
-	m_id = 0;
-	m_dupeScore = 0;
-	m_dupeMode = dmScore;
-	m_size = 0;
-	m_fullContentHash = 0;
-	m_filteredContentHash = 0;
-	m_status = dsUndefined;
-}
 
 void DupInfo::SetId(int id)
 {
@@ -1018,20 +934,6 @@ void DupInfo::SetId(int id)
 	}
 }
 
-
-HistoryInfo::HistoryInfo(NzbInfo* nzbInfo)
-{
-	m_kind = nzbInfo->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl;
-	m_info = nzbInfo;
-	m_time = 0;
-}
-
-HistoryInfo::HistoryInfo(DupInfo* dupInfo)
-{
-	m_kind = hkDup;
-	m_info = dupInfo;
-	m_time = 0;
-}
 
 HistoryInfo::~HistoryInfo()
 {

@@ -31,7 +31,6 @@
 ColoredFrontend::ColoredFrontend()
 {
 	m_summary = true;
-	m_needGoBack = false;
 #ifdef WIN32
 	m_console = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif

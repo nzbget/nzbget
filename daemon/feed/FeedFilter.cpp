@@ -29,15 +29,6 @@
 #include "Util.h"
 #include "FeedFilter.h"
 
-
-FeedFilter::Term::Term()
-{
-	m_float = false;
-	m_intParam = 0;
-	m_floatParam = 0.0;
-	m_refValues = nullptr;
-}
-
 bool FeedFilter::Term::Match(FeedItemInfo& feedItemInfo)
 {
 	const char* strValue = nullptr;
@@ -536,34 +527,6 @@ void FeedFilter::Term::FillRegExRefValues(const char* strValue, RegEx* regEx)
 	}
 }
 
-
-FeedFilter::Rule::Rule()
-{
-	m_command = frAccept;
-	m_isValid = false;
-	m_priority = 0;
-	m_addPriority = 0;
-	m_pause = false;
-	m_dupeScore = 0;
-	m_addDupeScore = 0;
-	m_dupeMode = dmScore;
-	m_hasCategory = false;
-	m_hasPriority = false;
-	m_hasAddPriority = false;
-	m_hasPause = false;
-	m_hasDupeScore = false;
-	m_hasAddDupeScore = false;
-	m_hasDupeKey = false;
-	m_hasAddDupeKey = false;
-	m_hasDupeMode = false;
-	m_hasRageId = false;
-	m_hasTvdbId = false;
-	m_hasTvmazeId = false;
-	m_hasSeries = false;
-	m_hasPatCategory = false;
-	m_hasPatDupeKey = false;
-	m_hasPatAddDupeKey = false;
-}
 
 void FeedFilter::Rule::Compile(char* rule)
 {

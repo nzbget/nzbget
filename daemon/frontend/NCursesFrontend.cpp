@@ -100,29 +100,9 @@ static const int READKEY_EMPTY = ERR;
 
 NCursesFrontend::NCursesFrontend()
 {
-	m_screenHeight = 0;
-	m_screenWidth = 0;
-	m_inputNumberIndex = 0;
-	m_inputMode = normal;
-	m_summary = true;
-	m_fileList = true;
-	m_neededLogEntries = 0;
-	m_queueWinTop = 0;
-	m_queueWinHeight = 0;
-	m_queueWinClientHeight = 0;
-	m_messagesWinTop = 0;
-	m_messagesWinHeight = 0;
-	m_messagesWinClientHeight = 0;
-	m_selectedQueueEntry = 0;
-	m_queueScrollOffset = 0;
 	m_showNzbname = g_Options->GetCursesNzbName();
 	m_showTimestamp = g_Options->GetCursesTime();
 	m_groupFiles = g_Options->GetCursesGroup();
-	m_queueWindowPercentage = 50;
-	m_dataUpdatePos = 0;
-	m_updateNextTime = false;
-	m_lastEditEntry = -1;
-	m_lastPausePars = false;
 
 	// Setup curses
 #ifdef WIN32
@@ -140,8 +120,6 @@ NCursesFrontend::NCursesFrontend()
 	{
 		SetConsoleTitle("NZBGet");
 	}
-
-	m_useColor = true;
 #else
 	m_window = initscr();
 	if (m_window == nullptr)

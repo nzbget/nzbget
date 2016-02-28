@@ -74,17 +74,6 @@ void Scanner::QueueData::SetNzbId(int nzbId)
 }
 
 
-Scanner::Scanner()
-{
-	debug("Creating Scanner");
-
-	m_requestedNzbDirScan = false;
-	m_scanning = false;
-	m_nzbDirInterval = 0;
-	m_pass = 0;
-	m_scanScript = false;
-}
-
 void Scanner::InitOptions()
 {
 	m_nzbDirInterval = g_Options->GetNzbDirInterval() * 1000;

@@ -30,11 +30,11 @@
 #include "Options.h"
 #include "Util.h"
 
-FeedFile::FeedFile(const char* fileName)
+FeedFile::FeedFile(const char* fileName) :
+	m_fileName(fileName)
 {
 	debug("Creating FeedFile");
 
-	m_fileName = fileName;
 	m_feedItemInfos = new FeedItemInfos();
 	m_feedItemInfos->Retain();
 

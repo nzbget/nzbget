@@ -49,7 +49,8 @@ private:
 	const char*			m_errText;
 
 public:
-						ErrorXmlCommand(int errCode, const char* errText);
+						ErrorXmlCommand(int errCode, const char* errText) :
+							m_errCode(errCode), m_errText(errText) {}
 	virtual void		Execute();
 };
 
@@ -68,7 +69,8 @@ private:
 	EPauseAction		m_pauseAction;
 
 public:
-						PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction);
+						PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction) :
+							m_pause(pause), m_pauseAction(pauseAction) {}
 	virtual void		Execute();
 };
 
@@ -226,7 +228,7 @@ private:
 	bool				m_preview;
 
 public:
-						ViewFeedXmlCommand(bool preview);
+						ViewFeedXmlCommand(bool preview) : m_preview(preview) {}
 	virtual void		Execute();
 };
 
@@ -314,14 +316,6 @@ public:
 
 //*****************************************************************
 // XmlRpcProcessor
-
-XmlRpcProcessor::XmlRpcProcessor()
-{
-	m_request = nullptr;
-	m_protocol = rpUndefined;
-	m_httpMethod = hmPost;
-	m_contentType = nullptr;
-}
 
 void XmlRpcProcessor::SetUrl(const char* url)
 {
@@ -736,11 +730,6 @@ std::unique_ptr<XmlCommand> XmlRpcProcessor::CreateCommand(const char* methodNam
 
 XmlCommand::XmlCommand()
 {
-	m_request = nullptr;
-	m_requestPtr = nullptr;
-	m_callbackFunc = nullptr;
-	m_fault = false;
-	m_protocol = XmlRpcProcessor::rpUndefined;
 	m_response.Reserve(1024 * 10 - 1);
 }
 
@@ -1077,21 +1066,9 @@ bool XmlCommand::CheckSafeMethod()
 //*****************************************************************
 // Commands
 
-ErrorXmlCommand::ErrorXmlCommand(int errCode, const char* errText)
-{
-	m_errCode = errCode;
-	m_errText = errText;
-}
-
 void ErrorXmlCommand::Execute()
 {
 	BuildErrorResponse(m_errCode, m_errText);
-}
-
-PauseUnpauseXmlCommand::PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction)
-{
-	m_pause = pause;
-	m_pauseAction = pauseAction;
 }
 
 void PauseUnpauseXmlCommand::Execute()
@@ -2786,11 +2763,6 @@ void ConfigTemplatesXmlCommand::Execute()
 	}
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
-}
-
-ViewFeedXmlCommand::ViewFeedXmlCommand(bool preview)
-{
-	m_preview = preview;
 }
 
 // struct[] viewfeed(int id)

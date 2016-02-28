@@ -37,16 +37,6 @@
 #include "PrePostProcessor.h"
 #include "DupeCoordinator.h"
 
-HistoryCoordinator::HistoryCoordinator()
-{
-	debug("Creating HistoryCoordinator");
-}
-
-HistoryCoordinator::~HistoryCoordinator()
-{
-	debug("Destroying HistoryCoordinator");
-}
-
 /**
  * Removes old entries from (recent) history
  */

@@ -47,7 +47,7 @@ public:
 	};
 
 private:
-	Connection*			m_connection;
+	Connection*			m_connection = nullptr;
 	CString				m_request;
 	CString				m_url;
 	EHttpMethod			m_httpMethod;
@@ -73,7 +73,6 @@ private:
 	bool				CheckCredentials();
 
 public:
-						WebProcessor();
 	static void			Init();
 	void				Execute();
 	void				SetConnection(Connection* connection) { m_connection = connection; }

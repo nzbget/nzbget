@@ -90,16 +90,15 @@ public:
 private:
 	int					m_partNumber;
 	CString				m_messageId;
-	int					m_size;
+	int					m_size = 0;
 	std::unique_ptr<SegmentData>	m_segmentContent;
-	int64				m_segmentOffset;
-	int					m_segmentSize;
-	EStatus				m_status;
+	int64				m_segmentOffset = 0;
+	int					m_segmentSize = 0;
+	EStatus				m_status = aiUndefined;
 	CString				m_resultFilename;
-	uint32				m_crc;
+	uint32				m_crc = 0;
 
 public:
-						ArticleInfo();
 	void 				SetPartNumber(int s) { m_partNumber = s; }
 	int 				GetPartNumber() { return m_partNumber; }
 	const char* 		GetMessageId() { return m_messageId; }
@@ -129,35 +128,35 @@ public:
 
 private:
 	int					m_id;
-	NzbInfo*			m_nzbInfo;
+	NzbInfo*			m_nzbInfo = nullptr;
 	Articles			m_articles;
 	Groups				m_groups;
 	ServerStatList		m_serverStats;
 	CString				m_subject;
 	CString				m_filename;
-	int64 				m_size;
-	int64 				m_remainingSize;
-	int64				m_successSize;
-	int64				m_failedSize;
-	int64				m_missedSize;
-	int					m_totalArticles;
-	int					m_missedArticles;
-	int					m_failedArticles;
-	int					m_successArticles;
-	time_t				m_time;
-	bool				m_paused;
-	bool				m_deleted;
-	bool				m_filenameConfirmed;
-	bool				m_parFile;
-	int					m_completedArticles;
-	bool				m_outputInitialized;
+	int64 				m_size = 0;
+	int64 				m_remainingSize = 0;
+	int64				m_successSize = 0;
+	int64				m_failedSize = 0;
+	int64				m_missedSize = 0;
+	int					m_totalArticles = 0;
+	int					m_missedArticles = 0;
+	int					m_failedArticles = 0;
+	int					m_successArticles = 0;
+	time_t				m_time = 0;
+	bool				m_paused = false;
+	bool				m_deleted = false;
+	bool				m_filenameConfirmed = false;
+	bool				m_parFile = false;
+	int					m_completedArticles = 0;
+	bool				m_outputInitialized = false;
 	CString				m_outputFilename;
-	Mutex*				m_mutexOutputFile;
-	bool				m_extraPriority;
-	int					m_activeDownloads;
-	bool				m_autoDeleted;
-	int					m_cachedArticles;
-	bool				m_partialChanged;
+	Mutex*				m_mutexOutputFile = nullptr;
+	bool				m_extraPriority = false;
+	int					m_activeDownloads = 0;
+	bool				m_autoDeleted = false;
+	int					m_cachedArticles = 0;
+	bool				m_partialChanged = false;
 
 	static int			m_idGen;
 	static int			m_idMax;
@@ -165,7 +164,7 @@ private:
 	friend class CompletedFile;
 
 public:
-						FileInfo(int id = 0);
+						FileInfo(int id = 0) : m_id(id ? id : ++m_idGen) {}
 						~FileInfo();
 	int					GetId() { return m_id; }
 	void				SetId(int id);
@@ -236,7 +235,7 @@ class FileList : public FileListBase
 private:
 	bool				m_ownObjects;
 public:
-						FileList(bool ownObjects = false) { m_ownObjects = ownObjects; }
+						FileList(bool ownObjects = false) : m_ownObjects(ownObjects) {}
 						~FileList();
 	void				Clear();
 	void				Remove(FileInfo* fileInfo);
@@ -716,29 +715,26 @@ public:
 	typedef std::vector<CString>		ParredFiles;
 
 private:
-	NzbInfo*			m_nzbInfo;
-	bool				m_working;
-	bool				m_deleted;
-	bool				m_requestParCheck;
-	bool				m_forceParFull;
-	bool				m_forceRepair;
-	bool				m_parRepaired;
-	bool				m_unpackTried;
-	bool				m_passListTried;
-	int					m_lastUnpackStatus;
-	EStage				m_stage;
-	CString				m_progressLabel;
-	int					m_fileProgress;
-	int					m_stageProgress;
-	time_t				m_startTime;
-	time_t				m_stageTime;
-	Thread*				m_postThread;
-
+	NzbInfo*			m_nzbInfo = nullptr;
+	bool				m_working = false;
+	bool				m_deleted = false;
+	bool				m_requestParCheck = false;
+	bool				m_forceParFull = false;
+	bool				m_forceRepair = false;
+	bool				m_parRepaired = false;
+	bool				m_unpackTried = false;
+	bool				m_passListTried = false;
+	int					m_lastUnpackStatus = 0;
+	EStage				m_stage = ptQueued;
+	CString				m_progressLabel = "";
+	int					m_fileProgress = 0;
+	int					m_stageProgress = 0;
+	time_t				m_startTime = 0;
+	time_t				m_stageTime = 0;
+	Thread*				m_postThread = nullptr;
 	ParredFiles			m_parredFiles;
 
 public:
-						PostInfo();
-						~PostInfo();
 	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
 	void				SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
 	EStage				GetStage() { return m_stage; }
@@ -795,18 +791,17 @@ public:
 	};
 
 private:
-	int					m_id;
+	int					m_id = 0;
 	CString				m_name;
 	CString				m_dupeKey;
-	int					m_dupeScore;
-	EDupeMode			m_dupeMode;
-	int64 				m_size;
-	uint32				m_fullContentHash;
-	uint32				m_filteredContentHash;
-	EStatus				m_status;
+	int					m_dupeScore = 0;
+	EDupeMode			m_dupeMode = dmScore;
+	int64 				m_size = 0;
+	uint32				m_fullContentHash = 0;
+	uint32				m_filteredContentHash = 0;
+	EStatus				m_status = dsUndefined;
 
 public:
-						DupInfo();
 	int					GetId() { return m_id; }
 	void				SetId(int id);
 	const char*			GetName() { return m_name; }
@@ -841,11 +836,12 @@ public:
 private:
 	EKind				m_kind;
 	void*				m_info;
-	time_t				m_time;
+	time_t				m_time = 0;
 
 public:
-						HistoryInfo(NzbInfo* nzbInfo);
-						HistoryInfo(DupInfo* dupInfo);
+						HistoryInfo(NzbInfo* nzbInfo) : m_info(nzbInfo),
+							m_kind(nzbInfo->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl) {}
+						HistoryInfo(DupInfo* dupInfo) : m_info(dupInfo), m_kind(hkDup) {}
 						~HistoryInfo();
 	EKind				GetKind() { return m_kind; }
 	int					GetId();

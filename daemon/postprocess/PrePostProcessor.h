@@ -44,9 +44,9 @@ private:
 private:
 	ParCoordinator		m_parCoordinator;
 	DownloadQueueObserver	m_downloadQueueObserver;
-	int					m_jobCount;
-	NzbInfo*			m_curJob;
-	const char*			m_pauseReason;
+	int					m_jobCount = 0;
+	NzbInfo*			m_curJob = nullptr;
+	const char*			m_pauseReason = nullptr;
 
 	bool				IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars, bool allowOnlyOneDeleted);
 	bool				IsNzbFileDownloading(NzbInfo* nzbInfo);
@@ -67,7 +67,6 @@ private:
 
 public:
 						PrePostProcessor();
-	virtual				~PrePostProcessor();
 	virtual void		Run();
 	virtual void		Stop();
 	bool				HasMoreJobs() { return m_jobCount > 0; }

@@ -57,12 +57,6 @@ public:
 #endif
 
 
-Maintenance::Maintenance()
-{
-	m_idMessageGen = 0;
-	m_updateScriptController = nullptr;
-}
-
 Maintenance::~Maintenance()
 {
 	m_controllerMutex.Lock();

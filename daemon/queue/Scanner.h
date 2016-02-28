@@ -100,13 +100,13 @@ private:
 
 	typedef std::deque<QueueData>		QueueList;
 
-	bool				m_requestedNzbDirScan;
-	int					m_nzbDirInterval;
-	bool				m_scanScript;
-	int					m_pass;
+	bool				m_requestedNzbDirScan = false;
+	int					m_nzbDirInterval = 0;
+	bool				m_scanScript = false;
+	int					m_pass = 0;
 	FileList			m_fileList;
 	QueueList			m_queueList;
-	bool				m_scanning;
+	bool				m_scanning = false;
 	Mutex				m_scanMutex;
 
 	void				CheckIncomingNzbs(const char* directory, const char* category, bool checkStat);
@@ -123,7 +123,6 @@ protected:
 	virtual void		ServiceWork();
 
 public:
-						Scanner();
 	void				InitOptions();
 	void				ScanNzbDir(bool syncMode);
 	EAddStatus			AddExternalFile(const char* nzbName, const char* category, int priority,

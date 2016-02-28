@@ -38,10 +38,6 @@ ArticleDownloader::ArticleDownloader()
 {
 	debug("Creating ArticleDownloader");
 
-	m_connection = nullptr;
-	m_status = adUndefined;
-	m_format = Decoder::efUnknown;
-	m_downloadedSize = 0;
 	m_articleWriter.SetOwner(this);
 	SetLastUpdateTimeNow();
 }

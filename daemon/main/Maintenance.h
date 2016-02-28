@@ -39,8 +39,8 @@ private:
 	MessageList			m_messages;
 	Mutex				m_logMutex;
 	Mutex				m_controllerMutex;
-	int					m_idMessageGen;
-	UpdateScriptController*	m_updateScriptController;
+	int					m_idMessageGen = 0;
+	UpdateScriptController*	m_updateScriptController = nullptr;
 	CString				m_updateScript;
 
 	bool				ReadPackageInfoStr(const char* key, CString& value);
@@ -53,7 +53,6 @@ public:
 		brDevel
 	};
 
-						Maintenance();
 						~Maintenance();
 	void				AddMessage(Message::EKind kind, time_t time, const char* text);
 	MessageList*		LockMessages();

@@ -47,16 +47,6 @@ CachedSegmentData& CachedSegmentData::operator=(CachedSegmentData&& other)
 }
 
 
-ArticleWriter::ArticleWriter()
-{
-	debug("Creating ArticleWriter");
-
-	m_resultFilename = nullptr;
-	m_format = Decoder::efUnknown;
-	m_duplicate = false;
-	m_flushing = false;
-}
-
 ArticleWriter::~ArticleWriter()
 {
 	debug("Destroying ArticleWriter");

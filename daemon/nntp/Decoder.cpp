@@ -30,16 +30,6 @@
 
 const char* Decoder::FormatNames[] = { "Unknown", "yEnc", "UU" };
 
-Decoder::Decoder()
-{
-	debug("Creating Decoder");
-}
-
-Decoder::~ Decoder()
-{
-	debug("Destroying Decoder");
-}
-
 void Decoder::Clear()
 {
 	m_articleFilename.Clear();
@@ -243,7 +233,7 @@ Decoder::EStatus YDecoder::Check()
 
 UDecoder::UDecoder()
 {
-
+	Clear();
 }
 
 void UDecoder::Clear()

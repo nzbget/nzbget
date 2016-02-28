@@ -28,24 +28,16 @@
 #include "Util.h"
 
 FeedInfo::FeedInfo(int id, const char* name, const char* url, bool backlog, int interval,
-	const char* filter, bool pauseNzb, const char* category, int priority, const char* feedScript)
+		const char* filter, bool pauseNzb, const char* category, int priority, const char* feedScript) :
+	m_backlog(backlog), m_interval(interval), m_pauseNzb(pauseNzb), m_priority(priority)
 {
 	m_id = id;
 	m_name = name ? name : "";
 	m_url = url ? url : "";
 	m_filter = filter ? filter : "";
-	m_backlog = backlog;
 	m_filterHash = Util::HashBJ96(m_filter, strlen(m_filter), 0);
 	m_category = category ? category : "";
-	m_interval = interval;
 	m_feedScript = feedScript ? feedScript : "";
-	m_pauseNzb = pauseNzb;
-	m_priority = priority;
-	m_lastUpdate = 0;
-	m_preview = false;
-	m_status = fsUndefined;
-	m_fetch = false;
-	m_force = false;
 }
 
 
@@ -62,30 +54,6 @@ FeedItemInfo::Attr* FeedItemInfo::Attributes::Find(const char* name)
 	return nullptr;
 }
 
-
-FeedItemInfo::FeedItemInfo()
-{
-	m_feedFilterHelper = nullptr;
-	m_category = "";
-	m_size = 0;
-	m_time = 0;
-	m_imdbId = 0;
-	m_rageId = 0;
-	m_tvdbId = 0;
-	m_tvmazeId = 0;
-	m_description = "";
-	m_seasonNum = 0;
-	m_episodeNum = 0;
-	m_seasonEpisodeParsed = false;
-	m_addCategory = "";
-	m_pauseNzb = false;
-	m_priority = 0;
-	m_status = isUnknown;
-	m_matchStatus = msIgnored;
-	m_matchRule = 0;
-	m_dupeScore = 0;
-	m_dupeMode = dmScore;
-}
 
 void FeedItemInfo::SetSeason(const char* season)
 {

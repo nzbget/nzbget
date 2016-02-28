@@ -54,8 +54,7 @@ protected:
 	CString					m_articleFilename;
 
 public:
-							Decoder();
-	virtual					~Decoder();
+	virtual					~Decoder() {}
 	virtual EStatus			Check() = 0;
 	virtual void			Clear();
 	virtual int				DecodeBuffer(char* buffer, int len) = 0;

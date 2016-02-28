@@ -32,7 +32,6 @@
 
 Service::Service()
 {
-	m_lastTick = 0;
 	g_ServiceCoordinator->RegisterService(this);
 }
 

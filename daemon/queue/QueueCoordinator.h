@@ -60,9 +60,9 @@ private:
 	CoordinatorDownloadQueue	m_downloadQueue;
 	ActiveDownloads				m_activeDownloads;
 	QueueEditor					m_queueEditor;
-	bool						m_hasMoreJobs;
+	bool						m_hasMoreJobs = true;
 	int							m_downloadsLimit;
-	int							m_serverConfigGeneration;
+	int							m_serverConfigGeneration = 0;
 
 	bool					GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
 	void					StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);

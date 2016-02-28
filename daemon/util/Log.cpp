@@ -33,10 +33,6 @@ Log::Log()
 {
 	g_Log = this;
 
-	m_messages.clear();
-	m_idGen = 0;
-	m_optInit = false;
-	m_lastWritten = 0;
 #ifdef DEBUG
 	m_extraDebug = FileSystem::FileExists("extradebug");
 #endif

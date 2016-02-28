@@ -41,8 +41,6 @@ protected:
 	virtual void	PrintMessage(Message& message);
 	virtual void 	PrintStatus() {};
 	virtual void 	PrintSkip();
-public:
-	LoggableFrontend();
 };
 
 #endif

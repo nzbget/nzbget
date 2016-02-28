@@ -148,14 +148,6 @@ void RarLister::AddMessage(Message::EKind kind, const char* text)
 }
 
 
-DupeMatcher::DupeMatcher(const char* destDir, int64 expectedSize)
-{
-	m_destDir = destDir;
-	m_expectedSize = expectedSize;
-	m_maxSize = -1;
-	m_compressed = false;
-}
-
 bool DupeMatcher::SizeDiffOK(int64 size1, int64 size2, int maxDiffPercent)
 {
 	if (size1 == 0 || size2 == 0)

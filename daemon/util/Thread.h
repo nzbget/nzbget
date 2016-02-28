@@ -49,13 +49,13 @@ private:
 	static std::unique_ptr<Mutex>	m_threadMutex;
 	static int				m_threadCount;
 #ifdef WIN32
-	HANDLE	 				m_threadObj;
+	HANDLE	 				m_threadObj = 0;
 #else
-	pthread_t 				m_threadObj;
+	pthread_t 				m_threadObj = 0;
 #endif
-	bool 					m_running;
-	bool					m_stopped;
-	bool					m_autoDestroy;
+	bool 					m_running = false;
+	bool					m_stopped = false;
+	bool					m_autoDestroy = false;
 
 #ifdef WIN32
 	static void __cdecl 	thread_handler(void* object);

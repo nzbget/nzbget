@@ -32,12 +32,9 @@
 
 static const int CONNECTION_LINEBUFFER_SIZE = 1024*10;
 
-NntpConnection::NntpConnection(NewsServer* newsServer) : Connection(newsServer->GetHost(), newsServer->GetPort(), newsServer->GetTls())
+NntpConnection::NntpConnection(NewsServer* newsServer) : Connection(newsServer->GetHost(), newsServer->GetPort(), newsServer->GetTls()), m_newsServer(newsServer)
 {
-	m_newsServer = newsServer;
-	m_activeGroup = nullptr;
 	m_lineBuf.Reserve(CONNECTION_LINEBUFFER_SIZE);
-	m_authError = false;
 	SetCipher(newsServer->GetCipher());
 }
 

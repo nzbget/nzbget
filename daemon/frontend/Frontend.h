@@ -42,23 +42,23 @@ private:
 	bool				RequestFileList();
 
 protected:
-	bool				m_summary;
-	bool				m_fileList;
-	uint32				m_neededLogEntries;
-	uint32				m_neededLogFirstId;
+	bool				m_summary = false;
+	bool				m_fileList = false;
+	uint32				m_neededLogEntries = 0;
+	uint32				m_neededLogFirstId = 0;
 	int					m_updateInterval;
 
 	// summary
-	int					m_currentDownloadSpeed;
-	int64 				m_remainingSize;
-	bool				m_pauseDownload;
-	int					m_downloadLimit;
-	int					m_threadCount;
-	int					m_postJobCount;
-	int					m_upTimeSec;
-	int					m_dnTimeSec;
-	int64				m_allBytes;
-	bool				m_standBy;
+	int					m_currentDownloadSpeed = 0;
+	int64 				m_remainingSize = 0;
+	bool				m_pauseDownload = false;
+	int					m_downloadLimit = 0;
+	int					m_threadCount = 0;
+	int					m_postJobCount = 0;
+	int					m_upTimeSec = 0;
+	int					m_dnTimeSec = 0;
+	int64				m_allBytes = 0;
+	bool				m_standBy = false;
 
 	bool				PrepareData();
 	void				FreeData();

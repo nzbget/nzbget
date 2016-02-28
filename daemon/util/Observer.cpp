@@ -27,11 +27,6 @@
 #include "Observer.h"
 #include "Log.h"
 
-Subject::Subject()
-{
-	m_observers.clear();
-}
-
 void Subject::Attach(Observer* observer)
 {
 	m_observers.push_back(observer);
@@ -39,7 +34,7 @@ void Subject::Attach(Observer* observer)
 
 void Subject::Detach(Observer* observer)
 {
-	m_observers.remove(observer);
+	m_observers.erase(std::find(m_observers.begin(), m_observers.end(), observer));
 }
 
 void Subject::Notify(void* aspect)

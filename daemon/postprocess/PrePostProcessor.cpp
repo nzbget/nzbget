@@ -42,19 +42,10 @@ PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
 
-	m_jobCount = 0;
-	m_curJob = nullptr;
-	m_pauseReason = nullptr;
-
 	m_downloadQueueObserver.m_owner = this;
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	downloadQueue->Attach(&m_downloadQueueObserver);
 	DownloadQueue::Unlock();
-}
-
-PrePostProcessor::~PrePostProcessor()
-{
-	debug("Destroying PrePostProcessor");
 }
 
 void PrePostProcessor::Run()

@@ -1483,13 +1483,9 @@ time_t WebUtil::ParseRfc822DateTime(const char* dateTimeStr)
 }
 
 
-URL::URL(const char* address)
+URL::URL(const char* address) :
+	m_address(address)
 {
-	m_address = address;
-	m_port = 0;
-	m_tls = false;
-	m_valid = false;
-
 	if (address)
 	{
 		ParseUrl();
@@ -1570,11 +1566,11 @@ void URL::ParseUrl()
 }
 
 
-RegEx::RegEx(const char *pattern, int matchBufSize)
+RegEx::RegEx(const char *pattern, int matchBufSize) :
+	m_matchBufSize(matchBufSize)
 {
 #ifdef HAVE_REGEX_H
 	m_valid = regcomp(&m_context, pattern, REG_EXTENDED | REG_ICASE | (matchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
-	m_matchBufSize = matchBufSize;
 	if (matchBufSize > 0)
 	{
 		m_matches = std::make_unique<regmatch_t[]>(matchBufSize);
@@ -1639,12 +1635,6 @@ int RegEx::GetMatchLen(int index)
 #endif
 }
 
-
-WildMask::WildMask(const char *pattern, bool wantsPositions)
-{
-	m_pattern = pattern;
-	m_wantsPositions = wantsPositions;
-}
 
 void WildMask::ExpandArray()
 {
@@ -1831,12 +1821,10 @@ uint32 ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* outputBu
 	return total_out;
 }
 
-GUnzipStream::GUnzipStream(int BufferSize)
+GUnzipStream::GUnzipStream(int BufferSize) :
+	m_bufferSize(BufferSize)
 {
-	m_bufferSize = BufferSize;
 	m_outputBuffer = std::make_unique<Bytef[]>(BufferSize);
-	m_zStream = {0};
-	m_active = false;
 
 	/* add 16 to MAX_WBITS to enforce gzip format */
 	int ret = inflateInit2(&m_zStream, MAX_WBITS + 16);
@@ -1887,7 +1875,8 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **outputBuffer, int *outputB
 }
 #endif
 
-Tokenizer::Tokenizer(const char* dataString, const char* separators)
+Tokenizer::Tokenizer(const char* dataString, const char* separators) :
+	m_separators(separators)
 {
 	// an optimization to avoid memory allocation for short data string
 	int len = strlen(dataString);
@@ -1902,12 +1891,10 @@ Tokenizer::Tokenizer(const char* dataString, const char* separators)
 		m_dataString = m_longString;
 	}
 
-	m_separators = separators;
-	m_savePtr = nullptr;
-	m_working = false;
 }
 
-Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf)
+Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf) :
+	m_separators(separators)
 {
 	if (inplaceBuf)
 	{
@@ -1918,10 +1905,6 @@ Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf)
 		m_longString.Set(dataString);
 		m_dataString = m_longString;
 	}
-
-	m_separators = separators;
-	m_savePtr = nullptr;
-	m_working = false;
 }
 
 char* Tokenizer::Next()

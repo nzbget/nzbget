@@ -37,7 +37,7 @@ private:
 	NewsServer*			m_newsServer;
 	CString				m_activeGroup;
 	CharBuffer			m_lineBuf;
-	bool				m_authError;
+	bool				m_authError = false;
 
 	void				Clear();
 	void				ReportErrorAnswer(const char* msgPrefix, const char* answer);

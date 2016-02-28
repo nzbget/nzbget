@@ -91,7 +91,7 @@ private:
 	bool				m_first;
 	CString				m_filename;
 #else
-	DIR*				m_dir;
+	DIR*				m_dir = nullptr;
 	struct dirent*		m_findData;
 #endif
 

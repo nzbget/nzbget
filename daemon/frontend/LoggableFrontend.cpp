@@ -28,15 +28,6 @@
 #include "LoggableFrontend.h"
 #include "Log.h"
 
-LoggableFrontend::LoggableFrontend()
-{
-	debug("Creating LoggableFrontend");
-
-	m_neededLogEntries = 0;
-	m_summary = false;
-	m_fileList = false;
-}
-
 void LoggableFrontend::Run()
 {
 	debug("Entering LoggableFrontend-loop");

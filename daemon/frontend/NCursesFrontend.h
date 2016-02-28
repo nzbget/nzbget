@@ -45,21 +45,21 @@ private:
 		downloadRate
 	};
 
-	bool				m_useColor;
-	int					m_dataUpdatePos;
-	bool				m_updateNextTime;
-	int					m_screenHeight;
-	int					m_screenWidth;
-	int					m_queueWinTop;
-	int					m_queueWinHeight;
-	int					m_queueWinClientHeight;
-	int					m_messagesWinTop;
-	int					m_messagesWinHeight;
-	int					m_messagesWinClientHeight;
-	int					m_selectedQueueEntry;
-	int					m_lastEditEntry;
-	bool				m_lastPausePars;
-	int					m_queueScrollOffset;
+	bool				m_useColor = true;
+	int					m_dataUpdatePos = 0;
+	bool				m_updateNextTime = false;
+	int					m_screenHeight = 0;
+	int					m_screenWidth = 0;
+	int					m_queueWinTop = 0;
+	int					m_queueWinHeight = 0;
+	int					m_queueWinClientHeight = 0;
+	int					m_messagesWinTop = 0;
+	int					m_messagesWinHeight = 0;
+	int					m_messagesWinClientHeight = 0;
+	int					m_selectedQueueEntry = 0;
+	int					m_lastEditEntry = -1;
+	bool				m_lastPausePars = false;
+	int					m_queueScrollOffset = 0;
 	CString				m_hint;
 	time_t				m_startHint;
 	int					m_colWidthFiles;
@@ -67,7 +67,7 @@ private:
 	int					m_colWidthLeft;
 
 	// Inputting numbers
-	int					m_inputNumberIndex;
+	int					m_inputNumberIndex = 0;
 	int					m_inputValue;
 
 #ifdef WIN32
@@ -78,11 +78,11 @@ private:
 	void* 				m_window;  //  WINDOW*
 #endif
 
-	EInputMode			m_inputMode;
+	EInputMode			m_inputMode = normal;
 	bool				m_showNzbname;
 	bool				m_showTimestamp;
 	bool				m_groupFiles;
-	int					m_queueWindowPercentage;
+	int					m_queueWindowPercentage = 50;
 
 #ifdef WIN32
 	void			init_pair(int colorNumber, WORD wForeColor, WORD wBackColor);

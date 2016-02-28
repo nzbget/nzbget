@@ -34,11 +34,6 @@ WebDownloader::WebDownloader()
 {
 	debug("Creating WebDownloader");
 
-	m_connection = nullptr;
-	m_confirmedLength = false;
-	m_status = adUndefined;
-	m_force = false;
-	m_retry = true;
 	SetLastUpdateTimeNow();
 }
 

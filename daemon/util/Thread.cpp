@@ -86,11 +86,6 @@ void Thread::Init()
 Thread::Thread()
 {
 	debug("Creating Thread");
-
-	m_threadObj = 0;
-	m_running = false;
-	m_stopped = false;
-	m_autoDestroy = false;
 }
 
 Thread::~Thread()

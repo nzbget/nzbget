@@ -89,8 +89,6 @@ void FeedCoordinator::FilterHelper::CalcDupeStatus(const char* title, const char
 FeedCoordinator::FeedCoordinator()
 {
 	debug("Creating FeedCoordinator");
-	m_force = false;
-	m_save = false;
 
 	g_Log->RegisterDebuggable(this);
 

@@ -89,8 +89,8 @@ private:
 	FeedHistory				m_feedHistory;
 	Mutex					m_downloadsMutex;
 	DownloadQueueObserver	m_downloadQueueObserver;
-	bool					m_force;
-	bool					m_save;
+	bool					m_force = false;
+	bool					m_save = false;
 	FeedCache				m_feedCache;
 	FilterHelper			m_filterHelper;
 

@@ -69,8 +69,6 @@ UrlCoordinator::UrlCoordinator()
 {
 	debug("Creating UrlCoordinator");
 
-	m_hasMoreJobs = true;
-
 	g_Log->RegisterDebuggable(this);
 }
 

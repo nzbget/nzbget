@@ -38,10 +38,10 @@ private:
 	class PooledConnection : public NntpConnection
 	{
 	private:
-		bool			m_inUse;
-		time_t			m_freeTime;
+		bool			m_inUse = false;
+		time_t			m_freeTime = 0;
 	public:
-						PooledConnection(NewsServer* server);
+						using NntpConnection::NntpConnection;
 		bool			GetInUse() { return m_inUse; }
 		void			SetInUse(bool inUse) { m_inUse = inUse; }
 		time_t			GetFreeTime() { return m_freeTime; }
@@ -55,11 +55,11 @@ private:
 	Servers				m_sortedServers;
 	Connections			m_connections;
 	Levels				m_levels;
-	int					m_maxNormLevel;
+	int					m_maxNormLevel = 0;
 	Mutex			 	m_connectionsMutex;
-	int					m_timeout;
-	int					m_retryInterval;
-	int					m_generation;
+	int					m_timeout = 60;
+	int					m_retryInterval = 0;
+	int					m_generation = 0;
 
 	void				NormalizeLevels();
 

@@ -118,7 +118,7 @@ private:
 
 private:
 	PostParChecker		m_parChecker;
-	bool				m_stopped;
+	bool				m_stopped = false;
 	PostParRenamer		m_parRenamer;
 	EJobKind			m_currentJob;
 

@@ -42,7 +42,7 @@ private:
 
 private:
 	ActiveDownloads			m_activeDownloads;
-	bool					m_hasMoreJobs;
+	bool					m_hasMoreJobs = true;
 	bool					m_force;
 
 	NzbInfo*				GetNextUrl(DownloadQueue* downloadQueue);

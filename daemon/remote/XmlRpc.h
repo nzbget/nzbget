@@ -57,10 +57,10 @@ public:
 	};
 
 private:
-	char*				m_request;
-	const char*			m_contentType;
-	ERpcProtocol		m_protocol;
-	EHttpMethod			m_httpMethod;
+	char*				m_request = nullptr;
+	const char*			m_contentType = nullptr;
+	ERpcProtocol		m_protocol = rpUndefined;
+	EHttpMethod			m_httpMethod = hmPost;
 	EUserAccess			m_userAccess;
 	CString				m_url;
 	StringBuilder		m_response;
@@ -71,7 +71,6 @@ private:
 	void				BuildResponse(const char* response, const char* callbackFunc, bool fault, const char* requestId);
 
 public:
-						XmlRpcProcessor();
 	void				Execute();
 	void				SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
 	void				SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
@@ -85,12 +84,12 @@ public:
 class XmlCommand
 {
 protected:
-	char*				m_request;
-	char*				m_requestPtr;
-	char*				m_callbackFunc;
+	char*				m_request = nullptr;
+	char*				m_requestPtr = nullptr;
+	char*				m_callbackFunc = nullptr;
 	StringBuilder		m_response;
-	bool				m_fault;
-	XmlRpcProcessor::ERpcProtocol	m_protocol;
+	bool				m_fault = false;
+	XmlRpcProcessor::ERpcProtocol	m_protocol = XmlRpcProcessor::rpUndefined;
 	XmlRpcProcessor::EHttpMethod	m_httpMethod;
 	XmlRpcProcessor::EUserAccess	m_userAccess;
 

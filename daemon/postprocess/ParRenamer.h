@@ -73,7 +73,7 @@ private:
 	int					m_curFile;
 	int					m_renamedCount;
 	bool				m_hasMissedFiles;
-	bool				m_detectMissing;
+	bool				m_detectMissing = false;
 
 	void				BuildDirList(const char* destDir);
 	void				CheckDir(const char* destDir);
@@ -97,7 +97,6 @@ protected:
 	int					GetStageProgress() { return m_stageProgress; }
 
 public:
-						ParRenamer();
 	virtual void		Run();
 	void				SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char*			GetInfoName() { return m_infoName; }

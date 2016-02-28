@@ -119,11 +119,11 @@ private:
 	CString				m_infoName;
 	CString				m_destDir;
 	CString				m_nzbName;
-	const char*			m_parFilename;
-	EStatus				m_status;
+	const char*			m_parFilename = nullptr;
+	EStatus				m_status = psFailed;
 	EStage				m_stage;
 	// declared as void* to prevent the including of libpar2-headers into this header-file
-	void*				m_repairer;
+	void*				m_repairer = nullptr;
 	CString				m_errMsg;
 	FileList			m_queuedParFiles;
 	Mutex			 	m_queuedParFilesMutex;
@@ -141,9 +141,9 @@ private:
 	SourceList			m_sourceFiles;
 	std::string			m_lastFilename;
 	bool				m_hasDamagedFiles;
-	bool				m_parQuick;
-	bool				m_forceRepair;
-	bool				m_parFull;
+	bool				m_parQuick = false;
+	bool				m_forceRepair = false;
+	bool				m_parFull = false;
 	DupeSourceList		m_dupeSources;
 	StreamBuf			m_parOutStream{this, Message::mkDetail};
 	StreamBuf			m_parErrStream{this, Message::mkError};
@@ -198,7 +198,6 @@ protected:
 	int					GetStageProgress() { return m_stageProgress; }
 
 public:
-						ParChecker();
 	virtual				~ParChecker();
 	virtual void		Run();
 	void				SetDestDir(const char* destDir) { m_destDir = destDir; }

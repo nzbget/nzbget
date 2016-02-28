@@ -54,18 +54,18 @@ private:
 	CString				m_outputFilename;
 	std::unique_ptr<Connection>		m_connection;
 	Mutex			 	m_connectionMutex;
-	EStatus				m_status;
+	EStatus				m_status = adUndefined;
 	time_t				m_lastUpdateTime;
 	CString				m_infoName;
 	DiskFile			m_outFile;
 	int					m_contentLen;
-	bool				m_confirmedLength;
+	bool				m_confirmedLength = false;
 	CString				m_originalFilename;
-	bool				m_force;
+	bool				m_force = false;
 	bool				m_redirecting;
 	bool				m_redirected;
 	bool				m_gzip;
-	bool				m_retry;
+	bool				m_retry = true;
 #ifndef DISABLE_GZIP
 	std::unique_ptr<GUnzipStream>	m_gUnzipStream;
 #endif

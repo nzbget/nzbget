@@ -45,17 +45,6 @@ public:
 };
 
 
-ParRenamer::ParRenamer()
-{
-	debug("Creating ParRenamer");
-
-	m_status = psFailed;
-	m_stageProgress = 0;
-	m_cancelled = false;
-	m_hasMissedFiles = false;
-	m_detectMissing = false;
-}
-
 void ParRenamer::Cleanup()
 {
 	m_dirList.clear();

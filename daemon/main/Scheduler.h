@@ -58,11 +58,13 @@ public:
 		int				m_weekDaysBits;
 		ECommand		m_command;
 		CString			m_param;
-		time_t			m_lastExecuted;
+		time_t			m_lastExecuted = 0;
 
 	public:
 						Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
-							const char* param);
+								const char* param) :
+							m_id(id), m_hours(hours), m_minutes(minutes),
+							m_weekDaysBits(weekDaysBits), m_command(command), m_param(param) {}
 		friend class	Scheduler;
 	};
 
@@ -73,7 +75,7 @@ private:
 
 	TaskList			m_taskList;
 	Mutex				m_taskListMutex;
-	time_t				m_lastCheck;
+	time_t				m_lastCheck = 0;
 	bool				m_downloadRateChanged;
 	bool				m_executeProcess;
 	bool				m_pauseDownloadChanged;
@@ -81,7 +83,7 @@ private:
 	bool				m_pauseScanChanged;
 	bool				m_serverChanged;
 	ServerStatusList	m_serverStatusList;
-	bool				m_firstChecked;
+	bool				m_firstChecked = false;
 
 	void				ExecuteTask(Task* task);
 	void				CheckTasks();
@@ -97,7 +99,6 @@ protected:
 	virtual void		ServiceWork();
 
 public:
-						Scheduler();
 						~Scheduler();
 	void				AddTask(Task* task);
 };

@@ -31,13 +31,6 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-DiskService::DiskService()
-{
-	m_interval = 0;
-	m_waitingReported = false;
-	m_waitingRequiredDir = true;
-}
-
 void DiskService::ServiceWork()
 {
 	m_interval++;

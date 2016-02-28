@@ -67,30 +67,6 @@ static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQOVW:";
 
 CommandLineParser::CommandLineParser(int argc, const char* argv[])
 {
-	m_noConfig = false;
-	m_errors = false;
-	m_printVersion = false;
-	m_printUsage = false;
-
-	m_editQueueAction = 0;
-	m_editQueueOffset = 0;
-	m_addPriority = 0;
-	m_addPaused = false;
-	m_serverMode = false;
-	m_daemonMode = false;
-	m_remoteClientMode = false;
-	m_printOptions = false;
-	m_addTop = false;
-	m_addDupeScore = 0;
-	m_addDupeMode = 0;
-	m_logLines = 0;
-	m_writeLogKind = 0;
-	m_testBacktrace = false;
-	m_webGet = false;
-	m_sigVerify = false;
-	m_matchMode = mmId;
-	m_pauseDownload = false;
-
 	InitCommandLine(argc, argv);
 
 	if (argc == 1)

@@ -53,20 +53,20 @@ class ScriptController
 private:
 	typedef std::vector<CString> ArgList;
 
-	const char*			m_script;
+	const char*			m_script = nullptr;
 	ArgList				m_args;
-	const char*			m_workingDir;
-	const char*			m_infoName;
-	const char*			m_logPrefix;
+	const char*			m_workingDir = nullptr;
+	const char*			m_infoName = nullptr;
+	const char*			m_logPrefix = nullptr;
 	EnvironmentStrings	m_environmentStrings;
-	bool				m_terminated;
-	bool				m_detached;
+	bool				m_terminated = false;
+	bool				m_detached = false;
 	FILE*				m_readpipe;
 #ifdef WIN32
-	HANDLE				m_processId;
+	HANDLE				m_processId = 0;
 	char				m_cmdLine[2048];
 #else
-	pid_t				m_processId;
+	pid_t				m_processId = 0;
 #endif
 
 	typedef std::vector<ScriptController*>	RunningScripts;

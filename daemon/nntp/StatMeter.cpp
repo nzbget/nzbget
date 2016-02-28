@@ -33,23 +33,6 @@
 static const int DAYS_UP_TO_2013_JAN_1 = 15706;
 static const int DAYS_IN_TWENTY_YEARS = 366*20;
 
-ServerVolume::ServerVolume()
-{
-	m_bytesPerSeconds.resize(60);
-	m_bytesPerMinutes.resize(60);
-	m_bytesPerHours.resize(24);
-	m_bytesPerDays.resize(0);
-	m_firstDay = 0;
-	m_dataTime = 0;
-	m_totalBytes = 0;
-	m_customBytes = 0;
-	m_customTime = Util::CurrentTime();
-	m_secSlot = 0;
-	m_minSlot = 0;
-	m_hourSlot = 0;
-	m_daySlot = 0;
-}
-
 void ServerVolume::CalcSlots(time_t locCurTime)
 {
 	m_secSlot = (int)locCurTime % 60;
@@ -192,26 +175,14 @@ StatMeter::StatMeter()
 
 	ResetSpeedStat();
 
-	m_allBytes = 0;
-	m_startDownload = 0;
-	m_pausedFrom = 0;
-	m_standBy = true;
-	m_startServer = 0;
-	m_lastCheck = 0;
-	m_lastTimeOffset = 0;
-	m_statChanged = false;
-
 	g_Log->RegisterDebuggable(this);
 }
 
 StatMeter::~StatMeter()
 {
 	debug("Destroying StatMeter");
-	// Cleanup
 
 	g_Log->UnregisterDebuggable(this);
-
-	debug("StatMeter destroyed");
 }
 
 void StatMeter::Init()

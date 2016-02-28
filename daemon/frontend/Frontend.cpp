@@ -38,20 +38,6 @@ Frontend::Frontend()
 {
 	debug("Creating Frontend");
 
-	m_neededLogFirstId = 0;
-	m_neededLogEntries = 0;
-	m_summary = false;
-	m_fileList = false;
-	m_currentDownloadSpeed = 0;
-	m_remainingSize = 0;
-	m_pauseDownload = false;
-	m_downloadLimit = 0;
-	m_threadCount = 0;
-	m_postJobCount = 0;
-	m_upTimeSec = 0;
-	m_dnTimeSec = 0;
-	m_allBytes = 0;
-	m_standBy = 0;
 	m_updateInterval = g_Options->GetUpdateInterval();
 }
 

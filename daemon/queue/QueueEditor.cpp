@@ -234,16 +234,6 @@ void GroupSorter::AlignSelectedGroups()
 }
 
 
-QueueEditor::QueueEditor()
-{
-	debug("Creating QueueEditor");
-}
-
-QueueEditor::~QueueEditor()
-{
-	debug("Destroying QueueEditor");
-}
-
 FileInfo* QueueEditor::FindFileInfo(int id)
 {
 	for (NzbInfo* nzbInfo : m_downloadQueue->GetQueue())

@@ -75,9 +75,6 @@ QueueCoordinator::QueueCoordinator()
 {
 	debug("Creating QueueCoordinator");
 
-	m_hasMoreJobs = true;
-	m_serverConfigGeneration = 0;
-
 	g_Log->RegisterDebuggable(this);
 
 	m_downloadQueue.m_owner = this;

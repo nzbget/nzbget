@@ -49,11 +49,11 @@ private:
 	bool 				ParseNzb(IUnknown* nzb);
 	static void			EncodeUrl(const char* filename, char* url, int bufLen);
 #else
-	FileInfo*			m_fileInfo;
-	ArticleInfo*		m_article;
+	FileInfo*			m_fileInfo = nullptr;
+	ArticleInfo*		m_article = nullptr;
 	StringBuilder		m_tagContent;
 	bool				m_ignoreNextError;
-	bool				m_hasPassword;
+	bool				m_hasPassword = false;
 
 	static void			SAX_StartElement(NzbFile* file, const char *name, const char **atts);
 	static void			SAX_EndElement(NzbFile* file, const char *name);

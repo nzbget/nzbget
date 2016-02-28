@@ -56,19 +56,19 @@ public:
 protected:
 	CString				m_host;
 	int					m_port;
-	SOCKET				m_socket;
 	bool				m_tls;
+	SOCKET				m_socket = INVALID_SOCKET;
 	CString				m_cipher;
 	CharBuffer			m_readBuf;
-	int					m_bufAvail;
-	char*				m_bufPtr;
-	EStatus				m_status;
-	int					m_timeout;
-	bool				m_suppressErrors;
+	int					m_bufAvail = 0;
+	char*				m_bufPtr = nullptr;
+	EStatus				m_status = csDisconnected;
+	int					m_timeout = 60;
+	bool				m_suppressErrors = true;
 	BString<100>		m_remoteAddr;
-	int					m_totalBytesRead;
-	bool				m_broken;
-	bool				m_gracefull;
+	int					m_totalBytesRead = 0;
+	bool				m_broken = false;
+	bool				m_gracefull = false;
 
 	struct SockAddr
 	{
@@ -93,7 +93,7 @@ protected:
 	};
 
 	std::unique_ptr<ConTlsSocket>	m_tlsSocket;
-	bool							m_tlsError;
+	bool							m_tlsError = false;
 #endif
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R

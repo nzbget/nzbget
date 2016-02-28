@@ -156,13 +156,6 @@ std::vector<char*> EnvironmentStrings::GetStrings()
 
 ScriptController::ScriptController()
 {
-	m_script = nullptr;
-	m_workingDir = nullptr;
-	m_infoName = nullptr;
-	m_logPrefix = nullptr;
-	m_terminated = false;
-	m_detached = false;
-	m_processId = 0;
 	ResetEnv();
 
 	m_runningMutex.Lock();

@@ -28,6 +28,7 @@
 
 #include "Log.h"
 #include "Thread.h"
+#include "Util.h"
 
 class ServerVolume
 {
@@ -35,22 +36,21 @@ public:
 	typedef std::vector<int64>	VolumeArray;
 
 private:
-	VolumeArray			m_bytesPerSeconds;
-	VolumeArray			m_bytesPerMinutes;
-	VolumeArray			m_bytesPerHours;
+	VolumeArray			m_bytesPerSeconds{60};
+	VolumeArray			m_bytesPerMinutes{60};
+	VolumeArray			m_bytesPerHours{24};
 	VolumeArray			m_bytesPerDays;
-	int					m_firstDay;
-	int64				m_totalBytes;
-	int64				m_customBytes;
-	time_t				m_dataTime;
-	time_t				m_customTime;
-	int					m_secSlot;
-	int					m_minSlot;
-	int					m_hourSlot;
-	int					m_daySlot;
+	int					m_firstDay = 0;
+	int64				m_totalBytes = 0;
+	int64				m_customBytes = 0;
+	time_t				m_dataTime = 0;
+	time_t				m_customTime = Util::CurrentTime();
+	int					m_secSlot = 0;
+	int					m_minSlot = 0;
+	int					m_hourSlot = 0;
+	int					m_daySlot = 0;
 
 public:
-						ServerVolume();
 	VolumeArray*		BytesPerSeconds() { return &m_bytesPerSeconds; }
 	VolumeArray*		BytesPerMinutes() { return &m_bytesPerMinutes; }
 	VolumeArray*		BytesPerHours() { return &m_bytesPerHours; }
@@ -95,17 +95,17 @@ private:
 	Mutex				m_speedMutex;
 
 	// time
-	int64				m_allBytes;
-	time_t				m_startServer;
-	time_t				m_lastCheck;
-	time_t				m_lastTimeOffset;
-	time_t				m_startDownload;
-	time_t				m_pausedFrom;
-	bool				m_standBy;
+	int64				m_allBytes = 0;
+	time_t				m_startServer = 0;
+	time_t				m_lastCheck = 0;
+	time_t				m_lastTimeOffset = 0;
+	time_t				m_startDownload = 0;
+	time_t				m_pausedFrom = 0;
+	bool				m_standBy = true;
 	Mutex				m_statMutex;
 
 	// data volume
-	bool				m_statChanged;
+	bool				m_statChanged = false;
 	ServerVolumes		m_serverVolumes;
 	Mutex				m_volumeMutex;
 

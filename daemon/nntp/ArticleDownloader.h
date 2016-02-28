@@ -65,20 +65,20 @@ public:
 private:
 	FileInfo*			m_fileInfo;
 	ArticleInfo*		m_articleInfo;
-	NntpConnection* 	m_connection;
-	EStatus				m_status;
+	NntpConnection* 	m_connection = nullptr;
+	EStatus				m_status = adUndefined;
 	Mutex			 	m_connectionMutex;
 	CString				m_infoName;
 	CString				m_connectionName;
 	CString				m_articleFilename;
 	time_t				m_lastUpdateTime;
-	Decoder::EFormat	m_format;
+	Decoder::EFormat	m_format = Decoder::efUnknown;
 	YDecoder			m_yDecoder;
 	UDecoder			m_uDecoder;
 	ArticleWriterImpl	m_articleWriter;
 	ServerStatList		m_serverStats;
 	bool				m_writingStarted;
-	int					m_downloadedSize;
+	int					m_downloadedSize = 0;
 
 	EStatus				Download();
 	EStatus				DecodeCheck();

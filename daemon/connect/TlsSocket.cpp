@@ -217,20 +217,6 @@ void TlsSocket::Final()
 #endif /* HAVE_OPENSSL */
 }
 
-TlsSocket::TlsSocket(SOCKET socket, bool isClient, const char* certFile, const char* keyFile, const char* cipher)
-{
-	m_socket = socket;
-	m_isClient = isClient;
-	m_certFile = certFile;
-	m_keyFile = keyFile;
-	m_cipher = cipher;
-	m_context = nullptr;
-	m_session = nullptr;
-	m_suppressErrors = false;
-	m_initialized = false;
-	m_connected = false;
-}
-
 TlsSocket::~TlsSocket()
 {
 	Close();

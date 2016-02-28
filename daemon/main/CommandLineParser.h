@@ -69,45 +69,45 @@ public:
 	typedef std::vector<CString>	NameList;
 
 private:
-	bool				m_noConfig;
+	bool				m_noConfig = false;
 	CString				m_configFilename;
 
 	// Parsed command-line parameters
-	bool				m_errors;
-	bool				m_printVersion;
-	bool				m_printUsage;
-	bool				m_serverMode;
-	bool				m_daemonMode;
-	bool				m_remoteClientMode;
+	bool				m_errors = false;
+	bool				m_printVersion = false;
+	bool				m_printUsage = false;
+	bool				m_serverMode = false;
+	bool				m_daemonMode = false;
+	bool				m_remoteClientMode = false;
 	EClientOperation	m_clientOperation;
 	NameList			m_optionList;
-	int					m_editQueueAction;
-	int					m_editQueueOffset;
+	int					m_editQueueAction = 0;
+	int					m_editQueueOffset = 0;
 	IdList				m_editQueueIdList;
 	NameList			m_editQueueNameList;
-	EMatchMode			m_matchMode;
+	EMatchMode			m_matchMode = mmId;
 	CString				m_editQueueText;
 	CString				m_argFilename;
 	CString				m_addCategory;
-	int					m_addPriority;
-	bool				m_addPaused;
+	int					m_addPriority = 0;
+	bool				m_addPaused = false;
 	CString				m_addNzbFilename;
 	CString				m_lastArg;
-	bool				m_printOptions;
-	bool				m_addTop;
+	bool				m_printOptions = false;
+	bool				m_addTop = false;
 	CString				m_addDupeKey;
-	int					m_addDupeScore;
-	int					m_addDupeMode;
-	int					m_setRate;
-	int					m_logLines;
-	int					m_writeLogKind;
-	bool				m_testBacktrace;
-	bool				m_webGet;
+	int					m_addDupeScore = 0;
+	int					m_addDupeMode = 0;
+	int					m_setRate = 0;
+	int					m_logLines = 0;
+	int					m_writeLogKind = 0;
+	bool				m_testBacktrace = false;
+	bool				m_webGet = false;
 	CString				m_webGetFilename;
-	bool				m_sigVerify;
+	bool				m_sigVerify = false;
 	CString				m_pubKeyFilename;
 	CString				m_sigFilename;
-	bool				m_pauseDownload;
+	bool				m_pauseDownload = false;
 
 	void				InitCommandLine(int argc, const char* argv[]);
 	void				InitFileArg(int argc, const char* argv[]);

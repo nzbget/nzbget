@@ -98,13 +98,13 @@ private:
 	Par2::u32		m_inputindex;
 	Par2::u32		m_outputindex;
 	size_t			m_blocklength;
-	volatile bool	m_working;
+	volatile bool	m_working = false;
 
 protected:
 	virtual void	Run();
 
 public:
-					RepairThread(Repairer* owner) { this->m_owner = owner; m_working = false; }
+					RepairThread(Repairer* owner) : m_owner(owner) {}
 	void			RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
 	bool			IsWorking() { return m_working; }
 };
@@ -364,25 +364,6 @@ int ParChecker::StreamBuf::overflow(int ch)
 	return (int)ch;
 }
 
-
-ParChecker::ParChecker()
-{
-	debug("Creating ParChecker");
-
-	m_status = psFailed;
-	m_parFilename = nullptr;
-	m_repairer = nullptr;
-	m_fileProgress = 0;
-	m_stageProgress = 0;
-	m_extraFiles = 0;
-	m_quickFiles = 0;
-	m_verifyingExtraFiles = false;
-	m_cancelled = false;
-	m_stage = ptLoadingPars;
-	m_parQuick = false;
-	m_forceRepair = false;
-	m_parFull = false;
-}
 
 ParChecker::~ParChecker()
 {
