@@ -35,11 +35,8 @@
 
 class Frontend : public Thread
 {
-private:
-	MessageList m_remoteMessages;
-
-	bool RequestMessages();
-	bool RequestFileList();
+public:
+	Frontend();
 
 protected:
 	bool m_summary = false;
@@ -75,8 +72,11 @@ protected:
 	bool ServerEditQueue(DownloadQueue::EEditAction action, int offset, int entry);
 	bool RequestEditQueue(DownloadQueue::EEditAction action, int offset, int id);
 
-public:
-	Frontend();
+private:
+	MessageList m_remoteMessages;
+
+	bool RequestMessages();
+	bool RequestFileList();
 };
 
 #endif

@@ -41,14 +41,21 @@ public:
 		asFailed
 	};
 
+	void InitOptions();
+	void ScanNzbDir(bool syncMode);
+	EAddStatus AddExternalFile(const char* nzbName, const char* category, int priority,
+		const char* dupeKey, int dupeScore, EDupeMode dupeMode,
+		NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
+		const char* fileName, const char* buffer, int bufSize, int* nzbId);
+	void InitPPParameters(const char* category, NzbParameterList* parameters, bool reset);
+
+protected:
+	virtual int ServiceInterval() { return 200; }
+	virtual void ServiceWork();
+
 private:
 	class FileData
 	{
-	private:
-		CString m_filename;
-		int64 m_size;
-		time_t m_lastChange;
-
 	public:
 		FileData(const char* filename, int64 size, time_t lastChange) :
 			m_filename(filename), m_size(size), m_lastChange(lastChange) {}
@@ -57,27 +64,16 @@ private:
 		void SetSize(int64 size) { m_size = size; }
 		time_t GetLastChange() { return m_lastChange; }
 		void SetLastChange(time_t lastChange) { m_lastChange = lastChange; }
+	private:
+		CString m_filename;
+		int64 m_size;
+		time_t m_lastChange;
 	};
 
 	typedef std::deque<FileData> FileList;
 
 	class QueueData
 	{
-	private:
-		CString m_filename;
-		CString m_nzbName;
-		CString m_category;
-		int m_priority;
-		CString m_dupeKey;
-		int m_dupeScore;
-		EDupeMode m_dupeMode;
-		NzbParameterList m_parameters;
-		bool m_addTop;
-		bool m_addPaused;
-		NzbInfo* m_urlInfo;
-		EAddStatus* m_addStatus;
-		int* m_nzbId;
-
 	public:
 		QueueData(const char* filename, const char* nzbName, const char* category,
 			int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
@@ -96,6 +92,20 @@ private:
 		NzbInfo* GetUrlInfo() { return m_urlInfo; }
 		void SetAddStatus(EAddStatus addStatus);
 		void SetNzbId(int nzbId);
+	private:
+		CString m_filename;
+		CString m_nzbName;
+		CString m_category;
+		int m_priority;
+		CString m_dupeKey;
+		int m_dupeScore;
+		EDupeMode m_dupeMode;
+		NzbParameterList m_parameters;
+		bool m_addTop;
+		bool m_addPaused;
+		NzbInfo* m_urlInfo;
+		EAddStatus* m_addStatus;
+		int* m_nzbId;
 	};
 
 	typedef std::deque<QueueData> QueueList;
@@ -117,19 +127,6 @@ private:
 		const char* fullFilename, const char* category);
 	bool CanProcessFile(const char* fullFilename, bool checkStat);
 	void DropOldFiles();
-
-protected:
-	virtual int ServiceInterval() { return 200; }
-	virtual void ServiceWork();
-
-public:
-	void InitOptions();
-	void ScanNzbDir(bool syncMode);
-	EAddStatus AddExternalFile(const char* nzbName, const char* category, int priority,
-		const char* dupeKey, int dupeScore, EDupeMode dupeMode,
-		NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
-		const char* fileName, const char* buffer, int bufSize, int* nzbId);
-	void InitPPParameters(const char* category, NzbParameterList* parameters, bool reset);
 };
 
 extern Scanner* g_Scanner;

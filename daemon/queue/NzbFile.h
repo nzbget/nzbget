@@ -32,6 +32,17 @@
 
 class NzbFile
 {
+public:
+	NzbFile(const char* fileName, const char* category);
+	~NzbFile();
+	bool Parse();
+	const char* GetFileName() const { return m_fileName; }
+	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
+	const char* GetPassword() { return m_password; }
+	void DetachNzbInfo() { m_nzbInfo = nullptr; }
+
+	void LogDebugInfo();
+
 private:
 	NzbInfo* m_nzbInfo;
 	CString m_fileName;
@@ -64,17 +75,6 @@ private:
 	void Parse_EndElement(const char *name);
 	void Parse_Content(const char *buf, int len);
 #endif
-
-public:
-	NzbFile(const char* fileName, const char* category);
-	~NzbFile();
-	bool Parse();
-	const char* GetFileName() const { return m_fileName; }
-	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
-	const char* GetPassword() { return m_password; }
-	void DetachNzbInfo() { m_nzbInfo = nullptr; }
-
-	void LogDebugInfo();
 };
 
 #endif

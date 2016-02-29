@@ -31,25 +31,6 @@
 
 class NewsServer
 {
-private:
-	int m_id;
-	int m_stateId = 0;
-	bool m_active;
-	CString m_name;
-	int m_group;
-	CString m_host;
-	int m_port;
-	CString m_user;
-	CString m_password;
-	int m_maxConnections;
-	int m_level;
-	int m_normLevel;
-	bool m_joinGroup;
-	bool m_tls;
-	CString m_cipher;
-	int m_retention;
-	time_t m_blockTime = 0;
-
 public:
 	NewsServer(int id, bool active, const char* name, const char* host, int port,
 		const char* user, const char* pass, bool joinGroup,
@@ -76,6 +57,25 @@ public:
 	int GetRetention() { return m_retention; }
 	time_t GetBlockTime() { return m_blockTime; }
 	void SetBlockTime(time_t blockTime) { m_blockTime = blockTime; }
+
+private:
+	int m_id;
+	int m_stateId = 0;
+	bool m_active;
+	CString m_name;
+	int m_group;
+	CString m_host;
+	int m_port;
+	CString m_user;
+	CString m_password;
+	int m_maxConnections;
+	int m_level;
+	int m_normLevel;
+	bool m_joinGroup;
+	bool m_tls;
+	CString m_cipher;
+	int m_retention;
+	time_t m_blockTime = 0;
 };
 
 typedef std::vector<NewsServer*> Servers;

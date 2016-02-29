@@ -54,13 +54,36 @@ public:
 
 	class ArticleWriterImpl : public ArticleWriter
 	{
-	private:
-		ArticleDownloader* m_owner;
-	protected:
-		virtual void SetLastUpdateTimeNow() { m_owner->SetLastUpdateTimeNow(); }
 	public:
 		void SetOwner(ArticleDownloader* owner) { m_owner = owner; }
+	protected:
+		virtual void SetLastUpdateTimeNow() { m_owner->SetLastUpdateTimeNow(); }
+	private:
+		ArticleDownloader* m_owner;
 	};
+
+	ArticleDownloader();
+	virtual ~ArticleDownloader();
+	void SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
+	FileInfo* GetFileInfo() { return m_fileInfo; }
+	void SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
+	ArticleInfo* GetArticleInfo() { return m_articleInfo; }
+	EStatus GetStatus() { return m_status; }
+	ServerStatList* GetServerStats() { return &m_serverStats; }
+	virtual void Run();
+	virtual void Stop();
+	bool Terminate();
+	time_t GetLastUpdateTime() { return m_lastUpdateTime; }
+	void SetLastUpdateTimeNow();
+	const char* GetArticleFilename() { return m_articleFilename; }
+	void SetInfoName(const char* infoName);
+	const char* GetInfoName() { return m_infoName; }
+	const char* GetConnectionName() { return m_connectionName; }
+	void SetConnection(NntpConnection* connection) { m_connection = connection; }
+	void CompleteFileParts() { m_articleWriter.CompleteFileParts(); }
+	int GetDownloadedSize() { return m_downloadedSize; }
+
+	void LogDebugInfo();
 
 private:
 	FileInfo* m_fileInfo;
@@ -87,30 +110,6 @@ private:
 	void SetStatus(EStatus status) { m_status = status; }
 	bool Write(char* line, int len);
 	void AddServerData();
-
-public:
-	ArticleDownloader();
-	virtual ~ArticleDownloader();
-	void SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
-	FileInfo* GetFileInfo() { return m_fileInfo; }
-	void SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
-	ArticleInfo* GetArticleInfo() { return m_articleInfo; }
-	EStatus GetStatus() { return m_status; }
-	ServerStatList* GetServerStats() { return &m_serverStats; }
-	virtual void Run();
-	virtual void Stop();
-	bool Terminate();
-	time_t GetLastUpdateTime() { return m_lastUpdateTime; }
-	void SetLastUpdateTimeNow();
-	const char* GetArticleFilename() { return m_articleFilename; }
-	void SetInfoName(const char* infoName);
-	const char* GetInfoName() { return m_infoName; }
-	const char* GetConnectionName() { return m_connectionName; }
-	void SetConnection(NntpConnection* connection) { m_connection = connection; }
-	void CompleteFileParts() { m_articleWriter.CompleteFileParts(); }
-	int GetDownloadedSize() { return m_downloadedSize; }
-
-	void LogDebugInfo();
 };
 
 #endif

@@ -33,12 +33,6 @@
 
 class CachedSegmentData : public SegmentData
 {
-private:
-	char* m_data = nullptr;
-	int m_size = 0;
-
-	friend class ArticleCache;
-
 public:
 	CachedSegmentData() {}
 	CachedSegmentData(char* data, int size) : m_data(data), m_size(size) {}
@@ -48,10 +42,33 @@ public:
 	CachedSegmentData& operator=(CachedSegmentData&& other);
 	virtual ~CachedSegmentData();
 	virtual char* GetData() { return m_data; }
+
+private:
+	char* m_data = nullptr;
+	int m_size = 0;
+
+	friend class ArticleCache;
 };
 
 class ArticleWriter
 {
+public:
+	~ArticleWriter();
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	void SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
+	void SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
+	void Prepare();
+	bool Start(Decoder::EFormat format, const char* filename, int64 fileSize, int64 articleOffset, int articleSize);
+	bool Write(char* buffer, int len);
+	void Finish(bool success);
+	bool GetDuplicate() { return m_duplicate; }
+	void CompleteFileParts();
+	static bool MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir);
+	void FlushCache();
+
+protected:
+	virtual void SetLastUpdateTimeNow() {}
+
 private:
 	FileInfo* m_fileInfo;
 	ArticleInfo* m_articleInfo;
@@ -71,37 +88,10 @@ private:
 	bool CreateOutputFile(int64 size);
 	void BuildOutputFilename();
 	void SetWriteBuffer(DiskFile& outFile, int recSize);
-
-protected:
-	virtual void SetLastUpdateTimeNow() {}
-
-public:
-	~ArticleWriter();
-	void SetInfoName(const char* infoName) { m_infoName = infoName; }
-	void SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
-	void SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
-	void Prepare();
-	bool Start(Decoder::EFormat format, const char* filename, int64 fileSize, int64 articleOffset, int articleSize);
-	bool Write(char* buffer, int len);
-	void Finish(bool success);
-	bool GetDuplicate() { return m_duplicate; }
-	void CompleteFileParts();
-	static bool MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir);
-	void FlushCache();
 };
 
 class ArticleCache : public Thread
 {
-private:
-	size_t m_allocated;
-	bool m_flushing;
-	Mutex m_allocMutex;
-	Mutex m_flushMutex;
-	Mutex m_contentMutex;
-	FileInfo* m_fileInfo;
-
-	bool CheckFlush(bool flushEverything);
-
 public:
 	ArticleCache();
 	virtual void Run();
@@ -115,6 +105,16 @@ public:
 	bool GetFlushing() { return m_flushing; }
 	size_t GetAllocated() { return m_allocated; }
 	bool FileBusy(FileInfo* fileInfo) { return fileInfo == m_fileInfo; }
+
+private:
+	size_t m_allocated;
+	bool m_flushing;
+	Mutex m_allocMutex;
+	Mutex m_flushMutex;
+	Mutex m_contentMutex;
+	FileInfo* m_fileInfo;
+
+	bool CheckFlush(bool flushEverything);
 };
 
 extern ArticleCache* g_ArticleCache;

@@ -33,6 +33,15 @@
 
 class NntpConnection : public Connection
 {
+public:
+	NntpConnection(NewsServer* newsServer);
+	virtual bool Connect();
+	virtual bool Disconnect();
+	NewsServer* GetNewsServer() { return m_newsServer; }
+	const char* Request(const char* req);
+	const char* JoinGroup(const char* grp);
+	bool GetAuthError() { return m_authError; }
+
 private:
 	NewsServer* m_newsServer;
 	CString m_activeGroup;
@@ -44,16 +53,6 @@ private:
 	bool Authenticate();
 	bool AuthInfoUser(int recur);
 	bool AuthInfoPass(int recur);
-
-public:
-	NntpConnection(NewsServer* newsServer);
-	virtual bool Connect();
-	virtual bool Disconnect();
-	NewsServer* GetNewsServer() { return m_newsServer; }
-	const char* Request(const char* req);
-	const char* JoinGroup(const char* grp);
-	bool GetAuthError() { return m_authError; }
-
 };
 
 #endif

@@ -30,6 +30,16 @@
 
 class ScanScriptController : public NzbScriptController
 {
+public:
+	static void ExecuteScripts(const char* nzbFilename, const char* url,
+		const char* directory, CString* nzbName, CString* category, int* priority,
+		NzbParameterList* parameters, bool* addTop, bool* addPaused,
+		CString* dupeKey, int* dupeScore, EDupeMode* dupeMode);
+
+protected:
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
 	const char* m_nzbFilename;
 	const char* m_url;
@@ -46,16 +56,6 @@ private:
 	int m_prefixLen;
 
 	void PrepareParams(const char* scriptName);
-
-protected:
-	virtual void ExecuteScript(ScriptConfig::Script* script);
-	virtual void AddMessage(Message::EKind kind, const char* text);
-
-public:
-	static void ExecuteScripts(const char* nzbFilename, const char* url,
-		const char* directory, CString* nzbName, CString* category, int* priority,
-		NzbParameterList* parameters, bool* addTop, bool* addPaused,
-		CString* dupeKey, int* dupeScore, EDupeMode* dupeMode);
 };
 
 #endif

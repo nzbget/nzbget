@@ -68,6 +68,46 @@ public:
 	typedef std::vector<int> IdList;
 	typedef std::vector<CString> NameList;
 
+	CommandLineParser(int argc, const char* argv[]);
+	void PrintUsage(const char* com);
+	bool GetErrors() { return m_errors; }
+	bool GetNoConfig() { return m_noConfig; }
+	const char* GetConfigFilename() { return m_configFilename; }
+	bool GetServerMode() { return m_serverMode; }
+	bool GetDaemonMode() { return m_daemonMode; }
+	bool GetRemoteClientMode() { return m_remoteClientMode; }
+	EClientOperation GetClientOperation() { return m_clientOperation; }
+	NameList* GetOptionList() { return &m_optionList; }
+	int GetEditQueueAction() { return m_editQueueAction; }
+	int GetEditQueueOffset() { return m_editQueueOffset; }
+	IdList* GetEditQueueIdList() { return &m_editQueueIdList; }
+	NameList* GetEditQueueNameList() { return &m_editQueueNameList; }
+	EMatchMode GetMatchMode() { return m_matchMode; }
+	const char* GetEditQueueText() { return m_editQueueText; }
+	const char* GetArgFilename() { return m_argFilename; }
+	const char* GetAddCategory() { return m_addCategory; }
+	bool GetAddPaused() { return m_addPaused; }
+	const char* GetLastArg() { return m_lastArg; }
+	int GetAddPriority() { return m_addPriority; }
+	const char* GetAddNzbFilename() { return m_addNzbFilename; }
+	bool GetAddTop() { return m_addTop; }
+	const char* GetAddDupeKey() { return m_addDupeKey; }
+	int GetAddDupeScore() { return m_addDupeScore; }
+	int GetAddDupeMode() { return m_addDupeMode; }
+	int GetSetRate() { return m_setRate; }
+	int GetLogLines() { return m_logLines; }
+	int GetWriteLogKind() { return m_writeLogKind; }
+	bool GetTestBacktrace() { return m_testBacktrace; }
+	bool GetWebGet() { return m_webGet; }
+	const char* GetWebGetFilename() { return m_webGetFilename; }
+	bool GetSigVerify() { return m_sigVerify; }
+	const char* GetPubKeyFilename() { return m_pubKeyFilename; }
+	const char* GetSigFilename() { return m_sigFilename; }
+	bool GetPrintOptions() { return m_printOptions; }
+	bool GetPrintVersion() { return m_printVersion; }
+	bool GetPrintUsage() { return m_printUsage; }
+	bool GetPauseDownload() const { return m_pauseDownload; }
+
 private:
 	bool m_noConfig = false;
 	CString m_configFilename;
@@ -114,49 +154,6 @@ private:
 	void ParseFileIdList(int argc, const char* argv[], int optind);
 	void ParseFileNameList(int argc, const char* argv[], int optind);
 	void ReportError(const char* errMessage);
-
-public:
-	CommandLineParser(int argc, const char* argv[]);
-
-	void PrintUsage(const char* com);
-
-	bool GetErrors() { return m_errors; }
-	bool GetNoConfig() { return m_noConfig; }
-	const char* GetConfigFilename() { return m_configFilename; }
-	bool GetServerMode() { return m_serverMode; }
-	bool GetDaemonMode() { return m_daemonMode; }
-	bool GetRemoteClientMode() { return m_remoteClientMode; }
-	EClientOperation GetClientOperation() { return m_clientOperation; }
-	NameList* GetOptionList() { return &m_optionList; }
-	int GetEditQueueAction() { return m_editQueueAction; }
-	int GetEditQueueOffset() { return m_editQueueOffset; }
-	IdList* GetEditQueueIdList() { return &m_editQueueIdList; }
-	NameList* GetEditQueueNameList() { return &m_editQueueNameList; }
-	EMatchMode GetMatchMode() { return m_matchMode; }
-	const char* GetEditQueueText() { return m_editQueueText; }
-	const char* GetArgFilename() { return m_argFilename; }
-	const char* GetAddCategory() { return m_addCategory; }
-	bool GetAddPaused() { return m_addPaused; }
-	const char* GetLastArg() { return m_lastArg; }
-	int GetAddPriority() { return m_addPriority; }
-	const char* GetAddNzbFilename() { return m_addNzbFilename; }
-	bool GetAddTop() { return m_addTop; }
-	const char* GetAddDupeKey() { return m_addDupeKey; }
-	int GetAddDupeScore() { return m_addDupeScore; }
-	int GetAddDupeMode() { return m_addDupeMode; }
-	int GetSetRate() { return m_setRate; }
-	int GetLogLines() { return m_logLines; }
-	int GetWriteLogKind() { return m_writeLogKind; }
-	bool GetTestBacktrace() { return m_testBacktrace; }
-	bool GetWebGet() { return m_webGet; }
-	const char* GetWebGetFilename() { return m_webGetFilename; }
-	bool GetSigVerify() { return m_sigVerify; }
-	const char* GetPubKeyFilename() { return m_pubKeyFilename; }
-	const char* GetSigFilename() { return m_sigFilename; }
-	bool GetPrintOptions() { return m_printOptions; }
-	bool GetPrintVersion() { return m_printVersion; }
-	bool GetPrintUsage() { return m_printUsage; }
-	bool GetPauseDownload() const { return m_pauseDownload; }
 };
 
 #endif

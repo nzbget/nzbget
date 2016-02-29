@@ -41,13 +41,29 @@ public:
 		psSuccess
 	};
 
+	virtual void Run();
+	void SetDestDir(const char* destDir) { m_destDir = destDir; }
+	const char* GetInfoName() { return m_infoName; }
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	void SetStatus(EStatus status);
+	EStatus GetStatus() { return m_status; }
+	void Cancel();
+	bool GetCancelled() { return m_cancelled; }
+	bool HasMissedFiles() { return m_hasMissedFiles; }
+	void SetDetectMissing(bool detectMissing) { m_detectMissing = detectMissing; }
+
+protected:
+	virtual void UpdateProgress() {}
+	virtual void Completed() {}
+	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
+	virtual void RegisterParredFile(const char* filename) {}
+	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) {}
+	const char* GetProgressLabel() { return m_progressLabel; }
+	int GetStageProgress() { return m_stageProgress; }
+
+private:
 	class FileHash
 	{
-	private:
-		CString m_filename;
-		CString m_hash;
-		bool m_fileExists = false;
-
 	public:
 		FileHash(const char* filename, const char* hash) :
 			m_filename(filename), m_hash(hash) {}
@@ -55,12 +71,15 @@ public:
 		const char* GetHash() { return m_hash; }
 		bool GetFileExists() { return m_fileExists; }
 		void SetFileExists(bool fileExists) { m_fileExists = fileExists; }
+	private:
+		CString m_filename;
+		CString m_hash;
+		bool m_fileExists = false;
 	};
 
 	typedef std::deque<FileHash> FileHashList;
 	typedef std::deque<CString> DirList;
 
-private:
 	CString m_infoName;
 	CString m_destDir;
 	EStatus m_status;
@@ -86,27 +105,6 @@ private:
 	void CheckMissing();
 	void RenameFile(const char* srcFilename, const char* destFileName);
 	void Cleanup();
-
-protected:
-	virtual void UpdateProgress() {}
-	virtual void Completed() {}
-	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
-	virtual void RegisterParredFile(const char* filename) {}
-	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) {}
-	const char* GetProgressLabel() { return m_progressLabel; }
-	int GetStageProgress() { return m_stageProgress; }
-
-public:
-	virtual void Run();
-	void SetDestDir(const char* destDir) { m_destDir = destDir; }
-	const char* GetInfoName() { return m_infoName; }
-	void SetInfoName(const char* infoName) { m_infoName = infoName; }
-	void SetStatus(EStatus status);
-	EStatus GetStatus() { return m_status; }
-	void Cancel();
-	bool GetCancelled() { return m_cancelled; }
-	bool HasMissedFiles() { return m_hasMissedFiles; }
-	void SetDetectMissing(bool detectMissing) { m_detectMissing = detectMissing; }
 };
 
 #endif

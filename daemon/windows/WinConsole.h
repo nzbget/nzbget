@@ -30,6 +30,17 @@
 
 class WinConsole : public Thread
 {
+public:
+	WinConsole();
+	~WinConsole();
+	virtual void Stop();
+	void InitAppMode();
+	bool GetAppMode() { return m_appMode; }
+	void SetupFirstStart();
+
+protected:
+	virtual void Run();
+
 private:
 	bool m_appMode;
 	char** m_defaultArguments;
@@ -91,17 +102,6 @@ private:
 	BOOL RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static BOOL CALLBACK FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-protected:
-	virtual void Run();
-
-public:
-	WinConsole();
-	~WinConsole();
-	virtual void Stop();
-	void InitAppMode();
-	bool GetAppMode() { return m_appMode; }
-	void SetupFirstStart();
 };
 
 #endif

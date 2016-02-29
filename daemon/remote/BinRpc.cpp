@@ -64,18 +64,18 @@ const uint32 g_MessageRequestSizes[] =
 
 class BinCommand
 {
+public:
+	virtual ~BinCommand() {}
+	virtual void Execute() = 0;
+	void SetConnection(Connection* connection) { m_connection = connection; }
+	void SetMessageBase(SNzbRequestBase* messageBase) { m_messageBase = messageBase; }
+
 protected:
 	Connection* m_connection;
 	SNzbRequestBase* m_messageBase;
 
 	bool ReceiveRequest(void* buffer, int size);
 	void SendBoolResponse(bool success, const char* text);
-
-public:
-	virtual ~BinCommand() {}
-	virtual void Execute() = 0;
-	void SetConnection(Connection* connection) { m_connection = connection; }
-	void SetMessageBase(SNzbRequestBase* messageBase) { m_messageBase = messageBase; }
 };
 
 class DownloadBinCommand: public BinCommand

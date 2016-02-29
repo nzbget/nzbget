@@ -33,7 +33,6 @@
 class LoggableFrontend : public Frontend
 {
 protected:
-
 	virtual void Run();
 	virtual void Update();
 	virtual void BeforePrint() {};

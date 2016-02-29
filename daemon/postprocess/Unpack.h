@@ -33,6 +33,15 @@
 
 class UnpackController : public Thread, public ScriptController
 {
+public:
+	virtual void Run();
+	virtual void Stop();
+	static void StartJob(PostInfo* postInfo);
+
+protected:
+	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
 	enum EUnpacker
 	{
@@ -54,7 +63,6 @@ private:
 		bool Exists(const char* param);
 	};
 
-private:
 	PostInfo* m_postInfo;
 	CString m_name;
 	CString m_infoName;
@@ -84,9 +92,6 @@ private:
 	FileList m_joinedFiles;
 	bool m_passListTried;
 
-protected:
-	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
-	virtual void AddMessage(Message::EKind kind, const char* text);
 	void ExecuteUnpack(EUnpacker unpacker, const char* password, bool multiVolumes);
 	void ExecuteUnrar(const char* password);
 	void ExecuteSevenZip(const char* password, bool multiVolumes);
@@ -103,11 +108,6 @@ protected:
 #endif
 	bool FileHasRarSignature(const char* filename);
 	bool PrepareCmdParams(const char* command, ParamList* params, const char* infoName);
-
-public:
-	virtual void Run();
-	virtual void Stop();
-	static void StartJob(PostInfo* postInfo);
 };
 
 #endif

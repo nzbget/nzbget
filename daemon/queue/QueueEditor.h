@@ -31,6 +31,10 @@
 class QueueEditor
 {
 public:
+	bool EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text);
+	bool EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action, int offset, const char* text);
+
+private:
 	class EditItem
 	{
 	public:
@@ -44,10 +48,8 @@ public:
 
 	typedef std::vector<EditItem> ItemList;
 
-private:
 	DownloadQueue* m_downloadQueue;
 
-private:
 	FileInfo* FindFileInfo(int id);
 	bool InternEditList(ItemList* itemList, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
 	void PrepareList(ItemList* itemList, IdList* idList, DownloadQueue::EEditAction action, int offset);
@@ -71,9 +73,7 @@ private:
 	void MoveEntry(FileInfo* fileInfo, int offset);
 	void MoveGroup(NzbInfo* nzbInfo, int offset);
 
-public:
-	bool EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text);
-	bool EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action, int offset, const char* text);
+	friend class GroupSorter;
 };
 
 #endif

@@ -35,22 +35,6 @@ class ServerVolume
 public:
 	typedef std::vector<int64> VolumeArray;
 
-private:
-	VolumeArray m_bytesPerSeconds{60};
-	VolumeArray m_bytesPerMinutes{60};
-	VolumeArray m_bytesPerHours{24};
-	VolumeArray m_bytesPerDays;
-	int m_firstDay = 0;
-	int64 m_totalBytes = 0;
-	int64 m_customBytes = 0;
-	time_t m_dataTime = 0;
-	time_t m_customTime = Util::CurrentTime();
-	int m_secSlot = 0;
-	int m_minSlot = 0;
-	int m_hourSlot = 0;
-	int m_daySlot = 0;
-
-public:
 	VolumeArray* BytesPerSeconds() { return &m_bytesPerSeconds; }
 	VolumeArray* BytesPerMinutes() { return &m_bytesPerMinutes; }
 	VolumeArray* BytesPerHours() { return &m_bytesPerHours; }
@@ -74,6 +58,21 @@ public:
 	void CalcSlots(time_t locCurTime);
 	void ResetCustom();
 	void LogDebugInfo();
+
+private:
+	VolumeArray m_bytesPerSeconds{60};
+	VolumeArray m_bytesPerMinutes{60};
+	VolumeArray m_bytesPerHours{24};
+	VolumeArray m_bytesPerDays;
+	int m_firstDay = 0;
+	int64 m_totalBytes = 0;
+	int64 m_customBytes = 0;
+	time_t m_dataTime = 0;
+	time_t m_customTime = Util::CurrentTime();
+	int m_secSlot = 0;
+	int m_minSlot = 0;
+	int m_hourSlot = 0;
+	int m_daySlot = 0;
 };
 
 typedef std::vector<ServerVolume> ServerVolumes;

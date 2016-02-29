@@ -31,6 +31,22 @@
 
 class TlsSocket
 {
+public:
+	TlsSocket(SOCKET socket, bool isClient, const char* certFile,
+		const char* keyFile, const char* cipher) :
+		m_socket(socket), m_isClient(isClient), m_certFile(certFile),
+		m_keyFile(keyFile), m_cipher(cipher) {}
+	virtual ~TlsSocket();
+	static void Init();
+	bool Start();
+	void Close();
+	int Send(const char* buffer, int size);
+	int Recv(char* buffer, int size);
+	void SetSuppressErrors(bool suppressErrors) { m_suppressErrors = suppressErrors; }
+
+protected:
+	virtual void PrintError(const char* errMsg);
+	
 private:
 	bool m_isClient;
 	CString m_certFile;
@@ -50,22 +66,6 @@ private:
 
 	static void Final();
 	friend class TlsSocketFinalizer;
-
-protected:
-	virtual void PrintError(const char* errMsg);
-
-public:
-	TlsSocket(SOCKET socket, bool isClient, const char* certFile,
-		const char* keyFile, const char* cipher) :
-		m_socket(socket), m_isClient(isClient), m_certFile(certFile),
-		m_keyFile(keyFile), m_cipher(cipher) {}
-	virtual ~TlsSocket();
-	static void Init();
-	bool Start();
-	void Close();
-	int Send(const char* buffer, int size);
-	int Recv(char* buffer, int size);
-	void SetSuppressErrors(bool suppressErrors) { m_suppressErrors = suppressErrors; }
 };
 
 #endif

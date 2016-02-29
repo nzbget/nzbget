@@ -31,11 +31,6 @@
 
 class EnvironmentStrings
 {
-private:
-	typedef std::vector<CString> Strings;
-
-	Strings m_strings;
-
 public:
 	void Clear();
 	void InitFromCurrentProcess();
@@ -46,50 +41,18 @@ public:
 #else
 	std::vector<char*> GetStrings();
 #endif
+
+private:
+	typedef std::vector<CString> Strings;
+
+	Strings m_strings;
 };
 
 class ScriptController
 {
-private:
+public:
 	typedef std::vector<CString> ArgList;
 
-	const char* m_script = nullptr;
-	ArgList m_args;
-	const char* m_workingDir = nullptr;
-	const char* m_infoName = nullptr;
-	const char* m_logPrefix = nullptr;
-	EnvironmentStrings m_environmentStrings;
-	bool m_terminated = false;
-	bool m_detached = false;
-	FILE* m_readpipe;
-#ifdef WIN32
-	HANDLE m_processId = 0;
-	char m_cmdLine[2048];
-#else
-	pid_t m_processId = 0;
-#endif
-
-	typedef std::vector<ScriptController*> RunningScripts;
-	static RunningScripts m_runningScripts;
-	static Mutex m_runningMutex;
-
-protected:
-	void ProcessOutput(char* text);
-	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
-	void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
-	virtual void AddMessage(Message::EKind kind, const char* text);
-	bool GetTerminated() { return m_terminated; }
-	void ResetEnv();
-	void PrepareEnvOptions(const char* stripPrefix);
-	void PrepareArgs();
-	int StartProcess();
-	int WaitProcess();
-#ifdef WIN32
-	void BuildCommandLine(char* cmdLineBuf, int bufSize);
-#endif
-	void UnregisterRunningScript();
-
-public:
 	ScriptController();
 	virtual ~ScriptController();
 	int Execute();
@@ -109,6 +72,44 @@ public:
 	void SetEnvVarSpecial(const char* prefix, const char* name, const char* value);
 	void SetIntEnvVar(const char* name, int value);
 	void Reset();
+
+protected:
+	void ProcessOutput(char* text);
+	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
+	void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+	bool GetTerminated() { return m_terminated; }
+	void ResetEnv();
+	void PrepareEnvOptions(const char* stripPrefix);
+	void PrepareArgs();
+	int StartProcess();
+	int WaitProcess();
+#ifdef WIN32
+	void BuildCommandLine(char* cmdLineBuf, int bufSize);
+#endif
+	void UnregisterRunningScript();
+
+private:
+	const char* m_script = nullptr;
+	ArgList m_args;
+	const char* m_workingDir = nullptr;
+	const char* m_infoName = nullptr;
+	const char* m_logPrefix = nullptr;
+	EnvironmentStrings m_environmentStrings;
+	bool m_terminated = false;
+	bool m_detached = false;
+	FILE* m_readpipe;
+#ifdef WIN32
+	HANDLE m_processId = 0;
+	char m_cmdLine[2048];
+#else
+	pid_t m_processId = 0;
+#endif
+
+	typedef std::vector<ScriptController*> RunningScripts;
+
+	static RunningScripts m_runningScripts;
+	static Mutex m_runningMutex;
 };
 
 #endif

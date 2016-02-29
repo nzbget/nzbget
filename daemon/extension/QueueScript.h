@@ -41,18 +41,27 @@ public:
 		qeNzbDeleted // highest priority
 	};
 
+	~QueueScriptCoordinator();
+	void Stop() { m_stopped = true; }
+	void InitOptions();
+	void EnqueueScript(NzbInfo* nzbInfo, EEvent event);
+	void CheckQueue();
+	bool HasJob(int nzbId, bool* active);
+	int GetQueueSize();
+
 private:
 	class QueueItem
 	{
+	public:
+		QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event) :
+			m_nzbId(nzbId), m_script(script), m_event(event) {}
+		int GetNzbId() { return m_nzbId; }
+		ScriptConfig::Script* GetScript() { return m_script; }
+		EEvent GetEvent() { return m_event; }
 	private:
 		int m_nzbId;
 		ScriptConfig::Script* m_script;
 		EEvent m_event;
-	public:
-		QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event);
-		int GetNzbId() { return m_nzbId; }
-		ScriptConfig::Script* GetScript() { return m_script; }
-		EEvent GetEvent() { return m_event; }
 	};
 
 	typedef std::list<QueueItem*> Queue;
@@ -66,15 +75,6 @@ private:
 	void StartScript(NzbInfo* nzbInfo, QueueItem* queueItem);
 	NzbInfo* FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
 	bool UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
-
-public:
-	~QueueScriptCoordinator();
-	void Stop() { m_stopped = true; }
-	void InitOptions();
-	void EnqueueScript(NzbInfo* nzbInfo, EEvent event);
-	void CheckQueue();
-	bool HasJob(int nzbId, bool* active);
-	int GetQueueSize();
 };
 
 extern QueueScriptCoordinator* g_QueueScriptCoordinator;

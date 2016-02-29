@@ -39,6 +39,13 @@ public:
 		hmOptions
 	};
 
+	static void Init();
+	void Execute();
+	void SetConnection(Connection* connection) { m_connection = connection; }
+	void SetUrl(const char* url) { m_url = url; }
+	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+
+private:
 	enum EUserAccess
 	{
 		uaControl,
@@ -46,7 +53,6 @@ public:
 		uaAdd
 	};
 
-private:
 	Connection* m_connection = nullptr;
 	CString m_request;
 	CString m_url;
@@ -71,13 +77,6 @@ private:
 	void ParseHeaders();
 	void ParseUrl();
 	bool CheckCredentials();
-
-public:
-	static void Init();
-	void Execute();
-	void SetConnection(Connection* connection) { m_connection = connection; }
-	void SetUrl(const char* url) { m_url = url; }
-	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
 };
 
 #endif

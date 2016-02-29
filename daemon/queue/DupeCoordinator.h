@@ -41,17 +41,16 @@ public:
 		dsFailure = 16
 	};
 
-private:
-	void ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* nzbName, const char* dupeKey);
-	void HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* markHistoryInfo);
-	bool SameNameOrKey(const char* name1, const char* dupeKey1, const char* name2, const char* dupeKey2);
-
-public:
 	void NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, NzbInfo::EMarkStatus markStatus);
 	EDupeStatus GetDupeStatus(DownloadQueue* downloadQueue, const char* name, const char* dupeKey);
 	void ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, NzbList* dupeList);
+
+private:
+	void ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* nzbName, const char* dupeKey);
+	void HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* markHistoryInfo);
+	bool SameNameOrKey(const char* name1, const char* dupeKey1, const char* name2, const char* dupeKey2);
 };
 
 extern DupeCoordinator* g_DupeCoordinator;

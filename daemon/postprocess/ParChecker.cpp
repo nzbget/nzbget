@@ -60,6 +60,20 @@ class RepairThread;
 
 class Repairer : public Par2::Par2Repairer
 {
+public:
+	Repairer(ParChecker* owner) { m_owner = owner; }
+	Par2::Result PreProcess(const char *parFilename);
+	Par2::Result Process(bool dorepair);
+
+protected:
+	virtual void sig_filename(std::string filename) { m_owner->signal_filename(filename); }
+	virtual void sig_progress(int progress) { m_owner->signal_progress(progress); }
+	virtual void sig_done(std::string filename, int available, int total) { m_owner->signal_done(filename, available, total); }
+
+	virtual bool ScanDataFile(Par2::DiskFile *diskfile, Par2::Par2RepairerSourceFile* &sourcefile,
+		Par2::MatchType &matchtype, Par2::MD5Hash &hashfull, Par2::MD5Hash &hash16k, Par2::u32 &count);
+	virtual bool RepairData(Par2::u32 inputindex, size_t blocklength);
+
 private:
 	typedef vector<Thread*> Threads;
 
@@ -73,40 +87,26 @@ private:
 	virtual void EndRepair();
 	void RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
 
-protected:
-	virtual void sig_filename(std::string filename) { m_owner->signal_filename(filename); }
-	virtual void sig_progress(int progress) { m_owner->signal_progress(progress); }
-	virtual void sig_done(std::string filename, int available, int total) { m_owner->signal_done(filename, available, total); }
-
-	virtual bool ScanDataFile(Par2::DiskFile *diskfile, Par2::Par2RepairerSourceFile* &sourcefile,
-		Par2::MatchType &matchtype, Par2::MD5Hash &hashfull, Par2::MD5Hash &hash16k, Par2::u32 &count);
-	virtual bool RepairData(Par2::u32 inputindex, size_t blocklength);
-
-public:
-	Repairer(ParChecker* owner) { m_owner = owner; }
-	Par2::Result PreProcess(const char *parFilename);
-	Par2::Result Process(bool dorepair);
-
 	friend class ParChecker;
 	friend class RepairThread;
 };
 
 class RepairThread : public Thread
 {
+public:
+	RepairThread(Repairer* owner) : m_owner(owner) {}
+	void RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
+	bool IsWorking() { return m_working; }
+
+protected:
+	virtual void Run();
+
 private:
 	Repairer* m_owner;
 	Par2::u32 m_inputindex;
 	Par2::u32 m_outputindex;
 	size_t m_blocklength;
 	volatile bool m_working = false;
-
-protected:
-	virtual void Run();
-
-public:
-	RepairThread(Repairer* owner) : m_owner(owner) {}
-	void RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
-	bool IsWorking() { return m_working; }
 };
 
 Par2::Result Repairer::PreProcess(const char *parFilename)

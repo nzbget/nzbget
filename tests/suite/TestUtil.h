@@ -28,18 +28,19 @@
 
 class TestUtil
 {
-private:
-	static bool			m_usedWorkingDir;
 public:
-	static void			Init(const char* argv0);
-	static void			Final();
-	static const		std::string TestDataDir();
-	static const		std::string WorkingDir();
-	static void			PrepareWorkingDir(const std::string templateDir);
-	static void			CleanupWorkingDir();
-	static void			DisableCout();
-	static void			EnableCout();
-	static void			CopyAllFiles(const std::string destDir, const std::string srcDir);
+	static void Init(const char* argv0);
+	static void Final();
+	static const std::string TestDataDir();
+	static const std::string WorkingDir();
+	static void PrepareWorkingDir(const std::string templateDir);
+	static void CleanupWorkingDir();
+	static void DisableCout();
+	static void EnableCout();
+	static void CopyAllFiles(const std::string destDir, const std::string srcDir);
+
+private:
+	static bool m_usedWorkingDir;
 };
 
 #endif

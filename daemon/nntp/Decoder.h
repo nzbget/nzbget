@@ -50,21 +50,32 @@ public:
 
 	static const char* FormatNames[];
 
-protected:
-	CString m_articleFilename;
-
-public:
 	virtual ~Decoder() {}
 	virtual EStatus Check() = 0;
 	virtual void Clear();
 	virtual int DecodeBuffer(char* buffer, int len) = 0;
 	const char* GetArticleFilename() { return m_articleFilename; }
 	static EFormat DetectFormat(const char* buffer, int len, bool inBody);
+
+protected:
+	CString m_articleFilename;
 };
 
 class YDecoder: public Decoder
 {
-protected:
+public:
+	YDecoder();
+	virtual EStatus Check();
+	virtual void Clear();
+	virtual int DecodeBuffer(char* buffer, int len);
+	void SetCrcCheck(bool crcCheck) { m_crcCheck = crcCheck; }
+	int64 GetBegin() { return m_beginPos; }
+	int64 GetEnd() { return m_endPos; }
+	int64 GetSize() { return m_size; }
+	uint32 GetExpectedCrc() { return m_expectedCRC; }
+	uint32 GetCalculatedCrc() { return m_calculatedCRC; }
+
+private:
 	bool m_begin;
 	bool m_part;
 	bool m_body;
@@ -77,31 +88,19 @@ protected:
 	int64 m_size;
 	int64 m_endSize;
 	bool m_crcCheck;
-
-public:
-	YDecoder();
-	virtual EStatus Check();
-	virtual void Clear();
-	virtual int DecodeBuffer(char* buffer, int len);
-	void SetCrcCheck(bool crcCheck) { m_crcCheck = crcCheck; }
-	int64 GetBegin() { return m_beginPos; }
-	int64 GetEnd() { return m_endPos; }
-	int64 GetSize() { return m_size; }
-	uint32 GetExpectedCrc() { return m_expectedCRC; }
-	uint32 GetCalculatedCrc() { return m_calculatedCRC; }
 };
 
 class UDecoder: public Decoder
 {
-private:
-	bool m_body;
-	bool m_end;
-
 public:
 	UDecoder();
 	virtual EStatus Check();
 	virtual void Clear();
 	virtual int DecodeBuffer(char* buffer, int len);
+
+private:
+	bool m_body;
+	bool m_end;
 };
 
 #endif

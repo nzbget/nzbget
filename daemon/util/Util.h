@@ -187,6 +187,18 @@ public:
 
 class URL
 {
+public:
+	URL(const char* address);
+	bool IsValid() { return m_valid; }
+	const char* GetAddress() { return m_address; }
+	const char* GetProtocol() { return m_protocol; }
+	const char* GetUser() { return m_user; }
+	const char* GetPassword() { return m_password; }
+	const char* GetHost() { return m_host; }
+	const char* GetResource() { return m_resource; }
+	int GetPort() { return m_port; }
+	bool GetTls() { return m_tls; }
+
 private:
 	CString m_address;
 	CString m_protocol;
@@ -199,30 +211,10 @@ private:
 	bool m_valid = false;
 
 	void ParseUrl();
-
-public:
-	URL(const char* address);
-	bool IsValid() { return m_valid; }
-	const char* GetAddress() { return m_address; }
-	const char* GetProtocol() { return m_protocol; }
-	const char* GetUser() { return m_user; }
-	const char* GetPassword() { return m_password; }
-	const char* GetHost() { return m_host; }
-	const char* GetResource() { return m_resource; }
-	int GetPort() { return m_port; }
-	bool GetTls() { return m_tls; }
 };
 
 class RegEx
 {
-private:
-#ifdef HAVE_REGEX_H
-	regex_t m_context;
-	std::unique_ptr<regmatch_t[]> m_matches;
-#endif
-	bool m_valid;
-	int m_matchBufSize;
-
 public:
 	RegEx(const char *pattern, int matchBufSize = 100);
 	~RegEx();
@@ -231,10 +223,26 @@ public:
 	int GetMatchCount();
 	int GetMatchStart(int index);
 	int GetMatchLen(int index);
+
+private:
+#ifdef HAVE_REGEX_H
+	regex_t m_context;
+	std::unique_ptr<regmatch_t[]> m_matches;
+#endif
+	bool m_valid;
+	int m_matchBufSize;
 };
 
 class WildMask
 {
+public:
+	WildMask(const char* pattern, bool wantsPositions = false):
+		m_pattern(pattern), m_wantsPositions(wantsPositions) {}
+	bool Match(const char* text);
+	int GetMatchCount() { return m_wildCount; }
+	int GetMatchStart(int index) { return m_wildStart[index]; }
+	int GetMatchLen(int index) { return m_wildLen[index]; }
+
 private:
 	typedef std::vector<int> IntList;
 
@@ -245,14 +253,6 @@ private:
 	IntList m_wildLen;
 
 	void ExpandArray();
-
-public:
-	WildMask(const char* pattern, bool wantsPositions = false):
-		m_pattern(pattern), m_wantsPositions(wantsPositions) {}
-	bool Match(const char* text);
-	int GetMatchCount() { return m_wildCount; }
-	int GetMatchStart(int index) { return m_wildStart[index]; }
-	int GetMatchLen(int index) { return m_wildLen[index]; }
 };
 
 #ifndef DISABLE_GZIP
@@ -281,13 +281,6 @@ public:
 		zlOK
 	};
 
-private:
-	z_stream m_zStream = {0};
-	std::unique_ptr<Bytef[]> m_outputBuffer;
-	int m_bufferSize;
-	bool m_active = false;
-
-public:
 	GUnzipStream(int BufferSize);
 	~GUnzipStream();
 
@@ -301,11 +294,22 @@ public:
 	* iOutputBufferLength - the size of uncompressed block. if it is "0" the next compressed block must be provided via "Write".
 	*/
 	EStatus Read(const void **outputBuffer, int *outputBufferLength);
+
+private:
+	z_stream m_zStream = {0};
+	std::unique_ptr<Bytef[]> m_outputBuffer;
+	int m_bufferSize;
+	bool m_active = false;
 };
 #endif
 
 class Tokenizer
 {
+public:
+	Tokenizer(const char* dataString, const char* separators);
+	Tokenizer(char* dataString, const char* separators, bool inplaceBuf);
+	char* Next();
+
 private:
 	BString<1024> m_shortString;
 	CString m_longString;
@@ -313,11 +317,6 @@ private:
 	const char* m_separators;
 	char* m_savePtr = nullptr;
 	bool m_working = false;
-
-public:
-	Tokenizer(const char* dataString, const char* separators);
-	Tokenizer(char* dataString, const char* separators, bool inplaceBuf);
-	char* Next();
 };
 
 #endif

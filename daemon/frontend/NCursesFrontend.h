@@ -36,8 +36,14 @@
 
 class NCursesFrontend : public Frontend
 {
-private:
+public:
+	NCursesFrontend();
+	virtual ~NCursesFrontend();
 
+protected:
+	virtual void Run();
+
+private:
 	enum EInputMode
 	{
 		normal,
@@ -110,13 +116,6 @@ private:
 	void NeedUpdateData();
 	bool EditQueue(DownloadQueue::EEditAction action, int offset);
 	void SetHint(const char* hint);
-
-protected:
-	virtual void Run();
-
-public:
-	NCursesFrontend();
-	virtual ~NCursesFrontend();
 };
 
 #endif

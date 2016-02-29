@@ -41,26 +41,6 @@ public:
 		fsFailed
 	};
 
-private:
-	int m_id;
-	CString m_name;
-	CString m_url;
-	int m_interval;
-	CString m_filter;
-	uint32 m_filterHash;
-	bool m_pauseNzb;
-	CString m_category;
-	CString m_feedScript;
-	int m_priority;
-	time_t m_lastUpdate = 0;
-	bool m_preview = false;
-	EStatus m_status = fsUndefined;
-	CString m_outputFilename;
-	bool m_fetch = false;
-	bool m_force = false;
-	bool m_backlog;
-
-public:
 	FeedInfo(int id, const char* name, const char* url, bool backlog, int interval,
 		const char* filter, bool pauseNzb, const char* category, int priority,
 		const char* feedScript);
@@ -88,6 +68,25 @@ public:
 	void SetForce(bool force) { m_force = force; }
 	bool GetBacklog() { return m_backlog; }
 	void SetBacklog(bool backlog) { m_backlog = backlog; }
+
+private:
+	int m_id;
+	CString m_name;
+	CString m_url;
+	int m_interval;
+	CString m_filter;
+	uint32 m_filterHash;
+	bool m_pauseNzb;
+	CString m_category;
+	CString m_feedScript;
+	int m_priority;
+	time_t m_lastUpdate = 0;
+	bool m_preview = false;
+	EStatus m_status = fsUndefined;
+	CString m_outputFilename;
+	bool m_fetch = false;
+	bool m_force = false;
+	bool m_backlog;
 };
 
 typedef std::deque<FeedInfo*> Feeds;
@@ -119,14 +118,14 @@ public:
 
 	class Attr
 	{
-	private:
-		CString m_name;
-		CString m_value;
 	public:
 		Attr(const char* name, const char* value) :
 			m_name(name ? name : ""), m_value(value ? value : "") {}
 		const char* GetName() { return m_name; }
 		const char* GetValue() { return m_value; }
+	private:
+		CString m_name;
+		CString m_value;
 	};
 
 	typedef std::deque<Attr> AttributesBase;
@@ -137,40 +136,6 @@ public:
 		Attr* Find(const char* name);
 	};
 
-private:
-	CString m_title;
-	CString m_filename;
-	CString m_url;
-	time_t m_time = 0;
-	int64 m_size = 0;
-	CString m_category = "";
-	int m_imdbId = 0;
-	int m_rageId = 0;
-	int m_tvdbId = 0;
-	int m_tvmazeId = 0;
-	CString m_description = "";
-	CString m_season;
-	CString m_episode;
-	int m_seasonNum = 0;
-	int m_episodeNum = 0;
-	bool m_seasonEpisodeParsed = false;
-	CString m_addCategory = "";
-	bool m_pauseNzb = false;
-	int m_priority = 0;
-	EStatus m_status = isUnknown;
-	EMatchStatus m_matchStatus = msIgnored;
-	int m_matchRule = 0;
-	CString m_dupeKey;
-	int m_dupeScore = 0;
-	EDupeMode m_dupeMode = dmScore;
-	CString m_dupeStatus;
-	FeedFilterHelper* m_feedFilterHelper = nullptr;
-	Attributes m_attributes;
-
-	int ParsePrefixedInt(const char *value);
-	void ParseSeasonEpisode();
-
-public:
 	FeedItemInfo() {}
 	FeedItemInfo(FeedItemInfo&&) = delete; // catch performance issues
 	void SetFeedFilterHelper(FeedFilterHelper* feedFilterHelper) { m_feedFilterHelper = feedFilterHelper; }
@@ -224,19 +189,52 @@ public:
 	void SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
 	const char* GetDupeStatus();
 	Attributes* GetAttributes() { return &m_attributes; }
+
+private:
+	CString m_title;
+	CString m_filename;
+	CString m_url;
+	time_t m_time = 0;
+	int64 m_size = 0;
+	CString m_category = "";
+	int m_imdbId = 0;
+	int m_rageId = 0;
+	int m_tvdbId = 0;
+	int m_tvmazeId = 0;
+	CString m_description = "";
+	CString m_season;
+	CString m_episode;
+	int m_seasonNum = 0;
+	int m_episodeNum = 0;
+	bool m_seasonEpisodeParsed = false;
+	CString m_addCategory = "";
+	bool m_pauseNzb = false;
+	int m_priority = 0;
+	EStatus m_status = isUnknown;
+	EMatchStatus m_matchStatus = msIgnored;
+	int m_matchRule = 0;
+	CString m_dupeKey;
+	int m_dupeScore = 0;
+	EDupeMode m_dupeMode = dmScore;
+	CString m_dupeStatus;
+	FeedFilterHelper* m_feedFilterHelper = nullptr;
+	Attributes m_attributes;
+
+	int ParsePrefixedInt(const char *value);
+	void ParseSeasonEpisode();
 };
 
 typedef std::deque<FeedItemInfo> FeedItemInfosBase;
 
 class FeedItemInfos : public FeedItemInfosBase
 {
-private:
-	int m_refCount;
-
 public:
 	FeedItemInfos();
 	void Retain();
 	void Release();
+
+private:
+	int m_refCount;
 };
 
 class FeedHistoryInfo
@@ -249,12 +247,6 @@ public:
 		hsFetched
 	};
 
-private:
-	CString m_url;
-	EStatus m_status;
-	time_t m_lastSeen;
-
-public:
 	FeedHistoryInfo(const char* url, EStatus status, time_t lastSeen) :
 		m_url(url), m_status(status), m_lastSeen(lastSeen) {}
 	const char* GetUrl() { return m_url; }
@@ -262,6 +254,11 @@ public:
 	void SetStatus(EStatus Status) { m_status = Status; }
 	time_t GetLastSeen() { return m_lastSeen; }
 	void SetLastSeen(time_t lastSeen) { m_lastSeen = lastSeen; }
+
+private:
+	CString m_url;
+	EStatus m_status;
+	time_t m_lastSeen;
 };
 
 typedef std::deque<FeedHistoryInfo> FeedHistoryBase;

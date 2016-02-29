@@ -34,18 +34,37 @@
 
 class ServerPool : public Debuggable
 {
+public:
+	ServerPool();
+	~ServerPool();
+	void SetTimeout(int timeout) { m_timeout = timeout; }
+	void SetRetryInterval(int retryInterval) { m_retryInterval = retryInterval; }
+	void AddServer(NewsServer* newsServer);
+	void InitConnections();
+	int GetMaxNormLevel() { return m_maxNormLevel; }
+	Servers* GetServers() { return &m_servers; } // Only for read access (no lockings)
+	NntpConnection* GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers);
+	void FreeConnection(NntpConnection* connection, bool used);
+	void CloseUnusedConnections();
+	void Changed();
+	int GetGeneration() { return m_generation; }
+	void BlockServer(NewsServer* newsServer);
+
+protected:
+	virtual void LogDebugInfo();
+
 private:
 	class PooledConnection : public NntpConnection
 	{
-	private:
-		bool m_inUse = false;
-		time_t m_freeTime = 0;
 	public:
 		using NntpConnection::NntpConnection;
 		bool GetInUse() { return m_inUse; }
 		void SetInUse(bool inUse) { m_inUse = inUse; }
 		time_t GetFreeTime() { return m_freeTime; }
 		void SetFreeTimeNow();
+	private:
+		bool m_inUse = false;
+		time_t m_freeTime = 0;
 	};
 
 	typedef std::vector<int> Levels;
@@ -62,25 +81,6 @@ private:
 	int m_generation = 0;
 
 	void NormalizeLevels();
-
-protected:
-	virtual void LogDebugInfo();
-
-public:
-	ServerPool();
-	~ServerPool();
-	void SetTimeout(int timeout) { m_timeout = timeout; }
-	void SetRetryInterval(int retryInterval) { m_retryInterval = retryInterval; }
-	void AddServer(NewsServer* newsServer);
-	void InitConnections();
-	int GetMaxNormLevel() { return m_maxNormLevel; }
-	Servers* GetServers() { return &m_servers; } // Only for read access (no lockings)
-	NntpConnection* GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers);
-	void FreeConnection(NntpConnection* connection, bool used);
-	void CloseUnusedConnections();
-	void Changed();
-	int GetGeneration() { return m_generation; }
-	void BlockServer(NewsServer* newsServer);
 };
 
 extern ServerPool* g_ServerPool;

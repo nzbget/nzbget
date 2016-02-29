@@ -32,32 +32,30 @@
 class OptionsExtenderMock : public Options::Extender
 {
 public:
-	int					m_newsServers;
-	int					m_feeds;
-	int					m_tasks;
+	int m_newsServers;
+	int m_feeds;
+	int m_tasks;
+
+	OptionsExtenderMock() : m_newsServers(0), m_feeds(0), m_tasks(0) {}
 
 protected:
-	virtual void		AddNewsServer(int id, bool active, const char* name, const char* host,
-							int port, const char* user, const char* pass, bool joinGroup,
-							bool tls, const char* cipher, int maxConnections, int retention,
-							int level, int group)
+	virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
+		int port, const char* user, const char* pass, bool joinGroup, bool tls,
+		const char* cipher, int maxConnections, int retention, int level, int group)
 	{
 		m_newsServers++;
 	}
 
-	virtual void		AddFeed(int id, const char* name, const char* url, int interval,
-							const char* filter, bool backlog, bool pauseNzb, const char* category, int priority, const char* feedScript)
+	virtual void AddFeed(int id, const char* name, const char* url, int interval,
+		const char* filter, bool backlog, bool pauseNzb, const char* category, int priority, const char* feedScript)
 	{
 		m_feeds++;
 	}
 
-	virtual void		AddTask(int id, int hours, int minutes, int weekDaysBits, Options::ESchedulerCommand command, const char* param)
+	virtual void AddTask(int id, int hours, int minutes, int weekDaysBits, Options::ESchedulerCommand command, const char* param)
 	{
 		m_tasks++;
 	}
-
-public:
-						OptionsExtenderMock() : m_newsServers(0), m_feeds(0), m_tasks(0) {}
 };
 
 TEST_CASE("Options: initializing without configuration file", "[Options][Quick]")

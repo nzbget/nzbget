@@ -44,14 +44,14 @@ extern void Reload();
 
 class ErrorXmlCommand: public XmlCommand
 {
-private:
-	int m_errCode;
-	const char* m_errText;
-
 public:
 	ErrorXmlCommand(int errCode, const char* errText) :
 		m_errCode(errCode), m_errText(errText) {}
 	virtual void Execute();
+
+private:
+	int m_errCode;
+	const char* m_errText;
 };
 
 class PauseUnpauseXmlCommand: public XmlCommand
@@ -64,14 +64,13 @@ public:
 		paScan
 	};
 
-private:
-	bool m_pause;
-	EPauseAction m_pauseAction;
-
-public:
 	PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction) :
 		m_pause(pause), m_pauseAction(pauseAction) {}
 	virtual void Execute();
+
+private:
+	bool m_pause;
+	EPauseAction m_pauseAction;
 };
 
 class ScheduleResumeXmlCommand: public XmlCommand
@@ -118,13 +117,14 @@ public:
 
 class LogXmlCommand: public XmlCommand
 {
+public:
+	virtual void Execute();
+
 protected:
 	int m_idFrom;
 	int m_nrEntries;
 	virtual MessageList* LockMessages();
 	virtual void UnlockMessages();
-public:
-	virtual void Execute();
 };
 
 class NzbInfoXmlCommand: public XmlCommand
@@ -142,10 +142,10 @@ public:
 
 class ListGroupsXmlCommand: public NzbInfoXmlCommand
 {
-private:
-	const char* DetectStatus(NzbInfo* nzbInfo);
 public:
 	virtual void Execute();
+private:
+	const char* DetectStatus(NzbInfo* nzbInfo);
 };
 
 class EditQueueXmlCommand: public XmlCommand
@@ -186,10 +186,10 @@ public:
 
 class HistoryXmlCommand: public NzbInfoXmlCommand
 {
-private:
-	const char* DetectStatus(HistoryInfo* historyInfo);
 public:
 	virtual void Execute();
+private:
+	const char* DetectStatus(HistoryInfo* historyInfo);
 };
 
 class UrlQueueXmlCommand: public XmlCommand
@@ -224,12 +224,11 @@ public:
 
 class ViewFeedXmlCommand: public XmlCommand
 {
-private:
-	bool m_preview;
-
 public:
 	ViewFeedXmlCommand(bool preview) : m_preview(preview) {}
 	virtual void Execute();
+private:
+	bool m_preview;
 };
 
 class FetchFeedXmlCommand: public XmlCommand
@@ -283,34 +282,35 @@ public:
 
 class LoadLogXmlCommand: public LogXmlCommand
 {
-private:
-	MessageList m_messages;
-	int m_nzbId;
-	NzbInfo* m_nzbInfo;
 protected:
 	virtual void Execute();
 	virtual MessageList* LockMessages();
 	virtual void UnlockMessages();
+private:
+	MessageList m_messages;
+	int m_nzbId;
+	NzbInfo* m_nzbInfo;
 };
 
 class TestServerXmlCommand: public XmlCommand
 {
+public:
+	virtual void Execute();
+
 private:
 	CString m_errText;
 
 	class TestConnection : public NntpConnection
 	{
-	protected:
-		TestServerXmlCommand* m_owner;
-		virtual void PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
 	public:
 		TestConnection(NewsServer* newsServer, TestServerXmlCommand* owner):
 			NntpConnection(newsServer), m_owner(owner) {}
+	protected:
+		TestServerXmlCommand* m_owner;
+		virtual void PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
 	};
 
 	void PrintError(const char* errMsg);
-public:
-	virtual void Execute();
 };
 
 

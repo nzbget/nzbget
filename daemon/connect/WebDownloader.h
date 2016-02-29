@@ -49,6 +49,30 @@ public:
 		adFatalError
 	};
 
+	WebDownloader();
+	EStatus GetStatus() { return m_status; }
+	virtual void Run();
+	virtual void Stop();
+	EStatus Download();
+	EStatus DownloadWithRedirects(int maxRedirects);
+	bool Terminate();
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	const char* GetInfoName() { return m_infoName; }
+	void SetUrl(const char* url);
+	const char* GetOutputFilename() { return m_outputFilename; }
+	void SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
+	time_t GetLastUpdateTime() { return m_lastUpdateTime; }
+	void SetLastUpdateTimeNow();
+	bool GetConfirmedLength() { return m_confirmedLength; }
+	const char* GetOriginalFilename() { return m_originalFilename; }
+	void SetForce(bool force) { m_force = force; }
+	void SetRetry(bool retry) { m_retry = retry; }
+
+	void LogDebugInfo();
+
+protected:
+	virtual void ProcessHeader(const char* line);
+
 private:
 	CString m_url;
 	CString m_outputFilename;
@@ -81,31 +105,6 @@ private:
 	EStatus DownloadHeaders();
 	EStatus DownloadBody();
 	void ParseRedirect(const char* location);
-
-protected:
-	virtual void ProcessHeader(const char* line);
-
-public:
-	WebDownloader();
-	EStatus GetStatus() { return m_status; }
-	virtual void Run();
-	virtual void Stop();
-	EStatus Download();
-	EStatus DownloadWithRedirects(int maxRedirects);
-	bool Terminate();
-	void SetInfoName(const char* infoName) { m_infoName = infoName; }
-	const char* GetInfoName() { return m_infoName; }
-	void SetUrl(const char* url);
-	const char* GetOutputFilename() { return m_outputFilename; }
-	void SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
-	time_t GetLastUpdateTime() { return m_lastUpdateTime; }
-	void SetLastUpdateTimeNow();
-	bool GetConfirmedLength() { return m_confirmedLength; }
-	const char* GetOriginalFilename() { return m_originalFilename; }
-	void SetForce(bool force) { m_force = force; }
-	void SetRetry(bool retry) { m_retry = retry; }
-
-	void LogDebugInfo();
 };
 
 #endif

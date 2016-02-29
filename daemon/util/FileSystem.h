@@ -84,6 +84,15 @@ public:
 
 class DirBrowser
 {
+public:
+#ifdef DIRBROWSER_SNAPSHOT
+	DirBrowser(const char* path, bool snapshot = true);
+#else
+	DirBrowser(const char* path);
+#endif
+	~DirBrowser();
+	const char* Next();
+
 private:
 #ifdef WIN32
 	WIN32_FIND_DATAW m_findData;
@@ -103,14 +112,6 @@ private:
 #endif
 
 	const char* InternNext();
-public:
-#ifdef DIRBROWSER_SNAPSHOT
-	DirBrowser(const char* path, bool snapshot = true);
-#else
-	DirBrowser(const char* path);
-#endif
-	~DirBrowser();
-	const char* Next();
 };
 
 class DiskFile
@@ -131,10 +132,6 @@ public:
 		soEnd
 	};
 
-private:
-	FILE* m_file = nullptr;
-
-public:
 	~DiskFile();
 	bool Open(const char* filename, EOpenMode mode);
 	bool Close();
@@ -150,6 +147,9 @@ public:
 	bool SetWriteBuffer(int size);
 	bool Flush();
 	bool Sync(CString& errmsg);
+
+private:
+	FILE* m_file = nullptr;
 };
 
 #endif

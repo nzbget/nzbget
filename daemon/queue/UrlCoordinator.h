@@ -37,22 +37,6 @@ class UrlDownloader;
 
 class UrlCoordinator : public Thread, public Observer, public Debuggable
 {
-private:
-	typedef std::list<UrlDownloader*> ActiveDownloads;
-
-private:
-	ActiveDownloads m_activeDownloads;
-	bool m_hasMoreJobs = true;
-	bool m_force;
-
-	NzbInfo* GetNextUrl(DownloadQueue* downloadQueue);
-	void StartUrlDownload(NzbInfo* nzbInfo);
-	void UrlCompleted(UrlDownloader* urlDownloader);
-	void ResetHangingDownloads();
-
-protected:
-	virtual void LogDebugInfo();
-
 public:
 	UrlCoordinator();
 	virtual ~UrlCoordinator();
@@ -64,23 +48,38 @@ public:
 	void AddUrlToQueue(NzbInfo* nzbInfo, bool addTop);
 	bool HasMoreJobs() { return m_hasMoreJobs; }
 	bool DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool avoidHistory);
+
+protected:
+	virtual void LogDebugInfo();
+
+private:
+	typedef std::list<UrlDownloader*> ActiveDownloads;
+
+	ActiveDownloads m_activeDownloads;
+	bool m_hasMoreJobs = true;
+	bool m_force;
+
+	NzbInfo* GetNextUrl(DownloadQueue* downloadQueue);
+	void StartUrlDownload(NzbInfo* nzbInfo);
+	void UrlCompleted(UrlDownloader* urlDownloader);
+	void ResetHangingDownloads();
 };
 
 extern UrlCoordinator* g_UrlCoordinator;
 
 class UrlDownloader : public WebDownloader
 {
-private:
-	NzbInfo* m_nzbInfo;
-	CString m_category;
-
-protected:
-	virtual void ProcessHeader(const char* line);
-
 public:
 	void SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
 	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
 	const char* GetCategory() { return m_category; }
+
+protected:
+	virtual void ProcessHeader(const char* line);
+
+private:
+	NzbInfo* m_nzbInfo;
+	CString m_category;
 };
 
 #endif

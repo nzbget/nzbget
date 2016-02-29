@@ -35,16 +35,6 @@ class UpdateScriptController;
 
 class Maintenance
 {
-private:
-	MessageList m_messages;
-	Mutex m_logMutex;
-	Mutex m_controllerMutex;
-	int m_idMessageGen = 0;
-	UpdateScriptController* m_updateScriptController = nullptr;
-	CString m_updateScript;
-
-	bool ReadPackageInfoStr(const char* key, CString& value);
-
 public:
 	enum EBranch
 	{
@@ -61,35 +51,45 @@ public:
 	void ResetUpdateController();
 	bool CheckUpdates(CString& updateInfo);
 	static bool VerifySignature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
+
+private:
+	MessageList m_messages;
+	Mutex m_logMutex;
+	Mutex m_controllerMutex;
+	int m_idMessageGen = 0;
+	UpdateScriptController* m_updateScriptController = nullptr;
+	CString m_updateScript;
+
+	bool ReadPackageInfoStr(const char* key, CString& value);
 };
 
 extern Maintenance* g_Maintenance;
 
 class UpdateScriptController : public Thread, public ScriptController
 {
-private:
-	Maintenance::EBranch m_branch;
-	int m_prefixLen;
+public:
+	virtual void Run();
+	void SetBranch(Maintenance::EBranch branch) { m_branch = branch; }
 
 protected:
 	virtual void AddMessage(Message::EKind kind, const char* text);
 
-public:
-	virtual void Run();
-	void SetBranch(Maintenance::EBranch branch) { m_branch = branch; }
+private:
+	Maintenance::EBranch m_branch;
+	int m_prefixLen;
 };
 
 class UpdateInfoScriptController : public ScriptController
 {
+public:
+	static void ExecuteScript(const char* script, CString& updateInfo);
+
 private:
 	int m_prefixLen;
 	StringBuilder m_updateInfo;
 
 protected:
 	virtual void AddMessage(Message::EKind kind, const char* text);
-
-public:
-	static void ExecuteScript(const char* script, CString& updateInfo);
 };
 
 #endif

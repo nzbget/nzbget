@@ -31,13 +31,13 @@ class Observer;
 
 class Subject
 {
-private:
-	std::vector<Observer*> m_observers;
-
 public:
 	void Attach(Observer* observer);
 	void Detach(Observer* observer);
 	void Notify(void* aspect);
+
+private:
+	std::vector<Observer*> m_observers;
 };
 
 class Observer

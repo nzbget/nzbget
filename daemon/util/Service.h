@@ -30,17 +30,17 @@
 
 class Service
 {
-private:
-	int m_lastTick = 0;
+public:
+	Service();
 
 protected:
 	virtual int ServiceInterval() = 0;
 	virtual void ServiceWork() = 0;
 
-	friend class ServiceCoordinator;
+private:
+	int m_lastTick = 0;
 
-public:
-	Service();
+	friend class ServiceCoordinator;
 };
 
 class ServiceCoordinator : public Thread
@@ -48,17 +48,16 @@ class ServiceCoordinator : public Thread
 public:
 	typedef std::vector<Service*> ServiceList;
 
+	ServiceCoordinator();
+	virtual ~ServiceCoordinator();
+	virtual void Run();
+
 private:
 	ServiceList m_services;
 
 	void RegisterService(Service* service);
 
 	friend class Service;
-
-public:
-	ServiceCoordinator();
-	virtual ~ServiceCoordinator();
-	virtual void Run();
 };
 
 extern ServiceCoordinator* g_ServiceCoordinator;

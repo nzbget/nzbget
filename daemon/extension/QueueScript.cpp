@@ -36,6 +36,14 @@ static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "URL_COMPLETED", "
 
 class QueueScriptController : public Thread, public NzbScriptController
 {
+public:
+	virtual void Run();
+	static void StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* script, QueueScriptCoordinator::EEvent event);
+
+protected:
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
 	CString m_nzbName;
 	CString m_nzbFilename;
@@ -56,14 +64,6 @@ private:
 	NzbInfo::EUrlStatus m_urlStatus;
 
 	void PrepareParams(const char* scriptName);
-
-protected:
-	virtual void ExecuteScript(ScriptConfig::Script* script);
-	virtual void AddMessage(Message::EKind kind, const char* text);
-
-public:
-	virtual void Run();
-	static void StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* script, QueueScriptCoordinator::EEvent event);
 };
 
 
@@ -238,13 +238,6 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 	}
 }
 
-
-QueueScriptCoordinator::QueueItem::QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event)
-{
-	m_nzbId = nzbId;
-	m_script = script;
-	m_event = event;
-}
 
 QueueScriptCoordinator::~QueueScriptCoordinator()
 {

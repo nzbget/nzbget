@@ -33,6 +33,10 @@
 
 class FeedFilter
 {
+public:
+	FeedFilter(const char* filter);
+	void Match(FeedItemInfo& feedItemInfo);
+
 private:
 	typedef std::vector<CString> RefValues;
 
@@ -52,6 +56,14 @@ private:
 
 	class Term
 	{
+	public:
+		Term() {}
+		Term(Term&&) = delete; // catch performance issues
+		void SetRefValues(RefValues* refValues) { m_refValues = refValues; }
+		bool Compile(char* token);
+		bool Match(FeedItemInfo& feedItemInfo);
+		ETermCommand GetCommand() { return m_command; }
+
 	private:
 		bool m_positive;
 		CString m_field;
@@ -74,14 +86,6 @@ private:
 		bool MatchRegex(const char* strValue);
 		void FillWildMaskRefValues(const char* strValue, WildMask* mask, int refOffset);
 		void FillRegExRefValues(const char* strValue, RegEx* regEx);
-
-	public:
-		Term() {}
-		Term(Term&&) = delete; // catch performance issues
-		void SetRefValues(RefValues* refValues) { m_refValues = refValues; }
-		bool Compile(char* token);
-		bool Match(FeedItemInfo& feedItemInfo);
-		ETermCommand GetCommand() { return m_command; }
 	};
 
 	typedef std::deque<Term> TermList;
@@ -97,6 +101,42 @@ private:
 
 	class Rule
 	{
+	public:
+		Rule() {}
+		Rule(Rule&&) = delete; // catch performance issues
+		void Compile(char* rule);
+		bool IsValid() { return m_isValid; }
+		ERuleCommand GetCommand() { return m_command; }
+		const char* GetCategory() { return m_category; }
+		int GetPriority() { return m_priority; }
+		int GetAddPriority() { return m_addPriority; }
+		bool GetPause() { return m_pause; }
+		const char* GetDupeKey() { return m_dupeKey; }
+		const char* GetAddDupeKey() { return m_addDupeKey; }
+		int GetDupeScore() { return m_dupeScore; }
+		int GetAddDupeScore() { return m_addDupeScore; }
+		EDupeMode GetDupeMode() { return m_dupeMode; }
+		const char* GetRageId() { return m_rageId; }
+		const char* GetTvdbId() { return m_tvdbId; }
+		const char* GetTvmazeId() { return m_tvmazeId; }
+		const char* GetSeries() { return m_series; }
+		bool HasCategory() { return m_hasCategory; }
+		bool HasPriority() { return m_hasPriority; }
+		bool HasAddPriority() { return m_hasAddPriority; }
+		bool HasPause() { return m_hasPause; }
+		bool HasDupeScore() { return m_hasDupeScore; }
+		bool HasAddDupeScore() { return m_hasAddDupeScore; }
+		bool HasDupeKey() { return m_hasDupeKey; }
+		bool HasAddDupeKey() { return m_hasAddDupeKey; }
+		bool HasDupeMode() { return m_hasDupeMode; }
+		bool HasRageId() { return m_hasRageId; }
+		bool HasTvdbId() { return m_hasTvdbId; }
+		bool HasTvmazeId() { return m_hasTvmazeId; }
+		bool HasSeries() { return m_hasSeries; }
+		bool Match(FeedItemInfo& feedItemInfo);
+		void ExpandRefValues(FeedItemInfo& feedItemInfo, CString* destStr, const char* patStr);
+		const char* GetRefValue(FeedItemInfo& feedItemInfo, const char* varName);
+
 	private:
 		bool m_isValid = false;
 		ERuleCommand m_command = frAccept;
@@ -139,56 +179,15 @@ private:
 		char* CompileOptions(char* rule);
 		bool CompileTerm(char* term);
 		bool MatchExpression(FeedItemInfo& feedItemInfo);
-
-	public:
-		Rule() {}
-		Rule(Rule&&) = delete; // catch performance issues
-		void Compile(char* rule);
-		bool IsValid() { return m_isValid; }
-		ERuleCommand GetCommand() { return m_command; }
-		const char* GetCategory() { return m_category; }
-		int GetPriority() { return m_priority; }
-		int GetAddPriority() { return m_addPriority; }
-		bool GetPause() { return m_pause; }
-		const char* GetDupeKey() { return m_dupeKey; }
-		const char* GetAddDupeKey() { return m_addDupeKey; }
-		int GetDupeScore() { return m_dupeScore; }
-		int GetAddDupeScore() { return m_addDupeScore; }
-		EDupeMode GetDupeMode() { return m_dupeMode; }
-		const char* GetRageId() { return m_rageId; }
-		const char* GetTvdbId() { return m_tvdbId; }
-		const char* GetTvmazeId() { return m_tvmazeId; }
-		const char* GetSeries() { return m_series; }
-		bool HasCategory() { return m_hasCategory; }
-		bool HasPriority() { return m_hasPriority; }
-		bool HasAddPriority() { return m_hasAddPriority; }
-		bool HasPause() { return m_hasPause; }
-		bool HasDupeScore() { return m_hasDupeScore; }
-		bool HasAddDupeScore() { return m_hasAddDupeScore; }
-		bool HasDupeKey() { return m_hasDupeKey; }
-		bool HasAddDupeKey() { return m_hasAddDupeKey; }
-		bool HasDupeMode() { return m_hasDupeMode; }
-		bool HasRageId() { return m_hasRageId; }
-		bool HasTvdbId() { return m_hasTvdbId; }
-		bool HasTvmazeId() { return m_hasTvmazeId; }
-		bool HasSeries() { return m_hasSeries; }
-		bool Match(FeedItemInfo& feedItemInfo);
-		void ExpandRefValues(FeedItemInfo& feedItemInfo, CString* destStr, const char* patStr);
-		const char* GetRefValue(FeedItemInfo& feedItemInfo, const char* varName);
 	};
 
 	typedef std::deque<Rule> RuleList;
 
-private:
 	RuleList m_rules;
 
 	void Compile(const char* filter);
 	void CompileRule(char* rule);
 	void ApplyOptions(Rule& rule, FeedItemInfo& feedItemInfo);
-
-public:
-	FeedFilter(const char* filter);
-	void Match(FeedItemInfo& feedItemInfo);
 };
 
 #endif

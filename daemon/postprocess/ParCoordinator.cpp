@@ -614,7 +614,7 @@ void ParCoordinator::UpdateParCheckProgress()
 	if (!m_parChecker.GetCancelled())
 	{
 		if ((g_Options->GetParTimeLimit() > 0) &&
-			m_parChecker.GetStage() == ParChecker::ptRepairing &&
+			m_parChecker.GetStage() == PostParChecker::ptRepairing &&
 			((g_Options->GetParTimeLimit() > 5 && current - postInfo->GetStageTime() > 5 * 60) ||
 			(g_Options->GetParTimeLimit() <= 5 && current - postInfo->GetStageTime() > 1 * 60)))
 		{

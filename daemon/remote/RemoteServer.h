@@ -32,27 +32,27 @@
 
 class RemoteServer : public Thread
 {
-private:
-	bool m_tls;
-	std::unique_ptr<Connection> m_connection;
-
 public:
 	RemoteServer(bool tls) : m_tls(tls) {}
 	virtual void Run();
 	virtual void Stop();
+
+private:
+	bool m_tls;
+	std::unique_ptr<Connection> m_connection;
 };
 
 class RequestProcessor : public Thread
 {
-private:
-	bool m_tls;
-	std::unique_ptr<Connection> m_connection;
-
 public:
 	~RequestProcessor();
 	virtual void Run();
 	void SetTls(bool tls) { m_tls = tls; }
 	void SetConnection(std::unique_ptr<Connection>&& connection) { m_connection = std::move(connection); }
+
+private:
+	bool m_tls;
+	std::unique_ptr<Connection> m_connection;
 };
 
 #endif

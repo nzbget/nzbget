@@ -34,36 +34,36 @@
 
 class MoveController : public Thread, public ScriptController
 {
+public:
+	virtual void Run();
+	static void StartJob(PostInfo* postInfo);
+
+protected:
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
 	PostInfo* m_postInfo;
 	CString m_interDir;
 	CString m_destDir;
 
 	bool MoveFiles();
-
-protected:
-	virtual void AddMessage(Message::EKind kind, const char* text);
-
-public:
-	virtual void Run();
-	static void StartJob(PostInfo* postInfo);
 };
 
 class CleanupController : public Thread, public ScriptController
 {
+public:
+	virtual void Run();
+	static void StartJob(PostInfo* postInfo);
+
+protected:
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
 	PostInfo* m_postInfo;
 	CString m_destDir;
 	CString m_finalDir;
 
 	bool Cleanup(const char* destDir, bool *deleted);
-
-protected:
-	virtual void AddMessage(Message::EKind kind, const char* text);
-
-public:
-	virtual void Run();
-	static void StartJob(PostInfo* postInfo);
 };
 
 #endif

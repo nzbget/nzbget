@@ -33,8 +33,6 @@ It has no memory overhead, provides memory management and formatting functions.
 template <int size>
 class BString
 {
-protected:
-	char m_data[size];
 public:
 	BString() { m_data[0] = '\0'; }
 	explicit BString(const char* format, ...) PRINTF_SYNTAX(2);
@@ -55,6 +53,9 @@ public:
 	void AppendFmtV(const char* format, va_list ap);
 	void Format(const char* format, ...) PRINTF_SYNTAX(2);
 	void FormatV(const char* format, va_list ap);
+
+protected:
+	char m_data[size];
 };
 
 /*
@@ -63,8 +64,6 @@ It has no memory overhead, provides memory management and string handling functi
  */
 class CString
 {
-protected:
-	char* m_data = nullptr;
 public:
 	CString() {}
 	~CString() { free(m_data); }
@@ -95,6 +94,9 @@ public:
 	void Replace(int pos, int len, const char* str, int strLen = 0);
 	void Replace(const char* from, const char* to);
 	void TrimRight();
+
+protected:
+	char* m_data = nullptr;
 };
 
 #ifdef WIN32
@@ -103,8 +105,6 @@ Wide-character string, Windows specific.
  */
 class WString
 {
-private:
-	wchar_t* m_data = nullptr;
 public:
 	WString(wchar_t* wstr) : m_data(_wcsdup(wstr)) {}
 	WString(const char* utfstr);
@@ -114,6 +114,9 @@ public:
 	operator wchar_t*() const { return m_data; }
 	wchar_t* operator*() const { return m_data; }
 	int Length() { return wcslen(m_data); }
+
+protected:
+	wchar_t* m_data = nullptr;
 };
 #endif
 
@@ -122,10 +125,6 @@ StringBuilder preallocates storage space and is best suitable for often "Append"
  */
 class StringBuilder
 {
-protected:
-	char* m_data = nullptr;
-	int m_length = 0;
-	int m_capacity = 0;
 public:
 	~StringBuilder() { free(m_data); }
 	operator const char*() const { return m_data ? m_data : ""; }
@@ -140,6 +139,11 @@ public:
 	void AppendFmt(const char* format, ...) PRINTF_SYNTAX(2);
 	void AppendFmtV(const char* format, va_list ap);
 	char* Unbind();
+
+protected:
+	char* m_data = nullptr;
+	int m_length = 0;
+	int m_capacity = 0;
 };
 
 /*
@@ -147,9 +151,6 @@ Plain char-buffer for I/O operations.
  */
 class CharBuffer
 {
-protected:
-	char* m_data = nullptr;
-	int m_size = 0;
 public:
 	CharBuffer() {}
 	CharBuffer(int size) : m_size(size) { m_data = (char*)malloc(size); }
@@ -160,6 +161,10 @@ public:
 	void Clear() { free(m_data); m_data = nullptr; m_size = 0; }
 	operator char*() const { return m_data; }
 	char* operator*() const { return m_data; }
+
+protected:
+	char* m_data = nullptr;
+	int m_size = 0;
 };
 
 #ifdef DEBUG

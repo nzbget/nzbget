@@ -32,12 +32,8 @@
 
 class ColoredFrontend : public LoggableFrontend
 {
-private:
-	bool m_needGoBack = false;
-
-#ifdef WIN32
-	HANDLE m_console;
-#endif
+public:
+	ColoredFrontend();
 
 protected:
 	virtual void BeforePrint();
@@ -46,8 +42,12 @@ protected:
 	virtual void PrintSkip();
 	virtual void BeforeExit();
 
-public:
-	ColoredFrontend();
+private:
+	bool m_needGoBack = false;
+
+#ifdef WIN32
+	HANDLE m_console;
+#endif
 };
 
 #endif

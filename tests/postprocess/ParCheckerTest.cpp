@@ -33,15 +33,17 @@
 
 class ParCheckerMock: public ParChecker
 {
-private:
-	uint32	CalcFileCrc(const char* filename);
-protected:
-	virtual bool	RequestMorePars(int blockNeeded, int* blockFound) { return false; }
-	virtual EFileStatus	FindFileCrc(const char* filename, uint32* crc, SegmentList* segments);
 public:
-					ParCheckerMock();
-	void			Execute();
-	void			CorruptFile(const char* filename, int offset);
+	ParCheckerMock();
+	void Execute();
+	void CorruptFile(const char* filename, int offset);
+
+protected:
+	virtual bool RequestMorePars(int blockNeeded, int* blockFound) { return false; }
+	virtual EFileStatus FindFileCrc(const char* filename, uint32* crc, SegmentList* segments);
+
+private:
+	uint32 CalcFileCrc(const char* filename);
 };
 
 ParCheckerMock::ParCheckerMock()

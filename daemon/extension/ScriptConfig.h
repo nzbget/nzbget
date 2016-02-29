@@ -34,17 +34,6 @@ class ScriptConfig
 public:
 	class Script
 	{
-	private:
-		CString m_name;
-		CString m_location;
-		CString m_displayName;
-		bool m_postScript;
-		bool m_scanScript;
-		bool m_queueScript;
-		bool m_schedulerScript;
-		bool m_feedScript;
-		CString m_queueEvents;
-
 	public:
 		Script(const char* name, const char* location);
 		Script(Script&&) = default;
@@ -64,26 +53,44 @@ public:
 		void SetFeedScript(bool feedScript) { m_feedScript = feedScript; }
 		void SetQueueEvents(const char* queueEvents) { m_queueEvents = queueEvents; }
 		const char* GetQueueEvents() { return m_queueEvents; }
+
+	private:
+		CString m_name;
+		CString m_location;
+		CString m_displayName;
+		bool m_postScript;
+		bool m_scanScript;
+		bool m_queueScript;
+		bool m_schedulerScript;
+		bool m_feedScript;
+		CString m_queueEvents;
 	};
 
 	typedef std::list<Script> Scripts;
 
 	class ConfigTemplate
 	{
-	private:
-		Script m_script;
-		CString m_template;
-
-		friend class Options;
-
 	public:
 		ConfigTemplate(Script&& script, const char* templ) :
 			m_script(std::move(script)), m_template(templ) {}
 		Script* GetScript() { return &m_script; }
 		const char* GetTemplate() { return m_template; }
+
+	private:
+		Script m_script;
+		CString m_template;
+
+		friend class Options;
 	};
 
 	typedef std::deque<ConfigTemplate> ConfigTemplates;
+
+	void InitOptions();
+	Scripts* GetScripts() { return &m_scripts; }
+	bool LoadConfig(Options::OptEntries* optEntries);
+	bool SaveConfig(Options::OptEntries* optEntries);
+	bool LoadConfigTemplates(ConfigTemplates* configTemplates);
+	ConfigTemplates* GetConfigTemplates() { return &m_configTemplates; }
 
 private:
 	Scripts m_scripts;
@@ -94,14 +101,6 @@ private:
 	void LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir);
 	void BuildScriptDisplayNames(Scripts* scripts);
 	void LoadScripts(Scripts* scripts);
-
-public:
-	void InitOptions();
-	Scripts* GetScripts() { return &m_scripts; }
-	bool LoadConfig(Options::OptEntries* optEntries);
-	bool SaveConfig(Options::OptEntries* optEntries);
-	bool LoadConfigTemplates(ConfigTemplates* configTemplates);
-	ConfigTemplates* GetConfigTemplates() { return &m_configTemplates; }
 };
 
 extern ScriptConfig* g_ScriptConfig;

@@ -31,6 +31,15 @@
 
 class PostScriptController : public Thread, public NzbScriptController
 {
+public:
+	virtual void Run();
+	virtual void Stop();
+	static void StartJob(PostInfo* postInfo);
+
+protected:
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
 	PostInfo* m_postInfo;
 	int m_prefixLen;
@@ -38,15 +47,6 @@ private:
 
 	void PrepareParams(const char* scriptName);
 	ScriptStatus::EStatus AnalyseExitCode(int exitCode);
-
-protected:
-	virtual void ExecuteScript(ScriptConfig::Script* script);
-	virtual void AddMessage(Message::EKind kind, const char* text);
-
-public:
-	virtual void Run();
-	virtual void Stop();
-	static void StartJob(PostInfo* postInfo);
 };
 
 #endif

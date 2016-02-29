@@ -34,6 +34,27 @@
 
 class RemoteClient
 {
+public:
+	void SetVerbose(bool verbose) { m_verbose = verbose; };
+	bool RequestServerDownload(const char* nzbFilename, const char* nzbContent, const char* category,
+		bool addFirst, bool addPaused, int priority,
+		const char* dupeKey, int dupeMode, int dupeScore);
+	bool RequestServerList(bool files, bool groups, const char* pattern);
+	bool RequestServerPauseUnpause(bool pause, ERemotePauseUnpauseAction action);
+	bool RequestServerSetDownloadRate(int rate);
+	bool RequestServerDumpDebug();
+	bool RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
+		IdList* idList, NameList* nameList, ERemoteMatchMode matchMode);
+	bool RequestServerLog(int lines);
+	bool RequestServerShutdown();
+	bool RequestServerReload();
+	bool RequestServerVersion();
+	bool RequestPostQueue();
+	bool RequestWriteLog(int kind, const char* text);
+	bool RequestScan(bool syncMode);
+	bool RequestHistory(bool withHidden);
+	void BuildFileList(SNzbListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue);
+
 private:
 	class MatchedNzbInfo: public NzbInfo
 	{
@@ -55,27 +76,6 @@ private:
 	bool ReceiveBoolResponse();
 	void printf(const char* msg, ...);
 	void perror(const char* msg);
-
-public:
-	void SetVerbose(bool verbose) { m_verbose = verbose; };
-	bool RequestServerDownload(const char* nzbFilename, const char* nzbContent, const char* category,
-		bool addFirst, bool addPaused, int priority,
-		const char* dupeKey, int dupeMode, int dupeScore);
-	bool RequestServerList(bool files, bool groups, const char* pattern);
-	bool RequestServerPauseUnpause(bool pause, ERemotePauseUnpauseAction action);
-	bool RequestServerSetDownloadRate(int rate);
-	bool RequestServerDumpDebug();
-	bool RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
-		IdList* idList, NameList* nameList, ERemoteMatchMode matchMode);
-	bool RequestServerLog(int lines);
-	bool RequestServerShutdown();
-	bool RequestServerReload();
-	bool RequestServerVersion();
-	bool RequestPostQueue();
-	bool RequestWriteLog(int kind, const char* text);
-	bool RequestScan(bool syncMode);
-	bool RequestHistory(bool withHidden);
-	void BuildFileList(SNzbListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue);
 };
 
 #endif

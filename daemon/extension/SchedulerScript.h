@@ -31,6 +31,13 @@
 
 class SchedulerScriptController : public Thread, public NzbScriptController
 {
+public:
+	virtual void Run();
+	static void StartScript(const char* param, bool externalProcess, int taskId);
+
+protected:
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+
 private:
 	CString m_script;
 	bool m_externalProcess;
@@ -38,13 +45,6 @@ private:
 
 	void PrepareParams(const char* scriptName);
 	void ExecuteExternalProcess();
-
-protected:
-	virtual void ExecuteScript(ScriptConfig::Script* script);
-
-public:
-	virtual void Run();
-	static void StartScript(const char* param, bool externalProcess, int taskId);
 };
 
 #endif

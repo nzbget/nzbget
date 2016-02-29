@@ -33,6 +33,17 @@
 
 class PrePostProcessor : public Thread
 {
+public:
+	PrePostProcessor();
+	virtual void Run();
+	virtual void Stop();
+	bool HasMoreJobs() { return m_jobCount > 0; }
+	int GetJobCount() { return m_jobCount; }
+	bool EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action,
+		int offset, const char* text);
+	void NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+
 private:
 	class DownloadQueueObserver: public Observer
 	{
@@ -41,7 +52,6 @@ private:
 		virtual void Update(Subject* Caller, void* Aspect) { m_owner->DownloadQueueUpdate(Caller, Aspect); }
 	};
 
-private:
 	ParCoordinator m_parCoordinator;
 	DownloadQueueObserver m_downloadQueueObserver;
 	int m_jobCount = 0;
@@ -64,16 +74,6 @@ private:
 	NzbInfo* GetNextJob(DownloadQueue* downloadQueue);
 	void DownloadQueueUpdate(Subject* Caller, void* Aspect);
 	void DeleteCleanup(NzbInfo* nzbInfo);
-
-public:
-	PrePostProcessor();
-	virtual void Run();
-	virtual void Stop();
-	bool HasMoreJobs() { return m_jobCount > 0; }
-	int GetJobCount() { return m_jobCount; }
-	bool EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
-	void NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
-	void NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 };
 
 extern PrePostProcessor* g_PrePostProcessor;

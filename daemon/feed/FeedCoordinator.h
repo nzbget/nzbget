@@ -40,6 +40,24 @@ class FeedDownloader;
 
 class FeedCoordinator : public Thread, public Observer, public Subject, public Debuggable
 {
+public:
+	FeedCoordinator();
+	virtual ~FeedCoordinator();
+	virtual void Run();
+	virtual void Stop();
+	void Update(Subject* caller, void* aspect);
+	void AddFeed(FeedInfo* feedInfo);
+	bool PreviewFeed(int id, const char* name, const char* url, const char* filter, bool backlog,
+		bool pauseNzb, const char* category, int priority, int interval, const char* feedScript,
+		int cacheTimeSec, const char* cacheId, FeedItemInfos** ppFeedItemInfos);
+	bool ViewFeed(int id, FeedItemInfos** ppFeedItemInfos);
+	void FetchFeed(int id);
+	bool HasActiveDownloads();
+	Feeds* GetFeeds() { return &m_feeds; }
+
+protected:
+	virtual void LogDebugInfo();
+
 private:
 	class DownloadQueueObserver: public Observer
 	{
@@ -50,13 +68,6 @@ private:
 
 	class FeedCacheItem
 	{
-	private:
-		CString m_url;
-		int m_cacheTimeSec;
-		CString m_cacheId;
-		time_t m_lastUsage;
-		FeedItemInfos* m_feedItemInfos;
-
 	public:
 		FeedCacheItem(const char* url, int cacheTimeSec,const char* cacheId,
 			time_t lastUsage, FeedItemInfos* feedItemInfos);
@@ -67,23 +78,29 @@ private:
 		time_t GetLastUsage() { return m_lastUsage; }
 		void SetLastUsage(time_t lastUsage) { m_lastUsage = lastUsage; }
 		FeedItemInfos* GetFeedItemInfos() { return m_feedItemInfos; }
+
+	private:
+		CString m_url;
+		int m_cacheTimeSec;
+		CString m_cacheId;
+		time_t m_lastUsage;
+		FeedItemInfos* m_feedItemInfos;
 	};
 
 	class FilterHelper : public FeedFilterHelper
 	{
-	private:
-		RegEx* m_seasonEpisodeRegEx;
 	public:
 		FilterHelper();
 		~FilterHelper();
 		virtual RegEx** GetSeasonEpisodeRegEx() { return &m_seasonEpisodeRegEx; };
 		virtual void CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen);
+	private:
+		RegEx* m_seasonEpisodeRegEx;
 	};
 
 	typedef std::list<FeedCacheItem> FeedCache;
 	typedef std::deque<FeedDownloader*> ActiveDownloads;
 
-private:
 	Feeds m_feeds;
 	ActiveDownloads m_activeDownloads;
 	FeedHistory m_feedHistory;
@@ -104,36 +121,18 @@ private:
 	void CleanupHistory();
 	void CleanupCache();
 	void CheckSaveFeeds();
-
-protected:
-	virtual void LogDebugInfo();
-
-public:
-	FeedCoordinator();
-	virtual ~FeedCoordinator();
-	virtual void Run();
-	virtual void Stop();
-	void Update(Subject* caller, void* aspect);
-	void AddFeed(FeedInfo* feedInfo);
-	bool PreviewFeed(int id, const char* name, const char* url, const char* filter, bool backlog,
-		bool pauseNzb, const char* category, int priority, int interval, const char* feedScript,
-		int cacheTimeSec, const char* cacheId, FeedItemInfos** ppFeedItemInfos);
-	bool ViewFeed(int id, FeedItemInfos** ppFeedItemInfos);
-	void FetchFeed(int id);
-	bool HasActiveDownloads();
-	Feeds* GetFeeds() { return &m_feeds; }
 };
 
 extern FeedCoordinator* g_FeedCoordinator;
 
 class FeedDownloader : public WebDownloader
 {
-private:
-	FeedInfo* m_feedInfo;
-
 public:
 	void SetFeedInfo(FeedInfo* feedInfo) { m_feedInfo = feedInfo; }
 	FeedInfo* GetFeedInfo() { return m_feedInfo; }
+
+private:
+	FeedInfo* m_feedInfo;
 };
 
 #endif

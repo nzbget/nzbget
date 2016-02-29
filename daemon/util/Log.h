@@ -55,6 +55,13 @@ public:
 		mkDetail
 	};
 
+	Message(uint32 id, EKind kind, time_t time, const char* text) :
+		m_id(id), m_kind(kind), m_time(time), m_text(text) {}
+	uint32 GetId() { return m_id; }
+	EKind GetKind() { return m_kind; }
+	time_t GetTime() { return m_time; }
+	const char* GetText() { return m_text; }
+
 private:
 	uint32 m_id;
 	EKind m_kind;
@@ -62,14 +69,6 @@ private:
 	CString m_text;
 
 	friend class Log;
-
-public:
-	Message(uint32 id, EKind kind, time_t time, const char* text) :
-		m_id(id), m_kind(kind), m_time(time), m_text(text) {}
-	uint32 GetId() { return m_id; }
-	EKind GetKind() { return m_kind; }
-	time_t GetTime() { return m_time; }
-	const char* GetText() { return m_text; }
 };
 
 typedef std::deque<Message> MessageList;
@@ -85,6 +84,17 @@ class Log
 {
 public:
 	typedef std::list<Debuggable*> Debuggables;
+
+	Log();
+	~Log();
+	MessageList* LockMessages();
+	void UnlockMessages();
+	void Clear();
+	void ResetLog();
+	void InitOptions();
+	void RegisterDebuggable(Debuggable* debuggable);
+	void UnregisterDebuggable(Debuggable* debuggable);
+	void LogDebugInfo();
 
 private:
 	Mutex m_logMutex;
@@ -114,18 +124,6 @@ private:
 	friend void debug(const char* msg, ...);
 #endif
 #endif
-
-public:
-	Log();
-	~Log();
-	MessageList* LockMessages();
-	void UnlockMessages();
-	void Clear();
-	void ResetLog();
-	void InitOptions();
-	void RegisterDebuggable(Debuggable* debuggable);
-	void UnregisterDebuggable(Debuggable* debuggable);
-	void LogDebugInfo();
 };
 
 #ifdef DEBUG

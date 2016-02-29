@@ -35,6 +35,27 @@
 
 class DiskState
 {
+public:
+	bool DownloadQueueExists();
+	bool SaveDownloadQueue(DownloadQueue* downloadQueue);
+	bool LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers);
+	bool SaveFile(FileInfo* fileInfo);
+	bool SaveFileState(FileInfo* fileInfo, bool completed);
+	bool LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed);
+	bool LoadArticles(FileInfo* fileInfo);
+	void DiscardDownloadQueue();
+	void DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState);
+	void DiscardFiles(NzbInfo* nzbInfo);
+	bool SaveFeeds(Feeds* feeds, FeedHistory* feedHistory);
+	bool LoadFeeds(Feeds* feeds, FeedHistory* feedHistory);
+	bool SaveStats(Servers* servers, ServerVolumes* serverVolumes);
+	bool LoadStats(Servers* servers, ServerVolumes* serverVolumes, bool* perfectMatch);
+	void CleanupTempDir(DownloadQueue* downloadQueue);
+	void WriteCacheFlag();
+	void DeleteCacheFlag();
+	void AppendNzbMessage(int nzbId, Message::EKind kind, const char* text);
+	void LoadNzbMessages(int nzbId, MessageList* messages);
+
 private:
 	int fscanf(DiskFile& infile, const char* format, ...);
 	bool SaveFileInfo(FileInfo* fileInfo, const char* filename);
@@ -75,27 +96,6 @@ private:
 	void CompleteNzbList12(DownloadQueue* downloadQueue, NzbList* nzbList, int formatVersion);
 	void CompleteDupList12(DownloadQueue* downloadQueue, int formatVersion);
 	void CalcCriticalHealth(NzbList* nzbList);
-
-public:
-	bool DownloadQueueExists();
-	bool SaveDownloadQueue(DownloadQueue* downloadQueue);
-	bool LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers);
-	bool SaveFile(FileInfo* fileInfo);
-	bool SaveFileState(FileInfo* fileInfo, bool completed);
-	bool LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed);
-	bool LoadArticles(FileInfo* fileInfo);
-	void DiscardDownloadQueue();
-	void DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState);
-	void DiscardFiles(NzbInfo* nzbInfo);
-	bool SaveFeeds(Feeds* feeds, FeedHistory* feedHistory);
-	bool LoadFeeds(Feeds* feeds, FeedHistory* feedHistory);
-	bool SaveStats(Servers* servers, ServerVolumes* serverVolumes);
-	bool LoadStats(Servers* servers, ServerVolumes* serverVolumes, bool* perfectMatch);
-	void CleanupTempDir(DownloadQueue* downloadQueue);
-	void WriteCacheFlag();
-	void DeleteCacheFlag();
-	void AppendNzbMessage(int nzbId, Message::EKind kind, const char* text);
-	void LoadNzbMessages(int nzbId, MessageList* messages);
 };
 
 extern DiskState* g_DiskState;

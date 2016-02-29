@@ -51,6 +51,13 @@ public:
 
 	class Task
 	{
+	public:
+		Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
+			const char* param) :
+			m_id(id), m_hours(hours), m_minutes(minutes),
+			m_weekDaysBits(weekDaysBits), m_command(command), m_param(param) {}
+		friend class Scheduler;
+
 	private:
 		int m_id;
 		int m_hours;
@@ -59,17 +66,16 @@ public:
 		ECommand m_command;
 		CString m_param;
 		time_t m_lastExecuted = 0;
-
-	public:
-		Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
-			const char* param) :
-			m_id(id), m_hours(hours), m_minutes(minutes),
-			m_weekDaysBits(weekDaysBits), m_command(command), m_param(param) {}
-		friend class Scheduler;
 	};
 
-private:
+	~Scheduler();
+	void AddTask(Task* task);
 
+protected:
+	virtual int ServiceInterval() { return 1000; }
+	virtual void ServiceWork();
+
+private:
 	typedef std::deque<Task*> TaskList;
 	typedef std::vector<bool> ServerStatusList;
 
@@ -93,14 +99,6 @@ private:
 	void FetchFeed(const char* feedList);
 	void CheckScheduledResume();
 	void FirstCheck();
-
-protected:
-	virtual int ServiceInterval() { return 1000; }
-	virtual void ServiceWork();
-
-public:
-	~Scheduler();
-	void AddTask(Task* task);
 };
 
 #endif

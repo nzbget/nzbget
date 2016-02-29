@@ -29,40 +29,22 @@
 
 class Mutex
 {
+public:
+	Mutex();
+	~Mutex();
+	void Lock();
+	void Unlock();
+
 private:
 #ifdef WIN32
 	CRITICAL_SECTION m_mutexObj;
 #else
 	pthread_mutex_t m_mutexObj;
 #endif
-
-public:
-	Mutex();
-	~Mutex();
-	void Lock();
-	void Unlock();
 };
 
 class Thread
 {
-private:
-	static std::unique_ptr<Mutex> m_threadMutex;
-	static int m_threadCount;
-#ifdef WIN32
-	HANDLE m_threadObj = 0;
-#else
-	pthread_t m_threadObj = 0;
-#endif
-	bool m_running = false;
-	bool m_stopped = false;
-	bool m_autoDestroy = false;
-
-#ifdef WIN32
-	static void __cdecl thread_handler(void* object);
-#else
-	static void *thread_handler(void* object);
-#endif
-
 public:
 	Thread();
 	virtual ~Thread();
@@ -82,6 +64,24 @@ public:
 
 protected:
 	virtual void Run() {}; // Virtual function - override in derivatives
+
+private:
+	static std::unique_ptr<Mutex> m_threadMutex;
+	static int m_threadCount;
+#ifdef WIN32
+	HANDLE m_threadObj = 0;
+#else
+	pthread_t m_threadObj = 0;
+#endif
+	bool m_running = false;
+	bool m_stopped = false;
+	bool m_autoDestroy = false;
+
+#ifdef WIN32
+	static void __cdecl thread_handler(void* object);
+#else
+	static void *thread_handler(void* object);
+#endif
 };
 
 #endif

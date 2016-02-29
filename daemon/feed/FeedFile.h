@@ -31,6 +31,14 @@
 
 class FeedFile
 {
+public:
+	FeedFile(const char* fileName);
+	virtual ~FeedFile();
+	bool Parse();
+	FeedItemInfos* GetFeedItemInfos() { return m_feedItemInfos; }
+
+	void LogDebugInfo();
+
 private:
 	FeedItemInfos* m_feedItemInfos;
 	CString m_fileName;
@@ -54,14 +62,6 @@ private:
 	void Parse_Content(const char *buf, int len);
 	void ResetTagContent();
 #endif
-
-public:
-	FeedFile(const char* fileName);
-	virtual ~FeedFile();
-	bool Parse();
-	FeedItemInfos* GetFeedItemInfos() { return m_feedItemInfos; }
-
-	void LogDebugInfo();
 };
 
 #endif

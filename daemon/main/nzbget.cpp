@@ -157,6 +157,26 @@ int main(int argc, char *argv[], char *argp[])
 
 class NZBGet : public Options::Extender
 {
+public:
+	~NZBGet();
+	void Run(bool reload);
+	void Stop(bool reload);
+	bool GetReloading() { return m_reloading; }
+
+	// Options::Extender
+	virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
+		int port, const char* user, const char* pass, bool joinGroup,
+		bool tls, const char* cipher, int maxConnections, int retention,
+		int level, int group);
+	virtual void AddFeed(int id, const char* name, const char* url, int interval,
+		const char* filter, bool backlog, bool pauseNzb, const char* category,
+		int priority, const char* feedScript);
+	virtual void AddTask(int id, int hours, int minutes, int weekDaysBits,
+		Options::ESchedulerCommand command, const char* param);
+#ifdef WIN32
+	virtual void SetupFirstStart();
+#endif
+
 private:
 	// globals
 	std::unique_ptr<Log> m_log;
@@ -188,20 +208,6 @@ private:
 	std::unique_ptr<Scheduler> m_scheduler;
 	std::unique_ptr<CommandLineParser> m_commandLineParser;
 
-	// Options::Extender
-	virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
-		int port, const char* user, const char* pass, bool joinGroup,
-		bool tls, const char* cipher, int maxConnections, int retention,
-		int level, int group);
-	virtual void AddFeed(int id, const char* name, const char* url, int interval,
-		const char* filter, bool backlog, bool pauseNzb, const char* category,
-		int priority, const char* feedScript);
-	virtual void AddTask(int id, int hours, int minutes, int weekDaysBits,
-		Options::ESchedulerCommand command, const char* param);
-#ifdef WIN32
-	virtual void SetupFirstStart();
-#endif
-
 	bool m_reloading = false;
 
 	void Init();
@@ -222,12 +228,6 @@ private:
 #ifndef WIN32
 	void Daemonize();
 #endif
-
-public:
-	~NZBGet();
-	void Run(bool reload);
-	void Stop(bool reload);
-	bool GetReloading() { return m_reloading; }
 };
 
 std::unique_ptr<NZBGet> g_NZBGet;

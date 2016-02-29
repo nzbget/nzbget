@@ -37,6 +37,11 @@ extern char* (*g_Arguments)[];
 #ifdef HAVE_OPENSSL
 class Signature
 {
+public:
+	Signature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
+	~Signature();
+	bool Verify();
+
 private:
 	const char* m_inFilename;
 	const char* m_sigFilename;
@@ -48,11 +53,6 @@ private:
 	bool ReadSignature();
 	bool ComputeInHash();
 	bool ReadPubKey();
-
-public:
-	Signature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
-	~Signature();
-	bool Verify();
 };
 #endif
 

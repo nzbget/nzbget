@@ -56,6 +56,15 @@ public:
 		uaAdd
 	};
 
+	void Execute();
+	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	void SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
+	void SetUrl(const char* url);
+	void SetRequest(char* request) { m_request = request; }
+	const char* GetResponse() { return m_response; }
+	const char* GetContentType() { return m_contentType; }
+	static bool IsRpcRequest(const char* url);
+
 private:
 	char* m_request = nullptr;
 	const char* m_contentType = nullptr;
@@ -69,20 +78,23 @@ private:
 	std::unique_ptr<XmlCommand> CreateCommand(const char* methodName);
 	void MutliCall();
 	void BuildResponse(const char* response, const char* callbackFunc, bool fault, const char* requestId);
-
-public:
-	void Execute();
-	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
-	void SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
-	void SetUrl(const char* url);
-	void SetRequest(char* request) { m_request = request; }
-	const char* GetResponse() { return m_response; }
-	const char* GetContentType() { return m_contentType; }
-	static bool IsRpcRequest(const char* url);
 };
 
 class XmlCommand
 {
+public:
+	XmlCommand();
+	virtual ~XmlCommand() {}
+	virtual void Execute() = 0;
+	void PrepareParams();
+	void SetRequest(char* request) { m_request = request; m_requestPtr = m_request; }
+	void SetProtocol(XmlRpcProcessor::ERpcProtocol protocol) { m_protocol = protocol; }
+	void SetHttpMethod(XmlRpcProcessor::EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	void SetUserAccess(XmlRpcProcessor::EUserAccess userAccess) { m_userAccess = userAccess; }
+	const char* GetResponse() { return m_response; }
+	const char* GetCallbackFunc() { return m_callbackFunc; }
+	bool GetFault() { return m_fault; }
+
 protected:
 	char* m_request = nullptr;
 	char* m_requestPtr = nullptr;
@@ -108,19 +120,6 @@ protected:
 	const char* BoolToStr(bool value);
 	CString EncodeStr(const char* str);
 	void DecodeStr(char* str);
-
-public:
-	XmlCommand();
-	virtual ~XmlCommand() {}
-	virtual void Execute() = 0;
-	void PrepareParams();
-	void SetRequest(char* request) { m_request = request; m_requestPtr = m_request; }
-	void SetProtocol(XmlRpcProcessor::ERpcProtocol protocol) { m_protocol = protocol; }
-	void SetHttpMethod(XmlRpcProcessor::EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
-	void SetUserAccess(XmlRpcProcessor::EUserAccess userAccess) { m_userAccess = userAccess; }
-	const char* GetResponse() { return m_response; }
-	const char* GetCallbackFunc() { return m_callbackFunc; }
-	bool GetFault() { return m_fault; }
 };
 
 #endif
