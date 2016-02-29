@@ -32,19 +32,19 @@
 class EnvironmentStrings
 {
 private:
-	typedef std::vector<CString>		Strings;
+	typedef std::vector<CString> Strings;
 
-	Strings				m_strings;
+	Strings m_strings;
 
 public:
-	void				Clear();
-	void				InitFromCurrentProcess();
-	void				Append(const char* envstr);
-	void				Append(CString&& envstr);
+	void Clear();
+	void InitFromCurrentProcess();
+	void Append(const char* envstr);
+	void Append(CString&& envstr);
 #ifdef WIN32
-	std::unique_ptr<wchar_t[]>	GetStrings();
+	std::unique_ptr<wchar_t[]> GetStrings();
 #else
-	std::vector<char*>			GetStrings();
+	std::vector<char*> GetStrings();
 #endif
 };
 
@@ -53,62 +53,62 @@ class ScriptController
 private:
 	typedef std::vector<CString> ArgList;
 
-	const char*			m_script = nullptr;
-	ArgList				m_args;
-	const char*			m_workingDir = nullptr;
-	const char*			m_infoName = nullptr;
-	const char*			m_logPrefix = nullptr;
-	EnvironmentStrings	m_environmentStrings;
-	bool				m_terminated = false;
-	bool				m_detached = false;
-	FILE*				m_readpipe;
+	const char* m_script = nullptr;
+	ArgList m_args;
+	const char* m_workingDir = nullptr;
+	const char* m_infoName = nullptr;
+	const char* m_logPrefix = nullptr;
+	EnvironmentStrings m_environmentStrings;
+	bool m_terminated = false;
+	bool m_detached = false;
+	FILE* m_readpipe;
 #ifdef WIN32
-	HANDLE				m_processId = 0;
-	char				m_cmdLine[2048];
+	HANDLE m_processId = 0;
+	char m_cmdLine[2048];
 #else
-	pid_t				m_processId = 0;
+	pid_t m_processId = 0;
 #endif
 
-	typedef std::vector<ScriptController*>	RunningScripts;
-	static RunningScripts	m_runningScripts;
-	static Mutex			m_runningMutex;
+	typedef std::vector<ScriptController*> RunningScripts;
+	static RunningScripts m_runningScripts;
+	static Mutex m_runningMutex;
 
 protected:
-	void				ProcessOutput(char* text);
-	virtual bool		ReadLine(char* buf, int bufSize, FILE* stream);
-	void				PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
-	virtual void		AddMessage(Message::EKind kind, const char* text);
-	bool				GetTerminated() { return m_terminated; }
-	void				ResetEnv();
-	void				PrepareEnvOptions(const char* stripPrefix);
-	void				PrepareArgs();
-	int					StartProcess();
-	int					WaitProcess();
+	void ProcessOutput(char* text);
+	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
+	void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+	bool GetTerminated() { return m_terminated; }
+	void ResetEnv();
+	void PrepareEnvOptions(const char* stripPrefix);
+	void PrepareArgs();
+	int StartProcess();
+	int WaitProcess();
 #ifdef WIN32
-	void				BuildCommandLine(char* cmdLineBuf, int bufSize);
+	void BuildCommandLine(char* cmdLineBuf, int bufSize);
 #endif
-	void				UnregisterRunningScript();
+	void UnregisterRunningScript();
 
 public:
-						ScriptController();
-	virtual				~ScriptController();
-	int					Execute();
-	void				Terminate();
-	void				Resume();
-	void				Detach();
-	static void			TerminateAll();
+	ScriptController();
+	virtual ~ScriptController();
+	int Execute();
+	void Terminate();
+	void Resume();
+	void Detach();
+	static void TerminateAll();
 
-	void				SetScript(const char* script) { m_script = script; }
-	const char*			GetScript() { return m_script; }
-	void				SetWorkingDir(const char* workingDir) { m_workingDir = workingDir; }
-	void				SetArgs(ArgList&& args) { m_args = std::move(args); }
-	void				SetInfoName(const char* infoName) { m_infoName = infoName; }
-	const char*			GetInfoName() { return m_infoName; }
-	void				SetLogPrefix(const char* logPrefix) { m_logPrefix = logPrefix; }
-	void				SetEnvVar(const char* name, const char* value);
-	void				SetEnvVarSpecial(const char* prefix, const char* name, const char* value);
-	void				SetIntEnvVar(const char* name, int value);
-	void				Reset();
+	void SetScript(const char* script) { m_script = script; }
+	const char* GetScript() { return m_script; }
+	void SetWorkingDir(const char* workingDir) { m_workingDir = workingDir; }
+	void SetArgs(ArgList&& args) { m_args = std::move(args); }
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	const char* GetInfoName() { return m_infoName; }
+	void SetLogPrefix(const char* logPrefix) { m_logPrefix = logPrefix; }
+	void SetEnvVar(const char* name, const char* value);
+	void SetEnvVarSpecial(const char* prefix, const char* name, const char* value);
+	void SetIntEnvVar(const char* name, int value);
+	void Reset();
 };
 
 #endif

@@ -57,70 +57,70 @@ public:
 	};
 
 private:
-	char*				m_request = nullptr;
-	const char*			m_contentType = nullptr;
-	ERpcProtocol		m_protocol = rpUndefined;
-	EHttpMethod			m_httpMethod = hmPost;
-	EUserAccess			m_userAccess;
-	CString				m_url;
-	StringBuilder		m_response;
+	char* m_request = nullptr;
+	const char* m_contentType = nullptr;
+	ERpcProtocol m_protocol = rpUndefined;
+	EHttpMethod m_httpMethod = hmPost;
+	EUserAccess m_userAccess;
+	CString m_url;
+	StringBuilder m_response;
 
-	void				Dispatch();
-	std::unique_ptr<XmlCommand>		CreateCommand(const char* methodName);
-	void				MutliCall();
-	void				BuildResponse(const char* response, const char* callbackFunc, bool fault, const char* requestId);
+	void Dispatch();
+	std::unique_ptr<XmlCommand> CreateCommand(const char* methodName);
+	void MutliCall();
+	void BuildResponse(const char* response, const char* callbackFunc, bool fault, const char* requestId);
 
 public:
-	void				Execute();
-	void				SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
-	void				SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
-	void				SetUrl(const char* url);
-	void				SetRequest(char* request) { m_request = request; }
-	const char*			GetResponse() { return m_response; }
-	const char*			GetContentType() { return m_contentType; }
-	static bool			IsRpcRequest(const char* url);
+	void Execute();
+	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	void SetUserAccess(EUserAccess userAccess) { m_userAccess = userAccess; }
+	void SetUrl(const char* url);
+	void SetRequest(char* request) { m_request = request; }
+	const char* GetResponse() { return m_response; }
+	const char* GetContentType() { return m_contentType; }
+	static bool IsRpcRequest(const char* url);
 };
 
 class XmlCommand
 {
 protected:
-	char*				m_request = nullptr;
-	char*				m_requestPtr = nullptr;
-	char*				m_callbackFunc = nullptr;
-	StringBuilder		m_response;
-	bool				m_fault = false;
-	XmlRpcProcessor::ERpcProtocol	m_protocol = XmlRpcProcessor::rpUndefined;
-	XmlRpcProcessor::EHttpMethod	m_httpMethod;
-	XmlRpcProcessor::EUserAccess	m_userAccess;
+	char* m_request = nullptr;
+	char* m_requestPtr = nullptr;
+	char* m_callbackFunc = nullptr;
+	StringBuilder m_response;
+	bool m_fault = false;
+	XmlRpcProcessor::ERpcProtocol m_protocol = XmlRpcProcessor::rpUndefined;
+	XmlRpcProcessor::EHttpMethod m_httpMethod;
+	XmlRpcProcessor::EUserAccess m_userAccess;
 
-	void				BuildErrorResponse(int errCode, const char* errText, ...);
-	void				BuildBoolResponse(bool ok);
-	void				BuildIntResponse(int value);
-	void				AppendResponse(const char* part);
-	void				AppendFmtResponse(const char* format, ...);
-	void				AppendCondResponse(const char* part, bool cond);
-	bool				IsJson();
-	bool				CheckSafeMethod();
-	bool				NextParamAsInt(int* value);
-	bool				NextParamAsBool(bool* value);
-	bool				NextParamAsStr(char** valueBuf);
-	char*				XmlNextValue(char* xml, const char* tag, int* valueLength);
-	const char*			BoolToStr(bool value);
-	CString				EncodeStr(const char* str);
-	void				DecodeStr(char* str);
+	void BuildErrorResponse(int errCode, const char* errText, ...);
+	void BuildBoolResponse(bool ok);
+	void BuildIntResponse(int value);
+	void AppendResponse(const char* part);
+	void AppendFmtResponse(const char* format, ...);
+	void AppendCondResponse(const char* part, bool cond);
+	bool IsJson();
+	bool CheckSafeMethod();
+	bool NextParamAsInt(int* value);
+	bool NextParamAsBool(bool* value);
+	bool NextParamAsStr(char** valueBuf);
+	char* XmlNextValue(char* xml, const char* tag, int* valueLength);
+	const char* BoolToStr(bool value);
+	CString EncodeStr(const char* str);
+	void DecodeStr(char* str);
 
 public:
-						XmlCommand();
-	virtual 			~XmlCommand() {}
-	virtual void		Execute() = 0;
-	void				PrepareParams();
-	void				SetRequest(char* request) { m_request = request; m_requestPtr = m_request; }
-	void				SetProtocol(XmlRpcProcessor::ERpcProtocol protocol) { m_protocol = protocol; }
-	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
-	void				SetUserAccess(XmlRpcProcessor::EUserAccess userAccess) { m_userAccess = userAccess; }
-	const char*			GetResponse() { return m_response; }
-	const char*			GetCallbackFunc() { return m_callbackFunc; }
-	bool				GetFault() { return m_fault; }
+	XmlCommand();
+	virtual ~XmlCommand() {}
+	virtual void Execute() = 0;
+	void PrepareParams();
+	void SetRequest(char* request) { m_request = request; m_requestPtr = m_request; }
+	void SetProtocol(XmlRpcProcessor::ERpcProtocol protocol) { m_protocol = protocol; }
+	void SetHttpMethod(XmlRpcProcessor::EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	void SetUserAccess(XmlRpcProcessor::EUserAccess userAccess) { m_userAccess = userAccess; }
+	const char* GetResponse() { return m_response; }
+	const char* GetCallbackFunc() { return m_callbackFunc; }
+	bool GetFault() { return m_fault; }
 };
 
 #endif

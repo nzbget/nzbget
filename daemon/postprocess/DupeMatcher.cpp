@@ -35,23 +35,23 @@
 class RarLister : public Thread, public ScriptController
 {
 private:
-	DupeMatcher*		m_owner;
-	int64				m_maxSize;
-	bool				m_compressed;
-	bool				m_lastSizeMax;
-	int64				m_expectedSize;
-	char*				m_filenameBuf;
-	int					m_filenameBufLen;
-	BString<1024>		m_lastFilename;
+	DupeMatcher* m_owner;
+	int64 m_maxSize;
+	bool m_compressed;
+	bool m_lastSizeMax;
+	int64 m_expectedSize;
+	char* m_filenameBuf;
+	int m_filenameBufLen;
+	BString<1024> m_lastFilename;
 
 protected:
-	virtual void		AddMessage(Message::EKind kind, const char* text);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
 public:
-	virtual void		Run();
-	static bool			FindLargestFile(DupeMatcher* owner, const char* directory,
-							char* filenameBuf, int filenameBufLen, int64 expectedSize,
-							int timeoutSec, int64* maxSize, bool* compressed);
+	virtual void Run();
+	static bool FindLargestFile(DupeMatcher* owner, const char* directory,
+		char* filenameBuf, int filenameBufLen, int64 expectedSize,
+		int timeoutSec, int64* maxSize, bool* compressed);
 };
 
 bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,

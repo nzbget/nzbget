@@ -62,113 +62,105 @@ const uint32 g_MessageRequestSizes[] =
 	};
 
 
-
 class BinCommand
 {
 protected:
-	Connection*			m_connection;
-	SNzbRequestBase*	m_messageBase;
+	Connection* m_connection;
+	SNzbRequestBase* m_messageBase;
 
-	bool				ReceiveRequest(void* buffer, int size);
-	void				SendBoolResponse(bool success, const char* text);
+	bool ReceiveRequest(void* buffer, int size);
+	void SendBoolResponse(bool success, const char* text);
 
 public:
-	virtual				~BinCommand() {}
-	virtual void		Execute() = 0;
-	void				SetConnection(Connection* connection) { m_connection = connection; }
-	void				SetMessageBase(SNzbRequestBase*	messageBase) { m_messageBase = messageBase; }
+	virtual ~BinCommand() {}
+	virtual void Execute() = 0;
+	void SetConnection(Connection* connection) { m_connection = connection; }
+	void SetMessageBase(SNzbRequestBase* messageBase) { m_messageBase = messageBase; }
 };
 
 class DownloadBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ListBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class LogBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class PauseUnpauseBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class EditQueueBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class SetDownloadRateBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class DumpDebugBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ShutdownBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ReloadBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class VersionBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class PostQueueBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class WriteLogBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ScanBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class HistoryBinCommand: public BinCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
-
-class UrlQueueBinCommand: public BinCommand
-{
-public:
-	virtual void		Execute();
-};
-
 
 //*****************************************************************
 // BinProcessor

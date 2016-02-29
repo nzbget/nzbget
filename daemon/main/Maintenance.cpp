@@ -38,21 +38,21 @@ extern char* (*g_Arguments)[];
 class Signature
 {
 private:
-	const char*			m_inFilename;
-	const char*			m_sigFilename;
-	const char*			m_pubKeyFilename;
-	uchar		m_inHash[SHA256_DIGEST_LENGTH];
-	uchar		m_signature[256];
-	RSA*				m_pubKey;
+	const char* m_inFilename;
+	const char* m_sigFilename;
+	const char* m_pubKeyFilename;
+	uchar m_inHash[SHA256_DIGEST_LENGTH];
+	uchar m_signature[256];
+	RSA* m_pubKey;
 
-	bool				ReadSignature();
-	bool				ComputeInHash();
-	bool				ReadPubKey();
+	bool ReadSignature();
+	bool ComputeInHash();
+	bool ReadPubKey();
 
 public:
-						Signature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
-						~Signature();
-	bool				Verify();
+	Signature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
+	~Signature();
+	bool Verify();
 };
 #endif
 

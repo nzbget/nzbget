@@ -63,29 +63,29 @@ class Repairer : public Par2::Par2Repairer
 private:
 	typedef vector<Thread*> Threads;
 
-	Par2::CommandLine		commandLine;
-	ParChecker*		m_owner;
-	Threads			m_threads;
-	bool			m_parallel;
-	Mutex			progresslock;
+	Par2::CommandLine commandLine;
+	ParChecker* m_owner;
+	Threads m_threads;
+	bool m_parallel;
+	Mutex progresslock;
 
-	virtual void	BeginRepair();
-	virtual void	EndRepair();
-	void			RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
+	virtual void BeginRepair();
+	virtual void EndRepair();
+	void RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
 
 protected:
-	virtual void	sig_filename(std::string filename) { m_owner->signal_filename(filename); }
-	virtual void	sig_progress(int progress) { m_owner->signal_progress(progress); }
-	virtual void	sig_done(std::string filename, int available, int total) { m_owner->signal_done(filename, available, total); }
+	virtual void sig_filename(std::string filename) { m_owner->signal_filename(filename); }
+	virtual void sig_progress(int progress) { m_owner->signal_progress(progress); }
+	virtual void sig_done(std::string filename, int available, int total) { m_owner->signal_done(filename, available, total); }
 
-	virtual bool	ScanDataFile(Par2::DiskFile *diskfile, Par2::Par2RepairerSourceFile* &sourcefile,
+	virtual bool ScanDataFile(Par2::DiskFile *diskfile, Par2::Par2RepairerSourceFile* &sourcefile,
 		Par2::MatchType &matchtype, Par2::MD5Hash &hashfull, Par2::MD5Hash &hash16k, Par2::u32 &count);
-	virtual bool	RepairData(Par2::u32 inputindex, size_t blocklength);
+	virtual bool RepairData(Par2::u32 inputindex, size_t blocklength);
 
 public:
-					Repairer(ParChecker* owner) { m_owner = owner; }
-	Par2::Result	PreProcess(const char *parFilename);
-	Par2::Result	Process(bool dorepair);
+	Repairer(ParChecker* owner) { m_owner = owner; }
+	Par2::Result PreProcess(const char *parFilename);
+	Par2::Result Process(bool dorepair);
 
 	friend class ParChecker;
 	friend class RepairThread;
@@ -94,19 +94,19 @@ public:
 class RepairThread : public Thread
 {
 private:
-	Repairer*		m_owner;
-	Par2::u32		m_inputindex;
-	Par2::u32		m_outputindex;
-	size_t			m_blocklength;
-	volatile bool	m_working = false;
+	Repairer* m_owner;
+	Par2::u32 m_inputindex;
+	Par2::u32 m_outputindex;
+	size_t m_blocklength;
+	volatile bool m_working = false;
 
 protected:
-	virtual void	Run();
+	virtual void Run();
 
 public:
-					RepairThread(Repairer* owner) : m_owner(owner) {}
-	void			RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
-	bool			IsWorking() { return m_working; }
+	RepairThread(Repairer* owner) : m_owner(owner) {}
+	void RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
+	bool IsWorking() { return m_working; }
 };
 
 Par2::Result Repairer::PreProcess(const char *parFilename)

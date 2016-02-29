@@ -159,75 +159,75 @@ class NZBGet : public Options::Extender
 {
 private:
 	// globals
-	std::unique_ptr<Log>					m_log;
-	std::unique_ptr<Options>				m_options;
-	std::unique_ptr<ServerPool>				m_serverPool;
-	std::unique_ptr<QueueCoordinator>		m_queueCoordinator;
-	std::unique_ptr<UrlCoordinator>			m_urlCoordinator;
-	std::unique_ptr<StatMeter>				m_statMeter;
-	std::unique_ptr<PrePostProcessor>		m_prePostProcessor;
-	std::unique_ptr<HistoryCoordinator>		m_historyCoordinator;
-	std::unique_ptr<DupeCoordinator>		m_dupeCoordinator;
-	std::unique_ptr<DiskState>				m_diskState;
-	std::unique_ptr<Scanner>				m_scanner;
-	std::unique_ptr<FeedCoordinator>		m_feedCoordinator;
-	std::unique_ptr<Maintenance>			m_maintenance;
-	std::unique_ptr<ArticleCache>			m_articleCache;
-	std::unique_ptr<QueueScriptCoordinator>	m_queueScriptCoordinator;
-	std::unique_ptr<ServiceCoordinator>		m_serviceCoordinator;
-	std::unique_ptr<ScriptConfig>			m_scriptConfig;
+	std::unique_ptr<Log> m_log;
+	std::unique_ptr<Options> m_options;
+	std::unique_ptr<ServerPool> m_serverPool;
+	std::unique_ptr<QueueCoordinator> m_queueCoordinator;
+	std::unique_ptr<UrlCoordinator> m_urlCoordinator;
+	std::unique_ptr<StatMeter> m_statMeter;
+	std::unique_ptr<PrePostProcessor> m_prePostProcessor;
+	std::unique_ptr<HistoryCoordinator> m_historyCoordinator;
+	std::unique_ptr<DupeCoordinator> m_dupeCoordinator;
+	std::unique_ptr<DiskState> m_diskState;
+	std::unique_ptr<Scanner> m_scanner;
+	std::unique_ptr<FeedCoordinator> m_feedCoordinator;
+	std::unique_ptr<Maintenance> m_maintenance;
+	std::unique_ptr<ArticleCache> m_articleCache;
+	std::unique_ptr<QueueScriptCoordinator> m_queueScriptCoordinator;
+	std::unique_ptr<ServiceCoordinator> m_serviceCoordinator;
+	std::unique_ptr<ScriptConfig> m_scriptConfig;
 #ifdef WIN32
-	std::unique_ptr<WinConsole>				m_winConsole;
+	std::unique_ptr<WinConsole> m_winConsole;
 #endif
 
 	// non-globals
-	std::unique_ptr<Thread>					m_frontend;
-	std::unique_ptr<RemoteServer>			m_remoteServer;
-	std::unique_ptr<RemoteServer>			m_remoteSecureServer;
-	std::unique_ptr<DiskService>			m_diskService;
-	std::unique_ptr<Scheduler>				m_scheduler;
-	std::unique_ptr<CommandLineParser>		m_commandLineParser;
+	std::unique_ptr<Thread> m_frontend;
+	std::unique_ptr<RemoteServer> m_remoteServer;
+	std::unique_ptr<RemoteServer> m_remoteSecureServer;
+	std::unique_ptr<DiskService> m_diskService;
+	std::unique_ptr<Scheduler> m_scheduler;
+	std::unique_ptr<CommandLineParser> m_commandLineParser;
 
 	// Options::Extender
-	virtual void		AddNewsServer(int id, bool active, const char* name, const char* host,
+	virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
 		int port, const char* user, const char* pass, bool joinGroup,
 		bool tls, const char* cipher, int maxConnections, int retention,
 		int level, int group);
-	virtual void		AddFeed(int id, const char* name, const char* url, int interval,
+	virtual void AddFeed(int id, const char* name, const char* url, int interval,
 		const char* filter, bool backlog, bool pauseNzb, const char* category,
 		int priority, const char* feedScript);
-	virtual void		AddTask(int id, int hours, int minutes, int weekDaysBits,
+	virtual void AddTask(int id, int hours, int minutes, int weekDaysBits,
 		Options::ESchedulerCommand command, const char* param);
 #ifdef WIN32
-	virtual void		SetupFirstStart();
+	virtual void SetupFirstStart();
 #endif
 
-	bool				m_reloading = false;
+	bool m_reloading = false;
 
-	void				Init();
-	void				BootConfig();
-	void				CreateGlobals();
-	void				Cleanup();
-	void				PrintOptions();
-	bool				ProcessDirect();
-	void				ProcessClientRequest();
-	void				ProcessWebGet();
-	void				ProcessSigVerify();
-	void				StartRemoteServer();
-	void				StopRemoteServer();
-	void				StartFrontend();
-	void				StopFrontend();
-	void				ProcessStandalone();
-	void				DoMainLoop();
+	void Init();
+	void BootConfig();
+	void CreateGlobals();
+	void Cleanup();
+	void PrintOptions();
+	bool ProcessDirect();
+	void ProcessClientRequest();
+	void ProcessWebGet();
+	void ProcessSigVerify();
+	void StartRemoteServer();
+	void StopRemoteServer();
+	void StartFrontend();
+	void StopFrontend();
+	void ProcessStandalone();
+	void DoMainLoop();
 #ifndef WIN32
-	void				Daemonize();
+	void Daemonize();
 #endif
 
 public:
-						~NZBGet();
-	void				Run(bool reload);
-	void				Stop(bool reload);
-	bool				GetReloading() { return m_reloading; }
+	~NZBGet();
+	void Run(bool reload);
+	void Stop(bool reload);
+	bool GetReloading() { return m_reloading; }
 };
 
 std::unique_ptr<NZBGet> g_NZBGet;

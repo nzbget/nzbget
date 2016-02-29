@@ -58,18 +58,18 @@ public:
 	};
 
 private:
-	NzbList*				m_nzbList;
-	QueueEditor::ItemList*	m_sortItemList;
-	ESortCriteria			m_sortCriteria;
-	ESortOrder				m_sortOrder;
+	NzbList* m_nzbList;
+	QueueEditor::ItemList* m_sortItemList;
+	ESortCriteria m_sortCriteria;
+	ESortOrder m_sortOrder;
 
-	void					AlignSelectedGroups();
+	void AlignSelectedGroups();
 
 public:
-							GroupSorter(NzbList* nzbList, QueueEditor::ItemList* sortItemList) :
-								m_nzbList(nzbList), m_sortItemList(sortItemList) {}
-	bool					Execute(const char* sort);
-	bool					operator()(NzbInfo* nzbInfo1, NzbInfo* nzbInfo2) const;
+	GroupSorter(NzbList* nzbList, QueueEditor::ItemList* sortItemList) :
+		m_nzbList(nzbList), m_sortItemList(sortItemList) {}
+	bool Execute(const char* sort);
+	bool operator()(NzbInfo* nzbInfo1, NzbInfo* nzbInfo2) const;
 };
 
 bool GroupSorter::Execute(const char* sort)

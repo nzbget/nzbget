@@ -37,33 +37,33 @@ static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "URL_COMPLETED", "
 class QueueScriptController : public Thread, public NzbScriptController
 {
 private:
-	CString				m_nzbName;
-	CString				m_nzbFilename;
-	CString				m_url;
-	CString				m_category;
-	CString				m_destDir;
-	int					m_id;
-	int					m_priority;
-	CString				m_dupeKey;
-	EDupeMode			m_dupeMode;
-	int					m_dupeScore;
-	NzbParameterList	m_parameters;
-	int					m_prefixLen;
-	ScriptConfig::Script*	m_script;
-	QueueScriptCoordinator::EEvent	m_event;
-	bool				m_markBad;
+	CString m_nzbName;
+	CString m_nzbFilename;
+	CString m_url;
+	CString m_category;
+	CString m_destDir;
+	int m_id;
+	int m_priority;
+	CString m_dupeKey;
+	EDupeMode m_dupeMode;
+	int m_dupeScore;
+	NzbParameterList m_parameters;
+	int m_prefixLen;
+	ScriptConfig::Script* m_script;
+	QueueScriptCoordinator::EEvent m_event;
+	bool m_markBad;
 	NzbInfo::EDeleteStatus m_deleteStatus;
-	NzbInfo::EUrlStatus	m_urlStatus;
+	NzbInfo::EUrlStatus m_urlStatus;
 
-	void				PrepareParams(const char* scriptName);
+	void PrepareParams(const char* scriptName);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* script);
-	virtual void		AddMessage(Message::EKind kind, const char* text);
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
 public:
-	virtual void		Run();
-	static void			StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* script, QueueScriptCoordinator::EEvent event);
+	virtual void Run();
+	static void StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* script, QueueScriptCoordinator::EEvent event);
 };
 
 

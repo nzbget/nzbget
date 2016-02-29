@@ -86,23 +86,23 @@ class DirBrowser
 {
 private:
 #ifdef WIN32
-	WIN32_FIND_DATAW	m_findData;
-	HANDLE				m_file;
-	bool				m_first;
-	CString				m_filename;
+	WIN32_FIND_DATAW m_findData;
+	HANDLE m_file;
+	bool m_first;
+	CString m_filename;
 #else
-	DIR*				m_dir = nullptr;
-	struct dirent*		m_findData;
+	DIR* m_dir = nullptr;
+	struct dirent* m_findData;
 #endif
 
 #ifdef DIRBROWSER_SNAPSHOT
-	bool				m_snapshot;
-	typedef std::deque<CString>	FileList;
-	FileList			m_snapshotFiles;
-	FileList::iterator	m_snapshotIter;
+	bool m_snapshot;
+	typedef std::deque<CString> FileList;
+	FileList m_snapshotFiles;
+	FileList::iterator m_snapshotIter;
 #endif
 
-	const char*			InternNext();
+	const char* InternNext();
 public:
 #ifdef DIRBROWSER_SNAPSHOT
 	DirBrowser(const char* path, bool snapshot = true);
@@ -110,7 +110,7 @@ public:
 	DirBrowser(const char* path);
 #endif
 	~DirBrowser();
-	const char*			Next();
+	const char* Next();
 };
 
 class DiskFile
@@ -118,10 +118,10 @@ class DiskFile
 public:
 	enum EOpenMode
 	{
-		omRead,			// file must exist
-		omReadWrite,	// file must exist
-		omWrite,		// create new or overwrite existing
-		omAppend		// create new or append to existing
+		omRead, // file must exist
+		omReadWrite, // file must exist
+		omWrite, // create new or overwrite existing
+		omAppend // create new or append to existing
 	};
 
 	enum ESeekOrigin
@@ -132,24 +132,24 @@ public:
 	};
 
 private:
-	FILE*				m_file = nullptr;
+	FILE* m_file = nullptr;
 
 public:
-						~DiskFile();
-	bool				Open(const char* filename, EOpenMode mode);
-	bool				Close();
-	bool				Active() { return m_file != nullptr; }
-	int64				Read(void* buffer, int64 size);
-	int64				Write(const void* buffer, int64 size);
-	int64				Position();
-	int64				Seek(int64 position, ESeekOrigin origin = soSet);
-	bool				Eof();
-	bool				Error();
-	int64				Print(const char* format, ...) PRINTF_SYNTAX(2);
-	char*				ReadLine(char* buffer, int64 size);
-	bool				SetWriteBuffer(int size);
-	bool				Flush();
-	bool				Sync(CString& errmsg);
+	~DiskFile();
+	bool Open(const char* filename, EOpenMode mode);
+	bool Close();
+	bool Active() { return m_file != nullptr; }
+	int64 Read(void* buffer, int64 size);
+	int64 Write(const void* buffer, int64 size);
+	int64 Position();
+	int64 Seek(int64 position, ESeekOrigin origin = soSet);
+	bool Eof();
+	bool Error();
+	int64 Print(const char* format, ...) PRINTF_SYNTAX(2);
+	char* ReadLine(char* buffer, int64 size);
+	bool SetWriteBuffer(int size);
+	bool Flush();
+	bool Sync(CString& errmsg);
 };
 
 #endif

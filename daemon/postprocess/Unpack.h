@@ -40,74 +40,74 @@ private:
 		upSevenZip
 	};
 
-	typedef std::vector<CString>		FileListBase;
+	typedef std::vector<CString> FileListBase;
 	class FileList : public FileListBase
 	{
 	public:
-		bool			Exists(const char* filename);
+		bool Exists(const char* filename);
 	};
 
-	typedef std::vector<CString>		ParamListBase;
+	typedef std::vector<CString> ParamListBase;
 	class ParamList : public ParamListBase
 	{
 	public:
-		bool			Exists(const char* param);
+		bool Exists(const char* param);
 	};
 
 private:
-	PostInfo*			m_postInfo;
-	CString				m_name;
-	CString				m_infoName;
-	CString				m_infoNameUp;
-	CString				m_destDir;
-	CString				m_finalDir;
-	CString				m_unpackDir;
-	CString				m_password;
-	bool				m_interDir;
-	bool				m_allOkMessageReceived;
-	bool				m_noFilesMessageReceived;
-	bool				m_hasParFiles;
-	bool				m_hasRarFiles;
-	bool				m_hasNonStdRarFiles;
-	bool				m_hasSevenZipFiles;
-	bool				m_hasSevenZipMultiFiles;
-	bool				m_hasSplittedFiles;
-	bool				m_unpackOk;
-	bool				m_unpackStartError;
-	bool				m_unpackSpaceError;
-	bool				m_unpackDecryptError;
-	bool				m_unpackPasswordError;
-	bool				m_cleanedUpDisk;
-	bool				m_autoTerminated;
-	EUnpacker			m_unpacker;
-	bool				m_finalDirCreated;
-	FileList			m_joinedFiles;
-	bool				m_passListTried;
+	PostInfo* m_postInfo;
+	CString m_name;
+	CString m_infoName;
+	CString m_infoNameUp;
+	CString m_destDir;
+	CString m_finalDir;
+	CString m_unpackDir;
+	CString m_password;
+	bool m_interDir;
+	bool m_allOkMessageReceived;
+	bool m_noFilesMessageReceived;
+	bool m_hasParFiles;
+	bool m_hasRarFiles;
+	bool m_hasNonStdRarFiles;
+	bool m_hasSevenZipFiles;
+	bool m_hasSevenZipMultiFiles;
+	bool m_hasSplittedFiles;
+	bool m_unpackOk;
+	bool m_unpackStartError;
+	bool m_unpackSpaceError;
+	bool m_unpackDecryptError;
+	bool m_unpackPasswordError;
+	bool m_cleanedUpDisk;
+	bool m_autoTerminated;
+	EUnpacker m_unpacker;
+	bool m_finalDirCreated;
+	FileList m_joinedFiles;
+	bool m_passListTried;
 
 protected:
-	virtual bool		ReadLine(char* buf, int bufSize, FILE* stream);
-	virtual void		AddMessage(Message::EKind kind, const char* text);
-	void				ExecuteUnpack(EUnpacker unpacker, const char* password, bool multiVolumes);
-	void				ExecuteUnrar(const char* password);
-	void				ExecuteSevenZip(const char* password, bool multiVolumes);
-	void				UnpackArchives(EUnpacker unpacker, bool multiVolumes);
-	void				JoinSplittedFiles();
-	bool				JoinFile(const char* fragBaseName);
-	void				Completed();
-	void				CreateUnpackDir();
-	bool				Cleanup();
-	void				CheckArchiveFiles(bool scanNonStdFiles);
-	void				SetProgressLabel(const char* progressLabel);
+	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+	void ExecuteUnpack(EUnpacker unpacker, const char* password, bool multiVolumes);
+	void ExecuteUnrar(const char* password);
+	void ExecuteSevenZip(const char* password, bool multiVolumes);
+	void UnpackArchives(EUnpacker unpacker, bool multiVolumes);
+	void JoinSplittedFiles();
+	bool JoinFile(const char* fragBaseName);
+	void Completed();
+	void CreateUnpackDir();
+	bool Cleanup();
+	void CheckArchiveFiles(bool scanNonStdFiles);
+	void SetProgressLabel(const char* progressLabel);
 #ifndef DISABLE_PARCHECK
-	void				RequestParCheck(bool forceRepair);
+	void RequestParCheck(bool forceRepair);
 #endif
-	bool				FileHasRarSignature(const char* filename);
-	bool				PrepareCmdParams(const char* command, ParamList* params, const char* infoName);
+	bool FileHasRarSignature(const char* filename);
+	bool PrepareCmdParams(const char* command, ParamList* params, const char* infoName);
 
 public:
-	virtual void		Run();
-	virtual void		Stop();
-	static void			StartJob(PostInfo* postInfo);
+	virtual void Run();
+	virtual void Stop();
+	static void StartJob(PostInfo* postInfo);
 };
 
 #endif

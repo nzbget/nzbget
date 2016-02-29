@@ -36,47 +36,47 @@
 class Frontend : public Thread
 {
 private:
-	MessageList			m_remoteMessages;
+	MessageList m_remoteMessages;
 
-	bool				RequestMessages();
-	bool				RequestFileList();
+	bool RequestMessages();
+	bool RequestFileList();
 
 protected:
-	bool				m_summary = false;
-	bool				m_fileList = false;
-	uint32				m_neededLogEntries = 0;
-	uint32				m_neededLogFirstId = 0;
-	int					m_updateInterval;
+	bool m_summary = false;
+	bool m_fileList = false;
+	uint32 m_neededLogEntries = 0;
+	uint32 m_neededLogFirstId = 0;
+	int m_updateInterval;
 
 	// summary
-	int					m_currentDownloadSpeed = 0;
-	int64 				m_remainingSize = 0;
-	bool				m_pauseDownload = false;
-	int					m_downloadLimit = 0;
-	int					m_threadCount = 0;
-	int					m_postJobCount = 0;
-	int					m_upTimeSec = 0;
-	int					m_dnTimeSec = 0;
-	int64				m_allBytes = 0;
-	bool				m_standBy = false;
+	int m_currentDownloadSpeed = 0;
+	int64 m_remainingSize = 0;
+	bool m_pauseDownload = false;
+	int m_downloadLimit = 0;
+	int m_threadCount = 0;
+	int m_postJobCount = 0;
+	int m_upTimeSec = 0;
+	int m_dnTimeSec = 0;
+	int64 m_allBytes = 0;
+	bool m_standBy = false;
 
-	bool				PrepareData();
-	void				FreeData();
-	MessageList*		LockMessages();
-	void				UnlockMessages();
-	DownloadQueue*		LockQueue();
-	void				UnlockQueue();
-	bool				IsRemoteMode();
-	void				InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
-	void				ServerPauseUnpause(bool pause);
-	bool				RequestPauseUnpause(bool pause);
-	void				ServerSetDownloadRate(int rate);
-	bool				RequestSetDownloadRate(int rate);
-	bool 				ServerEditQueue(DownloadQueue::EEditAction action, int offset, int entry);
-	bool 				RequestEditQueue(DownloadQueue::EEditAction action, int offset, int id);
+	bool PrepareData();
+	void FreeData();
+	MessageList* LockMessages();
+	void UnlockMessages();
+	DownloadQueue* LockQueue();
+	void UnlockQueue();
+	bool IsRemoteMode();
+	void InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
+	void ServerPauseUnpause(bool pause);
+	bool RequestPauseUnpause(bool pause);
+	void ServerSetDownloadRate(int rate);
+	bool RequestSetDownloadRate(int rate);
+	bool ServerEditQueue(DownloadQueue::EEditAction action, int offset, int entry);
+	bool RequestEditQueue(DownloadQueue::EEditAction action, int offset, int id);
 
 public:
-						Frontend();
+	Frontend();
 };
 
 #endif

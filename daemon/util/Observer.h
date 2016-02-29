@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,18 +32,18 @@ class Observer;
 class Subject
 {
 private:
-	std::vector<Observer*> 	m_observers;
+	std::vector<Observer*> m_observers;
 
 public:
-	void 			Attach(Observer* observer);
-	void 			Detach(Observer* observer);
-	void 			Notify(void* aspect);
+	void Attach(Observer* observer);
+	void Detach(Observer* observer);
+	void Notify(void* aspect);
 };
 
 class Observer
 {
 protected:
-	virtual void	Update(Subject* caller, void* aspect) = 0;
+	virtual void Update(Subject* caller, void* aspect) = 0;
 	friend class Subject;
 };
 

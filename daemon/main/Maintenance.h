@@ -36,14 +36,14 @@ class UpdateScriptController;
 class Maintenance
 {
 private:
-	MessageList			m_messages;
-	Mutex				m_logMutex;
-	Mutex				m_controllerMutex;
-	int					m_idMessageGen = 0;
-	UpdateScriptController*	m_updateScriptController = nullptr;
-	CString				m_updateScript;
+	MessageList m_messages;
+	Mutex m_logMutex;
+	Mutex m_controllerMutex;
+	int m_idMessageGen = 0;
+	UpdateScriptController* m_updateScriptController = nullptr;
+	CString m_updateScript;
 
-	bool				ReadPackageInfoStr(const char* key, CString& value);
+	bool ReadPackageInfoStr(const char* key, CString& value);
 
 public:
 	enum EBranch
@@ -53,14 +53,14 @@ public:
 		brDevel
 	};
 
-						~Maintenance();
-	void				AddMessage(Message::EKind kind, time_t time, const char* text);
-	MessageList*		LockMessages();
-	void				UnlockMessages();
-	bool				StartUpdate(EBranch branch);
-	void				ResetUpdateController();
-	bool				CheckUpdates(CString& updateInfo);
-	static bool			VerifySignature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
+	~Maintenance();
+	void AddMessage(Message::EKind kind, time_t time, const char* text);
+	MessageList* LockMessages();
+	void UnlockMessages();
+	bool StartUpdate(EBranch branch);
+	void ResetUpdateController();
+	bool CheckUpdates(CString& updateInfo);
+	static bool VerifySignature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
 };
 
 extern Maintenance* g_Maintenance;
@@ -68,28 +68,28 @@ extern Maintenance* g_Maintenance;
 class UpdateScriptController : public Thread, public ScriptController
 {
 private:
-	Maintenance::EBranch	m_branch;
-	int						m_prefixLen;
+	Maintenance::EBranch m_branch;
+	int m_prefixLen;
 
 protected:
-	virtual void		AddMessage(Message::EKind kind, const char* text);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
 public:
-	virtual void		Run();
-	void				SetBranch(Maintenance::EBranch branch) { m_branch = branch; }
+	virtual void Run();
+	void SetBranch(Maintenance::EBranch branch) { m_branch = branch; }
 };
 
 class UpdateInfoScriptController : public ScriptController
 {
 private:
-	int					m_prefixLen;
-	StringBuilder		m_updateInfo;
+	int m_prefixLen;
+	StringBuilder m_updateInfo;
 
 protected:
-	virtual void		AddMessage(Message::EKind kind, const char* text);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
 public:
-	static void			ExecuteScript(const char* script, CString& updateInfo);
+	static void ExecuteScript(const char* script, CString& updateInfo);
 };
 
 #endif

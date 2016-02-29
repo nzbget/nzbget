@@ -39,62 +39,62 @@
 class QueueCoordinator : public Thread, public Observer, public Debuggable
 {
 public:
-	typedef std::list<ArticleDownloader*>	ActiveDownloads;
+	typedef std::list<ArticleDownloader*> ActiveDownloads;
 
 private:
 	class CoordinatorDownloadQueue : public DownloadQueue
 	{
 	private:
-		QueueCoordinator*	m_owner;
-		bool				m_massEdit;
-		bool				m_wantSave;
+		QueueCoordinator* m_owner;
+		bool m_massEdit;
+		bool m_wantSave;
 		friend class QueueCoordinator;
 	public:
-							CoordinatorDownloadQueue(): m_massEdit(false), m_wantSave(false) {}
-		virtual bool		EditEntry(int ID, EEditAction action, int offset, const char* text);
-		virtual bool		EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text);
-		virtual void		Save();
+		CoordinatorDownloadQueue(): m_massEdit(false), m_wantSave(false) {}
+		virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text);
+		virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text);
+		virtual void Save();
 	};
 
 private:
-	CoordinatorDownloadQueue	m_downloadQueue;
-	ActiveDownloads				m_activeDownloads;
-	QueueEditor					m_queueEditor;
-	bool						m_hasMoreJobs = true;
-	int							m_downloadsLimit;
-	int							m_serverConfigGeneration = 0;
+	CoordinatorDownloadQueue m_downloadQueue;
+	ActiveDownloads m_activeDownloads;
+	QueueEditor m_queueEditor;
+	bool m_hasMoreJobs = true;
+	int m_downloadsLimit;
+	int m_serverConfigGeneration = 0;
 
-	bool					GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
-	void					StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);
-	void					ArticleCompleted(ArticleDownloader* articleDownloader);
-	void					DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
-	void					StatFileInfo(FileInfo* fileInfo, bool completed);
-	void					CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
-	void					ResetHangingDownloads();
-	void					AdjustDownloadsLimit();
-	void					Load();
-	void					SavePartialState();
+	bool GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
+	void StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);
+	void ArticleCompleted(ArticleDownloader* articleDownloader);
+	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
+	void StatFileInfo(FileInfo* fileInfo, bool completed);
+	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
+	void ResetHangingDownloads();
+	void AdjustDownloadsLimit();
+	void Load();
+	void SavePartialState();
 
 protected:
-	virtual void			LogDebugInfo();
+	virtual void LogDebugInfo();
 
 public:
-							QueueCoordinator();
-	virtual					~QueueCoordinator();
-	virtual void			Run();
-	virtual void 			Stop();
-	void					Update(Subject* Caller, void* Aspect);
+	QueueCoordinator();
+	virtual ~QueueCoordinator();
+	virtual void Run();
+	virtual void Stop();
+	void Update(Subject* Caller, void* Aspect);
 
 	// editing queue
-	void					AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, bool addFirst);
-	void					CheckDupeFileInfos(NzbInfo* nzbInfo);
-	bool					HasMoreJobs() { return m_hasMoreJobs; }
-	void					DiscardDiskFile(FileInfo* fileInfo);
-	bool					DeleteQueueEntry(DownloadQueue* downloadQueue, FileInfo* fileInfo);
-	bool					SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* category);
-	bool					SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* name);
-	bool					MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* destNzbInfo, NzbInfo* srcNzbInfo);
-	bool					SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NzbInfo** newNzbInfo);
+	void AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, bool addFirst);
+	void CheckDupeFileInfos(NzbInfo* nzbInfo);
+	bool HasMoreJobs() { return m_hasMoreJobs; }
+	void DiscardDiskFile(FileInfo* fileInfo);
+	bool DeleteQueueEntry(DownloadQueue* downloadQueue, FileInfo* fileInfo);
+	bool SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* category);
+	bool SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* name);
+	bool MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* destNzbInfo, NzbInfo* srcNzbInfo);
+	bool SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NzbInfo** newNzbInfo);
 };
 
 extern QueueCoordinator* g_QueueCoordinator;

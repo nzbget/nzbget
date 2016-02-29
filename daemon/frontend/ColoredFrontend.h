@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,18 +33,18 @@
 class ColoredFrontend : public LoggableFrontend
 {
 private:
-	bool			m_needGoBack = false;
+	bool m_needGoBack = false;
 
 #ifdef WIN32
-	HANDLE			m_console;
+	HANDLE m_console;
 #endif
 
 protected:
-	virtual void 	BeforePrint();
-	virtual void	PrintMessage(Message& message);
-	virtual void 	PrintStatus();
-	virtual void 	PrintSkip();
-	virtual void	BeforeExit();
+	virtual void BeforePrint();
+	virtual void PrintMessage(Message& message);
+	virtual void PrintStatus();
+	virtual void PrintSkip();
+	virtual void BeforeExit();
 
 public:
 	ColoredFrontend();

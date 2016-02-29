@@ -32,52 +32,52 @@
 class NewsServer
 {
 private:
-	int				m_id;
-	int				m_stateId = 0;
-	bool			m_active;
-	CString			m_name;
-	int				m_group;
-	CString			m_host;
-	int				m_port;
-	CString			m_user;
-	CString			m_password;
-	int				m_maxConnections;
-	int				m_level;
-	int				m_normLevel;
-	bool			m_joinGroup;
-	bool			m_tls;
-	CString			m_cipher;
-	int				m_retention;
-	time_t			m_blockTime = 0;
+	int m_id;
+	int m_stateId = 0;
+	bool m_active;
+	CString m_name;
+	int m_group;
+	CString m_host;
+	int m_port;
+	CString m_user;
+	CString m_password;
+	int m_maxConnections;
+	int m_level;
+	int m_normLevel;
+	bool m_joinGroup;
+	bool m_tls;
+	CString m_cipher;
+	int m_retention;
+	time_t m_blockTime = 0;
 
 public:
-					NewsServer(int id, bool active, const char* name, const char* host, int port,
-						const char* user, const char* pass, bool joinGroup,
-						bool tls, const char* cipher, int maxConnections, int retention,
-						int level, int group);
-	int				GetId() { return m_id; }
-	int				GetStateId() { return m_stateId; }
-	void			SetStateId(int stateId) { m_stateId = stateId; }
-	bool			GetActive() { return m_active; }
-	void			SetActive(bool active) { m_active = active; }
-	const char*		GetName() { return m_name; }
-	int				GetGroup() { return m_group; }
-	const char*		GetHost() { return m_host; }
-	int				GetPort() { return m_port; }
-	const char*		GetUser() { return m_user; }
-	const char*		GetPassword() { return m_password; }
-	int				GetMaxConnections() { return m_maxConnections; }
-	int				GetLevel() { return m_level; }
-	int				GetNormLevel() { return m_normLevel; }
-	void			SetNormLevel(int level) { m_normLevel = level; }
-	int				GetJoinGroup() { return m_joinGroup; }
-	bool			GetTls() { return m_tls; }
-	const char*		GetCipher() { return m_cipher; }
-	int				GetRetention() { return m_retention; }
-	time_t			GetBlockTime() { return m_blockTime; }
-	void			SetBlockTime(time_t blockTime) { m_blockTime = blockTime; }
+	NewsServer(int id, bool active, const char* name, const char* host, int port,
+		const char* user, const char* pass, bool joinGroup,
+		bool tls, const char* cipher, int maxConnections, int retention,
+		int level, int group);
+	int GetId() { return m_id; }
+	int GetStateId() { return m_stateId; }
+	void SetStateId(int stateId) { m_stateId = stateId; }
+	bool GetActive() { return m_active; }
+	void SetActive(bool active) { m_active = active; }
+	const char* GetName() { return m_name; }
+	int GetGroup() { return m_group; }
+	const char* GetHost() { return m_host; }
+	int GetPort() { return m_port; }
+	const char* GetUser() { return m_user; }
+	const char* GetPassword() { return m_password; }
+	int GetMaxConnections() { return m_maxConnections; }
+	int GetLevel() { return m_level; }
+	int GetNormLevel() { return m_normLevel; }
+	void SetNormLevel(int level) { m_normLevel = level; }
+	int GetJoinGroup() { return m_joinGroup; }
+	bool GetTls() { return m_tls; }
+	const char* GetCipher() { return m_cipher; }
+	int GetRetention() { return m_retention; }
+	time_t GetBlockTime() { return m_blockTime; }
+	void SetBlockTime(time_t blockTime) { m_blockTime = blockTime; }
 };
 
-typedef std::vector<NewsServer*>		Servers;
+typedef std::vector<NewsServer*> Servers;
 
 #endif

@@ -41,10 +41,10 @@ public:
 	static int64 GetCurrentTicks();
 
 	/*
-	 * Split command line into arguments.
-	 * Uses spaces and single quotation marks as separators.
-	 * May return empty list if bad escaping was detected.
-	 */
+	* Split command line into arguments.
+	* Uses spaces and single quotation marks as separators.
+	* May return empty list if bad escaping was detected.
+	*/
 	static std::vector<CString> SplitCommandLine(const char* commandLine);
 
 	static int64 JoinInt64(uint32 Hi, uint32 Lo);
@@ -79,9 +79,9 @@ public:
 	static CString FormatSize(int64 fileSize);
 
 	/*
-	 * Returns program version and revision number as string formatted like "0.7.0-r295".
-	 * If revision number is not available only version is returned ("0.7.0").
-	 */
+	* Returns program version and revision number as string formatted like "0.7.0-r295".
+	* If revision number is not available only version is returned ("0.7.0").
+	*/
 	static const char* VersionRevision() { return VersionRevisionBuf; };
 
 	static char VersionRevisionBuf[100];
@@ -93,8 +93,8 @@ public:
 	static uint32 Crc32Combine(uint32 crc1, uint32 crc2, uint32 len2);
 
 	/*
-	 * Returns number of available CPU cores or -1 if it could not be determined
-	 */
+	* Returns number of available CPU cores or -1 if it could not be determined
+	*/
 	static int NumberOfCpuCores();
 };
 
@@ -104,82 +104,82 @@ public:
 	static uint32 DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer);
 
 	/*
-	 * Encodes string to be used as content of xml-tag.
-	 */
+	* Encodes string to be used as content of xml-tag.
+	*/
 	static CString XmlEncode(const char* raw);
 
 	/*
-	 * Decodes string from xml.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
+	* Decodes string from xml.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
 	static void XmlDecode(char* raw);
 
 	/*
-	 * Returns pointer to tag-content and length of content in iValueLength
-	 * The returned pointer points to the part of source-string, no additional strings are allocated.
-	 */
+	* Returns pointer to tag-content and length of content in iValueLength
+	* The returned pointer points to the part of source-string, no additional strings are allocated.
+	*/
 	static const char* XmlFindTag(const char* xml, const char* tag, int* valueLength);
 
 	/*
-	 * Parses tag-content into szValueBuf.
-	 */
+	* Parses tag-content into szValueBuf.
+	*/
 	static bool XmlParseTagValue(const char* xml, const char* tag, char* valueBuf, int valueBufSize, const char** tagEnd);
 
 	/*
-	 * Replaces all tags with spaces effectively providing the text content only.
-	 * The string is transformed in-place overwriting the previous content.
-	 */
+	* Replaces all tags with spaces effectively providing the text content only.
+	* The string is transformed in-place overwriting the previous content.
+	*/
 	static void XmlStripTags(char* xml);
 
 	/*
-	 * Replaces all entities with spaces.
-	 * The string is transformed in-place overwriting the previous content.
-	 */
+	* Replaces all entities with spaces.
+	* The string is transformed in-place overwriting the previous content.
+	*/
 	static void XmlRemoveEntities(char* raw);
 
 	/*
-	 * Creates JSON-string by replace the certain characters with escape-sequences.
-	 */
+	* Creates JSON-string by replace the certain characters with escape-sequences.
+	*/
 	static CString JsonEncode(const char* raw);
 
 	/*
-	 * Decodes JSON-string.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
+	* Decodes JSON-string.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
 	static void JsonDecode(char* raw);
 
 	/*
-	 * Returns pointer to field-content and length of content in iValueLength
-	 * The returned pointer points to the part of source-string, no additional strings are allocated.
-	 */
+	* Returns pointer to field-content and length of content in iValueLength
+	* The returned pointer points to the part of source-string, no additional strings are allocated.
+	*/
 	static const char* JsonFindField(const char* jsonText, const char* fieldName, int* valueLength);
 
 	/*
-	 * Returns pointer to field-content and length of content in iValueLength
-	 * The returned pointer points to the part of source-string, no additional strings are allocated.
-	 */
+	* Returns pointer to field-content and length of content in iValueLength
+	* The returned pointer points to the part of source-string, no additional strings are allocated.
+	*/
 	static const char* JsonNextValue(const char* jsonText, int* valueLength);
 
 	/*
-	 * Unquote http quoted string.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
+	* Unquote http quoted string.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
 	static void HttpUnquote(char* raw);
 
 	/*
-	 * Decodes URL-string.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
+	* Decodes URL-string.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
 	static void UrlDecode(char* raw);
 
 	/*
-	 * Makes valid URL by replacing of spaces with "%20".
-	 */
+	* Makes valid URL by replacing of spaces with "%20".
+	*/
 	static CString UrlEncode(const char* raw);
 
 	/*
-	 * Converts ISO-8859-1 (aka Latin-1) into UTF-8.
-	 */
+	* Converts ISO-8859-1 (aka Latin-1) into UTF-8.
+	*/
 	static CString Latin1ToUtf8(const char* str);
 
 	static time_t ParseRfc822DateTime(const char* dateTimeStr);
@@ -188,49 +188,49 @@ public:
 class URL
 {
 private:
-	CString				m_address;
-	CString				m_protocol;
-	CString				m_user;
-	CString				m_password;
-	CString				m_host;
-	CString				m_resource;
-	int					m_port = 0;
-	bool				m_tls = false;
-	bool				m_valid = false;
+	CString m_address;
+	CString m_protocol;
+	CString m_user;
+	CString m_password;
+	CString m_host;
+	CString m_resource;
+	int m_port = 0;
+	bool m_tls = false;
+	bool m_valid = false;
 
-	void				ParseUrl();
+	void ParseUrl();
 
 public:
-	 					URL(const char* address);
-	bool				IsValid() { return m_valid; }
-	const char*			GetAddress() { return m_address; }
-	const char*			GetProtocol() { return m_protocol; }
-	const char*			GetUser() { return m_user; }
-	const char*			GetPassword() { return m_password; }
-	const char*			GetHost() { return m_host; }
-	const char*			GetResource() { return m_resource; }
-	int					GetPort() { return m_port; }
-	bool				GetTls() { return m_tls; }
+	URL(const char* address);
+	bool IsValid() { return m_valid; }
+	const char* GetAddress() { return m_address; }
+	const char* GetProtocol() { return m_protocol; }
+	const char* GetUser() { return m_user; }
+	const char* GetPassword() { return m_password; }
+	const char* GetHost() { return m_host; }
+	const char* GetResource() { return m_resource; }
+	int GetPort() { return m_port; }
+	bool GetTls() { return m_tls; }
 };
 
 class RegEx
 {
 private:
 #ifdef HAVE_REGEX_H
-	regex_t				m_context;
-	std::unique_ptr<regmatch_t[]>	m_matches;
+	regex_t m_context;
+	std::unique_ptr<regmatch_t[]> m_matches;
 #endif
-	bool				m_valid;
-	int					m_matchBufSize;
+	bool m_valid;
+	int m_matchBufSize;
 
 public:
-						RegEx(const char *pattern, int matchBufSize = 100);
-						~RegEx();
-	bool				IsValid() { return m_valid; }
-	bool				Match(const char* str);
-	int					GetMatchCount();
-	int					GetMatchStart(int index);
-	int					GetMatchLen(int index);
+	RegEx(const char *pattern, int matchBufSize = 100);
+	~RegEx();
+	bool IsValid() { return m_valid; }
+	bool Match(const char* str);
+	int GetMatchCount();
+	int GetMatchStart(int index);
+	int GetMatchLen(int index);
 };
 
 class WildMask
@@ -238,21 +238,21 @@ class WildMask
 private:
 	typedef std::vector<int> IntList;
 
-	CString				m_pattern;
-	bool				m_wantsPositions;
-	int					m_wildCount;
-	IntList				m_wildStart;
-	IntList				m_wildLen;
+	CString m_pattern;
+	bool m_wantsPositions;
+	int m_wildCount;
+	IntList m_wildStart;
+	IntList m_wildLen;
 
-	void				ExpandArray();
+	void ExpandArray();
 
 public:
-						WildMask(const char* pattern, bool wantsPositions = false):
-							m_pattern(pattern), m_wantsPositions(wantsPositions) {}
-	bool				Match(const char* text);
-	int					GetMatchCount() { return m_wildCount; }
-	int					GetMatchStart(int index) { return m_wildStart[index]; }
-	int					GetMatchLen(int index) { return m_wildLen[index]; }
+	WildMask(const char* pattern, bool wantsPositions = false):
+		m_pattern(pattern), m_wantsPositions(wantsPositions) {}
+	bool Match(const char* text);
+	int GetMatchCount() { return m_wildCount; }
+	int GetMatchStart(int index) { return m_wildStart[index]; }
+	int GetMatchLen(int index) { return m_wildLen[index]; }
 };
 
 #ifndef DISABLE_GZIP
@@ -260,14 +260,14 @@ class ZLib
 {
 public:
 	/*
-	 * calculates the size required for output buffer
-	 */
+	* calculates the size required for output buffer
+	*/
 	static uint32 GZipLen(int inputBufferLength);
 
 	/*
-	 * compresses inputBuffer and returns the size of bytes written to
-	 * outputBuffer or 0 if the buffer is too small or an error occured.
-	 */
+	* compresses inputBuffer and returns the size of bytes written to
+	* outputBuffer or 0 if the buffer is too small or an error occured.
+	*/
 	static uint32 GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength);
 };
 
@@ -282,42 +282,42 @@ public:
 	};
 
 private:
-	z_stream					m_zStream = {0};
-	std::unique_ptr<Bytef[]>	m_outputBuffer;
-	int							m_bufferSize;
-	bool						m_active = false;
+	z_stream m_zStream = {0};
+	std::unique_ptr<Bytef[]> m_outputBuffer;
+	int m_bufferSize;
+	bool m_active = false;
 
 public:
-						GUnzipStream(int BufferSize);
-						~GUnzipStream();
+	GUnzipStream(int BufferSize);
+	~GUnzipStream();
 
 	/*
-	 * set next memory block for uncompression
-	 */
-	void				Write(const void *inputBuffer, int inputBufferLength);
+	* set next memory block for uncompression
+	*/
+	void Write(const void *inputBuffer, int inputBufferLength);
 
 	/*
-	 * get next uncompressed memory block.
-	 * iOutputBufferLength - the size of uncompressed block. if it is "0" the next compressed block must be provided via "Write".
-	 */
-	EStatus				Read(const void **outputBuffer, int *outputBufferLength);
+	* get next uncompressed memory block.
+	* iOutputBufferLength - the size of uncompressed block. if it is "0" the next compressed block must be provided via "Write".
+	*/
+	EStatus Read(const void **outputBuffer, int *outputBufferLength);
 };
 #endif
 
 class Tokenizer
 {
 private:
-	BString<1024>		m_shortString;
-	CString				m_longString;
-	char*				m_dataString;
-	const char*			m_separators;
-	char*				m_savePtr = nullptr;
-	bool				m_working = false;
+	BString<1024> m_shortString;
+	CString m_longString;
+	char* m_dataString;
+	const char* m_separators;
+	char* m_savePtr = nullptr;
+	bool m_working = false;
 
 public:
-						Tokenizer(const char* dataString, const char* separators);
-						Tokenizer(char* dataString, const char* separators, bool inplaceBuf);
-	char*				Next();
+	Tokenizer(const char* dataString, const char* separators);
+	Tokenizer(char* dataString, const char* separators, bool inplaceBuf);
+	char* Next();
 };
 
 #endif

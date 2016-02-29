@@ -32,25 +32,25 @@
 class HistoryCoordinator : public Service
 {
 private:
-	void				HistoryDelete(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool final);
-	void				HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess);
-	void				HistoryRedownload(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool restorePauseState);
-	bool				HistorySetParameter(HistoryInfo* historyInfo, const char* text);
-	void				HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQueue::EEditAction action, const char* text);
-	bool				HistorySetCategory(HistoryInfo* historyInfo, const char* text);
-	bool				HistorySetName(HistoryInfo* historyInfo, const char* text);
-	void				PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action);
+	void HistoryDelete(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool final);
+	void HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess);
+	void HistoryRedownload(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool restorePauseState);
+	bool HistorySetParameter(HistoryInfo* historyInfo, const char* text);
+	void HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQueue::EEditAction action, const char* text);
+	bool HistorySetCategory(HistoryInfo* historyInfo, const char* text);
+	bool HistorySetName(HistoryInfo* historyInfo, const char* text);
+	void PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action);
 
 protected:
-	virtual int			ServiceInterval() { return 600000; }
-	virtual void		ServiceWork();
+	virtual int ServiceInterval() { return 600000; }
+	virtual void ServiceWork();
 
 public:
-	void				AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
-	bool				EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
-	void				DeleteDiskFiles(NzbInfo* nzbInfo);
-	void				HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex);
-	void				Redownload(DownloadQueue* downloadQueue, HistoryInfo* historyInfo);
+	void AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	bool EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
+	void DeleteDiskFiles(NzbInfo* nzbInfo);
+	void HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex);
+	void Redownload(DownloadQueue* downloadQueue, HistoryInfo* historyInfo);
 };
 
 extern HistoryCoordinator* g_HistoryCoordinator;

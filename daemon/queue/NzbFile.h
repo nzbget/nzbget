@@ -33,48 +33,48 @@
 class NzbFile
 {
 private:
-	NzbInfo*			m_nzbInfo;
-	CString				m_fileName;
-	CString				m_password;
+	NzbInfo* m_nzbInfo;
+	CString m_fileName;
+	CString m_password;
 
-	void				AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo);
-	void				AddFileInfo(FileInfo* fileInfo);
-	void				ParseSubject(FileInfo* fileInfo, bool TryQuotes);
-	void				BuildFilenames();
-	void				ProcessFiles();
-	void				CalcHashes();
-	bool				HasDuplicateFilenames();
-	void				ReadPassword();
+	void AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo);
+	void AddFileInfo(FileInfo* fileInfo);
+	void ParseSubject(FileInfo* fileInfo, bool TryQuotes);
+	void BuildFilenames();
+	void ProcessFiles();
+	void CalcHashes();
+	bool HasDuplicateFilenames();
+	void ReadPassword();
 #ifdef WIN32
-	bool 				ParseNzb(IUnknown* nzb);
-	static void			EncodeUrl(const char* filename, char* url, int bufLen);
+	bool ParseNzb(IUnknown* nzb);
+	static void EncodeUrl(const char* filename, char* url, int bufLen);
 #else
-	FileInfo*			m_fileInfo = nullptr;
-	ArticleInfo*		m_article = nullptr;
-	StringBuilder		m_tagContent;
-	bool				m_ignoreNextError;
-	bool				m_hasPassword = false;
+	FileInfo* m_fileInfo = nullptr;
+	ArticleInfo* m_article = nullptr;
+	StringBuilder m_tagContent;
+	bool m_ignoreNextError;
+	bool m_hasPassword = false;
 
-	static void			SAX_StartElement(NzbFile* file, const char *name, const char **atts);
-	static void			SAX_EndElement(NzbFile* file, const char *name);
-	static void			SAX_characters(NzbFile* file, const char * xmlstr, int len);
-	static void*		SAX_getEntity(NzbFile* file, const char * name);
-	static void			SAX_error(NzbFile* file, const char *msg, ...);
-	void				Parse_StartElement(const char *name, const char **atts);
-	void				Parse_EndElement(const char *name);
-	void				Parse_Content(const char *buf, int len);
+	static void SAX_StartElement(NzbFile* file, const char *name, const char **atts);
+	static void SAX_EndElement(NzbFile* file, const char *name);
+	static void SAX_characters(NzbFile* file, const char *  xmlstr, int len);
+	static void* SAX_getEntity(NzbFile* file, const char *  name);
+	static void SAX_error(NzbFile* file, const char *msg, ...);
+	void Parse_StartElement(const char *name, const char **atts);
+	void Parse_EndElement(const char *name);
+	void Parse_Content(const char *buf, int len);
 #endif
 
 public:
-						NzbFile(const char* fileName, const char* category);
-						~NzbFile();
-	bool				Parse();
-	const char* 		GetFileName() const { return m_fileName; }
-	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
-	const char*			GetPassword() { return m_password; }
-	void				DetachNzbInfo() { m_nzbInfo = nullptr; }
+	NzbFile(const char* fileName, const char* category);
+	~NzbFile();
+	bool Parse();
+	const char* GetFileName() const { return m_fileName; }
+	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
+	const char* GetPassword() { return m_password; }
+	void DetachNzbInfo() { m_nzbInfo = nullptr; }
 
-	void				LogDebugInfo();
+	void LogDebugInfo();
 };
 
 #endif

@@ -31,31 +31,31 @@
 class ScanScriptController : public NzbScriptController
 {
 private:
-	const char*			m_nzbFilename;
-	const char*			m_url;
-	const char*			m_directory;
-	CString*			m_nzbName;
-	CString*			m_category;
-	int*				m_priority;
-	NzbParameterList*	m_parameters;
-	bool*				m_addTop;
-	bool*				m_addPaused;
-	CString*			m_dupeKey;
-	int*				m_dupeScore;
-	EDupeMode*			m_dupeMode;
-	int					m_prefixLen;
+	const char* m_nzbFilename;
+	const char* m_url;
+	const char* m_directory;
+	CString* m_nzbName;
+	CString* m_category;
+	int* m_priority;
+	NzbParameterList* m_parameters;
+	bool* m_addTop;
+	bool* m_addPaused;
+	CString* m_dupeKey;
+	int* m_dupeScore;
+	EDupeMode* m_dupeMode;
+	int m_prefixLen;
 
-	void				PrepareParams(const char* scriptName);
+	void PrepareParams(const char* scriptName);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* script);
-	virtual void		AddMessage(Message::EKind kind, const char* text);
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
 public:
-	static void			ExecuteScripts(const char* nzbFilename, const char* url,
-							const char* directory, CString* nzbName, CString* category, int* priority,
-							NzbParameterList* parameters, bool* addTop, bool* addPaused,
-							CString* dupeKey, int* dupeScore, EDupeMode* dupeMode);
+	static void ExecuteScripts(const char* nzbFilename, const char* url,
+		const char* directory, CString* nzbName, CString* category, int* priority,
+		NzbParameterList* parameters, bool* addTop, bool* addPaused,
+		CString* dupeKey, int* dupeScore, EDupeMode* dupeMode);
 };
 
 #endif

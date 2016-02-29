@@ -52,55 +52,55 @@ public:
 	class Task
 	{
 	private:
-		int				m_id;
-		int				m_hours;
-		int				m_minutes;
-		int				m_weekDaysBits;
-		ECommand		m_command;
-		CString			m_param;
-		time_t			m_lastExecuted = 0;
+		int m_id;
+		int m_hours;
+		int m_minutes;
+		int m_weekDaysBits;
+		ECommand m_command;
+		CString m_param;
+		time_t m_lastExecuted = 0;
 
 	public:
-						Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
-								const char* param) :
-							m_id(id), m_hours(hours), m_minutes(minutes),
-							m_weekDaysBits(weekDaysBits), m_command(command), m_param(param) {}
-		friend class	Scheduler;
+		Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
+			const char* param) :
+			m_id(id), m_hours(hours), m_minutes(minutes),
+			m_weekDaysBits(weekDaysBits), m_command(command), m_param(param) {}
+		friend class Scheduler;
 	};
 
 private:
 
-	typedef std::deque<Task*>		TaskList;
-	typedef std::vector<bool>		ServerStatusList;
+	typedef std::deque<Task*> TaskList;
+	typedef std::vector<bool> ServerStatusList;
 
-	TaskList			m_taskList;
-	Mutex				m_taskListMutex;
-	time_t				m_lastCheck = 0;
-	bool				m_downloadRateChanged;
-	bool				m_executeProcess;
-	bool				m_pauseDownloadChanged;
-	bool				m_pausePostProcessChanged;
-	bool				m_pauseScanChanged;
-	bool				m_serverChanged;
-	ServerStatusList	m_serverStatusList;
-	bool				m_firstChecked = false;
+	TaskList m_taskList;
+	Mutex m_taskListMutex;
+	time_t m_lastCheck = 0;
+	bool m_downloadRateChanged;
+	bool m_executeProcess;
+	bool m_pauseDownloadChanged;
+	bool m_pausePostProcessChanged;
+	bool m_pauseScanChanged;
+	bool m_serverChanged;
+	ServerStatusList m_serverStatusList;
+	bool m_firstChecked = false;
 
-	void				ExecuteTask(Task* task);
-	void				CheckTasks();
-	void				PrepareLog();
-	void				PrintLog();
-	void				EditServer(bool active, const char* serverList);
-	void				FetchFeed(const char* feedList);
-	void				CheckScheduledResume();
-	void				FirstCheck();
+	void ExecuteTask(Task* task);
+	void CheckTasks();
+	void PrepareLog();
+	void PrintLog();
+	void EditServer(bool active, const char* serverList);
+	void FetchFeed(const char* feedList);
+	void CheckScheduledResume();
+	void FirstCheck();
 
 protected:
-	virtual int			ServiceInterval() { return 1000; }
-	virtual void		ServiceWork();
+	virtual int ServiceInterval() { return 1000; }
+	virtual void ServiceWork();
 
 public:
-						~Scheduler();
-	void				AddTask(Task* task);
+	~Scheduler();
+	void AddTask(Task* task);
 };
 
 #endif

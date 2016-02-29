@@ -45,13 +45,13 @@ extern void Reload();
 class ErrorXmlCommand: public XmlCommand
 {
 private:
-	int					m_errCode;
-	const char*			m_errText;
+	int m_errCode;
+	const char* m_errText;
 
 public:
-						ErrorXmlCommand(int errCode, const char* errText) :
-							m_errCode(errCode), m_errText(errText) {}
-	virtual void		Execute();
+	ErrorXmlCommand(int errCode, const char* errText) :
+		m_errCode(errCode), m_errText(errText) {}
+	virtual void Execute();
 };
 
 class PauseUnpauseXmlCommand: public XmlCommand
@@ -65,252 +65,252 @@ public:
 	};
 
 private:
-	bool				m_pause;
-	EPauseAction		m_pauseAction;
+	bool m_pause;
+	EPauseAction m_pauseAction;
 
 public:
-						PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction) :
-							m_pause(pause), m_pauseAction(pauseAction) {}
-	virtual void		Execute();
+	PauseUnpauseXmlCommand(bool pause, EPauseAction pauseAction) :
+		m_pause(pause), m_pauseAction(pauseAction) {}
+	virtual void Execute();
 };
 
 class ScheduleResumeXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ShutdownXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ReloadXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class VersionXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class DumpDebugXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class SetDownloadRateXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class StatusXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class LogXmlCommand: public XmlCommand
 {
 protected:
-	int						m_idFrom;
-	int						m_nrEntries;
-	virtual MessageList*	LockMessages();
-	virtual void			UnlockMessages();
+	int m_idFrom;
+	int m_nrEntries;
+	virtual MessageList* LockMessages();
+	virtual void UnlockMessages();
 public:
-	virtual void			Execute();
+	virtual void Execute();
 };
 
 class NzbInfoXmlCommand: public XmlCommand
 {
 protected:
-	void				AppendNzbInfoFields(NzbInfo* nzbInfo);
-	void				AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue);
+	void AppendNzbInfoFields(NzbInfo* nzbInfo);
+	void AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue);
 };
 
 class ListFilesXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ListGroupsXmlCommand: public NzbInfoXmlCommand
 {
 private:
-	const char*			DetectStatus(NzbInfo* nzbInfo);
+	const char* DetectStatus(NzbInfo* nzbInfo);
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class EditQueueXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class DownloadXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class PostQueueXmlCommand: public NzbInfoXmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class WriteLogXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ClearLogXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ScanXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class HistoryXmlCommand: public NzbInfoXmlCommand
 {
 private:
-	const char*			DetectStatus(HistoryInfo* historyInfo);
+	const char* DetectStatus(HistoryInfo* historyInfo);
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class UrlQueueXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ConfigXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class LoadConfigXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class SaveConfigXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ConfigTemplatesXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ViewFeedXmlCommand: public XmlCommand
 {
 private:
-	bool				m_preview;
+	bool m_preview;
 
 public:
-						ViewFeedXmlCommand(bool preview) : m_preview(preview) {}
-	virtual void		Execute();
+	ViewFeedXmlCommand(bool preview) : m_preview(preview) {}
+	virtual void Execute();
 };
 
 class FetchFeedXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class EditServerXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ReadUrlXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class CheckUpdatesXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class StartUpdateXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class LogUpdateXmlCommand: public LogXmlCommand
 {
 protected:
-	virtual MessageList*	LockMessages();
-	virtual void			UnlockMessages();
+	virtual MessageList* LockMessages();
+	virtual void UnlockMessages();
 };
 
 class ServerVolumesXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class ResetServerVolumeXmlCommand: public XmlCommand
 {
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 class LoadLogXmlCommand: public LogXmlCommand
 {
 private:
-	MessageList				m_messages;
-	int						m_nzbId;
-	NzbInfo*				m_nzbInfo;
+	MessageList m_messages;
+	int m_nzbId;
+	NzbInfo* m_nzbInfo;
 protected:
-	virtual void			Execute();
-	virtual MessageList*	LockMessages();
-	virtual void			UnlockMessages();
+	virtual void Execute();
+	virtual MessageList* LockMessages();
+	virtual void UnlockMessages();
 };
 
 class TestServerXmlCommand: public XmlCommand
 {
 private:
-	CString				m_errText;
+	CString m_errText;
 
 	class TestConnection : public NntpConnection
 	{
 	protected:
 		TestServerXmlCommand* m_owner;
-		virtual void	PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
+		virtual void PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
 	public:
-						TestConnection(NewsServer* newsServer, TestServerXmlCommand* owner):
-							NntpConnection(newsServer), m_owner(owner) {}
+		TestConnection(NewsServer* newsServer, TestServerXmlCommand* owner):
+			NntpConnection(newsServer), m_owner(owner) {}
 	};
 
-	void				PrintError(const char* errMsg);
+	void PrintError(const char* errMsg);
 public:
-	virtual void		Execute();
+	virtual void Execute();
 };
 
 

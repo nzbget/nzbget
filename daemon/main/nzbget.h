@@ -46,7 +46,7 @@
 #endif
 
 /* Define to the name of macro which returns the name of function being
-   compiled */
+compiled */
 #define FUNCTION_MACRO_NAME __FUNCTION__
 
 /* Define to 1 if ctime_r takes 2 arguments */
@@ -83,7 +83,7 @@
 
 #if _WIN32_WINNT < 0x0501
 #undef _WIN32_WINNT
-#define _WIN32_WINNT   0x0501
+#define _WIN32_WINNT 0x0501
 #endif
 
 #ifdef _DEBUG
@@ -233,10 +233,10 @@ using namespace MSXML;
 #include <iomanip>
 #include <cassert>
 #ifdef HAVE_MEMORY_H
-#  include <memory.h>
+# include <memory.h>
 #endif
 #ifdef HAVE_INTTYPES_H
-#  include <inttypes.h>
+# include <inttypes.h>
 #endif
 #endif /* NOT DISABLE_PARCHECK */
 
@@ -261,10 +261,10 @@ using namespace MSXML;
 #define strcasecmp(a, b) _stricmp(a, b)
 #define strncasecmp(a, b, c) _strnicmp(a, b, c)
 #define ssize_t SSIZE_T
-#define	__S_ISTYPE(mode, mask)	(((mode) & _S_IFMT) == (mask))
-#define	S_ISDIR(mode)	 __S_ISTYPE((mode), _S_IFDIR)
-#define	S_ISREG(mode)	 __S_ISTYPE((mode), _S_IFREG)
-#define	S_DIRMODE nullptr
+#define __S_ISTYPE(mode, mask) (((mode) & _S_IFMT) == (mask))
+#define S_ISDIR(mode) __S_ISTYPE((mode), _S_IFDIR)
+#define S_ISREG(mode) __S_ISTYPE((mode), _S_IFREG)
+#define S_DIRMODE nullptr
 #define usleep(usec) Sleep((usec) / 1000)
 #define socklen_t int
 #define SHUT_WR 0x01
@@ -329,7 +329,7 @@ typedef unsigned char uint8;
 typedef signed int int32;
 typedef unsigned int uint32;
 typedef signed long long int64;
-typedef unsigned long long  uint64;
+typedef unsigned long long uint64;
 #endif
 
 typedef unsigned char uchar;

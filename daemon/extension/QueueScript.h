@@ -34,47 +34,47 @@ class QueueScriptCoordinator
 public:
 	enum EEvent
 	{
-		qeFileDownloaded,	// lowest priority
+		qeFileDownloaded, // lowest priority
 		qeUrlCompleted,
 		qeNzbAdded,
 		qeNzbDownloaded,
-		qeNzbDeleted		// highest priority
+		qeNzbDeleted // highest priority
 	};
 
 private:
 	class QueueItem
 	{
 	private:
-		int						m_nzbId;
-		ScriptConfig::Script*	m_script;
-		EEvent					m_event;
+		int m_nzbId;
+		ScriptConfig::Script* m_script;
+		EEvent m_event;
 	public:
-								QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event);
-		int						GetNzbId() { return m_nzbId; }
-		ScriptConfig::Script*	GetScript() { return m_script; }
-		EEvent					GetEvent() { return m_event; }
+		QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event);
+		int GetNzbId() { return m_nzbId; }
+		ScriptConfig::Script* GetScript() { return m_script; }
+		EEvent GetEvent() { return m_event; }
 	};
 
 	typedef std::list<QueueItem*> Queue;
 
-	Queue				m_queue;
-	Mutex				m_queueMutex;
-	QueueItem*			m_curItem = nullptr;
-	bool				m_hasQueueScripts = false;
-	bool				m_stopped = false;
+	Queue m_queue;
+	Mutex m_queueMutex;
+	QueueItem* m_curItem = nullptr;
+	bool m_hasQueueScripts = false;
+	bool m_stopped = false;
 
-	void				StartScript(NzbInfo* nzbInfo, QueueItem* queueItem);
-	NzbInfo*			FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
-	bool				UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
+	void StartScript(NzbInfo* nzbInfo, QueueItem* queueItem);
+	NzbInfo* FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
+	bool UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
 
 public:
-						~QueueScriptCoordinator();
-	void				Stop() { m_stopped = true; }
-	void				InitOptions();
-	void				EnqueueScript(NzbInfo* nzbInfo, EEvent event);
-	void				CheckQueue();
-	bool				HasJob(int nzbId, bool* active);
-	int					GetQueueSize();
+	~QueueScriptCoordinator();
+	void Stop() { m_stopped = true; }
+	void InitOptions();
+	void EnqueueScript(NzbInfo* nzbInfo, EEvent event);
+	void CheckQueue();
+	bool HasJob(int nzbId, bool* active);
+	int GetQueueSize();
 };
 
 extern QueueScriptCoordinator* g_QueueScriptCoordinator;

@@ -38,49 +38,49 @@ private:
 	class PooledConnection : public NntpConnection
 	{
 	private:
-		bool			m_inUse = false;
-		time_t			m_freeTime = 0;
+		bool m_inUse = false;
+		time_t m_freeTime = 0;
 	public:
-						using NntpConnection::NntpConnection;
-		bool			GetInUse() { return m_inUse; }
-		void			SetInUse(bool inUse) { m_inUse = inUse; }
-		time_t			GetFreeTime() { return m_freeTime; }
-		void			SetFreeTimeNow();
+		using NntpConnection::NntpConnection;
+		bool GetInUse() { return m_inUse; }
+		void SetInUse(bool inUse) { m_inUse = inUse; }
+		time_t GetFreeTime() { return m_freeTime; }
+		void SetFreeTimeNow();
 	};
 
-	typedef std::vector<int>				Levels;
-	typedef std::vector<PooledConnection*>	Connections;
+	typedef std::vector<int> Levels;
+	typedef std::vector<PooledConnection*> Connections;
 
-	Servers				m_servers;
-	Servers				m_sortedServers;
-	Connections			m_connections;
-	Levels				m_levels;
-	int					m_maxNormLevel = 0;
-	Mutex			 	m_connectionsMutex;
-	int					m_timeout = 60;
-	int					m_retryInterval = 0;
-	int					m_generation = 0;
+	Servers m_servers;
+	Servers m_sortedServers;
+	Connections m_connections;
+	Levels m_levels;
+	int m_maxNormLevel = 0;
+	Mutex m_connectionsMutex;
+	int m_timeout = 60;
+	int m_retryInterval = 0;
+	int m_generation = 0;
 
-	void				NormalizeLevels();
+	void NormalizeLevels();
 
 protected:
-	virtual void		LogDebugInfo();
+	virtual void LogDebugInfo();
 
 public:
-						ServerPool();
-						~ServerPool();
-	void				SetTimeout(int timeout) { m_timeout = timeout; }
-	void				SetRetryInterval(int retryInterval) { m_retryInterval = retryInterval; }
-	void 				AddServer(NewsServer* newsServer);
-	void				InitConnections();
-	int					GetMaxNormLevel() { return m_maxNormLevel; }
-	Servers*			GetServers() { return &m_servers; } // Only for read access (no lockings)
-	NntpConnection*		GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers);
-	void 				FreeConnection(NntpConnection* connection, bool used);
-	void				CloseUnusedConnections();
-	void				Changed();
-	int					GetGeneration() { return m_generation; }
-	void				BlockServer(NewsServer* newsServer);
+	ServerPool();
+	~ServerPool();
+	void SetTimeout(int timeout) { m_timeout = timeout; }
+	void SetRetryInterval(int retryInterval) { m_retryInterval = retryInterval; }
+	void AddServer(NewsServer* newsServer);
+	void InitConnections();
+	int GetMaxNormLevel() { return m_maxNormLevel; }
+	Servers* GetServers() { return &m_servers; } // Only for read access (no lockings)
+	NntpConnection* GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers);
+	void FreeConnection(NntpConnection* connection, bool used);
+	void CloseUnusedConnections();
+	void Changed();
+	int GetGeneration() { return m_generation; }
+	void BlockServer(NewsServer* newsServer);
 };
 
 extern ServerPool* g_ServerPool;

@@ -39,20 +39,20 @@ class PostInfo;
 class ServerStat
 {
 private:
-	int					m_serverId;
-	int					m_successArticles = 0;
-	int					m_failedArticles = 0;
+	int m_serverId;
+	int m_successArticles = 0;
+	int m_failedArticles = 0;
 
 public:
-						ServerStat(int serverId) : m_serverId(serverId) {}
-	int					GetServerId() { return m_serverId; }
-	int					GetSuccessArticles() { return m_successArticles; }
-	void				SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
-	int					GetFailedArticles() { return m_failedArticles; }
-	void				SetFailedArticles(int failedArticles) { m_failedArticles = failedArticles; }
+	ServerStat(int serverId) : m_serverId(serverId) {}
+	int GetServerId() { return m_serverId; }
+	int GetSuccessArticles() { return m_successArticles; }
+	void SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
+	int GetFailedArticles() { return m_failedArticles; }
+	void SetFailedArticles(int failedArticles) { m_failedArticles = failedArticles; }
 };
 
-typedef std::vector<ServerStat>		ServerStatListBase;
+typedef std::vector<ServerStat> ServerStatListBase;
 
 class ServerStatList : public ServerStatListBase
 {
@@ -65,15 +65,15 @@ public:
 	};
 
 public:
-	void				StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation);
-	void				ListOp(ServerStatList* serverStats, EStatOperation statOperation);
+	void StatOp(int serverId, int successArticles, int failedArticles, EStatOperation statOperation);
+	void ListOp(ServerStatList* serverStats, EStatOperation statOperation);
 };
 
 class SegmentData
 {
 public:
-	virtual char*	GetData() = 0;
-	virtual			~SegmentData() {}
+	virtual char* GetData() = 0;
+	virtual ~SegmentData() {}
 };
 
 class ArticleInfo
@@ -88,144 +88,144 @@ public:
 	};
 
 private:
-	int					m_partNumber;
-	CString				m_messageId;
-	int					m_size = 0;
-	std::unique_ptr<SegmentData>	m_segmentContent;
-	int64				m_segmentOffset = 0;
-	int					m_segmentSize = 0;
-	EStatus				m_status = aiUndefined;
-	CString				m_resultFilename;
-	uint32				m_crc = 0;
+	int m_partNumber;
+	CString m_messageId;
+	int m_size = 0;
+	std::unique_ptr<SegmentData> m_segmentContent;
+	int64 m_segmentOffset = 0;
+	int m_segmentSize = 0;
+	EStatus m_status = aiUndefined;
+	CString m_resultFilename;
+	uint32 m_crc = 0;
 
 public:
-	void 				SetPartNumber(int s) { m_partNumber = s; }
-	int 				GetPartNumber() { return m_partNumber; }
-	const char* 		GetMessageId() { return m_messageId; }
-	void 				SetMessageId(const char* messageId) { m_messageId = messageId; }
-	void 				SetSize(int size) { m_size = size; }
-	int 				GetSize() { return m_size; }
-	void				AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size);
-	void				DiscardSegment();
-	const char* 		GetSegmentContent() { return m_segmentContent ? m_segmentContent->GetData() : nullptr; }
-	void				SetSegmentOffset(int64 segmentOffset) { m_segmentOffset = segmentOffset; }
-	int64				GetSegmentOffset() { return m_segmentOffset; }
-	void 				SetSegmentSize(int segmentSize) { m_segmentSize = segmentSize; }
-	int 				GetSegmentSize() { return m_segmentSize; }
-	EStatus				GetStatus() { return m_status; }
-	void				SetStatus(EStatus Status) { m_status = Status; }
-	const char*			GetResultFilename() { return m_resultFilename; }
-	void 				SetResultFilename(const char* resultFilename) { m_resultFilename = resultFilename; }
-	uint32				GetCrc() { return m_crc; }
-	void				SetCrc(uint32 crc) { m_crc = crc; }
+	void SetPartNumber(int s) { m_partNumber = s; }
+	int GetPartNumber() { return m_partNumber; }
+	const char* GetMessageId() { return m_messageId; }
+	void SetMessageId(const char* messageId) { m_messageId = messageId; }
+	void SetSize(int size) { m_size = size; }
+	int GetSize() { return m_size; }
+	void AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size);
+	void DiscardSegment();
+	const char* GetSegmentContent() { return m_segmentContent ? m_segmentContent->GetData() : nullptr; }
+	void SetSegmentOffset(int64 segmentOffset) { m_segmentOffset = segmentOffset; }
+	int64 GetSegmentOffset() { return m_segmentOffset; }
+	void SetSegmentSize(int segmentSize) { m_segmentSize = segmentSize; }
+	int GetSegmentSize() { return m_segmentSize; }
+	EStatus GetStatus() { return m_status; }
+	void SetStatus(EStatus Status) { m_status = Status; }
+	const char* GetResultFilename() { return m_resultFilename; }
+	void SetResultFilename(const char* resultFilename) { m_resultFilename = resultFilename; }
+	uint32 GetCrc() { return m_crc; }
+	void SetCrc(uint32 crc) { m_crc = crc; }
 };
 
 class FileInfo
 {
 public:
-	typedef std::vector<ArticleInfo*>	Articles;
-	typedef std::vector<CString>		Groups;
+	typedef std::vector<ArticleInfo*> Articles;
+	typedef std::vector<CString> Groups;
 
 private:
-	int					m_id;
-	NzbInfo*			m_nzbInfo = nullptr;
-	Articles			m_articles;
-	Groups				m_groups;
-	ServerStatList		m_serverStats;
-	CString				m_subject;
-	CString				m_filename;
-	int64 				m_size = 0;
-	int64 				m_remainingSize = 0;
-	int64				m_successSize = 0;
-	int64				m_failedSize = 0;
-	int64				m_missedSize = 0;
-	int					m_totalArticles = 0;
-	int					m_missedArticles = 0;
-	int					m_failedArticles = 0;
-	int					m_successArticles = 0;
-	time_t				m_time = 0;
-	bool				m_paused = false;
-	bool				m_deleted = false;
-	bool				m_filenameConfirmed = false;
-	bool				m_parFile = false;
-	int					m_completedArticles = 0;
-	bool				m_outputInitialized = false;
-	CString				m_outputFilename;
-	Mutex*				m_mutexOutputFile = nullptr;
-	bool				m_extraPriority = false;
-	int					m_activeDownloads = 0;
-	bool				m_autoDeleted = false;
-	int					m_cachedArticles = 0;
-	bool				m_partialChanged = false;
+	int m_id;
+	NzbInfo* m_nzbInfo = nullptr;
+	Articles m_articles;
+	Groups m_groups;
+	ServerStatList m_serverStats;
+	CString m_subject;
+	CString m_filename;
+	int64 m_size = 0;
+	int64 m_remainingSize = 0;
+	int64 m_successSize = 0;
+	int64 m_failedSize = 0;
+	int64 m_missedSize = 0;
+	int m_totalArticles = 0;
+	int m_missedArticles = 0;
+	int m_failedArticles = 0;
+	int m_successArticles = 0;
+	time_t m_time = 0;
+	bool m_paused = false;
+	bool m_deleted = false;
+	bool m_filenameConfirmed = false;
+	bool m_parFile = false;
+	int m_completedArticles = 0;
+	bool m_outputInitialized = false;
+	CString m_outputFilename;
+	Mutex* m_mutexOutputFile = nullptr;
+	bool m_extraPriority = false;
+	int m_activeDownloads = 0;
+	bool m_autoDeleted = false;
+	int m_cachedArticles = 0;
+	bool m_partialChanged = false;
 
-	static int			m_idGen;
-	static int			m_idMax;
+	static int m_idGen;
+	static int m_idMax;
 
 	friend class CompletedFile;
 
 public:
-						FileInfo(int id = 0) : m_id(id ? id : ++m_idGen) {}
-						~FileInfo();
-	int					GetId() { return m_id; }
-	void				SetId(int id);
-	static void			ResetGenId(bool max);
-	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
-	void				SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
-	Articles* 			GetArticles() { return &m_articles; }
-	Groups* 			GetGroups() { return &m_groups; }
-	const char*			GetSubject() { return m_subject; }
-	void 				SetSubject(const char* subject) { m_subject = subject; }
-	const char*			GetFilename() { return m_filename; }
-	void 				SetFilename(const char* filename) { m_filename = filename; }
-	void				MakeValidFilename();
-	bool				GetFilenameConfirmed() { return m_filenameConfirmed; }
-	void				SetFilenameConfirmed(bool filenameConfirmed) { m_filenameConfirmed = filenameConfirmed; }
-	void 				SetSize(int64 size) { m_size = size; m_remainingSize = size; }
-	int64 				GetSize() { return m_size; }
-	int64 				GetRemainingSize() { return m_remainingSize; }
-	void 				SetRemainingSize(int64 remainingSize) { m_remainingSize = remainingSize; }
-	int64				GetMissedSize() { return m_missedSize; }
-	void 				SetMissedSize(int64 missedSize) { m_missedSize = missedSize; }
-	int64				GetSuccessSize() { return m_successSize; }
-	void 				SetSuccessSize(int64 successSize) { m_successSize = successSize; }
-	int64				GetFailedSize() { return m_failedSize; }
-	void 				SetFailedSize(int64 failedSize) { m_failedSize = failedSize; }
-	int					GetTotalArticles() { return m_totalArticles; }
-	void 				SetTotalArticles(int totalArticles) { m_totalArticles = totalArticles; }
-	int					GetMissedArticles() { return m_missedArticles; }
-	void 				SetMissedArticles(int missedArticles) { m_missedArticles = missedArticles; }
-	int					GetFailedArticles() { return m_failedArticles; }
-	void 				SetFailedArticles(int failedArticles) { m_failedArticles = failedArticles; }
-	int					GetSuccessArticles() { return m_successArticles; }
-	void 				SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
-	time_t				GetTime() { return m_time; }
-	void				SetTime(time_t time) { m_time = time; }
-	bool				GetPaused() { return m_paused; }
-	void				SetPaused(bool paused);
-	bool				GetDeleted() { return m_deleted; }
-	void				SetDeleted(bool Deleted) { m_deleted = Deleted; }
-	int					GetCompletedArticles() { return m_completedArticles; }
-	void				SetCompletedArticles(int completedArticles) { m_completedArticles = completedArticles; }
-	bool				GetParFile() { return m_parFile; }
-	void				SetParFile(bool parFile) { m_parFile = parFile; }
-	void				ClearArticles();
-	void				LockOutputFile();
-	void				UnlockOutputFile();
-	const char*			GetOutputFilename() { return m_outputFilename; }
-	void 				SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
-	bool				GetOutputInitialized() { return m_outputInitialized; }
-	void				SetOutputInitialized(bool outputInitialized) { m_outputInitialized = outputInitialized; }
-	bool				GetExtraPriority() { return m_extraPriority; }
-	void				SetExtraPriority(bool extraPriority) { m_extraPriority = extraPriority; }
-	int					GetActiveDownloads() { return m_activeDownloads; }
-	void				SetActiveDownloads(int activeDownloads);
-	bool				GetAutoDeleted() { return m_autoDeleted; }
-	void				SetAutoDeleted(bool autoDeleted) { m_autoDeleted = autoDeleted; }
-	int					GetCachedArticles() { return m_cachedArticles; }
-	void				SetCachedArticles(int cachedArticles) { m_cachedArticles = cachedArticles; }
-	bool				GetPartialChanged() { return m_partialChanged; }
-	void				SetPartialChanged(bool partialChanged) { m_partialChanged = partialChanged; }
-	ServerStatList*		GetServerStats() { return &m_serverStats; }
+	FileInfo(int id = 0) : m_id(id ? id : ++m_idGen) {}
+	~FileInfo();
+	int GetId() { return m_id; }
+	void SetId(int id);
+	static void ResetGenId(bool max);
+	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
+	void SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
+	Articles* GetArticles() { return &m_articles; }
+	Groups* GetGroups() { return &m_groups; }
+	const char* GetSubject() { return m_subject; }
+	void SetSubject(const char* subject) { m_subject = subject; }
+	const char* GetFilename() { return m_filename; }
+	void SetFilename(const char* filename) { m_filename = filename; }
+	void MakeValidFilename();
+	bool GetFilenameConfirmed() { return m_filenameConfirmed; }
+	void SetFilenameConfirmed(bool filenameConfirmed) { m_filenameConfirmed = filenameConfirmed; }
+	void SetSize(int64 size) { m_size = size; m_remainingSize = size; }
+	int64 GetSize() { return m_size; }
+	int64 GetRemainingSize() { return m_remainingSize; }
+	void SetRemainingSize(int64 remainingSize) { m_remainingSize = remainingSize; }
+	int64 GetMissedSize() { return m_missedSize; }
+	void SetMissedSize(int64 missedSize) { m_missedSize = missedSize; }
+	int64 GetSuccessSize() { return m_successSize; }
+	void SetSuccessSize(int64 successSize) { m_successSize = successSize; }
+	int64 GetFailedSize() { return m_failedSize; }
+	void SetFailedSize(int64 failedSize) { m_failedSize = failedSize; }
+	int GetTotalArticles() { return m_totalArticles; }
+	void SetTotalArticles(int totalArticles) { m_totalArticles = totalArticles; }
+	int GetMissedArticles() { return m_missedArticles; }
+	void SetMissedArticles(int missedArticles) { m_missedArticles = missedArticles; }
+	int GetFailedArticles() { return m_failedArticles; }
+	void SetFailedArticles(int failedArticles) { m_failedArticles = failedArticles; }
+	int GetSuccessArticles() { return m_successArticles; }
+	void SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
+	time_t GetTime() { return m_time; }
+	void SetTime(time_t time) { m_time = time; }
+	bool GetPaused() { return m_paused; }
+	void SetPaused(bool paused);
+	bool GetDeleted() { return m_deleted; }
+	void SetDeleted(bool Deleted) { m_deleted = Deleted; }
+	int GetCompletedArticles() { return m_completedArticles; }
+	void SetCompletedArticles(int completedArticles) { m_completedArticles = completedArticles; }
+	bool GetParFile() { return m_parFile; }
+	void SetParFile(bool parFile) { m_parFile = parFile; }
+	void ClearArticles();
+	void LockOutputFile();
+	void UnlockOutputFile();
+	const char* GetOutputFilename() { return m_outputFilename; }
+	void SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
+	bool GetOutputInitialized() { return m_outputInitialized; }
+	void SetOutputInitialized(bool outputInitialized) { m_outputInitialized = outputInitialized; }
+	bool GetExtraPriority() { return m_extraPriority; }
+	void SetExtraPriority(bool extraPriority) { m_extraPriority = extraPriority; }
+	int GetActiveDownloads() { return m_activeDownloads; }
+	void SetActiveDownloads(int activeDownloads);
+	bool GetAutoDeleted() { return m_autoDeleted; }
+	void SetAutoDeleted(bool autoDeleted) { m_autoDeleted = autoDeleted; }
+	int GetCachedArticles() { return m_cachedArticles; }
+	void SetCachedArticles(int cachedArticles) { m_cachedArticles = cachedArticles; }
+	bool GetPartialChanged() { return m_partialChanged; }
+	void SetPartialChanged(bool partialChanged) { m_partialChanged = partialChanged; }
+	ServerStatList* GetServerStats() { return &m_serverStats; }
 };
 
 typedef std::deque<FileInfo*> FileListBase;
@@ -233,12 +233,12 @@ typedef std::deque<FileInfo*> FileListBase;
 class FileList : public FileListBase
 {
 private:
-	bool				m_ownObjects;
+	bool m_ownObjects;
 public:
-						FileList(bool ownObjects = false) : m_ownObjects(ownObjects) {}
-						~FileList();
-	void				Clear();
-	void				Remove(FileInfo* fileInfo);
+	FileList(bool ownObjects = false) : m_ownObjects(ownObjects) {}
+	~FileList();
+	void Clear();
+	void Remove(FileInfo* fileInfo);
 };
 
 class CompletedFile
@@ -253,47 +253,47 @@ public:
 	};
 
 private:
-	int					m_id;
-	CString				m_fileName;
-	EStatus				m_status;
-	uint32				m_crc;
+	int m_id;
+	CString m_fileName;
+	EStatus m_status;
+	uint32 m_crc;
 
 public:
-						CompletedFile(int id, const char* fileName, EStatus status, uint32 crc);
-	int					GetId() { return m_id; }
-	void				SetFileName(const char* fileName) { m_fileName = fileName; }
-	const char*			GetFileName() { return m_fileName; }
-	EStatus				GetStatus() { return m_status; }
-	uint32				GetCrc() { return m_crc; }
+	CompletedFile(int id, const char* fileName, EStatus status, uint32 crc);
+	int GetId() { return m_id; }
+	void SetFileName(const char* fileName) { m_fileName = fileName; }
+	const char* GetFileName() { return m_fileName; }
+	EStatus GetStatus() { return m_status; }
+	uint32 GetCrc() { return m_crc; }
 };
 
-typedef std::deque<CompletedFile>	CompletedFileList;
+typedef std::deque<CompletedFile> CompletedFileList;
 
 class NzbParameter
 {
 private:
-	CString				m_name;
-	CString				m_value;
+	CString m_name;
+	CString m_value;
 
-	void				SetValue(const char* value) { m_value = value; }
+	void SetValue(const char* value) { m_value = value; }
 
 	friend class NzbParameterList;
 
 public:
-						NzbParameter(const char* name, const char* value) :
-							m_name(name), m_value(value) {}
-	const char*			GetName() { return m_name; }
-	const char*			GetValue() { return m_value; }
+	NzbParameter(const char* name, const char* value) :
+		m_name(name), m_value(value) {}
+	const char* GetName() { return m_name; }
+	const char* GetValue() { return m_value; }
 };
 
-typedef std::deque<NzbParameter>	NzbParameterListBase;
+typedef std::deque<NzbParameter> NzbParameterListBase;
 
 class NzbParameterList : public NzbParameterListBase
 {
 public:
-	void				SetParameter(const char* name, const char* value);
-	NzbParameter*		Find(const char* name, bool caseSensitive);
-	void				CopyFrom(NzbParameterList* sourceParameters);
+	void SetParameter(const char* name, const char* value);
+	NzbParameter* Find(const char* name, bool caseSensitive);
+	void CopyFrom(NzbParameterList* sourceParameters);
 };
 
 class ScriptStatus
@@ -307,24 +307,24 @@ public:
 	};
 
 private:
-	CString				m_name;
-	EStatus				m_status;
+	CString m_name;
+	EStatus m_status;
 
 	friend class ScriptStatusList;
 
 public:
-						ScriptStatus(const char* name, EStatus status) : 
-							m_name(name), m_status(status) {}
-	const char*			GetName() { return m_name; }
-	EStatus				GetStatus() { return m_status; }
+	ScriptStatus(const char* name, EStatus status) : 
+		m_name(name), m_status(status) {}
+	const char* GetName() { return m_name; }
+	EStatus GetStatus() { return m_status; }
 };
 
-typedef std::deque<ScriptStatus>	ScriptStatusListBase;
+typedef std::deque<ScriptStatus> ScriptStatusListBase;
 
 class ScriptStatusList : public ScriptStatusListBase
 {
 public:
-	ScriptStatus::EStatus	CalcTotalStatus();
+	ScriptStatus::EStatus CalcTotalStatus();
 };
 
 enum EDupeMode
@@ -421,263 +421,263 @@ public:
 	friend class DupInfo;
 
 private:
-	int					m_id;
-	EKind				m_kind;
-	CString				m_url;
-	CString				m_filename;
-	CString				m_name;
-	CString				m_destDir;
-	CString				m_finalDir;
-	CString				m_category;
-	int		 			m_fileCount;
-	int		 			m_parkedFileCount;
-	int64 				m_size;
-	int64 				m_remainingSize;
-	int					m_pausedFileCount;
-	int64 				m_pausedSize;
-	int					m_remainingParCount;
-	int					m_activeDownloads;
-	int64				m_successSize;
-	int64				m_failedSize;
-	int64				m_currentSuccessSize;
-	int64				m_currentFailedSize;
-	int64				m_parSize;
-	int64				m_parSuccessSize;
-	int64				m_parFailedSize;
-	int64				m_parCurrentSuccessSize;
-	int64				m_parCurrentFailedSize;
-	int					m_totalArticles;
-	int					m_successArticles;
-	int					m_failedArticles;
-	int					m_currentSuccessArticles;
-	int					m_currentFailedArticles;
-	time_t				m_minTime;
-	time_t				m_maxTime;
-	int					m_priority;
-	CompletedFileList	m_completedFiles;
-	ERenameStatus		m_renameStatus;
-	EParStatus			m_parStatus;
-	EUnpackStatus		m_unpackStatus;
-	ECleanupStatus		m_cleanupStatus;
-	EMoveStatus			m_moveStatus;
-	EDeleteStatus		m_deleteStatus;
-	EMarkStatus			m_markStatus;
-	EUrlStatus			m_urlStatus;
-	int					m_extraParBlocks;
-	bool				m_addUrlPaused;
-	bool				m_deletePaused;
-	bool				m_manyDupeFiles;
-	CString				m_queuedFilename;
-	bool				m_deleting;
-	bool				m_avoidHistory;
-	bool				m_healthPaused;
-	bool				m_parCleanup;
-	bool				m_parManual;
-	bool				m_cleanupDisk;
-	bool				m_unpackCleanedUpDisk;
-	CString				m_dupeKey;
-	int					m_dupeScore;
-	EDupeMode			m_dupeMode;
-	uint32				m_fullContentHash;
-	uint32				m_filteredContentHash;
-	FileList			m_fileList;
-	NzbParameterList	m_ppParameters;
-	ScriptStatusList	m_scriptStatuses;
-	ServerStatList		m_serverStats;
-	ServerStatList		m_currentServerStats;
-	Mutex				m_logMutex;
-	MessageList			m_messages;
-	int					m_idMessageGen;
-	PostInfo*			m_postInfo;
-	int64 				m_downloadedSize;
-	time_t				m_downloadStartTime;
-	int					m_downloadSec;
-	int					m_postTotalSec;
-	int					m_parSec;
-	int					m_repairSec;
-	int					m_unpackSec;
-	bool				m_reprocess;
-	time_t				m_queueScriptTime;
-	bool				m_parFull;
-	int					m_messageCount;
-	int					m_cachedMessageCount;
-	int					m_feedId;
+	int m_id;
+	EKind m_kind;
+	CString m_url;
+	CString m_filename;
+	CString m_name;
+	CString m_destDir;
+	CString m_finalDir;
+	CString m_category;
+	int m_fileCount;
+	int m_parkedFileCount;
+	int64 m_size;
+	int64 m_remainingSize;
+	int m_pausedFileCount;
+	int64 m_pausedSize;
+	int m_remainingParCount;
+	int m_activeDownloads;
+	int64 m_successSize;
+	int64 m_failedSize;
+	int64 m_currentSuccessSize;
+	int64 m_currentFailedSize;
+	int64 m_parSize;
+	int64 m_parSuccessSize;
+	int64 m_parFailedSize;
+	int64 m_parCurrentSuccessSize;
+	int64 m_parCurrentFailedSize;
+	int m_totalArticles;
+	int m_successArticles;
+	int m_failedArticles;
+	int m_currentSuccessArticles;
+	int m_currentFailedArticles;
+	time_t m_minTime;
+	time_t m_maxTime;
+	int m_priority;
+	CompletedFileList m_completedFiles;
+	ERenameStatus m_renameStatus;
+	EParStatus m_parStatus;
+	EUnpackStatus m_unpackStatus;
+	ECleanupStatus m_cleanupStatus;
+	EMoveStatus m_moveStatus;
+	EDeleteStatus m_deleteStatus;
+	EMarkStatus m_markStatus;
+	EUrlStatus m_urlStatus;
+	int m_extraParBlocks;
+	bool m_addUrlPaused;
+	bool m_deletePaused;
+	bool m_manyDupeFiles;
+	CString m_queuedFilename;
+	bool m_deleting;
+	bool m_avoidHistory;
+	bool m_healthPaused;
+	bool m_parCleanup;
+	bool m_parManual;
+	bool m_cleanupDisk;
+	bool m_unpackCleanedUpDisk;
+	CString m_dupeKey;
+	int m_dupeScore;
+	EDupeMode m_dupeMode;
+	uint32 m_fullContentHash;
+	uint32 m_filteredContentHash;
+	FileList m_fileList;
+	NzbParameterList m_ppParameters;
+	ScriptStatusList m_scriptStatuses;
+	ServerStatList m_serverStats;
+	ServerStatList m_currentServerStats;
+	Mutex m_logMutex;
+	MessageList m_messages;
+	int m_idMessageGen;
+	PostInfo* m_postInfo;
+	int64 m_downloadedSize;
+	time_t m_downloadStartTime;
+	int m_downloadSec;
+	int m_postTotalSec;
+	int m_parSec;
+	int m_repairSec;
+	int m_unpackSec;
+	bool m_reprocess;
+	time_t m_queueScriptTime;
+	bool m_parFull;
+	int m_messageCount;
+	int m_cachedMessageCount;
+	int m_feedId;
 
-	static int			m_idGen;
-	static int			m_idMax;
+	static int m_idGen;
+	static int m_idMax;
 
-	void				ClearMessages();
+	void ClearMessages();
 
 public:
-						NzbInfo();
-						~NzbInfo();
-	int					GetId() { return m_id; }
-	void				SetId(int id);
-	static void			ResetGenId(bool max);
-	static int			GenerateId();
-	EKind				GetKind() { return m_kind; }
-	void				SetKind(EKind kind) { m_kind = kind; }
-	const char*			GetUrl() { return m_url; }
-	void				SetUrl(const char* url);
-	const char*			GetFilename() { return m_filename; }
-	void				SetFilename(const char* filename);
-	static CString		MakeNiceNzbName(const char* nzbFilename, bool removeExt);
-	static CString		MakeNiceUrlName(const char* url, const char* nzbFilename);
-	const char*			GetDestDir() { return m_destDir; }
-	void				SetDestDir(const char* destDir) { m_destDir = destDir; }
-	const char*			GetFinalDir() { return m_finalDir; }
-	void				SetFinalDir(const char* finalDir) { m_finalDir = finalDir; }
-	const char*			GetCategory() { return m_category; }
-	void				SetCategory(const char* category) { m_category = category; }
-	const char*			GetName() { return m_name; }
-	void				SetName(const char* name) { m_name = name; }
-	int					GetFileCount() { return m_fileCount; }
-	void 				SetFileCount(int fileCount) { m_fileCount = fileCount; }
-	int					GetParkedFileCount() { return m_parkedFileCount; }
-	void 				SetParkedFileCount(int parkedFileCount) { m_parkedFileCount = parkedFileCount; }
-	int64 				GetSize() { return m_size; }
-	void 				SetSize(int64 size) { m_size = size; }
-	int64 				GetRemainingSize() { return m_remainingSize; }
-	void	 			SetRemainingSize(int64 remainingSize) { m_remainingSize = remainingSize; }
-	int64 				GetPausedSize() { return m_pausedSize; }
-	void	 			SetPausedSize(int64 pausedSize) { m_pausedSize = pausedSize; }
-	int					GetPausedFileCount() { return m_pausedFileCount; }
-	void 				SetPausedFileCount(int pausedFileCount) { m_pausedFileCount = pausedFileCount; }
-	int					GetRemainingParCount() { return m_remainingParCount; }
-	void 				SetRemainingParCount(int remainingParCount) { m_remainingParCount = remainingParCount; }
-	int					GetActiveDownloads() { return m_activeDownloads; }
-	void				SetActiveDownloads(int activeDownloads);
-	int64				GetSuccessSize() { return m_successSize; }
-	void 				SetSuccessSize(int64 successSize) { m_successSize = successSize; }
-	int64				GetFailedSize() { return m_failedSize; }
-	void 				SetFailedSize(int64 failedSize) { m_failedSize = failedSize; }
-	int64				GetCurrentSuccessSize() { return m_currentSuccessSize; }
-	void 				SetCurrentSuccessSize(int64 currentSuccessSize) { m_currentSuccessSize = currentSuccessSize; }
-	int64				GetCurrentFailedSize() { return m_currentFailedSize; }
-	void 				SetCurrentFailedSize(int64 currentFailedSize) { m_currentFailedSize = currentFailedSize; }
-	int64				GetParSize() { return m_parSize; }
-	void 				SetParSize(int64 parSize) { m_parSize = parSize; }
-	int64				GetParSuccessSize() { return m_parSuccessSize; }
-	void 				SetParSuccessSize(int64 parSuccessSize) { m_parSuccessSize = parSuccessSize; }
-	int64				GetParFailedSize() { return m_parFailedSize; }
-	void 				SetParFailedSize(int64 parFailedSize) { m_parFailedSize = parFailedSize; }
-	int64				GetParCurrentSuccessSize() { return m_parCurrentSuccessSize; }
-	void 				SetParCurrentSuccessSize(int64 parCurrentSuccessSize) { m_parCurrentSuccessSize = parCurrentSuccessSize; }
-	int64				GetParCurrentFailedSize() { return m_parCurrentFailedSize; }
-	void 				SetParCurrentFailedSize(int64 parCurrentFailedSize) { m_parCurrentFailedSize = parCurrentFailedSize; }
-	int					GetTotalArticles() { return m_totalArticles; }
-	void 				SetTotalArticles(int totalArticles) { m_totalArticles = totalArticles; }
-	int					GetSuccessArticles() { return m_successArticles; }
-	void 				SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
-	int					GetFailedArticles() { return m_failedArticles; }
-	void 				SetFailedArticles(int failedArticles) { m_failedArticles = failedArticles; }
-	int					GetCurrentSuccessArticles() { return m_currentSuccessArticles; }
-	void 				SetCurrentSuccessArticles(int currentSuccessArticles) { m_currentSuccessArticles = currentSuccessArticles; }
-	int					GetCurrentFailedArticles() { return m_currentFailedArticles; }
-	void 				SetCurrentFailedArticles(int currentFailedArticles) { m_currentFailedArticles = currentFailedArticles; }
-	int					GetPriority() { return m_priority; }
-	void				SetPriority(int priority) { m_priority = priority; }
-	bool				GetForcePriority() { return m_priority >= FORCE_PRIORITY; }
-	time_t				GetMinTime() { return m_minTime; }
-	void				SetMinTime(time_t minTime) { m_minTime = minTime; }
-	time_t				GetMaxTime() { return m_maxTime; }
-	void				SetMaxTime(time_t maxTime) { m_maxTime = maxTime; }
-	void				BuildDestDirName();
-	CString				BuildFinalDirName();
-	CompletedFileList*	GetCompletedFiles() { return &m_completedFiles; }
-	ERenameStatus		GetRenameStatus() { return m_renameStatus; }
-	void				SetRenameStatus(ERenameStatus renameStatus) { m_renameStatus = renameStatus; }
-	EParStatus			GetParStatus() { return m_parStatus; }
-	void				SetParStatus(EParStatus parStatus) { m_parStatus = parStatus; }
-	EUnpackStatus		GetUnpackStatus() { return m_unpackStatus; }
-	void				SetUnpackStatus(EUnpackStatus unpackStatus) { m_unpackStatus = unpackStatus; }
-	ECleanupStatus		GetCleanupStatus() { return m_cleanupStatus; }
-	void				SetCleanupStatus(ECleanupStatus cleanupStatus) { m_cleanupStatus = cleanupStatus; }
-	EMoveStatus			GetMoveStatus() { return m_moveStatus; }
-	void				SetMoveStatus(EMoveStatus moveStatus) { m_moveStatus = moveStatus; }
-	EDeleteStatus		GetDeleteStatus() { return m_deleteStatus; }
-	void				SetDeleteStatus(EDeleteStatus deleteStatus) { m_deleteStatus = deleteStatus; }
-	EMarkStatus			GetMarkStatus() { return m_markStatus; }
-	void				SetMarkStatus(EMarkStatus markStatus) { m_markStatus = markStatus; }
-	EUrlStatus			GetUrlStatus() { return m_urlStatus; }
-	int					GetExtraParBlocks() { return m_extraParBlocks; }
-	void				SetExtraParBlocks(int extraParBlocks) { m_extraParBlocks = extraParBlocks; }
-	void				SetUrlStatus(EUrlStatus urlStatus) { m_urlStatus = urlStatus; }
-	const char*			GetQueuedFilename() { return m_queuedFilename; }
-	void				SetQueuedFilename(const char* queuedFilename) { m_queuedFilename = queuedFilename; }
-	bool				GetDeleting() { return m_deleting; }
-	void				SetDeleting(bool deleting) { m_deleting = deleting; }
-	bool				GetDeletePaused() { return m_deletePaused; }
-	void				SetDeletePaused(bool deletePaused) { m_deletePaused = deletePaused; }
-	bool				GetManyDupeFiles() { return m_manyDupeFiles; }
-	void				SetManyDupeFiles(bool manyDupeFiles) { m_manyDupeFiles = manyDupeFiles; }
-	bool				GetAvoidHistory() { return m_avoidHistory; }
-	void				SetAvoidHistory(bool avoidHistory) { m_avoidHistory = avoidHistory; }
-	bool				GetHealthPaused() { return m_healthPaused; }
-	void				SetHealthPaused(bool healthPaused) { m_healthPaused = healthPaused; }
-	bool				GetParCleanup() { return m_parCleanup; }
-	void				SetParCleanup(bool parCleanup) { m_parCleanup = parCleanup; }
-	bool				GetCleanupDisk() { return m_cleanupDisk; }
-	void				SetCleanupDisk(bool cleanupDisk) { m_cleanupDisk = cleanupDisk; }
-	bool				GetUnpackCleanedUpDisk() { return m_unpackCleanedUpDisk; }
-	void				SetUnpackCleanedUpDisk(bool unpackCleanedUpDisk) { m_unpackCleanedUpDisk = unpackCleanedUpDisk; }
-	bool				GetAddUrlPaused() { return m_addUrlPaused; }
-	void				SetAddUrlPaused(bool addUrlPaused) { m_addUrlPaused = addUrlPaused; }
-	FileList*			GetFileList() { return &m_fileList; }
-	NzbParameterList*	GetParameters() { return &m_ppParameters; }
-	ScriptStatusList*	GetScriptStatuses() { return &m_scriptStatuses; }
-	ServerStatList*		GetServerStats() { return &m_serverStats; }
-	ServerStatList*		GetCurrentServerStats() { return &m_currentServerStats; }
-	int					CalcHealth();
-	int					CalcCriticalHealth(bool allowEstimation);
-	const char*			GetDupeKey() { return m_dupeKey; }
-	void				SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey ? dupeKey : ""; }
-	int					GetDupeScore() { return m_dupeScore; }
-	void				SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
-	EDupeMode			GetDupeMode() { return m_dupeMode; }
-	void				SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
-	uint32				GetFullContentHash() { return m_fullContentHash; }
-	void				SetFullContentHash(uint32 fullContentHash) { m_fullContentHash = fullContentHash; }
-	uint32				GetFilteredContentHash() { return m_filteredContentHash; }
-	void				SetFilteredContentHash(uint32 filteredContentHash) { m_filteredContentHash = filteredContentHash; }
-	int64 				GetDownloadedSize() { return m_downloadedSize; }
-	void 				SetDownloadedSize(int64 downloadedSize) { m_downloadedSize = downloadedSize; }
-	int					GetDownloadSec() { return m_downloadSec; }
-	void 				SetDownloadSec(int downloadSec) { m_downloadSec = downloadSec; }
-	int					GetPostTotalSec() { return m_postTotalSec; }
-	void 				SetPostTotalSec(int postTotalSec) { m_postTotalSec = postTotalSec; }
-	int					GetParSec() { return m_parSec; }
-	void 				SetParSec(int parSec) { m_parSec = parSec; }
-	int					GetRepairSec() { return m_repairSec; }
-	void 				SetRepairSec(int repairSec) { m_repairSec = repairSec; }
-	int					GetUnpackSec() { return m_unpackSec; }
-	void 				SetUnpackSec(int unpackSec) { m_unpackSec = unpackSec; }
-	time_t				GetDownloadStartTime() { return m_downloadStartTime; }
-	void 				SetDownloadStartTime(time_t downloadStartTime) { m_downloadStartTime = downloadStartTime; }
-	void				SetReprocess(bool reprocess) { m_reprocess = reprocess; }
-	bool				GetReprocess() { return m_reprocess; }
-	time_t				GetQueueScriptTime() { return m_queueScriptTime; }
-	void 				SetQueueScriptTime(time_t queueScriptTime) { m_queueScriptTime = queueScriptTime; }
-	void				SetParFull(bool parFull) { m_parFull = parFull; }
-	bool				GetParFull() { return m_parFull; }
-	int					GetFeedId() { return m_feedId; }
-	void				SetFeedId(int feedId) { m_feedId = feedId; }
+	NzbInfo();
+	~NzbInfo();
+	int GetId() { return m_id; }
+	void SetId(int id);
+	static void ResetGenId(bool max);
+	static int GenerateId();
+	EKind GetKind() { return m_kind; }
+	void SetKind(EKind kind) { m_kind = kind; }
+	const char* GetUrl() { return m_url; }
+	void SetUrl(const char* url);
+	const char* GetFilename() { return m_filename; }
+	void SetFilename(const char* filename);
+	static CString MakeNiceNzbName(const char* nzbFilename, bool removeExt);
+	static CString MakeNiceUrlName(const char* url, const char* nzbFilename);
+	const char* GetDestDir() { return m_destDir; }
+	void SetDestDir(const char* destDir) { m_destDir = destDir; }
+	const char* GetFinalDir() { return m_finalDir; }
+	void SetFinalDir(const char* finalDir) { m_finalDir = finalDir; }
+	const char* GetCategory() { return m_category; }
+	void SetCategory(const char* category) { m_category = category; }
+	const char* GetName() { return m_name; }
+	void SetName(const char* name) { m_name = name; }
+	int GetFileCount() { return m_fileCount; }
+	void SetFileCount(int fileCount) { m_fileCount = fileCount; }
+	int GetParkedFileCount() { return m_parkedFileCount; }
+	void SetParkedFileCount(int parkedFileCount) { m_parkedFileCount = parkedFileCount; }
+	int64 GetSize() { return m_size; }
+	void SetSize(int64 size) { m_size = size; }
+	int64 GetRemainingSize() { return m_remainingSize; }
+	void SetRemainingSize(int64 remainingSize) { m_remainingSize = remainingSize; }
+	int64 GetPausedSize() { return m_pausedSize; }
+	void SetPausedSize(int64 pausedSize) { m_pausedSize = pausedSize; }
+	int GetPausedFileCount() { return m_pausedFileCount; }
+	void SetPausedFileCount(int pausedFileCount) { m_pausedFileCount = pausedFileCount; }
+	int GetRemainingParCount() { return m_remainingParCount; }
+	void SetRemainingParCount(int remainingParCount) { m_remainingParCount = remainingParCount; }
+	int GetActiveDownloads() { return m_activeDownloads; }
+	void SetActiveDownloads(int activeDownloads);
+	int64 GetSuccessSize() { return m_successSize; }
+	void SetSuccessSize(int64 successSize) { m_successSize = successSize; }
+	int64 GetFailedSize() { return m_failedSize; }
+	void SetFailedSize(int64 failedSize) { m_failedSize = failedSize; }
+	int64 GetCurrentSuccessSize() { return m_currentSuccessSize; }
+	void SetCurrentSuccessSize(int64 currentSuccessSize) { m_currentSuccessSize = currentSuccessSize; }
+	int64 GetCurrentFailedSize() { return m_currentFailedSize; }
+	void SetCurrentFailedSize(int64 currentFailedSize) { m_currentFailedSize = currentFailedSize; }
+	int64 GetParSize() { return m_parSize; }
+	void SetParSize(int64 parSize) { m_parSize = parSize; }
+	int64 GetParSuccessSize() { return m_parSuccessSize; }
+	void SetParSuccessSize(int64 parSuccessSize) { m_parSuccessSize = parSuccessSize; }
+	int64 GetParFailedSize() { return m_parFailedSize; }
+	void SetParFailedSize(int64 parFailedSize) { m_parFailedSize = parFailedSize; }
+	int64 GetParCurrentSuccessSize() { return m_parCurrentSuccessSize; }
+	void SetParCurrentSuccessSize(int64 parCurrentSuccessSize) { m_parCurrentSuccessSize = parCurrentSuccessSize; }
+	int64 GetParCurrentFailedSize() { return m_parCurrentFailedSize; }
+	void SetParCurrentFailedSize(int64 parCurrentFailedSize) { m_parCurrentFailedSize = parCurrentFailedSize; }
+	int GetTotalArticles() { return m_totalArticles; }
+	void SetTotalArticles(int totalArticles) { m_totalArticles = totalArticles; }
+	int GetSuccessArticles() { return m_successArticles; }
+	void SetSuccessArticles(int successArticles) { m_successArticles = successArticles; }
+	int GetFailedArticles() { return m_failedArticles; }
+	void SetFailedArticles(int failedArticles) { m_failedArticles = failedArticles; }
+	int GetCurrentSuccessArticles() { return m_currentSuccessArticles; }
+	void SetCurrentSuccessArticles(int currentSuccessArticles) { m_currentSuccessArticles = currentSuccessArticles; }
+	int GetCurrentFailedArticles() { return m_currentFailedArticles; }
+	void SetCurrentFailedArticles(int currentFailedArticles) { m_currentFailedArticles = currentFailedArticles; }
+	int GetPriority() { return m_priority; }
+	void SetPriority(int priority) { m_priority = priority; }
+	bool GetForcePriority() { return m_priority >= FORCE_PRIORITY; }
+	time_t GetMinTime() { return m_minTime; }
+	void SetMinTime(time_t minTime) { m_minTime = minTime; }
+	time_t GetMaxTime() { return m_maxTime; }
+	void SetMaxTime(time_t maxTime) { m_maxTime = maxTime; }
+	void BuildDestDirName();
+	CString BuildFinalDirName();
+	CompletedFileList* GetCompletedFiles() { return &m_completedFiles; }
+	ERenameStatus GetRenameStatus() { return m_renameStatus; }
+	void SetRenameStatus(ERenameStatus renameStatus) { m_renameStatus = renameStatus; }
+	EParStatus GetParStatus() { return m_parStatus; }
+	void SetParStatus(EParStatus parStatus) { m_parStatus = parStatus; }
+	EUnpackStatus GetUnpackStatus() { return m_unpackStatus; }
+	void SetUnpackStatus(EUnpackStatus unpackStatus) { m_unpackStatus = unpackStatus; }
+	ECleanupStatus GetCleanupStatus() { return m_cleanupStatus; }
+	void SetCleanupStatus(ECleanupStatus cleanupStatus) { m_cleanupStatus = cleanupStatus; }
+	EMoveStatus GetMoveStatus() { return m_moveStatus; }
+	void SetMoveStatus(EMoveStatus moveStatus) { m_moveStatus = moveStatus; }
+	EDeleteStatus GetDeleteStatus() { return m_deleteStatus; }
+	void SetDeleteStatus(EDeleteStatus deleteStatus) { m_deleteStatus = deleteStatus; }
+	EMarkStatus GetMarkStatus() { return m_markStatus; }
+	void SetMarkStatus(EMarkStatus markStatus) { m_markStatus = markStatus; }
+	EUrlStatus GetUrlStatus() { return m_urlStatus; }
+	int GetExtraParBlocks() { return m_extraParBlocks; }
+	void SetExtraParBlocks(int extraParBlocks) { m_extraParBlocks = extraParBlocks; }
+	void SetUrlStatus(EUrlStatus urlStatus) { m_urlStatus = urlStatus; }
+	const char* GetQueuedFilename() { return m_queuedFilename; }
+	void SetQueuedFilename(const char* queuedFilename) { m_queuedFilename = queuedFilename; }
+	bool GetDeleting() { return m_deleting; }
+	void SetDeleting(bool deleting) { m_deleting = deleting; }
+	bool GetDeletePaused() { return m_deletePaused; }
+	void SetDeletePaused(bool deletePaused) { m_deletePaused = deletePaused; }
+	bool GetManyDupeFiles() { return m_manyDupeFiles; }
+	void SetManyDupeFiles(bool manyDupeFiles) { m_manyDupeFiles = manyDupeFiles; }
+	bool GetAvoidHistory() { return m_avoidHistory; }
+	void SetAvoidHistory(bool avoidHistory) { m_avoidHistory = avoidHistory; }
+	bool GetHealthPaused() { return m_healthPaused; }
+	void SetHealthPaused(bool healthPaused) { m_healthPaused = healthPaused; }
+	bool GetParCleanup() { return m_parCleanup; }
+	void SetParCleanup(bool parCleanup) { m_parCleanup = parCleanup; }
+	bool GetCleanupDisk() { return m_cleanupDisk; }
+	void SetCleanupDisk(bool cleanupDisk) { m_cleanupDisk = cleanupDisk; }
+	bool GetUnpackCleanedUpDisk() { return m_unpackCleanedUpDisk; }
+	void SetUnpackCleanedUpDisk(bool unpackCleanedUpDisk) { m_unpackCleanedUpDisk = unpackCleanedUpDisk; }
+	bool GetAddUrlPaused() { return m_addUrlPaused; }
+	void SetAddUrlPaused(bool addUrlPaused) { m_addUrlPaused = addUrlPaused; }
+	FileList* GetFileList() { return &m_fileList; }
+	NzbParameterList* GetParameters() { return &m_ppParameters; }
+	ScriptStatusList* GetScriptStatuses() { return &m_scriptStatuses; }
+	ServerStatList* GetServerStats() { return &m_serverStats; }
+	ServerStatList* GetCurrentServerStats() { return &m_currentServerStats; }
+	int CalcHealth();
+	int CalcCriticalHealth(bool allowEstimation);
+	const char* GetDupeKey() { return m_dupeKey; }
+	void SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey ? dupeKey : ""; }
+	int GetDupeScore() { return m_dupeScore; }
+	void SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
+	EDupeMode GetDupeMode() { return m_dupeMode; }
+	void SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
+	uint32 GetFullContentHash() { return m_fullContentHash; }
+	void SetFullContentHash(uint32 fullContentHash) { m_fullContentHash = fullContentHash; }
+	uint32 GetFilteredContentHash() { return m_filteredContentHash; }
+	void SetFilteredContentHash(uint32 filteredContentHash) { m_filteredContentHash = filteredContentHash; }
+	int64 GetDownloadedSize() { return m_downloadedSize; }
+	void SetDownloadedSize(int64 downloadedSize) { m_downloadedSize = downloadedSize; }
+	int GetDownloadSec() { return m_downloadSec; }
+	void SetDownloadSec(int downloadSec) { m_downloadSec = downloadSec; }
+	int GetPostTotalSec() { return m_postTotalSec; }
+	void SetPostTotalSec(int postTotalSec) { m_postTotalSec = postTotalSec; }
+	int GetParSec() { return m_parSec; }
+	void SetParSec(int parSec) { m_parSec = parSec; }
+	int GetRepairSec() { return m_repairSec; }
+	void SetRepairSec(int repairSec) { m_repairSec = repairSec; }
+	int GetUnpackSec() { return m_unpackSec; }
+	void SetUnpackSec(int unpackSec) { m_unpackSec = unpackSec; }
+	time_t GetDownloadStartTime() { return m_downloadStartTime; }
+	void SetDownloadStartTime(time_t downloadStartTime) { m_downloadStartTime = downloadStartTime; }
+	void SetReprocess(bool reprocess) { m_reprocess = reprocess; }
+	bool GetReprocess() { return m_reprocess; }
+	time_t GetQueueScriptTime() { return m_queueScriptTime; }
+	void SetQueueScriptTime(time_t queueScriptTime) { m_queueScriptTime = queueScriptTime; }
+	void SetParFull(bool parFull) { m_parFull = parFull; }
+	bool GetParFull() { return m_parFull; }
+	int GetFeedId() { return m_feedId; }
+	void SetFeedId(int feedId) { m_feedId = feedId; }
 
-	void				CopyFileList(NzbInfo* srcNzbInfo);
-	void				UpdateMinMaxTime();
-	PostInfo*			GetPostInfo() { return m_postInfo; }
-	void				EnterPostProcess();
-	void				LeavePostProcess();
-	bool				IsDupeSuccess();
-	const char*			MakeTextStatus(bool ignoreScriptStatus);
+	void CopyFileList(NzbInfo* srcNzbInfo);
+	void UpdateMinMaxTime();
+	PostInfo* GetPostInfo() { return m_postInfo; }
+	void EnterPostProcess();
+	void LeavePostProcess();
+	bool IsDupeSuccess();
+	const char* MakeTextStatus(bool ignoreScriptStatus);
 
-	void				AddMessage(Message::EKind kind, const char* text);
-	void				PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
-	int					GetMessageCount() { return m_messageCount; }
-	void				SetMessageCount(int messageCount) { m_messageCount = messageCount; }
-	int					GetCachedMessageCount() { return m_cachedMessageCount; }
-	MessageList*		LockCachedMessages();
-	void				UnlockCachedMessages();
+	void AddMessage(Message::EKind kind, const char* text);
+	void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+	int GetMessageCount() { return m_messageCount; }
+	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }
+	int GetCachedMessageCount() { return m_cachedMessageCount; }
+	MessageList* LockCachedMessages();
+	void UnlockCachedMessages();
 };
 
 typedef std::deque<NzbInfo*> NzbQueueBase;
@@ -685,14 +685,14 @@ typedef std::deque<NzbInfo*> NzbQueueBase;
 class NzbList : public NzbQueueBase
 {
 private:
-	bool				m_ownObjects;
+	bool m_ownObjects;
 public:
-						NzbList(bool ownObjects = false) { m_ownObjects = ownObjects; }
-						~NzbList();
-	void				Clear();
-	void				Add(NzbInfo* nzbInfo, bool addTop);
-	void				Remove(NzbInfo* nzbInfo);
-	NzbInfo*			Find(int id);
+	NzbList(bool ownObjects = false) { m_ownObjects = ownObjects; }
+	~NzbList();
+	void Clear();
+	void Add(NzbInfo* nzbInfo, bool addTop);
+	void Remove(NzbInfo* nzbInfo);
+	NzbInfo* Find(int id);
 };
 
 class PostInfo
@@ -712,64 +712,64 @@ public:
 		ptFinished
 	};
 
-	typedef std::vector<CString>		ParredFiles;
+	typedef std::vector<CString> ParredFiles;
 
 private:
-	NzbInfo*			m_nzbInfo = nullptr;
-	bool				m_working = false;
-	bool				m_deleted = false;
-	bool				m_requestParCheck = false;
-	bool				m_forceParFull = false;
-	bool				m_forceRepair = false;
-	bool				m_parRepaired = false;
-	bool				m_unpackTried = false;
-	bool				m_passListTried = false;
-	int					m_lastUnpackStatus = 0;
-	EStage				m_stage = ptQueued;
-	CString				m_progressLabel = "";
-	int					m_fileProgress = 0;
-	int					m_stageProgress = 0;
-	time_t				m_startTime = 0;
-	time_t				m_stageTime = 0;
-	Thread*				m_postThread = nullptr;
-	ParredFiles			m_parredFiles;
+	NzbInfo* m_nzbInfo = nullptr;
+	bool m_working = false;
+	bool m_deleted = false;
+	bool m_requestParCheck = false;
+	bool m_forceParFull = false;
+	bool m_forceRepair = false;
+	bool m_parRepaired = false;
+	bool m_unpackTried = false;
+	bool m_passListTried = false;
+	int m_lastUnpackStatus = 0;
+	EStage m_stage = ptQueued;
+	CString m_progressLabel = "";
+	int m_fileProgress = 0;
+	int m_stageProgress = 0;
+	time_t m_startTime = 0;
+	time_t m_stageTime = 0;
+	Thread* m_postThread = nullptr;
+	ParredFiles m_parredFiles;
 
 public:
-	NzbInfo*			GetNzbInfo() { return m_nzbInfo; }
-	void				SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
-	EStage				GetStage() { return m_stage; }
-	void				SetStage(EStage stage) { m_stage = stage; }
-	void				SetProgressLabel(const char* progressLabel) { m_progressLabel = progressLabel; }
-	const char*			GetProgressLabel() { return m_progressLabel; }
-	int					GetFileProgress() { return m_fileProgress; }
-	void				SetFileProgress(int fileProgress) { m_fileProgress = fileProgress; }
-	int					GetStageProgress() { return m_stageProgress; }
-	void				SetStageProgress(int stageProgress) { m_stageProgress = stageProgress; }
-	time_t				GetStartTime() { return m_startTime; }
-	void				SetStartTime(time_t startTime) { m_startTime = startTime; }
-	time_t				GetStageTime() { return m_stageTime; }
-	void				SetStageTime(time_t stageTime) { m_stageTime = stageTime; }
-	bool				GetWorking() { return m_working; }
-	void				SetWorking(bool working) { m_working = working; }
-	bool				GetDeleted() { return m_deleted; }
-	void				SetDeleted(bool deleted) { m_deleted = deleted; }
-	bool				GetRequestParCheck() { return m_requestParCheck; }
-	void				SetRequestParCheck(bool requestParCheck) { m_requestParCheck = requestParCheck; }
-	bool				GetForceParFull() { return m_forceParFull; }
-	void				SetForceParFull(bool forceParFull) { m_forceParFull = forceParFull; }
-	bool				GetForceRepair() { return m_forceRepair; }
-	void				SetForceRepair(bool forceRepair) { m_forceRepair = forceRepair; }
-	bool				GetParRepaired() { return m_parRepaired; }
-	void				SetParRepaired(bool parRepaired) { m_parRepaired = parRepaired; }
-	bool				GetUnpackTried() { return m_unpackTried; }
-	void				SetUnpackTried(bool unpackTried) { m_unpackTried = unpackTried; }
-	bool				GetPassListTried() { return m_passListTried; }
-	void				SetPassListTried(bool passListTried) { m_passListTried = passListTried; }
-	int					GetLastUnpackStatus() { return m_lastUnpackStatus; }
-	void				SetLastUnpackStatus(int unpackStatus) { m_lastUnpackStatus = unpackStatus; }
-	Thread*				GetPostThread() { return m_postThread; }
-	void				SetPostThread(Thread* postThread) { m_postThread = postThread; }
-	ParredFiles*		GetParredFiles() { return &m_parredFiles; }
+	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
+	void SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
+	EStage GetStage() { return m_stage; }
+	void SetStage(EStage stage) { m_stage = stage; }
+	void SetProgressLabel(const char* progressLabel) { m_progressLabel = progressLabel; }
+	const char* GetProgressLabel() { return m_progressLabel; }
+	int GetFileProgress() { return m_fileProgress; }
+	void SetFileProgress(int fileProgress) { m_fileProgress = fileProgress; }
+	int GetStageProgress() { return m_stageProgress; }
+	void SetStageProgress(int stageProgress) { m_stageProgress = stageProgress; }
+	time_t GetStartTime() { return m_startTime; }
+	void SetStartTime(time_t startTime) { m_startTime = startTime; }
+	time_t GetStageTime() { return m_stageTime; }
+	void SetStageTime(time_t stageTime) { m_stageTime = stageTime; }
+	bool GetWorking() { return m_working; }
+	void SetWorking(bool working) { m_working = working; }
+	bool GetDeleted() { return m_deleted; }
+	void SetDeleted(bool deleted) { m_deleted = deleted; }
+	bool GetRequestParCheck() { return m_requestParCheck; }
+	void SetRequestParCheck(bool requestParCheck) { m_requestParCheck = requestParCheck; }
+	bool GetForceParFull() { return m_forceParFull; }
+	void SetForceParFull(bool forceParFull) { m_forceParFull = forceParFull; }
+	bool GetForceRepair() { return m_forceRepair; }
+	void SetForceRepair(bool forceRepair) { m_forceRepair = forceRepair; }
+	bool GetParRepaired() { return m_parRepaired; }
+	void SetParRepaired(bool parRepaired) { m_parRepaired = parRepaired; }
+	bool GetUnpackTried() { return m_unpackTried; }
+	void SetUnpackTried(bool unpackTried) { m_unpackTried = unpackTried; }
+	bool GetPassListTried() { return m_passListTried; }
+	void SetPassListTried(bool passListTried) { m_passListTried = passListTried; }
+	int GetLastUnpackStatus() { return m_lastUnpackStatus; }
+	void SetLastUnpackStatus(int unpackStatus) { m_lastUnpackStatus = unpackStatus; }
+	Thread* GetPostThread() { return m_postThread; }
+	void SetPostThread(Thread* postThread) { m_postThread = postThread; }
+	ParredFiles* GetParredFiles() { return &m_parredFiles; }
 };
 
 typedef std::vector<int> IdList;
@@ -791,35 +791,35 @@ public:
 	};
 
 private:
-	int					m_id = 0;
-	CString				m_name;
-	CString				m_dupeKey;
-	int					m_dupeScore = 0;
-	EDupeMode			m_dupeMode = dmScore;
-	int64 				m_size = 0;
-	uint32				m_fullContentHash = 0;
-	uint32				m_filteredContentHash = 0;
-	EStatus				m_status = dsUndefined;
+	int m_id = 0;
+	CString m_name;
+	CString m_dupeKey;
+	int m_dupeScore = 0;
+	EDupeMode m_dupeMode = dmScore;
+	int64 m_size = 0;
+	uint32 m_fullContentHash = 0;
+	uint32 m_filteredContentHash = 0;
+	EStatus m_status = dsUndefined;
 
 public:
-	int					GetId() { return m_id; }
-	void				SetId(int id);
-	const char*			GetName() { return m_name; }
-	void				SetName(const char* name) { m_name = name; }
-	const char*			GetDupeKey() { return m_dupeKey; }
-	void				SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey; }
-	int					GetDupeScore() { return m_dupeScore; }
-	void				SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
-	EDupeMode			GetDupeMode() { return m_dupeMode; }
-	void				SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
-	int64				GetSize() { return m_size; }
-	void 				SetSize(int64 size) { m_size = size; }
-	uint32				GetFullContentHash() { return m_fullContentHash; }
-	void				SetFullContentHash(uint32 fullContentHash) { m_fullContentHash = fullContentHash; }
-	uint32				GetFilteredContentHash() { return m_filteredContentHash; }
-	void				SetFilteredContentHash(uint32 filteredContentHash) { m_filteredContentHash = filteredContentHash; }
-	EStatus				GetStatus() { return m_status; }
-	void				SetStatus(EStatus Status) { m_status = Status; }
+	int GetId() { return m_id; }
+	void SetId(int id);
+	const char* GetName() { return m_name; }
+	void SetName(const char* name) { m_name = name; }
+	const char* GetDupeKey() { return m_dupeKey; }
+	void SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey; }
+	int GetDupeScore() { return m_dupeScore; }
+	void SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
+	EDupeMode GetDupeMode() { return m_dupeMode; }
+	void SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
+	int64 GetSize() { return m_size; }
+	void SetSize(int64 size) { m_size = size; }
+	uint32 GetFullContentHash() { return m_fullContentHash; }
+	void SetFullContentHash(uint32 fullContentHash) { m_fullContentHash = fullContentHash; }
+	uint32 GetFilteredContentHash() { return m_filteredContentHash; }
+	void SetFilteredContentHash(uint32 filteredContentHash) { m_filteredContentHash = filteredContentHash; }
+	EStatus GetStatus() { return m_status; }
+	void SetStatus(EStatus Status) { m_status = Status; }
 };
 
 class HistoryInfo
@@ -834,23 +834,23 @@ public:
 	};
 
 private:
-	EKind				m_kind;
-	void*				m_info;
-	time_t				m_time = 0;
+	EKind m_kind;
+	void* m_info;
+	time_t m_time = 0;
 
 public:
-						HistoryInfo(NzbInfo* nzbInfo) : m_info(nzbInfo),
-							m_kind(nzbInfo->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl) {}
-						HistoryInfo(DupInfo* dupInfo) : m_info(dupInfo), m_kind(hkDup) {}
-						~HistoryInfo();
-	EKind				GetKind() { return m_kind; }
-	int					GetId();
-	NzbInfo*			GetNzbInfo() { return (NzbInfo*)m_info; }
-	DupInfo*			GetDupInfo() { return (DupInfo*)m_info; }
-	void				DiscardNzbInfo() { m_info = nullptr; }
-	time_t				GetTime() { return m_time; }
-	void				SetTime(time_t time) { m_time = time; }
-	const char*			GetName();
+	HistoryInfo(NzbInfo* nzbInfo) : m_info(nzbInfo),
+		m_kind(nzbInfo->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl) {}
+	HistoryInfo(DupInfo* dupInfo) : m_info(dupInfo), m_kind(hkDup) {}
+	~HistoryInfo();
+	EKind GetKind() { return m_kind; }
+	int GetId();
+	NzbInfo* GetNzbInfo() { return (NzbInfo*)m_info; }
+	DupInfo* GetDupInfo() { return (DupInfo*)m_info; }
+	void DiscardNzbInfo() { m_info = nullptr; }
+	time_t GetTime() { return m_time; }
+	void SetTime(time_t time) { m_time = time; }
+	const char* GetName();
 };
 
 typedef std::deque<HistoryInfo*> HistoryListBase;
@@ -858,8 +858,8 @@ typedef std::deque<HistoryInfo*> HistoryListBase;
 class HistoryList : public HistoryListBase
 {
 public:
-						~HistoryList();
-	HistoryInfo*		Find(int id);
+	~HistoryList();
+	HistoryInfo* Find(int id);
 };
 
 class DownloadQueue : public Subject
@@ -885,52 +885,52 @@ public:
 
 	enum EEditAction
 	{
-		eaFileMoveOffset = 1,	// move files to m_iOffset relative to the current position in download-queue
-		eaFileMoveTop,			// move files to the top of download-queue
-		eaFileMoveBottom,		// move files to the bottom of download-queue
-		eaFilePause,			// pause files
-		eaFileResume,			// resume (unpause) files
-		eaFileDelete,			// delete files
-		eaFilePauseAllPars,		// pause only (all) pars (does not affect other files)
-		eaFilePauseExtraPars,	// pause only (almost all) pars, except main par-file (does not affect other files)
-		eaFileReorder,			// set file order
-		eaFileSplit,			// split - create new group from selected files
-		eaGroupMoveOffset,		// move group to m_iOffset relative to the current position in download-queue
-		eaGroupMoveTop,			// move group to the top of download-queue
-		eaGroupMoveBottom,		// move group to the bottom of download-queue
-		eaGroupPause,			// pause group
-		eaGroupResume,			// resume (unpause) group
-		eaGroupDelete,			// delete group and put to history
-		eaGroupDupeDelete,		// delete group, put to history and mark as duplicate
-		eaGroupFinalDelete,		// delete group without adding to history
-		eaGroupPauseAllPars,	// pause only (all) pars (does not affect other files) in group
-		eaGroupPauseExtraPars,	// pause only (almost all) pars in group, except main par-file (does not affect other files)
-		eaGroupSetPriority,		// set priority for groups
-		eaGroupSetCategory,		// set or change category for a group
-		eaGroupApplyCategory,	// set or change category for a group and reassign pp-params according to category settings
-		eaGroupMerge,			// merge groups
-		eaGroupSetParameter,	// set post-process parameter for group
-		eaGroupSetName,			// set group name (rename group)
-		eaGroupSetDupeKey,		// set duplicate key
-		eaGroupSetDupeScore,	// set duplicate score
-		eaGroupSetDupeMode,		// set duplicate mode
-		eaGroupSort,			// sort groups
-		eaPostDelete,			// cancel post-processing
-		eaHistoryDelete,		// hide history-item
-		eaHistoryFinalDelete,	// delete history-item
-		eaHistoryReturn,		// move history-item back to download queue
-		eaHistoryProcess,		// move history-item back to download queue and start postprocessing
-		eaHistoryRedownload,	// move history-item back to download queue for redownload
-		eaHistorySetParameter,	// set post-process parameter for history-item
-		eaHistorySetDupeKey,	// set duplicate key
-		eaHistorySetDupeScore,	// set duplicate score
-		eaHistorySetDupeMode,	// set duplicate mode
-		eaHistorySetDupeBackup,	// set duplicate backup flag
-		eaHistoryMarkBad,		// mark history-item as bad (and download other duplicate)
-		eaHistoryMarkGood,		// mark history-item as good (and push it into dup-history)
-		eaHistoryMarkSuccess,	// mark history-item as success (and do nothing more)
-		eaHistorySetCategory,	// set or change category for history-item
-		eaHistorySetName		// set history-item name (rename)
+		eaFileMoveOffset = 1, // move files to m_iOffset relative to the current position in download-queue
+		eaFileMoveTop, // move files to the top of download-queue
+		eaFileMoveBottom, // move files to the bottom of download-queue
+		eaFilePause, // pause files
+		eaFileResume, // resume (unpause) files
+		eaFileDelete, // delete files
+		eaFilePauseAllPars, // pause only (all) pars (does not affect other files)
+		eaFilePauseExtraPars, // pause only (almost all) pars, except main par-file (does not affect other files)
+		eaFileReorder, // set file order
+		eaFileSplit, // split - create new group from selected files
+		eaGroupMoveOffset, // move group to m_iOffset relative to the current position in download-queue
+		eaGroupMoveTop, // move group to the top of download-queue
+		eaGroupMoveBottom, // move group to the bottom of download-queue
+		eaGroupPause, // pause group
+		eaGroupResume, // resume (unpause) group
+		eaGroupDelete, // delete group and put to history
+		eaGroupDupeDelete, // delete group, put to history and mark as duplicate
+		eaGroupFinalDelete, // delete group without adding to history
+		eaGroupPauseAllPars, // pause only (all) pars (does not affect other files) in group
+		eaGroupPauseExtraPars, // pause only (almost all) pars in group, except main par-file (does not affect other files)
+		eaGroupSetPriority, // set priority for groups
+		eaGroupSetCategory, // set or change category for a group
+		eaGroupApplyCategory, // set or change category for a group and reassign pp-params according to category settings
+		eaGroupMerge, // merge groups
+		eaGroupSetParameter, // set post-process parameter for group
+		eaGroupSetName, // set group name (rename group)
+		eaGroupSetDupeKey, // set duplicate key
+		eaGroupSetDupeScore, // set duplicate score
+		eaGroupSetDupeMode, // set duplicate mode
+		eaGroupSort, // sort groups
+		eaPostDelete, // cancel post-processing
+		eaHistoryDelete, // hide history-item
+		eaHistoryFinalDelete, // delete history-item
+		eaHistoryReturn, // move history-item back to download queue
+		eaHistoryProcess, // move history-item back to download queue and start postprocessing
+		eaHistoryRedownload, // move history-item back to download queue for redownload
+		eaHistorySetParameter, // set post-process parameter for history-item
+		eaHistorySetDupeKey, // set duplicate key
+		eaHistorySetDupeScore, // set duplicate score
+		eaHistorySetDupeMode, // set duplicate mode
+		eaHistorySetDupeBackup, // set duplicate backup flag
+		eaHistoryMarkBad, // mark history-item as bad (and download other duplicate)
+		eaHistoryMarkGood, // mark history-item as good (and push it into dup-history)
+		eaHistoryMarkSuccess, // mark history-item as success (and do nothing more)
+		eaHistorySetCategory, // set or change category for history-item
+		eaHistorySetName // set history-item name (rename)
 	};
 
 	enum EMatchMode
@@ -941,29 +941,29 @@ public:
 	};
 
 private:
-	NzbList					m_queue;
-	HistoryList				m_history;
-	Mutex	 				m_lockMutex;
+	NzbList m_queue;
+	HistoryList m_history;
+	Mutex m_lockMutex;
 
-	static DownloadQueue*	g_DownloadQueue;
-	static bool				g_Loaded;
+	static DownloadQueue* g_DownloadQueue;
+	static bool g_Loaded;
 
 protected:
-							DownloadQueue() : m_queue(true) {}
-	static void				Init(DownloadQueue* globalInstance) { g_DownloadQueue = globalInstance; }
-	static void				Final() { g_DownloadQueue = nullptr; }
-	static void				Loaded() { g_Loaded = true; }
+	DownloadQueue() : m_queue(true) {}
+	static void Init(DownloadQueue* globalInstance) { g_DownloadQueue = globalInstance; }
+	static void Final() { g_DownloadQueue = nullptr; }
+	static void Loaded() { g_Loaded = true; }
 
 public:
-	static bool				IsLoaded() { return g_Loaded; }
-	static DownloadQueue*	Lock();
-	static void				Unlock();
-	NzbList*				GetQueue() { return &m_queue; }
-	HistoryList*			GetHistory() { return &m_history; }
-	virtual bool			EditEntry(int ID, EEditAction action, int offset, const char* text) = 0;
-	virtual bool			EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text) = 0;
-	virtual void			Save() = 0;
-	void					CalcRemainingSize(int64* remaining, int64* remainingForced);
+	static bool IsLoaded() { return g_Loaded; }
+	static DownloadQueue* Lock();
+	static void Unlock();
+	NzbList* GetQueue() { return &m_queue; }
+	HistoryList* GetHistory() { return &m_history; }
+	virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text) = 0;
+	virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text) = 0;
+	virtual void Save() = 0;
+	void CalcRemainingSize(int64* remaining, int64* remainingForced);
 };
 
 #endif

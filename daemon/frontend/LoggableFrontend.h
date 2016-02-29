@@ -1,8 +1,8 @@
 /*
  *  This file if part of nzbget
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,13 +34,13 @@ class LoggableFrontend : public Frontend
 {
 protected:
 
-	virtual void 	Run();
-	virtual void 	Update();
-	virtual void	BeforePrint() {};
-	virtual void	BeforeExit() {};
-	virtual void	PrintMessage(Message& message);
-	virtual void 	PrintStatus() {};
-	virtual void 	PrintSkip();
+	virtual void Run();
+	virtual void Update();
+	virtual void BeforePrint() {};
+	virtual void BeforeExit() {};
+	virtual void PrintMessage(Message& message);
+	virtual void PrintStatus() {};
+	virtual void PrintSkip();
 };
 
 #endif

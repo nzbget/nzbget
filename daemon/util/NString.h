@@ -27,9 +27,9 @@
 #define NSTRING_H
 
 /*
- BString is a replacement for char-arrays allocated on stack.
- It has no memory overhead, provides memory management and formatting functions.
-*/
+BString is a replacement for char-arrays allocated on stack.
+It has no memory overhead, provides memory management and formatting functions.
+ */
 template <int size>
 class BString
 {
@@ -58,9 +58,9 @@ public:
 };
 
 /*
- CString is a replacement for C-Style null-terminated strings.
- It has no memory overhead, provides memory management and string handling functions.
-*/
+CString is a replacement for C-Style null-terminated strings.
+It has no memory overhead, provides memory management and string handling functions.
+ */
 class CString
 {
 protected:
@@ -100,7 +100,7 @@ public:
 #ifdef WIN32
 /*
 Wide-character string, Windows specific.
-*/
+ */
 class WString
 {
 private:
@@ -118,8 +118,8 @@ public:
 #endif
 
 /*
- StringBuilder preallocates storage space and is best suitable for often "Append"s.
-*/
+StringBuilder preallocates storage space and is best suitable for often "Append"s.
+ */
 class StringBuilder
 {
 protected:
@@ -143,8 +143,8 @@ public:
 };
 
 /*
- Plain char-buffer for I/O operations.
-*/
+Plain char-buffer for I/O operations.
+ */
 class CharBuffer
 {
 protected:

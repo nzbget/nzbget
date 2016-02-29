@@ -32,36 +32,36 @@
 class FeedFile
 {
 private:
-	FeedItemInfos*		m_feedItemInfos;
-	CString				m_fileName;
+	FeedItemInfos* m_feedItemInfos;
+	CString m_fileName;
 
-	void				ParseSubject(FeedItemInfo& feedItemInfo);
+	void ParseSubject(FeedItemInfo& feedItemInfo);
 #ifdef WIN32
-	bool 				ParseFeed(IUnknown* nzb);
-	static void			EncodeUrl(const char* filename, char* url, int bufLen);
+	bool ParseFeed(IUnknown* nzb);
+	static void EncodeUrl(const char* filename, char* url, int bufLen);
 #else
-	FeedItemInfo*		m_feedItemInfo;
-	StringBuilder		m_tagContent;
-	bool				m_ignoreNextError;
+	FeedItemInfo* m_feedItemInfo;
+	StringBuilder m_tagContent;
+	bool m_ignoreNextError;
 
-	static void			SAX_StartElement(FeedFile* file, const char *name, const char **atts);
-	static void			SAX_EndElement(FeedFile* file, const char *name);
-	static void			SAX_characters(FeedFile* file, const char * xmlstr, int len);
-	static void*		SAX_getEntity(FeedFile* file, const char * name);
-	static void			SAX_error(FeedFile* file, const char *msg, ...);
-	void				Parse_StartElement(const char *name, const char **atts);
-	void				Parse_EndElement(const char *name);
-	void				Parse_Content(const char *buf, int len);
-	void				ResetTagContent();
+	static void SAX_StartElement(FeedFile* file, const char *name, const char **atts);
+	static void SAX_EndElement(FeedFile* file, const char *name);
+	static void SAX_characters(FeedFile* file, const char *  xmlstr, int len);
+	static void* SAX_getEntity(FeedFile* file, const char *  name);
+	static void SAX_error(FeedFile* file, const char *msg, ...);
+	void Parse_StartElement(const char *name, const char **atts);
+	void Parse_EndElement(const char *name);
+	void Parse_Content(const char *buf, int len);
+	void ResetTagContent();
 #endif
 
 public:
-						FeedFile(const char* fileName);
-	virtual 			~FeedFile();
-	bool				Parse();
-	FeedItemInfos*		GetFeedItemInfos() { return m_feedItemInfos; }
+	FeedFile(const char* fileName);
+	virtual ~FeedFile();
+	bool Parse();
+	FeedItemInfos* GetFeedItemInfos() { return m_feedItemInfos; }
 
-	void				LogDebugInfo();
+	void LogDebugInfo();
 };
 
 #endif

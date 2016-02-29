@@ -56,11 +56,11 @@ const int FORK_ERROR_EXIT_CODE = 254;
 class ChildWatchDog : public Thread
 {
 private:
-	pid_t			m_processId;
+	pid_t m_processId;
 protected:
-	virtual void	Run();
+	virtual void Run();
 public:
-	void			SetProcessId(pid_t processId) { m_processId = processId; }
+	void SetProcessId(pid_t processId) { m_processId = processId; }
 };
 
 void ChildWatchDog::Run()

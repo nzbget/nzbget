@@ -32,40 +32,40 @@
 class TlsSocket
 {
 private:
-	bool				m_isClient;
-	CString				m_certFile;
-	CString				m_keyFile;
-	CString				m_cipher;
-	SOCKET				m_socket;
-	bool				m_suppressErrors = false;
-	bool				m_initialized = false;
-	bool				m_connected = false;
-	int					m_retCode;
+	bool m_isClient;
+	CString m_certFile;
+	CString m_keyFile;
+	CString m_cipher;
+	SOCKET m_socket;
+	bool m_suppressErrors = false;
+	bool m_initialized = false;
+	bool m_connected = false;
+	int m_retCode;
 
 	// using "void*" to prevent the including of GnuTLS/OpenSSL header files into TlsSocket.h
-	void*				m_context = nullptr;
-	void*				m_session = nullptr;
+	void* m_context = nullptr;
+	void* m_session = nullptr;
 
-	void				ReportError(const char* errMsg);
+	void ReportError(const char* errMsg);
 
-	static void			Final();
+	static void Final();
 	friend class TlsSocketFinalizer;
 
 protected:
-	virtual void		PrintError(const char* errMsg);
+	virtual void PrintError(const char* errMsg);
 
 public:
-						TlsSocket(SOCKET socket, bool isClient, const char* certFile,
-								  const char* keyFile, const char* cipher) :
-							m_socket(socket), m_isClient(isClient), m_certFile(certFile),
-							m_keyFile(keyFile), m_cipher(cipher) {}
-	virtual				~TlsSocket();
-	static void			Init();
-	bool				Start();
-	void				Close();
-	int					Send(const char* buffer, int size);
-	int					Recv(char* buffer, int size);
-	void				SetSuppressErrors(bool suppressErrors) { m_suppressErrors = suppressErrors; }
+	TlsSocket(SOCKET socket, bool isClient, const char* certFile,
+		const char* keyFile, const char* cipher) :
+		m_socket(socket), m_isClient(isClient), m_certFile(certFile),
+		m_keyFile(keyFile), m_cipher(cipher) {}
+	virtual ~TlsSocket();
+	static void Init();
+	bool Start();
+	void Close();
+	int Send(const char* buffer, int size);
+	int Recv(char* buffer, int size);
+	void SetSuppressErrors(bool suppressErrors) { m_suppressErrors = suppressErrors; }
 };
 
 #endif

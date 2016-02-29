@@ -33,104 +33,104 @@
 class ServerVolume
 {
 public:
-	typedef std::vector<int64>	VolumeArray;
+	typedef std::vector<int64> VolumeArray;
 
 private:
-	VolumeArray			m_bytesPerSeconds{60};
-	VolumeArray			m_bytesPerMinutes{60};
-	VolumeArray			m_bytesPerHours{24};
-	VolumeArray			m_bytesPerDays;
-	int					m_firstDay = 0;
-	int64				m_totalBytes = 0;
-	int64				m_customBytes = 0;
-	time_t				m_dataTime = 0;
-	time_t				m_customTime = Util::CurrentTime();
-	int					m_secSlot = 0;
-	int					m_minSlot = 0;
-	int					m_hourSlot = 0;
-	int					m_daySlot = 0;
+	VolumeArray m_bytesPerSeconds{60};
+	VolumeArray m_bytesPerMinutes{60};
+	VolumeArray m_bytesPerHours{24};
+	VolumeArray m_bytesPerDays;
+	int m_firstDay = 0;
+	int64 m_totalBytes = 0;
+	int64 m_customBytes = 0;
+	time_t m_dataTime = 0;
+	time_t m_customTime = Util::CurrentTime();
+	int m_secSlot = 0;
+	int m_minSlot = 0;
+	int m_hourSlot = 0;
+	int m_daySlot = 0;
 
 public:
-	VolumeArray*		BytesPerSeconds() { return &m_bytesPerSeconds; }
-	VolumeArray*		BytesPerMinutes() { return &m_bytesPerMinutes; }
-	VolumeArray*		BytesPerHours() { return &m_bytesPerHours; }
-	VolumeArray*		BytesPerDays() { return &m_bytesPerDays; }
-	void				SetFirstDay(int firstDay) { m_firstDay = firstDay; }
-	int					GetFirstDay() { return m_firstDay; }
-	void				SetTotalBytes(int64 totalBytes) { m_totalBytes = totalBytes; }
-	int64				GetTotalBytes() { return m_totalBytes; }
-	void				SetCustomBytes(int64 customBytes) { m_customBytes = customBytes; }
-	int64				GetCustomBytes() { return m_customBytes; }
-	int					GetSecSlot() { return m_secSlot; }
-	int					GetMinSlot() { return m_minSlot; }
-	int					GetHourSlot() { return m_hourSlot; }
-	int					GetDaySlot() { return m_daySlot; }
-	time_t				GetDataTime() { return m_dataTime; }
-	void				SetDataTime(time_t dataTime) { m_dataTime = dataTime; }
-	time_t				GetCustomTime() { return m_customTime; }
-	void				SetCustomTime(time_t customTime) { m_customTime = customTime; }
+	VolumeArray* BytesPerSeconds() { return &m_bytesPerSeconds; }
+	VolumeArray* BytesPerMinutes() { return &m_bytesPerMinutes; }
+	VolumeArray* BytesPerHours() { return &m_bytesPerHours; }
+	VolumeArray* BytesPerDays() { return &m_bytesPerDays; }
+	void SetFirstDay(int firstDay) { m_firstDay = firstDay; }
+	int GetFirstDay() { return m_firstDay; }
+	void SetTotalBytes(int64 totalBytes) { m_totalBytes = totalBytes; }
+	int64 GetTotalBytes() { return m_totalBytes; }
+	void SetCustomBytes(int64 customBytes) { m_customBytes = customBytes; }
+	int64 GetCustomBytes() { return m_customBytes; }
+	int GetSecSlot() { return m_secSlot; }
+	int GetMinSlot() { return m_minSlot; }
+	int GetHourSlot() { return m_hourSlot; }
+	int GetDaySlot() { return m_daySlot; }
+	time_t GetDataTime() { return m_dataTime; }
+	void SetDataTime(time_t dataTime) { m_dataTime = dataTime; }
+	time_t GetCustomTime() { return m_customTime; }
+	void SetCustomTime(time_t customTime) { m_customTime = customTime; }
 
-	void				AddData(int bytes);
-	void				CalcSlots(time_t locCurTime);
-	void				ResetCustom();
-	void				LogDebugInfo();
+	void AddData(int bytes);
+	void CalcSlots(time_t locCurTime);
+	void ResetCustom();
+	void LogDebugInfo();
 };
 
-typedef std::vector<ServerVolume>	ServerVolumes;
+typedef std::vector<ServerVolume> ServerVolumes;
 
 class StatMeter : public Debuggable
 {
 private:
 	// speed meter
-	static const int	SPEEDMETER_SLOTS = 30;
-	static const int	SPEEDMETER_SLOTSIZE = 1;  //Split elapsed time into this number of secs.
-	int					m_speedBytes[SPEEDMETER_SLOTS];
-	int64				m_speedTotalBytes;
-	int					m_speedTime[SPEEDMETER_SLOTS];
-	int					m_speedStartTime;
-	time_t				m_speedCorrection;
-	int					m_speedBytesIndex;
-	int					m_curSecBytes;
-	time_t				m_curSecTime;
-	Mutex				m_speedMutex;
+	static const int SPEEDMETER_SLOTS = 30;
+	static const int SPEEDMETER_SLOTSIZE = 1; //Split elapsed time into this number of secs.
+	int m_speedBytes[SPEEDMETER_SLOTS];
+	int64 m_speedTotalBytes;
+	int m_speedTime[SPEEDMETER_SLOTS];
+	int m_speedStartTime;
+	time_t m_speedCorrection;
+	int m_speedBytesIndex;
+	int m_curSecBytes;
+	time_t m_curSecTime;
+	Mutex m_speedMutex;
 
 	// time
-	int64				m_allBytes = 0;
-	time_t				m_startServer = 0;
-	time_t				m_lastCheck = 0;
-	time_t				m_lastTimeOffset = 0;
-	time_t				m_startDownload = 0;
-	time_t				m_pausedFrom = 0;
-	bool				m_standBy = true;
-	Mutex				m_statMutex;
+	int64 m_allBytes = 0;
+	time_t m_startServer = 0;
+	time_t m_lastCheck = 0;
+	time_t m_lastTimeOffset = 0;
+	time_t m_startDownload = 0;
+	time_t m_pausedFrom = 0;
+	bool m_standBy = true;
+	Mutex m_statMutex;
 
 	// data volume
-	bool				m_statChanged = false;
-	ServerVolumes		m_serverVolumes;
-	Mutex				m_volumeMutex;
+	bool m_statChanged = false;
+	ServerVolumes m_serverVolumes;
+	Mutex m_volumeMutex;
 
-	void				ResetSpeedStat();
-	void				AdjustTimeOffset();
+	void ResetSpeedStat();
+	void AdjustTimeOffset();
 
 protected:
-	virtual void		LogDebugInfo();
+	virtual void LogDebugInfo();
 
 public:
-						StatMeter();
-						~StatMeter();
-	void				Init();
-	int					CalcCurrentDownloadSpeed();
-	int					CalcMomentaryDownloadSpeed();
-	void				AddSpeedReading(int bytes);
-	void				AddServerData(int bytes, int serverId);
-	void				CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy);
-	bool				GetStandBy() { return m_standBy; }
-	void				IntervalCheck();
-	void				EnterLeaveStandBy(bool enter);
-	ServerVolumes*		LockServerVolumes();
-	void				UnlockServerVolumes();
-	void				Save();
-	bool				Load(bool* perfectServerMatch);
+	StatMeter();
+	~StatMeter();
+	void Init();
+	int CalcCurrentDownloadSpeed();
+	int CalcMomentaryDownloadSpeed();
+	void AddSpeedReading(int bytes);
+	void AddServerData(int bytes, int serverId);
+	void CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy);
+	bool GetStandBy() { return m_standBy; }
+	void IntervalCheck();
+	void EnterLeaveStandBy(bool enter);
+	ServerVolumes* LockServerVolumes();
+	void UnlockServerVolumes();
+	void Save();
+	bool Load(bool* perfectServerMatch);
 };
 
 extern StatMeter* g_StatMeter;

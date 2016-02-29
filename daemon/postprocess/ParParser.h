@@ -29,11 +29,11 @@
 class ParParser
 {
 public:
-	typedef std::vector<CString>	ParFileList;
+	typedef std::vector<CString> ParFileList;
 
-	static bool			FindMainPars(const char* path, ParFileList* fileList);
-	static bool			ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks);
-	static bool			SameParCollection(const char* filename1, const char* filename2);
+	static bool FindMainPars(const char* path, ParFileList* fileList);
+	static bool ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks);
+	static bool SameParCollection(const char* filename1, const char* filename2);
 };
 
 #endif

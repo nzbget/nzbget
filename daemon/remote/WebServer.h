@@ -47,37 +47,37 @@ public:
 	};
 
 private:
-	Connection*			m_connection = nullptr;
-	CString				m_request;
-	CString				m_url;
-	EHttpMethod			m_httpMethod;
-	EUserAccess			m_userAccess;
-	bool				m_gzip;
-	CString				m_origin;
-	int					m_contentLen;
-	char				m_authInfo[256+1];
-	char				m_authToken[48+1];
-	static char			m_serverAuthToken[3][48+1];
+	Connection* m_connection = nullptr;
+	CString m_request;
+	CString m_url;
+	EHttpMethod m_httpMethod;
+	EUserAccess m_userAccess;
+	bool m_gzip;
+	CString m_origin;
+	int m_contentLen;
+	char m_authInfo[256+1];
+	char m_authToken[48+1];
+	static char m_serverAuthToken[3][48+1];
 
-	void				Dispatch();
-	void				SendAuthResponse();
-	void				SendOptionsResponse();
-	void				SendErrorResponse(const char* errCode, bool printWarning);
-	void				SendFileResponse(const char* filename);
-	void				SendBodyResponse(const char* body, int bodyLen, const char* contentType);
-	void				SendRedirectResponse(const char* url);
-	const char*			DetectContentType(const char* filename);
-	bool				IsAuthorizedIp(const char* remoteAddr);
-	void				ParseHeaders();
-	void				ParseUrl();
-	bool				CheckCredentials();
+	void Dispatch();
+	void SendAuthResponse();
+	void SendOptionsResponse();
+	void SendErrorResponse(const char* errCode, bool printWarning);
+	void SendFileResponse(const char* filename);
+	void SendBodyResponse(const char* body, int bodyLen, const char* contentType);
+	void SendRedirectResponse(const char* url);
+	const char* DetectContentType(const char* filename);
+	bool IsAuthorizedIp(const char* remoteAddr);
+	void ParseHeaders();
+	void ParseUrl();
+	bool CheckCredentials();
 
 public:
-	static void			Init();
-	void				Execute();
-	void				SetConnection(Connection* connection) { m_connection = connection; }
-	void				SetUrl(const char* url) { m_url = url; }
-	void				SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	static void Init();
+	void Execute();
+	void SetConnection(Connection* connection) { m_connection = connection; }
+	void SetUrl(const char* url) { m_url = url; }
+	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
 };
 
 #endif

@@ -31,57 +31,57 @@ class Mutex
 {
 private:
 #ifdef WIN32
-	CRITICAL_SECTION		m_mutexObj;
+	CRITICAL_SECTION m_mutexObj;
 #else
-	pthread_mutex_t			m_mutexObj;
+	pthread_mutex_t m_mutexObj;
 #endif
 
 public:
-							Mutex();
-							~Mutex();
-	void					Lock();
-	void					Unlock();
+	Mutex();
+	~Mutex();
+	void Lock();
+	void Unlock();
 };
 
 class Thread
 {
 private:
-	static std::unique_ptr<Mutex>	m_threadMutex;
-	static int				m_threadCount;
+	static std::unique_ptr<Mutex> m_threadMutex;
+	static int m_threadCount;
 #ifdef WIN32
-	HANDLE	 				m_threadObj = 0;
+	HANDLE m_threadObj = 0;
 #else
-	pthread_t 				m_threadObj = 0;
+	pthread_t m_threadObj = 0;
 #endif
-	bool 					m_running = false;
-	bool					m_stopped = false;
-	bool					m_autoDestroy = false;
+	bool m_running = false;
+	bool m_stopped = false;
+	bool m_autoDestroy = false;
 
 #ifdef WIN32
-	static void __cdecl 	thread_handler(void* object);
+	static void __cdecl thread_handler(void* object);
 #else
-	static void				*thread_handler(void* object);
+	static void *thread_handler(void* object);
 #endif
 
 public:
-							Thread();
-	virtual 				~Thread();
-	static void				Init();
+	Thread();
+	virtual ~Thread();
+	static void Init();
 
-	virtual void 			Start();
-	virtual void 			Stop();
-	virtual void 			Resume();
-	bool					Kill();
+	virtual void Start();
+	virtual void Stop();
+	virtual void Resume();
+	bool Kill();
 
-	bool 					IsStopped() { return m_stopped; };
-	bool 					IsRunning()	const { return m_running; }
-	void 					SetRunning(bool onOff) { m_running = onOff; }
-	bool					GetAutoDestroy() { return m_autoDestroy; }
-	void					SetAutoDestroy(bool autoDestroy) { m_autoDestroy = autoDestroy; }
-	static int				GetThreadCount();
+	bool IsStopped() { return m_stopped; };
+	bool IsRunning() const { return m_running; }
+	void SetRunning(bool onOff) { m_running = onOff; }
+	bool GetAutoDestroy() { return m_autoDestroy; }
+	void SetAutoDestroy(bool autoDestroy) { m_autoDestroy = autoDestroy; }
+	static int GetThreadCount();
 
 protected:
-	virtual void 			Run() {}; // Virtual function - override in derivatives
+	virtual void Run() {}; // Virtual function - override in derivatives
 };
 
 #endif

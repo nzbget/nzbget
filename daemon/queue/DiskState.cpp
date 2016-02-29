@@ -64,21 +64,21 @@ int ParseFormatVersion(const char* formatSignature)
 class StateFile
 {
 private:
-	BString<1024>	m_destFilename;
-	BString<1024>	m_tempFilename;
-	int				m_formatVersion;
-	int				m_fileVersion;
-	DiskFile		m_file;
+	BString<1024> m_destFilename;
+	BString<1024> m_tempFilename;
+	int m_formatVersion;
+	int m_fileVersion;
+	DiskFile m_file;
 
 public:
-					StateFile(const char* filename, int formatVersion);
-	void			Discard();
-	bool			FileExists();
-	DiskFile*		BeginWriteTransaction();
-	bool			FinishWriteTransaction();
-	DiskFile*		BeginReadTransaction();
-	int				GetFileVersion() { return m_fileVersion; }
-	const char*		GetDestFilename() { return m_destFilename; }
+	StateFile(const char* filename, int formatVersion);
+	void Discard();
+	bool FileExists();
+	DiskFile* BeginWriteTransaction();
+	bool FinishWriteTransaction();
+	DiskFile* BeginReadTransaction();
+	int GetFileVersion() { return m_fileVersion; }
+	const char* GetDestFilename() { return m_destFilename; }
 };
 
 
@@ -2478,23 +2478,23 @@ bool DiskState::SaveServerInfo(Servers* servers, DiskFile& outfile)
 class ServerRef
 {
 public:
-	int				m_stateId;
-	CString			m_name;
-	CString			m_host;
-	int				m_port;
-	CString			m_user;
-	bool			m_matched;
-	bool			m_perfect;
+	int m_stateId;
+	CString m_name;
+	CString m_host;
+	int m_port;
+	CString m_user;
+	bool m_matched;
+	bool m_perfect;
 
-	int				GetStateId() { return m_stateId; }
-	const char*		GetName() { return m_name; }
-	const char*		GetHost() { return m_host; }
-	int				GetPort() { return m_port; }
-	const char*		GetUser() { return m_user; }
-	bool			GetMatched() { return m_matched; }
-	void			SetMatched(bool matched) { m_matched = matched; }
-	bool			GetPerfect() { return m_perfect; }
-	void			SetPerfect(bool perfect) { m_perfect = perfect; }
+	int GetStateId() { return m_stateId; }
+	const char* GetName() { return m_name; }
+	const char* GetHost() { return m_host; }
+	int GetPort() { return m_port; }
+	const char* GetUser() { return m_user; }
+	bool GetMatched() { return m_matched; }
+	void SetMatched(bool matched) { m_matched = matched; }
+	bool GetPerfect() { return m_perfect; }
+	void SetPerfect(bool perfect) { m_perfect = perfect; }
 };
 
 typedef std::deque<ServerRef*> ServerRefList;
