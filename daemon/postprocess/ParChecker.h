@@ -39,6 +39,14 @@ public:
 		psRepairNotNeeded
 	};
 
+	enum EStage
+	{
+		ptLoadingPars,
+		ptVerifyingSources,
+		ptRepairing,
+		ptVerifyingRepaired,
+	};
+
 	virtual ~ParChecker();
 	virtual void Run();
 	void SetDestDir(const char* destDir) { m_destDir = destDir; }
@@ -95,14 +103,6 @@ protected:
 	};
 
 	typedef std::deque<DupeSource> DupeSourceList;
-
-	enum EStage
-	{
-		ptLoadingPars,
-		ptVerifyingSources,
-		ptRepairing,
-		ptVerifyingRepaired,
-	};
 
 	enum EFileStatus
 	{
