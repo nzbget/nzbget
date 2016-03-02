@@ -198,6 +198,11 @@ using namespace MSXML;
 #include <memory>
 
 #ifdef HAVE_LIBGNUTLS
+#ifdef WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+typedef int pid_t;
+#endif
 #include <gnutls/gnutls.h>
 #if GNUTLS_VERSION_NUMBER <= 0x020b00
 #define NEED_GCRYPT_LOCKING
@@ -255,7 +260,6 @@ using namespace MSXML;
 #define rmdir _rmdir
 #define strcasecmp(a, b) _stricmp(a, b)
 #define strncasecmp(a, b, c) _strnicmp(a, b, c)
-#define ssize_t SSIZE_T
 #define __S_ISTYPE(mode, mask) (((mode) & _S_IFMT) == (mask))
 #define S_ISDIR(mode) __S_ISTYPE((mode), _S_IFDIR)
 #define S_ISREG(mode) __S_ISTYPE((mode), _S_IFREG)
@@ -267,7 +271,6 @@ using namespace MSXML;
 #define PATH_SEPARATOR '\\'
 #define ALT_PATH_SEPARATOR '/'
 #define LINE_ENDING "\r\n"
-#define pid_t int
 #define atoll _atoi64
 #define fseek _fseeki64
 #define ftell _ftelli64

@@ -127,6 +127,8 @@ public:
 		soEnd
 	};
 
+	DiskFile() = default;
+	DiskFile(const DiskFile&) = delete;
 	~DiskFile();
 	bool Open(const char* filename, EOpenMode mode);
 	bool Close();

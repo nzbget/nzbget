@@ -44,22 +44,23 @@ std::unique_ptr<TlsSocketFinalizer> m_tlsSocketFinalizer;
  * Mutexes for gcryptlib
  */
 
-typedef std::list<Mutex*> Mutexes;
-Mutexes* g_GCryptLibMutexes;
+std::vector<std::unique_ptr<Mutex>> g_GCryptLibMutexes;
 
 static int gcry_mutex_init(void **priv)
 {
-	Mutex* mutex = new Mutex();
-	g_GCryptLibMutexes->push_back(mutex);
-	*priv = mutex;
+	g_GCryptLibMutexes.emplace_back(std::make_unique<Mutex>());
+	*priv = g_GCryptLibMutexes.back().get();
 	return 0;
 }
 
 static int gcry_mutex_destroy(void **lock)
 {
 	Mutex* mutex = ((Mutex*)*lock);
-	g_GCryptLibMutexes->remove(mutex);
-	delete mutex;
+	g_GCryptLibMutexes.erase(std::find_if(g_GCryptLibMutexes.begin(), g_GCryptLibMutexes.end(),
+		[mutex](std::unique_ptr<Mutex>& itMutex)
+		{
+			return itMutex.get() == mutex;
+		}));
 	return 0;
 }
 
@@ -92,18 +93,18 @@ static struct gcry_thread_cbs gcry_threads_Mutex =
  * Mutexes for OpenSSL
  */
 
-std::vector<Mutex> g_OpenSSLMutexes;
+std::vector<std::unique_ptr<Mutex>> g_OpenSSLMutexes;
 
 static void openssl_locking(int mode, int n, const char* file, int line)
 {
-	Mutex& mutex = g_OpenSSLMutexes[n];
+	Mutex* mutex = g_OpenSSLMutexes[n].get();
 	if (mode & CRYPTO_LOCK)
 	{
-		mutex.Lock();
+		mutex->Lock();
 	}
 	else
 	{
-		mutex.Unlock();
+		mutex->Unlock();
 	}
 }
 
@@ -150,10 +151,6 @@ void TlsSocket::Init()
 	debug("Initializing TLS library");
 
 #ifdef HAVE_LIBGNUTLS
-#ifdef NEED_GCRYPT_LOCKING
-	g_GCryptLibMutexes = new Mutexes();
-#endif /* NEED_GCRYPT_LOCKING */
-
 	int error_code;
 
 #ifdef NEED_GCRYPT_LOCKING
@@ -175,7 +172,10 @@ void TlsSocket::Init()
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	g_OpenSSLMutexes.resize(CRYPTO_num_locks());
+	for (int i = 0, num = CRYPTO_num_locks(); i < num; i++)
+	{
+		g_OpenSSLMutexes.emplace_back(std::make_unique<Mutex>());
+	}
 
 	SSL_load_error_strings();
 	SSL_library_init();
@@ -196,20 +196,7 @@ void TlsSocket::Final()
 {
 #ifdef HAVE_LIBGNUTLS
 	gnutls_global_deinit();
-
-#ifdef NEED_GCRYPT_LOCKING
-	// fixing memory leak in gcryptlib
-	for (Mutex* mutex : *g_GCryptLibMutexes)
-	{
-		delete mutex;
-	}
-	delete g_GCryptLibMutexes;
-#endif /* NEED_GCRYPT_LOCKING */
 #endif /* HAVE_LIBGNUTLS */
-
-#ifdef HAVE_OPENSSL
-	g_OpenSSLMutexes.clear();
-#endif /* HAVE_OPENSSL */
 }
 
 TlsSocket::~TlsSocket()

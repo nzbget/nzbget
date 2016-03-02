@@ -26,6 +26,7 @@ class Mutex
 {
 public:
 	Mutex();
+	Mutex(const Mutex&) = delete;
 	~Mutex();
 	void Lock();
 	void Unlock();
@@ -42,6 +43,7 @@ class Thread
 {
 public:
 	Thread();
+	Thread(const Thread&) = delete;
 	virtual ~Thread();
 	static void Init();
 
