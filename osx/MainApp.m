@@ -410,6 +410,8 @@ void InstallSignalHandlers()
 												  range:NSMakeRange(0, [dir length])];
 	}
 	
+	dir = [[dir componentsSeparatedByCharactersInSet: [NSCharacterSet characterSetWithCharactersInString:@";,"]] objectAtIndex:0];
+
 	if (dir.length == 0 || ![[NSFileManager defaultManager] fileExistsAtPath:dir]) {
 		[NSApp activateIgnoringOtherApps:TRUE];
 		NSAlert *alert = [[NSAlert alloc] init];
@@ -418,7 +420,7 @@ void InstallSignalHandlers()
 		[alert runModal];
 		return;
 	}
-	
+
 	[[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:@[[NSURL fileURLWithPath:dir isDirectory:YES]]];
 }
 
