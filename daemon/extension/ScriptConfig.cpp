@@ -244,13 +244,18 @@ void ScriptConfig::InitScripts()
 
 void ScriptConfig::LoadScripts(Scripts* scripts)
 {
-	if (strlen(g_Options->GetScriptDir()) == 0)
+	if (Util::EmptyStr(g_Options->GetScriptDir()))
 	{
 		return;
 	}
 
 	Scripts tmpScripts;
-	LoadScriptDir(&tmpScripts, g_Options->GetScriptDir(), false);
+
+	Tokenizer tokDir(g_Options->GetScriptDir(), ",;");
+	while (const char* scriptDir = tokDir.Next())
+	{
+		LoadScriptDir(&tmpScripts, scriptDir, false);
+	}
 
 	tmpScripts.sort(
 		[](Script& script1, Script& script2)
@@ -259,8 +264,8 @@ void ScriptConfig::LoadScripts(Scripts* scripts)
 		});
 
 	// first add all scripts from ScriptOrder
-	Tokenizer tok(g_Options->GetScriptOrder(), ",;");
-	while (const char* scriptName = tok.Next())
+	Tokenizer tokOrder(g_Options->GetScriptOrder(), ",;");
+	while (const char* scriptName = tokOrder.Next())
 	{
 		Scripts::iterator pos = std::find_if(tmpScripts.begin(), tmpScripts.end(),
 			[scriptName](Script& script)
@@ -296,6 +301,12 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 
 			if (!FileSystem::DirectoryExists(fullFilename))
 			{
+				BString<1024> scriptName = BuildScriptName(directory, filename, isSubDir);
+				if (ScriptExists(scripts, scriptName))
+				{
+					continue;
+				}
+
 				// check if the file contains pp-script-signature
 				DiskFile infile;
 				if (infile.Open(fullFilename, DiskFile::omRead))
@@ -319,24 +330,6 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 							bool feedScript = strstr(line, FEED_SCRIPT_SIGNATURE);
 							if (postScript || scanScript || queueScript || schedulerScript || feedScript)
 							{
-								BString<1024> scriptName;
-								if (isSubDir)
-								{
-									BString<1024> directory2 = directory;
-									int len = strlen(directory2);
-									if (directory2[len-1] == PATH_SEPARATOR || directory2[len-1] == ALT_PATH_SEPARATOR)
-									{
-										// trim last path-separator
-										directory2[len-1] = '\0';
-									}
-
-									scriptName.Format("%s%c%s", FileSystem::BaseFileName(directory2), PATH_SEPARATOR, filename);
-								}
-								else
-								{
-									scriptName = filename;
-								}
-
 								char* queueEvents = nullptr;
 								if (queueScript)
 								{
@@ -370,6 +363,36 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 			}
 		}
 	}
+}
+
+
+BString<1024> ScriptConfig::BuildScriptName(const char* directory, const char* filename, bool isSubDir)
+{
+	if (isSubDir)
+	{
+		BString<1024> directory2 = directory;
+		int len = strlen(directory2);
+		if (directory2[len-1] == PATH_SEPARATOR || directory2[len-1] == ALT_PATH_SEPARATOR)
+		{
+			// trim last path-separator
+			directory2[len-1] = '\0';
+		}
+
+		return BString<1024>("%s%c%s", FileSystem::BaseFileName(directory2), PATH_SEPARATOR, filename);
+	}
+	else
+	{
+		return filename;
+	}
+}
+
+bool ScriptConfig::ScriptExists(Scripts* scripts, const char* scriptName)
+{
+	return std::find_if(scripts->begin(), scripts->end(),
+		[scriptName](Script& script)
+		{
+			return !strcmp(script.GetName(), scriptName);
+		}) != scripts->end();
 }
 
 void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)

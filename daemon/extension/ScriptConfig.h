@@ -96,6 +96,8 @@ private:
 	void LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir);
 	void BuildScriptDisplayNames(Scripts* scripts);
 	void LoadScripts(Scripts* scripts);
+	BString<1024>BuildScriptName(const char* directory, const char* filename, bool isSubDir);
+	bool ScriptExists(Scripts* scripts, const char* scriptName);
 };
 
 extern ScriptConfig* g_ScriptConfig;
