@@ -93,25 +93,28 @@ bool MoveController::MoveFiles()
 	}
 
 	bool ok = true;
-	DirBrowser dir(m_interDir);
-	while (const char* filename = dir.Next())
+
 	{
-		BString<1024> srcFile("%s%c%s",* m_interDir, PATH_SEPARATOR, filename);
-		CString dstFile = FileSystem::MakeUniqueFilename(m_destDir, filename);
-		bool hiddenFile = filename[0] == '.';
-
-		if (!hiddenFile)
+		DirBrowser dir(m_interDir);
+		while (const char* filename = dir.Next())
 		{
-			PrintMessage(Message::mkInfo, "Moving file %s to %s", FileSystem::BaseFileName(srcFile), *m_destDir);
-		}
+			BString<1024> srcFile("%s%c%s",* m_interDir, PATH_SEPARATOR, filename);
+			CString dstFile = FileSystem::MakeUniqueFilename(m_destDir, filename);
+			bool hiddenFile = filename[0] == '.';
 
-		if (!FileSystem::MoveFile(srcFile, dstFile) && !hiddenFile)
-		{
-			PrintMessage(Message::mkError, "Could not move file %s to %s: %s",
-				*srcFile, *dstFile, *FileSystem::GetLastErrorMessage());
-			ok = false;
+			if (!hiddenFile)
+			{
+				PrintMessage(Message::mkInfo, "Moving file %s to %s", FileSystem::BaseFileName(srcFile), *m_destDir);
+			}
+
+			if (!FileSystem::MoveFile(srcFile, dstFile) && !hiddenFile)
+			{
+				PrintMessage(Message::mkError, "Could not move file %s to %s: %s",
+					*srcFile, *dstFile, *FileSystem::GetLastErrorMessage());
+				ok = false;
+			}
 		}
-	}
+	} // make sure "DirBrowser dir" is destroyed (and has closed its handle) before we trying to delete the directory
 
 	if (ok && !FileSystem::DeleteDirectoryWithContent(m_interDir, errmsg))
 	{

@@ -523,25 +523,27 @@ bool FileSystem::DeleteDirectoryWithContent(const char* dirFilename, CString& er
 	bool del = false;
 	bool ok = true;
 
-	DirBrowser dir(dirFilename);
-	while (const char* filename = dir.Next())
 	{
-		BString<1024> fullFilename("%s%c%s", dirFilename, PATH_SEPARATOR, filename);
+		DirBrowser dir(dirFilename);
+		while (const char* filename = dir.Next())
+		{
+			BString<1024> fullFilename("%s%c%s", dirFilename, PATH_SEPARATOR, filename);
 
-		if (FileSystem::DirectoryExists(fullFilename))
-		{
-			del = DeleteDirectoryWithContent(fullFilename, errmsg);
+			if (FileSystem::DirectoryExists(fullFilename))
+			{
+				del = DeleteDirectoryWithContent(fullFilename, errmsg);
+			}
+			else
+			{
+				del = DeleteFile(fullFilename);
+			}
+			ok &= del;
+			if (!del && errmsg.Empty())
+			{
+				errmsg.Format("could not delete %s: %s", *fullFilename, *GetLastErrorMessage());
+			}
 		}
-		else
-		{
-			del = DeleteFile(fullFilename);
-		}
-		ok &= del;
-		if (!del && errmsg.Empty())
-		{
-			errmsg.Format("could not delete %s: %s", *fullFilename, *GetLastErrorMessage());
-		}
-	}
+	} // make sure "DirBrowser dir" is destroyed (and has closed its handle) before we trying to delete the directory
 
 	del = RemoveDirectory(dirFilename);
 	ok &= del;
