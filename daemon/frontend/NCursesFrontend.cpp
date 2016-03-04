@@ -95,6 +95,9 @@ static const int READKEY_EMPTY = ERR;
 
 NCursesFrontend::NCursesFrontend()
 {
+	m_summary = true;
+	m_fileList = true;
+
 	m_showNzbname = g_Options->GetCursesNzbName();
 	m_showTimestamp = g_Options->GetCursesTime();
 	m_groupFiles = g_Options->GetCursesGroup();
