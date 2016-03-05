@@ -28,14 +28,13 @@ class FeedFile
 {
 public:
 	FeedFile(const char* fileName);
-	virtual ~FeedFile();
 	bool Parse();
-	FeedItemInfos* GetFeedItemInfos() { return m_feedItemInfos; }
+	std::unique_ptr<FeedItemList> DetachFeedItems() { return std::move(m_feedItems); }
 
 	void LogDebugInfo();
 
 private:
-	FeedItemInfos* m_feedItemInfos;
+	std::unique_ptr<FeedItemList> m_feedItems;
 	CString m_fileName;
 
 	void ParseSubject(FeedItemInfo& feedItemInfo);

@@ -194,25 +194,3 @@ FeedHistoryInfo* FeedHistory::Find(const char* url)
 
 	return nullptr;
 }
-
-
-FeedItemInfos::FeedItemInfos()
-{
-	debug("Creating FeedItemInfos");
-
-	m_refCount = 0;
-}
-
-void FeedItemInfos::Retain()
-{
-	m_refCount++;
-}
-
-void FeedItemInfos::Release()
-{
-	m_refCount--;
-	if (m_refCount <= 0)
-	{
-		delete this;
-	}
-}

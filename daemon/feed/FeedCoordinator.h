@@ -42,10 +42,15 @@ public:
 	virtual void Stop();
 	void Update(Subject* caller, void* aspect);
 	void AddFeed(FeedInfo* feedInfo);
-	bool PreviewFeed(int id, const char* name, const char* url, const char* filter, bool backlog,
-		bool pauseNzb, const char* category, int priority, int interval, const char* feedScript,
-		int cacheTimeSec, const char* cacheId, FeedItemInfos** ppFeedItemInfos);
-	bool ViewFeed(int id, FeedItemInfos** ppFeedItemInfos);
+
+	/* may return empty pointer on error */
+	std::shared_ptr<FeedItemList> PreviewFeed(int id, const char* name, const char* url,
+		const char* filter, bool backlog, bool pauseNzb, const char* category, int priority,
+		int interval, const char* feedScript, int cacheTimeSec, const char* cacheId);
+
+	/* may return empty pointer on error */
+	std::shared_ptr<FeedItemList> ViewFeed(int id);
+
 	void FetchFeed(int id);
 	bool HasActiveDownloads();
 	Feeds* GetFeeds() { return &m_feeds; }
@@ -65,21 +70,22 @@ private:
 	{
 	public:
 		FeedCacheItem(const char* url, int cacheTimeSec,const char* cacheId,
-			time_t lastUsage, FeedItemInfos* feedItemInfos);
-		~FeedCacheItem();
+				time_t lastUsage, std::shared_ptr<FeedItemList> feedItems) :
+			m_url(url), m_cacheTimeSec(cacheTimeSec), m_cacheId(cacheId),
+			m_lastUsage(lastUsage), m_feedItems(feedItems) {}
 		const char* GetUrl() { return m_url; }
 		int GetCacheTimeSec() { return m_cacheTimeSec; }
 		const char* GetCacheId() { return m_cacheId; }
 		time_t GetLastUsage() { return m_lastUsage; }
 		void SetLastUsage(time_t lastUsage) { m_lastUsage = lastUsage; }
-		FeedItemInfos* GetFeedItemInfos() { return m_feedItemInfos; }
+		std::shared_ptr<FeedItemList> GetFeedItems() { return m_feedItems; }
 
 	private:
 		CString m_url;
 		int m_cacheTimeSec;
 		CString m_cacheId;
 		time_t m_lastUsage;
-		FeedItemInfos* m_feedItemInfos;
+		std::shared_ptr<FeedItemList> m_feedItems;
 	};
 
 	class FilterHelper : public FeedFilterHelper
@@ -108,8 +114,8 @@ private:
 
 	void StartFeedDownload(FeedInfo* feedInfo, bool force);
 	void FeedCompleted(FeedDownloader* feedDownloader);
-	void FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos);
-	void ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NzbList* addedNzbs);
+	void FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems);
+	void ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems, NzbList* addedNzbs);
 	NzbInfo* CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedItemInfo);
 	void ResetHangingDownloads();
 	void DownloadQueueUpdate(Subject* caller, void* aspect);

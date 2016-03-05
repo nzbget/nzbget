@@ -2769,9 +2769,8 @@ void ConfigTemplatesXmlCommand::Execute()
 //		int priority, int interval, string feedfilter, bool includeNonMatching, int cacheTimeSec, string cacheId)
 void ViewFeedXmlCommand::Execute()
 {
-	bool ok = false;
 	bool includeNonMatching = false;
-	FeedItemInfos* feedItemInfos = nullptr;
+	std::shared_ptr<FeedItemList> feedItems;
 
 	if (m_preview)
 	{
@@ -2811,8 +2810,8 @@ void ViewFeedXmlCommand::Execute()
 		debug("Url=%s", url);
 		debug("Filter=%s", filter);
 
-		ok = g_FeedCoordinator->PreviewFeed(id, name, url, filter, backlog, pauseNzb,
-			category, priority, interval, feedFilter, cacheTimeSec, cacheId, &feedItemInfos);
+		feedItems = g_FeedCoordinator->PreviewFeed(id, name, url, filter, backlog, pauseNzb,
+			category, priority, interval, feedFilter, cacheTimeSec, cacheId);
 	}
 	else
 	{
@@ -2825,10 +2824,10 @@ void ViewFeedXmlCommand::Execute()
 
 		debug("ID=%i", id);
 
-		ok = g_FeedCoordinator->ViewFeed(id, &feedItemInfos);
+		feedItems = g_FeedCoordinator->ViewFeed(id);
 	}
 
-	if (!ok)
+	if (!feedItems)
 	{
 		BuildErrorResponse(3, "Could not read feed");
 		return;
@@ -2883,7 +2882,7 @@ void ViewFeedXmlCommand::Execute()
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 	int index = 0;
 
-	for (FeedItemInfo& feedItemInfo : feedItemInfos)
+	for (FeedItemInfo& feedItemInfo : feedItems.get())
 	{
 		if (includeNonMatching || feedItemInfo.GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
@@ -2902,8 +2901,6 @@ void ViewFeedXmlCommand::Execute()
 				dupeModeType[feedItemInfo.GetDupeMode()], statusType[feedItemInfo.GetStatus()]);
 		}
 	}
-
-	feedItemInfos->Release();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }

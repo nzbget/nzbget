@@ -219,18 +219,7 @@ private:
 	void ParseSeasonEpisode();
 };
 
-typedef std::deque<FeedItemInfo> FeedItemInfosBase;
-
-class FeedItemInfos : public FeedItemInfosBase
-{
-public:
-	FeedItemInfos();
-	void Retain();
-	void Release();
-
-private:
-	int m_refCount;
-};
+typedef std::deque<FeedItemInfo> FeedItemList;
 
 class FeedHistoryInfo
 {

@@ -30,22 +30,6 @@
 #include "DiskState.h"
 #include "DupeCoordinator.h"
 
-FeedCoordinator::FeedCacheItem::FeedCacheItem(const char* url, int cacheTimeSec,const char* cacheId,
-	time_t lastUsage, FeedItemInfos* feedItemInfos)
-{
-	m_url = url;
-	m_cacheTimeSec = cacheTimeSec;
-	m_cacheId = cacheId;
-	m_lastUsage = lastUsage;
-	m_feedItemInfos = feedItemInfos;
-	m_feedItemInfos->Retain();
-}
-
-FeedCoordinator::FeedCacheItem::~FeedCacheItem()
-{
-	m_feedItemInfos->Release();
-}
-
 FeedCoordinator::FilterHelper::FilterHelper()
 {
 	m_seasonEpisodeRegEx = nullptr;
@@ -365,7 +349,8 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			m_downloadsMutex.Lock();
 			if (parsed)
 			{
-				ProcessFeed(feedInfo, feedFile->GetFeedItemInfos(), &addedNzbs);
+				std::unique_ptr<FeedItemList> feedItems = feedFile->DetachFeedItems();
+				ProcessFeed(feedInfo, feedItems.get(), &addedNzbs);
 				feedFile.reset();
 			}
 			feedInfo->SetLastUpdate(Util::CurrentTime());
@@ -389,7 +374,7 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 	}
 }
 
-void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos)
+void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems)
 {
 	debug("Filtering feed %s", feedInfo->GetName());
 
@@ -400,7 +385,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 		feedFilter = std::make_unique<FeedFilter>(feedInfo->GetFilter());
 	}
 
-	for (FeedItemInfo& feedItemInfo : feedItemInfos)
+	for (FeedItemInfo& feedItemInfo : feedItems)
 	{
 		feedItemInfo.SetMatchStatus(FeedItemInfo::msAccepted);
 		feedItemInfo.SetMatchRule(0);
@@ -418,16 +403,16 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfo
 	}
 }
 
-void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemInfos* feedItemInfos, NzbList* addedNzbs)
+void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems, NzbList* addedNzbs)
 {
 	debug("Process feed %s", feedInfo->GetName());
 
-	FilterFeed(feedInfo, feedItemInfos);
+	FilterFeed(feedInfo, feedItems);
 
 	bool firstFetch = feedInfo->GetLastUpdate() == 0;
 	int added = 0;
 
-	for (FeedItemInfo& feedItemInfo : feedItemInfos)
+	for (FeedItemInfo& feedItemInfo : feedItems)
 	{
 		if (feedItemInfo.GetMatchStatus() == FeedItemInfo::msAccepted)
 		{
@@ -499,23 +484,24 @@ NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedIt
 	return nzbInfo;
 }
 
-bool FeedCoordinator::ViewFeed(int id, FeedItemInfos** ppFeedItemInfos)
+std::shared_ptr<FeedItemList> FeedCoordinator::ViewFeed(int id)
 {
 	if (id < 1 || id > (int)m_feeds.size())
 	{
-		return false;
+		return nullptr;
 	}
 
 	FeedInfo* feedInfo = m_feeds.at(id - 1);
 
 	return PreviewFeed(feedInfo->GetId(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(),
 		feedInfo->GetBacklog(), feedInfo->GetPauseNzb(), feedInfo->GetCategory(),
-		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetFeedScript(), 0, nullptr, ppFeedItemInfos);
+		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetFeedScript(), 0, nullptr);
 }
 
-bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, const char* filter,
-	bool backlog, bool pauseNzb, const char* category, int priority, int interval, const char* feedScript,
-	int cacheTimeSec, const char* cacheId, FeedItemInfos** ppFeedItemInfos)
+std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
+	const char* name, const char* url, const char* filter, bool backlog, bool pauseNzb,
+	const char* category, int priority, int interval, const char* feedScript,
+	int cacheTimeSec, const char* cacheId)
 {
 	debug("Preview feed %s", name);
 
@@ -523,7 +509,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		filter, pauseNzb, category, priority, feedScript);
 	feedInfo->SetPreview(true);
 
-	FeedItemInfos* feedItemInfos = nullptr;
+	std::shared_ptr<FeedItemList> feedItems;
 	bool hasCache = false;
 	if (cacheTimeSec > 0 && *cacheId != '\0')
 	{
@@ -533,8 +519,7 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 			if (!strcmp(feedCacheItem.GetCacheId(), cacheId))
 			{
 				feedCacheItem.SetLastUsage(Util::CurrentTime());
-				feedItemInfos = feedCacheItem.GetFeedItemInfos();
-				feedItemInfos->Retain();
+				feedItems = feedCacheItem.GetFeedItems();
 				hasCache = true;
 				break;
 			}
@@ -584,14 +569,13 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 
 		if (!parsed)
 		{
-			return false;
+			return nullptr;
 		}
 
-		feedItemInfos = feedFile->GetFeedItemInfos();
-		feedItemInfos->Retain();
+		feedItems = feedFile->DetachFeedItems();
 		feedFile.reset();
 
-		for (FeedItemInfo& feedItemInfo : feedItemInfos)
+		for (FeedItemInfo& feedItemInfo : feedItems.get())
 		{
 			feedItemInfo.SetStatus(firstFetch && feedInfo->GetBacklog() ? FeedItemInfo::isBacklog : FeedItemInfo::isNew);
 			FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(feedItemInfo.GetUrl());
@@ -602,19 +586,17 @@ bool FeedCoordinator::PreviewFeed(int id, const char* name, const char* url, con
 		}
 	}
 
-	FilterFeed(feedInfo.get(), feedItemInfos);
+	FilterFeed(feedInfo.get(), feedItems.get());
 	feedInfo.reset();
 
 	if (cacheTimeSec > 0 && *cacheId != '\0' && !hasCache)
 	{
 		m_downloadsMutex.Lock();
-		m_feedCache.emplace_back(url, cacheTimeSec, cacheId, Util::CurrentTime(), feedItemInfos);
+		m_feedCache.emplace_back(url, cacheTimeSec, cacheId, Util::CurrentTime(), feedItems);
 		m_downloadsMutex.Unlock();
 	}
 
-	*ppFeedItemInfos = feedItemInfos;
-
-	return true;
+	return feedItems;
 }
 
 void FeedCoordinator::FetchFeed(int id)

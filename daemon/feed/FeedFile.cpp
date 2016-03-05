@@ -30,21 +30,12 @@ FeedFile::FeedFile(const char* fileName) :
 {
 	debug("Creating FeedFile");
 
-	m_feedItemInfos = new FeedItemInfos();
-	m_feedItemInfos->Retain();
+	m_feedItems = std::make_unique<FeedItemList>();
 
 #ifndef WIN32
 	m_feedItemInfo = nullptr;
 	m_tagContent.Clear();
 #endif
-}
-
-FeedFile::~FeedFile()
-{
-	debug("Destroying FeedFile");
-
-	// Cleanup
-	m_feedItemInfos->Release();
 }
 
 void FeedFile::LogDebugInfo()
@@ -168,8 +159,8 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 	{
 		MSXML::IXMLDOMNodePtr node = itemList->Getitem(i);
 
-		m_feedItemInfos->emplace_back();
-		FeedItemInfo& feedItemInfo = m_feedItemInfos->back();
+		m_feedItems->emplace_back();
+		FeedItemInfo& feedItemInfo = m_feedItems->back();
 
 		MSXML::IXMLDOMNodePtr tag;
 		MSXML::IXMLDOMNodePtr attr;
@@ -395,8 +386,8 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 
 	if (!strcmp("item", name))
 	{
-		m_feedItemInfos->emplace_back();
-		m_feedItemInfo = &m_feedItemInfos->back();
+		m_feedItems->emplace_back();
+		m_feedItemInfo = &m_feedItems->back();
 	}
 	else if (!strcmp("enclosure", name) && m_feedItemInfo)
 	{
