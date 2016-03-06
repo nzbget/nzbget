@@ -205,7 +205,6 @@ NzbInfo::NzbInfo() : m_fileList(true)
 	m_priority = 0;
 	m_activeDownloads = 0;
 	m_messages.clear();
-	m_postInfo = nullptr;
 	m_idMessageGen = 0;
 	m_id = ++m_idGen;
 	m_downloadedSize = 0;
@@ -227,7 +226,6 @@ NzbInfo::~NzbInfo()
 {
 	debug("Destroying NZBInfo");
 
-	delete m_postInfo;
 	m_fileList.Clear();
 }
 
@@ -556,14 +554,13 @@ void NzbInfo::CopyFileList(NzbInfo* srcNzbInfo)
 
 void NzbInfo::EnterPostProcess()
 {
-	m_postInfo = new PostInfo();
+	m_postInfo = std::make_unique<PostInfo>();
 	m_postInfo->SetNzbInfo(this);
 }
 
 void NzbInfo::LeavePostProcess()
 {
-	delete m_postInfo;
-	m_postInfo = nullptr;
+	m_postInfo.reset();
 	ClearMessages();
 }
 
@@ -809,8 +806,6 @@ FileInfo::~ FileInfo()
 {
 	debug("Destroying FileInfo");
 
-	delete m_mutexOutputFile;
-
 	ClearArticles();
 }
 
@@ -862,26 +857,25 @@ void FileInfo::MakeValidFilename()
 
 void FileInfo::LockOutputFile()
 {
-	m_mutexOutputFile->Lock();
+	m_outputFileMutex->Lock();
 }
 
 void FileInfo::UnlockOutputFile()
 {
-	m_mutexOutputFile->Unlock();
+	m_outputFileMutex->Unlock();
 }
 
 void FileInfo::SetActiveDownloads(int activeDownloads)
 {
 	m_activeDownloads = activeDownloads;
 
-	if (m_activeDownloads > 0 && !m_mutexOutputFile)
+	if (m_activeDownloads > 0 && !m_outputFileMutex)
 	{
-		m_mutexOutputFile = new Mutex();
+		m_outputFileMutex = std::make_unique<Mutex>();
 	}
-	else if (m_activeDownloads == 0 && m_mutexOutputFile)
+	else if (m_activeDownloads == 0)
 	{
-		delete m_mutexOutputFile;
-		m_mutexOutputFile = nullptr;
+		m_outputFileMutex.reset();
 	}
 }
 

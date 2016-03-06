@@ -207,7 +207,7 @@ private:
 	int m_completedArticles = 0;
 	bool m_outputInitialized = false;
 	CString m_outputFilename;
-	Mutex* m_mutexOutputFile = nullptr;
+	std::unique_ptr<Mutex> m_outputFileMutex;
 	bool m_extraPriority = false;
 	int m_activeDownloads = 0;
 	bool m_autoDeleted = false;
@@ -560,15 +560,13 @@ public:
 	bool GetParFull() { return m_parFull; }
 	int GetFeedId() { return m_feedId; }
 	void SetFeedId(int feedId) { m_feedId = feedId; }
-
 	void CopyFileList(NzbInfo* srcNzbInfo);
 	void UpdateMinMaxTime();
-	PostInfo* GetPostInfo() { return m_postInfo; }
+	PostInfo* GetPostInfo() { return m_postInfo.get(); }
 	void EnterPostProcess();
 	void LeavePostProcess();
 	bool IsDupeSuccess();
 	const char* MakeTextStatus(bool ignoreScriptStatus);
-
 	void AddMessage(Message::EKind kind, const char* text);
 	void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 	int GetMessageCount() { return m_messageCount; }
@@ -647,7 +645,7 @@ private:
 	Mutex m_logMutex;
 	MessageList m_messages;
 	int m_idMessageGen;
-	PostInfo* m_postInfo;
+	std::unique_ptr<PostInfo> m_postInfo;
 	int64 m_downloadedSize;
 	time_t m_downloadStartTime;
 	int m_downloadSec;
