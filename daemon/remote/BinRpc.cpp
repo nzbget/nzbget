@@ -473,10 +473,10 @@ void ListBinCommand::Execute()
 		bool matchGroup = ntohl(ListRequest.m_matchGroup);
 		const char* pattern = ListRequest.m_pattern;
 
-		RegEx *regEx = nullptr;
+		std::unique_ptr<RegEx> regEx;
 		if (matchMode == rmRegEx)
 		{
-			regEx = new RegEx(pattern);
+			regEx = std::make_unique<RegEx>(pattern);
 			ListResponse.m_regExValid = regEx->IsValid();
 		}
 
@@ -654,8 +654,6 @@ void ListBinCommand::Execute()
 		}
 
 		DownloadQueue::Unlock();
-
-		delete regEx;
 
 		ListResponse.m_nrTrailingNzbEntries = htonl(nrNzbEntries);
 		ListResponse.m_nrTrailingPPPEntries = htonl(nrPPPEntries);
