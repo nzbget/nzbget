@@ -136,18 +136,20 @@ void FeedItemInfo::ParseSeasonEpisode()
 {
 	m_seasonEpisodeParsed = true;
 
-	RegEx** ppRegEx = m_feedFilterHelper->GetSeasonEpisodeRegEx();
-	if (!*ppRegEx)
+	const char* pattern = "[^[:alnum:]]s?([0-9]+)[ex]([0-9]+(-?e[0-9]+)?)[^[:alnum:]]";
+
+	std::unique_ptr<RegEx>& regEx = m_feedFilterHelper->GetRegEx(1);
+	if (!regEx)
 	{
-		*ppRegEx = new RegEx("[^[:alnum:]]s?([0-9]+)[ex]([0-9]+(-?e[0-9]+)?)[^[:alnum:]]", 10);
+		regEx = std::make_unique<RegEx>(pattern, 10);
 	}
 
-	if ((*ppRegEx)->Match(m_title))
+	if (regEx->Match(m_title))
 	{
-		SetSeason(BString<100>("S%02d", atoi(m_title + (*ppRegEx)->GetMatchStart(1))));
+		SetSeason(BString<100>("S%02d", atoi(m_title + regEx->GetMatchStart(1))));
 
 		BString<100> regValue;
-		regValue.Set(m_title + (*ppRegEx)->GetMatchStart(2), (*ppRegEx)->GetMatchLen(2));
+		regValue.Set(m_title + regEx->GetMatchStart(2), regEx->GetMatchLen(2));
 
 		BString<100> episode("E%s", *regValue);
 		Util::ReduceStr(episode, "-", "");

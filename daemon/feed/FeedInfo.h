@@ -89,7 +89,7 @@ typedef std::deque<FeedInfo*> Feeds;
 class FeedFilterHelper
 {
 public:
-	virtual RegEx** GetSeasonEpisodeRegEx() = 0;
+	virtual std::unique_ptr<RegEx>& GetRegEx(int id) = 0;
 	virtual void CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen) = 0;
 };
 

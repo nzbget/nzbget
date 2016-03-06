@@ -91,12 +91,10 @@ private:
 	class FilterHelper : public FeedFilterHelper
 	{
 	public:
-		FilterHelper();
-		~FilterHelper();
-		virtual RegEx** GetSeasonEpisodeRegEx() { return &m_seasonEpisodeRegEx; };
+		virtual std::unique_ptr<RegEx>& GetRegEx(int id);
 		virtual void CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen);
 	private:
-		RegEx* m_seasonEpisodeRegEx;
+		std::vector<std::unique_ptr<RegEx>> m_regExes;
 	};
 
 	typedef std::list<FeedCacheItem> FeedCache;
@@ -110,7 +108,6 @@ private:
 	bool m_force = false;
 	bool m_save = false;
 	FeedCache m_feedCache;
-	FilterHelper m_filterHelper;
 
 	void StartFeedDownload(FeedInfo* feedInfo, bool force);
 	void FeedCompleted(FeedDownloader* feedDownloader);

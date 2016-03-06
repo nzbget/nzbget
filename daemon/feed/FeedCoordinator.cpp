@@ -30,14 +30,10 @@
 #include "DiskState.h"
 #include "DupeCoordinator.h"
 
-FeedCoordinator::FilterHelper::FilterHelper()
+std::unique_ptr<RegEx>& FeedCoordinator::FilterHelper::GetRegEx(int id)
 {
-	m_seasonEpisodeRegEx = nullptr;
-}
-
-FeedCoordinator::FilterHelper::~FilterHelper()
-{
-	delete m_seasonEpisodeRegEx;
+	m_regExes.resize(id);
+	return m_regExes[id - 1];
 }
 
 void FeedCoordinator::FilterHelper::CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen)
@@ -378,6 +374,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems)
 {
 	debug("Filtering feed %s", feedInfo->GetName());
 
+	FilterHelper filterHelper;
 	std::unique_ptr<FeedFilter> feedFilter;
 
 	if (!Util::EmptyStr(feedInfo->GetFilter()))
@@ -394,7 +391,7 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems)
 		feedItemInfo.SetAddCategory(feedInfo->GetCategory());
 		feedItemInfo.SetDupeScore(0);
 		feedItemInfo.SetDupeMode(dmScore);
-		feedItemInfo.SetFeedFilterHelper(&m_filterHelper);
+		feedItemInfo.SetFeedFilterHelper(&filterHelper);
 		feedItemInfo.BuildDupeKey(nullptr, nullptr, nullptr, nullptr);
 		if (feedFilter)
 		{
