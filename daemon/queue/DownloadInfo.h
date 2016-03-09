@@ -676,7 +676,6 @@ public:
 	NzbList(bool ownObjects = false) { m_ownObjects = ownObjects; }
 	~NzbList();
 	void Clear();
-	void Add(NzbInfo* nzbInfo, bool addTop);
 	void Remove(NzbInfo* nzbInfo);
 	NzbInfo* Find(int id);
 

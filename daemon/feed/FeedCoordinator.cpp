@@ -340,13 +340,13 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			bool parsed = feedFile->Parse();
 			FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
-			NzbList addedNzbs;
+			std::vector<std::unique_ptr<NzbInfo>> addedNzbs;
 
 			m_downloadsMutex.Lock();
 			if (parsed)
 			{
 				std::unique_ptr<FeedItemList> feedItems = feedFile->DetachFeedItems();
-				ProcessFeed(feedInfo, feedItems.get(), &addedNzbs);
+				addedNzbs = ProcessFeed(feedInfo, feedItems.get());
 				feedFile.reset();
 			}
 			feedInfo->SetLastUpdate(Util::CurrentTime());
@@ -355,9 +355,9 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			m_downloadsMutex.Unlock();
 
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
-			for (NzbInfo* nzbInfo : addedNzbs)
+			for (std::unique_ptr<NzbInfo>& nzbInfo : addedNzbs)
 			{
-				downloadQueue->GetQueue()->Add(nzbInfo, false);
+				downloadQueue->GetQueue()->push_back(nzbInfo.release());
 			}
 			downloadQueue->Save();
 			DownloadQueue::Unlock();
@@ -400,12 +400,13 @@ void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems)
 	}
 }
 
-void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems, NzbList* addedNzbs)
+std::vector<std::unique_ptr<NzbInfo>> FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems)
 {
 	debug("Process feed %s", feedInfo->GetName());
 
 	FilterFeed(feedInfo, feedItems);
 
+	std::vector<std::unique_ptr<NzbInfo>> addedNzbs;
 	bool firstFetch = feedInfo->GetLastUpdate() == 0;
 	int added = 0;
 
@@ -421,8 +422,7 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems, N
 			}
 			else if (!feedHistoryInfo)
 			{
-				NzbInfo* nzbInfo = CreateNzbInfo(feedInfo, feedItemInfo);
-				addedNzbs->Add(nzbInfo, false);
+				addedNzbs.push_back(CreateNzbInfo(feedInfo, feedItemInfo));
 				status = FeedHistoryInfo::hsFetched;
 				added++;
 			}
@@ -446,13 +446,15 @@ void FeedCoordinator::ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems, N
 	{
 		detail("%s has no new items", feedInfo->GetName());
 	}
+
+	return addedNzbs;
 }
 
-NzbInfo* FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedItemInfo)
+std::unique_ptr<NzbInfo> FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedItemInfo)
 {
 	debug("Download %s from %s", feedItemInfo.GetUrl(), feedInfo->GetName());
 
-	NzbInfo* nzbInfo = new NzbInfo();
+	std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 	nzbInfo->SetKind(NzbInfo::nkUrl);
 	nzbInfo->SetFeedId(feedInfo->GetId());
 	nzbInfo->SetUrl(feedItemInfo.GetUrl());

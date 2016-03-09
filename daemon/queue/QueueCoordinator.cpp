@@ -1099,8 +1099,7 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 		}
 	}
 
-	NzbInfo* nzbInfo = new NzbInfo();
-	downloadQueue->GetQueue()->push_back(nzbInfo);
+	std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 
 	nzbInfo->SetFilename(srcNzbInfo->GetFilename());
 	nzbInfo->SetName(name);
@@ -1120,9 +1119,9 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 		DownloadQueue::Aspect aspect = { DownloadQueue::eaFileDeleted, downloadQueue, fileInfo->GetNzbInfo(), fileInfo };
 		downloadQueue->Notify(&aspect);
 
-		fileInfo->SetNzbInfo(nzbInfo);
-		nzbInfo->GetFileList()->push_back(fileInfo);
 		srcNzbInfo->GetFileList()->Remove(fileInfo);
+		nzbInfo->GetFileList()->push_back(fileInfo);
+		fileInfo->SetNzbInfo(nzbInfo.get());
 
 		srcNzbInfo->SetFileCount(srcNzbInfo->GetFileCount() - 1);
 		srcNzbInfo->SetSize(srcNzbInfo->GetSize() - fileInfo->GetSize());
@@ -1180,6 +1179,8 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 		delete srcNzbInfo;
 	}
 
-	*newNzbInfo = nzbInfo;
+	*newNzbInfo = nzbInfo.get();
+	downloadQueue->GetQueue()->push_back(nzbInfo.release());
+
 	return true;
 }

@@ -419,7 +419,7 @@ void DownloadBinCommand::Execute()
 	if (!strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7))
 	{
 		// add url
-		NzbInfo* nzbInfo = new NzbInfo();
+		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 		nzbInfo->SetKind(NzbInfo::nkUrl);
 		nzbInfo->SetUrl(nzbContent);
 		nzbInfo->SetFilename(DownloadRequest.m_nzbFilename);
@@ -431,7 +431,14 @@ void DownloadBinCommand::Execute()
 		nzbInfo->SetDupeMode((EDupeMode)dupeMode);
 
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		downloadQueue->GetQueue()->Add(nzbInfo, addTop);
+		if (addTop)
+		{
+			downloadQueue->GetQueue()->push_front(nzbInfo.release());
+		}
+		else
+		{
+			downloadQueue->GetQueue()->push_back(nzbInfo.release());
+		}
 		downloadQueue->Save();
 		DownloadQueue::Unlock();
 

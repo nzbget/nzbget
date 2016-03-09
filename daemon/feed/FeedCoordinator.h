@@ -112,8 +112,8 @@ private:
 	void StartFeedDownload(FeedInfo* feedInfo, bool force);
 	void FeedCompleted(FeedDownloader* feedDownloader);
 	void FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems);
-	void ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems, NzbList* addedNzbs);
-	NzbInfo* CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedItemInfo);
+	std::vector<std::unique_ptr<NzbInfo>> ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems);
+	std::unique_ptr<NzbInfo> CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedItemInfo);
 	void ResetHangingDownloads();
 	void DownloadQueueUpdate(Subject* caller, void* aspect);
 	void CleanupHistory();

@@ -386,9 +386,9 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 		nzbInfo->GetUrlStatus() != NzbInfo::lsFinished &&
 		!nzbInfo->GetAvoidHistory())
 	{
-		HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
+		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
 		historyInfo->SetTime(Util::CurrentTime());
-		downloadQueue->GetHistory()->push_front(historyInfo);
+		downloadQueue->GetHistory()->push_front(historyInfo.release());
 		deleteObj = false;
 	}
 
@@ -429,9 +429,9 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 	downloadQueue->GetQueue()->Remove(nzbInfo);
 	if (g_Options->GetKeepHistory() > 0 && !avoidHistory)
 	{
-		HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
+		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
 		historyInfo->SetTime(Util::CurrentTime());
-		downloadQueue->GetHistory()->push_front(historyInfo);
+		downloadQueue->GetHistory()->push_front(historyInfo.release());
 	}
 	else
 	{

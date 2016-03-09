@@ -2210,7 +2210,7 @@ void DownloadXmlCommand::Execute()
 	if (!strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7))
 	{
 		// add url
-		NzbInfo* nzbInfo = new NzbInfo();
+		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 		nzbInfo->SetKind(NzbInfo::nkUrl);
 		nzbInfo->SetUrl(nzbContent);
 		nzbInfo->SetFilename(nzbFilename);
@@ -2226,7 +2226,14 @@ void DownloadXmlCommand::Execute()
 		info("Queue %s", *nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename));
 
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		downloadQueue->GetQueue()->Add(nzbInfo, addTop);
+		if (addTop)
+		{
+			downloadQueue->GetQueue()->push_front(nzbInfo.release());
+		}
+		else
+		{
+			downloadQueue->GetQueue()->push_back(nzbInfo.release());
+		}
 		downloadQueue->Save();
 		DownloadQueue::Unlock();
 
@@ -2638,11 +2645,10 @@ void LoadConfigXmlCommand::Execute()
 		"\"Value\" : \"%s\"\n"
 		"}";
 
-	Options::OptEntries* optEntries = new Options::OptEntries();
-	if (!g_ScriptConfig->LoadConfig(optEntries))
+	Options::OptEntries optEntries;
+	if (!g_ScriptConfig->LoadConfig(&optEntries))
 	{
 		BuildErrorResponse(3, "Could not read configuration file");
-		delete optEntries;
 		return;
 	}
 
@@ -2650,7 +2656,7 @@ void LoadConfigXmlCommand::Execute()
 
 	int index = 0;
 
-	for (Options::OptEntry& optEntry: *optEntries)
+	for (Options::OptEntry& optEntry: optEntries)
 	{
 		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
 			optEntry.Restricted() ? "***" : optEntry.GetValue());
@@ -2660,15 +2666,13 @@ void LoadConfigXmlCommand::Execute()
 			*EncodeStr(optEntry.GetName()), *xmlValue);
 	}
 
-	delete optEntries;
-
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
 // bool saveconfig(struct[] data)
 void SaveConfigXmlCommand::Execute()
 {
-	Options::OptEntries* optEntries = new Options::OptEntries();
+	Options::OptEntries optEntries;
 
 	char* name;
 	char* value;
@@ -2679,13 +2683,11 @@ void SaveConfigXmlCommand::Execute()
 	{
 		DecodeStr(name);
 		DecodeStr(value);
-		optEntries->emplace_back(name, value);
+		optEntries.emplace_back(name, value);
 	}
 
 	// save to config file
-	bool ok = g_ScriptConfig->SaveConfig(optEntries);
-
-	delete optEntries;
+	bool ok = g_ScriptConfig->SaveConfig(&optEntries);
 
 	BuildBoolResponse(ok);
 }
@@ -2723,15 +2725,15 @@ void ConfigTemplatesXmlCommand::Execute()
 
 	ScriptConfig::ConfigTemplates* configTemplates = g_ScriptConfig->GetConfigTemplates();
 
+	ScriptConfig::ConfigTemplates loadedConfigTemplates;
 	if (loadFromDisk)
 	{
-		configTemplates = new ScriptConfig::ConfigTemplates();
-		if (!g_ScriptConfig->LoadConfigTemplates(configTemplates))
+		if (!g_ScriptConfig->LoadConfigTemplates(&loadedConfigTemplates))
 		{
 			BuildErrorResponse(3, "Could not read configuration templates");
-			delete configTemplates;
 			return;
 		}
+		configTemplates = &loadedConfigTemplates;
 	}
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
@@ -2750,11 +2752,6 @@ void ConfigTemplatesXmlCommand::Execute()
 			BoolToStr(configTemplate.GetScript()->GetSchedulerScript()),
 			BoolToStr(configTemplate.GetScript()->GetFeedScript()),
 			*EncodeStr(configTemplate.GetTemplate()));
-	}
-
-	if (loadFromDisk)
-	{
-		delete configTemplates;
 	}
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");

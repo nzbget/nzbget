@@ -122,9 +122,9 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 
 void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	HistoryInfo* historyInfo = new HistoryInfo(nzbInfo);
+	std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
 	historyInfo->SetTime(Util::CurrentTime());
-	downloadQueue->GetHistory()->push_front(historyInfo);
+	downloadQueue->GetHistory()->push_front(historyInfo.release());
 	downloadQueue->GetQueue()->Remove(nzbInfo);
 
 	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsNone)
@@ -162,7 +162,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 void HistoryCoordinator::HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex)
 {
 	// replace history element
-	DupInfo* dupInfo = new DupInfo();
+	std::unique_ptr<DupInfo> dupInfo = std::make_unique<DupInfo>();
 	dupInfo->SetId(historyInfo->GetNzbInfo()->GetId());
 	dupInfo->SetName(historyInfo->GetNzbInfo()->GetName());
 	dupInfo->SetDupeKey(historyInfo->GetNzbInfo()->GetDupeKey());
@@ -183,9 +183,9 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* 
 		historyInfo->GetNzbInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
 		DupInfo::dsFailed);
 
-	HistoryInfo* newHistoryInfo = new HistoryInfo(dupInfo);
+	std::unique_ptr<HistoryInfo> newHistoryInfo = std::make_unique<HistoryInfo>(dupInfo.release());
 	newHistoryInfo->SetTime(historyInfo->GetTime());
-	(*downloadQueue->GetHistory())[downloadQueue->GetHistory()->size() - 1 - rindex] = newHistoryInfo;
+	(*downloadQueue->GetHistory())[downloadQueue->GetHistory()->size() - 1 - rindex] = newHistoryInfo.release();
 
 	DeleteDiskFiles(historyInfo->GetNzbInfo());
 

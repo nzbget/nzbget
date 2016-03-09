@@ -33,21 +33,10 @@ NzbFile::NzbFile(const char* fileName, const char* category) :
 {
 	debug("Creating NZBFile");
 
-	m_nzbInfo = new NzbInfo();
+	m_nzbInfo = std::make_unique<NzbInfo>();
 	m_nzbInfo->SetFilename(fileName);
 	m_nzbInfo->SetCategory(category);
 	m_nzbInfo->BuildDestDirName();
-}
-
-NzbFile::~NzbFile()
-{
-	debug("Destroying NZBFile");
-
-#ifndef WIN32
-	delete m_fileInfo;
-#endif
-
-	delete m_nzbInfo;
 }
 
 void NzbFile::LogDebugInfo()
@@ -55,7 +44,7 @@ void NzbFile::LogDebugInfo()
 	info(" NZBFile %s", *m_fileName);
 }
 
-void NzbFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
+void NzbFile::AddArticle(FileInfo* fileInfo, std::unique_ptr<ArticleInfo> articleInfo)
 {
 	// make Article-List big enough
 	while ((int)fileInfo->GetArticles()->size() < articleInfo->GetPartNumber())
@@ -66,10 +55,10 @@ void NzbFile::AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo)
 	{
 		delete (*fileInfo->GetArticles())[index];
 	}
-	(*fileInfo->GetArticles())[index] = articleInfo;
+	(*fileInfo->GetArticles())[index] = articleInfo.release();
 }
 
-void NzbFile::AddFileInfo(FileInfo* fileInfo)
+void NzbFile::AddFileInfo(std::unique_ptr<FileInfo> fileInfo)
 {
 	// calculate file size and delete empty articles
 
@@ -112,19 +101,18 @@ void NzbFile::AddFileInfo(FileInfo* fileInfo)
 
 	if (articles->empty())
 	{
-		delete fileInfo;
 		return;
 	}
 
 	missedSize += uncountedArticles * oneSize;
 	size += missedSize;
-	m_nzbInfo->GetFileList()->push_back(fileInfo);
-	fileInfo->SetNzbInfo(m_nzbInfo);
+	fileInfo->SetNzbInfo(m_nzbInfo.get());
 	fileInfo->SetSize(size);
 	fileInfo->SetRemainingSize(size - missedSize);
 	fileInfo->SetMissedSize(missedSize);
 	fileInfo->SetTotalArticles(totalArticles);
 	fileInfo->SetMissedArticles(missedArticles);
+	m_nzbInfo->GetFileList()->push_back(fileInfo.release());
 }
 
 void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
@@ -551,7 +539,8 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 		MSXML::IXMLDOMNodePtr attribute = node->Getattributes()->getNamedItem("subject");
 		if (!attribute) return false;
 		_bstr_t subject(attribute->Gettext());
-		FileInfo* fileInfo = new FileInfo();
+
+		std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
 		fileInfo->SetSubject(subject);
 
 		attribute = node->Getattributes()->getNamedItem("date");
@@ -589,15 +578,15 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 
 			if (partNumber > 0)
 			{
-				ArticleInfo* article = new ArticleInfo();
+				std::unique_ptr<ArticleInfo> article = std::make_unique<ArticleInfo>();
 				article->SetPartNumber(partNumber);
 				article->SetMessageId(id);
 				article->SetSize(lsize);
-				AddArticle(fileInfo, article);
+				AddArticle(fileInfo.get(), std::move(article));
 			}
 		}
 
-		AddFileInfo(fileInfo);
+		AddFileInfo(std::move(fileInfo));
 	}
 	return true;
 }
@@ -644,7 +633,7 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 
 	if (!strcmp("file", name))
 	{
-		m_fileInfo = new FileInfo();
+		m_fileInfo = std::make_unique<FileInfo>();
 		m_fileInfo->SetFilename(m_fileName);
 
 		if (!atts)
@@ -701,10 +690,11 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 		if (partNumber > 0)
 		{
 			// new segment, add it!
-			m_article = new ArticleInfo();
-			m_article->SetPartNumber(partNumber);
-			m_article->SetSize(lsize);
-			AddArticle(m_fileInfo, m_article);
+			std::unique_ptr<ArticleInfo> article = std::make_unique<ArticleInfo>();
+			article->SetPartNumber(partNumber);
+			article->SetSize(lsize);
+			m_article = article.get();
+			AddArticle(m_fileInfo.get(), std::move(article));
 		}
 	}
 	else if (!strcmp("meta", name))
@@ -723,8 +713,7 @@ void NzbFile::Parse_EndElement(const char *name)
 	if (!strcmp("file", name))
 	{
 		// Close the file element, add the new file to file-list
-		AddFileInfo(m_fileInfo);
-		m_fileInfo = nullptr;
+		AddFileInfo(std::move(m_fileInfo));
 		m_article = nullptr;
 	}
 	else if (!strcmp("group", name))

@@ -29,22 +29,21 @@ class NzbFile
 {
 public:
 	NzbFile(const char* fileName, const char* category);
-	~NzbFile();
 	bool Parse();
 	const char* GetFileName() const { return m_fileName; }
-	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
+	NzbInfo* GetNzbInfo() { return m_nzbInfo.get(); }
 	const char* GetPassword() { return m_password; }
-	void DetachNzbInfo() { m_nzbInfo = nullptr; }
+	void DetachNzbInfo() { m_nzbInfo.release(); }
 
 	void LogDebugInfo();
 
 private:
-	NzbInfo* m_nzbInfo;
+	std::unique_ptr<NzbInfo> m_nzbInfo;
 	CString m_fileName;
 	CString m_password;
 
-	void AddArticle(FileInfo* fileInfo, ArticleInfo* articleInfo);
-	void AddFileInfo(FileInfo* fileInfo);
+	void AddArticle(FileInfo* fileInfo, std::unique_ptr<ArticleInfo> articleInfo);
+	void AddFileInfo(std::unique_ptr<FileInfo> fileInfo);
 	void ParseSubject(FileInfo* fileInfo, bool TryQuotes);
 	void BuildFilenames();
 	void ProcessFiles();
@@ -55,7 +54,7 @@ private:
 	bool ParseNzb(IUnknown* nzb);
 	static void EncodeUrl(const char* filename, char* url, int bufLen);
 #else
-	FileInfo* m_fileInfo = nullptr;
+	std::unique_ptr<FileInfo> m_fileInfo;
 	ArticleInfo* m_article = nullptr;
 	StringBuilder m_tagContent;
 	bool m_ignoreNextError;

@@ -203,7 +203,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			const char* m_queuedFilename = bufPtr + sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) + ntohl(listAnswer->m_categoryLen);
 
-			MatchedNzbInfo* nzbInfo = new MatchedNzbInfo();
+			std::unique_ptr<MatchedNzbInfo> nzbInfo = std::make_unique<MatchedNzbInfo>();
 			nzbInfo->SetId(ntohl(listAnswer->m_id));
 			nzbInfo->SetKind((NzbInfo::EKind)ntohl(listAnswer->m_kind));
 			nzbInfo->SetSize(Util::JoinInt64(ntohl(listAnswer->m_sizeHi), ntohl(listAnswer->m_sizeLo)));
@@ -219,7 +219,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			nzbInfo->SetPriority(ntohl(listAnswer->m_priority));
 			nzbInfo->m_match = ntohl(listAnswer->m_match);
 
-			downloadQueue->GetQueue()->push_back(nzbInfo);
+			downloadQueue->GetQueue()->push_back(nzbInfo.release());
 
 			bufPtr += sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) +
@@ -249,7 +249,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			const char* subject = bufPtr + sizeof(SNzbListResponseFileEntry);
 			const char* fileName = bufPtr + sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen);
 
-			MatchedFileInfo* fileInfo = new MatchedFileInfo();
+			std::unique_ptr<MatchedFileInfo> fileInfo = std::make_unique<MatchedFileInfo>();
 			fileInfo->SetId(ntohl(listAnswer->m_id));
 			fileInfo->SetSize(Util::JoinInt64(ntohl(listAnswer->m_fileSizeHi), ntohl(listAnswer->m_fileSizeLo)));
 			fileInfo->SetRemainingSize(Util::JoinInt64(ntohl(listAnswer->m_remainingSizeHi), ntohl(listAnswer->m_remainingSizeLo)));
@@ -262,7 +262,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 
 			NzbInfo* nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
 			fileInfo->SetNzbInfo(nzbInfo);
-			nzbInfo->GetFileList()->push_back(fileInfo);
+			nzbInfo->GetFileList()->push_back(fileInfo.release());
 
 			bufPtr += sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen) +
 				ntohl(listAnswer->m_filenameLen);

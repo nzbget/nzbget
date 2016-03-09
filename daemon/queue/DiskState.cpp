@@ -393,9 +393,9 @@ bool DiskState::LoadNzbList(NzbList* nzbList, Servers* servers, DiskFile& infile
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		NzbInfo* nzbInfo = new NzbInfo();
-		nzbList->push_back(nzbInfo);
-		if (!LoadNzbInfo(nzbInfo, servers, infile, formatVersion)) goto error;
+		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
+		if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
+		nzbList->push_back(nzbInfo.release());
 	}
 
 	return true;
@@ -962,8 +962,8 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 			}
 
 			BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, id);
-			FileInfo* fileInfo = new FileInfo();
-			bool res = LoadFileInfo(fileInfo, fileName, true, false);
+			std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
+			bool res = LoadFileInfo(fileInfo.get(), fileName, true, false);
 			if (res)
 			{
 				fileInfo->SetId(id);
@@ -975,11 +975,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 				{
 					nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
 				}
-				nzbInfo->GetFileList()->push_back(fileInfo);
-			}
-			else
-			{
-				delete fileInfo;
+				nzbInfo->GetFileList()->push_back(fileInfo.release());
 			}
 		}
 	}
@@ -1021,8 +1017,8 @@ bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, DiskFile& i
 		if (nzbIndex > nzbList->size()) goto error;
 
 		BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, id);
-		FileInfo* fileInfo = new FileInfo();
-		bool res = LoadFileInfo(fileInfo, fileName, true, false);
+		std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
+		bool res = LoadFileInfo(fileInfo.get(), fileName, true, false);
 		if (res)
 		{
 			NzbInfo* nzbInfo = nzbList->at(nzbIndex - 1);
@@ -1036,16 +1032,12 @@ bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, DiskFile& i
 			{
 				nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
 			}
-			nzbInfo->GetFileList()->push_back(fileInfo);
+			nzbInfo->GetFileList()->push_back(fileInfo.release());
 
 			if (sortList && std::find(sortList->begin(), sortList->end(), nzbInfo) == sortList->end())
 			{
 				sortList->push_back(nzbInfo);
 			}
-		}
-		else
-		{
-			delete fileInfo;
 		}
 	}
 
@@ -1249,11 +1241,11 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
-			ArticleInfo* articleInfo = new ArticleInfo();
+			std::unique_ptr<ArticleInfo> articleInfo = std::make_unique<ArticleInfo>();
 			articleInfo->SetPartNumber(PartNumber);
 			articleInfo->SetSize(PartSize);
 			articleInfo->SetMessageId(buf);
-			fileInfo->GetArticles()->push_back(articleInfo);
+			fileInfo->GetArticles()->push_back(articleInfo.release());
 		}
 	}
 
@@ -1357,7 +1349,8 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	{
 		if (!hasArticles)
 		{
-			fileInfo->GetArticles()->push_back(new ArticleInfo());
+			std::unique_ptr<ArticleInfo> articleInfo = std::make_unique<ArticleInfo>();
+			fileInfo->GetArticles()->push_back(articleInfo.release());
 		}
 		ArticleInfo* pa = fileInfo->GetArticles()->at(i);
 
@@ -1564,9 +1557,10 @@ bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
 		bool newNzbInfo = !nzbInfo;
 		if (newNzbInfo)
 		{
-			nzbInfo = new NzbInfo();
-			nzbList->push_front(nzbInfo);
-			nzbInfo->SetFilename(buf);
+			std::unique_ptr<NzbInfo> nzbInfo2 = std::make_unique<NzbInfo>();
+			nzbInfo2->SetFilename(buf);
+			nzbInfo = nzbInfo2.get();
+			nzbList->push_front(nzbInfo2.release());
 		}
 
 		nzbInfo->EnterPostProcess();
@@ -1676,9 +1670,9 @@ bool DiskState::LoadUrlQueue12(DownloadQueue* downloadQueue, DiskFile& infile, i
 
 	for (int i = 0; i < size; i++)
 	{
-		NzbInfo* nzbInfo = new NzbInfo();
-		if (!LoadUrlInfo12(nzbInfo, infile, formatVersion)) goto error;
-		downloadQueue->GetQueue()->push_back(nzbInfo);
+		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
+		if (!LoadUrlInfo12(nzbInfo.get(), infile, formatVersion)) goto error;
+		downloadQueue->GetQueue()->push_back(nzbInfo.release());
 	}
 
 	return true;
@@ -1832,7 +1826,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 	if (fscanf(infile, "%i\n", &size) != 1) goto error;
 	for (int i = 0; i < size; i++)
 	{
-		HistoryInfo* historyInfo = nullptr;
+		std::unique_ptr<HistoryInfo> historyInfo;
 		HistoryInfo::EKind kind = HistoryInfo::hkNzb;
 		int id = 0;
 		int time;
@@ -1860,51 +1854,50 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 
 		if (kind == HistoryInfo::hkNzb)
 		{
-			NzbInfo* nzbInfo = nullptr;
-
 			if (formatVersion < 43)
 			{
 				uint32 nzbIndex;
 				if (fscanf(infile, "%i\n", &nzbIndex) != 1) goto error;
-				nzbInfo = nzbList->at(nzbIndex - 1);
+				NzbInfo* nzbInfo = nzbList->at(nzbIndex - 1);
+				historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
 			}
 			else
 			{
-				nzbInfo = new NzbInfo();
-				if (!LoadNzbInfo(nzbInfo, servers, infile, formatVersion)) goto error;
+				std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
+				if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
 				nzbInfo->LeavePostProcess();
+				historyInfo = std::make_unique<HistoryInfo>(nzbInfo.release());
 			}
 
-			historyInfo = new HistoryInfo(nzbInfo);
-
-			if (formatVersion < 28 && nzbInfo->GetParStatus() == 0 &&
-				nzbInfo->GetUnpackStatus() == 0 && nzbInfo->GetMoveStatus() == 0)
+			if (formatVersion < 28 && historyInfo->GetNzbInfo()->GetParStatus() == 0 &&
+				historyInfo->GetNzbInfo()->GetUnpackStatus() == 0 &&
+				historyInfo->GetNzbInfo()->GetMoveStatus() == 0)
 			{
-				nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
+				historyInfo->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsManual);
 			}
 		}
 		else if (kind == HistoryInfo::hkUrl)
 		{
-			NzbInfo* nzbInfo = new NzbInfo();
+			std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 			if (formatVersion >= 46)
 			{
-				if (!LoadNzbInfo(nzbInfo, servers, infile, formatVersion)) goto error;
+				if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
 			}
 			else
 			{
-				if (!LoadUrlInfo12(nzbInfo, infile, formatVersion)) goto error;
+				if (!LoadUrlInfo12(nzbInfo.get(), infile, formatVersion)) goto error;
 			}
-			historyInfo = new HistoryInfo(nzbInfo);
+			historyInfo = std::make_unique<HistoryInfo>(nzbInfo.release());
 		}
 		else if (kind == HistoryInfo::hkDup)
 		{
-			DupInfo* dupInfo = new DupInfo();
-			if (!LoadDupInfo(dupInfo, infile, formatVersion)) goto error;
+			std::unique_ptr<DupInfo> dupInfo = std::make_unique<DupInfo>();
+			if (!LoadDupInfo(dupInfo.get(), infile, formatVersion)) goto error;
 			if (formatVersion >= 47)
 			{
 				dupInfo->SetId(id);
 			}
-			historyInfo = new HistoryInfo(dupInfo);
+			historyInfo = std::make_unique<HistoryInfo>(dupInfo.release());
 		}
 
 		if (formatVersion < 33)
@@ -1914,7 +1907,7 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 
 		historyInfo->SetTime((time_t)time);
 
-		downloadQueue->GetHistory()->push_back(historyInfo);
+		downloadQueue->GetHistory()->push_back(historyInfo.release());
 	}
 
 	return true;
@@ -2492,7 +2485,19 @@ public:
 	void SetPerfect(bool perfect) { m_perfect = perfect; }
 };
 
-typedef std::deque<ServerRef*> ServerRefList;
+typedef std::vector<ServerRef*> ServerRefList;
+
+class OwnedServerRefList : public ServerRefList
+{
+public:
+	~OwnedServerRefList()
+	{
+		for (ServerRef* ref : this)
+		{
+			delete ref;
+		}
+	}
+};
 
 enum ECriteria
 {
@@ -2623,7 +2628,7 @@ bool DiskState::LoadServerInfo(Servers* servers, DiskFile& infile, int formatVer
 		if (!infile.ReadLine(user, sizeof(user))) goto error;
 		if (user[0] != 0) user[strlen(user)-1] = 0; // remove traling '\n'
 
-		ServerRef* ref = new ServerRef();
+		std::unique_ptr<ServerRef> ref = std::make_unique<ServerRef>();
 		ref->m_stateId = i + 1;
 		ref->m_name = name;
 		ref->m_host = host;
@@ -2631,7 +2636,7 @@ bool DiskState::LoadServerInfo(Servers* servers, DiskFile& infile, int formatVer
 		ref->m_user = user;
 		ref->m_matched = false;
 		ref->m_perfect = false;
-		serverRefs.push_back(ref);
+		serverRefs.push_back(ref.release());
 	}
 
 	MatchServers(servers, &serverRefs);
@@ -2639,7 +2644,6 @@ bool DiskState::LoadServerInfo(Servers* servers, DiskFile& infile, int formatVer
 	for (ServerRef* ref : serverRefs)
 	{
 		*perfectMatch = *perfectMatch && ref->GetPerfect();
-		delete ref;
 	}
 
 	debug("******** MATCHING NEWS-SERVERS **********");
@@ -2657,11 +2661,6 @@ bool DiskState::LoadServerInfo(Servers* servers, DiskFile& infile, int formatVer
 
 error:
 	error("Error reading server info from disk");
-
-	for (ServerRef* ref : serverRefs)
-	{
-		delete ref;
-	}
 
 	return false;
 }

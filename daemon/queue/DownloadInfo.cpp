@@ -676,18 +676,6 @@ void NzbList::Clear()
 	clear();
 }
 
-void NzbList::Add(NzbInfo* nzbInfo, bool addTop)
-{
-	if (addTop)
-	{
-		push_front(nzbInfo);
-	}
-	else
-	{
-		push_back(nzbInfo);
-	}
-}
-
 void NzbList::Remove(NzbInfo* nzbInfo)
 {
 	iterator it = std::find(begin(), end(), nzbInfo);
