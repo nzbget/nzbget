@@ -55,16 +55,14 @@ private:
 	int fscanf(DiskFile& infile, const char* format, ...);
 	bool SaveFileInfo(FileInfo* fileInfo, const char* filename);
 	bool LoadFileInfo(FileInfo* fileInfo, const char* filename, bool fileSummary, bool articles);
-	void SaveNzbQueue(DownloadQueue* downloadQueue, DiskFile& outfile);
-	bool LoadNzbList(NzbList* nzbList, Servers* servers, DiskFile& infile, int formatVersion);
+	void SaveQueue(NzbList* queue, DiskFile& outfile);
+	bool LoadQueue(NzbList* queue, Servers* servers, DiskFile& infile, int formatVersion);
 	void SaveNzbInfo(NzbInfo* nzbInfo, DiskFile& outfile);
 	bool LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile, int formatVersion);
-	void SavePostQueue(DownloadQueue* downloadQueue, DiskFile& outfile);
 	void SaveDupInfo(DupInfo* dupInfo, DiskFile& outfile);
 	bool LoadDupInfo(DupInfo* dupInfo, DiskFile& infile, int formatVersion);
-	void SaveHistory(DownloadQueue* downloadQueue, DiskFile& outfile);
-	bool LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Servers* servers, DiskFile& infile, int formatVersion);
-	NzbInfo* FindNzbInfo(DownloadQueue* downloadQueue, int id);
+	void SaveHistory(HistoryList* history, DiskFile& outfile);
+	bool LoadHistory(HistoryList* history, Servers* servers, DiskFile& infile, int formatVersion);
 	bool SaveFeedStatus(Feeds* feeds, DiskFile& outfile);
 	bool LoadFeedStatus(Feeds* feeds, DiskFile& infile, int formatVersion);
 	bool SaveFeedHistory(FeedHistory* feedHistory, DiskFile& outfile);
@@ -78,19 +76,6 @@ private:
 	bool LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers);
 	void SaveServerStats(ServerStatList* serverStatList, DiskFile& outfile);
 	bool LoadServerStats(ServerStatList* serverStatList, Servers* servers, DiskFile& infile);
-	bool FinishWriteTransaction(const char* newFileName, const char* destFileName);
-
-	// backward compatibility functions (conversions from older formats)
-	bool LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, DiskFile& infile, int formatVersion);
-	bool LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList);
-	bool LoadUrlQueue12(DownloadQueue* downloadQueue, DiskFile& infile, int formatVersion);
-	bool LoadUrlInfo12(NzbInfo* nzbInfo, DiskFile& infile, int formatVersion);
-	int FindNzbInfoIndex(NzbList* nzbList, NzbInfo* nzbInfo);
-	void ConvertDupeKey(char* buf, int bufsize);
-	bool LoadFileQueue12(NzbList* nzbList, NzbList* sortList, DiskFile& infile, int formatVersion);
-	void CompleteNzbList12(DownloadQueue* downloadQueue, NzbList* nzbList, int formatVersion);
-	void CompleteDupList12(DownloadQueue* downloadQueue, int formatVersion);
-	void CalcCriticalHealth(NzbList* nzbList);
 };
 
 extern DiskState* g_DiskState;

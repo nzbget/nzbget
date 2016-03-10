@@ -231,10 +231,10 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue)
 	}
 
 	// save nzb-infos
-	SaveNzbQueue(downloadQueue, *outfile);
+	SaveQueue(downloadQueue->GetQueue(), *outfile);
 
 	// save history
-	SaveHistory(downloadQueue, *outfile);
+	SaveHistory(downloadQueue->GetHistory(), *outfile);
 
 	// now rename to dest file name
 	return stateFile.FinishWriteTransaction();
@@ -255,66 +255,16 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	bool ok = false;
 	int formatVersion = stateFile.GetFileVersion();
 
-	NzbList nzbList(false);
-	NzbList sortList(false);
-
-	if (formatVersion < 43)
-	{
-		// load nzb-infos
-		if (!LoadNzbList(&nzbList, servers, *infile, formatVersion)) goto error;
-
-		// load file-infos
-		if (!LoadFileQueue12(&nzbList, &sortList, *infile, formatVersion)) goto error;
-	}
-	else
-	{
-		if (!LoadNzbList(downloadQueue->GetQueue(), servers, *infile, formatVersion)) goto error;
-	}
-
-	if (formatVersion >= 7 && formatVersion < 45)
-	{
-		// load post-queue from v12
-		if (!LoadPostQueue12(downloadQueue, &nzbList, *infile, formatVersion)) goto error;
-	}
-	else if (formatVersion < 7)
-	{
-		// load post-queue from v5
-		LoadPostQueue5(downloadQueue, &nzbList);
-	}
-
-	if (formatVersion >= 15 && formatVersion < 46)
-	{
-		// load url-queue
-		if (!LoadUrlQueue12(downloadQueue, *infile, formatVersion)) goto error;
-	}
-
-	if (formatVersion >= 9)
-	{
-		// load history
-		if (!LoadHistory(downloadQueue, &nzbList, servers, *infile, formatVersion)) goto error;
-	}
-
-	if (formatVersion >= 9 && formatVersion < 43)
-	{
-		// load parked file-infos
-		if (!LoadFileQueue12(&nzbList, nullptr, *infile, formatVersion)) goto error;
-	}
-
-	if (formatVersion < 29)
-	{
-		CalcCriticalHealth(&nzbList);
-	}
-
-	if (formatVersion < 43)
-	{
-		// finalize queue reading
-		CompleteNzbList12(downloadQueue, &sortList, formatVersion);
-	}
-
 	if (formatVersion < 47)
 	{
-		CompleteDupList12(downloadQueue, formatVersion);
+		error("Failed to read queue and history data. Only queue and history from NZBGet v13 or newer can be converted by this NZBGet version. "
+			"Old queue and history data still can be converted using NZBGet v16 as an intermediate version.");
+		goto error;
 	}
+
+	if (!LoadQueue(downloadQueue->GetQueue(), servers, *infile, formatVersion)) goto error;
+
+	if (!LoadHistory(downloadQueue->GetHistory(), servers, *infile, formatVersion)) goto error;
 
 	if (!LoadAllFileStates(downloadQueue, servers)) goto error;
 
@@ -338,53 +288,18 @@ error:
 	return ok;
 }
 
-void DiskState::CompleteNzbList12(DownloadQueue* downloadQueue, NzbList* nzbList, int formatVersion)
-{
-	// put all NZBs referenced from file queue into pDownloadQueue->GetQueue()
-	for (NzbInfo* nzbInfo: *nzbList)
-	{
-		downloadQueue->GetQueue()->push_back(nzbInfo);
-	}
-
-	if (31 <= formatVersion && formatVersion < 42)
-	{
-		// due to a bug in r811 (v12-testing) new NZBIDs were generated on each refresh of web-ui
-		// this resulted in very high numbers for NZBIDs
-		// here we renumber NZBIDs in order to keep them low.
-		NzbInfo::ResetGenId(false);
-		int id = 1;
-		for (NzbInfo* nzbInfo : nzbList)
-		{
-			nzbInfo->SetId(id++);
-		}
-	}
-}
-
-void DiskState::CompleteDupList12(DownloadQueue* downloadQueue, int formatVersion)
-{
-	NzbInfo::ResetGenId(true);
-
-	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
-	{
-		if (historyInfo->GetKind() == HistoryInfo::hkDup)
-		{
-			historyInfo->GetDupInfo()->SetId(NzbInfo::GenerateId());
-		}
-	}
-}
-
-void DiskState::SaveNzbQueue(DownloadQueue* downloadQueue, DiskFile& outfile)
+void DiskState::SaveQueue(NzbList* queue, DiskFile& outfile)
 {
 	debug("Saving nzb list to disk");
 
-	outfile.Print("%i\n", (int)downloadQueue->GetQueue()->size());
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	outfile.Print("%i\n", (int)queue->size());
+	for (NzbInfo* nzbInfo : queue)
 	{
 		SaveNzbInfo(nzbInfo, outfile);
 	}
 }
 
-bool DiskState::LoadNzbList(NzbList* nzbList, Servers* servers, DiskFile& infile, int formatVersion)
+bool DiskState::LoadQueue(NzbList* queue, Servers* servers, DiskFile& infile, int formatVersion)
 {
 	debug("Loading nzb list from disk");
 
@@ -395,7 +310,7 @@ bool DiskState::LoadNzbList(NzbList* nzbList, Servers* servers, DiskFile& infile
 	{
 		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 		if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
-		nzbList->push_back(nzbInfo.release());
+		queue->push_back(nzbInfo.release());
 	}
 
 	return true;
@@ -499,23 +414,17 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 {
 	char buf[10240];
 
-	if (formatVersion >= 24)
-	{
-		int id;
-		if (fscanf(infile, "%i\n", &id) != 1) goto error;
-		nzbInfo->SetId(id);
-	}
+	int id;
+	if (fscanf(infile, "%i\n", &id) != 1) goto error;
+	nzbInfo->SetId(id);
 
-	if (formatVersion >= 46)
-	{
-		int kind;
-		if (fscanf(infile, "%i\n", &kind) != 1) goto error;
-		nzbInfo->SetKind((NzbInfo::EKind)kind);
+	int kind;
+	if (fscanf(infile, "%i\n", &kind) != 1) goto error;
+	nzbInfo->SetKind((NzbInfo::EKind)kind);
 
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		nzbInfo->SetUrl(buf);
-	}
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	nzbInfo->SetUrl(buf);
 
 	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
@@ -525,218 +434,90 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 	nzbInfo->SetDestDir(buf);
 
-	if (formatVersion >= 27)
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	nzbInfo->SetFinalDir(buf);
+
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	nzbInfo->SetQueuedFilename(buf);
+
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	if (strlen(buf) > 0)
 	{
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		nzbInfo->SetFinalDir(buf);
+		nzbInfo->SetName(buf);
 	}
 
-	if (formatVersion >= 5)
-	{
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		nzbInfo->SetQueuedFilename(buf);
-	}
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	nzbInfo->SetCategory(buf);
 
-	if (formatVersion >= 13)
+	int priority, postStage, deletePaused, manyDupeFiles, feedId;
+	if (formatVersion >= 54)
 	{
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		if (strlen(buf) > 0)
-		{
-			nzbInfo->SetName(buf);
-		}
-	}
-
-	if (formatVersion >= 4)
-	{
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		nzbInfo->SetCategory(buf);
-	}
-
-	if (true) // clang requires a block for goto to work
-	{
-		int priority = 0, postProcess = 0, postStage = 0, deletePaused = 0, manyDupeFiles = 0, feedId = 0;
-		if (formatVersion >= 54)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &priority, &postStage, &deletePaused, &manyDupeFiles, &feedId) != 5) goto error;
-		}
-		else if (formatVersion >= 45)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &priority, &postStage, &deletePaused, &manyDupeFiles) != 4) goto error;
-		}
-		else if (formatVersion >= 44)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &priority, &postProcess, &deletePaused, &manyDupeFiles) != 4) goto error;
-		}
-		else if (formatVersion >= 41)
-		{
-			if (fscanf(infile, "%i,%i,%i\n", &postProcess, &deletePaused, &manyDupeFiles) != 3) goto error;
-		}
-		else if (formatVersion >= 40)
-		{
-			if (fscanf(infile, "%i,%i\n", &postProcess, &deletePaused) != 2) goto error;
-		}
-		else if (formatVersion >= 4)
-		{
-			if (fscanf(infile, "%i\n", &postProcess) != 1) goto error;
-		}
-		nzbInfo->SetPriority(priority);
-		nzbInfo->SetDeletePaused((bool)deletePaused);
-		nzbInfo->SetManyDupeFiles((bool)manyDupeFiles);
-		if (postStage > 0)
-		{
-			nzbInfo->EnterPostProcess();
-			nzbInfo->GetPostInfo()->SetStage((PostInfo::EStage)postStage);
-		}
-		nzbInfo->SetFeedId(feedId);
-	}
-
-	if (formatVersion >= 8 && formatVersion < 18)
-	{
-		int parStatus;
-		if (fscanf(infile, "%i\n", &parStatus) != 1) goto error;
-		nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
-	}
-
-	if (formatVersion >= 9 && formatVersion < 18)
-	{
-		int scriptStatus;
-		if (fscanf(infile, "%i\n", &scriptStatus) != 1) goto error;
-		if (scriptStatus > 1) scriptStatus--;
-		nzbInfo->GetScriptStatuses()->emplace_back("SCRIPT", (ScriptStatus::EStatus)scriptStatus);
-	}
-
-	if (formatVersion >= 18)
-	{
-		int parStatus, unpackStatus, scriptStatus, moveStatus = 0, renameStatus = 0,
-			deleteStatus = 0, markStatus = 0, urlStatus = 0;
-		if (formatVersion >= 46)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i,%i,%i\n", &parStatus, &unpackStatus, &moveStatus,
-				&renameStatus, &deleteStatus, &markStatus, &urlStatus) != 7) goto error;
-		}
-		else if (formatVersion >= 37)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i,%i\n", &parStatus, &unpackStatus,
-				&moveStatus, &renameStatus, &deleteStatus, &markStatus) != 6) goto error;
-		}
-		else if (formatVersion >= 35)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &parStatus, &unpackStatus,
-				&moveStatus, &renameStatus, &deleteStatus) != 5) goto error;
-		}
-		else if (formatVersion >= 23)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &parStatus, &unpackStatus,
-				&moveStatus, &renameStatus) != 4) goto error;
-		}
-		else if (formatVersion >= 21)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &parStatus, &unpackStatus,
-				&scriptStatus, &moveStatus, &renameStatus) != 5) goto error;
-		}
-		else if (formatVersion >= 20)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &parStatus, &unpackStatus,
-				&scriptStatus, &moveStatus) != 4) goto error;
-		}
-		else
-		{
-			if (fscanf(infile, "%i,%i,%i\n", &parStatus, &unpackStatus, &scriptStatus) != 3) goto error;
-		}
-		nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
-		nzbInfo->SetUnpackStatus((NzbInfo::EUnpackStatus)unpackStatus);
-		nzbInfo->SetMoveStatus((NzbInfo::EMoveStatus)moveStatus);
-		nzbInfo->SetRenameStatus((NzbInfo::ERenameStatus)renameStatus);
-		nzbInfo->SetDeleteStatus((NzbInfo::EDeleteStatus)deleteStatus);
-		nzbInfo->SetMarkStatus((NzbInfo::EMarkStatus)markStatus);
-		if (nzbInfo->GetKind() == NzbInfo::nkNzb ||
-			(NzbInfo::EUrlStatus)urlStatus >= NzbInfo::lsFailed ||
-			(NzbInfo::EUrlStatus)urlStatus >= NzbInfo::lsScanSkipped)
-		{
-			nzbInfo->SetUrlStatus((NzbInfo::EUrlStatus)urlStatus);
-		}
-		if (formatVersion < 23)
-		{
-			if (scriptStatus > 1) scriptStatus--;
-			nzbInfo->GetScriptStatuses()->emplace_back("SCRIPT", (ScriptStatus::EStatus)scriptStatus);
-		}
-	}
-
-	if (formatVersion >= 35)
-	{
-		int unpackCleanedUpDisk, healthPaused, addUrlPaused = 0;
-		if (formatVersion >= 46)
-		{
-			if (fscanf(infile, "%i,%i,%i\n", &unpackCleanedUpDisk, &healthPaused, &addUrlPaused) != 3) goto error;
-		}
-		else
-		{
-			if (fscanf(infile, "%i,%i\n", &unpackCleanedUpDisk, &healthPaused) != 2) goto error;
-		}
-		nzbInfo->SetUnpackCleanedUpDisk((bool)unpackCleanedUpDisk);
-		nzbInfo->SetHealthPaused((bool)healthPaused);
-		nzbInfo->SetAddUrlPaused((bool)addUrlPaused);
-	}
-	else if (formatVersion >= 28)
-	{
-		int deleted, unpackCleanedUpDisk, healthPaused, healthDeleted;
-		if (fscanf(infile, "%i,%i,%i,%i\n", &deleted, &unpackCleanedUpDisk, &healthPaused, &healthDeleted) != 4) goto error;
-		nzbInfo->SetUnpackCleanedUpDisk((bool)unpackCleanedUpDisk);
-		nzbInfo->SetHealthPaused((bool)healthPaused);
-		nzbInfo->SetDeleteStatus(healthDeleted ? NzbInfo::dsHealth : deleted ? NzbInfo::dsManual : NzbInfo::dsNone);
-	}
-
-	if (formatVersion >= 28)
-	{
-		int fileCount, parkedFileCount, messageCount = 0;
-		if (formatVersion >= 52)
-		{
-			if (fscanf(infile, "%i,%i,%i\n", &fileCount, &parkedFileCount, &messageCount) != 3) goto error;
-		}
-		else
-		{
-			if (fscanf(infile, "%i,%i\n", &fileCount, &parkedFileCount) != 2) goto error;
-		}
-
-		nzbInfo->SetFileCount(fileCount);
-		nzbInfo->SetParkedFileCount(parkedFileCount);
-		nzbInfo->SetMessageCount(messageCount);
+		if (fscanf(infile, "%i,%i,%i,%i,%i\n", &priority, &postStage, &deletePaused, &manyDupeFiles, &feedId) != 5) goto error;
 	}
 	else
 	{
-		if (formatVersion >= 19)
-		{
-			int unpackCleanedUpDisk;
-			if (fscanf(infile, "%i\n", &unpackCleanedUpDisk) != 1) goto error;
-			nzbInfo->SetUnpackCleanedUpDisk((bool)unpackCleanedUpDisk);
-		}
-
-		int fileCount;
-		if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
-		nzbInfo->SetFileCount(fileCount);
-
-		if (formatVersion >= 10)
-		{
-			if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
-			nzbInfo->SetParkedFileCount(fileCount);
-		}
+		if (fscanf(infile, "%i,%i,%i,%i\n", &priority, &postStage, &deletePaused, &manyDupeFiles) != 4) goto error;
+		feedId = 0;
 	}
-
-	if (formatVersion >= 44)
+	nzbInfo->SetPriority(priority);
+	nzbInfo->SetDeletePaused((bool)deletePaused);
+	nzbInfo->SetManyDupeFiles((bool)manyDupeFiles);
+	if (postStage > 0)
 	{
-		int minTime, maxTime;
-		if (fscanf(infile, "%i,%i\n", &minTime, &maxTime) != 2) goto error;
-		nzbInfo->SetMinTime((time_t)minTime);
-		nzbInfo->SetMaxTime((time_t)maxTime);
+		nzbInfo->EnterPostProcess();
+		nzbInfo->GetPostInfo()->SetStage((PostInfo::EStage)postStage);
 	}
+	nzbInfo->SetFeedId(feedId);
+
+	int parStatus, unpackStatus, moveStatus, renameStatus, deleteStatus, markStatus, urlStatus;
+	if (fscanf(infile, "%i,%i,%i,%i,%i,%i,%i\n", &parStatus, &unpackStatus, &moveStatus,
+		&renameStatus, &deleteStatus, &markStatus, &urlStatus) != 7) goto error;
+	nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
+	nzbInfo->SetUnpackStatus((NzbInfo::EUnpackStatus)unpackStatus);
+	nzbInfo->SetMoveStatus((NzbInfo::EMoveStatus)moveStatus);
+	nzbInfo->SetRenameStatus((NzbInfo::ERenameStatus)renameStatus);
+	nzbInfo->SetDeleteStatus((NzbInfo::EDeleteStatus)deleteStatus);
+	nzbInfo->SetMarkStatus((NzbInfo::EMarkStatus)markStatus);
+	if (nzbInfo->GetKind() == NzbInfo::nkNzb ||
+		(NzbInfo::EUrlStatus)urlStatus >= NzbInfo::lsFailed ||
+		(NzbInfo::EUrlStatus)urlStatus >= NzbInfo::lsScanSkipped)
+	{
+		nzbInfo->SetUrlStatus((NzbInfo::EUrlStatus)urlStatus);
+	}
+
+	int unpackCleanedUpDisk, healthPaused, addUrlPaused;
+	if (fscanf(infile, "%i,%i,%i\n", &unpackCleanedUpDisk, &healthPaused, &addUrlPaused) != 3) goto error;
+	nzbInfo->SetUnpackCleanedUpDisk((bool)unpackCleanedUpDisk);
+	nzbInfo->SetHealthPaused((bool)healthPaused);
+	nzbInfo->SetAddUrlPaused((bool)addUrlPaused);
+
+	int fileCount, parkedFileCount, messageCount;
+	if (formatVersion >= 52)
+	{
+		if (fscanf(infile, "%i,%i,%i\n", &fileCount, &parkedFileCount, &messageCount) != 3) goto error;
+	}
+	else
+	{
+		if (fscanf(infile, "%i,%i\n", &fileCount, &parkedFileCount) != 2) goto error;
+		messageCount = 0;
+	}
+
+	nzbInfo->SetFileCount(fileCount);
+	nzbInfo->SetParkedFileCount(parkedFileCount);
+	nzbInfo->SetMessageCount(messageCount);
+
+	int minTime, maxTime;
+	if (fscanf(infile, "%i,%i\n", &minTime, &maxTime) != 2) goto error;
+	nzbInfo->SetMinTime((time_t)minTime);
+	nzbInfo->SetMaxTime((time_t)maxTime);
 
 	if (formatVersion >= 51)
 	{
-		int parFull, forceParFull, forceRepair, extraParBlocks = 0;
+		int parFull, forceParFull, forceRepair, extraParBlocks;
 		if (formatVersion >= 55)
 		{
 			if (fscanf(infile, "%i,%i,%i,%i\n", &parFull, &forceParFull, &forceRepair, &extraParBlocks) != 4) goto error;
@@ -744,6 +525,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		else
 		{
 			if (fscanf(infile, "%i,%i,%i\n", &parFull, &forceParFull, &forceRepair) != 3) goto error;
+			extraParBlocks = 0;
 		}
 		nzbInfo->SetParFull((bool)parFull);
 		nzbInfo->SetExtraParBlocks(extraParBlocks);
@@ -754,79 +536,42 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		}
 	}
 
-	if (true) // clang requires a block for goto to work
-	{
-		uint32 fullContentHash = 0, filteredContentHash = 0;
-		if (formatVersion >= 34)
-		{
-			if (fscanf(infile, "%u,%u\n", &fullContentHash, &filteredContentHash) != 2) goto error;
-		}
-		else if (formatVersion >= 32)
-		{
-			if (fscanf(infile, "%u\n", &fullContentHash) != 1) goto error;
-		}
-		nzbInfo->SetFullContentHash(fullContentHash);
-		nzbInfo->SetFilteredContentHash(filteredContentHash);
-	}
+	uint32 fullContentHash, filteredContentHash;
+	if (fscanf(infile, "%u,%u\n", &fullContentHash, &filteredContentHash) != 2) goto error;
+	nzbInfo->SetFullContentHash(fullContentHash);
+	nzbInfo->SetFilteredContentHash(filteredContentHash);
 
-	if (formatVersion >= 28)
-	{
-		uint32 High1, Low1, High2, Low2, High3, Low3;
-		if (fscanf(infile, "%u,%u,%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
-		nzbInfo->SetSize(Util::JoinInt64(High1, Low1));
-		nzbInfo->SetSuccessSize(Util::JoinInt64(High2, Low2));
-		nzbInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
-		nzbInfo->SetCurrentSuccessSize(nzbInfo->GetSuccessSize());
-		nzbInfo->SetCurrentFailedSize(nzbInfo->GetFailedSize());
+	uint32 High1, Low1, High2, Low2, High3, Low3;
+	if (fscanf(infile, "%u,%u,%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
+	nzbInfo->SetSize(Util::JoinInt64(High1, Low1));
+	nzbInfo->SetSuccessSize(Util::JoinInt64(High2, Low2));
+	nzbInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
+	nzbInfo->SetCurrentSuccessSize(nzbInfo->GetSuccessSize());
+	nzbInfo->SetCurrentFailedSize(nzbInfo->GetFailedSize());
 
-		if (fscanf(infile, "%u,%u,%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
-		nzbInfo->SetParSize(Util::JoinInt64(High1, Low1));
-		nzbInfo->SetParSuccessSize(Util::JoinInt64(High2, Low2));
-		nzbInfo->SetParFailedSize(Util::JoinInt64(High3, Low3));
-		nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParSuccessSize());
-		nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParFailedSize());
-	}
-	else
-	{
-		uint32 High, Low;
-		if (fscanf(infile, "%u,%u\n", &High, &Low) != 2) goto error;
-		nzbInfo->SetSize(Util::JoinInt64(High, Low));
-	}
+	if (fscanf(infile, "%u,%u,%u,%u,%u,%u\n", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
+	nzbInfo->SetParSize(Util::JoinInt64(High1, Low1));
+	nzbInfo->SetParSuccessSize(Util::JoinInt64(High2, Low2));
+	nzbInfo->SetParFailedSize(Util::JoinInt64(High3, Low3));
+	nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParSuccessSize());
+	nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParFailedSize());
 
-	if (formatVersion >= 30)
-	{
-		int totalArticles, successArticles, failedArticles;
-		if (fscanf(infile, "%i,%i,%i\n", &totalArticles, &successArticles, &failedArticles) != 3) goto error;
-		nzbInfo->SetTotalArticles(totalArticles);
-		nzbInfo->SetSuccessArticles(successArticles);
-		nzbInfo->SetFailedArticles(failedArticles);
-		nzbInfo->SetCurrentSuccessArticles(successArticles);
-		nzbInfo->SetCurrentFailedArticles(failedArticles);
-	}
+	int totalArticles, successArticles, failedArticles;
+	if (fscanf(infile, "%i,%i,%i\n", &totalArticles, &successArticles, &failedArticles) != 3) goto error;
+	nzbInfo->SetTotalArticles(totalArticles);
+	nzbInfo->SetSuccessArticles(successArticles);
+	nzbInfo->SetFailedArticles(failedArticles);
+	nzbInfo->SetCurrentSuccessArticles(successArticles);
+	nzbInfo->SetCurrentFailedArticles(failedArticles);
 
-	if (formatVersion >= 31)
-	{
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		if (formatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
-		nzbInfo->SetDupeKey(buf);
-	}
+	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	nzbInfo->SetDupeKey(buf);
 
-	if (true) // clang requires a block for goto to work
-	{
-		int dupeMode = 0, dupeScore = 0;
-		if (formatVersion >= 39)
-		{
-			if (fscanf(infile, "%i,%i\n", &dupeMode, &dupeScore) != 2) goto error;
-		}
-		else if (formatVersion >= 31)
-		{
-			int dupe;
-			if (fscanf(infile, "%i,%i,%i\n", &dupe, &dupeMode, &dupeScore) != 3) goto error;
-		}
-		nzbInfo->SetDupeMode((EDupeMode)dupeMode);
-		nzbInfo->SetDupeScore(dupeScore);
-	}
+	int dupeMode, dupeScore;
+	if (fscanf(infile, "%i,%i\n", &dupeMode, &dupeScore) != 2) goto error;
+	nzbInfo->SetDupeMode((EDupeMode)dupeMode);
+	nzbInfo->SetDupeScore(dupeScore);
 
 	if (formatVersion >= 48)
 	{
@@ -840,90 +585,77 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		nzbInfo->SetUnpackSec(unpackSec);
 	}
 
-	if (formatVersion >= 4)
+	if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
+	for (int i = 0; i < fileCount; i++)
 	{
-		int fileCount;
-		if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
-		for (int i = 0; i < fileCount; i++)
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+
+		int id = 0;
+		char* fileName = buf;
+		int status = 0;
+		uint32 crc = 0;
+
+		if (formatVersion >= 49)
 		{
-			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-
-			int id = 0;
-			char* fileName = buf;
-			int status = 0;
-			uint32 crc = 0;
-
-			if (formatVersion >= 49)
+			if (formatVersion >= 50)
 			{
-				if (formatVersion >= 50)
-				{
-					if (sscanf(buf, "%i,%i,%u", &id, &status, &crc) != 3) goto error;
-					fileName = strchr(buf, ',');
-					if (fileName) fileName = strchr(fileName+1, ',');
-					if (fileName) fileName = strchr(fileName+1, ',');
-				}
-				else
-				{
-					if (sscanf(buf, "%i,%u", &status, &crc) != 2) goto error;
-					fileName = strchr(buf + 2, ',');
-				}
-				if (fileName)
-				{
-					fileName++;
-				}
+				if (sscanf(buf, "%i,%i,%u", &id, &status, &crc) != 3) goto error;
+				fileName = strchr(buf, ',');
+				if (fileName) fileName = strchr(fileName+1, ',');
+				if (fileName) fileName = strchr(fileName+1, ',');
 			}
+			else
+			{
+				if (sscanf(buf, "%i,%u", &status, &crc) != 2) goto error;
+				fileName = strchr(buf + 2, ',');
+			}
+			if (fileName)
+			{
+				fileName++;
+			}
+		}
 
-			nzbInfo->GetCompletedFiles()->emplace_back(id, fileName, (CompletedFile::EStatus)status, crc);
+		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName, (CompletedFile::EStatus)status, crc);
+	}
+
+	int parameterCount;
+	if (fscanf(infile, "%i\n", &parameterCount) != 1) goto error;
+	for (int i = 0; i < parameterCount; i++)
+	{
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+
+		char* value = strchr(buf, '=');
+		if (value)
+		{
+			*value = '\0';
+			value++;
+			nzbInfo->GetParameters()->SetParameter(buf, value);
 		}
 	}
 
-	if (formatVersion >= 6)
+	int scriptCount;
+	if (fscanf(infile, "%i\n", &scriptCount) != 1) goto error;
+	for (int i = 0; i < scriptCount; i++)
 	{
-		int parameterCount;
-		if (fscanf(infile, "%i\n", &parameterCount) != 1) goto error;
-		for (int i = 0; i < parameterCount; i++)
-		{
-			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
 
-			char* value = strchr(buf, '=');
-			if (value)
-			{
-				*value = '\0';
-				value++;
-				nzbInfo->GetParameters()->SetParameter(buf, value);
-			}
+		char* scriptName = strchr(buf, ',');
+		if (scriptName)
+		{
+			scriptName++;
+			int status = atoi(buf);
+			if (status > 1 && formatVersion < 25) status--;
+			nzbInfo->GetScriptStatuses()->emplace_back(scriptName, (ScriptStatus::EStatus)status);
 		}
 	}
 
-	if (formatVersion >= 23)
-	{
-		int scriptCount;
-		if (fscanf(infile, "%i\n", &scriptCount) != 1) goto error;
-		for (int i = 0; i < scriptCount; i++)
-		{
-			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
+	if (!LoadServerStats(nzbInfo->GetServerStats(), servers, infile)) goto error;
+	nzbInfo->GetCurrentServerStats()->ListOp(nzbInfo->GetServerStats(), ServerStatList::soSet);
 
-			char* scriptName = strchr(buf, ',');
-			if (scriptName)
-			{
-				scriptName++;
-				int status = atoi(buf);
-				if (status > 1 && formatVersion < 25) status--;
-				nzbInfo->GetScriptStatuses()->emplace_back(scriptName, (ScriptStatus::EStatus)status);
-			}
-		}
-	}
-
-	if (formatVersion >= 30)
-	{
-		if (!LoadServerStats(nzbInfo->GetServerStats(), servers, infile)) goto error;
-		nzbInfo->GetCurrentServerStats()->ListOp(nzbInfo->GetServerStats(), ServerStatList::soSet);
-	}
-
-	if (formatVersion >= 11 && formatVersion < 52)
+	if (formatVersion < 52)
 	{
 		int logCount;
 		if (fscanf(infile, "%i\n", &logCount) != 1) goto error;
@@ -933,96 +665,18 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		}
 	}
 
-	if (formatVersion < 26)
+	if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
+	for (int i = 0; i < fileCount; i++)
 	{
-		NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
-		if (!unpackParameter)
-		{
-			nzbInfo->GetParameters()->SetParameter("*Unpack:", g_Options->GetUnpack() ? "yes" : "no");
-		}
-	}
-
-	if (formatVersion >= 43)
-	{
-		int fileCount;
-		if (fscanf(infile, "%i\n", &fileCount) != 1) goto error;
-		for (int i = 0; i < fileCount; i++)
-		{
-			uint32 id, paused, time = 0;
-			int priority = 0, extraPriority = 0;
-
-			if (formatVersion >= 44)
-			{
-				if (fscanf(infile, "%i,%i,%i,%i\n", &id, &paused, &time, &extraPriority) != 4) goto error;
-			}
-			else
-			{
-				if (fscanf(infile, "%i,%i,%i,%i,%i\n", &id, &paused, &time, &priority, &extraPriority) != 5) goto error;
-				nzbInfo->SetPriority(priority);
-			}
-
-			BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, id);
-			std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
-			bool res = LoadFileInfo(fileInfo.get(), fileName, true, false);
-			if (res)
-			{
-				fileInfo->SetId(id);
-				fileInfo->SetPaused(paused);
-				fileInfo->SetTime(time);
-				fileInfo->SetExtraPriority(extraPriority != 0);
-				fileInfo->SetNzbInfo(nzbInfo);
-				if (formatVersion < 30)
-				{
-					nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
-				}
-				nzbInfo->GetFileList()->push_back(fileInfo.release());
-			}
-		}
-	}
-
-	return true;
-
-error:
-	error("Error reading nzb info from disk");
-	return false;
-}
-
-bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, DiskFile& infile, int formatVersion)
-{
-	debug("Loading file queue from disk");
-
-	int size;
-	if (fscanf(infile, "%i\n", &size) != 1) goto error;
-	for (int i = 0; i < size; i++)
-	{
-		uint32 id, nzbIndex, paused;
-		uint32 time = 0;
-		int priority = 0, extraPriority = 0;
-		if (formatVersion >= 17)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i,%i\n", &id, &nzbIndex, &paused, &time, &priority, &extraPriority) != 6) goto error;
-		}
-		else if (formatVersion >= 14)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i,%i\n", &id, &nzbIndex, &paused, &time, &priority) != 5) goto error;
-		}
-		else if (formatVersion >= 12)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &id, &nzbIndex, &paused, &time) != 4) goto error;
-		}
-		else
-		{
-			if (fscanf(infile, "%i,%i,%i\n", &id, &nzbIndex, &paused) != 3) goto error;
-		}
-		if (nzbIndex > nzbList->size()) goto error;
+		uint32 id, paused, time;
+		int extraPriority;
+		if (fscanf(infile, "%i,%i,%i,%i\n", &id, &paused, &time, &extraPriority) != 4) goto error;
 
 		BString<1024> fileName("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, id);
 		std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
 		bool res = LoadFileInfo(fileInfo.get(), fileName, true, false);
 		if (res)
 		{
-			NzbInfo* nzbInfo = nzbList->at(nzbIndex - 1);
-			nzbInfo->SetPriority(priority);
 			fileInfo->SetId(id);
 			fileInfo->SetPaused(paused);
 			fileInfo->SetTime(time);
@@ -1033,18 +687,13 @@ bool DiskState::LoadFileQueue12(NzbList* nzbList, NzbList* sortList, DiskFile& i
 				nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
 			}
 			nzbInfo->GetFileList()->push_back(fileInfo.release());
-
-			if (sortList && std::find(sortList->begin(), sortList->end(), nzbInfo) == sortList->end())
-			{
-				sortList->push_back(nzbInfo);
-			}
 		}
 	}
 
 	return true;
 
 error:
-	error("Error reading file queue from disk");
+	error("Error reading nzb info from disk");
 	return false;
 }
 
@@ -1430,311 +1079,6 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 	FileSystem::DeleteFile(filename);
 }
 
-bool DiskState::LoadPostQueue12(DownloadQueue* downloadQueue, NzbList* nzbList, DiskFile& infile, int formatVersion)
-{
-	debug("Loading post-queue from disk");
-
-	int size;
-	char buf[10240];
-
-	// load post-infos
-	if (fscanf(infile, "%i\n", &size) != 1) goto error;
-	for (int i = 0; i < size; i++)
-	{
-		PostInfo* postInfo = nullptr;
-		int nzbId = 0;
-		uint32 nzbIndex = 0, stage, dummy;
-		if (formatVersion < 19)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &nzbIndex, &dummy, &dummy, &stage) != 4) goto error;
-		}
-		else if (formatVersion < 22)
-		{
-			if (fscanf(infile, "%i,%i,%i,%i\n", &nzbIndex, &dummy, &dummy, &stage) != 4) goto error;
-		}
-		else if (formatVersion < 43)
-		{
-			if (fscanf(infile, "%i,%i\n", &nzbIndex, &stage) != 2) goto error;
-		}
-		else
-		{
-			if (fscanf(infile, "%i,%i\n", &nzbId, &stage) != 2) goto error;
-		}
-		if (formatVersion < 18 && stage > (int)PostInfo::ptVerifyingRepaired) stage++;
-		if (formatVersion < 21 && stage > (int)PostInfo::ptVerifyingRepaired) stage++;
-		if (formatVersion < 20 && stage > (int)PostInfo::ptUnpacking) stage++;
-
-		NzbInfo* nzbInfo = nullptr;
-
-		if (formatVersion < 43)
-		{
-			nzbInfo = nzbList->at(nzbIndex - 1);
-			if (!nzbInfo) goto error;
-		}
-		else
-		{
-			nzbInfo = FindNzbInfo(downloadQueue, nzbId);
-			if (!nzbInfo) goto error;
-		}
-
-		nzbInfo->EnterPostProcess();
-		postInfo = nzbInfo->GetPostInfo();
-
-		postInfo->SetStage((PostInfo::EStage)stage);
-
-		// InfoName, ignore
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-
-		if (formatVersion < 22)
-		{
-			// ParFilename, ignore
-			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		}
-	}
-
-	return true;
-
-error:
-	error("Error reading diskstate for post-processor queue");
-	return false;
-}
-
-/*
- * Loads post-queue created with older versions of nzbget.
- * Returns true if successful, false if not
- */
-bool DiskState::LoadPostQueue5(DownloadQueue* downloadQueue, NzbList* nzbList)
-{
-	debug("Loading post-queue from disk");
-
-	BString<1024> fileName("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "postq");
-
-	if (!FileSystem::FileExists(fileName))
-	{
-		return true;
-	}
-
-	DiskFile infile;
-
-	if (!infile.Open(fileName, DiskFile::omRead))
-	{
-		error("Error reading diskstate: could not open file %s", *fileName);
-		return false;
-	}
-
-	char FileSignatur[128];
-	infile.ReadLine(FileSignatur, sizeof(FileSignatur));
-	int formatVersion = ParseFormatVersion(FileSignatur);
-	if (formatVersion < 3 || formatVersion > 7)
-	{
-		error("Could not load diskstate due to file version mismatch");
-		infile.Close();
-		return false;
-	}
-
-	int size;
-	char buf[10240];
-	int intValue;
-
-	// load file-infos
-	if (fscanf(infile, "%i\n", &size) != 1) goto error;
-	for (int i = 0; i < size; i++)
-	{
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-
-		// find NZBInfo based on NZBFilename
-		NzbInfo* nzbInfo = nullptr;
-		for (NzbInfo* nzbInfo2 : nzbList)
-		{
-			if (!strcmp(nzbInfo2->GetFilename(), buf))
-			{
-				nzbInfo = nzbInfo2;
-				break;
-			}
-		}
-
-		bool newNzbInfo = !nzbInfo;
-		if (newNzbInfo)
-		{
-			std::unique_ptr<NzbInfo> nzbInfo2 = std::make_unique<NzbInfo>();
-			nzbInfo2->SetFilename(buf);
-			nzbInfo = nzbInfo2.get();
-			nzbList->push_front(nzbInfo2.release());
-		}
-
-		nzbInfo->EnterPostProcess();
-		PostInfo* postInfo = nzbInfo->GetPostInfo();
-
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		if (newNzbInfo)
-		{
-			nzbInfo->SetDestDir(buf);
-		}
-
-		// ParFilename, ignore
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-
-		// InfoName, ignore
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-
-		if (formatVersion >= 4)
-		{
-			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-			if (newNzbInfo)
-			{
-				nzbInfo->SetCategory(buf);
-			}
-		}
-		else
-		{
-			if (newNzbInfo)
-			{
-				nzbInfo->SetCategory("");
-			}
-		}
-
-		if (formatVersion >= 5)
-		{
-			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-			if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-			if (newNzbInfo)
-			{
-				nzbInfo->SetQueuedFilename(buf);
-			}
-		}
-		else
-		{
-			if (newNzbInfo)
-			{
-				nzbInfo->SetQueuedFilename("");
-			}
-		}
-
-		int parCheck;
-		if (fscanf(infile, "%i\n", &parCheck) != 1) goto error; // ParCheck
-
-		if (fscanf(infile, "%i\n", &intValue) != 1) goto error;
-		nzbInfo->SetParStatus(parCheck ? (NzbInfo::EParStatus)intValue : NzbInfo::psSkipped);
-
-		if (formatVersion < 7)
-		{
-			// skip old field ParFailed, not used anymore
-			if (fscanf(infile, "%i\n", &intValue) != 1) goto error;
-		}
-
-		if (fscanf(infile, "%i\n", &intValue) != 1) goto error;
-		postInfo->SetStage((PostInfo::EStage)intValue);
-
-		if (formatVersion >= 6)
-		{
-			int parameterCount;
-			if (fscanf(infile, "%i\n", &parameterCount) != 1) goto error;
-			for (int i = 0; i < parameterCount; i++)
-			{
-				if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-				if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-
-				char* value = strchr(buf, '=');
-				if (value)
-				{
-					*value = '\0';
-					value++;
-					if (newNzbInfo)
-					{
-						nzbInfo->GetParameters()->SetParameter(buf, value);
-					}
-				}
-			}
-		}
-	}
-
-	infile.Close();
-	return true;
-
-error:
-	infile.Close();
-	error("Error reading diskstate for file %s", *fileName);
-	return false;
-}
-
-bool DiskState::LoadUrlQueue12(DownloadQueue* downloadQueue, DiskFile& infile, int formatVersion)
-{
-	debug("Loading url-queue from disk");
-	int size;
-
-	// load url-infos
-	if (fscanf(infile, "%i\n", &size) != 1) goto error;
-
-	for (int i = 0; i < size; i++)
-	{
-		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
-		if (!LoadUrlInfo12(nzbInfo.get(), infile, formatVersion)) goto error;
-		downloadQueue->GetQueue()->push_back(nzbInfo.release());
-	}
-
-	return true;
-
-error:
-	error("Error reading diskstate for url-queue");
-	return false;
-}
-
-bool DiskState::LoadUrlInfo12(NzbInfo* nzbInfo, DiskFile& infile, int formatVersion)
-{
-	char buf[10240];
-
-	if (formatVersion >= 24)
-	{
-		int id;
-		if (fscanf(infile, "%i\n", &id) != 1) goto error;
-		nzbInfo->SetId(id);
-	}
-
-	int statusDummy, priority;
-	if (fscanf(infile, "%i,%i\n", &statusDummy, &priority) != 2) goto error;
-	nzbInfo->SetPriority(priority);
-
-	if (formatVersion >= 16)
-	{
-		int addTopDummy, addPaused;
-		if (fscanf(infile, "%i,%i\n", &addTopDummy, &addPaused) != 2) goto error;
-		nzbInfo->SetAddUrlPaused(addPaused);
-	}
-
-	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	nzbInfo->SetUrl(buf);
-
-	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	nzbInfo->SetFilename(buf);
-
-	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	nzbInfo->SetCategory(buf);
-
-	if (formatVersion >= 31)
-	{
-		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
-		if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-		if (formatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
-		nzbInfo->SetDupeKey(buf);
-
-		int dupeMode, dupeScore;
-		if (fscanf(infile, "%i,%i\n", &dupeMode, &dupeScore) != 2) goto error;
-		nzbInfo->SetDupeMode((EDupeMode)dupeMode);
-		nzbInfo->SetDupeScore(dupeScore);
-	}
-
-	return true;
-
-error:
-	return false;
-}
-
 void DiskState::SaveDupInfo(DupInfo* dupInfo, DiskFile& outfile)
 {
 	uint32 High, Low;
@@ -1753,28 +1097,8 @@ bool DiskState::LoadDupInfo(DupInfo* dupInfo, DiskFile& infile, int formatVersio
 	int status;
 	uint32 High, Low;
 	uint32 fullContentHash, filteredContentHash = 0;
-	int dupeScore, dupe = 0, dupeMode = 0;
-
-	if (formatVersion >= 39)
-	{
-		if (fscanf(infile, "%i,%u,%u,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupeMode) != 7) goto error;
-	}
-	else if (formatVersion >= 38)
-	{
-		if (fscanf(infile, "%i,%u,%u,%u,%u,%i,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupe, &dupeMode) != 8) goto error;
-	}
-	else if (formatVersion >= 37)
-	{
-		if (fscanf(infile, "%i,%u,%u,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupe) != 7) goto error;
-	}
-	else if (formatVersion >= 34)
-	{
-		if (fscanf(infile, "%i,%u,%u,%u,%u,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore) != 6) goto error;
-	}
-	else
-	{
-		if (fscanf(infile, "%i,%u,%u,%u,%i\n", &status, &High, &Low, &fullContentHash, &dupeScore) != 5) goto error;
-	}
+	int dupeScore, dupeMode;
+	if (fscanf(infile, "%i,%u,%u,%u,%u,%i,%i\n", &status, &High, &Low, &fullContentHash, &filteredContentHash, &dupeScore, &dupeMode) != 7) goto error;
 
 	dupInfo->SetStatus((DupInfo::EStatus)status);
 	dupInfo->SetFullContentHash(fullContentHash);
@@ -1789,7 +1113,6 @@ bool DiskState::LoadDupInfo(DupInfo* dupInfo, DiskFile& infile, int formatVersio
 
 	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (buf[0] != 0) buf[strlen(buf)-1] = 0; // remove traling '\n'
-	if (formatVersion < 36) ConvertDupeKey(buf, sizeof(buf));
 	dupInfo->SetDupeKey(buf);
 
 	return true;
@@ -1798,12 +1121,12 @@ error:
 	return false;
 }
 
-void DiskState::SaveHistory(DownloadQueue* downloadQueue, DiskFile& outfile)
+void DiskState::SaveHistory(HistoryList* history, DiskFile& outfile)
 {
 	debug("Saving history to disk");
 
-	outfile.Print("%i\n", (int)downloadQueue->GetHistory()->size());
-	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
+	outfile.Print("%i\n", (int)history->size());
+	for (HistoryInfo* historyInfo : history)
 	{
 		outfile.Print("%i,%i,%i\n", historyInfo->GetId(), (int)historyInfo->GetKind(), (int)historyInfo->GetTime());
 
@@ -1818,7 +1141,7 @@ void DiskState::SaveHistory(DownloadQueue* downloadQueue, DiskFile& outfile)
 	}
 }
 
-bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Servers* servers, DiskFile& infile, int formatVersion)
+bool DiskState::LoadHistory(HistoryList* history, Servers* servers, DiskFile& infile, int formatVersion)
 {
 	debug("Loading history from disk");
 
@@ -1831,83 +1154,34 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 		int id = 0;
 		int time;
 
-		if (formatVersion >= 33)
-		{
-			int kindval = 0;
-			if (fscanf(infile, "%i,%i,%i\n", &id, &kindval, &time) != 3) goto error;
-			kind = (HistoryInfo::EKind)kindval;
-		}
-		else
-		{
-			if (formatVersion >= 24)
-			{
-				if (fscanf(infile, "%i\n", &id) != 1) goto error;
-			}
-
-			if (formatVersion >= 15)
-			{
-				int kindval = 0;
-				if (fscanf(infile, "%i\n", &kindval) != 1) goto error;
-				kind = (HistoryInfo::EKind)kindval;
-			}
-		}
+		int kindval = 0;
+		if (fscanf(infile, "%i,%i,%i\n", &id, &kindval, &time) != 3) goto error;
+		kind = (HistoryInfo::EKind)kindval;
 
 		if (kind == HistoryInfo::hkNzb)
 		{
-			if (formatVersion < 43)
-			{
-				uint32 nzbIndex;
-				if (fscanf(infile, "%i\n", &nzbIndex) != 1) goto error;
-				NzbInfo* nzbInfo = nzbList->at(nzbIndex - 1);
-				historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
-			}
-			else
-			{
-				std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
-				if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
-				nzbInfo->LeavePostProcess();
-				historyInfo = std::make_unique<HistoryInfo>(nzbInfo.release());
-			}
-
-			if (formatVersion < 28 && historyInfo->GetNzbInfo()->GetParStatus() == 0 &&
-				historyInfo->GetNzbInfo()->GetUnpackStatus() == 0 &&
-				historyInfo->GetNzbInfo()->GetMoveStatus() == 0)
-			{
-				historyInfo->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsManual);
-			}
+			std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
+			if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
+			nzbInfo->LeavePostProcess();
+			historyInfo = std::make_unique<HistoryInfo>(nzbInfo.release());
 		}
 		else if (kind == HistoryInfo::hkUrl)
 		{
 			std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
-			if (formatVersion >= 46)
-			{
-				if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
-			}
-			else
-			{
-				if (!LoadUrlInfo12(nzbInfo.get(), infile, formatVersion)) goto error;
-			}
+			if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
 			historyInfo = std::make_unique<HistoryInfo>(nzbInfo.release());
 		}
 		else if (kind == HistoryInfo::hkDup)
 		{
 			std::unique_ptr<DupInfo> dupInfo = std::make_unique<DupInfo>();
 			if (!LoadDupInfo(dupInfo.get(), infile, formatVersion)) goto error;
-			if (formatVersion >= 47)
-			{
-				dupInfo->SetId(id);
-			}
+			dupInfo->SetId(id);
 			historyInfo = std::make_unique<HistoryInfo>(dupInfo.release());
-		}
-
-		if (formatVersion < 33)
-		{
-			if (fscanf(infile, "%i\n", &time) != 1) goto error;
 		}
 
 		historyInfo->SetTime((time_t)time);
 
-		downloadQueue->GetHistory()->push_back(historyInfo.release());
+		history->push_back(historyInfo.release());
 	}
 
 	return true;
@@ -1915,38 +1189,6 @@ bool DiskState::LoadHistory(DownloadQueue* downloadQueue, NzbList* nzbList, Serv
 error:
 	error("Error reading diskstate for history");
 	return false;
-}
-
-/*
-* Find index of nzb-info.
-*/
-int DiskState::FindNzbInfoIndex(NzbList* nzbList, NzbInfo* nzbInfo)
-{
-	int nzbIndex = 0;
-	for (NzbInfo* nzbInfo2 : nzbList)
-	{
-		nzbIndex++;
-		if (nzbInfo2 == nzbInfo)
-		{
-			break;
-		}
-	}
-	return nzbIndex;
-}
-
-/*
-* Find nzb-info by id.
-*/
-NzbInfo* DiskState::FindNzbInfo(DownloadQueue* downloadQueue, int id)
-{
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-	{
-		if (nzbInfo->GetId() == id)
-		{
-			return nzbInfo;
-		}
-	}
-	return nullptr;
 }
 
 /*
@@ -2211,33 +1453,6 @@ error:
 	return false;
 }
 
-// calculate critical health for old NZBs
-void DiskState::CalcCriticalHealth(NzbList* nzbList)
-{
-	// build list of old NZBs which do not have critical health calculated
-	for (NzbInfo* nzbInfo : nzbList)
-	{
-		if (nzbInfo->CalcCriticalHealth(false) == 1000)
-		{
-			debug("Calculating critical health for %s", nzbInfo->GetName());
-
-			for (FileInfo* fileInfo : nzbInfo->GetFileList())
-			{
-				BString<1024> loFileName;
-				loFileName = fileInfo->GetFilename();
-				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-				bool parFile = strstr(loFileName, ".par2");
-
-				fileInfo->SetParFile(parFile);
-				if (parFile)
-				{
-					nzbInfo->SetParSize(nzbInfo->GetParSize() + fileInfo->GetSize());
-				}
-			}
-		}
-	}
-}
-
 void DiskState::CalcFileStats(DownloadQueue* downloadQueue, int formatVersion)
 {
 	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
@@ -2346,33 +1561,6 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 
 error:
 	return false;
-}
-
-void DiskState::ConvertDupeKey(char* buf, int bufsize)
-{
-	if (strncmp(buf, "rageid=", 7))
-	{
-		return;
-	}
-
-	int rageId = atoi(buf + 7);
-	int season = 0;
-	int episode = 0;
-	char* p = strchr(buf + 7, ',');
-	if (p)
-	{
-		season = atoi(p + 1);
-		p = strchr(p + 1, ',');
-		if (p)
-		{
-			episode = atoi(p + 1);
-		}
-	}
-
-	if (rageId != 0 && season != 0 && episode != 0)
-	{
-		snprintf(buf, bufsize, "rageid=%i-S%02i-E%02i", rageId, season, episode);
-	}
 }
 
 bool DiskState::SaveStats(Servers* servers, ServerVolumes* serverVolumes)
