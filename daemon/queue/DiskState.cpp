@@ -310,7 +310,7 @@ bool DiskState::LoadQueue(NzbList* queue, Servers* servers, DiskFile& infile, in
 	{
 		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 		if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
-		queue->push_back(nzbInfo.release());
+		queue->push_back(std::move(nzbInfo));
 	}
 
 	return true;
@@ -505,7 +505,6 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		if (fscanf(infile, "%i,%i\n", &fileCount, &parkedFileCount) != 2) goto error;
 		messageCount = 0;
 	}
-
 	nzbInfo->SetFileCount(fileCount);
 	nzbInfo->SetParkedFileCount(parkedFileCount);
 	nzbInfo->SetMessageCount(messageCount);
@@ -517,7 +516,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 
 	if (formatVersion >= 51)
 	{
-		int parFull, forceParFull, forceRepair, extraParBlocks;
+		int parFull, forceParFull, forceRepair, extraParBlocks = 0;
 		if (formatVersion >= 55)
 		{
 			if (fscanf(infile, "%i,%i,%i,%i\n", &parFull, &forceParFull, &forceRepair, &extraParBlocks) != 4) goto error;
@@ -525,7 +524,6 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 		else
 		{
 			if (fscanf(infile, "%i,%i,%i\n", &parFull, &forceParFull, &forceRepair) != 3) goto error;
-			extraParBlocks = 0;
 		}
 		nzbInfo->SetParFull((bool)parFull);
 		nzbInfo->SetExtraParBlocks(extraParBlocks);
@@ -682,11 +680,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile
 			fileInfo->SetTime(time);
 			fileInfo->SetExtraPriority(extraPriority != 0);
 			fileInfo->SetNzbInfo(nzbInfo);
-			if (formatVersion < 30)
-			{
-				nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
-			}
-			nzbInfo->GetFileList()->push_back(fileInfo.release());
+			nzbInfo->GetFileList()->Add(std::move(fileInfo));
 		}
 	}
 
@@ -894,7 +888,7 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, const char * filename, bool fil
 			articleInfo->SetPartNumber(PartNumber);
 			articleInfo->SetSize(PartSize);
 			articleInfo->SetMessageId(buf);
-			fileInfo->GetArticles()->push_back(articleInfo.release());
+			fileInfo->GetArticles()->push_back(std::move(articleInfo));
 		}
 	}
 
@@ -998,10 +992,9 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	{
 		if (!hasArticles)
 		{
-			std::unique_ptr<ArticleInfo> articleInfo = std::make_unique<ArticleInfo>();
-			fileInfo->GetArticles()->push_back(articleInfo.release());
+			fileInfo->GetArticles()->push_back(std::make_unique<ArticleInfo>());
 		}
-		ArticleInfo* pa = fileInfo->GetArticles()->at(i);
+		std::unique_ptr<ArticleInfo>& pa = fileInfo->GetArticles()->at(i);
 
 		int statusInt;
 
@@ -1163,25 +1156,25 @@ bool DiskState::LoadHistory(HistoryList* history, Servers* servers, DiskFile& in
 			std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 			if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
 			nzbInfo->LeavePostProcess();
-			historyInfo = std::make_unique<HistoryInfo>(nzbInfo.release());
+			historyInfo = std::make_unique<HistoryInfo>(std::move(nzbInfo));
 		}
 		else if (kind == HistoryInfo::hkUrl)
 		{
 			std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
 			if (!LoadNzbInfo(nzbInfo.get(), servers, infile, formatVersion)) goto error;
-			historyInfo = std::make_unique<HistoryInfo>(nzbInfo.release());
+			historyInfo = std::make_unique<HistoryInfo>(std::move(nzbInfo));
 		}
 		else if (kind == HistoryInfo::hkDup)
 		{
 			std::unique_ptr<DupInfo> dupInfo = std::make_unique<DupInfo>();
 			if (!LoadDupInfo(dupInfo.get(), infile, formatVersion)) goto error;
 			dupInfo->SetId(id);
-			historyInfo = std::make_unique<HistoryInfo>(dupInfo.release());
+			historyInfo = std::make_unique<HistoryInfo>(std::move(dupInfo));
 		}
 
 		historyInfo->SetTime((time_t)time);
 
-		history->push_back(historyInfo.release());
+		history->push_back(std::move(historyInfo));
 	}
 
 	return true;
@@ -1516,11 +1509,6 @@ void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
 	nzbInfo->SetCurrentFailedSize(nzbInfo->GetFailedSize() + failedSize);
 	nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParSuccessSize() + parSuccessSize);
 	nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParFailedSize() + parFailedSize);
-
-	if (formatVersion < 44)
-	{
-		nzbInfo->UpdateMinMaxTime();
-	}
 }
 
 bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers)
@@ -1794,7 +1782,7 @@ bool DiskState::LoadServerInfo(Servers* servers, DiskFile& infile, int formatVer
 {
 	debug("Loading server info from disk");
 
-	ServerRefList serverRefs;
+	OwnedServerRefList serverRefs;
 	*perfectMatch = true;
 
 	int size;

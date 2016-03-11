@@ -21,6 +21,8 @@
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
+#include "NString.h"
+#include "Container.h"
 #include "Thread.h"
 #include "Log.h"
 

@@ -357,7 +357,7 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
 			for (std::unique_ptr<NzbInfo>& nzbInfo : addedNzbs)
 			{
-				downloadQueue->GetQueue()->push_back(nzbInfo.release());
+				downloadQueue->GetQueue()->Add(std::move(nzbInfo));
 			}
 			downloadQueue->Save();
 			DownloadQueue::Unlock();

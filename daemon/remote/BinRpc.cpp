@@ -431,14 +431,7 @@ void DownloadBinCommand::Execute()
 		nzbInfo->SetDupeMode((EDupeMode)dupeMode);
 
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		if (addTop)
-		{
-			downloadQueue->GetQueue()->push_front(nzbInfo.release());
-		}
-		else
-		{
-			downloadQueue->GetQueue()->push_back(nzbInfo.release());
-		}
+		downloadQueue->GetQueue()->Add(std::move(nzbInfo), addTop);
 		downloadQueue->Save();
 		DownloadQueue::Unlock();
 
@@ -620,7 +613,7 @@ void ListBinCommand::Execute()
 				for (uint32 i = 0; i < downloadQueue->GetQueue()->size(); i++)
 				{
 					nzbIndex++;
-					if (downloadQueue->GetQueue()->at(i) == fileInfo->GetNzbInfo())
+					if (downloadQueue->GetQueue()->at(i).get() == fileInfo->GetNzbInfo())
 					{
 						break;
 					}

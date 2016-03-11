@@ -83,7 +83,7 @@ void Frontend::FreeData()
 		m_remoteMessages.clear();
 
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		downloadQueue->GetQueue()->Clear();
+		downloadQueue->GetQueue()->clear();
 		DownloadQueue::Unlock();
 	}
 }

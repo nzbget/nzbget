@@ -2226,14 +2226,7 @@ void DownloadXmlCommand::Execute()
 		info("Queue %s", *nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename));
 
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		if (addTop)
-		{
-			downloadQueue->GetQueue()->push_front(nzbInfo.release());
-		}
-		else
-		{
-			downloadQueue->GetQueue()->push_back(nzbInfo.release());
-		}
+		downloadQueue->GetQueue()->Add(std::move(nzbInfo), addTop);
 		downloadQueue->Save();
 		DownloadQueue::Unlock();
 

@@ -43,7 +43,7 @@ public:
 	void Update(Subject* Caller, void* Aspect);
 
 	// editing queue
-	void AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, bool addFirst);
+	NzbInfo* AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, NzbInfo* urlInfo, bool addFirst);
 	void CheckDupeFileInfos(NzbInfo* nzbInfo);
 	bool HasMoreJobs() { return m_hasMoreJobs; }
 	void DiscardDiskFile(FileInfo* fileInfo);
@@ -51,7 +51,7 @@ public:
 	bool SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* category);
 	bool SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* name);
 	bool MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* destNzbInfo, NzbInfo* srcNzbInfo);
-	bool SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NzbInfo** newNzbInfo);
+	bool SplitQueueEntries(DownloadQueue* downloadQueue, RawFileList* fileList, const char* name, NzbInfo** newNzbInfo);
 
 protected:
 	virtual void LogDebugInfo();

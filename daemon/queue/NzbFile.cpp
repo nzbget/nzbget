@@ -46,16 +46,15 @@ void NzbFile::LogDebugInfo()
 
 void NzbFile::AddArticle(FileInfo* fileInfo, std::unique_ptr<ArticleInfo> articleInfo)
 {
-	// make Article-List big enough
-	while ((int)fileInfo->GetArticles()->size() < articleInfo->GetPartNumber())
-		fileInfo->GetArticles()->push_back(nullptr);
-
 	int index = articleInfo->GetPartNumber() - 1;
-	if ((*fileInfo->GetArticles())[index])
+
+	// make Article-List big enough
+	if (index >= (int)fileInfo->GetArticles()->size())
 	{
-		delete (*fileInfo->GetArticles())[index];
+		fileInfo->GetArticles()->resize(index + 1);
 	}
-	(*fileInfo->GetArticles())[index] = articleInfo.release();
+
+	(*fileInfo->GetArticles())[index] = std::move(articleInfo);
 }
 
 void NzbFile::AddFileInfo(std::unique_ptr<FileInfo> fileInfo)
@@ -67,16 +66,15 @@ void NzbFile::AddFileInfo(std::unique_ptr<FileInfo> fileInfo)
 	int64 oneSize = 0;
 	int uncountedArticles = 0;
 	int missedArticles = 0;
-	FileInfo::Articles* articles = fileInfo->GetArticles();
-	int totalArticles = (int)articles->size();
+	int totalArticles = (int)fileInfo->GetArticles()->size();
 	int i = 0;
-	for (FileInfo::Articles::iterator it = articles->begin(); it != articles->end(); )
+	for (ArticleList::iterator it = fileInfo->GetArticles()->begin(); it != fileInfo->GetArticles()->end(); )
 	{
-		ArticleInfo* article = *it;
+		ArticleInfo* article = (*it).get();
 		if (!article)
 		{
-			articles->erase(it);
-			it = articles->begin() + i;
+			fileInfo->GetArticles()->erase(it);
+			it = fileInfo->GetArticles()->begin() + i;
 			missedArticles++;
 			if (oneSize > 0)
 			{
@@ -99,7 +97,7 @@ void NzbFile::AddFileInfo(std::unique_ptr<FileInfo> fileInfo)
 		}
 	}
 
-	if (articles->empty())
+	if (fileInfo->GetArticles()->empty())
 	{
 		return;
 	}
@@ -112,7 +110,7 @@ void NzbFile::AddFileInfo(std::unique_ptr<FileInfo> fileInfo)
 	fileInfo->SetMissedSize(missedSize);
 	fileInfo->SetTotalArticles(totalArticles);
 	fileInfo->SetMissedArticles(missedArticles);
-	m_nzbInfo->GetFileList()->push_back(fileInfo.release());
+	m_nzbInfo->GetFileList()->Add(std::move(fileInfo));
 }
 
 void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
@@ -239,11 +237,11 @@ bool NzbFile::HasDuplicateFilenames()
 {
 	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 	{
-		FileInfo* fileInfo1 = *it;
+		FileInfo* fileInfo1 = (*it).get();
 		int dupe = 1;
 		for (FileList::iterator it2 = it + 1; it2 != m_nzbInfo->GetFileList()->end(); it2++)
 		{
-			FileInfo* fileInfo2 = *it2;
+			FileInfo* fileInfo2 = (*it2).get();
 			if (!strcmp(fileInfo1->GetFilename(), fileInfo2->GetFilename()) &&
 				strcmp(fileInfo1->GetSubject(), fileInfo2->GetSubject()))
 			{
@@ -296,7 +294,7 @@ void NzbFile::BuildFilenames()
 
 void NzbFile::CalcHashes()
 {
-	FileList sortedFiles;
+	RawFileList sortedFiles;
 
 	for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 	{
@@ -319,7 +317,7 @@ void NzbFile::CalcHashes()
 		bool skip = !fileInfo->GetParFile() &&
 			Util::MatchFileExt(fileInfo->GetFilename(), g_Options->GetParIgnoreExt(), ",;");
 
-		for (ArticleInfo* article: *fileInfo->GetArticles())
+		for (ArticleInfo* article: fileInfo->GetArticles())
 		{
 			int len = strlen(article->GetMessageId());
 			fullContentHash = Util::HashBJ96(article->GetMessageId(), len, fullContentHash);
@@ -379,7 +377,7 @@ void NzbFile::ProcessFiles()
 		for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 		{
 			g_DiskState->SaveFile(fileInfo);
-			fileInfo->ClearArticles();
+			fileInfo->GetArticles()->clear();
 		}
 	}
 
@@ -481,7 +479,7 @@ bool NzbFile::Parse()
 		return false;
 	}
 
-	if (GetNzbInfo()->GetFileList()->empty())
+	if (m_nzbInfo->GetFileList()->empty())
 	{
 		m_nzbInfo->AddMessage(Message::mkError, BString<1024>(
 			"Error parsing nzb-file %s: file has no content", FileSystem::BaseFileName(m_fileName)));
@@ -808,7 +806,7 @@ void* NzbFile::SAX_getEntity(NzbFile* file, const char * name)
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
 	if (!e)
 	{
-		file->GetNzbInfo()->AddMessage(Message::mkWarning, "entity not found");
+		file->m_nzbInfo->AddMessage(Message::mkWarning, "entity not found");
 		file->m_ignoreNextError = true;
 	}
 
@@ -833,6 +831,6 @@ void NzbFile::SAX_error(NzbFile* file, const char *msg, ...)
 	// remove trailing CRLF
 	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
 
-	file->GetNzbInfo()->AddMessage(Message::mkError, BString<1024>("Error parsing nzb-file: %s", errMsg));
+	file->m_nzbInfo->AddMessage(Message::mkError, BString<1024>("Error parsing nzb-file: %s", errMsg));
 }
 #endif

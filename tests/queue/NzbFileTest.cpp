@@ -45,13 +45,14 @@ void TestNzb(std::string testFilename)
 	REQUIRE(*buffer);
 
 	int fileCount = atoi(buffer);
-	REQUIRE(nzbFile.GetNzbInfo()->GetFileCount() == fileCount);
+	std::unique_ptr<NzbInfo> nzbInfo = nzbFile.DetachNzbInfo();
+	REQUIRE(nzbInfo->GetFileCount() == fileCount);
 
 	for (int i = 0; i < fileCount; i++)
 	{
 		while (fgets(buffer, sizeof(buffer), infofile) && *buffer == '#') ;
 		REQUIRE(*buffer);
-		FileInfo* fileInfo = nzbFile.GetNzbInfo()->GetFileList()->at(i);
+		FileInfo* fileInfo = nzbInfo->GetFileList()->at(i).get();
 		REQUIRE(fileInfo != nullptr);
 		Util::TrimRight(buffer);
 		REQUIRE(std::string(fileInfo->GetFilename()) == std::string(buffer));

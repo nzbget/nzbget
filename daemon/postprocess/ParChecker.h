@@ -24,6 +24,7 @@
 #ifndef DISABLE_PARCHECK
 
 #include "NString.h"
+#include "Container.h"
 #include "Thread.h"
 #include "FileSystem.h"
 #include "Log.h"

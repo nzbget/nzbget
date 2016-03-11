@@ -214,24 +214,24 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/remote/WebServer.cpp daemon/remote/WebServer.h \
 	daemon/remote/XmlRpc.cpp daemon/remote/XmlRpc.h \
 	daemon/util/Log.cpp daemon/util/Log.h daemon/util/NString.cpp \
-	daemon/util/NString.h daemon/util/Observer.cpp \
-	daemon/util/Observer.h daemon/util/Script.cpp \
-	daemon/util/Script.h daemon/util/Thread.cpp \
-	daemon/util/Thread.h daemon/util/Service.cpp \
-	daemon/util/Service.h daemon/util/FileSystem.cpp \
-	daemon/util/FileSystem.h daemon/util/Util.cpp \
-	daemon/util/Util.h code_revision.cpp lib/par2/commandline.cpp \
-	lib/par2/commandline.h lib/par2/crc.cpp lib/par2/crc.h \
-	lib/par2/creatorpacket.cpp lib/par2/creatorpacket.h \
-	lib/par2/criticalpacket.cpp lib/par2/criticalpacket.h \
-	lib/par2/datablock.cpp lib/par2/datablock.h \
-	lib/par2/descriptionpacket.cpp lib/par2/descriptionpacket.h \
-	lib/par2/diskfile.cpp lib/par2/diskfile.h \
-	lib/par2/filechecksummer.cpp lib/par2/filechecksummer.h \
-	lib/par2/galois.cpp lib/par2/galois.h lib/par2/letype.h \
-	lib/par2/mainpacket.cpp lib/par2/mainpacket.h lib/par2/md5.cpp \
-	lib/par2/md5.h lib/par2/par2cmdline.h \
-	lib/par2/par2creatorsourcefile.cpp \
+	daemon/util/NString.h daemon/util/Container.h \
+	daemon/util/Observer.cpp daemon/util/Observer.h \
+	daemon/util/Script.cpp daemon/util/Script.h \
+	daemon/util/Thread.cpp daemon/util/Thread.h \
+	daemon/util/Service.cpp daemon/util/Service.h \
+	daemon/util/FileSystem.cpp daemon/util/FileSystem.h \
+	daemon/util/Util.cpp daemon/util/Util.h code_revision.cpp \
+	lib/par2/commandline.cpp lib/par2/commandline.h \
+	lib/par2/crc.cpp lib/par2/crc.h lib/par2/creatorpacket.cpp \
+	lib/par2/creatorpacket.h lib/par2/criticalpacket.cpp \
+	lib/par2/criticalpacket.h lib/par2/datablock.cpp \
+	lib/par2/datablock.h lib/par2/descriptionpacket.cpp \
+	lib/par2/descriptionpacket.h lib/par2/diskfile.cpp \
+	lib/par2/diskfile.h lib/par2/filechecksummer.cpp \
+	lib/par2/filechecksummer.h lib/par2/galois.cpp \
+	lib/par2/galois.h lib/par2/letype.h lib/par2/mainpacket.cpp \
+	lib/par2/mainpacket.h lib/par2/md5.cpp lib/par2/md5.h \
+	lib/par2/par2cmdline.h lib/par2/par2creatorsourcefile.cpp \
 	lib/par2/par2creatorsourcefile.h lib/par2/par2fileformat.cpp \
 	lib/par2/par2fileformat.h lib/par2/par2repairer.cpp \
 	lib/par2/par2repairer.h lib/par2/par2repairersourcefile.cpp \
@@ -518,14 +518,14 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/remote/WebServer.cpp daemon/remote/WebServer.h \
 	daemon/remote/XmlRpc.cpp daemon/remote/XmlRpc.h \
 	daemon/util/Log.cpp daemon/util/Log.h daemon/util/NString.cpp \
-	daemon/util/NString.h daemon/util/Observer.cpp \
-	daemon/util/Observer.h daemon/util/Script.cpp \
-	daemon/util/Script.h daemon/util/Thread.cpp \
-	daemon/util/Thread.h daemon/util/Service.cpp \
-	daemon/util/Service.h daemon/util/FileSystem.cpp \
-	daemon/util/FileSystem.h daemon/util/Util.cpp \
-	daemon/util/Util.h code_revision.cpp $(am__append_1) \
-	$(am__append_2)
+	daemon/util/NString.h daemon/util/Container.h \
+	daemon/util/Observer.cpp daemon/util/Observer.h \
+	daemon/util/Script.cpp daemon/util/Script.h \
+	daemon/util/Thread.cpp daemon/util/Thread.h \
+	daemon/util/Service.cpp daemon/util/Service.h \
+	daemon/util/FileSystem.cpp daemon/util/FileSystem.h \
+	daemon/util/Util.cpp daemon/util/Util.h code_revision.cpp \
+	$(am__append_1) $(am__append_2)
 AM_CPPFLAGS = -I$(srcdir)/daemon/connect -I$(srcdir)/daemon/extension \
 	-I$(srcdir)/daemon/feed -I$(srcdir)/daemon/frontend \
 	-I$(srcdir)/daemon/main -I$(srcdir)/daemon/nntp \

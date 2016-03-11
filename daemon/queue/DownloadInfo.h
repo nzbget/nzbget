@@ -23,6 +23,7 @@
 #define DOWNLOADINFO_H
 
 #include "NString.h"
+#include "Container.h"
 #include "Observer.h"
 #include "Log.h"
 #include "Thread.h"
@@ -113,20 +114,20 @@ private:
 	uint32 m_crc = 0;
 };
 
+typedef std::vector<std::unique_ptr<ArticleInfo>> ArticleList;
+
 class FileInfo
 {
 public:
-	typedef std::vector<ArticleInfo*> Articles;
 	typedef std::vector<CString> Groups;
 
 	FileInfo(int id = 0) : m_id(id ? id : ++m_idGen) {}
-	~FileInfo();
 	int GetId() { return m_id; }
 	void SetId(int id);
 	static void ResetGenId(bool max);
 	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
 	void SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
-	Articles* GetArticles() { return &m_articles; }
+	ArticleList* GetArticles() { return &m_articles; }
 	Groups* GetGroups() { return &m_groups; }
 	const char* GetSubject() { return m_subject; }
 	void SetSubject(const char* subject) { m_subject = subject; }
@@ -163,7 +164,6 @@ public:
 	void SetCompletedArticles(int completedArticles) { m_completedArticles = completedArticles; }
 	bool GetParFile() { return m_parFile; }
 	void SetParFile(bool parFile) { m_parFile = parFile; }
-	void ClearArticles();
 	void LockOutputFile();
 	void UnlockOutputFile();
 	const char* GetOutputFilename() { return m_outputFilename; }
@@ -185,7 +185,7 @@ public:
 private:
 	int m_id;
 	NzbInfo* m_nzbInfo = nullptr;
-	Articles m_articles;
+	ArticleList m_articles;
 	Groups m_groups;
 	ServerStatList m_serverStats;
 	CString m_subject;
@@ -220,19 +220,8 @@ private:
 	friend class CompletedFile;
 };
 
-typedef std::deque<FileInfo*> FileListBase;
-
-class FileList : public FileListBase
-{
-public:
-	FileList(bool ownObjects = false) : m_ownObjects(ownObjects) {}
-	~FileList();
-	void Clear();
-	void Remove(FileInfo* fileInfo);
-
-private:
-	bool m_ownObjects;
-};
+typedef UniqueDeque<FileInfo> FileList;
+typedef std::vector<FileInfo*> RawFileList;
 
 class CompletedFile
 {
@@ -407,8 +396,6 @@ public:
 		nkUrl
 	};
 
-	NzbInfo() : m_fileList(true) {}
-	~NzbInfo();
 	int GetId() { return m_id; }
 	void SetId(int id);
 	static void ResetGenId(bool max);
@@ -560,7 +547,7 @@ public:
 	bool GetParFull() { return m_parFull; }
 	int GetFeedId() { return m_feedId; }
 	void SetFeedId(int feedId) { m_feedId = feedId; }
-	void CopyFileList(NzbInfo* srcNzbInfo);
+	void MoveFileList(NzbInfo* srcNzbInfo);
 	void UpdateMinMaxTime();
 	PostInfo* GetPostInfo() { return m_postInfo.get(); }
 	void EnterPostProcess();
@@ -668,20 +655,8 @@ private:
 	friend class DupInfo;
 };
 
-typedef std::deque<NzbInfo*> NzbQueueBase;
-
-class NzbList : public NzbQueueBase
-{
-public:
-	NzbList(bool ownObjects = false) { m_ownObjects = ownObjects; }
-	~NzbList();
-	void Clear();
-	void Remove(NzbInfo* nzbInfo);
-	NzbInfo* Find(int id);
-
-private:
-	bool m_ownObjects;
-};
+typedef UniqueDeque<NzbInfo> NzbList;
+typedef std::vector<NzbInfo*> RawNzbList;
 
 class PostInfo
 {
@@ -819,9 +794,9 @@ public:
 		hkDup
 	};
 
-	HistoryInfo(NzbInfo* nzbInfo) : m_info(nzbInfo),
+	HistoryInfo(std::unique_ptr<NzbInfo> nzbInfo) : m_info(nzbInfo.release()),
 		m_kind(nzbInfo->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl) {}
-	HistoryInfo(DupInfo* dupInfo) : m_info(dupInfo), m_kind(hkDup) {}
+	HistoryInfo(std::unique_ptr<DupInfo> dupInfo) : m_info(dupInfo.release()), m_kind(hkDup) {}
 	~HistoryInfo();
 	EKind GetKind() { return m_kind; }
 	int GetId();
@@ -838,14 +813,7 @@ private:
 	time_t m_time = 0;
 };
 
-typedef std::deque<HistoryInfo*> HistoryListBase;
-
-class HistoryList : public HistoryListBase
-{
-public:
-	~HistoryList();
-	HistoryInfo* Find(int id);
-};
+typedef UniqueDeque<HistoryInfo> HistoryList;
 
 class DownloadQueue : public Subject
 {
@@ -936,7 +904,7 @@ public:
 	void CalcRemainingSize(int64* remaining, int64* remainingForced);
 
 protected:
-	DownloadQueue() : m_queue(true) {}
+	DownloadQueue() {}
 	static void Init(DownloadQueue* globalInstance) { g_DownloadQueue = globalInstance; }
 	static void Final() { g_DownloadQueue = nullptr; }
 	static void Loaded() { g_Loaded = true; }

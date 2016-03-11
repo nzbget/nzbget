@@ -21,6 +21,9 @@
 #ifndef PARPARSER_H
 #define PARPARSER_H
 
+#include "NString.h"
+#include "Container.h"
+
 class ParParser
 {
 public:

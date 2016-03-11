@@ -31,9 +31,8 @@ public:
 	NzbFile(const char* fileName, const char* category);
 	bool Parse();
 	const char* GetFileName() const { return m_fileName; }
-	NzbInfo* GetNzbInfo() { return m_nzbInfo.get(); }
+	std::unique_ptr<NzbInfo> DetachNzbInfo() { return std::move(m_nzbInfo); }
 	const char* GetPassword() { return m_password; }
-	void DetachNzbInfo() { m_nzbInfo.release(); }
 
 	void LogDebugInfo();
 

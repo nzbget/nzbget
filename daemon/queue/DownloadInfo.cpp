@@ -144,13 +144,6 @@ void ServerStatList::ListOp(ServerStatList* serverStats, EStatOperation statOper
 }
 
 
-NzbInfo::~NzbInfo()
-{
-	debug("Destroying NZBInfo");
-
-	m_fileList.Clear();
-}
-
 void NzbInfo::SetId(int id)
 {
 	m_id = id;
@@ -334,7 +327,7 @@ void NzbInfo::UpdateMinMaxTime()
 	m_maxTime = 0;
 
 	bool first = true;
-	for (FileInfo* fileInfo : m_fileList)
+	for (FileInfo* fileInfo : &m_fileList)
 	{
 		if (first)
 		{
@@ -431,17 +424,13 @@ void NzbInfo::ClearMessages()
 	m_logMutex.Unlock();
 }
 
-void NzbInfo::CopyFileList(NzbInfo* srcNzbInfo)
+void NzbInfo::MoveFileList(NzbInfo* srcNzbInfo)
 {
-	m_fileList.Clear();
-
-	for (FileInfo* fileInfo : srcNzbInfo->GetFileList())
+	m_fileList = std::move(*srcNzbInfo->GetFileList());
+	for (FileInfo* fileInfo : &m_fileList)
 	{
 		fileInfo->SetNzbInfo(this);
-		m_fileList.push_back(fileInfo);
 	}
-
-	srcNzbInfo->GetFileList()->clear(); // only remove references
 
 	SetFullContentHash(srcNzbInfo->GetFullContentHash());
 	SetFilteredContentHash(srcNzbInfo->GetFilteredContentHash());
@@ -659,46 +648,6 @@ const char* NzbInfo::MakeTextStatus(bool ignoreScriptStatus)
 }
 
 
-NzbList::~NzbList()
-{
-	if (m_ownObjects)
-	{
-		Clear();
-	}
-}
-
-void NzbList::Clear()
-{
-	for (NzbInfo* nzbInfo : this)
-	{
-		delete nzbInfo;
-	}
-	clear();
-}
-
-void NzbList::Remove(NzbInfo* nzbInfo)
-{
-	iterator it = std::find(begin(), end(), nzbInfo);
-	if (it != end())
-	{
-		erase(it);
-	}
-}
-
-NzbInfo* NzbList::Find(int id)
-{
-	for (NzbInfo* nzbInfo : this)
-	{
-		if (nzbInfo->GetId() == id)
-		{
-			return nzbInfo;
-		}
-	}
-
-	return nullptr;
-}
-
-
 void ArticleInfo::AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size)
 {
 	m_segmentContent = std::move(content);
@@ -711,22 +660,6 @@ void ArticleInfo::DiscardSegment()
 	m_segmentContent.reset();
 }
 
-
-FileInfo::~ FileInfo()
-{
-	debug("Destroying FileInfo");
-
-	ClearArticles();
-}
-
-void FileInfo::ClearArticles()
-{
-	for (ArticleInfo* articleInfo : m_articles)
-	{
-		delete articleInfo;
-	}
-	m_articles.clear();
-}
 
 void FileInfo::SetId(int id)
 {
@@ -787,29 +720,6 @@ void FileInfo::SetActiveDownloads(int activeDownloads)
 	{
 		m_outputFileMutex.reset();
 	}
-}
-
-
-FileList::~FileList()
-{
-	if (m_ownObjects)
-	{
-		Clear();
-	}
-}
-
-void FileList::Clear()
-{
-	for (FileInfo* fileInfo : this)
-	{
-		delete fileInfo;
-	}
-	clear();
-}
-
-void FileList::Remove(FileInfo* fileInfo)
-{
-	erase(std::find(begin(), end(), fileInfo));
 }
 
 
@@ -875,28 +785,6 @@ const char* HistoryInfo::GetName()
 }
 
 
-HistoryList::~HistoryList()
-{
-	for (HistoryInfo* historyInfo : this)
-	{
-		delete historyInfo;
-	}
-}
-
-HistoryInfo* HistoryList::Find(int id)
-{
-	for (HistoryInfo* historyInfo : this)
-	{
-		if (historyInfo->GetId() == id)
-		{
-			return historyInfo;
-		}
-	}
-
-	return nullptr;
-}
-
-
 DownloadQueue* DownloadQueue::Lock()
 {
 	g_DownloadQueue->m_lockMutex.Lock();
@@ -913,7 +801,7 @@ void DownloadQueue::CalcRemainingSize(int64* remaining, int64* remainingForced)
 	int64 remainingSize = 0;
 	int64 remainingForcedSize = 0;
 
-	for (NzbInfo* nzbInfo : m_queue)
+	for (NzbInfo* nzbInfo : &m_queue)
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{

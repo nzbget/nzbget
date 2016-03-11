@@ -47,7 +47,7 @@ void HistoryCoordinator::ServiceWork()
 	// (just to produce the log-messages in a more logical order)
 	for (HistoryList::reverse_iterator it = downloadQueue->GetHistory()->rbegin(); it != downloadQueue->GetHistory()->rend(); )
 	{
-		HistoryInfo* historyInfo = *it;
+		HistoryInfo* historyInfo = (*it).get();
 		if (historyInfo->GetKind() != HistoryInfo::hkDup && historyInfo->GetTime() < minTime)
 		{
 			if (g_Options->GetDupeCheck() && historyInfo->GetKind() == HistoryInfo::hkNzb)
@@ -58,15 +58,13 @@ void HistoryCoordinator::ServiceWork()
 			}
 			else
 			{
-				downloadQueue->GetHistory()->erase(downloadQueue->GetHistory()->end() - 1 - index);
-
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 				{
 					DeleteDiskFiles(historyInfo->GetNzbInfo());
 				}
 				info("Collection %s removed from history", historyInfo->GetName());
 
-				delete historyInfo;
+				downloadQueue->GetHistory()->erase(downloadQueue->GetHistory()->end() - 1 - index);
 			}
 
 			it = downloadQueue->GetHistory()->rbegin() + index;
@@ -94,7 +92,7 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 		// delete parked files
 		g_DiskState->DiscardFiles(nzbInfo);
 	}
-	nzbInfo->GetFileList()->Clear();
+	nzbInfo->GetFileList()->clear();
 
 	// delete nzb-file
 	if (!g_Options->GetNzbCleanupDisk())
@@ -122,10 +120,10 @@ void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 
 void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
+	std::unique_ptr<NzbInfo> oldNzbInfo = downloadQueue->GetQueue()->Remove(nzbInfo);
+	std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
 	historyInfo->SetTime(Util::CurrentTime());
-	downloadQueue->GetHistory()->push_front(historyInfo.release());
-	downloadQueue->GetQueue()->Remove(nzbInfo);
+	downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
 
 	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsNone)
 	{
@@ -133,7 +131,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 		int parkedFiles = 0;
 		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); )
 		{
-			FileInfo* fileInfo = *it;
+			FileInfo* fileInfo = (*it).get();
 			if (!fileInfo->GetDeleted())
 			{
 				detail("Parking file %s", fileInfo->GetFilename());
@@ -145,7 +143,6 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 			{
 				// since we removed nzbInfo from queue we need to take care of removing file infos marked for deletion
 				nzbInfo->GetFileList()->erase(it);
-				delete fileInfo;
 				it = nzbInfo->GetFileList()->begin() + parkedFiles;
 			}
 		}
@@ -153,7 +150,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	}
 	else
 	{
-		nzbInfo->GetFileList()->Clear();
+		nzbInfo->GetFileList()->clear();
 	}
 
 	nzbInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", nzbInfo->GetName());
@@ -183,14 +180,14 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* 
 		historyInfo->GetNzbInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
 		DupInfo::dsFailed);
 
-	std::unique_ptr<HistoryInfo> newHistoryInfo = std::make_unique<HistoryInfo>(dupInfo.release());
+	std::unique_ptr<HistoryInfo> newHistoryInfo = std::make_unique<HistoryInfo>(std::move(dupInfo));
 	newHistoryInfo->SetTime(historyInfo->GetTime());
-	(*downloadQueue->GetHistory())[downloadQueue->GetHistory()->size() - 1 - rindex] = newHistoryInfo.release();
 
 	DeleteDiskFiles(historyInfo->GetNzbInfo());
 
 	info("Collection %s removed from history", historyInfo->GetName());
-	delete historyInfo;
+
+	(*downloadQueue->GetHistory())[downloadQueue->GetHistory()->size() - 1 - rindex] = std::move(newHistoryInfo);
 }
 
 void HistoryCoordinator::PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action)
@@ -219,7 +216,7 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 	{
 		for (HistoryList::iterator itHistory = downloadQueue->GetHistory()->begin(); itHistory != downloadQueue->GetHistory()->end(); itHistory++)
 		{
-			HistoryInfo* historyInfo = *itHistory;
+			HistoryInfo* historyInfo = (*itHistory).get();
 			if (historyInfo->GetId() == id)
 			{
 				ok = true;
@@ -318,7 +315,6 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 	if (final || !g_Options->GetDupeCheck() || historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
 		downloadQueue->GetHistory()->erase(itHistory);
-		delete historyInfo;
 	}
 	else
 	{
@@ -361,7 +357,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 			return;
 		}
 
-		downloadQueue->GetQueue()->push_front(nzbInfo);
+		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
 		historyInfo->DiscardNzbInfo();
 
 		// reset postprocessing status variables
@@ -402,7 +398,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 		historyInfo->DiscardNzbInfo();
 		nzbInfo->SetUrlStatus(NzbInfo::lsNone);
 		nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
-		downloadQueue->GetQueue()->push_front(nzbInfo);
+		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
 	}
 
 	downloadQueue->GetHistory()->erase(itHistory);
@@ -415,8 +411,6 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 		debug("Restarting postprocessing for %s", *nicename);
 		g_PrePostProcessor->NzbDownloaded(downloadQueue, nzbInfo);
 	}
-
-	delete historyInfo;
 }
 
 void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
@@ -454,7 +448,9 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	info("Returning %s from history back to queue", nzbInfo->GetName());
 
-	for (FileInfo* fileInfo : nzbFile.GetNzbInfo()->GetFileList())
+	std::unique_ptr<NzbInfo> newNzbInfo = nzbFile.DetachNzbInfo();
+
+	for (FileInfo* fileInfo : newNzbInfo->GetFileList())
 	{
 		fileInfo->SetPaused(paused);
 	}
@@ -498,7 +494,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->GetServerStats()->clear();
 	nzbInfo->GetCurrentServerStats()->clear();
 
-	nzbInfo->CopyFileList(nzbFile.GetNzbInfo());
+	nzbInfo->MoveFileList(newNzbInfo.get());
 
 	g_QueueCoordinator->CheckDupeFileInfos(nzbInfo);
 
@@ -662,7 +658,6 @@ void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQ
 
 void HistoryCoordinator::Redownload(DownloadQueue* downloadQueue, HistoryInfo* historyInfo)
 {
-	HistoryList::iterator it = std::find(downloadQueue->GetHistory()->begin(),
-		downloadQueue->GetHistory()->end(), historyInfo);
+	HistoryList::iterator it = downloadQueue->GetHistory()->Find(historyInfo);
 	HistoryRedownload(downloadQueue, it, historyInfo, true);
 }

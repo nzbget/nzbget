@@ -51,7 +51,7 @@ private:
 	bool BuildIdListFromNameList(IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action);
 	bool EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, int offset, const char* text);
 	void PauseParsInGroups(ItemList* itemList, bool extraParsOnly);
-	void PausePars(FileList* fileList, bool extraParsOnly);
+	void PausePars(RawFileList* fileList, bool extraParsOnly);
 	void SetNzbPriority(NzbInfo* nzbInfo, const char* priority);
 	void SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool applyParams);
 	void SetNzbName(NzbInfo* nzbInfo, const char* name);

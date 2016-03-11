@@ -283,7 +283,6 @@ void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbIn
 	{
 		g_HistoryCoordinator->DeleteDiskFiles(nzbInfo);
 		downloadQueue->GetQueue()->Remove(nzbInfo);
-		delete nzbInfo;
 	}
 
 	if (saveQueue && needSave)
@@ -411,7 +410,7 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
 {
 	NzbInfo* nzbInfo = nullptr;
 
-	for (NzbInfo* nzbInfo1: *downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo1: downloadQueue->GetQueue())
 	{
 		if (nzbInfo1->GetPostInfo() && !g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
 			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
@@ -735,7 +734,7 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 
 	for (int id : *idList)
 	{
-		for (NzbInfo* nzbInfo: *downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo: downloadQueue->GetQueue())
 		{
 			PostInfo* postInfo = nzbInfo->GetPostInfo();
 			if (postInfo && nzbInfo->GetId() == id)

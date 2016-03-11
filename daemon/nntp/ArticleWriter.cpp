@@ -574,7 +574,7 @@ void ArticleWriter::FlushCache()
 
 	g_ArticleCache->LockFlush();
 
-	FileInfo::Articles cachedArticles;
+	std::vector<ArticleInfo*> cachedArticles;
 	cachedArticles.reserve(m_fileInfo->GetArticles()->size());
 
 	g_ArticleCache->LockContent();

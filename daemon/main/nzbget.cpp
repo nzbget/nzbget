@@ -576,8 +576,9 @@ void NZBGet::ProcessStandalone()
 			m_commandLineParser->GetArgFilename() ? m_commandLineParser->GetArgFilename() : "N/A");
 		return;
 	}
-	m_scanner->InitPPParameters(category, nzbFile.GetNzbInfo()->GetParameters(), false);
-	m_queueCoordinator->AddNzbFileToQueue(&nzbFile, nullptr, false);
+	std::unique_ptr<NzbInfo> nzbInfo = nzbFile.DetachNzbInfo();
+	m_scanner->InitPPParameters(category, nzbInfo->GetParameters(), false);
+	m_queueCoordinator->AddNzbFileToQueue(std::move(nzbInfo), nullptr, false);
 }
 
 void NZBGet::DoMainLoop()

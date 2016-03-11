@@ -302,15 +302,15 @@ void QueueCoordinator::AdjustDownloadsLimit()
 	m_downloadsLimit = downloadsLimit;
 }
 
-void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, bool addFirst)
+NzbInfo* QueueCoordinator::AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, NzbInfo* urlInfo, bool addFirst)
 {
 	debug("Adding NZBFile to queue");
 
-	NzbInfo* nzbInfo = nzbFile->GetNzbInfo();
+	NzbInfo* addedNzb = nzbInfo.get();
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	DownloadQueue::Aspect foundAspect = { DownloadQueue::eaNzbFound, downloadQueue, nzbInfo, nullptr };
+	DownloadQueue::Aspect foundAspect = { DownloadQueue::eaNzbFound, downloadQueue, nzbInfo.get(), nullptr };
 	downloadQueue->Notify(&foundAspect);
 
 	NzbInfo::EDeleteStatus deleteStatus = nzbInfo->GetDeleteStatus();
@@ -318,7 +318,7 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 	if (deleteStatus != NzbInfo::dsNone)
 	{
 		bool allPaused = !nzbInfo->GetFileList()->empty();
-		for (FileInfo* fileInfo: *nzbInfo->GetFileList())
+		for (FileInfo* fileInfo: nzbInfo->GetFileList())
 		{
 			allPaused &= fileInfo->GetPaused();
 			if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
@@ -329,56 +329,58 @@ void QueueCoordinator::AddNzbFileToQueue(NzbFile* nzbFile, NzbInfo* urlInfo, boo
 		nzbInfo->SetDeletePaused(allPaused);
 	}
 
-	if (deleteStatus != NzbInfo::dsManual)
-	{
-		// NZBInfo will be added either to queue or to history as duplicate
-		// and therefore can be detached from NZBFile.
-		nzbFile->DetachNzbInfo();
-	}
-
 	if (deleteStatus == NzbInfo::dsNone)
 	{
 		if (g_Options->GetDupeCheck() && nzbInfo->GetDupeMode() != dmForce)
 		{
-			CheckDupeFileInfos(nzbInfo);
+			CheckDupeFileInfos(nzbInfo.get());
 		}
 
 		if (urlInfo)
 		{
 			// insert at the URL position
-			downloadQueue->GetQueue()->insert(std::find(downloadQueue->GetQueue()->begin(), downloadQueue->GetQueue()->end(), urlInfo), nzbInfo);
-		}
-		else if (addFirst)
-		{
-			downloadQueue->GetQueue()->push_front(nzbInfo);
+			downloadQueue->GetQueue()->insert(downloadQueue->GetQueue()->Find(urlInfo), std::move(nzbInfo));
 		}
 		else
 		{
-			downloadQueue->GetQueue()->push_back(nzbInfo);
+			downloadQueue->GetQueue()->Add(std::move(nzbInfo), addFirst);
 		}
+	}
+	else
+	{
+		// temporary adding to queue in order for listeners to see it
+		downloadQueue->GetQueue()->Add(std::move(nzbInfo), true);
 	}
 
 	if (urlInfo)
 	{
-		nzbInfo->SetId(urlInfo->GetId());
+		addedNzb->SetId(urlInfo->GetId());
 		downloadQueue->GetQueue()->Remove(urlInfo);
-		delete urlInfo;
 	}
 
 	if (deleteStatus == NzbInfo::dsNone)
 	{
-		nzbInfo->PrintMessage(Message::mkInfo, "Collection %s added to queue", nzbInfo->GetName());
+		addedNzb->PrintMessage(Message::mkInfo, "Collection %s added to queue", addedNzb->GetName());
 	}
 
 	if (deleteStatus != NzbInfo::dsManual)
 	{
-		DownloadQueue::Aspect addedAspect = { DownloadQueue::eaNzbAdded, downloadQueue, nzbInfo, nullptr };
+		DownloadQueue::Aspect addedAspect = { DownloadQueue::eaNzbAdded, downloadQueue, addedNzb, nullptr };
 		downloadQueue->Notify(&addedAspect);
+	}
+
+	if (deleteStatus != NzbInfo::dsNone)
+	{
+		// in a case if none of listeners did already delete the temporary object - we do it ourselves
+		downloadQueue->GetQueue()->Remove(addedNzb);
+		addedNzb = nullptr;
 	}
 
 	downloadQueue->Save();
 
 	DownloadQueue::Unlock();
+
+	return addedNzb;
 }
 
 void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
@@ -390,7 +392,7 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 		return;
 	}
 
-	FileList dupeList(true);
+	RawFileList dupeList;
 
 	int index1 = 0;
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
@@ -459,7 +461,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 
 	bool ok = false;
 
-	std::vector<FileInfo*> checkedFiles;
+	RawFileList checkedFiles;
 	time_t curDate = Util::CurrentTime();
 
 	while (!ok)
@@ -747,11 +749,9 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 	downloadQueue->Notify(&aspect);
 
 	// nzb-file could be deleted from queue in "Notify", check if it is still in queue.
-	if (std::find(downloadQueue->GetQueue()->begin(), downloadQueue->GetQueue()->end(), nzbInfo) !=
-		downloadQueue->GetQueue()->end())
+	if (downloadQueue->GetQueue()->Find(nzbInfo) != downloadQueue->GetQueue()->end())
 	{
 		nzbInfo->GetFileList()->Remove(fileInfo);
-		delete fileInfo;
 	}
 }
 
@@ -1001,12 +1001,11 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 	SetQueueEntryCategory(downloadQueue, srcNzbInfo, destNzbInfo->GetCategory());
 
 	// reattach file items to new NZBInfo-object
-	for (FileInfo* fileInfo : srcNzbInfo->GetFileList())
+	for (std::unique_ptr<FileInfo>& fileInfo : *srcNzbInfo->GetFileList())
 	{
 		fileInfo->SetNzbInfo(destNzbInfo);
-		destNzbInfo->GetFileList()->push_back(fileInfo);
+		destNzbInfo->GetFileList()->Add(std::move(fileInfo));
 	}
-
 	srcNzbInfo->GetFileList()->clear();
 
 	destNzbInfo->SetFileCount(destNzbInfo->GetFileCount() + srcNzbInfo->GetFileCount());
@@ -1060,9 +1059,8 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
 	queuedFilename.Format("%s|%s", destNzbInfo->GetQueuedFilename(), srcNzbInfo->GetQueuedFilename());
 	destNzbInfo->SetQueuedFilename(queuedFilename);
 
-	downloadQueue->GetQueue()->Remove(srcNzbInfo);
 	g_DiskState->DiscardFiles(srcNzbInfo);
-	delete srcNzbInfo;
+	downloadQueue->GetQueue()->Remove(srcNzbInfo);
 
 	return true;
 }
@@ -1072,7 +1070,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* 
  * If any of file-items is being downloaded the command fail.
  * For each file-item an event "eaFileDeleted" is fired.
  */
-bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList* fileList, const char* name, NzbInfo** newNzbInfo)
+bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, RawFileList* fileList, const char* name, NzbInfo** newNzbInfo)
 {
 	if (fileList->empty())
 	{
@@ -1119,8 +1117,7 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 		DownloadQueue::Aspect aspect = { DownloadQueue::eaFileDeleted, downloadQueue, fileInfo->GetNzbInfo(), fileInfo };
 		downloadQueue->Notify(&aspect);
 
-		srcNzbInfo->GetFileList()->Remove(fileInfo);
-		nzbInfo->GetFileList()->push_back(fileInfo);
+		nzbInfo->GetFileList()->Add(srcNzbInfo->GetFileList()->Remove(fileInfo));
 		fileInfo->SetNzbInfo(nzbInfo.get());
 
 		srcNzbInfo->SetFileCount(srcNzbInfo->GetFileCount() - 1);
@@ -1174,13 +1171,12 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, FileList*
 
 	if (srcNzbInfo->GetFileList()->empty())
 	{
-		downloadQueue->GetQueue()->Remove(srcNzbInfo);
 		g_DiskState->DiscardFiles(srcNzbInfo);
-		delete srcNzbInfo;
+		downloadQueue->GetQueue()->Remove(srcNzbInfo);
 	}
 
 	*newNzbInfo = nzbInfo.get();
-	downloadQueue->GetQueue()->push_back(nzbInfo.release());
+	downloadQueue->GetQueue()->Add(std::move(nzbInfo));
 
 	return true;
 }

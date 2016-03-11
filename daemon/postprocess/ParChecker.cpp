@@ -25,7 +25,6 @@
 #include "par2cmdline.h"
 #include "par2repairer.h"
 
-#include "Thread.h"
 #include "ParChecker.h"
 #include "ParParser.h"
 #include "Log.h"

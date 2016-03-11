@@ -260,7 +260,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		int index = 0;
 		for (NzbList::iterator it = downloadQueue->GetQueue()->begin(); it != downloadQueue->GetQueue()->end(); index++)
 		{
-			NzbInfo* queuedNzbInfo = *it++;
+			NzbInfo* queuedNzbInfo = (*it++).get();
 			if (queuedNzbInfo != nzbInfo &&
 				queuedNzbInfo->GetKind() == NzbInfo::nkNzb &&
 				queuedNzbInfo->GetDupeMode() != dmForce &&
@@ -461,7 +461,7 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* 
 	// (just to produce the log-messages in a more logical order)
 	for (HistoryList::reverse_iterator it = downloadQueue->GetHistory()->rbegin(); it != downloadQueue->GetHistory()->rend(); )
 	{
-		HistoryInfo* historyInfo = *it;
+		HistoryInfo* historyInfo = (*it).get();
 
 		if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
 			historyInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
@@ -548,11 +548,13 @@ DupeCoordinator::EDupeStatus DupeCoordinator::GetDupeStatus(DownloadQueue* downl
 	return statuses;
 }
 
-void DupeCoordinator::ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, NzbList* dupeList)
+RawNzbList DupeCoordinator::ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
+	RawNzbList dupeList;
+
 	if (nzbInfo->GetDupeMode() == dmForce)
 	{
-		return;
+		return dupeList;
 	}
 
 	// find duplicates in history
@@ -563,7 +565,9 @@ void DupeCoordinator::ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nz
 			SameNameOrKey(historyInfo->GetNzbInfo()->GetName(), historyInfo->GetNzbInfo()->GetDupeKey(),
 				nzbInfo->GetName(), nzbInfo->GetDupeKey()))
 		{
-			dupeList->push_back(historyInfo->GetNzbInfo());
+			dupeList.push_back(historyInfo->GetNzbInfo());
 		}
 	}
+
+	return dupeList;
 }

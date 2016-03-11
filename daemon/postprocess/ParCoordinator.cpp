@@ -118,8 +118,7 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 {
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
-	NzbList dupeList;
-	g_DupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNzbInfo(), &dupeList);
+	RawNzbList dupeList = g_DupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNzbInfo());
 
 	if (!dupeList.empty())
 	{

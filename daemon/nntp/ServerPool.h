@@ -23,6 +23,7 @@
 #define SERVERPOOL_H
 
 #include "Log.h"
+#include "Container.h"
 #include "Thread.h"
 #include "NewsServer.h"
 #include "NntpConnection.h"

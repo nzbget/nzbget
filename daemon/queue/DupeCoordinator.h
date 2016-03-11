@@ -40,7 +40,7 @@ public:
 	void NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void HistoryMark(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, NzbInfo::EMarkStatus markStatus);
 	EDupeStatus GetDupeStatus(DownloadQueue* downloadQueue, const char* name, const char* dupeKey);
-	void ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, NzbList* dupeList);
+	RawNzbList ListHistoryDupes(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 
 private:
 	void ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* nzbName, const char* dupeKey);

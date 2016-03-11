@@ -133,6 +133,7 @@ nzbget_SOURCES = \
 	daemon/util/Log.h \
 	daemon/util/NString.cpp \
 	daemon/util/NString.h \
+	daemon/util/Container.h \
 	daemon/util/Observer.cpp \
 	daemon/util/Observer.h \
 	daemon/util/Script.cpp \

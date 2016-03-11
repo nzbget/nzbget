@@ -219,7 +219,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			nzbInfo->SetPriority(ntohl(listAnswer->m_priority));
 			nzbInfo->m_match = ntohl(listAnswer->m_match);
 
-			downloadQueue->GetQueue()->push_back(nzbInfo.release());
+			downloadQueue->GetQueue()->Add(std::move(nzbInfo));
 
 			bufPtr += sizeof(SNzbListResponseNzbEntry) + ntohl(listAnswer->m_filenameLen) +
 				ntohl(listAnswer->m_nameLen) + ntohl(listAnswer->m_destDirLen) +
@@ -234,7 +234,7 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			const char* name = bufPtr + sizeof(SNzbListResponsePPPEntry);
 			const char* value = bufPtr + sizeof(SNzbListResponsePPPEntry) + ntohl(listAnswer->m_nameLen);
 
-			NzbInfo* nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
+			std::unique_ptr<NzbInfo>& nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
 			nzbInfo->GetParameters()->SetParameter(name, value);
 
 			bufPtr += sizeof(SNzbListResponsePPPEntry) + ntohl(listAnswer->m_nameLen) +
@@ -260,9 +260,9 @@ void RemoteClient::BuildFileList(SNzbListResponse* listResponse, const char* tra
 			fileInfo->SetActiveDownloads(ntohl(listAnswer->m_activeDownloads));
 			fileInfo->m_match = ntohl(listAnswer->m_match);
 
-			NzbInfo* nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
-			fileInfo->SetNzbInfo(nzbInfo);
-			nzbInfo->GetFileList()->push_back(fileInfo.release());
+			std::unique_ptr<NzbInfo>& nzbInfo = downloadQueue->GetQueue()->at(ntohl(listAnswer->m_nzbIndex) - 1);
+			fileInfo->SetNzbInfo(nzbInfo.get());
+			nzbInfo->GetFileList()->Add(std::move(fileInfo));
 
 			bufPtr += sizeof(SNzbListResponseFileEntry) + ntohl(listAnswer->m_subjectLen) +
 				ntohl(listAnswer->m_filenameLen);

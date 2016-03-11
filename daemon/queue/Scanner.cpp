@@ -408,7 +408,7 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 			*FileSystem::GetLastErrorMessage());
 	}
 
-	NzbInfo* nzbInfo = nzbFile.GetNzbInfo();
+	std::unique_ptr<NzbInfo> nzbInfo = nzbFile.DetachNzbInfo();
 	nzbInfo->SetQueuedFilename(bakname2);
 
 	if (nzbName && strlen(nzbName) > 0)
@@ -441,19 +441,21 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 		fileInfo->SetPaused(addPaused);
 	}
 
+	NzbInfo* addedNzb = nullptr;
+
 	if (ok)
 	{
-		g_QueueCoordinator->AddNzbFileToQueue(&nzbFile, urlInfo, addTop);
+		addedNzb = g_QueueCoordinator->AddNzbFileToQueue(std::move(nzbInfo), std::move(urlInfo), addTop);
 	}
 	else if (!urlInfo)
 	{
-		nzbFile.GetNzbInfo()->SetDeleteStatus(NzbInfo::dsScan);
-		g_QueueCoordinator->AddNzbFileToQueue(&nzbFile, urlInfo, addTop);
+		nzbInfo->SetDeleteStatus(NzbInfo::dsScan);
+		addedNzb = g_QueueCoordinator->AddNzbFileToQueue(std::move(nzbInfo), std::move(urlInfo), addTop);
 	}
 
 	if (nzbId)
 	{
-		*nzbId = nzbInfo->GetId();
+		*nzbId = addedNzb ? addedNzb->GetId() : 0;
 	}
 
 	return ok;

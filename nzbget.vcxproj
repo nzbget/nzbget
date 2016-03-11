@@ -243,6 +243,7 @@
     <ClInclude Include="daemon\util\Service.h" />
     <ClInclude Include="daemon\util\Thread.h" />
     <ClInclude Include="daemon\util\NString.h" />
+    <ClInclude Include="daemon\util\Container.h" />
     <ClInclude Include="daemon\util\Util.h" />
     <ClInclude Include="daemon\util\FileSystem.h" />
     <ClInclude Include="daemon\windows\WinService.h" />

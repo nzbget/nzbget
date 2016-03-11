@@ -22,6 +22,7 @@
 #define SCRIPTCONFIG_H
 
 #include "NString.h"
+#include "Container.h"
 #include "Options.h"
 
 class ScriptConfig

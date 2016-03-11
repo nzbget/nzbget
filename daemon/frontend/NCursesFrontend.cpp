@@ -984,7 +984,7 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 		DownloadQueue* downloadQueue = LockQueue();
 		if (m_selectedQueueEntry >= 0 && m_selectedQueueEntry < (int)downloadQueue->GetQueue()->size())
 		{
-			NzbInfo* nzbInfo = downloadQueue->GetQueue()->at(m_selectedQueueEntry);
+			std::unique_ptr<NzbInfo>& nzbInfo = downloadQueue->GetQueue()->at(m_selectedQueueEntry);
 			ID = nzbInfo->GetId();
 			if (action == DownloadQueue::eaFilePause)
 			{

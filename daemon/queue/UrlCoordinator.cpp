@@ -213,23 +213,6 @@ void UrlCoordinator::LogDebugInfo()
 	DownloadQueue::Unlock();
 }
 
-void UrlCoordinator::AddUrlToQueue(NzbInfo* nzbInfo, bool addTop)
-{
-	debug("Adding NZB-URL to queue");
-
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	if (addTop)
-	{
-		downloadQueue->GetQueue()->push_front(nzbInfo);
-	}
-	else
-	{
-		downloadQueue->GetQueue()->push_back(nzbInfo);
-	}
-	downloadQueue->Save();
-	DownloadQueue::Unlock();
-}
-
 /*
  * Returns next URL for download.
  */
@@ -378,28 +361,25 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 	downloadQueue = DownloadQueue::Lock();
 
 	// delete URL from queue
-	downloadQueue->GetQueue()->Remove(nzbInfo);
-	bool deleteObj = true;
+	std::unique_ptr<NzbInfo> oldNzbInfo = downloadQueue->GetQueue()->Remove(nzbInfo);
 
 	// add failed URL to history
 	if (g_Options->GetKeepHistory() > 0 &&
 		nzbInfo->GetUrlStatus() != NzbInfo::lsFinished &&
 		!nzbInfo->GetAvoidHistory())
 	{
-		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
+		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
 		historyInfo->SetTime(Util::CurrentTime());
-		downloadQueue->GetHistory()->push_front(historyInfo.release());
-		deleteObj = false;
+		downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
 	}
 
 	downloadQueue->Save();
 
 	DownloadQueue::Unlock();
 
-	if (deleteObj)
+	if (oldNzbInfo)
 	{
-		g_DiskState->DiscardFiles(nzbInfo);
-		delete nzbInfo;
+		g_DiskState->DiscardFiles(oldNzbInfo.get());
 	}
 }
 
@@ -426,17 +406,17 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 	nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
 	nzbInfo->SetUrlStatus(NzbInfo::lsNone);
 
-	downloadQueue->GetQueue()->Remove(nzbInfo);
+	std::unique_ptr<NzbInfo> oldNzbInfo = downloadQueue->GetQueue()->Remove(nzbInfo);
+
 	if (g_Options->GetKeepHistory() > 0 && !avoidHistory)
 	{
-		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(nzbInfo);
+		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
 		historyInfo->SetTime(Util::CurrentTime());
-		downloadQueue->GetHistory()->push_front(historyInfo.release());
+		downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
 	}
 	else
 	{
-		g_DiskState->DiscardFiles(nzbInfo);
-		delete nzbInfo;
+		g_DiskState->DiscardFiles(oldNzbInfo.get());
 	}
 
 	return true;

@@ -338,12 +338,4 @@ typedef unsigned char uchar;
 #define PRINTF_SYNTAX(strindex)
 #endif
 
-// for-range loops on pointers to std-containers (avoiding dereferencing)
-template <typename T> typename std::deque<T>::iterator begin(std::deque<T>* c) { return c->begin(); }
-template <typename T> typename std::deque<T>::iterator end(std::deque<T>* c) { return c->end(); }
-template <typename T> typename std::vector<T>::iterator begin(std::vector<T>* c) { return c->begin(); }
-template <typename T> typename std::vector<T>::iterator end(std::vector<T>* c) { return c->end(); }
-template <typename T> typename std::list<T>::iterator begin(std::list<T>* c) { return c->begin(); }
-template <typename T> typename std::list<T>::iterator end(std::list<T>* c) { return c->end(); }
-
 #endif /* NZBGET_H */

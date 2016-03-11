@@ -40,7 +40,6 @@ public:
 	void Update(Subject* caller, void* aspect);
 
 	// Editing the queue
-	void AddUrlToQueue(NzbInfo* nzbInfo, bool addTop);
 	bool HasMoreJobs() { return m_hasMoreJobs; }
 	bool DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool avoidHistory);
 
