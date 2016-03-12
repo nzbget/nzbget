@@ -65,8 +65,6 @@ FeedCoordinator::FeedCoordinator()
 {
 	debug("Creating FeedCoordinator");
 
-	g_Log->RegisterDebuggable(this);
-
 	m_downloadQueueObserver.m_owner = this;
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	downloadQueue->Attach(&m_downloadQueueObserver);
@@ -76,11 +74,7 @@ FeedCoordinator::FeedCoordinator()
 FeedCoordinator::~FeedCoordinator()
 {
 	debug("Destroying FeedCoordinator");
-	// Cleanup
 
-	g_Log->UnregisterDebuggable(this);
-
-	debug("Deleting FeedDownloaders");
 	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
 		delete feedDownloader;

@@ -33,8 +33,6 @@ class ServerPool : public Debuggable
 public:
 	typedef std::vector<NewsServer*> RawServerList;
 
-	ServerPool();
-	~ServerPool();
 	void SetTimeout(int timeout) { m_timeout = timeout; }
 	void SetRetryInterval(int retryInterval) { m_retryInterval = retryInterval; }
 	void AddServer(std::unique_ptr<NewsServer> newsServer);

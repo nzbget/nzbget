@@ -60,21 +60,10 @@ void UrlDownloader::ProcessHeader(const char* line)
 	}
 }
 
-UrlCoordinator::UrlCoordinator()
-{
-	debug("Creating UrlCoordinator");
-
-	g_Log->RegisterDebuggable(this);
-}
-
 UrlCoordinator::~UrlCoordinator()
 {
 	debug("Destroying UrlCoordinator");
-	// Cleanup
 
-	g_Log->UnregisterDebuggable(this);
-
-	debug("Deleting UrlDownloaders");
 	for (UrlDownloader* urlDownloader : m_activeDownloads)
 	{
 		delete urlDownloader;

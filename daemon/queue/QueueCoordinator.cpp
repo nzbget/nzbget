@@ -70,8 +70,6 @@ QueueCoordinator::QueueCoordinator()
 {
 	debug("Creating QueueCoordinator");
 
-	g_Log->RegisterDebuggable(this);
-
 	m_downloadQueue.m_owner = this;
 	CoordinatorDownloadQueue::Init(&m_downloadQueue);
 }
@@ -79,11 +77,7 @@ QueueCoordinator::QueueCoordinator()
 QueueCoordinator::~QueueCoordinator()
 {
 	debug("Destroying QueueCoordinator");
-	// Cleanup
 
-	g_Log->UnregisterDebuggable(this);
-
-	debug("Deleting ArticleDownloaders");
 	for (ArticleDownloader* articleDownloader : m_activeDownloads)
 	{
 		delete articleDownloader;

@@ -111,7 +111,6 @@ protected:
 
 public:
 	StatMeter();
-	~StatMeter();
 	void Init();
 	int CalcCurrentDownloadSpeed();
 	int CalcMomentaryDownloadSpeed();

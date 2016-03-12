@@ -33,7 +33,6 @@ class UrlDownloader;
 class UrlCoordinator : public Thread, public Observer, public Debuggable
 {
 public:
-	UrlCoordinator();
 	virtual ~UrlCoordinator();
 	virtual void Run();
 	virtual void Stop();

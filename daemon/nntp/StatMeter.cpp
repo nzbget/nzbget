@@ -169,15 +169,6 @@ StatMeter::StatMeter()
 	debug("Creating StatMeter");
 
 	ResetSpeedStat();
-
-	g_Log->RegisterDebuggable(this);
-}
-
-StatMeter::~StatMeter()
-{
-	debug("Destroying StatMeter");
-
-	g_Log->UnregisterDebuggable(this);
 }
 
 void StatMeter::Init()

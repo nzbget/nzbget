@@ -68,12 +68,7 @@ private:
 
 typedef std::deque<Message> MessageList;
 
-class Debuggable
-{
-protected:
-	virtual void LogDebugInfo() = 0;
-	friend class Log;
-};
+class Debuggable;
 
 class Log
 {
@@ -130,5 +125,15 @@ private:
 #endif
 
 extern Log* g_Log;
+
+class Debuggable
+{
+public:
+	Debuggable() { g_Log->RegisterDebuggable(this); }
+	virtual ~Debuggable() { g_Log->UnregisterDebuggable(this); }
+protected:
+	virtual void LogDebugInfo() = 0;
+	friend class Log;
+};
 
 #endif

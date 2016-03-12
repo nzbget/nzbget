@@ -31,20 +31,6 @@ void ServerPool::PooledConnection::SetFreeTimeNow()
 }
 
 
-ServerPool::ServerPool()
-{
-	debug("Creating ServerPool");
-
-	g_Log->RegisterDebuggable(this);
-}
-
-ServerPool::~ ServerPool()
-{
-	debug("Destroying ServerPool");
-
-	g_Log->UnregisterDebuggable(this);
-}
-
 void ServerPool::AddServer(std::unique_ptr<NewsServer> newsServer)
 {
 	debug("Adding server to ServerPool");
