@@ -29,6 +29,8 @@
 #include "FileSystem.h"
 #include "Log.h"
 
+class Repairer;
+
 class ParChecker : public Thread
 {
 public:
@@ -46,6 +48,13 @@ public:
 		ptVerifyingSources,
 		ptRepairing,
 		ptVerifyingRepaired,
+	};
+
+	class AbstractRepairer
+	{
+	public:
+		virtual ~AbstractRepairer() {};
+		virtual Repairer* GetRepairer() = 0;
 	};
 
 	virtual ~ParChecker();
@@ -154,8 +163,6 @@ private:
 	const char* m_parFilename = nullptr;
 	EStatus m_status = psFailed;
 	EStage m_stage;
-	// declared as void* to prevent the including of libpar2-headers into this header-file
-	void* m_repairer = nullptr;
 	CString m_errMsg;
 	FileList m_queuedParFiles;
 	Mutex m_queuedParFilesMutex;
@@ -180,6 +187,11 @@ private:
 	StreamBuf m_parOutStream{this, Message::mkDetail};
 	StreamBuf m_parErrStream{this, Message::mkError};
 
+	// "m_repairer" should be of type "Par2::Par2Repairer", however to prevent the
+	// including of libpar2-headers into this header-file we use an empty abstract class.
+	std::unique_ptr<AbstractRepairer> m_repairer;
+	Repairer* GetRepairer() { return m_repairer->GetRepairer(); }
+
 	void Cleanup();
 	EStatus RunParCheckAll();
 	EStatus RunParCheck(const char* parFilename);
@@ -199,7 +211,7 @@ private:
 	void signal_progress(int progress);
 	void signal_done(std::string str, int available, int total);
 	// declared as void* to prevent the including of libpar2-headers into this header-file
-	// DiskFile* pDiskfile, Par2RepairerSourceFile* pSourcefile
+	// Par2::DiskFile* pDiskfile, Par2::Par2RepairerSourceFile* pSourcefile
 	EFileStatus VerifyDataFile(void* diskfile, void* sourcefile, int* availableBlocks);
 	bool VerifySuccessDataFile(void* diskfile, void* sourcefile, uint32 downloadCrc);
 	bool VerifyPartialDataFile(void* diskfile, void* sourcefile, SegmentList* segments, ValidBlocks* validBlocks);
