@@ -43,29 +43,14 @@ ServerPool::~ ServerPool()
 	debug("Destroying ServerPool");
 
 	g_Log->UnregisterDebuggable(this);
-
-	m_levels.clear();
-
-	for (NewsServer* server : m_servers)
-	{
-		delete server;
-	}
-	m_servers.clear();
-	m_sortedServers.clear();
-
-	for (PooledConnection* connection : m_connections)
-	{
-		delete connection;
-	}
-	m_connections.clear();
 }
 
-void ServerPool::AddServer(NewsServer* newsServer)
+void ServerPool::AddServer(std::unique_ptr<NewsServer> newsServer)
 {
 	debug("Adding server to ServerPool");
 
-	m_servers.push_back(newsServer);
-	m_sortedServers.push_back(newsServer);
+	m_sortedServers.push_back(newsServer.get());
+	m_servers.push_back(std::move(newsServer));
 }
 
 /*
@@ -142,7 +127,7 @@ void ServerPool::InitConnections()
 			{
 				int connections = 0;
 
-				for (PooledConnection* connection : m_connections)
+				for (PooledConnection* connection : &m_connections)
 				{
 					if (connection->GetNewsServer() == newsServer)
 					{
@@ -152,9 +137,9 @@ void ServerPool::InitConnections()
 
 				for (int i = connections; i < newsServer->GetMaxConnections(); i++)
 				{
-					PooledConnection* connection = new PooledConnection(newsServer);
+					std::unique_ptr<PooledConnection> connection = std::make_unique<PooledConnection>(newsServer);
 					connection->SetTimeout(m_timeout);
-					m_connections.push_back(connection);
+					m_connections.push_back(std::move(connection));
 					connections++;
 				}
 
@@ -168,7 +153,7 @@ void ServerPool::InitConnections()
 	m_connectionsMutex.Unlock();
 }
 
-NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers)
+NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers)
 {
 	PooledConnection* connection = nullptr;
 	m_connectionsMutex.Lock();
@@ -177,10 +162,10 @@ NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Ser
 
 	if (level < (int)m_levels.size() && m_levels[level] > 0)
 	{
-		Connections candidates;
+		std::vector<PooledConnection*> candidates;
 		candidates.reserve(m_connections.size());
 
-		for (PooledConnection* candidateConnection : m_connections)
+		for (PooledConnection* candidateConnection : &m_connections)
 		{
 			NewsServer* candidateServer = candidateConnection->GetNewsServer();
 			if (!candidateConnection->GetInUse() && candidateServer->GetActive() &&
@@ -283,7 +268,7 @@ void ServerPool::CloseUnusedConnections()
 
 	// close and free all connections of servers which were disabled since the last check
 	m_connections.erase(std::remove_if(m_connections.begin(), m_connections.end(),
-		[](PooledConnection* connection)
+		[](std::unique_ptr<PooledConnection>& connection)
 		{
 			if (!connection->GetInUse() &&
 				(connection->GetNewsServer()->GetNormLevel() == -1 ||
@@ -294,7 +279,6 @@ void ServerPool::CloseUnusedConnections()
 				{
 					connection->Disconnect();
 				}
-				delete connection;
 				return true;
 			}
 			return false;
@@ -307,7 +291,7 @@ void ServerPool::CloseUnusedConnections()
 		// check if we have in-use connections on the level
 		bool hasInUseConnections = false;
 		int inactiveTime = 0;
-		for (PooledConnection* connection : m_connections)
+		for (PooledConnection* connection : &m_connections)
 		{
 			if (connection->GetNewsServer()->GetNormLevel() == level)
 			{
@@ -331,7 +315,7 @@ void ServerPool::CloseUnusedConnections()
 		// expired - close all connections of the level.
 		if (!hasInUseConnections && inactiveTime > CONNECTION_HOLD_SECODNS)
 		{
-			for (PooledConnection* connection : m_connections)
+			for (PooledConnection* connection : &m_connections)
 			{
 				if (connection->GetNewsServer()->GetNormLevel() == level &&
 					connection->GetStatus() == Connection::csConnected)
@@ -365,7 +349,7 @@ void ServerPool::LogDebugInfo()
 	time_t curTime = Util::CurrentTime();
 
 	info("    Servers: %i", (int)m_servers.size());
-	for (NewsServer* newsServer : m_servers)
+	for (NewsServer* newsServer : &m_servers)
 	{
 		info("      %i) %s (%s): Level=%i, NormLevel=%i, BlockSec=%i", newsServer->GetId(), newsServer->GetName(),
 			newsServer->GetHost(), newsServer->GetLevel(), newsServer->GetNormLevel(),
@@ -382,7 +366,7 @@ void ServerPool::LogDebugInfo()
 	}
 
 	info("    Connections: %i", (int)m_connections.size());
-	for (PooledConnection* connection : m_connections)
+	for (PooledConnection* connection : &m_connections)
 	{
 		info("      %i) %s (%s): Level=%i, NormLevel=%i, InUse:%i", connection->GetNewsServer()->GetId(),
 			connection->GetNewsServer()->GetName(), connection->GetNewsServer()->GetHost(),

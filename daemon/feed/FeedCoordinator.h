@@ -41,7 +41,7 @@ public:
 	virtual void Run();
 	virtual void Stop();
 	void Update(Subject* caller, void* aspect);
-	void AddFeed(FeedInfo* feedInfo);
+	void AddFeed(std::unique_ptr<FeedInfo> feedInfo) { m_feeds.push_back(std::move(feedInfo)); }
 
 	/* may return empty pointer on error */
 	std::shared_ptr<FeedItemList> PreviewFeed(int id, const char* name, const char* url,

@@ -86,23 +86,6 @@ FeedCoordinator::~FeedCoordinator()
 		delete feedDownloader;
 	}
 	m_activeDownloads.clear();
-
-	debug("Deleting Feeds");
-	for (FeedInfo* feedInfo : m_feeds)
-	{
-		delete feedInfo;
-	}
-	m_feeds.clear();
-
-	debug("Deleting FeedCache");
-	m_feedCache.clear();
-
-	debug("FeedCoordinator destroyed");
-}
-
-void FeedCoordinator::AddFeed(FeedInfo* feedInfo)
-{
-	m_feeds.push_back(feedInfo);
 }
 
 void FeedCoordinator::Run()
@@ -142,7 +125,7 @@ void FeedCoordinator::Run()
 				{
 					m_force = false;
 					// check feed list and update feeds
-					for (FeedInfo* feedInfo : m_feeds)
+					for (FeedInfo* feedInfo : &m_feeds)
 					{
 						if (((feedInfo->GetInterval() > 0 &&
 							(current - feedInfo->GetLastUpdate() >= feedInfo->GetInterval() * 60 ||
@@ -490,7 +473,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::ViewFeed(int id)
 		return nullptr;
 	}
 
-	FeedInfo* feedInfo = m_feeds.at(id - 1);
+	std::unique_ptr<FeedInfo>& feedInfo = m_feeds[id - 1];
 
 	return PreviewFeed(feedInfo->GetId(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(),
 		feedInfo->GetBacklog(), feedInfo->GetPauseNzb(), feedInfo->GetCategory(),
@@ -531,7 +514,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 		m_downloadsMutex.Lock();
 
 		bool firstFetch = true;
-		for (FeedInfo* feedInfo2 : m_feeds)
+		for (FeedInfo* feedInfo2 : &m_feeds)
 		{
 			if (!strcmp(feedInfo2->GetUrl(), feedInfo->GetUrl()) &&
 				!strcmp(feedInfo2->GetFilter(), feedInfo->GetFilter()) &&
@@ -603,7 +586,7 @@ void FeedCoordinator::FetchFeed(int id)
 	debug("FetchFeeds");
 
 	m_downloadsMutex.Lock();
-	for (FeedInfo* feedInfo : m_feeds)
+	for (FeedInfo* feedInfo : &m_feeds)
 	{
 		if (feedInfo->GetId() == id || id == 0)
 		{
@@ -667,7 +650,7 @@ void FeedCoordinator::CleanupHistory()
 
 	time_t oldestUpdate = Util::CurrentTime();
 
-	for (FeedInfo* feedInfo : m_feeds)
+	for (FeedInfo* feedInfo : &m_feeds)
 	{
 		if (feedInfo->GetLastUpdate() < oldestUpdate)
 		{

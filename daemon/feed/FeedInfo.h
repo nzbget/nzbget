@@ -84,7 +84,7 @@ private:
 	bool m_backlog;
 };
 
-typedef std::deque<FeedInfo*> Feeds;
+typedef std::deque<std::unique_ptr<FeedInfo>> Feeds;
 
 class FeedFilterHelper
 {

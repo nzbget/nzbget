@@ -28,20 +28,10 @@
 #include "FeedCoordinator.h"
 #include "SchedulerScript.h"
 
-Scheduler::~Scheduler()
-{
-	debug("Destroying Scheduler");
-
-	for (Task* task : m_taskList)
-	{
-		delete task;
-	}
-}
-
-void Scheduler::AddTask(Task* task)
+void Scheduler::AddTask(std::unique_ptr<Task> task)
 {
 	m_taskListMutex.Lock();
-	m_taskList.push_back(task);
+	m_taskList.push_back(std::move(task));
 	m_taskListMutex.Unlock();
 }
 
@@ -50,7 +40,7 @@ void Scheduler::FirstCheck()
 	m_taskListMutex.Lock();
 
 	std::sort(m_taskList.begin(), m_taskList.end(),
-		[](Scheduler::Task* task1, Scheduler::Task* task2)
+		[](std::unique_ptr<Task>& task1, std::unique_ptr<Task>& task2)
 		{
 			return (task1->m_hours < task2->m_hours) ||
 				((task1->m_hours == task2->m_hours) && (task1->m_minutes < task2->m_minutes));
@@ -101,7 +91,7 @@ void Scheduler::CheckTasks()
 			m_lastCheck = current - 60*60*24*7;
 			m_executeProcess = false;
 
-			for (Task* task : m_taskList)
+			for (Task* task : &m_taskList)
 			{
 				task->m_lastExecuted = 0;
 			}
@@ -124,7 +114,7 @@ void Scheduler::CheckTasks()
 
 		while (loop <= localCurrent)
 		{
-			for (Task* task : m_taskList)
+			for (Task* task : &m_taskList)
 			{
 				if (task->m_lastExecuted != loop)
 				{

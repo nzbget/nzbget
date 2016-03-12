@@ -931,21 +931,21 @@ void NZBGet::AddNewsServer(int id, bool active, const char* name, const char* ho
 	int port, const char* user, const char* pass, bool joinGroup, bool tls,
 	const char* cipher, int maxConnections, int retention, int level, int group)
 {
-	m_serverPool->AddServer(new NewsServer(id, active, name, host, port, user, pass, joinGroup,
+	m_serverPool->AddServer(std::make_unique<NewsServer>(id, active, name, host, port, user, pass, joinGroup,
 		tls, cipher, maxConnections, retention, level, group));
 }
 
 void NZBGet::AddFeed(int id, const char* name, const char* url, int interval, const char* filter,
 	bool backlog, bool pauseNzb, const char* category, int priority, const char* feedScript)
 {
-	m_feedCoordinator->AddFeed(new FeedInfo(id, name, url, backlog, interval, filter,
+	m_feedCoordinator->AddFeed(std::make_unique<FeedInfo>(id, name, url, backlog, interval, filter,
 		pauseNzb, category, priority, feedScript));
 }
 
 void NZBGet::AddTask(int id, int hours, int minutes, int weekDaysBits,
 	Options::ESchedulerCommand command, const char* param)
 {
-	m_scheduler->AddTask(new Scheduler::Task(id, hours, minutes, weekDaysBits,
+	m_scheduler->AddTask(std::make_unique<Scheduler::Task>(id, hours, minutes, weekDaysBits,
 		(Scheduler::ECommand)command, param));
 }
 

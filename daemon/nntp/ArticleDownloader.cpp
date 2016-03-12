@@ -82,7 +82,7 @@ void ArticleDownloader::Run()
 	EStatus status = adFailed;
 	int retries = g_Options->GetRetries() > 0 ? g_Options->GetRetries() : 1;
 	int remainedRetries = retries;
-	Servers failedServers;
+	ServerPool::RawServerList failedServers;
 	failedServers.reserve(g_ServerPool->GetServers()->size());
 	NewsServer* wantServer = nullptr;
 	NewsServer* lastServer = nullptr;

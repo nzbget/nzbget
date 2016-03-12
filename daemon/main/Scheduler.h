@@ -63,15 +63,14 @@ public:
 		time_t m_lastExecuted = 0;
 	};
 
-	~Scheduler();
-	void AddTask(Task* task);
+	void AddTask(std::unique_ptr<Task> task);
 
 protected:
 	virtual int ServiceInterval() { return 1000; }
 	virtual void ServiceWork();
 
 private:
-	typedef std::deque<Task*> TaskList;
+	typedef std::vector<std::unique_ptr<Task>> TaskList;
 	typedef std::vector<bool> ServerStatusList;
 
 	TaskList m_taskList;

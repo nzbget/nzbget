@@ -31,15 +31,17 @@
 class ServerPool : public Debuggable
 {
 public:
+	typedef std::vector<NewsServer*> RawServerList;
+
 	ServerPool();
 	~ServerPool();
 	void SetTimeout(int timeout) { m_timeout = timeout; }
 	void SetRetryInterval(int retryInterval) { m_retryInterval = retryInterval; }
-	void AddServer(NewsServer* newsServer);
+	void AddServer(std::unique_ptr<NewsServer> newsServer);
 	void InitConnections();
 	int GetMaxNormLevel() { return m_maxNormLevel; }
 	Servers* GetServers() { return &m_servers; } // Only for read access (no lockings)
-	NntpConnection* GetConnection(int level, NewsServer* wantServer, Servers* ignoreServers);
+	NntpConnection* GetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers);
 	void FreeConnection(NntpConnection* connection, bool used);
 	void CloseUnusedConnections();
 	void Changed();
@@ -64,10 +66,10 @@ private:
 	};
 
 	typedef std::vector<int> Levels;
-	typedef std::vector<PooledConnection*> Connections;
+	typedef std::vector<std::unique_ptr<PooledConnection>> Connections;
 
 	Servers m_servers;
-	Servers m_sortedServers;
+	RawServerList m_sortedServers;
 	Connections m_connections;
 	Levels m_levels;
 	int m_maxNormLevel = 0;
