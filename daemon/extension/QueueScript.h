@@ -36,7 +36,6 @@ public:
 		qeNzbDeleted // highest priority
 	};
 
-	~QueueScriptCoordinator();
 	void Stop() { m_stopped = true; }
 	void InitOptions();
 	void EnqueueScript(NzbInfo* nzbInfo, EEvent event);
@@ -59,15 +58,14 @@ private:
 		EEvent m_event;
 	};
 
-	typedef std::list<QueueItem*> Queue;
+	typedef std::deque<std::unique_ptr<QueueItem>> Queue;
 
 	Queue m_queue;
 	Mutex m_queueMutex;
-	QueueItem* m_curItem = nullptr;
+	std::unique_ptr<QueueItem> m_curItem;
 	bool m_hasQueueScripts = false;
 	bool m_stopped = false;
 
-	void StartScript(NzbInfo* nzbInfo, QueueItem* queueItem);
 	NzbInfo* FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
 	bool UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
 };

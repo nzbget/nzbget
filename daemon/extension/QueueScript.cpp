@@ -234,15 +234,6 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 }
 
 
-QueueScriptCoordinator::~QueueScriptCoordinator()
-{
-	delete m_curItem;
-	for (QueueItem* queueItem : m_queue)
-	{
-		delete queueItem;
-	}
-}
-
 void QueueScriptCoordinator::InitOptions()
 {
 	m_hasQueueScripts = false;
@@ -269,14 +260,9 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 	{
 		// delete all other queued scripts for this nzb
 		m_queue.erase(std::remove_if(m_queue.begin(), m_queue.end(),
-			[nzbInfo](QueueItem* queueItem)
+			[nzbInfo](std::unique_ptr<QueueItem>& queueItem)
 			{
-				if (queueItem->GetNzbId() == nzbInfo->GetId())
-				{
-					delete queueItem;
-					return true;
-				}
-				return false;
+				return queueItem->GetNzbId() == nzbInfo->GetId();
 			}),
 			m_queue.end());
 	}
@@ -300,7 +286,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 			if (event == qeFileDownloaded)
 			{
 				// check if this script is already queued for this nzb
-				for (QueueItem* queueItem : m_queue)
+				for (QueueItem* queueItem : &m_queue)
 				{
 					if (queueItem->GetNzbId() == nzbInfo->GetId() && queueItem->GetScript() == &script)
 					{
@@ -312,14 +298,15 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 
 			if (!alreadyQueued)
 			{
-				QueueItem* queueItem = new QueueItem(nzbInfo->GetId(), &script, event);
+				std::unique_ptr<QueueItem> queueItem = std::make_unique<QueueItem>(nzbInfo->GetId(), &script, event);
 				if (m_curItem)
 				{
-					m_queue.push_back(queueItem);
+					m_queue.push_back(std::move(queueItem));
 				}
 				else
 				{
-					StartScript(nzbInfo, queueItem);
+					m_curItem = std::move(queueItem);
+					QueueScriptController::StartScript(nzbInfo, m_curItem->GetScript(), m_curItem->GetEvent());
 				}
 			}
 
@@ -428,18 +415,17 @@ void QueueScriptCoordinator::CheckQueue()
 		return;
 	}
 
+	m_curItem.reset();
+
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	m_queueMutex.Lock();
 
-	delete m_curItem;
-
-	m_curItem = nullptr;
 	NzbInfo* curNzbInfo = nullptr;
 	Queue::iterator itCurItem = m_queue.end();
 
 	for (Queue::iterator it = m_queue.begin(); it != m_queue.end(); )
 	{
-		QueueItem* queueItem = *it;
+		std::unique_ptr<QueueItem>& queueItem = *it;
 
 		NzbInfo* nzbInfo = FindNzbInfo(downloadQueue, queueItem->GetNzbId());
 
@@ -448,14 +434,12 @@ void QueueScriptCoordinator::CheckQueue()
 			(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone && queueItem->GetEvent() != qeNzbDeleted) ||
 			nzbInfo->GetMarkStatus() == NzbInfo::ksBad)
 		{
-			delete queueItem;
 			it = m_queue.erase(it);
 			continue;
 		}
 
 		if (!m_curItem || queueItem->GetEvent() > m_curItem->GetEvent())
 		{
-			m_curItem = queueItem;
 			itCurItem = it;
 			curNzbInfo = nzbInfo;
 		}
@@ -463,20 +447,15 @@ void QueueScriptCoordinator::CheckQueue()
 		it++;
 	}
 
-	if (m_curItem)
+	if (itCurItem != m_queue.end())
 	{
+		m_curItem = std::move(*itCurItem);
 		m_queue.erase(itCurItem);
-		StartScript(curNzbInfo, m_curItem);
+		QueueScriptController::StartScript(curNzbInfo, m_curItem->GetScript(), m_curItem->GetEvent());
 	}
 
 	m_queueMutex.Unlock();
 	DownloadQueue::Unlock();
-}
-
-void QueueScriptCoordinator::StartScript(NzbInfo* nzbInfo, QueueItem* queueItem)
-{
-	m_curItem = queueItem;
-	QueueScriptController::StartScript(nzbInfo, queueItem->GetScript(), queueItem->GetEvent());
 }
 
 bool QueueScriptCoordinator::HasJob(int nzbId, bool* active)
@@ -489,7 +468,7 @@ bool QueueScriptCoordinator::HasJob(int nzbId, bool* active)
 	}
 	if (!working)
 	{
-		for (QueueItem* queueItem : m_queue)
+		for (QueueItem* queueItem : &m_queue)
 		{
 			working = queueItem->GetNzbId() == nzbId;
 			if (working)
