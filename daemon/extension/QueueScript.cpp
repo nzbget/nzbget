@@ -174,7 +174,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 			{
 				*value = '\0';
 				DownloadQueue* downloadQueue = DownloadQueue::Lock();
-				NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
+				NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 				if (nzbInfo)
 				{
 					nzbInfo->GetParameters()->SetParameter(param, value + 1);
@@ -190,7 +190,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 			m_event == QueueScriptCoordinator::qeNzbDownloaded)
 		{
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
-			NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
+			NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 			if (nzbInfo)
 			{
 				nzbInfo->SetFinalDir(msgText + 6 + 10);
@@ -201,7 +201,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 		{
 			m_markBad = true;
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
-			NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
+			NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 			if (nzbInfo)
 			{
 				SetLogPrefix(nullptr);
@@ -219,7 +219,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 	else
 	{
 		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
+		NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 		if (nzbInfo)
 		{
 			nzbInfo->AddMessage(kind, text);
@@ -394,18 +394,18 @@ bool QueueScriptCoordinator::UsableScript(ScriptConfig::Script& script, NzbInfo*
 NzbInfo* QueueScriptCoordinator::FindNzbInfo(DownloadQueue* downloadQueue, int nzbId)
 {
 	NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(nzbId);
-	if (!nzbInfo)
+	if (nzbInfo)
 	{
-		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
-		{
-			if (historyInfo->GetNzbInfo() && historyInfo->GetNzbInfo()->GetId() == nzbId)
-			{
-				nzbInfo = historyInfo->GetNzbInfo();
-				break;
-			}
-		}
+		return nzbInfo;
 	}
-	return nzbInfo;
+
+	HistoryInfo* historyInfo = downloadQueue->GetHistory()->Find(nzbId);
+	if (historyInfo)
+	{
+		return historyInfo->GetNzbInfo();
+	}
+
+	return nullptr;
 }
 
 void QueueScriptCoordinator::CheckQueue()

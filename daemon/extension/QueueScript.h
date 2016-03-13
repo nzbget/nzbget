@@ -42,6 +42,7 @@ public:
 	void CheckQueue();
 	bool HasJob(int nzbId, bool* active);
 	int GetQueueSize();
+	static NzbInfo* FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
 
 private:
 	class QueueItem
@@ -66,7 +67,6 @@ private:
 	bool m_hasQueueScripts = false;
 	bool m_stopped = false;
 
-	NzbInfo* FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
 	bool UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
 };
 
