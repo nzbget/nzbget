@@ -369,8 +369,13 @@ void WinConsole::ShowMenu()
 			break;
 
 		case ID_SHOW_SCRIPTDIR:
-			ShowInExplorer(g_Options->GetScriptDir());
-			break;
+			{
+				CString firstScriptDir = g_Options->GetScriptDir();
+				// Taking the first path from the list
+				if (char* p = strpbrk(firstScriptDir, ";,")) *p = '\0';
+				ShowInExplorer(firstScriptDir);
+				break;
+			}
 
 		case ID_INFO_HOMEPAGE:
 			ShellExecute(0, "open", "http://nzbget.net", nullptr, nullptr, SW_SHOWNORMAL);
