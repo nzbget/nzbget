@@ -83,7 +83,7 @@ void Scanner::ServiceWork()
 		return;
 	}
 
-	m_scanMutex.Lock();
+	Guard guard(m_scanMutex);
 
 	if (m_requestedNzbDirScan ||
 		(!g_Options->GetPauseScan() && g_Options->GetNzbDirInterval() > 0 &&
@@ -126,8 +126,6 @@ void Scanner::ServiceWork()
 		m_queueList.clear();
 	}
 	m_nzbDirInterval += 200;
-
-	m_scanMutex.Unlock();
 }
 
 /**
@@ -463,10 +461,11 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 
 void Scanner::ScanNzbDir(bool syncMode)
 {
-	m_scanMutex.Lock();
-	m_scanning = true;
-	m_requestedNzbDirScan = true;
-	m_scanMutex.Unlock();
+	{
+		Guard guard(m_scanMutex);
+		m_scanning = true;
+		m_requestedNzbDirScan = true;
+	}
 
 	while (syncMode && (m_scanning || m_requestedNzbDirScan))
 	{
@@ -542,14 +541,13 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 		num++;
 	}
 
-	m_scanMutex.Lock();
+	Guard guard(m_scanMutex);
 
 	if (!FileSystem::MoveFile(tempFileName, scanFileName))
 	{
 		error("Could not move file %s to %s: %s", *tempFileName, *scanFileName,
 			*FileSystem::GetLastErrorMessage());
 		FileSystem::DeleteFile(tempFileName);
-		m_scanMutex.Unlock(); // UNLOCK
 		return asFailed;
 	}
 
@@ -566,7 +564,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 		dupeKey, dupeScore, dupeMode, parameters, addTop, addPaused, urlInfo,
 		&addStatus, nzbId);
 
-	m_scanMutex.Unlock();
+	guard.Release();
 
 	ScanNzbDir(true);
 

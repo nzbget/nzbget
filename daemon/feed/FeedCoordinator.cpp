@@ -93,9 +93,8 @@ void FeedCoordinator::Run()
 
 	if (g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetReloadQueue())
 	{
-		m_downloadsMutex.Lock();
+		Guard guard(m_downloadsMutex);
 		g_DiskState->LoadFeeds(&m_feeds, &m_feedHistory);
-		m_downloadsMutex.Unlock();
 	}
 
 	int sleepInterval = 100;
@@ -113,7 +112,8 @@ void FeedCoordinator::Run()
 
 			if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
 			{
-				m_downloadsMutex.Lock();
+				Guard guard(m_downloadsMutex);
+
 				time_t current = Util::CurrentTime();
 				if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
 				{
@@ -135,7 +135,6 @@ void FeedCoordinator::Run()
 						}
 					}
 				}
-				m_downloadsMutex.Unlock();
 			}
 
 			CheckSaveFeeds();
@@ -176,12 +175,11 @@ void FeedCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping UrlDownloads");
-	m_downloadsMutex.Lock();
+	Guard guard(m_downloadsMutex);
 	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
 		feedDownloader->Stop();
 	}
-	m_downloadsMutex.Unlock();
 	debug("UrlDownloads are notified");
 }
 
@@ -193,7 +191,7 @@ void FeedCoordinator::ResetHangingDownloads()
 		return;
 	}
 
-	m_downloadsMutex.Lock();
+	Guard guard(m_downloadsMutex);
 	time_t tm = Util::CurrentTime();
 
 	m_activeDownloads.erase(std::remove_if(m_activeDownloads.begin(), m_activeDownloads.end(),
@@ -221,21 +219,18 @@ void FeedCoordinator::ResetHangingDownloads()
 			return false;
 		}),
 		m_activeDownloads.end());
-
-	m_downloadsMutex.Unlock();
 }
 
 void FeedCoordinator::LogDebugInfo()
 {
 	info("   ---------- FeedCoordinator");
 
-	m_downloadsMutex.Lock();
+	Guard guard(m_downloadsMutex);
 	info("    Active Downloads: %i", (int)m_activeDownloads.size());
 	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
 		feedDownloader->LogDebugInfo();
 	}
-	m_downloadsMutex.Unlock();
 }
 
 void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
@@ -301,9 +296,10 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 	}
 
 	// remove downloader from downloader list
-	m_downloadsMutex.Lock();
-	m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), feedDownloader));
-	m_downloadsMutex.Unlock();
+	{
+		Guard guard(m_downloadsMutex);
+		m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), feedDownloader));
+	}
 
 	if (statusOK)
 	{
@@ -319,17 +315,18 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 
 			std::vector<std::unique_ptr<NzbInfo>> addedNzbs;
 
-			m_downloadsMutex.Lock();
-			if (parsed)
 			{
-				std::unique_ptr<FeedItemList> feedItems = feedFile->DetachFeedItems();
-				addedNzbs = ProcessFeed(feedInfo, feedItems.get());
-				feedFile.reset();
+				Guard guard(m_downloadsMutex);
+				if (parsed)
+				{
+					std::unique_ptr<FeedItemList> feedItems = feedFile->DetachFeedItems();
+					addedNzbs = ProcessFeed(feedInfo, feedItems.get());
+					feedFile.reset();
+				}
+				feedInfo->SetLastUpdate(Util::CurrentTime());
+				feedInfo->SetForce(false);
+				m_save = true;
 			}
-			feedInfo->SetLastUpdate(Util::CurrentTime());
-			feedInfo->SetForce(false);
-			m_save = true;
-			m_downloadsMutex.Unlock();
 
 			DownloadQueue* downloadQueue = DownloadQueue::Lock();
 			for (std::unique_ptr<NzbInfo>& nzbInfo : addedNzbs)
@@ -489,7 +486,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 	bool hasCache = false;
 	if (cacheTimeSec > 0 && *cacheId != '\0')
 	{
-		m_downloadsMutex.Lock();
+		Guard guard(m_downloadsMutex);
 		for (FeedCacheItem& feedCacheItem : m_feedCache)
 		{
 			if (!strcmp(feedCacheItem.GetCacheId(), cacheId))
@@ -500,27 +497,28 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 				break;
 			}
 		}
-		m_downloadsMutex.Unlock();
 	}
 
 	if (!hasCache)
 	{
-		m_downloadsMutex.Lock();
-
 		bool firstFetch = true;
-		for (FeedInfo* feedInfo2 : &m_feeds)
-		{
-			if (!strcmp(feedInfo2->GetUrl(), feedInfo->GetUrl()) &&
-				!strcmp(feedInfo2->GetFilter(), feedInfo->GetFilter()) &&
-				feedInfo2->GetLastUpdate() > 0)
-			{
-				firstFetch = false;
-				break;
-			}
-		}
 
-		StartFeedDownload(feedInfo.get(), true);
-		m_downloadsMutex.Unlock();
+		{
+			Guard guard(m_downloadsMutex);
+
+			for (FeedInfo* feedInfo2 : &m_feeds)
+			{
+				if (!strcmp(feedInfo2->GetUrl(), feedInfo->GetUrl()) &&
+					!strcmp(feedInfo2->GetFilter(), feedInfo->GetFilter()) &&
+					feedInfo2->GetLastUpdate() > 0)
+				{
+					firstFetch = false;
+					break;
+				}
+			}
+
+			StartFeedDownload(feedInfo.get(), true);
+		}
 
 		// wait until the download in a separate thread completes
 		while (feedInfo->GetStatus() == FeedInfo::fsRunning)
@@ -567,9 +565,8 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 
 	if (cacheTimeSec > 0 && *cacheId != '\0' && !hasCache)
 	{
-		m_downloadsMutex.Lock();
+		Guard guard(m_downloadsMutex);
 		m_feedCache.emplace_back(url, cacheTimeSec, cacheId, Util::CurrentTime(), feedItems);
-		m_downloadsMutex.Unlock();
 	}
 
 	return feedItems;
@@ -579,7 +576,7 @@ void FeedCoordinator::FetchFeed(int id)
 {
 	debug("FetchFeeds");
 
-	m_downloadsMutex.Lock();
+	Guard guard(m_downloadsMutex);
 	for (FeedInfo* feedInfo : &m_feeds)
 	{
 		if (feedInfo->GetId() == id || id == 0)
@@ -588,7 +585,6 @@ void FeedCoordinator::FetchFeed(int id)
 			m_force = true;
 		}
 	}
-	m_downloadsMutex.Unlock();
 }
 
 void FeedCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
@@ -598,7 +594,7 @@ void FeedCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
 	DownloadQueue::Aspect* queueAspect = (DownloadQueue::Aspect*)aspect;
 	if (queueAspect->action == DownloadQueue::eaUrlCompleted)
 	{
-		m_downloadsMutex.Lock();
+		Guard guard(m_downloadsMutex);
 		FeedHistoryInfo* feedHistoryInfo = m_feedHistory.Find(queueAspect->nzbInfo->GetUrl());
 		if (feedHistoryInfo)
 		{
@@ -609,22 +605,19 @@ void FeedCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
 			m_feedHistory.emplace_back(queueAspect->nzbInfo->GetUrl(), FeedHistoryInfo::hsFetched, Util::CurrentTime());
 		}
 		m_save = true;
-		m_downloadsMutex.Unlock();
 	}
 }
 
 bool FeedCoordinator::HasActiveDownloads()
 {
-	m_downloadsMutex.Lock();
-	bool active = !m_activeDownloads.empty();
-	m_downloadsMutex.Unlock();
-	return active;
+	Guard guard(m_downloadsMutex);
+	return !m_activeDownloads.empty();
 }
 
 void FeedCoordinator::CheckSaveFeeds()
 {
 	debug("CheckSaveFeeds");
-	m_downloadsMutex.Lock();
+	Guard guard(m_downloadsMutex);
 	if (m_save)
 	{
 		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
@@ -633,14 +626,13 @@ void FeedCoordinator::CheckSaveFeeds()
 		}
 		m_save = false;
 	}
-	m_downloadsMutex.Unlock();
 }
 
 void FeedCoordinator::CleanupHistory()
 {
 	debug("CleanupHistory");
 
-	m_downloadsMutex.Lock();
+	Guard guard(m_downloadsMutex);
 
 	time_t oldestUpdate = Util::CurrentTime();
 
@@ -666,15 +658,13 @@ void FeedCoordinator::CleanupHistory()
 			return false;
 		}),
 		m_feedHistory.end());
-
-	m_downloadsMutex.Unlock();
 }
 
 void FeedCoordinator::CleanupCache()
 {
 	debug("CleanupCache");
 
-	m_downloadsMutex.Lock();
+	Guard guard(m_downloadsMutex);
 
 	time_t curTime = Util::CurrentTime();
 
@@ -689,6 +679,4 @@ void FeedCoordinator::CleanupCache()
 			}
 			return false;
 		});
-
-	m_downloadsMutex.Unlock();
 }

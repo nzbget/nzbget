@@ -970,24 +970,17 @@ in_addr_t Connection::ResolveHostAddr(const char* host)
 		err = hinfo == nullptr;
 #endif
 #else
-		m_getHostByNameMutex->Lock();
+		Guard guard(m_getHostByNameMutex);
 		hinfo = gethostbyname(host);
 		err = hinfo == nullptr;
 #endif
 		if (err)
 		{
-#ifndef HAVE_GETHOSTBYNAME_R
-			m_getHostByNameMutex->Unlock();
-#endif
 			ReportError("Could not resolve hostname %s", host, true, h_errnop);
 			return INADDR_NONE;
 		}
 
 		memcpy(&uaddr, hinfo->h_addr_list[0], sizeof(uaddr));
-
-#ifndef HAVE_GETHOSTBYNAME_R
-		m_getHostByNameMutex->Unlock();
-#endif
 	}
 	return uaddr;
 }

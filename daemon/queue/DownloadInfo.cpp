@@ -385,7 +385,8 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 			break;
 	}
 
-	m_logMutex.Lock();
+	Guard guard(m_logMutex);
+
 	m_messages.emplace_back(++m_idMessageGen, kind, Util::CurrentTime(), text);
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetNzbLog())
@@ -400,7 +401,6 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 	}
 
 	m_cachedMessageCount = m_messages.size();
-	m_logMutex.Unlock();
 }
 
 void NzbInfo::PrintMessage(Message::EKind kind, const char* format, ...)
@@ -418,10 +418,9 @@ void NzbInfo::PrintMessage(Message::EKind kind, const char* format, ...)
 
 void NzbInfo::ClearMessages()
 {
-	m_logMutex.Lock();
+	Guard guard(m_logMutex);
 	m_messages.clear();
 	m_cachedMessageCount = 0;
-	m_logMutex.Unlock();
 }
 
 void NzbInfo::MoveFileList(NzbInfo* srcNzbInfo)

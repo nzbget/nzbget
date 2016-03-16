@@ -639,13 +639,12 @@ void WebDownloader::Stop()
 {
 	debug("Trying to stop WebDownloader");
 	Thread::Stop();
-	m_connectionMutex.Lock();
+	Guard guard(m_connectionMutex);
 	if (m_connection)
 	{
 		m_connection->SetSuppressErrors(true);
 		m_connection->Cancel();
 	}
-	m_connectionMutex.Unlock();
 	debug("WebDownloader stopped successfully");
 }
 
@@ -669,12 +668,11 @@ void WebDownloader::FreeConnection()
 	if (m_connection)
 	{
 		debug("Releasing connection");
-		m_connectionMutex.Lock();
+		Guard guard(m_connectionMutex);
 		if (m_connection->GetStatus() == Connection::csCancelled)
 		{
 			m_connection->Disconnect();
 		}
 		m_connection.reset();
-		m_connectionMutex.Unlock();
 	}
 }

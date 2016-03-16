@@ -44,12 +44,11 @@ void Log::LogDebugInfo()
 	info("Dumping debug info to log");
 	info("--------------------------------------------");
 
-	m_debugMutex.Lock();
+	Guard guard(m_debugMutex);
 	for (Debuggable* debuggable : m_debuggables)
 	{
 		debuggable->LogDebugInfo();
 	}
-	m_debugMutex.Unlock();
 
 	info("--------------------------------------------");
 }
@@ -134,7 +133,7 @@ void debug(const char* msg, ...)
 	tmp2.Format("%s", tmp1);
 #endif
 
-	g_Log->m_logMutex.Lock();
+	Guard guard(g_Log->m_logMutex);
 
 	if (!g_Options && g_Log->m_extraDebug)
 	{
@@ -150,8 +149,6 @@ void debug(const char* msg, ...)
 	{
 		g_Log->Filelog("DEBUG\t%s", *tmp2);
 	}
-
-	g_Log->m_logMutex.Unlock();
 }
 #endif
 
@@ -165,7 +162,7 @@ void error(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_Log->m_logMutex.Lock();
+	Guard guard(g_Log->m_logMutex);
 
 	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetErrorTarget() : Options::mtBoth;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
@@ -176,8 +173,6 @@ void error(const char* msg, ...)
 	{
 		g_Log->Filelog("ERROR\t%s", tmp2);
 	}
-
-	g_Log->m_logMutex.Unlock();
 }
 
 void warn(const char* msg, ...)
@@ -190,7 +185,7 @@ void warn(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_Log->m_logMutex.Lock();
+	Guard guard(g_Log->m_logMutex);
 
 	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetWarningTarget() : Options::mtScreen;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
@@ -201,8 +196,6 @@ void warn(const char* msg, ...)
 	{
 		g_Log->Filelog("WARNING\t%s", tmp2);
 	}
-
-	g_Log->m_logMutex.Unlock();
 }
 
 void info(const char* msg, ...)
@@ -215,7 +208,7 @@ void info(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_Log->m_logMutex.Lock();
+	Guard guard(g_Log->m_logMutex);
 
 	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetInfoTarget() : Options::mtScreen;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
@@ -226,8 +219,6 @@ void info(const char* msg, ...)
 	{
 		g_Log->Filelog("INFO\t%s", tmp2);
 	}
-
-	g_Log->m_logMutex.Unlock();
 }
 
 void detail(const char* msg, ...)
@@ -240,7 +231,7 @@ void detail(const char* msg, ...)
 	tmp2[1024-1] = '\0';
 	va_end(ap);
 
-	g_Log->m_logMutex.Lock();
+	Guard guard(g_Log->m_logMutex);
 
 	Options::EMessageTarget messageTarget = g_Options ? g_Options->GetDetailTarget() : Options::mtScreen;
 	if (messageTarget == Options::mtScreen || messageTarget == Options::mtBoth)
@@ -251,16 +242,13 @@ void detail(const char* msg, ...)
 	{
 		g_Log->Filelog("DETAIL\t%s", tmp2);
 	}
-
-	g_Log->m_logMutex.Unlock();
 }
 
 
 void Log::Clear()
 {
-	m_logMutex.Lock();
+	Guard guard(m_logMutex);
 	m_messages.clear();
-	m_logMutex.Unlock();
 }
 
 void Log::AddMessage(Message::EKind kind, const char * text)
@@ -419,14 +407,12 @@ void Log::InitOptions()
 
 void Log::RegisterDebuggable(Debuggable* debuggable)
 {
-	m_debugMutex.Lock();
+	Guard guard(m_debugMutex);
 	m_debuggables.push_back(debuggable);
-	m_debugMutex.Unlock();
 }
 
 void Log::UnregisterDebuggable(Debuggable* debuggable)
 {
-	m_debugMutex.Lock();
+	Guard guard(m_debugMutex);
 	m_debuggables.remove(debuggable);
-	m_debugMutex.Unlock();
 }

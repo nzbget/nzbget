@@ -93,7 +93,7 @@ void ServerPool::InitConnections()
 {
 	debug("Initializing connections in ServerPool");
 
-	m_connectionsMutex.Lock();
+	Guard guard(m_connectionsMutex);
 
 	NormalizeLevels();
 	m_levels.clear();
@@ -135,14 +135,12 @@ void ServerPool::InitConnections()
 	}
 
 	m_generation++;
-
-	m_connectionsMutex.Unlock();
 }
 
 NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers)
 {
 	PooledConnection* connection = nullptr;
-	m_connectionsMutex.Lock();
+	Guard guard(m_connectionsMutex);
 
 	time_t curTime = Util::CurrentTime();
 
@@ -204,8 +202,6 @@ NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, Raw
 		}
 	}
 
-	m_connectionsMutex.Unlock();
-
 	return connection;
 }
 
@@ -216,7 +212,7 @@ void ServerPool::FreeConnection(NntpConnection* connection, bool used)
 		debug("Freeing used connection");
 	}
 
-	m_connectionsMutex.Lock();
+	Guard guard(m_connectionsMutex);
 
 	((PooledConnection*)connection)->SetInUse(false);
 	if (used)
@@ -228,17 +224,15 @@ void ServerPool::FreeConnection(NntpConnection* connection, bool used)
 	{
 		m_levels[connection->GetNewsServer()->GetNormLevel()]++;
 	}
-
-	m_connectionsMutex.Unlock();
 }
 
 void ServerPool::BlockServer(NewsServer* newsServer)
 {
-	m_connectionsMutex.Lock();
+	Guard guard(m_connectionsMutex);
 	time_t curTime = Util::CurrentTime();
 	bool newBlock = newsServer->GetBlockTime() != curTime;
 	newsServer->SetBlockTime(curTime);
-	m_connectionsMutex.Unlock();
+	guard.Release();
 
 	if (newBlock && m_retryInterval > 0)
 	{
@@ -248,7 +242,7 @@ void ServerPool::BlockServer(NewsServer* newsServer)
 
 void ServerPool::CloseUnusedConnections()
 {
-	m_connectionsMutex.Lock();
+	Guard guard(m_connectionsMutex);
 
 	time_t curtime = Util::CurrentTime();
 
@@ -312,8 +306,6 @@ void ServerPool::CloseUnusedConnections()
 			}
 		}
 	}
-
-	m_connectionsMutex.Unlock();
 }
 
 void ServerPool::Changed()
@@ -330,7 +322,7 @@ void ServerPool::LogDebugInfo()
 
 	info("    Max-Level: %i", m_maxNormLevel);
 
-	m_connectionsMutex.Lock();
+	Guard guard(m_connectionsMutex);
 
 	time_t curTime = Util::CurrentTime();
 
@@ -359,6 +351,4 @@ void ServerPool::LogDebugInfo()
 			connection->GetNewsServer()->GetLevel(), connection->GetNewsServer()->GetNormLevel(),
 			(int)connection->GetInUse());
 	}
-
-	m_connectionsMutex.Unlock();
 }

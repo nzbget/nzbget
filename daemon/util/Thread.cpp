@@ -102,7 +102,7 @@ void Thread::Start()
 	// We lock mutex m_pMutexThread on calling pthread_create; the started thread
 	// then also try to lock the mutex (see thread_handler) and therefore
 	// must wait until we unlock it
-	m_threadMutex->Lock();
+	Guard guard(m_threadMutex);
 
 #ifdef WIN32
 	m_threadObj = (HANDLE)_beginthread(Thread::thread_handler, 0, (void*)this);
@@ -111,12 +111,10 @@ void Thread::Start()
 	pthread_attr_t m_attr;
 	pthread_attr_init(&m_attr);
 	pthread_attr_setdetachstate(&m_attr, PTHREAD_CREATE_DETACHED);
-	pthread_attr_setinheritsched(&m_attr , PTHREAD_INHERIT_SCHED);
+	pthread_attr_setinheritsched(&m_attr, PTHREAD_INHERIT_SCHED);
 	m_running = !pthread_create(&m_threadObj, &m_attr, Thread::thread_handler, (void *) this);
 	pthread_attr_destroy(&m_attr);
 #endif
-
-	m_threadMutex->Unlock();
 }
 
 void Thread::Stop()
@@ -137,7 +135,7 @@ bool Thread::Kill()
 {
 	debug("Killing Thread");
 
-	m_threadMutex->Lock();
+	Guard guard(m_threadMutex);
 
 #ifdef WIN32
 	bool terminated = TerminateThread(m_threadObj, 0) != 0;
@@ -149,7 +147,6 @@ bool Thread::Kill()
 	{
 		m_threadCount--;
 	}
-	m_threadMutex->Unlock();
 	return terminated;
 }
 
@@ -159,9 +156,10 @@ void __cdecl Thread::thread_handler(void* object)
 void* Thread::thread_handler(void* object)
 #endif
 {
-	m_threadMutex->Lock();
-	m_threadCount++;
-	m_threadMutex->Unlock();
+	{
+		Guard guard(m_threadMutex);
+		m_threadCount++;
+	}
 
 	debug("Entering Thread-func");
 
@@ -179,9 +177,10 @@ void* Thread::thread_handler(void* object)
 		delete thread;
 	}
 
-	m_threadMutex->Lock();
-	m_threadCount--;
-	m_threadMutex->Unlock();
+	{
+		Guard guard(m_threadMutex);
+		m_threadCount--;
+	}
 
 #ifndef WIN32
 	return nullptr;
@@ -190,8 +189,7 @@ void* Thread::thread_handler(void* object)
 
 int Thread::GetThreadCount()
 {
-	m_threadMutex->Lock();
+	Guard guard(m_threadMutex);
 	int threadCount = m_threadCount;
-	m_threadMutex->Unlock();
 	return threadCount;
 }

@@ -795,34 +795,36 @@ ArticleCache::ArticleCache()
 
 CachedSegmentData ArticleCache::Alloc(int size)
 {
-	m_allocMutex.Lock();
 	void* p = nullptr;
-	if (m_allocated + size <= (size_t)g_Options->GetArticleCache() * 1024 * 1024)
+
 	{
-		p = malloc(size);
-		if (p)
+		Guard guard(m_allocMutex);
+		if (m_allocated + size <= (size_t)g_Options->GetArticleCache() * 1024 * 1024)
 		{
-			if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
+			p = malloc(size);
+			if (p)
 			{
-				g_DiskState->WriteCacheFlag();
+				if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
+				{
+					g_DiskState->WriteCacheFlag();
+				}
+				m_allocated += size;
 			}
-			m_allocated += size;
 		}
 	}
-	m_allocMutex.Unlock();
 
 	return CachedSegmentData((char*)p, size);
 }
 
 bool ArticleCache::Realloc(CachedSegmentData* segment, int newSize)
 {
-	m_allocMutex.Lock();
+	Guard guard(m_allocMutex);
+
 	void* p = realloc(segment->m_data, newSize);
 	if (p)
 	{
 		m_allocated += newSize - segment->m_size;
 	}
-	m_allocMutex.Unlock();
 
 	return p;
 }
@@ -833,13 +835,12 @@ void ArticleCache::Free(CachedSegmentData* segment)
 	{
 		free(segment->m_data);
 
-		m_allocMutex.Lock();
+		Guard guard(m_allocMutex);
 		m_allocated -= segment->m_size;
 		if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
 		{
 			g_DiskState->DeleteCacheFlag();
 		}
-		m_allocMutex.Unlock();
 	}
 }
 

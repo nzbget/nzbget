@@ -39,6 +39,19 @@ private:
 #endif
 };
 
+class Guard
+{
+public:
+	Guard(Mutex& mutex) : m_mutex(&mutex) { if (m_mutex) m_mutex->Lock(); }
+	Guard(Mutex* mutex) : m_mutex(mutex) { if (m_mutex) m_mutex->Lock(); }
+	Guard(std::unique_ptr<Mutex>& mutex) : m_mutex(mutex.get()) { if (m_mutex) m_mutex->Lock(); }
+	~Guard() { Release(); }
+	void Release() { if (m_mutex) { m_mutex->Unlock(); m_mutex = nullptr; } }
+
+private:
+	Mutex* m_mutex;
+};
+
 class Thread
 {
 public:

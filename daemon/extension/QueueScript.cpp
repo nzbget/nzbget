@@ -254,7 +254,7 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		return;
 	}
 
-	m_queueMutex.Lock();
+	Guard guard(m_queueMutex);
 
 	if (event == qeNzbDownloaded)
 	{
@@ -274,7 +274,6 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 		 (g_Options->GetEventInterval() > 0 && curTime - nzbInfo->GetQueueScriptTime() > 0 &&
 		 (int)(curTime - nzbInfo->GetQueueScriptTime()) < g_Options->GetEventInterval())))
 	{
-		m_queueMutex.Unlock();
 		return;
 	}
 
@@ -313,8 +312,6 @@ void QueueScriptCoordinator::EnqueueScript(NzbInfo* nzbInfo, EEvent event)
 			nzbInfo->SetQueueScriptTime(Util::CurrentTime());
 		}
 	}
-
-	m_queueMutex.Unlock();
 }
 
 bool QueueScriptCoordinator::UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event)
@@ -418,7 +415,7 @@ void QueueScriptCoordinator::CheckQueue()
 	m_curItem.reset();
 
 	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	m_queueMutex.Lock();
+	Guard guard(m_queueMutex);
 
 	NzbInfo* curNzbInfo = nullptr;
 	Queue::iterator itCurItem = m_queue.end();
@@ -454,13 +451,14 @@ void QueueScriptCoordinator::CheckQueue()
 		QueueScriptController::StartScript(curNzbInfo, m_curItem->GetScript(), m_curItem->GetEvent());
 	}
 
-	m_queueMutex.Unlock();
+	guard.Release();
 	DownloadQueue::Unlock();
 }
 
 bool QueueScriptCoordinator::HasJob(int nzbId, bool* active)
 {
-	m_queueMutex.Lock();
+	Guard guard(m_queueMutex);
+
 	bool working = m_curItem && m_curItem->GetNzbId() == nzbId;
 	if (active)
 	{
@@ -477,20 +475,19 @@ bool QueueScriptCoordinator::HasJob(int nzbId, bool* active)
 			}
 		}
 	}
-	m_queueMutex.Unlock();
 
 	return working;
 }
 
 int QueueScriptCoordinator::GetQueueSize()
 {
-	m_queueMutex.Lock();
+	Guard guard(m_queueMutex);
+
 	int queuedCount = m_queue.size();
 	if (m_curItem)
 	{
 		queuedCount++;
 	}
-	m_queueMutex.Unlock();
 
 	return queuedCount;
 }

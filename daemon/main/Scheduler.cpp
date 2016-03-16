@@ -30,23 +30,22 @@
 
 void Scheduler::AddTask(std::unique_ptr<Task> task)
 {
-	m_taskListMutex.Lock();
+	Guard guard(m_taskListMutex);
 	m_taskList.push_back(std::move(task));
-	m_taskListMutex.Unlock();
 }
 
 void Scheduler::FirstCheck()
 {
-	m_taskListMutex.Lock();
+	{
+		Guard guard(m_taskListMutex);
 
-	std::sort(m_taskList.begin(), m_taskList.end(),
-		[](std::unique_ptr<Task>& task1, std::unique_ptr<Task>& task2)
+		std::sort(m_taskList.begin(), m_taskList.end(),
+			[](std::unique_ptr<Task>& task1, std::unique_ptr<Task>& task2)
 		{
 			return (task1->m_hours < task2->m_hours) ||
 				((task1->m_hours == task2->m_hours) && (task1->m_minutes < task2->m_minutes));
 		});
-
-	m_taskListMutex.Unlock();
+	}
 
 	// check all tasks for the last week
 	CheckTasks();
@@ -75,7 +74,7 @@ void Scheduler::CheckTasks()
 {
 	PrepareLog();
 
-	m_taskListMutex.Lock();
+	Guard guard(m_taskListMutex);
 
 	time_t current = Util::CurrentTime();
 
@@ -151,7 +150,7 @@ void Scheduler::CheckTasks()
 
 	m_lastCheck = current;
 
-	m_taskListMutex.Unlock();
+	guard.Release();
 
 	PrintLog();
 }

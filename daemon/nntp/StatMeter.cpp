@@ -232,7 +232,7 @@ void StatMeter::IntervalCheck()
 
 void StatMeter::EnterLeaveStandBy(bool enter)
 {
-	m_statMutex.Lock();
+	Guard guard(m_statMutex);
 	m_standBy = enter;
 	if (enter)
 	{
@@ -251,12 +251,11 @@ void StatMeter::EnterLeaveStandBy(bool enter)
 		m_pausedFrom = 0;
 		ResetSpeedStat();
 	}
-	m_statMutex.Unlock();
 }
 
 void StatMeter::CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy)
 {
-	m_statMutex.Lock();
+	Guard guard(m_statMutex);
 	if (m_startServer > 0)
 	{
 		*upTimeSec = (int)(Util::CurrentTime() - m_startServer);
@@ -275,7 +274,6 @@ void StatMeter::CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, b
 		*dnTimeSec = (int)(Util::CurrentTime() - m_startDownload);
 	}
 	*allBytes = m_allBytes;
-	m_statMutex.Unlock();
 }
 
 // Average speed in last 30 seconds
@@ -308,10 +306,7 @@ void StatMeter::AddSpeedReading(int bytes)
 	time_t curTime = Util::CurrentTime();
 	int nowSlot = (int)curTime / SPEEDMETER_SLOTSIZE;
 
-	if (g_Options->GetAccurateRate())
-	{
-		m_speedMutex.Lock();
-	}
+	Guard guard(g_Options->GetAccurateRate() ? &m_speedMutex : nullptr);
 
 	if (curTime != m_curSecTime)
 	{
@@ -360,11 +355,6 @@ void StatMeter::AddSpeedReading(int bytes)
 	m_speedBytes[m_speedBytesIndex] += bytes;
 	m_speedTotalBytes += bytes;
 	m_allBytes += bytes;
-
-	if (g_Options->GetAccurateRate())
-	{
-		m_speedMutex.Unlock();
-	}
 }
 
 void StatMeter::ResetSpeedStat()
@@ -400,7 +390,7 @@ void StatMeter::LogDebugInfo()
 		info("      Bytes[%i]: %i, Time[%i]: %i", i, m_speedBytes[i], i, m_speedTime[i]);
 	}
 
-	m_volumeMutex.Lock();
+	Guard guard(m_volumeMutex);
 	int index = 0;
 	for (ServerVolume& serverVolume : m_serverVolumes)
 	{
@@ -408,7 +398,6 @@ void StatMeter::LogDebugInfo()
 		serverVolume.LogDebugInfo();
 		index++;
 	}
-	m_volumeMutex.Unlock();
 }
 
 void StatMeter::AddServerData(int bytes, int serverId)
@@ -418,11 +407,10 @@ void StatMeter::AddServerData(int bytes, int serverId)
 		return;
 	}
 
-	m_volumeMutex.Lock();
+	Guard guard(m_volumeMutex);
 	m_serverVolumes[0].AddData(bytes);
 	m_serverVolumes[serverId].AddData(bytes);
 	m_statChanged = true;
-	m_volumeMutex.Unlock();
 }
 
 ServerVolumes* StatMeter::LockServerVolumes()
@@ -450,15 +438,14 @@ void StatMeter::Save()
 		return;
 	}
 
-	m_volumeMutex.Lock();
+	Guard guard(m_volumeMutex);
 	g_DiskState->SaveStats(g_ServerPool->GetServers(), &m_serverVolumes);
 	m_statChanged = false;
-	m_volumeMutex.Unlock();
 }
 
 bool StatMeter::Load(bool* perfectServerMatch)
 {
-	m_volumeMutex.Lock();
+	Guard guard(m_volumeMutex);
 
 	bool ok = g_DiskState->LoadStats(g_ServerPool->GetServers(), &m_serverVolumes, perfectServerMatch);
 
@@ -466,8 +453,6 @@ bool StatMeter::Load(bool* perfectServerMatch)
 	{
 		serverVolume.CalcSlots(serverVolume.GetDataTime() + g_Options->GetLocalTimeOffset());
 	}
-
-	m_volumeMutex.Unlock();
 
 	return ok;
 }

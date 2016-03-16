@@ -627,13 +627,12 @@ void ArticleDownloader::Stop()
 {
 	debug("Trying to stop ArticleDownloader");
 	Thread::Stop();
-	m_connectionMutex.Lock();
+	Guard guard(m_connectionMutex);
 	if (m_connection)
 	{
 		m_connection->SetSuppressErrors(true);
 		m_connection->Cancel();
 	}
-	m_connectionMutex.Unlock();
 	debug("ArticleDownloader stopped successfully");
 }
 
@@ -658,7 +657,7 @@ void ArticleDownloader::FreeConnection(bool keepConnected)
 	if (m_connection)
 	{
 		debug("Releasing connection");
-		m_connectionMutex.Lock();
+		Guard guard(m_connectionMutex);
 		if (!keepConnected || m_connection->GetStatus() == Connection::csCancelled)
 		{
 			m_connection->Disconnect();
@@ -666,7 +665,6 @@ void ArticleDownloader::FreeConnection(bool keepConnected)
 		AddServerData();
 		g_ServerPool->FreeConnection(m_connection, true);
 		m_connection = nullptr;
-		m_connectionMutex.Unlock();
 	}
 }
 

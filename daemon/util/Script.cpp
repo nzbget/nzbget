@@ -153,9 +153,8 @@ ScriptController::ScriptController()
 {
 	ResetEnv();
 
-	m_runningMutex.Lock();
+	Guard guard(m_runningMutex);
 	m_runningScripts.push_back(this);
-	m_runningMutex.Unlock();
 }
 
 ScriptController::~ScriptController()
@@ -165,9 +164,8 @@ ScriptController::~ScriptController()
 
 void ScriptController::UnregisterRunningScript()
 {
-	m_runningMutex.Lock();
+	Guard guard(m_runningMutex);
 	m_runningScripts.erase(std::remove(m_runningScripts.begin(), m_runningScripts.end(), this), m_runningScripts.end());
-	m_runningMutex.Unlock();
 }
 
 void ScriptController::ResetEnv()
@@ -641,7 +639,7 @@ void ScriptController::Terminate()
 
 void ScriptController::TerminateAll()
 {
-	m_runningMutex.Lock();
+	Guard guard(m_runningMutex);
 	for (ScriptController* script : m_runningScripts)
 	{
 		if (script->m_processId && !script->m_detached)
@@ -649,7 +647,6 @@ void ScriptController::TerminateAll()
 			script->Terminate();
 		}
 	}
-	m_runningMutex.Unlock();
 }
 
 void ScriptController::Detach()

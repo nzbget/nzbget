@@ -281,11 +281,11 @@ void Repairer::RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t b
 	if (noiselevel > Par2::CommandLine::nlQuiet)
 	{
 		// Update a progress indicator
-		progresslock.Lock();
+		Guard guard(progresslock);
 		Par2::u32 oldfraction = (Par2::u32)(1000 * progress / totaldata);
 		progress += blocklength;
 		Par2::u32 newfraction = (Par2::u32)(1000 * progress / totaldata);
-		progresslock.Unlock();
+		guard.Release();
 
 		if (oldfraction != newfraction)
 		{
@@ -648,10 +648,12 @@ bool ParChecker::LoadMainParBak()
 {
 	while (!IsStopped())
 	{
-		m_queuedParFilesMutex.Lock();
-		bool hasMorePars = !m_queuedParFiles.empty();
-		m_queuedParFiles.clear();
-		m_queuedParFilesMutex.Unlock();
+		bool hasMorePars = false;
+		{
+			Guard guard(m_queuedParFilesMutex);
+			hasMorePars = !m_queuedParFiles.empty();
+			m_queuedParFiles.clear();
+		}
 
 		if (hasMorePars)
 		{
@@ -667,10 +669,11 @@ bool ParChecker::LoadMainParBak()
 			UpdateProgress();
 		}
 
-		m_queuedParFilesMutex.Lock();
-		hasMorePars = !m_queuedParFiles.empty();
-		m_queuedParFilesChanged = false;
-		m_queuedParFilesMutex.Unlock();
+		{
+			Guard guard(m_queuedParFilesMutex);
+			hasMorePars = !m_queuedParFiles.empty();
+			m_queuedParFilesChanged = false;
+		}
 
 		if (!requested && !hasMorePars)
 		{
@@ -683,9 +686,10 @@ bool ParChecker::LoadMainParBak()
 			bool queuedParFilesChanged = false;
 			while (!queuedParFilesChanged && !IsStopped() && !m_cancelled)
 			{
-				m_queuedParFilesMutex.Lock();
-				queuedParFilesChanged = m_queuedParFilesChanged;
-				m_queuedParFilesMutex.Unlock();
+				{
+					Guard guard(m_queuedParFilesMutex);
+					queuedParFilesChanged = m_queuedParFilesChanged;
+				}
 				usleep(100 * 1000);
 			}
 		}
@@ -713,9 +717,11 @@ int ParChecker::ProcessMorePars()
 			PrintMessage(Message::mkInfo, "Need more %i par-block(s) for %s", missingblockcount, *m_infoName);
 		}
 
-		m_queuedParFilesMutex.Lock();
-		bool hasMorePars = !m_queuedParFiles.empty();
-		m_queuedParFilesMutex.Unlock();
+		bool hasMorePars = false;
+		{
+			Guard guard(m_queuedParFilesMutex);
+			hasMorePars = !m_queuedParFiles.empty();
+		}
 
 		if (!hasMorePars)
 		{
@@ -728,10 +734,11 @@ int ParChecker::ProcessMorePars()
 				UpdateProgress();
 			}
 
-			m_queuedParFilesMutex.Lock();
-			hasMorePars = !m_queuedParFiles.empty();
-			m_queuedParFilesChanged = false;
-			m_queuedParFilesMutex.Unlock();
+			{
+				Guard guard(m_queuedParFilesMutex);
+				hasMorePars = !m_queuedParFiles.empty();
+				m_queuedParFilesChanged = false;
+			}
 
 			if (!requested && !hasMorePars)
 			{
@@ -745,9 +752,10 @@ int ParChecker::ProcessMorePars()
 				bool queuedParFilesChanged = false;
 				while (!queuedParFilesChanged && !IsStopped() && !m_cancelled)
 				{
-					m_queuedParFilesMutex.Lock();
-					queuedParFilesChanged = m_queuedParFilesChanged;
-					m_queuedParFilesMutex.Unlock();
+					{
+						Guard guard(m_queuedParFilesMutex);
+						queuedParFilesChanged = m_queuedParFilesChanged;
+					}
 					usleep(100 * 1000);
 				}
 			}
@@ -771,10 +779,10 @@ int ParChecker::ProcessMorePars()
 
 bool ParChecker::LoadMorePars()
 {
-	m_queuedParFilesMutex.Lock();
+	Guard guard(m_queuedParFilesMutex);
 	FileList moreFiles = std::move(m_queuedParFiles);
 	m_queuedParFiles.clear();
-	m_queuedParFilesMutex.Unlock();
+	guard.Release();
 
 	for (CString& parFilename : moreFiles)
 	{
@@ -794,17 +802,15 @@ bool ParChecker::LoadMorePars()
 
 void ParChecker::AddParFile(const char * parFilename)
 {
-	m_queuedParFilesMutex.Lock();
+	Guard guard(m_queuedParFilesMutex);
 	m_queuedParFiles.push_back(parFilename);
 	m_queuedParFilesChanged = true;
-	m_queuedParFilesMutex.Unlock();
 }
 
 void ParChecker::QueueChanged()
 {
-	m_queuedParFilesMutex.Lock();
+	Guard guard(m_queuedParFilesMutex);
 	m_queuedParFilesChanged = true;
-	m_queuedParFilesMutex.Unlock();
 }
 
 bool ParChecker::AddSplittedFragments()
