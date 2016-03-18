@@ -51,12 +51,6 @@ void UnpackController::Run()
 {
 	time_t start = Util::CurrentTime();
 
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-
-	m_destDir = m_postInfo->GetNzbInfo()->GetDestDir();
-	m_finalDir = m_postInfo->GetNzbInfo()->GetFinalDir();
-	m_name = m_postInfo->GetNzbInfo()->GetName();
 	m_cleanedUpDisk = false;
 	m_finalDirCreated = false;
 	m_unpackOk = true;
@@ -67,16 +61,24 @@ void UnpackController::Run()
 	m_autoTerminated = false;
 	m_passListTried = false;
 
-	NzbParameter* parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
-	bool unpack = !(parameter && !strcasecmp(parameter->GetValue(), "no"));
+	bool unpack;
 
-	parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:Password", false);
-	if (parameter)
 	{
-		m_password = parameter->GetValue();
-	}
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
 
-	DownloadQueue::Unlock();
+		m_destDir = m_postInfo->GetNzbInfo()->GetDestDir();
+		m_finalDir = m_postInfo->GetNzbInfo()->GetFinalDir();
+		m_name = m_postInfo->GetNzbInfo()->GetName();
+
+		NzbParameter* parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
+		unpack = !(parameter && !strcasecmp(parameter->GetValue(), "no"));
+
+		parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:Password", false);
+		if (parameter)
+		{
+			m_password = parameter->GetValue();
+		}
+	}
 
 	m_infoName.Format("unpack for %s", *m_name);
 	m_infoNameUp.Format("Unpack for %s", *m_name); // first letter in upper case
@@ -590,9 +592,10 @@ void UnpackController::CreateUnpackDir()
 	{
 		m_finalDir = m_postInfo->GetNzbInfo()->BuildFinalDirName();
 
-		DownloadQueue::Lock();
-		m_postInfo->GetNzbInfo()->SetFinalDir(m_finalDir);
-		DownloadQueue::Unlock();
+		{
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
+			m_postInfo->GetNzbInfo()->SetFinalDir(m_finalDir);
+		}
 
 		destDir = m_finalDir;
 		m_finalDirCreated = !FileSystem::DirectoryExists(m_finalDir);
@@ -908,7 +911,6 @@ void UnpackController::Stop()
 
 void UnpackController::SetProgressLabel(const char* progressLabel)
 {
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	m_postInfo->SetProgressLabel(progressLabel);
-	DownloadQueue::Unlock();
 }

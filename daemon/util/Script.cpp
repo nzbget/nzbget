@@ -194,9 +194,7 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 {
 	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	Options::OptEntries* optEntries = g_Options->LockOptEntries();
-
-	for (Options::OptEntry& optEntry : optEntries)
+	for (Options::OptEntry& optEntry : *g_Options->GuardOptEntries())
 	{
 		if (stripPrefix && !strncmp(optEntry.GetName(), stripPrefix, prefixLen) &&
 			(int)strlen(optEntry.GetName()) > prefixLen)
@@ -208,8 +206,6 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 			SetEnvVarSpecial("NZBOP", optEntry.GetName(), optEntry.GetValue());
 		}
 	}
-
-	g_Options->UnlockOptEntries();
 }
 
 void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, const char* value)

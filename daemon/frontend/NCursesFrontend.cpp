@@ -332,19 +332,17 @@ void NCursesFrontend::CalcWindowSizes()
 int NCursesFrontend::CalcQueueSize()
 {
 	int queueSize = 0;
-	DownloadQueue* downloadQueue = LockQueue();
 	if (m_groupFiles)
 	{
-		queueSize = downloadQueue->GetQueue()->size();
+		queueSize = DownloadQueue::Guard()->GetQueue()->size();
 	}
 	else
 	{
-		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 		{
 			queueSize += nzbInfo->GetFileList()->size();
 		}
 	}
-	UnlockQueue();
 	return queueSize;
 }
 
@@ -450,12 +448,12 @@ void NCursesFrontend::PrintMessages()
 	int line = lineNr + m_messagesWinClientHeight - 1;
 	int linesToPrint = m_messagesWinClientHeight;
 
-	MessageList* messages = LockMessages();
+	GuardedMessageList messages = GuardMessages();
 
 	// print messages from bottom
 	for (int i = (int)messages->size() - 1; i >= 0 && linesToPrint > 0; i--)
 	{
-		int printedLines = PrintMessage((*messages)[i], line, linesToPrint);
+		int printedLines = PrintMessage(messages->at(i), line, linesToPrint);
 		line -= printedLines;
 		linesToPrint -= printedLines;
 	}
@@ -471,13 +469,11 @@ void NCursesFrontend::PrintMessages()
 		int linesToPrint2 = m_messagesWinClientHeight;
 		for (int i = (int)messages->size() - 1; i >= 0 && linesToPrint2 > 0; i--)
 		{
-			int printedLines = PrintMessage((*messages)[i], line, linesToPrint2);
+			int printedLines = PrintMessage(messages->at(i), line, linesToPrint2);
 			line -= printedLines;
 			linesToPrint2 -= printedLines;
 		}
 	}
-
-	UnlockMessages();
 }
 
 int NCursesFrontend::PrintMessage(Message& msg, int row, int maxLines)
@@ -658,15 +654,13 @@ void NCursesFrontend::PrintQueue()
 
 void NCursesFrontend::PrintFileQueue()
 {
-	DownloadQueue* downloadQueue = LockQueue();
-
 	int lineNr = m_queueWinTop + 1;
 	int64 remaining = 0;
 	int64 paused = 0;
 	int pausedFiles = 0;
 	int fileNum = 0;
 
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
@@ -700,8 +694,6 @@ void NCursesFrontend::PrintFileQueue()
 		PrintTopHeader(header, lineNr++, true);
 		PlotLine("Ready to receive nzb-job", lineNr++, 0, NCURSES_COLORPAIR_TEXT);
 	}
-
-	UnlockQueue();
 }
 
 void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
@@ -814,9 +806,10 @@ void NCursesFrontend::PrintTopHeader(char* header, int lineNr, bool upTime)
 
 void NCursesFrontend::PrintGroupQueue()
 {
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
 	int lineNr = m_queueWinTop;
 
-	DownloadQueue* downloadQueue = LockQueue();
 	if (downloadQueue->GetQueue()->empty())
 	{
 		BString<1024> buffer("%s NZBs for downloading", m_useColor ? "" : "*** ");
@@ -858,7 +851,6 @@ void NCursesFrontend::PrintGroupQueue()
 			*Util::FormatSize(remaining), *Util::FormatSize(remaining - paused));
 		PrintTopHeader(buffer, m_queueWinTop, false);
 	}
-	UnlockQueue();
 }
 
 void NCursesFrontend::ResetColWidths()
@@ -981,7 +973,7 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 
 	if (m_groupFiles)
 	{
-		DownloadQueue* downloadQueue = LockQueue();
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 		if (m_selectedQueueEntry >= 0 && m_selectedQueueEntry < (int)downloadQueue->GetQueue()->size())
 		{
 			std::unique_ptr<NzbInfo>& nzbInfo = downloadQueue->GetQueue()->at(m_selectedQueueEntry);
@@ -1005,7 +997,6 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 				}
 			}
 		}
-		UnlockQueue();
 
 		// map file-edit-actions to group-edit-actions
 		 DownloadQueue::EEditAction FileToGroupMap[] = {
@@ -1022,10 +1013,8 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 	}
 	else
 	{
-		DownloadQueue* downloadQueue = LockQueue();
-
 		int fileNum = 0;
-		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 		{
 			for (FileInfo* fileInfo : nzbInfo->GetFileList())
 			{
@@ -1040,8 +1029,6 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 				fileNum++;
 			}
 		}
-
-		UnlockQueue();
 	}
 
 	m_lastEditEntry = m_selectedQueueEntry;

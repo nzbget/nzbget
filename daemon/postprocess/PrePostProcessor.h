@@ -58,8 +58,7 @@ private:
 	void CheckPostQueue();
 	void JobCompleted(DownloadQueue* downloadQueue, PostInfo* postInfo);
 	void StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo);
-	void SaveQueue(DownloadQueue* downloadQueue);
-	void SanitisePostQueue(DownloadQueue* downloadQueue);
+	void SanitisePostQueue();
 	void UpdatePauseState(bool needPause, const char* reason);
 	void NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);

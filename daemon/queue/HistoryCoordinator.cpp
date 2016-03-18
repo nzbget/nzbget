@@ -37,7 +37,7 @@
  */
 void HistoryCoordinator::ServiceWork()
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	time_t minTime = Util::CurrentTime() - g_Options->GetKeepHistory() * 60*60*24;
 	bool changed = false;
@@ -81,8 +81,6 @@ void HistoryCoordinator::ServiceWork()
 	{
 		downloadQueue->Save();
 	}
-
-	DownloadQueue::Unlock();
 }
 
 void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)

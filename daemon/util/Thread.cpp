@@ -94,12 +94,12 @@ void Thread::Start()
 
 	m_running = true;
 
-	// NOTE: we must guarantee, that in a time we set m_bRunning
+	// NOTE: we must guarantee, that in a time we set m_running
 	// to value returned from pthread_create, the thread-object still exists.
-	// This is not obviously!
+	// This is not obvious!
 	// pthread_create could wait long enough before returning result
 	// back to allow the started thread to complete its job and terminate.
-	// We lock mutex m_pMutexThread on calling pthread_create; the started thread
+	// We lock mutex m_threadMutex on calling pthread_create; the started thread
 	// then also try to lock the mutex (see thread_handler) and therefore
 	// must wait until we unlock it
 	Guard guard(m_threadMutex);
@@ -190,6 +190,5 @@ void* Thread::thread_handler(void* object)
 int Thread::GetThreadCount()
 {
 	Guard guard(m_threadMutex);
-	int threadCount = m_threadCount;
-	return threadCount;
+	return m_threadCount;
 }

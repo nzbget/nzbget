@@ -281,11 +281,15 @@ void Repairer::RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t b
 	if (noiselevel > Par2::CommandLine::nlQuiet)
 	{
 		// Update a progress indicator
-		Guard guard(progresslock);
-		Par2::u32 oldfraction = (Par2::u32)(1000 * progress / totaldata);
-		progress += blocklength;
-		Par2::u32 newfraction = (Par2::u32)(1000 * progress / totaldata);
-		guard.Release();
+
+		Par2::u32 oldfraction;
+		Par2::u32 newfraction;
+		{
+			Guard guard(progresslock);
+			oldfraction = (Par2::u32)(1000 * progress / totaldata);
+			progress += blocklength;
+			newfraction = (Par2::u32)(1000 * progress / totaldata);
+		}
 
 		if (oldfraction != newfraction)
 		{
@@ -717,7 +721,7 @@ int ParChecker::ProcessMorePars()
 			PrintMessage(Message::mkInfo, "Need more %i par-block(s) for %s", missingblockcount, *m_infoName);
 		}
 
-		bool hasMorePars = false;
+		bool hasMorePars;
 		{
 			Guard guard(m_queuedParFilesMutex);
 			hasMorePars = !m_queuedParFiles.empty();
@@ -779,10 +783,12 @@ int ParChecker::ProcessMorePars()
 
 bool ParChecker::LoadMorePars()
 {
-	Guard guard(m_queuedParFilesMutex);
-	FileList moreFiles = std::move(m_queuedParFiles);
-	m_queuedParFiles.clear();
-	guard.Release();
+	FileList moreFiles;
+	{
+		Guard guard(m_queuedParFilesMutex);
+		moreFiles = std::move(m_queuedParFiles);
+		m_queuedParFiles.clear();
+	}
 
 	for (CString& parFilename : moreFiles)
 	{

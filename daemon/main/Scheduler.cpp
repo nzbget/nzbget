@@ -74,83 +74,83 @@ void Scheduler::CheckTasks()
 {
 	PrepareLog();
 
-	Guard guard(m_taskListMutex);
-
-	time_t current = Util::CurrentTime();
-
-	if (!m_taskList.empty())
 	{
-		// Detect large step changes of system time
-		time_t diff = current - m_lastCheck;
-		if (diff > 60*90 || diff < 0)
+		Guard guard(m_taskListMutex);
+
+		time_t current = Util::CurrentTime();
+
+		if (!m_taskList.empty())
 		{
-			debug("Reset scheduled tasks (detected clock change greater than 90 minutes or negative)");
-
-			// check all tasks for the last week
-			m_lastCheck = current - 60*60*24*7;
-			m_executeProcess = false;
-
-			for (Task* task : &m_taskList)
+			// Detect large step changes of system time
+			time_t diff = current - m_lastCheck;
+			if (diff > 60 * 90 || diff < 0)
 			{
-				task->m_lastExecuted = 0;
-			}
-		}
+				debug("Reset scheduled tasks (detected clock change greater than 90 minutes or negative)");
 
-		time_t localCurrent = current + g_Options->GetLocalTimeOffset();
-		time_t localLastCheck = m_lastCheck + g_Options->GetLocalTimeOffset();
+				// check all tasks for the last week
+				m_lastCheck = current - 60 * 60 * 24 * 7;
+				m_executeProcess = false;
 
-		tm tmCurrent;
-		gmtime_r(&localCurrent, &tmCurrent);
-		tm tmLastCheck;
-		gmtime_r(&localLastCheck, &tmLastCheck);
-
-		tm tmLoop;
-		memcpy(&tmLoop, &tmLastCheck, sizeof(tmLastCheck));
-		tmLoop.tm_hour = tmCurrent.tm_hour;
-		tmLoop.tm_min = tmCurrent.tm_min;
-		tmLoop.tm_sec = tmCurrent.tm_sec;
-		time_t loop = Util::Timegm(&tmLoop);
-
-		while (loop <= localCurrent)
-		{
-			for (Task* task : &m_taskList)
-			{
-				if (task->m_lastExecuted != loop)
+				for (Task* task : &m_taskList)
 				{
-					tm tmAppoint;
-					memcpy(&tmAppoint, &tmLoop, sizeof(tmLoop));
-					tmAppoint.tm_hour = task->m_hours;
-					tmAppoint.tm_min = task->m_minutes;
-					tmAppoint.tm_sec = 0;
-
-					time_t appoint = Util::Timegm(&tmAppoint);
-
-					int weekDay = tmAppoint.tm_wday;
-					if (weekDay == 0)
-					{
-						weekDay = 7;
-					}
-
-					bool weekDayOK = task->m_weekDaysBits == 0 || (task->m_weekDaysBits & (1 << (weekDay - 1)));
-					bool doTask = weekDayOK && localLastCheck < appoint && appoint <= localCurrent;
-
-					//debug("TEMP: 1) m_tLastCheck=%i, tLocalCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tLocalCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
-
-					if (doTask)
-					{
-						ExecuteTask(task);
-						task->m_lastExecuted = loop;
-					}
+					task->m_lastExecuted = 0;
 				}
 			}
-			loop += 60*60*24; // inc day
-			gmtime_r(&loop, &tmLoop);
+
+			time_t localCurrent = current + g_Options->GetLocalTimeOffset();
+			time_t localLastCheck = m_lastCheck + g_Options->GetLocalTimeOffset();
+
+			tm tmCurrent;
+			gmtime_r(&localCurrent, &tmCurrent);
+			tm tmLastCheck;
+			gmtime_r(&localLastCheck, &tmLastCheck);
+
+			tm tmLoop;
+			memcpy(&tmLoop, &tmLastCheck, sizeof(tmLastCheck));
+			tmLoop.tm_hour = tmCurrent.tm_hour;
+			tmLoop.tm_min = tmCurrent.tm_min;
+			tmLoop.tm_sec = tmCurrent.tm_sec;
+			time_t loop = Util::Timegm(&tmLoop);
+
+			while (loop <= localCurrent)
+			{
+				for (Task* task : &m_taskList)
+				{
+					if (task->m_lastExecuted != loop)
+					{
+						tm tmAppoint;
+						memcpy(&tmAppoint, &tmLoop, sizeof(tmLoop));
+						tmAppoint.tm_hour = task->m_hours;
+						tmAppoint.tm_min = task->m_minutes;
+						tmAppoint.tm_sec = 0;
+
+						time_t appoint = Util::Timegm(&tmAppoint);
+
+						int weekDay = tmAppoint.tm_wday;
+						if (weekDay == 0)
+						{
+							weekDay = 7;
+						}
+
+						bool weekDayOK = task->m_weekDaysBits == 0 || (task->m_weekDaysBits & (1 << (weekDay - 1)));
+						bool doTask = weekDayOK && localLastCheck < appoint && appoint <= localCurrent;
+
+						//debug("TEMP: 1) m_tLastCheck=%i, tLocalCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tLocalCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
+
+						if (doTask)
+						{
+							ExecuteTask(task);
+							task->m_lastExecuted = loop;
+						}
+					}
+				}
+				loop += 60 * 60 * 24; // inc day
+				gmtime_r(&loop, &tmLoop);
+			}
 		}
+
+		m_lastCheck = current;
 	}
-
-	m_lastCheck = current;
-
-	guard.Release();
 
 	PrintLog();
 }

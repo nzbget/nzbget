@@ -1684,14 +1684,3 @@ void Options::CheckOptions()
 		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", *m_unpackPassFile);
 	}
 }
-
-Options::OptEntries* Options::LockOptEntries()
-{
-	m_optEntriesMutex.Lock();
-	return &m_optEntries;
-}
-
-void Options::UnlockOptEntries()
-{
-	m_optEntriesMutex.Unlock();
-}

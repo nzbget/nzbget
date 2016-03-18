@@ -39,18 +39,16 @@ void MoveController::StartJob(PostInfo* postInfo)
 
 void MoveController::Run()
 {
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
+	BString<1024> nzbName;
+	{
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		nzbName = m_postInfo->GetNzbInfo()->GetName();
+		m_interDir = m_postInfo->GetNzbInfo()->GetDestDir();
+		m_destDir = m_postInfo->GetNzbInfo()->GetFinalDir();
+	}
 
-	BString<1024> nzbName = m_postInfo->GetNzbInfo()->GetName();
-
-	BString<1024> infoName("move for %s", m_postInfo->GetNzbInfo()->GetName());
+	BString<1024> infoName("move for %s", *nzbName);
 	SetInfoName(infoName);
-
-	m_interDir = m_postInfo->GetNzbInfo()->GetDestDir();
-	m_destDir = m_postInfo->GetNzbInfo()->GetFinalDir();
-
-	DownloadQueue::Unlock();
 
 	if (m_destDir.Empty())
 	{
@@ -67,11 +65,10 @@ void MoveController::Run()
 	{
 		PrintMessage(Message::mkInfo, "%s successful", *infoName);
 		// save new dest dir
-		DownloadQueue::Lock();
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
 		m_postInfo->GetNzbInfo()->SetDestDir(m_destDir);
 		m_postInfo->GetNzbInfo()->SetFinalDir("");
 		m_postInfo->GetNzbInfo()->SetMoveStatus(NzbInfo::msSuccess);
-		DownloadQueue::Unlock();
 	}
 	else
 	{
@@ -142,19 +139,18 @@ void CleanupController::StartJob(PostInfo* postInfo)
 
 void CleanupController::Run()
 {
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-
 	BString<1024> nzbName;
-	nzbName = m_postInfo->GetNzbInfo()->GetName();
+	CString destDir;
+	CString finalDir;
+	{
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		nzbName = m_postInfo->GetNzbInfo()->GetName();
+		destDir = m_postInfo->GetNzbInfo()->GetDestDir();
+		finalDir = m_postInfo->GetNzbInfo()->GetFinalDir();
+	}
 
-	BString<1024> infoName("cleanup for %s", m_postInfo->GetNzbInfo()->GetName());
+	BString<1024> infoName("cleanup for %s", *nzbName);
 	SetInfoName(infoName);
-
-	CString destDir = m_postInfo->GetNzbInfo()->GetDestDir();
-	CString finalDir = m_postInfo->GetNzbInfo()->GetFinalDir();
-
-	DownloadQueue::Unlock();
 
 	PrintMessage(Message::mkInfo, "Cleaning up %s", *nzbName);
 

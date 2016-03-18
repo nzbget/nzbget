@@ -40,8 +40,7 @@ public:
 
 	~Maintenance();
 	void AddMessage(Message::EKind kind, time_t time, const char* text);
-	MessageList* LockMessages();
-	void UnlockMessages();
+	GuardedMessageList GuardMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
 	bool StartUpdate(EBranch branch);
 	void ResetUpdateController();
 	bool CheckUpdates(CString& updateInfo);

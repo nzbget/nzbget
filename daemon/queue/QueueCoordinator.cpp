@@ -91,7 +91,7 @@ QueueCoordinator::~QueueCoordinator()
 
 void QueueCoordinator::Load()
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	bool statLoaded = true;
 	bool perfectServerMatch = true;
@@ -158,7 +158,6 @@ void QueueCoordinator::Load()
 	}
 
 	CoordinatorDownloadQueue::Loaded();
-	DownloadQueue::Unlock();
 }
 
 void QueueCoordinator::Run()
@@ -184,23 +183,24 @@ void QueueCoordinator::Run()
 			ArticleInfo* articleInfo;
 			bool freeConnection = false;
 
-			DownloadQueue* downloadQueue = DownloadQueue::Lock();
-			bool hasMoreArticles = GetNextArticle(downloadQueue, fileInfo, articleInfo);
-			articeDownloadsRunning = !m_activeDownloads.empty();
-			downloadsChecked = true;
-			m_hasMoreJobs = hasMoreArticles || articeDownloadsRunning;
-			if (hasMoreArticles && !IsStopped() && (int)m_activeDownloads.size() < m_downloadsLimit &&
-				(!g_Options->GetTempPauseDownload() || fileInfo->GetExtraPriority()))
 			{
-				StartArticleDownload(fileInfo, articleInfo, connection);
-				articeDownloadsRunning = true;
-				downloadStarted = true;
+				GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+				bool hasMoreArticles = GetNextArticle(downloadQueue, fileInfo, articleInfo);
+				articeDownloadsRunning = !m_activeDownloads.empty();
+				downloadsChecked = true;
+				m_hasMoreJobs = hasMoreArticles || articeDownloadsRunning;
+				if (hasMoreArticles && !IsStopped() && (int)m_activeDownloads.size() < m_downloadsLimit &&
+					(!g_Options->GetTempPauseDownload() || fileInfo->GetExtraPriority()))
+				{
+					StartArticleDownload(fileInfo, articleInfo, connection);
+					articeDownloadsRunning = true;
+					downloadStarted = true;
+				}
+				else
+				{
+					freeConnection = true;
+				}
 			}
-			else
-			{
-				freeConnection = true;
-			}
-			DownloadQueue::Unlock();
 
 			if (freeConnection)
 			{
@@ -210,9 +210,8 @@ void QueueCoordinator::Run()
 
 		if (!downloadsChecked)
 		{
-			DownloadQueue::Lock();
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
 			articeDownloadsRunning = !m_activeDownloads.empty();
-			DownloadQueue::Unlock();
 		}
 
 		bool standBy = !articeDownloadsRunning;
@@ -258,9 +257,10 @@ void QueueCoordinator::Run()
 	bool completed = false;
 	while (!completed)
 	{
-		DownloadQueue::Lock();
-		completed = m_activeDownloads.size() == 0;
-		DownloadQueue::Unlock();
+		{
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
+			completed = m_activeDownloads.size() == 0;
+		}
 		usleep(100 * 1000);
 		ResetHangingDownloads();
 	}
@@ -302,7 +302,7 @@ NzbInfo* QueueCoordinator::AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, N
 
 	NzbInfo* addedNzb = nzbInfo.get();
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	DownloadQueue::Aspect foundAspect = { DownloadQueue::eaNzbFound, downloadQueue, nzbInfo.get(), nullptr };
 	downloadQueue->Notify(&foundAspect);
@@ -372,8 +372,6 @@ NzbInfo* QueueCoordinator::AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, N
 
 	downloadQueue->Save();
 
-	DownloadQueue::Unlock();
-
 	return addedNzb;
 }
 
@@ -430,12 +428,11 @@ void QueueCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping ArticleDownloads");
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	for (ArticleDownloader* articleDownloader : m_activeDownloads)
 	{
 		articleDownloader->Stop();
 	}
-	DownloadQueue::Unlock();
 	debug("ArticleDownloads are notified");
 }
 
@@ -560,104 +557,106 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 	bool retry = false;
 	bool fileCompleted = false;
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	if (articleDownloader->GetStatus() == ArticleDownloader::adFinished)
-	{
-		articleInfo->SetStatus(ArticleInfo::aiFinished);
-		fileInfo->SetSuccessSize(fileInfo->GetSuccessSize() + articleInfo->GetSize());
-		nzbInfo->SetCurrentSuccessSize(nzbInfo->GetCurrentSuccessSize() + articleInfo->GetSize());
-		nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() + (fileInfo->GetParFile() ? articleInfo->GetSize() : 0));
-		fileInfo->SetSuccessArticles(fileInfo->GetSuccessArticles() + 1);
-		nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetCurrentSuccessArticles() + 1);
-	}
-	else if (articleDownloader->GetStatus() == ArticleDownloader::adFailed)
-	{
-		articleInfo->SetStatus(ArticleInfo::aiFailed);
-		fileInfo->SetFailedSize(fileInfo->GetFailedSize() + articleInfo->GetSize());
-		nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() + articleInfo->GetSize());
-		nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() + (fileInfo->GetParFile() ? articleInfo->GetSize() : 0));
-		fileInfo->SetFailedArticles(fileInfo->GetFailedArticles() + 1);
-		nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() + 1);
-	}
-	else if (articleDownloader->GetStatus() == ArticleDownloader::adRetry)
-	{
-		articleInfo->SetStatus(ArticleInfo::aiUndefined);
-		retry = true;
-	}
-
-	if (!retry)
-	{
-		fileInfo->SetRemainingSize(fileInfo->GetRemainingSize() - articleInfo->GetSize());
-		nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() - articleInfo->GetSize());
-		if (fileInfo->GetPaused())
+		if (articleDownloader->GetStatus() == ArticleDownloader::adFinished)
 		{
-			nzbInfo->SetPausedSize(nzbInfo->GetPausedSize() - articleInfo->GetSize());
+			articleInfo->SetStatus(ArticleInfo::aiFinished);
+			fileInfo->SetSuccessSize(fileInfo->GetSuccessSize() + articleInfo->GetSize());
+			nzbInfo->SetCurrentSuccessSize(nzbInfo->GetCurrentSuccessSize() + articleInfo->GetSize());
+			nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() + (fileInfo->GetParFile() ? articleInfo->GetSize() : 0));
+			fileInfo->SetSuccessArticles(fileInfo->GetSuccessArticles() + 1);
+			nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetCurrentSuccessArticles() + 1);
 		}
-		fileInfo->SetCompletedArticles(fileInfo->GetCompletedArticles() + 1);
-		fileCompleted = (int)fileInfo->GetArticles()->size() == fileInfo->GetCompletedArticles();
-		fileInfo->GetServerStats()->ListOp(articleDownloader->GetServerStats(), ServerStatList::soAdd);
-		nzbInfo->GetCurrentServerStats()->ListOp(articleDownloader->GetServerStats(), ServerStatList::soAdd);
-		fileInfo->SetPartialChanged(true);
-	}
-
-	if (!fileInfo->GetFilenameConfirmed() &&
-		articleDownloader->GetStatus() == ArticleDownloader::adFinished &&
-		articleDownloader->GetArticleFilename())
-	{
-		fileInfo->SetFilename(articleDownloader->GetArticleFilename());
-		fileInfo->SetFilenameConfirmed(true);
-		if (g_Options->GetDupeCheck() &&
-			nzbInfo->GetDupeMode() != dmForce &&
-			!nzbInfo->GetManyDupeFiles() &&
-			FileSystem::FileExists(nzbInfo->GetDestDir(), fileInfo->GetFilename()))
+		else if (articleDownloader->GetStatus() == ArticleDownloader::adFailed)
 		{
-			warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", fileInfo->GetFilename());
-			fileCompleted = false;
-			fileInfo->SetAutoDeleted(true);
-			DeleteQueueEntry(downloadQueue, fileInfo);
+			articleInfo->SetStatus(ArticleInfo::aiFailed);
+			fileInfo->SetFailedSize(fileInfo->GetFailedSize() + articleInfo->GetSize());
+			nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() + articleInfo->GetSize());
+			nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() + (fileInfo->GetParFile() ? articleInfo->GetSize() : 0));
+			fileInfo->SetFailedArticles(fileInfo->GetFailedArticles() + 1);
+			nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() + 1);
 		}
-	}
+		else if (articleDownloader->GetStatus() == ArticleDownloader::adRetry)
+		{
+			articleInfo->SetStatus(ArticleInfo::aiUndefined);
+			retry = true;
+		}
 
-	nzbInfo->SetDownloadedSize(nzbInfo->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
+		if (!retry)
+		{
+			fileInfo->SetRemainingSize(fileInfo->GetRemainingSize() - articleInfo->GetSize());
+			nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() - articleInfo->GetSize());
+			if (fileInfo->GetPaused())
+			{
+				nzbInfo->SetPausedSize(nzbInfo->GetPausedSize() - articleInfo->GetSize());
+			}
+			fileInfo->SetCompletedArticles(fileInfo->GetCompletedArticles() + 1);
+			fileCompleted = (int)fileInfo->GetArticles()->size() == fileInfo->GetCompletedArticles();
+			fileInfo->GetServerStats()->ListOp(articleDownloader->GetServerStats(), ServerStatList::soAdd);
+			nzbInfo->GetCurrentServerStats()->ListOp(articleDownloader->GetServerStats(), ServerStatList::soAdd);
+			fileInfo->SetPartialChanged(true);
+		}
+
+		if (!fileInfo->GetFilenameConfirmed() &&
+			articleDownloader->GetStatus() == ArticleDownloader::adFinished &&
+			articleDownloader->GetArticleFilename())
+		{
+			fileInfo->SetFilename(articleDownloader->GetArticleFilename());
+			fileInfo->SetFilenameConfirmed(true);
+			if (g_Options->GetDupeCheck() &&
+				nzbInfo->GetDupeMode() != dmForce &&
+				!nzbInfo->GetManyDupeFiles() &&
+				FileSystem::FileExists(nzbInfo->GetDestDir(), fileInfo->GetFilename()))
+			{
+				warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", fileInfo->GetFilename());
+				fileCompleted = false;
+				fileInfo->SetAutoDeleted(true);
+				DeleteQueueEntry(downloadQueue, fileInfo);
+			}
+		}
+
+		nzbInfo->SetDownloadedSize(nzbInfo->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
+	}
 
 	bool deleteFileObj = false;
 
 	if (fileCompleted && !fileInfo->GetDeleted())
 	{
 		// all jobs done
-		DownloadQueue::Unlock();
 		articleDownloader->CompleteFileParts();
-		downloadQueue = DownloadQueue::Lock();
 		deleteFileObj = true;
 	}
 
-	CheckHealth(downloadQueue, fileInfo);
-
-	bool hasOtherDownloaders = false;
-	for (ArticleDownloader* downloader : m_activeDownloads)
 	{
-		if (downloader != articleDownloader && downloader->GetFileInfo() == fileInfo)
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+		CheckHealth(downloadQueue, fileInfo);
+
+		bool hasOtherDownloaders = false;
+		for (ArticleDownloader* downloader : m_activeDownloads)
 		{
-			hasOtherDownloaders = true;
-			break;
+			if (downloader != articleDownloader && downloader->GetFileInfo() == fileInfo)
+			{
+				hasOtherDownloaders = true;
+				break;
+			}
+		}
+		deleteFileObj |= fileInfo->GetDeleted() && !hasOtherDownloaders;
+
+		// remove downloader from downloader list
+		m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), articleDownloader));
+
+		fileInfo->SetActiveDownloads(fileInfo->GetActiveDownloads() - 1);
+		nzbInfo->SetActiveDownloads(nzbInfo->GetActiveDownloads() - 1);
+
+		if (deleteFileObj)
+		{
+			DeleteFileInfo(downloadQueue, fileInfo, fileCompleted);
+			downloadQueue->Save();
 		}
 	}
-	deleteFileObj |= fileInfo->GetDeleted() && !hasOtherDownloaders;
-
-	// remove downloader from downloader list
-	m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), articleDownloader));
-
-	fileInfo->SetActiveDownloads(fileInfo->GetActiveDownloads() - 1);
-	nzbInfo->SetActiveDownloads(nzbInfo->GetActiveDownloads() - 1);
-
-	if (deleteFileObj)
-	{
-		DeleteFileInfo(downloadQueue, fileInfo, fileCompleted);
-		downloadQueue->Save();
-	}
-
-	DownloadQueue::Unlock();
 }
 
 void QueueCoordinator::StatFileInfo(FileInfo* fileInfo, bool completed)
@@ -777,9 +776,7 @@ void QueueCoordinator::SavePartialState()
 		return;
 	}
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
@@ -791,8 +788,6 @@ void QueueCoordinator::SavePartialState()
 			}
 		}
 	}
-
-	DownloadQueue::Unlock();
 }
 
 void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo)
@@ -827,7 +822,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 
 void QueueCoordinator::LogDebugInfo()
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	info("   ---------- Queue");
 	int64 remaining, remainingForced;
@@ -844,7 +839,6 @@ void QueueCoordinator::LogDebugInfo()
 	{
 		articleDownloader->LogDebugInfo();
 	}
-	DownloadQueue::Unlock();
 }
 
 void QueueCoordinator::ResetHangingDownloads()
@@ -854,7 +848,7 @@ void QueueCoordinator::ResetHangingDownloads()
 		return;
 	}
 
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	time_t tm = Util::CurrentTime();
 
 	m_activeDownloads.erase(std::remove_if(m_activeDownloads.begin(), m_activeDownloads.end(),
@@ -897,8 +891,6 @@ void QueueCoordinator::ResetHangingDownloads()
 			return false;
 		}),
 		m_activeDownloads.end());
-
-	DownloadQueue::Unlock();
 }
 
 /*

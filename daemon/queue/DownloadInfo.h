@@ -164,8 +164,7 @@ public:
 	void SetCompletedArticles(int completedArticles) { m_completedArticles = completedArticles; }
 	bool GetParFile() { return m_parFile; }
 	void SetParFile(bool parFile) { m_parFile = parFile; }
-	void LockOutputFile();
-	void UnlockOutputFile();
+	Guard GuardOutputFile() { return Guard(m_outputFileMutex); }
 	const char* GetOutputFilename() { return m_outputFilename; }
 	void SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
 	bool GetOutputInitialized() { return m_outputInitialized; }
@@ -559,8 +558,7 @@ public:
 	int GetMessageCount() { return m_messageCount; }
 	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }
 	int GetCachedMessageCount() { return m_cachedMessageCount; }
-	MessageList* LockCachedMessages();
-	void UnlockCachedMessages();
+	GuardedMessageList GuardCachedMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
 
 	static const int FORCE_PRIORITY = 900;
 
@@ -815,6 +813,8 @@ private:
 
 typedef UniqueDeque<HistoryInfo> HistoryList;
 
+typedef GuardedPtr<DownloadQueue> GuardedDownloadQueue;
+
 class DownloadQueue : public Subject
 {
 public:
@@ -894,8 +894,7 @@ public:
 	};
 
 	static bool IsLoaded() { return g_Loaded; }
-	static DownloadQueue* Lock();
-	static void Unlock();
+	static GuardedDownloadQueue Guard() { return GuardedDownloadQueue(g_DownloadQueue, &g_DownloadQueue->m_lockMutex); }
 	NzbList* GetQueue() { return &m_queue; }
 	HistoryList* GetHistory() { return &m_history; }
 	virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text) = 0;

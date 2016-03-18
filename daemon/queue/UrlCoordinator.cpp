@@ -90,7 +90,7 @@ void UrlCoordinator::Run()
 		if (!g_Options->GetPauseDownload() || g_Options->GetUrlForce())
 		{
 			// start download for next URL
-			DownloadQueue* downloadQueue = DownloadQueue::Lock();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 			if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
 			{
 				NzbInfo* nzbInfo = GetNextUrl(downloadQueue);
@@ -103,7 +103,6 @@ void UrlCoordinator::Run()
 					downloadStarted = true;
 				}
 			}
-			DownloadQueue::Unlock();
 		}
 
 		int sleepInterval = downloadStarted ? 0 : 100;
@@ -123,9 +122,10 @@ void UrlCoordinator::Run()
 	bool completed = false;
 	while (!completed)
 	{
-		DownloadQueue::Lock();
-		completed = m_activeDownloads.size() == 0;
-		DownloadQueue::Unlock();
+		{
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
+			completed = m_activeDownloads.size() == 0;
+		}
 		usleep(100 * 1000);
 		ResetHangingDownloads();
 	}
@@ -139,12 +139,11 @@ void UrlCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping UrlDownloads");
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	for (UrlDownloader* urlDownloader : m_activeDownloads)
 	{
 		urlDownloader->Stop();
 	}
-	DownloadQueue::Unlock();
 	debug("UrlDownloads are notified");
 }
 
@@ -156,7 +155,7 @@ void UrlCoordinator::ResetHangingDownloads()
 		return;
 	}
 
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	time_t tm = Util::CurrentTime();
 
 	m_activeDownloads.erase(std::remove_if(m_activeDownloads.begin(), m_activeDownloads.end(),
@@ -185,21 +184,18 @@ void UrlCoordinator::ResetHangingDownloads()
 			return false;
 		}),
 		m_activeDownloads.end());
-
-	DownloadQueue::Unlock();
 }
 
 void UrlCoordinator::LogDebugInfo()
 {
 	info("   ---------- UrlCoordinator");
 
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	info("    Active Downloads: %i", (int)m_activeDownloads.size());
 	for (UrlDownloader* urlDownloader : m_activeDownloads)
 	{
 		urlDownloader->LogDebugInfo();
 	}
-	DownloadQueue::Unlock();
 }
 
 /*
@@ -282,41 +278,43 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 	debug("Filename: [%s]", *filename);
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	bool retry;
 
-	// remove downloader from downloader list
-	m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), urlDownloader));
-
-	nzbInfo->SetActiveDownloads(0);
-
-	bool retry = urlDownloader->GetStatus() == WebDownloader::adRetry && !nzbInfo->GetDeleting();
-
-	if (nzbInfo->GetDeleting())
 	{
-		nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
-		nzbInfo->SetUrlStatus(NzbInfo::lsNone);
-		nzbInfo->SetDeleting(false);
-	}
-	else if (urlDownloader->GetStatus() == WebDownloader::adFinished)
-	{
-		nzbInfo->SetUrlStatus(NzbInfo::lsFinished);
-	}
-	else if (urlDownloader->GetStatus() == WebDownloader::adFailed)
-	{
-		nzbInfo->SetUrlStatus(NzbInfo::lsFailed);
-	}
-	else if (urlDownloader->GetStatus() == WebDownloader::adRetry)
-	{
-		nzbInfo->SetUrlStatus(NzbInfo::lsNone);
-	}
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	if (!retry)
-	{
-		DownloadQueue::Aspect aspect = { DownloadQueue::eaUrlCompleted, downloadQueue, nzbInfo, nullptr };
-		downloadQueue->Notify(&aspect);
-	}
+		// remove downloader from downloader list
+		m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), urlDownloader));
 
-	DownloadQueue::Unlock();
+		nzbInfo->SetActiveDownloads(0);
+
+		retry = urlDownloader->GetStatus() == WebDownloader::adRetry && !nzbInfo->GetDeleting();
+
+		if (nzbInfo->GetDeleting())
+		{
+			nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
+			nzbInfo->SetUrlStatus(NzbInfo::lsNone);
+			nzbInfo->SetDeleting(false);
+		}
+		else if (urlDownloader->GetStatus() == WebDownloader::adFinished)
+		{
+			nzbInfo->SetUrlStatus(NzbInfo::lsFinished);
+		}
+		else if (urlDownloader->GetStatus() == WebDownloader::adFailed)
+		{
+			nzbInfo->SetUrlStatus(NzbInfo::lsFailed);
+		}
+		else if (urlDownloader->GetStatus() == WebDownloader::adRetry)
+		{
+			nzbInfo->SetUrlStatus(NzbInfo::lsNone);
+		}
+
+		if (!retry)
+		{
+			DownloadQueue::Aspect aspect = {DownloadQueue::eaUrlCompleted, downloadQueue, nzbInfo, nullptr};
+			downloadQueue->Notify(&aspect);
+		}
+	}
 
 	if (retry)
 	{
@@ -347,24 +345,26 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 	g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeUrlCompleted);
 
-	downloadQueue = DownloadQueue::Lock();
+	std::unique_ptr<NzbInfo> oldNzbInfo;
 
-	// delete URL from queue
-	std::unique_ptr<NzbInfo> oldNzbInfo = downloadQueue->GetQueue()->Remove(nzbInfo);
-
-	// add failed URL to history
-	if (g_Options->GetKeepHistory() > 0 &&
-		nzbInfo->GetUrlStatus() != NzbInfo::lsFinished &&
-		!nzbInfo->GetAvoidHistory())
 	{
-		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
-		historyInfo->SetTime(Util::CurrentTime());
-		downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+		// delete URL from queue
+		oldNzbInfo = downloadQueue->GetQueue()->Remove(nzbInfo);
+
+		// add failed URL to history
+		if (g_Options->GetKeepHistory() > 0 &&
+			nzbInfo->GetUrlStatus() != NzbInfo::lsFinished &&
+			!nzbInfo->GetAvoidHistory())
+		{
+			std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
+			historyInfo->SetTime(Util::CurrentTime());
+			downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
+		}
+
+		downloadQueue->Save();
 	}
-
-	downloadQueue->Save();
-
-	DownloadQueue::Unlock();
 
 	if (oldNzbInfo)
 	{

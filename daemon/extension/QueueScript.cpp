@@ -96,7 +96,7 @@ void QueueScriptController::Run()
 
 	if (m_markBad)
 	{
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
 		if (nzbInfo)
 		{
@@ -104,7 +104,6 @@ void QueueScriptController::Run()
 			nzbInfo->SetDeleteStatus(NzbInfo::dsBad);
 			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, 0, nullptr);
 		}
-		DownloadQueue::Unlock();
 	}
 
 	g_QueueScriptCoordinator->CheckQueue();
@@ -173,13 +172,12 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 			if (value)
 			{
 				*value = '\0';
-				DownloadQueue* downloadQueue = DownloadQueue::Lock();
+				GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 				NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 				if (nzbInfo)
 				{
 					nzbInfo->GetParameters()->SetParameter(param, value + 1);
 				}
-				DownloadQueue::Unlock();
 			}
 			else
 			{
@@ -189,18 +187,17 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 		else if (!strncmp(msgText + 6, "DIRECTORY=", 10) &&
 			m_event == QueueScriptCoordinator::qeNzbDownloaded)
 		{
-			DownloadQueue* downloadQueue = DownloadQueue::Lock();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 			NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 			if (nzbInfo)
 			{
 				nzbInfo->SetFinalDir(msgText + 6 + 10);
 			}
-			DownloadQueue::Unlock();
 		}
 		else if (!strncmp(msgText + 6, "MARK=BAD", 8))
 		{
 			m_markBad = true;
-			DownloadQueue* downloadQueue = DownloadQueue::Lock();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 			NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 			if (nzbInfo)
 			{
@@ -209,7 +206,6 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 				SetLogPrefix(m_script->GetDisplayName());
 				nzbInfo->SetMarkStatus(NzbInfo::ksBad);
 			}
-			DownloadQueue::Unlock();
 		}
 		else
 		{
@@ -218,13 +214,15 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 	}
 	else
 	{
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
-		if (nzbInfo)
+		NzbInfo* nzbInfo = nullptr;
 		{
-			nzbInfo->AddMessage(kind, text);
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+			nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
+			if (nzbInfo)
+			{
+				nzbInfo->AddMessage(kind, text);
+			}
 		}
-		DownloadQueue::Unlock();
 
 		if (!nzbInfo)
 		{
@@ -414,7 +412,7 @@ void QueueScriptCoordinator::CheckQueue()
 
 	m_curItem.reset();
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 	Guard guard(m_queueMutex);
 
 	NzbInfo* curNzbInfo = nullptr;
@@ -450,9 +448,6 @@ void QueueScriptCoordinator::CheckQueue()
 		m_queue.erase(itCurItem);
 		QueueScriptController::StartScript(curNzbInfo, m_curItem->GetScript(), m_curItem->GetEvent());
 	}
-
-	guard.Release();
-	DownloadQueue::Unlock();
 }
 
 bool QueueScriptCoordinator::HasJob(int nzbId, bool* active)

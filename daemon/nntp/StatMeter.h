@@ -71,6 +71,7 @@ private:
 };
 
 typedef std::vector<ServerVolume> ServerVolumes;
+typedef GuardedPtr<ServerVolumes> GuardedServerVolumes;
 
 class StatMeter : public Debuggable
 {
@@ -120,8 +121,7 @@ public:
 	bool GetStandBy() { return m_standBy; }
 	void IntervalCheck();
 	void EnterLeaveStandBy(bool enter);
-	ServerVolumes* LockServerVolumes();
-	void UnlockServerVolumes();
+	GuardedServerVolumes GuardServerVolumes();
 	void Save();
 	bool Load(bool* perfectServerMatch);
 };

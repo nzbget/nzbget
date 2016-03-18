@@ -42,16 +42,6 @@ CachedSegmentData& CachedSegmentData::operator=(CachedSegmentData&& other)
 }
 
 
-ArticleWriter::~ArticleWriter()
-{
-	debug("Destroying ArticleWriter");
-
-	if (m_flushing)
-	{
-		g_ArticleCache->UnlockFlush();
-	}
-}
-
 void ArticleWriter::SetWriteBuffer(DiskFile& outFile, int recSize)
 {
 	if (g_Options->GetWriteBuffer() > 0)
@@ -83,13 +73,16 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 			m_fileInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
 			!m_fileInfo->GetNzbInfo()->GetManyDupeFiles())
 		{
-			m_fileInfo->LockOutputFile();
-			bool outputInitialized = m_fileInfo->GetOutputInitialized();
-			if (!g_Options->GetDirectWrite())
+			bool outputInitialized;
 			{
-				m_fileInfo->SetOutputInitialized(true);
+				Guard guard = m_fileInfo->GuardOutputFile();
+				outputInitialized = m_fileInfo->GetOutputInitialized();
+				if (!g_Options->GetDirectWrite())
+				{
+					m_fileInfo->SetOutputInitialized(true);
+				}
 			}
-			m_fileInfo->UnlockOutputFile();
+
 			if (!outputInitialized && filename &&
 				FileSystem::FileExists(m_fileInfo->GetNzbInfo()->GetDestDir(), filename))
 			{
@@ -100,17 +93,15 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 
 		if (g_Options->GetDirectWrite())
 		{
-			m_fileInfo->LockOutputFile();
+			Guard guard = m_fileInfo->GuardOutputFile();
 			if (!m_fileInfo->GetOutputInitialized())
 			{
 				if (!CreateOutputFile(fileSize))
 				{
-					m_fileInfo->UnlockOutputFile();
 					return false;
 				}
 				m_fileInfo->SetOutputInitialized(true);
 			}
-			m_fileInfo->UnlockOutputFile();
 		}
 	}
 
@@ -208,10 +199,9 @@ void ArticleWriter::Finish(bool success)
 			{
 				g_ArticleCache->Realloc(&m_articleData, m_articlePtr);
 			}
-			g_ArticleCache->LockContent();
+			Guard contentGuard = g_ArticleCache->GuardContent();
 			m_articleInfo->AttachSegment(std::make_unique<CachedSegmentData>(std::move(m_articleData)), m_articleOffset, m_articlePtr);
 			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() + 1);
-			g_ArticleCache->UnlockContent();
 		}
 		else
 		{
@@ -276,7 +266,7 @@ void ArticleWriter::BuildOutputFilename()
 
 	if (g_Options->GetDirectWrite())
 	{
-		m_fileInfo->LockOutputFile();
+		Guard guard = m_fileInfo->GuardOutputFile();
 
 		if (m_fileInfo->GetOutputFilename())
 		{
@@ -289,8 +279,6 @@ void ArticleWriter::BuildOutputFilename()
 			m_fileInfo->SetOutputFilename(filename);
 		}
 
-		m_fileInfo->UnlockOutputFile();
-
 		m_outputFilename = *filename;
 	}
 }
@@ -302,15 +290,14 @@ void ArticleWriter::CompleteFileParts()
 
 	bool directWrite = g_Options->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
 
-	CString errmsg;
 	BString<1024> nzbName;
 	BString<1024> nzbDestDir;
 
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	nzbName = m_fileInfo->GetNzbInfo()->GetName();
-	nzbDestDir = m_fileInfo->GetNzbInfo()->GetDestDir();
-	DownloadQueue::Unlock();
+	{
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		nzbName = m_fileInfo->GetNzbInfo()->GetName();
+		nzbDestDir = m_fileInfo->GetNzbInfo()->GetDestDir();
+	}
 
 	BString<1024> infoFilename("%s%c%s", *nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
 
@@ -334,6 +321,7 @@ void ArticleWriter::CompleteFileParts()
 	}
 
 	// Ensure the DstDir is created
+	CString errmsg;
 	if (!FileSystem::ForceDirectories(nzbDestDir, errmsg))
 	{
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
@@ -382,91 +370,88 @@ void ArticleWriter::CompleteFileParts()
 		SetWriteBuffer(outfile, 0);
 	}
 
-	if (cached)
-	{
-		g_ArticleCache->LockFlush();
-		m_flushing = true;
-	}
-
-	CharBuffer buffer;
-	bool firstArticle = true;
 	uint32 crc = 0;
 
-	if (g_Options->GetDecode() && !directWrite)
 	{
-		buffer.Reserve(1024 * 64);
-	}
-
-	for (ArticleInfo* pa : m_fileInfo->GetArticles())
-	{
-		if (pa->GetStatus() != ArticleInfo::aiFinished)
+		std::unique_ptr<ArticleCache::FlushGuard> flushGuard;
+		if (cached)
 		{
-			continue;
+			flushGuard = std::make_unique<ArticleCache::FlushGuard>(g_ArticleCache->GuardFlush());
 		}
 
-		if (g_Options->GetDecode() && !directWrite && pa->GetSegmentOffset() > -1 &&
-			pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1)
+		CharBuffer buffer;
+		bool firstArticle = true;
+
+		if (g_Options->GetDecode() && !directWrite)
 		{
-			memset(buffer, 0, buffer.Size());
-			while (pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1 &&
-				outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), buffer.Size()))) ;
+			buffer.Reserve(1024 * 64);
 		}
 
-		if (pa->GetSegmentContent())
+		for (ArticleInfo* pa : m_fileInfo->GetArticles())
 		{
-			outfile.Seek(pa->GetSegmentOffset());
-			outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
-			pa->DiscardSegment();
-			SetLastUpdateTimeNow();
-		}
-		else if (g_Options->GetDecode() && !directWrite)
-		{
-			DiskFile infile;
-			if (pa->GetResultFilename() && infile.Open(pa->GetResultFilename(), DiskFile::omRead))
+			if (pa->GetStatus() != ArticleInfo::aiFinished)
 			{
-				int cnt = buffer.Size();
-				while (cnt == buffer.Size())
+				continue;
+			}
+
+			if (g_Options->GetDecode() && !directWrite && pa->GetSegmentOffset() > -1 &&
+				pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1)
+			{
+				memset(buffer, 0, buffer.Size());
+				while (pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1 &&
+					outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), buffer.Size())));
+			}
+
+			if (pa->GetSegmentContent())
+			{
+				outfile.Seek(pa->GetSegmentOffset());
+				outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
+				pa->DiscardSegment();
+				SetLastUpdateTimeNow();
+			}
+			else if (g_Options->GetDecode() && !directWrite)
+			{
+				DiskFile infile;
+				if (pa->GetResultFilename() && infile.Open(pa->GetResultFilename(), DiskFile::omRead))
 				{
-					cnt = (int)infile.Read(buffer, buffer.Size());
-					outfile.Write(buffer, cnt);
-					SetLastUpdateTimeNow();
+					int cnt = buffer.Size();
+					while (cnt == buffer.Size())
+					{
+						cnt = (int)infile.Read(buffer, buffer.Size());
+						outfile.Write(buffer, cnt);
+						SetLastUpdateTimeNow();
+					}
+					infile.Close();
 				}
-				infile.Close();
+				else
+				{
+					m_fileInfo->SetFailedArticles(m_fileInfo->GetFailedArticles() + 1);
+					m_fileInfo->SetSuccessArticles(m_fileInfo->GetSuccessArticles() - 1);
+					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+						"Could not find file %s for %s%c%s [%i/%i]",
+						pa->GetResultFilename(), *nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename(),
+						pa->GetPartNumber(), (int)m_fileInfo->GetArticles()->size());
+				}
 			}
-			else
+			else if (!g_Options->GetDecode())
 			{
-				m_fileInfo->SetFailedArticles(m_fileInfo->GetFailedArticles() + 1);
-				m_fileInfo->SetSuccessArticles(m_fileInfo->GetSuccessArticles() - 1);
-				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-					"Could not find file %s for %s%c%s [%i/%i]",
-					pa->GetResultFilename(), *nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename(),
-					pa->GetPartNumber(), (int)m_fileInfo->GetArticles()->size());
+				BString<1024> dstFileName("%s%c%03i", *ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
+				if (!FileSystem::MoveFile(pa->GetResultFilename(), dstFileName))
+				{
+					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+						"Could not move file %s to %s: %s", pa->GetResultFilename(),
+						*dstFileName, *FileSystem::GetLastErrorMessage());
+				}
 			}
-		}
-		else if (!g_Options->GetDecode())
-		{
-			BString<1024> dstFileName("%s%c%03i", *ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
-			if (!FileSystem::MoveFile(pa->GetResultFilename(), dstFileName))
+
+			if (m_format == Decoder::efYenc)
 			{
-				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-					"Could not move file %s to %s: %s", pa->GetResultFilename(),
-					*dstFileName, *FileSystem::GetLastErrorMessage());
+				crc = firstArticle ? pa->GetCrc() : Util::Crc32Combine(crc, pa->GetCrc(), pa->GetSegmentSize());
+				firstArticle = false;
 			}
 		}
 
-		if (m_format == Decoder::efYenc)
-		{
-			crc = firstArticle ? pa->GetCrc() : Util::Crc32Combine(crc, pa->GetCrc(), pa->GetSegmentSize());
-			firstArticle = false;
-		}
-	}
-
-	buffer.Clear();
-
-	if (cached)
-	{
-		g_ArticleCache->UnlockFlush();
-		m_flushing = false;
+		buffer.Clear();
 	}
 
 	if (outfile.Active())
@@ -550,16 +535,16 @@ void ArticleWriter::CompleteFileParts()
 		m_fileInfo->GetSuccessArticles() > 0 ? CompletedFile::cfPartial :
 		CompletedFile::cfFailure;
 
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	m_fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(
-		m_fileInfo->GetId(), FileSystem::BaseFileName(ofn), fileStatus, crc);
-	if (strcmp(m_fileInfo->GetNzbInfo()->GetDestDir(), nzbDestDir))
 	{
-		// destination directory was changed during completion, need to move the file
-		MoveCompletedFiles(m_fileInfo->GetNzbInfo(), nzbDestDir);
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		m_fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(
+			m_fileInfo->GetId(), FileSystem::BaseFileName(ofn), fileStatus, crc);
+		if (strcmp(m_fileInfo->GetNzbInfo()->GetDestDir(), nzbDestDir))
+		{
+			// destination directory was changed during completion, need to move the file
+			MoveCompletedFiles(m_fileInfo->GetNzbInfo(), nzbDestDir);
+		}
 	}
-	DownloadQueue::Unlock();
 }
 
 void ArticleWriter::FlushCache()
@@ -572,94 +557,96 @@ void ArticleWriter::FlushCache()
 	int flushedArticles = 0;
 	int64 flushedSize = 0;
 
-	g_ArticleCache->LockFlush();
-
-	std::vector<ArticleInfo*> cachedArticles;
-	cachedArticles.reserve(m_fileInfo->GetArticles()->size());
-
-	g_ArticleCache->LockContent();
-	for (ArticleInfo* pa : m_fileInfo->GetArticles())
 	{
-		if (pa->GetSegmentContent())
-		{
-			cachedArticles.push_back(pa);
-		}
-	}
-	g_ArticleCache->UnlockContent();
+		ArticleCache::FlushGuard flushGuard = g_ArticleCache->GuardFlush();
 
-	for (ArticleInfo* pa : cachedArticles)
-	{
-		if (m_fileInfo->GetDeleted())
-		{
-			// the file was deleted during flushing: stop flushing immediately
-			break;
-		}
+		std::vector<ArticleInfo*> cachedArticles;
+		cachedArticles.reserve(m_fileInfo->GetArticles()->size());
 
-		if (directWrite && !outfile.Active())
 		{
-			if (!outfile.Open(m_fileInfo->GetOutputFilename(), DiskFile::omReadWrite))
+			Guard contentGuard = g_ArticleCache->GuardContent();
+			for (ArticleInfo* pa : m_fileInfo->GetArticles())
 			{
-				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-					"Could not open file %s: %s", m_fileInfo->GetOutputFilename(),
-					*FileSystem::GetLastErrorMessage());
+				if (pa->GetSegmentContent())
+				{
+					cachedArticles.push_back(pa);
+				}
+			}
+		}
+
+		for (ArticleInfo* pa : cachedArticles)
+		{
+			if (m_fileInfo->GetDeleted())
+			{
+				// the file was deleted during flushing: stop flushing immediately
 				break;
 			}
-			needBufFile = true;
-		}
 
-		BString<1024> destFile;
-
-		if (!directWrite)
-		{
-			destFile.Format("%s.tmp", pa->GetResultFilename());
-			if (!outfile.Open(destFile, DiskFile::omWrite))
+			if (directWrite && !outfile.Active())
 			{
-				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-					"Could not create file %s: %s", *destFile,
-					*FileSystem::GetLastErrorMessage());
-				break;
+				if (!outfile.Open(m_fileInfo->GetOutputFilename(), DiskFile::omReadWrite))
+				{
+					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+						"Could not open file %s: %s", m_fileInfo->GetOutputFilename(),
+						*FileSystem::GetLastErrorMessage());
+					break;
+				}
+				needBufFile = true;
 			}
-			needBufFile = true;
-		}
 
-		if (outfile.Active() && needBufFile)
-		{
-			SetWriteBuffer(outfile, 0);
-			needBufFile = false;
-		}
+			BString<1024> destFile;
 
-		if (directWrite)
-		{
-			outfile.Seek(pa->GetSegmentOffset());
-		}
-
-		outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
-
-		flushedSize += pa->GetSegmentSize();
-		flushedArticles++;
-
-		pa->DiscardSegment();
-
-		if (!directWrite)
-		{
-			outfile.Close();
-
-			if (!FileSystem::MoveFile(destFile, pa->GetResultFilename()))
+			if (!directWrite)
 			{
-				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-					"Could not rename file %s to %s: %s", *destFile, pa->GetResultFilename(),
-					*FileSystem::GetLastErrorMessage());
+				destFile.Format("%s.tmp", pa->GetResultFilename());
+				if (!outfile.Open(destFile, DiskFile::omWrite))
+				{
+					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+						"Could not create file %s: %s", *destFile,
+						*FileSystem::GetLastErrorMessage());
+					break;
+				}
+				needBufFile = true;
 			}
+
+			if (outfile.Active() && needBufFile)
+			{
+				SetWriteBuffer(outfile, 0);
+				needBufFile = false;
+			}
+
+			if (directWrite)
+			{
+				outfile.Seek(pa->GetSegmentOffset());
+			}
+
+			outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
+
+			flushedSize += pa->GetSegmentSize();
+			flushedArticles++;
+
+			pa->DiscardSegment();
+
+			if (!directWrite)
+			{
+				outfile.Close();
+
+				if (!FileSystem::MoveFile(destFile, pa->GetResultFilename()))
+				{
+					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+						"Could not rename file %s to %s: %s", *destFile, pa->GetResultFilename(),
+						*FileSystem::GetLastErrorMessage());
+				}
+			}
+		}
+
+		outfile.Close();
+
+		{
+			Guard contentGuard = g_ArticleCache->GuardContent();
+			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() - flushedArticles);
 		}
 	}
-
-	outfile.Close();
-
-	g_ArticleCache->LockContent();
-	m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() - flushedArticles);
-	g_ArticleCache->UnlockContent();
-
-	g_ArticleCache->UnlockFlush();
 
 	detail("Saved %i articles (%.2f MB) from cache into disk for %s", flushedArticles,
 		(float)(flushedSize / 1024.0 / 1024.0), *m_infoName);
@@ -766,9 +753,8 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 
 			if (fileInfo->GetActiveDownloads() > 0)
 			{
-				fileInfo->LockOutputFile();
+				Guard guard = fileInfo->GuardOutputFile();
 				pendingWrites = fileInfo->GetOutputInitialized() && !Util::EmptyStr(fileInfo->GetOutputFilename());
-				fileInfo->UnlockOutputFile();
 			}
 			else
 			{
@@ -795,21 +781,20 @@ ArticleCache::ArticleCache()
 
 CachedSegmentData ArticleCache::Alloc(int size)
 {
+	Guard guard(m_allocMutex);
+
 	void* p = nullptr;
 
+	if (m_allocated + size <= (size_t)g_Options->GetArticleCache() * 1024 * 1024)
 	{
-		Guard guard(m_allocMutex);
-		if (m_allocated + size <= (size_t)g_Options->GetArticleCache() * 1024 * 1024)
+		p = malloc(size);
+		if (p)
 		{
-			p = malloc(size);
-			if (p)
+			if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
 			{
-				if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
-				{
-					g_DiskState->WriteCacheFlag();
-				}
-				m_allocated += size;
+				g_DiskState->WriteCacheFlag();
 			}
+			m_allocated += size;
 		}
 	}
 
@@ -844,18 +829,6 @@ void ArticleCache::Free(CachedSegmentData* segment)
 	}
 }
 
-void ArticleCache::LockFlush()
-{
-	m_flushMutex.Lock();
-	m_flushing = true;
-}
-
-void ArticleCache::UnlockFlush()
-{
-	m_flushMutex.Unlock();
-	m_flushing = false;
-}
-
 void ArticleCache::Run()
 {
 	// automatically flush the cache if it is filled to 90% (only in DirectWrite mode)
@@ -886,8 +859,7 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 
 	BString<1024> infoName;
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		if (m_fileInfo)
 		{
@@ -904,7 +876,6 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 			}
 		}
 	}
-	DownloadQueue::Unlock();
 
 	if (m_fileInfo)
 	{
@@ -919,4 +890,17 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 	debug("Checking cache... nothing to flush");
 
 	return false;
+}
+
+ArticleCache::FlushGuard::FlushGuard(Mutex& mutex) : m_guard(&mutex)
+{
+	g_ArticleCache->m_flushing = true;
+}
+
+ArticleCache::FlushGuard::~FlushGuard()
+{
+	if (m_guard)
+	{
+		g_ArticleCache->m_flushing = false;
+	}
 }

@@ -67,18 +67,16 @@ private:
 };
 
 typedef std::deque<Message> MessageList;
+typedef GuardedPtr<MessageList> GuardedMessageList;
 
 class Debuggable;
 
 class Log
 {
 public:
-	typedef std::list<Debuggable*> Debuggables;
-
 	Log();
 	~Log();
-	MessageList* LockMessages();
-	void UnlockMessages();
+	GuardedMessageList GuardMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
 	void Clear();
 	void ResetLog();
 	void InitOptions();
@@ -87,6 +85,8 @@ public:
 	void LogDebugInfo();
 
 private:
+	typedef std::list<Debuggable*> Debuggables;
+
 	Mutex m_logMutex;
 	MessageList m_messages;
 	Debuggables m_debuggables;

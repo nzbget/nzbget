@@ -139,8 +139,9 @@ void ServerPool::InitConnections()
 
 NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers)
 {
-	PooledConnection* connection = nullptr;
 	Guard guard(m_connectionsMutex);
+
+	PooledConnection* connection = nullptr;
 
 	time_t curTime = Util::CurrentTime();
 
@@ -228,11 +229,13 @@ void ServerPool::FreeConnection(NntpConnection* connection, bool used)
 
 void ServerPool::BlockServer(NewsServer* newsServer)
 {
-	Guard guard(m_connectionsMutex);
-	time_t curTime = Util::CurrentTime();
-	bool newBlock = newsServer->GetBlockTime() != curTime;
-	newsServer->SetBlockTime(curTime);
-	guard.Release();
+	bool newBlock = false;
+	{
+		Guard guard(m_connectionsMutex);
+		time_t curTime = Util::CurrentTime();
+		newBlock = newsServer->GetBlockTime() != curTime;
+		newsServer->SetBlockTime(curTime);
+	}
 
 	if (newBlock && m_retryInterval > 0)
 	{

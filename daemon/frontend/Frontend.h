@@ -54,10 +54,7 @@ protected:
 
 	bool PrepareData();
 	void FreeData();
-	MessageList* LockMessages();
-	void UnlockMessages();
-	DownloadQueue* LockQueue();
-	void UnlockQueue();
+	GuardedMessageList GuardMessages();
 	bool IsRemoteMode();
 	void InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
 	void ServerPauseUnpause(bool pause);

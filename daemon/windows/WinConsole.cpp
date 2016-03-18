@@ -783,15 +783,13 @@ void WinConsole::UpdateTrayIcon()
 	}
 	else
 	{
-		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
 		int urlCount = 0;
-		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 		{
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
 		}
-		DownloadQueue::Unlock();
 
 		if (postJobCount > 0)
 		{

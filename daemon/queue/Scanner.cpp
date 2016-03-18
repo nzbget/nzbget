@@ -541,30 +541,32 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 		num++;
 	}
 
-	Guard guard(m_scanMutex);
+	EAddStatus addStatus;
 
-	if (!FileSystem::MoveFile(tempFileName, scanFileName))
 	{
-		error("Could not move file %s to %s: %s", *tempFileName, *scanFileName,
-			*FileSystem::GetLastErrorMessage());
-		FileSystem::DeleteFile(tempFileName);
-		return asFailed;
+		Guard guard(m_scanMutex);
+
+		if (!FileSystem::MoveFile(tempFileName, scanFileName))
+		{
+			error("Could not move file %s to %s: %s", *tempFileName, *scanFileName,
+				*FileSystem::GetLastErrorMessage());
+			FileSystem::DeleteFile(tempFileName);
+			return asFailed;
+		}
+
+		CString useCategory = category ? category : "";
+		Options::Category* categoryObj = g_Options->FindCategory(useCategory, true);
+		if (categoryObj && strcmp(useCategory, categoryObj->GetName()))
+		{
+			useCategory = categoryObj->GetName();
+			detail("Category %s matched to %s for %s", category, *useCategory, nzbName);
+		}
+
+		addStatus = asSkipped;
+		m_queueList.emplace_back(scanFileName, nzbName, useCategory, priority,
+			dupeKey, dupeScore, dupeMode, parameters, addTop, addPaused, urlInfo,
+			&addStatus, nzbId);
 	}
-
-	CString useCategory = category ? category : "";
-	Options::Category* categoryObj = g_Options->FindCategory(useCategory, true);
-	if (categoryObj && strcmp(useCategory, categoryObj->GetName()))
-	{
-		useCategory = categoryObj->GetName();
-		detail("Category %s matched to %s for %s", category, *useCategory, nzbName);
-	}
-
-	EAddStatus addStatus = asSkipped;
-	m_queueList.emplace_back(scanFileName, nzbName, useCategory, priority,
-		dupeKey, dupeScore, dupeMode, parameters, addTop, addPaused, urlInfo,
-		&addStatus, nzbId);
-
-	guard.Release();
 
 	ScanNzbDir(true);
 

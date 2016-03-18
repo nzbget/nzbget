@@ -50,23 +50,24 @@ void LoggableFrontend::Update()
 
 	BeforePrint();
 
-	MessageList* messages = LockMessages();
-	if (!messages->empty())
 	{
-		Message& firstMessage = messages->front();
-		int start = m_neededLogFirstId - firstMessage.GetId() + 1;
-		if (start < 0)
+		GuardedMessageList messages = GuardMessages();
+		if (!messages->empty())
 		{
-			PrintSkip();
-			start = 0;
-		}
-		for (uint32 i = (uint32)start; i < messages->size(); i++)
-		{
-			PrintMessage((*messages)[i]);
-			m_neededLogFirstId = (*messages)[i].GetId();
+			Message& firstMessage = messages->front();
+			int start = m_neededLogFirstId - firstMessage.GetId() + 1;
+			if (start < 0)
+			{
+				PrintSkip();
+				start = 0;
+			}
+			for (uint32 i = (uint32)start; i < messages->size(); i++)
+			{
+				PrintMessage(messages->at(i));
+				m_neededLogFirstId = messages->at(i).GetId();
+			}
 		}
 	}
-	UnlockMessages();
 
 	PrintStatus();
 

@@ -334,7 +334,8 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			printf("Queue List\n");
 			printf("-----------------------------------\n");
 
-			DownloadQueue* downloadQueue = DownloadQueue::Lock();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
 			BuildFileList(&ListResponse, buf, downloadQueue);
 
 			int64 remaining = 0;
@@ -381,8 +382,6 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 				}
 			}
 
-			DownloadQueue::Unlock();
-
 			if (matches == 0)
 			{
 				printf("No matches founds\n");
@@ -418,7 +417,8 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			printf("Queue List\n");
 			printf("-----------------------------------\n");
 
-			DownloadQueue* downloadQueue = DownloadQueue::Lock();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
 			BuildFileList(&ListResponse, buf, downloadQueue);
 
 			int64 remaining = 0;
@@ -513,8 +513,6 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			{
 				printf("Remaining size: %s\n", *Util::FormatSize(remaining));
 			}
-
-			DownloadQueue::Unlock();
 		}
 	}
 

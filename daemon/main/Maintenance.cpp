@@ -54,11 +54,18 @@ private:
 
 Maintenance::~Maintenance()
 {
-	Guard guard(m_controllerMutex);
-	if (m_updateScriptController)
+	bool waitScript = false;
 	{
-		m_updateScriptController->Detach();
-		guard.Release();
+		Guard guard(m_controllerMutex);
+		if (m_updateScriptController)
+		{
+			m_updateScriptController->Detach();
+			waitScript = true;
+		}
+	}
+
+	if (waitScript)
+	{
 		while (m_updateScriptController)
 		{
 			usleep(20*1000);
@@ -72,17 +79,6 @@ void Maintenance::ResetUpdateController()
 	m_updateScriptController = nullptr;
 }
 
-MessageList* Maintenance::LockMessages()
-{
-	m_logMutex.Lock();
-	return &m_messages;
-}
-
-void Maintenance::UnlockMessages()
-{
-	m_logMutex.Unlock();
-}
-
 void Maintenance::AddMessage(Message::EKind kind, time_t time, const char * text)
 {
 	if (time == 0)
@@ -90,16 +86,17 @@ void Maintenance::AddMessage(Message::EKind kind, time_t time, const char * text
 		time = Util::CurrentTime();
 	}
 
-	m_logMutex.Lock();
+	Guard guard(m_logMutex);
 	m_messages.emplace_back(++m_idMessageGen, kind, time, text);
-	m_logMutex.Unlock();
 }
 
 bool Maintenance::StartUpdate(EBranch branch)
 {
-	Guard guard(m_controllerMutex);
-	bool alreadyUpdating = m_updateScriptController != nullptr;
-	guard.Release();
+	bool alreadyUpdating;
+	{
+		Guard guard(m_controllerMutex);
+		alreadyUpdating = m_updateScriptController != nullptr;
+	}
 
 	if (alreadyUpdating)
 	{

@@ -430,10 +430,9 @@ void DownloadBinCommand::Execute()
 		nzbInfo->SetDupeScore(dupeScore);
 		nzbInfo->SetDupeMode((EDupeMode)dupeMode);
 
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 		downloadQueue->GetQueue()->Add(std::move(nzbInfo), addTop);
 		downloadQueue->Save();
-		DownloadQueue::Unlock();
 
 		ok = true;
 	}
@@ -480,8 +479,7 @@ void ListBinCommand::Execute()
 			ListResponse.m_regExValid = regEx->IsValid();
 		}
 
-		// Make a data structure and copy all the elements of the list into it
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 		// calculate required buffer size for nzbs
 		int nrNzbEntries = downloadQueue->GetQueue()->size();
@@ -537,23 +535,23 @@ void ListBinCommand::Execute()
 			Util::SplitInt64(nzbInfo->GetRemainingSize(), &remainingSizeHi, &remainingSizeLo);
 			Util::SplitInt64(nzbInfo->GetPausedSize(), &pausedSizeHi, &pausedSizeLo);
 
-			listAnswer->m_id					= htonl(nzbInfo->GetId());
-			listAnswer->m_kind				= htonl(nzbInfo->GetKind());
-			listAnswer->m_sizeLo				= htonl(sizeLo);
-			listAnswer->m_sizeHi				= htonl(sizeHi);
-			listAnswer->m_remainingSizeLo		= htonl(remainingSizeLo);
-			listAnswer->m_remainingSizeHi		= htonl(remainingSizeHi);
-			listAnswer->m_pausedSizeLo		= htonl(pausedSizeLo);
-			listAnswer->m_pausedSizeHi		= htonl(pausedSizeHi);
-			listAnswer->m_pausedCount			= htonl(nzbInfo->GetPausedFileCount());
-			listAnswer->m_remainingParCount	= htonl(nzbInfo->GetRemainingParCount());
-			listAnswer->m_priority			= htonl(nzbInfo->GetPriority());
-			listAnswer->m_match				= htonl(matchGroup && (!regEx || regEx->Match(nzbInfo->GetName())));
-			listAnswer->m_filenameLen			= htonl(strlen(nzbInfo->GetFilename()) + 1);
-			listAnswer->m_nameLen				= htonl(strlen(nzbInfo->GetName()) + 1);
-			listAnswer->m_destDirLen			= htonl(strlen(nzbInfo->GetDestDir()) + 1);
-			listAnswer->m_categoryLen			= htonl(strlen(nzbInfo->GetCategory()) + 1);
-			listAnswer->m_queuedFilenameLen	= htonl(strlen(nzbInfo->GetQueuedFilename()) + 1);
+			listAnswer->m_id = htonl(nzbInfo->GetId());
+			listAnswer->m_kind = htonl(nzbInfo->GetKind());
+			listAnswer->m_sizeLo = htonl(sizeLo);
+			listAnswer->m_sizeHi = htonl(sizeHi);
+			listAnswer->m_remainingSizeLo = htonl(remainingSizeLo);
+			listAnswer->m_remainingSizeHi = htonl(remainingSizeHi);
+			listAnswer->m_pausedSizeLo = htonl(pausedSizeLo);
+			listAnswer->m_pausedSizeHi = htonl(pausedSizeHi);
+			listAnswer->m_pausedCount = htonl(nzbInfo->GetPausedFileCount());
+			listAnswer->m_remainingParCount = htonl(nzbInfo->GetRemainingParCount());
+			listAnswer->m_priority = htonl(nzbInfo->GetPriority());
+			listAnswer->m_match = htonl(matchGroup && (!regEx || regEx->Match(nzbInfo->GetName())));
+			listAnswer->m_filenameLen = htonl(strlen(nzbInfo->GetFilename()) + 1);
+			listAnswer->m_nameLen = htonl(strlen(nzbInfo->GetName()) + 1);
+			listAnswer->m_destDirLen = htonl(strlen(nzbInfo->GetDestDir()) + 1);
+			listAnswer->m_categoryLen = htonl(strlen(nzbInfo->GetCategory()) + 1);
+			listAnswer->m_queuedFilenameLen = htonl(strlen(nzbInfo->GetQueuedFilename()) + 1);
 			bufptr += sizeof(SNzbListResponseNzbEntry);
 			strcpy(bufptr, nzbInfo->GetFilename());
 			bufptr += ntohl(listAnswer->m_filenameLen);
@@ -618,7 +616,7 @@ void ListBinCommand::Execute()
 						break;
 					}
 				}
-				listAnswer->m_nzbIndex		= htonl(nzbIndex);
+				listAnswer->m_nzbIndex = htonl(nzbIndex);
 
 				if (regEx && !matchGroup)
 				{
@@ -628,16 +626,16 @@ void ListBinCommand::Execute()
 				}
 
 				Util::SplitInt64(fileInfo->GetSize(), &sizeHi, &sizeLo);
-				listAnswer->m_fileSizeLo		= htonl(sizeLo);
-				listAnswer->m_fileSizeHi		= htonl(sizeHi);
+				listAnswer->m_fileSizeLo = htonl(sizeLo);
+				listAnswer->m_fileSizeHi = htonl(sizeHi);
 				Util::SplitInt64(fileInfo->GetRemainingSize(), &sizeHi, &sizeLo);
-				listAnswer->m_remainingSizeLo	= htonl(sizeLo);
-				listAnswer->m_remainingSizeHi	= htonl(sizeHi);
+				listAnswer->m_remainingSizeLo = htonl(sizeLo);
+				listAnswer->m_remainingSizeHi = htonl(sizeHi);
 				listAnswer->m_filenameConfirmed = htonl(fileInfo->GetFilenameConfirmed());
-				listAnswer->m_paused			= htonl(fileInfo->GetPaused());
-				listAnswer->m_activeDownloads	= htonl(fileInfo->GetActiveDownloads());
-				listAnswer->m_subjectLen		= htonl(strlen(fileInfo->GetSubject()) + 1);
-				listAnswer->m_filenameLen		= htonl(strlen(fileInfo->GetFilename()) + 1);
+				listAnswer->m_paused = htonl(fileInfo->GetPaused());
+				listAnswer->m_activeDownloads = htonl(fileInfo->GetActiveDownloads());
+				listAnswer->m_subjectLen = htonl(strlen(fileInfo->GetSubject()) + 1);
+				listAnswer->m_filenameLen = htonl(strlen(fileInfo->GetFilename()) + 1);
 				bufptr += sizeof(SNzbListResponseFileEntry);
 				strcpy(bufptr, fileInfo->GetSubject());
 				bufptr += ntohl(listAnswer->m_subjectLen);
@@ -653,8 +651,6 @@ void ListBinCommand::Execute()
 			}
 		}
 
-		DownloadQueue::Unlock();
-
 		ListResponse.m_nrTrailingNzbEntries = htonl(nrNzbEntries);
 		ListResponse.m_nrTrailingPPPEntries = htonl(nrPPPEntries);
 		ListResponse.m_nrTrailingFileEntries = htonl(nrFileEntries);
@@ -663,15 +659,16 @@ void ListBinCommand::Execute()
 
 	if (htonl(ListRequest.m_serverState))
 	{
-		DownloadQueue *downloadQueue = DownloadQueue::Lock();
 		int postJobCount = 0;
-		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-		{
-			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
-		}
 		int64 remainingSize;
-		downloadQueue->CalcRemainingSize(&remainingSize, nullptr);
-		DownloadQueue::Unlock();
+		{
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+			{
+				postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
+			}
+			downloadQueue->CalcRemainingSize(&remainingSize, nullptr);
+		}
 
 		uint32 sizeHi, sizeLo;
 		ListResponse.m_downloadRate = htonl(g_StatMeter->CalcCurrentDownloadSpeed());
@@ -715,66 +712,70 @@ void LogBinCommand::Execute()
 		return;
 	}
 
-	MessageList* messages = g_Log->LockMessages();
+	CharBuffer buf;
+	int nrEntries;
+	int bufsize;
 
-	int nrEntries = ntohl(LogRequest.m_lines);
-	uint32 idFrom = ntohl(LogRequest.m_idFrom);
-	int start = messages->size();
-	if (nrEntries > 0)
 	{
-		if (nrEntries > (int)messages->size())
-		{
-			nrEntries = messages->size();
-		}
-		start = messages->size() - nrEntries;
-	}
-	if (idFrom > 0 && !messages->empty())
-	{
-		start = idFrom - messages->front().GetId();
-		if (start < 0)
-		{
-			start = 0;
-		}
-		nrEntries = messages->size() - start;
-		if (nrEntries < 0)
-		{
-			nrEntries = 0;
-		}
-	}
+		GuardedMessageList messages = g_Log->GuardMessages();
 
-	// calculate required buffer size
-	int bufsize = nrEntries * sizeof(SNzbLogResponseEntry);
-	for (uint32 i = (uint32)start; i < messages->size(); i++)
-	{
-		Message& message = (*messages)[i];
-		bufsize += strlen(message.GetText()) + 1;
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
-	}
-
-	CharBuffer buf(bufsize);
-	char* bufptr = buf;
-	for (uint32 i = (uint32)start; i < messages->size(); i++)
-	{
-		Message& message = (*messages)[i];
-		SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufptr;
-		logAnswer->m_id = htonl(message.GetId());
-		logAnswer->m_kind = htonl(message.GetKind());
-		logAnswer->m_time = htonl((int)message.GetTime());
-		logAnswer->m_textLen = htonl(strlen(message.GetText()) + 1);
-		bufptr += sizeof(SNzbLogResponseEntry);
-		strcpy(bufptr, message.GetText());
-		bufptr += ntohl(logAnswer->m_textLen);
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		if ((size_t)bufptr % 4 > 0)
+		nrEntries = ntohl(LogRequest.m_lines);
+		uint32 idFrom = ntohl(LogRequest.m_idFrom);
+		int start = messages->size();
+		if (nrEntries > 0)
 		{
-			logAnswer->m_textLen = htonl(ntohl(logAnswer->m_textLen) + 4 - (size_t)bufptr % 4);
-			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
-			bufptr += 4 - (size_t)bufptr % 4;
+			if (nrEntries > (int)messages->size())
+			{
+				nrEntries = messages->size();
+			}
+			start = messages->size() - nrEntries;
+		}
+		if (idFrom > 0 && !messages->empty())
+		{
+			start = idFrom - messages->front().GetId();
+			if (start < 0)
+			{
+				start = 0;
+			}
+			nrEntries = messages->size() - start;
+			if (nrEntries < 0)
+			{
+				nrEntries = 0;
+			}
+		}
+
+		// calculate required buffer size
+		bufsize = nrEntries * sizeof(SNzbLogResponseEntry);
+		for (uint32 i = (uint32)start; i < messages->size(); i++)
+		{
+			Message& message = messages->at(i);
+			bufsize += strlen(message.GetText()) + 1;
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+		}
+
+		buf.Reserve(bufsize);
+		char* bufptr = buf;
+		for (uint32 i = (uint32)start; i < messages->size(); i++)
+		{
+			Message& message = messages->at(i);
+			SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*)bufptr;
+			logAnswer->m_id = htonl(message.GetId());
+			logAnswer->m_kind = htonl(message.GetKind());
+			logAnswer->m_time = htonl((int)message.GetTime());
+			logAnswer->m_textLen = htonl(strlen(message.GetText()) + 1);
+			bufptr += sizeof(SNzbLogResponseEntry);
+			strcpy(bufptr, message.GetText());
+			bufptr += ntohl(logAnswer->m_textLen);
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			if ((size_t)bufptr % 4 > 0)
+			{
+				logAnswer->m_textLen = htonl(ntohl(logAnswer->m_textLen) + 4 - (size_t)bufptr % 4);
+				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+				bufptr += 4 - (size_t)bufptr % 4;
+			}
 		}
 	}
-
-	g_Log->UnlockMessages();
 
 	SNzbLogResponse LogResponse;
 	LogResponse.m_messageBase.m_signature = htonl(NZBMESSAGE_SIGNATURE);
@@ -856,12 +857,10 @@ void EditQueueBinCommand::Execute()
 		}
 	}
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	bool ok = downloadQueue->EditList(
+	bool ok = DownloadQueue::Guard()->EditList(
 		nrIdEntries > 0 ? &cIdList : nullptr,
 		nrNameEntries > 0 ? &cNameList : nullptr,
 		(DownloadQueue::EMatchMode)matchMode, (DownloadQueue::EEditAction)action, offset, text);
-	DownloadQueue::Unlock();
 
 	if (ok)
 	{
@@ -894,76 +893,80 @@ void PostQueueBinCommand::Execute()
 	PostQueueResponse.m_messageBase.m_structSize = htonl(sizeof(PostQueueResponse));
 	PostQueueResponse.m_entrySize = htonl(sizeof(SNzbPostQueueResponseEntry));
 
+	CharBuffer buf;
 	int bufsize = 0;
 
-	// Make a data structure and copy all the elements of the list into it
-	NzbList* nzbList = DownloadQueue::Lock()->GetQueue();
-
-	// calculate required buffer size
-	int NrEntries = 0;
-	for (NzbInfo* nzbInfo : nzbList)
 	{
-		PostInfo* postInfo = nzbInfo->GetPostInfo();
-		if (!postInfo)
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+		// Make a data structure and copy all the elements of the list into it
+		NzbList* nzbList = downloadQueue->GetQueue();
+
+		// calculate required buffer size
+		int NrEntries = 0;
+		for (NzbInfo* nzbInfo : nzbList)
 		{
-			continue;
+			PostInfo* postInfo = nzbInfo->GetPostInfo();
+			if (!postInfo)
+			{
+				continue;
+			}
+
+			NrEntries++;
+			bufsize += sizeof(SNzbPostQueueResponseEntry);
+			bufsize += strlen(postInfo->GetNzbInfo()->GetFilename()) + 1;
+			bufsize += strlen(postInfo->GetNzbInfo()->GetName()) + 1;
+			bufsize += strlen(postInfo->GetNzbInfo()->GetDestDir()) + 1;
+			bufsize += strlen(postInfo->GetProgressLabel()) + 1;
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
 		}
 
-		NrEntries++;
-		bufsize += sizeof(SNzbPostQueueResponseEntry);
-		bufsize += strlen(postInfo->GetNzbInfo()->GetFilename()) + 1;
-		bufsize += strlen(postInfo->GetNzbInfo()->GetName()) + 1;
-		bufsize += strlen(postInfo->GetNzbInfo()->GetDestDir()) + 1;
-		bufsize += strlen(postInfo->GetProgressLabel()) + 1;
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+		time_t curTime = Util::CurrentTime();
+
+		buf.Reserve(bufsize);
+		char* bufptr = buf;
+
+		for (NzbInfo* nzbInfo : nzbList)
+		{
+			PostInfo* postInfo = nzbInfo->GetPostInfo();
+			if (!postInfo)
+			{
+				continue;
+			}
+
+			SNzbPostQueueResponseEntry* postQueueAnswer = (SNzbPostQueueResponseEntry*)bufptr;
+			postQueueAnswer->m_id = htonl(nzbInfo->GetId());
+			postQueueAnswer->m_stage = htonl(postInfo->GetStage());
+			postQueueAnswer->m_stageProgress = htonl(postInfo->GetStageProgress());
+			postQueueAnswer->m_fileProgress = htonl(postInfo->GetFileProgress());
+			postQueueAnswer->m_totalTimeSec = htonl((int)(postInfo->GetStartTime() ? curTime - postInfo->GetStartTime() : 0));
+			postQueueAnswer->m_stageTimeSec = htonl((int)(postInfo->GetStageTime() ? curTime - postInfo->GetStageTime() : 0));
+			postQueueAnswer->m_nzbFilenameLen = htonl(strlen(postInfo->GetNzbInfo()->GetFilename()) + 1);
+			postQueueAnswer->m_infoNameLen = htonl(strlen(postInfo->GetNzbInfo()->GetName()) + 1);
+			postQueueAnswer->m_destDirLen = htonl(strlen(postInfo->GetNzbInfo()->GetDestDir()) + 1);
+			postQueueAnswer->m_progressLabelLen = htonl(strlen(postInfo->GetProgressLabel()) + 1);
+			bufptr += sizeof(SNzbPostQueueResponseEntry);
+			strcpy(bufptr, postInfo->GetNzbInfo()->GetFilename());
+			bufptr += ntohl(postQueueAnswer->m_nzbFilenameLen);
+			strcpy(bufptr, postInfo->GetNzbInfo()->GetName());
+			bufptr += ntohl(postQueueAnswer->m_infoNameLen);
+			strcpy(bufptr, postInfo->GetNzbInfo()->GetDestDir());
+			bufptr += ntohl(postQueueAnswer->m_destDirLen);
+			strcpy(bufptr, postInfo->GetProgressLabel());
+			bufptr += ntohl(postQueueAnswer->m_progressLabelLen);
+			// align struct to 4-bytes, needed by ARM-processor (and may be others)
+			if ((size_t)bufptr % 4 > 0)
+			{
+				postQueueAnswer->m_progressLabelLen = htonl(ntohl(postQueueAnswer->m_progressLabelLen) + 4 - (size_t)bufptr % 4);
+				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+				bufptr += 4 - (size_t)bufptr % 4;
+			}
+		}
+
+		PostQueueResponse.m_nrTrailingEntries = htonl(NrEntries);
+		PostQueueResponse.m_trailingDataLength = htonl(bufsize);
 	}
-
-	time_t curTime = Util::CurrentTime();
-	CharBuffer buf(bufsize);
-	char* bufptr = buf;
-
-	for (NzbInfo* nzbInfo : nzbList)
-	{
-		PostInfo* postInfo = nzbInfo->GetPostInfo();
-		if (!postInfo)
-		{
-			continue;
-		}
-
-		SNzbPostQueueResponseEntry* postQueueAnswer = (SNzbPostQueueResponseEntry*) bufptr;
-		postQueueAnswer->m_id				= htonl(nzbInfo->GetId());
-		postQueueAnswer->m_stage			= htonl(postInfo->GetStage());
-		postQueueAnswer->m_stageProgress	= htonl(postInfo->GetStageProgress());
-		postQueueAnswer->m_fileProgress	= htonl(postInfo->GetFileProgress());
-		postQueueAnswer->m_totalTimeSec	= htonl((int)(postInfo->GetStartTime() ? curTime - postInfo->GetStartTime() : 0));
-		postQueueAnswer->m_stageTimeSec	= htonl((int)(postInfo->GetStageTime() ? curTime - postInfo->GetStageTime() : 0));
-		postQueueAnswer->m_nzbFilenameLen		= htonl(strlen(postInfo->GetNzbInfo()->GetFilename()) + 1);
-		postQueueAnswer->m_infoNameLen		= htonl(strlen(postInfo->GetNzbInfo()->GetName()) + 1);
-		postQueueAnswer->m_destDirLen			= htonl(strlen(postInfo->GetNzbInfo()->GetDestDir()) + 1);
-		postQueueAnswer->m_progressLabelLen	= htonl(strlen(postInfo->GetProgressLabel()) + 1);
-		bufptr += sizeof(SNzbPostQueueResponseEntry);
-		strcpy(bufptr, postInfo->GetNzbInfo()->GetFilename());
-		bufptr += ntohl(postQueueAnswer->m_nzbFilenameLen);
-		strcpy(bufptr, postInfo->GetNzbInfo()->GetName());
-		bufptr += ntohl(postQueueAnswer->m_infoNameLen);
-		strcpy(bufptr, postInfo->GetNzbInfo()->GetDestDir());
-		bufptr += ntohl(postQueueAnswer->m_destDirLen);
-		strcpy(bufptr, postInfo->GetProgressLabel());
-		bufptr += ntohl(postQueueAnswer->m_progressLabelLen);
-		// align struct to 4-bytes, needed by ARM-processor (and may be others)
-		if ((size_t)bufptr % 4 > 0)
-		{
-			postQueueAnswer->m_progressLabelLen = htonl(ntohl(postQueueAnswer->m_progressLabelLen) + 4 - (size_t)bufptr % 4);
-			memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
-			bufptr += 4 - (size_t)bufptr % 4;
-		}
-	}
-
-	DownloadQueue::Unlock();
-
-	PostQueueResponse.m_nrTrailingEntries = htonl(NrEntries);
-	PostQueueResponse.m_trailingDataLength = htonl(bufsize);
 
 	// Send the request answer
 	m_connection->Send((char*) &PostQueueResponse, sizeof(PostQueueResponse));
@@ -1046,86 +1049,88 @@ void HistoryBinCommand::Execute()
 	HistoryResponse.m_entrySize = htonl(sizeof(SNzbHistoryResponseEntry));
 
 	int bufsize = 0;
+	CharBuffer buf;
 
-	// Make a data structure and copy all the elements of the list into it
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-
-	// calculate required buffer size for nzbs
-	int nrEntries = 0;
-	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
-		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+		// Make a data structure and copy all the elements of the list into it
+
+		// calculate required buffer size for nzbs
+		int nrEntries = 0;
+		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 		{
-			nrEntries++;
-		}
-	}
-	bufsize += nrEntries * sizeof(SNzbHistoryResponseEntry);
-	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
-	{
-		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
-		{
-			bufsize += strlen(historyInfo->GetName()) + 1;
-			// align struct to 4-bytes, needed by ARM-processor (and may be others)
-			bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
-		}
-	}
-
-	CharBuffer buf(bufsize);
-	char* bufptr = buf;
-
-	// write nzb entries
-	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
-	{
-		if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
-		{
-			SNzbHistoryResponseEntry* listAnswer = (SNzbHistoryResponseEntry*) bufptr;
-			listAnswer->m_id = htonl(historyInfo->GetId());
-			listAnswer->m_kind = htonl((int)historyInfo->GetKind());
-			listAnswer->m_time = htonl((int)historyInfo->GetTime());
-			listAnswer->m_nicenameLen = htonl(strlen(historyInfo->GetName()) + 1);
-
-			if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+			if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
 			{
-				NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
-				uint32 sizeHi, sizeLo;
-				Util::SplitInt64(nzbInfo->GetSize(), &sizeHi, &sizeLo);
-				listAnswer->m_sizeLo = htonl(sizeLo);
-				listAnswer->m_sizeHi = htonl(sizeHi);
-				listAnswer->m_fileCount = htonl(nzbInfo->GetFileCount());
-				listAnswer->m_parStatus = htonl(nzbInfo->GetParStatus());
-				listAnswer->m_scriptStatus = htonl(nzbInfo->GetScriptStatuses()->CalcTotalStatus());
-			}
-			else if (historyInfo->GetKind() == HistoryInfo::hkDup && showHidden)
-			{
-				DupInfo* dupInfo = historyInfo->GetDupInfo();
-				uint32 sizeHi, sizeLo;
-				Util::SplitInt64(dupInfo->GetSize(), &sizeHi, &sizeLo);
-				listAnswer->m_sizeLo = htonl(sizeLo);
-				listAnswer->m_sizeHi = htonl(sizeHi);
-			}
-			else if (historyInfo->GetKind() == HistoryInfo::hkUrl)
-			{
-				NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
-				listAnswer->m_urlStatus = htonl(nzbInfo->GetUrlStatus());
-			}
-
-			bufptr += sizeof(SNzbHistoryResponseEntry);
-			strcpy(bufptr, historyInfo->GetName());
-			bufptr += ntohl(listAnswer->m_nicenameLen);
-			// align struct to 4-bytes, needed by ARM-processor (and may be others)
-			if ((size_t)bufptr % 4 > 0)
-			{
-				listAnswer->m_nicenameLen = htonl(ntohl(listAnswer->m_nicenameLen) + 4 - (size_t)bufptr % 4);
-				memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
-				bufptr += 4 - (size_t)bufptr % 4;
+				nrEntries++;
 			}
 		}
+		bufsize += nrEntries * sizeof(SNzbHistoryResponseEntry);
+		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
+		{
+			if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
+			{
+				bufsize += strlen(historyInfo->GetName()) + 1;
+				// align struct to 4-bytes, needed by ARM-processor (and may be others)
+				bufsize += bufsize % 4 > 0 ? 4 - bufsize % 4 : 0;
+			}
+		}
+
+		buf.Reserve(bufsize);
+		char* bufptr = buf;
+
+		// write nzb entries
+		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
+		{
+			if (historyInfo->GetKind() != HistoryInfo::hkDup || showHidden)
+			{
+				SNzbHistoryResponseEntry* listAnswer = (SNzbHistoryResponseEntry*)bufptr;
+				listAnswer->m_id = htonl(historyInfo->GetId());
+				listAnswer->m_kind = htonl((int)historyInfo->GetKind());
+				listAnswer->m_time = htonl((int)historyInfo->GetTime());
+				listAnswer->m_nicenameLen = htonl(strlen(historyInfo->GetName()) + 1);
+
+				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+				{
+					NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
+					uint32 sizeHi, sizeLo;
+					Util::SplitInt64(nzbInfo->GetSize(), &sizeHi, &sizeLo);
+					listAnswer->m_sizeLo = htonl(sizeLo);
+					listAnswer->m_sizeHi = htonl(sizeHi);
+					listAnswer->m_fileCount = htonl(nzbInfo->GetFileCount());
+					listAnswer->m_parStatus = htonl(nzbInfo->GetParStatus());
+					listAnswer->m_scriptStatus = htonl(nzbInfo->GetScriptStatuses()->CalcTotalStatus());
+				}
+				else if (historyInfo->GetKind() == HistoryInfo::hkDup && showHidden)
+				{
+					DupInfo* dupInfo = historyInfo->GetDupInfo();
+					uint32 sizeHi, sizeLo;
+					Util::SplitInt64(dupInfo->GetSize(), &sizeHi, &sizeLo);
+					listAnswer->m_sizeLo = htonl(sizeLo);
+					listAnswer->m_sizeHi = htonl(sizeHi);
+				}
+				else if (historyInfo->GetKind() == HistoryInfo::hkUrl)
+				{
+					NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
+					listAnswer->m_urlStatus = htonl(nzbInfo->GetUrlStatus());
+				}
+
+				bufptr += sizeof(SNzbHistoryResponseEntry);
+				strcpy(bufptr, historyInfo->GetName());
+				bufptr += ntohl(listAnswer->m_nicenameLen);
+				// align struct to 4-bytes, needed by ARM-processor (and may be others)
+				if ((size_t)bufptr % 4 > 0)
+				{
+					listAnswer->m_nicenameLen = htonl(ntohl(listAnswer->m_nicenameLen) + 4 - (size_t)bufptr % 4);
+					memset(bufptr, 0, 4 - (size_t)bufptr % 4); //suppress valgrind warning "uninitialized data"
+					bufptr += 4 - (size_t)bufptr % 4;
+				}
+			}
+		}
+
+		HistoryResponse.m_nrTrailingEntries = htonl(nrEntries);
+		HistoryResponse.m_trailingDataLength = htonl(bufsize);
 	}
-
-	DownloadQueue::Unlock();
-
-	HistoryResponse.m_nrTrailingEntries = htonl(nrEntries);
-	HistoryResponse.m_trailingDataLength = htonl(bufsize);
 
 	// Send the request answer
 	m_connection->Send((char*) &HistoryResponse, sizeof(HistoryResponse));

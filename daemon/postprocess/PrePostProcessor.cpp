@@ -38,9 +38,7 @@ PrePostProcessor::PrePostProcessor()
 	debug("Creating PrePostProcessor");
 
 	m_downloadQueueObserver.m_owner = this;
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	downloadQueue->Attach(&m_downloadQueueObserver);
-	DownloadQueue::Unlock();
+	DownloadQueue::Guard()->Attach(&m_downloadQueueObserver);
 }
 
 void PrePostProcessor::Run()
@@ -54,9 +52,7 @@ void PrePostProcessor::Run()
 
 	if (g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetReloadQueue())
 	{
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		SanitisePostQueue(downloadQueue);
-		DownloadQueue::Unlock();
+		SanitisePostQueue();
 	}
 
 	while (!IsStopped())
@@ -78,7 +74,7 @@ void PrePostProcessor::Run()
 void PrePostProcessor::Stop()
 {
 	Thread::Stop();
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 
 #ifndef DISABLE_PARCHECK
 	m_parCoordinator.Stop();
@@ -94,8 +90,6 @@ void PrePostProcessor::Stop()
 		postThread->SetAutoDestroy(true);
 		postThread->Stop();
 	}
-
-	DownloadQueue::Unlock();
 }
 
 void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
@@ -331,7 +325,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 
 void PrePostProcessor::CheckPostQueue()
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	if (!m_curJob && m_jobCount > 0)
 	{
@@ -402,8 +396,6 @@ void PrePostProcessor::CheckPostQueue()
 			}
 		}
 	}
-
-	DownloadQueue::Unlock();
 }
 
 NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
@@ -428,9 +420,9 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
  * delete items which could not be resumed.
  * Also count the number of post-jobs.
  */
-void PrePostProcessor::SanitisePostQueue(DownloadQueue* downloadQueue)
+void PrePostProcessor::SanitisePostQueue()
 {
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (postInfo)

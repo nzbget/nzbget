@@ -62,15 +62,13 @@ bool Frontend::PrepareData()
 			m_threadCount = Thread::GetThreadCount();
 			g_StatMeter->CalcTotalStat(&m_upTimeSec, &m_dnTimeSec, &m_allBytes, &m_standBy);
 
-			DownloadQueue *downloadQueue = DownloadQueue::Lock();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 			m_postJobCount = 0;
 			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 			{
 				m_postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			}
 			downloadQueue->CalcRemainingSize(&m_remainingSize, nullptr);
-			DownloadQueue::Unlock();
-
 		}
 	}
 	return true;
@@ -81,41 +79,20 @@ void Frontend::FreeData()
 	if (IsRemoteMode())
 	{
 		m_remoteMessages.clear();
-
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		downloadQueue->GetQueue()->clear();
-		DownloadQueue::Unlock();
+		DownloadQueue::Guard()->GetQueue()->clear();
 	}
 }
 
-MessageList* Frontend::LockMessages()
+GuardedMessageList Frontend::GuardMessages()
 {
 	if (IsRemoteMode())
 	{
-		return &m_remoteMessages;
+		return GuardedMessageList(&m_remoteMessages, nullptr);
 	}
 	else
 	{
-		return g_Log->LockMessages();
+		return g_Log->GuardMessages();
 	}
-}
-
-void Frontend::UnlockMessages()
-{
-	if (!IsRemoteMode())
-	{
-		g_Log->UnlockMessages();
-	}
-}
-
-DownloadQueue* Frontend::LockQueue()
-{
-	return DownloadQueue::Lock();
-}
-
-void Frontend::UnlockQueue()
-{
-	DownloadQueue::Unlock();
 }
 
 bool Frontend::IsRemoteMode()
@@ -156,12 +133,8 @@ bool Frontend::ServerEditQueue(DownloadQueue::EEditAction action, int offset, in
 	}
 	else
 	{
-		DownloadQueue* downloadQueue = LockQueue();
-		bool ok = downloadQueue->EditEntry(id, action, offset, nullptr);
-		UnlockQueue();
-		return ok;
+		return DownloadQueue::Guard()->EditEntry(id, action, offset, nullptr);
 	}
-	return false;
 }
 
 void Frontend::InitMessageBase(SNzbRequestBase* messageBase, int request, int size)
@@ -307,9 +280,7 @@ bool Frontend::RequestFileList()
 		RemoteClient client;
 		client.SetVerbose(false);
 
-		DownloadQueue* downloadQueue = LockQueue();
-		client.BuildFileList(&ListResponse, buf, downloadQueue);
-		UnlockQueue();
+		client.BuildFileList(&ListResponse, buf, DownloadQueue::Guard());
 	}
 
 	return true;

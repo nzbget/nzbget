@@ -116,7 +116,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 
 void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSourceList)
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	RawNzbList dupeList = g_DupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNzbInfo());
 
@@ -143,13 +143,11 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 			PrintMessage(Message::mkInfo, "No usable dupe scan sources found");
 		}
 	}
-
-	DownloadQueue::Unlock();
 }
 
 void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceList)
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	int totalExtraParBlocks = 0;
 	for (DupeSource& dupeSource : dupeSourceList)
@@ -169,8 +167,6 @@ void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceL
 	}
 
 	m_postInfo->GetNzbInfo()->SetExtraParBlocks(m_postInfo->GetNzbInfo()->GetExtraParBlocks() + totalExtraParBlocks);
-
-	DownloadQueue::Unlock();
 }
 
 void ParCoordinator::PostParRenamer::UpdateProgress()
@@ -359,7 +355,7 @@ bool ParCoordinator::AddPar(FileInfo* fileInfo, bool deleted)
 
 void ParCoordinator::ParCheckCompleted()
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	PostInfo* postInfo = m_parChecker.GetPostInfo();
 
@@ -392,8 +388,6 @@ void ParCoordinator::ParCheckCompleted()
 	postInfo->SetStage(PostInfo::ptQueued);
 
 	downloadQueue->Save();
-
-	DownloadQueue::Unlock();
 }
 
 /**
@@ -405,7 +399,7 @@ void ParCoordinator::ParCheckCompleted()
 */
 bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFoundOut)
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	Blocks blocks;
 	blocks.clear();
@@ -489,8 +483,6 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 			break;
 		}
 	}
-
-	DownloadQueue::Unlock();
 
 	if (blockFoundOut)
 	{
@@ -576,60 +568,62 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 
 void ParCoordinator::UpdateParCheckProgress()
 {
-	DownloadQueue::Lock();
+	PostInfo* postInfo;
 
-	PostInfo* postInfo = m_parChecker.GetPostInfo();
-	if (m_parChecker.GetFileProgress() == 0)
 	{
-		postInfo->SetProgressLabel(m_parChecker.GetProgressLabel());
-	}
-	postInfo->SetFileProgress(m_parChecker.GetFileProgress());
-	postInfo->SetStageProgress(m_parChecker.GetStageProgress());
-	PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
-	PostInfo::EStage stage = StageKind[m_parChecker.GetStage()];
-	time_t current = Util::CurrentTime();
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
 
-	if (postInfo->GetStage() != stage)
-	{
-		postInfo->SetStage(stage);
-		postInfo->SetStageTime(current);
-		if (postInfo->GetStage() == PostInfo::ptRepairing)
+		postInfo = m_parChecker.GetPostInfo();
+		if (m_parChecker.GetFileProgress() == 0)
 		{
-			m_parChecker.SetRepairTime(current);
+			postInfo->SetProgressLabel(m_parChecker.GetProgressLabel());
 		}
-		else if (postInfo->GetStage() == PostInfo::ptVerifyingRepaired)
-		{
-			int repairSec = (int)(current - m_parChecker.GetRepairTime());
-			postInfo->GetNzbInfo()->SetRepairSec(postInfo->GetNzbInfo()->GetRepairSec() + repairSec);
-		}
-	}
+		postInfo->SetFileProgress(m_parChecker.GetFileProgress());
+		postInfo->SetStageProgress(m_parChecker.GetStageProgress());
+		PostInfo::EStage StageKind[] = {PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired};
+		PostInfo::EStage stage = StageKind[m_parChecker.GetStage()];
+		time_t current = Util::CurrentTime();
 
-	bool parCancel = false;
-	if (!m_parChecker.GetCancelled())
-	{
-		if ((g_Options->GetParTimeLimit() > 0) &&
-			m_parChecker.GetStage() == PostParChecker::ptRepairing &&
-			((g_Options->GetParTimeLimit() > 5 && current - postInfo->GetStageTime() > 5 * 60) ||
-			(g_Options->GetParTimeLimit() <= 5 && current - postInfo->GetStageTime() > 1 * 60)))
+		if (postInfo->GetStage() != stage)
 		{
-			// first five (or one) minutes elapsed, now can check the estimated time
-			int estimatedRepairTime = (int)((current - postInfo->GetStartTime()) * 1000 /
-				(postInfo->GetStageProgress() > 0 ? postInfo->GetStageProgress() : 1));
-			if (estimatedRepairTime > g_Options->GetParTimeLimit() * 60)
+			postInfo->SetStage(stage);
+			postInfo->SetStageTime(current);
+			if (postInfo->GetStage() == PostInfo::ptRepairing)
 			{
-				debug("Estimated repair time %i seconds", estimatedRepairTime);
-				m_parChecker.PrintMessage(Message::mkWarning, "Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_parChecker.GetInfoName(), estimatedRepairTime / 60);
-				parCancel = true;
+				m_parChecker.SetRepairTime(current);
+			}
+			else if (postInfo->GetStage() == PostInfo::ptVerifyingRepaired)
+			{
+				int repairSec = (int)(current - m_parChecker.GetRepairTime());
+				postInfo->GetNzbInfo()->SetRepairSec(postInfo->GetNzbInfo()->GetRepairSec() + repairSec);
 			}
 		}
-	}
 
-	if (parCancel)
-	{
-		m_parChecker.Cancel();
-	}
+		bool parCancel = false;
+		if (!m_parChecker.GetCancelled())
+		{
+			if ((g_Options->GetParTimeLimit() > 0) &&
+				m_parChecker.GetStage() == PostParChecker::ptRepairing &&
+				((g_Options->GetParTimeLimit() > 5 && current - postInfo->GetStageTime() > 5 * 60) ||
+					(g_Options->GetParTimeLimit() <= 5 && current - postInfo->GetStageTime() > 1 * 60)))
+			{
+				// first five (or one) minutes elapsed, now can check the estimated time
+				int estimatedRepairTime = (int)((current - postInfo->GetStartTime()) * 1000 /
+					(postInfo->GetStageProgress() > 0 ? postInfo->GetStageProgress() : 1));
+				if (estimatedRepairTime > g_Options->GetParTimeLimit() * 60)
+				{
+					debug("Estimated repair time %i seconds", estimatedRepairTime);
+					m_parChecker.PrintMessage(Message::mkWarning, "Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_parChecker.GetInfoName(), estimatedRepairTime / 60);
+					parCancel = true;
+				}
+			}
+		}
 
-	DownloadQueue::Unlock();
+		if (parCancel)
+		{
+			m_parChecker.Cancel();
+		}
+	}
 
 	CheckPauseState(postInfo);
 }
@@ -675,7 +669,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 
 void ParCoordinator::ParRenameCompleted()
 {
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	PostInfo* postInfo = m_parRenamer.GetPostInfo();
 	postInfo->GetNzbInfo()->SetRenameStatus(m_parRenamer.GetStatus() == ParRenamer::psSuccess ? NzbInfo::rsSuccess : NzbInfo::rsFailure);
@@ -690,26 +684,25 @@ void ParCoordinator::ParRenameCompleted()
 	postInfo->SetStage(PostInfo::ptQueued);
 
 	downloadQueue->Save();
-
-	DownloadQueue::Unlock();
 }
 
 void ParCoordinator::UpdateParRenameProgress()
 {
-	DownloadQueue::Lock();
-
-	PostInfo* postInfo = m_parRenamer.GetPostInfo();
-	postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
-	postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
-	time_t current = Util::CurrentTime();
-
-	if (postInfo->GetStage() != PostInfo::ptRenaming)
+	PostInfo* postInfo;
 	{
-		postInfo->SetStage(PostInfo::ptRenaming);
-		postInfo->SetStageTime(current);
-	}
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
 
-	DownloadQueue::Unlock();
+		postInfo = m_parRenamer.GetPostInfo();
+		postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
+		postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
+		time_t current = Util::CurrentTime();
+
+		if (postInfo->GetStage() != PostInfo::ptRenaming)
+		{
+			postInfo->SetStage(PostInfo::ptRenaming);
+			postInfo->SetStageTime(current);
+		}
+	}
 
 	CheckPauseState(postInfo);
 }

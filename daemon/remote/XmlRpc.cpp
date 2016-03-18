@@ -118,8 +118,7 @@ public:
 protected:
 	int m_idFrom;
 	int m_nrEntries;
-	virtual MessageList* LockMessages();
-	virtual void UnlockMessages();
+	virtual GuardedMessageList GuardMessages();
 };
 
 class NzbInfoXmlCommand: public XmlCommand
@@ -259,8 +258,7 @@ public:
 class LogUpdateXmlCommand: public LogXmlCommand
 {
 protected:
-	virtual MessageList* LockMessages();
-	virtual void UnlockMessages();
+	virtual GuardedMessageList GuardMessages();
 };
 
 class ServerVolumesXmlCommand: public XmlCommand
@@ -279,12 +277,12 @@ class LoadLogXmlCommand: public LogXmlCommand
 {
 protected:
 	virtual void Execute();
-	virtual MessageList* LockMessages();
-	virtual void UnlockMessages();
+	virtual GuardedMessageList GuardMessages();
 private:
-	MessageList m_messages;
 	int m_nzbId;
 	NzbInfo* m_nzbInfo;
+	MessageList m_messages;
+	std::unique_ptr<GuardedDownloadQueue> m_downloadQueue;
 };
 
 class TestServerXmlCommand: public XmlCommand
@@ -1274,17 +1272,18 @@ void StatusXmlCommand::Execute()
 		"\"Active\" : %s\n"
 		"}";
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 	int postJobCount = 0;
 	int urlCount = 0;
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-	{
-		postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
-		urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
-	}
 	int64 remainingSize, forcedSize;
-	downloadQueue->CalcRemainingSize(&remainingSize, &forcedSize);
-	DownloadQueue::Unlock();
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		{
+			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
+			urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;
+		}
+		downloadQueue->CalcRemainingSize(&remainingSize, &forcedSize);
+	}
 
 	uint32 remainingSizeHi, remainingSizeLo;
 	Util::SplitInt64(remainingSize, &remainingSizeHi, &remainingSizeLo);
@@ -1360,7 +1359,8 @@ void LogXmlCommand::Execute()
 	debug("iNrEntries=%i", m_nrEntries);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-	MessageList* messages = LockMessages();
+
+	GuardedMessageList messages = GuardMessages();
 
 	int start = messages->size();
 	if (m_nrEntries > 0)
@@ -1403,7 +1403,7 @@ void LogXmlCommand::Execute()
 
 	for (uint32 i = (uint32)start; i < messages->size(); i++)
 	{
-		Message& message = (*messages)[i];
+		Message& message = messages->at(i);
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
@@ -1411,18 +1411,12 @@ void LogXmlCommand::Execute()
 			*EncodeStr(message.GetText()));
 	}
 
-	UnlockMessages();
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
-MessageList* LogXmlCommand::LockMessages()
+GuardedMessageList LogXmlCommand::GuardMessages()
 {
-	return g_Log->LockMessages();
-}
-
-void LogXmlCommand::UnlockMessages()
-{
-	g_Log->UnlockMessages();
+	return g_Log->GuardMessages();
 }
 
 // struct[] listfiles(int IDFrom, int IDTo, int NZBID)
@@ -1451,7 +1445,6 @@ void ListFilesXmlCommand::Execute()
 	debug("iIDEnd=%i", idEnd);
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
 
 	const char* XML_LIST_ITEM =
 		"<value><struct>\n"
@@ -1501,7 +1494,7 @@ void ListFilesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
@@ -1530,7 +1523,6 @@ void ListFilesXmlCommand::Execute()
 		}
 	}
 
-	DownloadQueue::Unlock();
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
@@ -1839,7 +1831,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 	if (logEntries > 0 && postInfo)
 	{
-		MessageList* messages = postInfo->GetNzbInfo()->LockCachedMessages();
+		GuardedMessageList messages = postInfo->GetNzbInfo()->GuardCachedMessages();
 		if (!messages->empty())
 		{
 			if (logEntries > (int)messages->size())
@@ -1851,7 +1843,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 			int index = 0;
 			for (uint32 i = (uint32)start; i < messages->size(); i++)
 			{
-				Message& message = (*messages)[i];
+				Message& message = messages->at(i);
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
@@ -1859,7 +1851,6 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 					*EncodeStr(message.GetText()));
 			}
 		}
-		postInfo->GetNzbInfo()->UnlockCachedMessages();
 	}
 
 	AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
@@ -1915,9 +1906,7 @@ void ListGroupsXmlCommand::Execute()
 
 	int index = 0;
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		uint32 remainingSizeLo, remainingSizeHi, remainingSizeMB;
 		uint32 pausedSizeLo, pausedSizeHi, pausedSizeMB;
@@ -1941,14 +1930,13 @@ void ListGroupsXmlCommand::Execute()
 		AppendResponse(IsJson() ? JSON_LIST_ITEM_END : XML_LIST_ITEM_END);
 	}
 
-	DownloadQueue::Unlock();
-
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
 const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 {
-	const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING", "VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
+	const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING",
+		"VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
 
 	const char* status = nullptr;
 
@@ -1981,11 +1969,11 @@ const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 	return status;
 }
 
-typedef struct
+struct EditCommandEntry
 {
-	int				actionId;
-	const char*	actionName;
-} EditCommandEntry;
+	int actionId;
+	const char* actionName;
+};
 
 EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaFileMoveOffset, "FileMoveOffset" },
@@ -2092,9 +2080,7 @@ void EditQueueXmlCommand::Execute()
 		cIdList.push_back(id);
 	}
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	bool ok = downloadQueue->EditList(&cIdList, nullptr, DownloadQueue::mmId, (DownloadQueue::EEditAction)action, offset, editText);
-	DownloadQueue::Unlock();
+	bool ok = DownloadQueue::Guard()->EditList(&cIdList, nullptr, DownloadQueue::mmId, (DownloadQueue::EEditAction)action, offset, editText);
 
 	BuildBoolResponse(ok);
 }
@@ -2225,10 +2211,11 @@ void DownloadXmlCommand::Execute()
 
 		info("Queue %s", *nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename));
 
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		downloadQueue->GetQueue()->Add(std::move(nzbInfo), addTop);
-		downloadQueue->Save();
-		DownloadQueue::Unlock();
+		{
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+			downloadQueue->GetQueue()->Add(std::move(nzbInfo), addTop);
+			downloadQueue->Save();
+		}
 
 		if (v13)
 		{
@@ -2295,11 +2282,9 @@ void PostQueueXmlCommand::Execute()
 	const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING",
 		"VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
-	NzbList* nzbList = DownloadQueue::Lock()->GetQueue();
-
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : nzbList)
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
@@ -2318,8 +2303,6 @@ void PostQueueXmlCommand::Execute()
 
 		AppendResponse(IsJson() ? JSON_POSTQUEUE_ITEM_END : XML_POSTQUEUE_ITEM_END);
 	}
-
-	DownloadQueue::Unlock();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -2467,11 +2450,9 @@ void HistoryXmlCommand::Execute()
 	bool dup = false;
 	NextParamAsBool(&dup);
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-
 	int index = 0;
 
-	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
+	for (HistoryInfo* historyInfo : DownloadQueue::Guard()->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkDup && !dup)
 		{
@@ -2518,8 +2499,6 @@ void HistoryXmlCommand::Execute()
 	}
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
-
-	DownloadQueue::Unlock();
 }
 
 const char* HistoryXmlCommand::DetectStatus(HistoryInfo* historyInfo)
@@ -2567,11 +2546,9 @@ void UrlQueueXmlCommand::Execute()
 		"\"Priority\" : %i\n"
 		"}";
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
 	{
 		if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 		{
@@ -2581,8 +2558,6 @@ void UrlQueueXmlCommand::Execute()
 				*EncodeStr(nzbInfo->GetName()), *EncodeStr(nzbInfo->GetCategory()), nzbInfo->GetPriority());
 		}
 	}
-
-	DownloadQueue::Unlock();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -2606,9 +2581,7 @@ void ConfigXmlCommand::Execute()
 
 	int index = 0;
 
-	Options::OptEntries* optEntries = g_Options->LockOptEntries();
-
-	for (Options::OptEntry& optEntry : optEntries)
+	for (Options::OptEntry& optEntry : *g_Options->GuardOptEntries())
 	{
 		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
 			optEntry.Restricted() ? "***" : optEntry.GetValue());
@@ -2617,8 +2590,6 @@ void ConfigXmlCommand::Execute()
 		AppendFmtResponse(IsJson() ? JSON_CONFIG_ITEM : XML_CONFIG_ITEM,
 			*EncodeStr(optEntry.GetName()), *xmlValue);
 	}
-
-	g_Options->UnlockOptEntries();
 
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
@@ -3080,14 +3051,9 @@ void StartUpdateXmlCommand::Execute()
 }
 
 // struct[] logupdate(idfrom, entries)
-MessageList* LogUpdateXmlCommand::LockMessages()
+GuardedMessageList LogUpdateXmlCommand::GuardMessages()
 {
-	return g_Maintenance->LockMessages();
-}
-
-void LogUpdateXmlCommand::UnlockMessages()
-{
-	g_Maintenance->UnlockMessages();
+	return g_Maintenance->GuardMessages();
 }
 
 // struct[] servervolumes()
@@ -3161,11 +3127,9 @@ void ServerVolumesXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
-	ServerVolumes* serverVolumes = g_StatMeter->LockServerVolumes();
-
 	int index = 0;
 
-	for (ServerVolume& serverVolume : serverVolumes)
+	for (ServerVolume& serverVolume : *g_StatMeter->GuardServerVolumes())
 	{
 		uint32 totalSizeHi, totalSizeLo, totalSizeMB;
 		Util::SplitInt64(serverVolume.GetTotalBytes(), &totalSizeHi, &totalSizeLo);
@@ -3212,8 +3176,6 @@ void ServerVolumesXmlCommand::Execute()
 		index++;
 	}
 
-	g_StatMeter->UnlockServerVolumes();
-
 	AppendResponse(IsJson() ? "\n]" : "</data></array>\n");
 }
 
@@ -3240,9 +3202,8 @@ void ResetServerVolumeXmlCommand::Execute()
 	}
 
 	bool ok = false;
-	ServerVolumes* serverVolumes = g_StatMeter->LockServerVolumes();
 	int index = 0;
-	for (ServerVolume& serverVolume : serverVolumes)
+	for (ServerVolume& serverVolume : *g_StatMeter->GuardServerVolumes())
 	{
 		if (index == serverId || serverId == -1)
 		{
@@ -3251,7 +3212,6 @@ void ResetServerVolumeXmlCommand::Execute()
 		}
 		index++;
 	}
-	g_StatMeter->UnlockServerVolumes();
 
 	BuildBoolResponse(ok);
 }
@@ -3268,37 +3228,35 @@ void LoadLogXmlCommand::Execute()
 	}
 
 	LogXmlCommand::Execute();
+	m_downloadQueue.reset();
 }
 
-MessageList* LoadLogXmlCommand::LockMessages()
+GuardedMessageList LoadLogXmlCommand::GuardMessages()
 {
 	// TODO: optimize for m_iIDFrom and m_iNrEntries
 	g_DiskState->LoadNzbMessages(m_nzbId, &m_messages);
 
 	if (m_messages.empty())
 	{
-		DownloadQueue* downloadQueue = DownloadQueue::Lock();
-		m_nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
+		// When we returing cached messages from m_nzbInfo we have to make sure that
+		// m_nzbInfo isn't destroyed during we are working with CachedMessages.
+		// For that purpose we set a lock on DownloadQueue,
+		// which will be released later in LoadLogXmlCommand::Execute().
+
+		m_downloadQueue = std::make_unique<GuardedDownloadQueue>(DownloadQueue::Guard());
+		m_nzbInfo = (*m_downloadQueue)->GetQueue()->Find(m_nzbId);
 		if (m_nzbInfo)
 		{
-			return m_nzbInfo->LockCachedMessages();
+			return m_nzbInfo->GuardCachedMessages();
 		}
 		else
 		{
-			DownloadQueue::Unlock();
+			// No nzb-object available, the lock on DownloadQueue can be released right now.
+			m_downloadQueue.reset();
 		}
 	}
 
-	return &m_messages;
-}
-
-void LoadLogXmlCommand::UnlockMessages()
-{
-	if (m_nzbInfo)
-	{
-		m_nzbInfo->UnlockCachedMessages();
-		DownloadQueue::Unlock();
-	}
+	return GuardedMessageList(&m_messages, nullptr);
 }
 
 // string testserver(string host, int port, string username, string password, bool encryption, string cipher, int timeout);

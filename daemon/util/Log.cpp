@@ -264,17 +264,6 @@ void Log::AddMessage(Message::EKind kind, const char * text)
 	}
 }
 
-MessageList* Log::LockMessages()
-{
-	m_logMutex.Lock();
-	return &m_messages;
-}
-
-void Log::UnlockMessages()
-{
-	m_logMutex.Unlock();
-}
-
 void Log::ResetLog()
 {
 	FileSystem::DeleteFile(g_Options->GetLogFile());

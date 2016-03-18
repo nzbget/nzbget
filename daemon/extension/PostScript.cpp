@@ -45,22 +45,22 @@ void PostScriptController::Run()
 {
 	StringBuilder scriptCommaList;
 
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	for (NzbParameter& parameter : m_postInfo->GetNzbInfo()->GetParameters())
 	{
-		const char* varname = parameter.GetName();
-		if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname)-1] == ':' &&
-			(!strcasecmp(parameter.GetValue(), "yes") || !strcasecmp(parameter.GetValue(), "on") || !strcasecmp(parameter.GetValue(), "1")))
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		for (NzbParameter& parameter : m_postInfo->GetNzbInfo()->GetParameters())
 		{
-			CString scriptName(varname);
-			scriptName[strlen(scriptName)-1] = '\0'; // remove trailing ':'
-			scriptCommaList.Append(scriptName);
-			scriptCommaList.Append(",");
+			const char* varname = parameter.GetName();
+			if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname) - 1] == ':' &&
+				(!strcasecmp(parameter.GetValue(), "yes") || !strcasecmp(parameter.GetValue(), "on") || !strcasecmp(parameter.GetValue(), "1")))
+			{
+				CString scriptName(varname);
+				scriptName[strlen(scriptName) - 1] = '\0'; // remove trailing ':'
+				scriptCommaList.Append(scriptName);
+				scriptCommaList.Append(",");
+			}
 		}
+		m_postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
 	}
-	m_postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
-	DownloadQueue::Unlock();
 
 	ExecuteScriptList(scriptCommaList);
 
@@ -80,9 +80,10 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	BString<1024> progressLabel("Executing post-process-script %s", script->GetName());
 
-	DownloadQueue::Lock();
-	m_postInfo->SetProgressLabel(progressLabel);
-	DownloadQueue::Unlock();
+	{
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		m_postInfo->SetProgressLabel(progressLabel);
+	}
 
 	SetScript(script->GetLocation());
 
@@ -101,16 +102,15 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 	SetLogPrefix(nullptr);
 	ScriptStatus::EStatus status = AnalyseExitCode(exitCode);
 
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	m_postInfo->GetNzbInfo()->GetScriptStatuses()->emplace_back(script->GetName(), status);
-	DownloadQueue::Unlock();
+	{
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		m_postInfo->GetNzbInfo()->GetScriptStatuses()->emplace_back(script->GetName(), status);
+	}
 }
 
 void PostScriptController::PrepareParams(const char* scriptName)
 {
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 
 	ResetEnv();
 
@@ -173,8 +173,6 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	}
 
 	PrepareEnvScript(m_postInfo->GetNzbInfo()->GetParameters(), scriptName);
-
-	DownloadQueue::Unlock();
 }
 
 ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int exitCode)
@@ -229,15 +227,13 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 		debug("Command %s detected", msgText + 6);
 		if (!strncmp(msgText + 6, "FINALDIR=", 9))
 		{
-			DownloadQueue::Lock();
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
 			m_postInfo->GetNzbInfo()->SetFinalDir(msgText + 6 + 9);
-			DownloadQueue::Unlock();
 		}
 		else if (!strncmp(msgText + 6, "DIRECTORY=", 10))
 		{
-			DownloadQueue::Lock();
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
 			m_postInfo->GetNzbInfo()->SetDestDir(msgText + 6 + 10);
-			DownloadQueue::Unlock();
 		}
 		else if (!strncmp(msgText + 6, "NZBPR_", 6))
 		{
@@ -246,9 +242,8 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 			if (value)
 			{
 				*value = '\0';
-				DownloadQueue::Lock();
+				GuardedDownloadQueue guard = DownloadQueue::Guard();
 				m_postInfo->GetNzbInfo()->GetParameters()->SetParameter(param, value + 1);
-				DownloadQueue::Unlock();
 			}
 			else
 			{
@@ -272,9 +267,8 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 	else
 	{
 		m_postInfo->GetNzbInfo()->AddMessage(kind, text);
-		DownloadQueue::Lock();
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
 		m_postInfo->SetProgressLabel(text);
-		DownloadQueue::Unlock();
 	}
 
 	if (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority())

@@ -413,9 +413,9 @@ void StatMeter::AddServerData(int bytes, int serverId)
 	m_statChanged = true;
 }
 
-ServerVolumes* StatMeter::LockServerVolumes()
+GuardedServerVolumes StatMeter::GuardServerVolumes()
 {
-	m_volumeMutex.Lock();
+	GuardedServerVolumes serverVolumes(&m_serverVolumes, &m_volumeMutex);
 
 	// update slots
 	for (ServerVolume& serverVolume : m_serverVolumes)
@@ -423,12 +423,7 @@ ServerVolumes* StatMeter::LockServerVolumes()
 		serverVolume.AddData(0);
 	}
 
-	return &m_serverVolumes;
-}
-
-void StatMeter::UnlockServerVolumes()
-{
-	m_volumeMutex.Unlock();
+	return serverVolumes;
 }
 
 void StatMeter::Save()

@@ -117,6 +117,8 @@ public:
 		OptEntry* FindOption(const char* name);
 	};
 
+	typedef GuardedPtr<OptEntries> GuardedOptEntries;
+
 	typedef std::vector<CString> NameList;
 	typedef std::vector<const char*> CmdOptList;
 
@@ -169,8 +171,7 @@ public:
 
 	bool SplitOptionString(const char* option, CString& optName, CString& optValue);
 	bool GetFatalError() { return m_fatalError; }
-	OptEntries* LockOptEntries();
-	void UnlockOptEntries();
+	GuardedOptEntries GuardOptEntries() { return GuardedOptEntries(&m_optEntries, &m_optEntriesMutex); }
 
 	// Options
 	const char* GetConfigFilename() { return m_configFilename; }

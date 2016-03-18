@@ -48,7 +48,6 @@ private:
 class ArticleWriter
 {
 public:
-	~ArticleWriter();
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
 	void SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
 	void SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
@@ -76,7 +75,6 @@ private:
 	int64 m_articleOffset;
 	int m_articleSize;
 	int m_articlePtr;
-	bool m_flushing = false;
 	bool m_duplicate = false;
 	CString m_infoName;
 
@@ -88,15 +86,24 @@ private:
 class ArticleCache : public Thread
 {
 public:
+	class FlushGuard
+	{
+	public:
+		FlushGuard(FlushGuard&& other) = default;
+		~FlushGuard();
+	private:
+		Guard m_guard;
+		FlushGuard(Mutex& mutex);
+		friend class ArticleCache;
+	};
+
 	ArticleCache();
 	virtual void Run();
 	CachedSegmentData Alloc(int size);
 	bool Realloc(CachedSegmentData* segment, int newSize);
 	void Free(CachedSegmentData* segment);
-	void LockFlush();
-	void UnlockFlush();
-	void LockContent() { m_contentMutex.Lock(); }
-	void UnlockContent() { m_contentMutex.Unlock(); }
+	FlushGuard GuardFlush() { return FlushGuard(m_flushMutex); }
+	Guard GuardContent() { return Guard(m_contentMutex); }
 	bool GetFlushing() { return m_flushing; }
 	size_t GetAllocated() { return m_allocated; }
 	bool FileBusy(FileInfo* fileInfo) { return fileInfo == m_fileInfo; }

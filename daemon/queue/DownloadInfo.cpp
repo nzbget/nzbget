@@ -349,17 +349,6 @@ void NzbInfo::UpdateMinMaxTime()
 	}
 }
 
-MessageList* NzbInfo::LockCachedMessages()
-{
-	m_logMutex.Lock();
-	return &m_messages;
-}
-
-void NzbInfo::UnlockCachedMessages()
-{
-	m_logMutex.Unlock();
-}
-
 void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 {
 	switch (kind)
@@ -697,16 +686,6 @@ void FileInfo::MakeValidFilename()
 	FileSystem::MakeValidFilename(m_filename, '_', false);
 }
 
-void FileInfo::LockOutputFile()
-{
-	m_outputFileMutex->Lock();
-}
-
-void FileInfo::UnlockOutputFile()
-{
-	m_outputFileMutex->Unlock();
-}
-
 void FileInfo::SetActiveDownloads(int activeDownloads)
 {
 	m_activeDownloads = activeDownloads;
@@ -783,17 +762,6 @@ const char* HistoryInfo::GetName()
 	}
 }
 
-
-DownloadQueue* DownloadQueue::Lock()
-{
-	g_DownloadQueue->m_lockMutex.Lock();
-	return g_DownloadQueue;
-}
-
-void DownloadQueue::Unlock()
-{
-	g_DownloadQueue->m_lockMutex.Unlock();
-}
 
 void DownloadQueue::CalcRemainingSize(int64* remaining, int64* remainingForced)
 {

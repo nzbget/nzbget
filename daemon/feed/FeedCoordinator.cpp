@@ -41,9 +41,7 @@ void FeedCoordinator::FilterHelper::CalcDupeStatus(const char* title, const char
 	const char* dupeStatusName[] = { "", "QUEUED", "DOWNLOADING", "3", "SUCCESS", "5", "6", "7", "WARNING",
 		"9", "10", "11", "12", "13", "14", "15", "FAILURE" };
 
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	DupeCoordinator::EDupeStatus dupeStatus = g_DupeCoordinator->GetDupeStatus(downloadQueue, title, dupeKey);
-	DownloadQueue::Unlock();
+	DupeCoordinator::EDupeStatus dupeStatus = g_DupeCoordinator->GetDupeStatus(DownloadQueue::Guard(), title, dupeKey);
 
 	BString<1024> statuses;
 	for (int i = 1; i <= (int)DupeCoordinator::dsFailure; i = i << 1)
@@ -66,9 +64,7 @@ FeedCoordinator::FeedCoordinator()
 	debug("Creating FeedCoordinator");
 
 	m_downloadQueueObserver.m_owner = this;
-	DownloadQueue* downloadQueue = DownloadQueue::Lock();
-	downloadQueue->Attach(&m_downloadQueueObserver);
-	DownloadQueue::Unlock();
+	DownloadQueue::Guard()->Attach(&m_downloadQueueObserver);
 }
 
 FeedCoordinator::~FeedCoordinator()
@@ -158,9 +154,10 @@ void FeedCoordinator::Run()
 	bool completed = false;
 	while (!completed)
 	{
-		m_downloadsMutex.Lock();
-		completed = m_activeDownloads.size() == 0;
-		m_downloadsMutex.Unlock();
+		{
+			Guard guard(m_downloadsMutex);
+			completed = m_activeDownloads.size() == 0;
+		}
 		CheckSaveFeeds();
 		usleep(100 * 1000);
 		ResetHangingDownloads();
@@ -328,13 +325,12 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 				m_save = true;
 			}
 
-			DownloadQueue* downloadQueue = DownloadQueue::Lock();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 			for (std::unique_ptr<NzbInfo>& nzbInfo : addedNzbs)
 			{
 				downloadQueue->GetQueue()->Add(std::move(nzbInfo));
 			}
 			downloadQueue->Save();
-			DownloadQueue::Unlock();
 		}
 		feedInfo->SetStatus(FeedInfo::fsFinished);
 	}
