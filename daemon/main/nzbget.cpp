@@ -204,6 +204,7 @@ private:
 	std::unique_ptr<CommandLineParser> m_commandLineParser;
 
 	bool m_reloading = false;
+	bool m_daemonized = false;
 
 	void Init();
 	void BootConfig();
@@ -402,7 +403,7 @@ void NZBGet::Cleanup()
 {
 	debug("Cleaning up global objects");
 
-	if (m_options && m_commandLineParser->GetDaemonMode() && !m_reloading)
+	if (m_options && m_commandLineParser->GetDaemonMode() && !m_reloading && m_daemonized)
 	{
 		info("Deleting lock file");
 		FileSystem::DeleteFile(m_options->GetLockFile());
@@ -859,6 +860,7 @@ void NZBGet::Daemonize()
 	if (f > 0) exit(0); /* parent exits */
 
 	/* child (daemon) continues */
+	m_daemonized = true;
 
 	// obtain a new process group
 	setsid();
