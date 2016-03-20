@@ -22,7 +22,6 @@
 
 AC_PREREQ(2.59)
 AC_INIT(nzbget, 17.0-testing, hugbug@users.sourceforge.net)
-AC_CONFIG_MACRO_DIR([posix])
 AC_CONFIG_AUX_DIR(posix)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign])
@@ -30,6 +29,7 @@ AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 AM_MAINTAINER_MODE
 
+m4_include([posix/ax_cxx_compile_stdcxx.m4])
 
 dnl
 dnl Set default library path, if not specified in environment variable "LIBPREF".
