@@ -233,7 +233,8 @@ EXTRA_DIST = \
 	$(windows_FILES) \
 	$(osx_FILES) \
 	$(linux_FILES) \
-	$(testdata_FILES)
+	$(testdata_FILES) \
+	$(par2doc_FILES)
 
 windows_FILES = \
 	daemon/windows/StdAfx.cpp \
@@ -296,13 +297,14 @@ linux_FILES = \
 	linux/build-unpack \
 	linux/build-toolchain-freebsd
 
-
 doc_FILES = \
-	lib/par2/AUTHORS \
-	lib/par2/README \
 	README \
 	ChangeLog \
 	COPYING
+
+par2doc_FILES = \
+	lib/par2/AUTHORS \
+	lib/par2/README
 
 exampleconf_FILES = \
 	nzbget.conf

@@ -331,7 +331,6 @@ PackTarget()
     mkdir -p nzbget
     mv install/usr/local/bin/nzbget nzbget
     mv install/usr/local/share/doc/nzbget/* nzbget
-    rm nzbget/AUTHORS
     mv install/usr/local/share/nzbget/webui nzbget
     mv install/usr/local/share/nzbget/scripts nzbget
     CONFTEMPLATE=nzbget/webui/nzbget.conf.template
