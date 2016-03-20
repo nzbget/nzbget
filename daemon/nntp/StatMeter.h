@@ -55,9 +55,9 @@ public:
 	void LogDebugInfo();
 
 private:
-	VolumeArray m_bytesPerSeconds{60};
-	VolumeArray m_bytesPerMinutes{60};
-	VolumeArray m_bytesPerHours{24};
+	VolumeArray m_bytesPerSeconds = VolumeArray(60);
+	VolumeArray m_bytesPerMinutes = VolumeArray(60);
+	VolumeArray m_bytesPerHours = VolumeArray(24);
 	VolumeArray m_bytesPerDays;
 	int m_firstDay = 0;
 	int64 m_totalBytes = 0;
