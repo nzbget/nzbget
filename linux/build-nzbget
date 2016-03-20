@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#  This file is part of nzbget. See <http://nzbget.net>.
+#  This file is part of nzbget
 #
-#  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -472,7 +472,7 @@ BuildDist()
     echo "Building dist"
 
     cd $BUILDDIR
-    ./configure --disable-dependency-tracking
+    ./configure --disable-dependency-tracking --disable-cpp-check
     make dist
     cp nzbget-$VERSION.tar.gz $OUTPUTDIR/$BASENAME.tar.gz
 }
