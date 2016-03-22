@@ -20,6 +20,7 @@
 
 #include "nzbget.h"
 #include "FileSystem.h"
+#include "Util.h"
 
 CString FileSystem::GetLastErrorMessage()
 {
@@ -726,6 +727,66 @@ bool FileSystem::SameFilename(const char* filename1, const char* filename2)
 #endif
 }
 
+#ifdef WIN32
+CString FileSystem::MakeCanonicalPath(const char* path)
+{
+	int len = strlen(path);
+
+	if (!strncmp("\\\\?\\", path, 4) || len == 0)
+	{
+		return path;
+	}
+
+	std::vector<CString> components = Util::SplitStr(path, "\\/");
+	for (uint32 i = 1; i < components.size(); i++)
+	{
+		if (!strcmp(components[i], ".."))
+		{
+			components.erase(components.begin() + i - 1, components.begin() + i + 1);
+			i -= 2;
+		}
+		else if (!strcmp(components[i], "."))
+		{
+			components.erase(components.begin() + i);
+			i--;
+		}
+	}
+
+	StringBuilder result;
+	result.Reserve(strlen(path));
+
+	if (!strncmp("\\\\", path, 2))
+	{
+		result.Append("\\\\");
+	}
+
+	bool first = true;
+	for (CString& comp : components)
+	{
+		if (comp.Length() > 0)
+		{
+			if (!first)
+			{
+				result.Append("\\");
+			}
+			result.Append(comp);
+			first = false;
+		}
+	}
+
+	if ((path[len - 1] == '\\' || path[len - 1] == '/' ||
+		(len > 3 && !strcmp(path + len - 3, "\\..")) ||
+		(len > 2 && !strcmp(path + len - 2, "\\.")))
+		&&
+		result[result.Length() - 1] != '\\')
+	{
+		result.Append("\\");
+	}
+
+	return *result;
+}
+#endif
+
 bool FileSystem::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 {
 #ifdef WIN32
@@ -791,21 +852,22 @@ void FileSystem::FixExecPermission(const char* filename)
 }
 #endif
 
-CString FileSystem::MakeExtendedPath(const char* path)
+CString FileSystem::MakeExtendedPath(const char* path, bool force)
 {
 #ifdef WIN32
-	if (strlen(path) > 260 - 14)
+	if (force || strlen(path) > 260 - 14)
 	{
+		CString canonicalPath = MakeCanonicalPath(path);
 		BString<1024> longpath;
-		if (path[0] == '\\' && path[1] == '\\')
+		if (canonicalPath[0] == '\\' && canonicalPath[1] == '\\')
 		{
 			// UNC path
-			longpath.Format("\\\\?\\UNC\\%s", path + 2);
+			longpath.Format("\\\\?\\UNC\\%s", canonicalPath + 2);
 		}
 		else
 		{
 			// local path
-			longpath.Format("\\\\?\\%s", path);
+			longpath.Format("\\\\?\\%s", canonicalPath);
 		}
 		return *longpath;
 	}
@@ -819,7 +881,7 @@ CString FileSystem::MakeExtendedPath(const char* path)
 #ifdef WIN32
 WString FileSystem::UtfPathToWidePath(const char* utfpath)
 {
-	return *FileSystem::MakeExtendedPath(utfpath);
+	return *FileSystem::MakeExtendedPath(utfpath, false);
 }
 
 CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)

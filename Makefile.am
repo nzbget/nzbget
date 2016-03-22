@@ -221,6 +221,7 @@ nzbget_SOURCES += \
 	tests/postprocess/ParRenamerTest.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
 	tests/queue/NzbFileTest.cpp \
+	tests/util/FileSystemTest.cpp \
 	tests/util/NStringTest.cpp \
 	tests/util/UtilTest.cpp
 

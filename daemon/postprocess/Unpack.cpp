@@ -269,7 +269,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 	}
 
 	params.emplace_back(m_hasNonStdRarFiles ? "*.*" : "*.rar");
-	params.push_back(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR)));
+	params.push_back(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR), true));
 	SetScript(params[0]);
 	SetArgs(std::move(params));
 	SetLogPrefix("Unrar");

@@ -69,11 +69,12 @@ public:
 	/* Flush disk buffers for file metadata (after file renaming) */
 	static bool FlushDirBuffers(const char* filename, CString& errmsg);
 
-	static CString MakeExtendedPath(const char* path);
+	static CString MakeExtendedPath(const char* path, bool force);
 
 #ifdef WIN32
 	static WString UtfPathToWidePath(const char* utfpath);
 	static CString WidePathToUtfPath(const wchar_t* wpath);
+	static CString MakeCanonicalPath(const char* filename);
 #endif
 };
 
