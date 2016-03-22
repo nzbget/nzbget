@@ -419,6 +419,8 @@ datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+gnutls_CFLAGS = @gnutls_CFLAGS@
+gnutls_LIBS = @gnutls_LIBS@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
@@ -436,6 +438,8 @@ localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
+ncurses_CFLAGS = @ncurses_CFLAGS@
+ncurses_LIBS = @ncurses_LIBS@
 oldincludedir = @oldincludedir@
 openssl_CFLAGS = @openssl_CFLAGS@
 openssl_LIBS = @openssl_LIBS@
@@ -451,6 +455,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+zlib_CFLAGS = @zlib_CFLAGS@
+zlib_LIBS = @zlib_LIBS@
 nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TlsSocket.cpp \
 	daemon/connect/TlsSocket.h daemon/connect/WebDownloader.cpp \

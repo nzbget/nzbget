@@ -31,13 +31,6 @@ AM_MAINTAINER_MODE
 
 m4_include([posix/ax_cxx_compile_stdcxx.m4])
 
-dnl
-dnl Set default library path, if not specified in environment variable "LIBPREF".
-dnl
-if test "$LIBPREF" = ""; then
-	LIBPREF="/usr"
-fi
-
 
 dnl
 dnl Check for programs.
@@ -277,17 +270,23 @@ AC_ARG_ENABLE(curses,
 	[USECURSES=yes] )
 AC_MSG_RESULT($USECURSES)
 if test "$USECURSES" = "yes"; then
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
 	AC_ARG_WITH(libcurses_includes,
 		[AS_HELP_STRING([--with-libcurses-includes=DIR], [libcurses include directory])],
-		[INCVAL="$withval"])
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+		[INCVAL="yes"],
+		[INCVAL="no"])
 	AC_ARG_WITH(libcurses_libraries,
 		[AS_HELP_STRING([--with-libcurses-libraries=DIR], [libcurses library directory])],
-		[LIBVAL="$withval"])
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-	
+		[LDFLAGS="${LDFLAGS} -L${withval}"]
+		[LIBVAL="yes"],
+		[LIBVAL="no"])
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+		PKG_CHECK_MODULES(ncurses, ncurses,
+			[LIBS="${LIBS} $ncurses_LIBS"]
+			[CPPFLAGS="${CPPFLAGS} $ncurses_CFLAGS"],
+			AC_MSG_ERROR("ncurses library not found"))
+	fi
+
 	AC_CHECK_HEADER(ncurses.h,
 		FOUND=yes
 		AC_DEFINE([HAVE_NCURSES_H],1,[Define to 1 if you have the <ncurses.h> header file.]),
@@ -308,6 +307,8 @@ if test "$USECURSES" = "yes"; then
 		AC_MSG_ERROR([Couldn't find curses headers (ncurses.h or curses.h)])
 	fi
 	AC_SEARCH_LIBS([refresh], [ncurses curses],, 
+		AC_ERROR([Couldn't find curses library]))
+	AC_SEARCH_LIBS([nodelay], [ncurses curses tinfo],, 
 		AC_ERROR([Couldn't find curses library]))
 else
 	AC_DEFINE([DISABLE_CURSES],1,[Define to 1 to not use curses])
@@ -373,8 +374,7 @@ if test "$USETLS" = "yes"; then
 		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 			PKG_CHECK_MODULES([openssl], [openssl],
 				[LIBS="${LIBS} $openssl_LIBS"]
-				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"],
-				FOUND=no)
+				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"])
 		fi
 
 		AC_CHECK_HEADER(openssl/ssl.h,
@@ -401,16 +401,21 @@ if test "$USETLS" = "yes"; then
 	fi
 
 	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
-		INCVAL="${LIBPREF}/include"
-		LIBVAL="${LIBPREF}/lib"
 		AC_ARG_WITH(libgnutls_includes,
 			[AS_HELP_STRING([--with-libgnutls-includes=DIR], [GnuTLS include directory])],
-			[INCVAL="$withval"])
-		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+			[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+			[INCVAL="yes"],
+			[INCVAL="no"])
 		AC_ARG_WITH(libgnutls_libraries,
 			[AS_HELP_STRING([--with-libgnutls-libraries=DIR], [GnuTLS library directory])],
-			[LIBVAL="$withval"])
-		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+			[LDFLAGS="${LDFLAGS} -L${withval}"]
+			[LIBVAL="yes"],
+			[LIBVAL="no"])
+		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+			PKG_CHECK_MODULES([gnutls], [gnutls],
+				[LIBS="${LIBS} $gnutls_LIBS"]
+				[CPPFLAGS="${CPPFLAGS} $gnutls_CFLAGS"])
+		fi
 
 		AC_CHECK_HEADER(gnutls/gnutls.h,
 			FOUND=yes
@@ -476,16 +481,21 @@ AC_ARG_ENABLE(gzip,
 	[USEZLIB=yes] )
 AC_MSG_RESULT($USEZLIB)
 if test "$USEZLIB" = "yes"; then
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
 	AC_ARG_WITH(zlib_includes,
 		[AS_HELP_STRING([--with-zlib-includes=DIR], [zlib include directory])],
-		[INCVAL="$withval"])
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+		[INCVAL="yes"],
+		[INCVAL="no"])
 	AC_ARG_WITH(zlib_libraries,
 		[AS_HELP_STRING([--with-zlib-libraries=DIR], [zlib library directory])],
-		[LIBVAL="$withval"])
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+		[LDFLAGS="${LDFLAGS} -L${withval}"]
+		[LIBVAL="yes"],
+		[LIBVAL="no"])
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+		PKG_CHECK_MODULES([zlib], [zlib],
+			[LIBS="${LIBS} $zlib_LIBS"]
+			[CPPFLAGS="${CPPFLAGS} $zlib_CFLAGS"])
+	fi
 	
 	AC_CHECK_HEADER(zlib.h,,
 		AC_MSG_ERROR("zlib header files not found"))

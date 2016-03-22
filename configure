@@ -713,10 +713,16 @@ EGREP
 PKG_CONFIG
 libxml2_CFLAGS
 libxml2_LIBS
+ncurses_CFLAGS
+ncurses_LIBS
 WITH_PAR2_TRUE
 WITH_PAR2_FALSE
 openssl_CFLAGS
 openssl_LIBS
+gnutls_CFLAGS
+gnutls_LIBS
+zlib_CFLAGS
+zlib_LIBS
 WITH_TESTS_TRUE
 WITH_TESTS_FALSE
 LIBOBJS
@@ -735,8 +741,14 @@ CXXCPP
 PKG_CONFIG
 libxml2_CFLAGS
 libxml2_LIBS
+ncurses_CFLAGS
+ncurses_LIBS
 openssl_CFLAGS
-openssl_LIBS'
+openssl_LIBS
+gnutls_CFLAGS
+gnutls_LIBS
+zlib_CFLAGS
+zlib_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1376,10 +1388,19 @@ Some influential environment variables:
               C compiler flags for libxml2, overriding pkg-config
   libxml2_LIBS
               linker flags for libxml2, overriding pkg-config
+  ncurses_CFLAGS
+              C compiler flags for ncurses, overriding pkg-config
+  ncurses_LIBS
+              linker flags for ncurses, overriding pkg-config
   openssl_CFLAGS
               C compiler flags for openssl, overriding pkg-config
   openssl_LIBS
               linker flags for openssl, overriding pkg-config
+  gnutls_CFLAGS
+              C compiler flags for gnutls, overriding pkg-config
+  gnutls_LIBS linker flags for gnutls, overriding pkg-config
+  zlib_CFLAGS C compiler flags for zlib, overriding pkg-config
+  zlib_LIBS   linker flags for zlib, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -2491,10 +2512,6 @@ fi
 
 
 
-
-if test "$LIBPREF" = ""; then
-	LIBPREF="/usr"
-fi
 
 
 ac_ext=cpp
@@ -7969,22 +7986,102 @@ fi
 { echo "$as_me:$LINENO: result: $USECURSES" >&5
 echo "${ECHO_T}$USECURSES" >&6; }
 if test "$USECURSES" = "yes"; then
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
 
 # Check whether --with-libcurses_includes was given.
 if test "${with_libcurses_includes+set}" = set; then
-  withval=$with_libcurses_includes; INCVAL="$withval"
+  withval=$with_libcurses_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
+		INCVAL="yes"
+else
+  INCVAL="no"
 fi
 
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
 
 # Check whether --with-libcurses_libraries was given.
 if test "${with_libcurses_libraries+set}" = set; then
-  withval=$with_libcurses_libraries; LIBVAL="$withval"
+  withval=$with_libcurses_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
+		LIBVAL="yes"
+else
+  LIBVAL="no"
 fi
 
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for ncurses" >&5
+echo $ECHO_N "checking for ncurses... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$ncurses_CFLAGS"; then
+        pkg_cv_ncurses_CFLAGS="$ncurses_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ncurses\"") >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_ncurses_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$ncurses_LIBS"; then
+        pkg_cv_ncurses_LIBS="$ncurses_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ncurses\"") >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_ncurses_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        ncurses_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ncurses"`
+        else
+	        ncurses_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ncurses"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$ncurses_PKG_ERRORS" >&5
+
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+                { { echo "$as_me:$LINENO: error: \"ncurses library not found\"" >&5
+echo "$as_me: error: \"ncurses library not found\"" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: \"ncurses library not found\"" >&5
+echo "$as_me: error: \"ncurses library not found\"" >&2;}
+   { (exit 1); exit 1; }; }
+else
+	ncurses_CFLAGS=$pkg_cv_ncurses_CFLAGS
+	ncurses_LIBS=$pkg_cv_ncurses_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	LIBS="${LIBS} $ncurses_LIBS"
+			CPPFLAGS="${CPPFLAGS} $ncurses_CFLAGS"
+fi
+	fi
 
 	if test "${ac_cv_header_ncurses_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for ncurses.h" >&5
@@ -8499,6 +8596,93 @@ fi
 { echo "$as_me:$LINENO: result: $ac_cv_search_refresh" >&5
 echo "${ECHO_T}$ac_cv_search_refresh" >&6; }
 ac_res=$ac_cv_search_refresh
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Couldn't find curses library" >&5
+echo "$as_me: error: Couldn't find curses library" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+	{ echo "$as_me:$LINENO: checking for library containing nodelay" >&5
+echo $ECHO_N "checking for library containing nodelay... $ECHO_C" >&6; }
+if test "${ac_cv_search_nodelay+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char nodelay ();
+int
+main ()
+{
+return nodelay ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' ncurses curses tinfo; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_nodelay=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_nodelay+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_nodelay+set}" = set; then
+  :
+else
+  ac_cv_search_nodelay=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_nodelay" >&5
+echo "${ECHO_T}$ac_cv_search_nodelay" >&6; }
+ac_res=$ac_cv_search_nodelay
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
@@ -9414,11 +9598,51 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$openssl_PKG_ERRORS" >&5
 
-	{ echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-                FOUND=no
+	{ { echo "$as_me:$LINENO: error: Package requirements (openssl) were not met:
+
+$openssl_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (openssl) were not met:
+
+$openssl_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
 elif test $pkg_failed = untried; then
-	FOUND=no
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables openssl_CFLAGS
+and openssl_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
 else
 	openssl_CFLAGS=$pkg_cv_openssl_CFLAGS
 	openssl_LIBS=$pkg_cv_openssl_LIBS
@@ -9759,22 +9983,138 @@ _ACEOF
 	fi
 
 	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
-		INCVAL="${LIBPREF}/include"
-		LIBVAL="${LIBPREF}/lib"
 
 # Check whether --with-libgnutls_includes was given.
 if test "${with_libgnutls_includes+set}" = set; then
-  withval=$with_libgnutls_includes; INCVAL="$withval"
+  withval=$with_libgnutls_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
+			INCVAL="yes"
+else
+  INCVAL="no"
 fi
 
-		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
 
 # Check whether --with-libgnutls_libraries was given.
 if test "${with_libgnutls_libraries+set}" = set; then
-  withval=$with_libgnutls_libraries; LIBVAL="$withval"
+  withval=$with_libgnutls_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
+			LIBVAL="yes"
+else
+  LIBVAL="no"
 fi
 
-		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for gnutls" >&5
+echo $ECHO_N "checking for gnutls... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$gnutls_CFLAGS"; then
+        pkg_cv_gnutls_CFLAGS="$gnutls_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gnutls\"") >&5
+  ($PKG_CONFIG --exists --print-errors "gnutls") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_gnutls_CFLAGS=`$PKG_CONFIG --cflags "gnutls" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$gnutls_LIBS"; then
+        pkg_cv_gnutls_LIBS="$gnutls_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gnutls\"") >&5
+  ($PKG_CONFIG --exists --print-errors "gnutls") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_gnutls_LIBS=`$PKG_CONFIG --libs "gnutls" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        gnutls_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "gnutls"`
+        else
+	        gnutls_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "gnutls"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$gnutls_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (gnutls) were not met:
+
+$gnutls_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables gnutls_CFLAGS
+and gnutls_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (gnutls) were not met:
+
+$gnutls_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables gnutls_CFLAGS
+and gnutls_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables gnutls_CFLAGS
+and gnutls_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables gnutls_CFLAGS
+and gnutls_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	gnutls_CFLAGS=$pkg_cv_gnutls_CFLAGS
+	gnutls_LIBS=$pkg_cv_gnutls_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	LIBS="${LIBS} $gnutls_LIBS"
+				CPPFLAGS="${CPPFLAGS} $gnutls_CFLAGS"
+fi
+		fi
 
 		if test "${ac_cv_header_gnutls_gnutls_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for gnutls/gnutls.h" >&5
@@ -10328,22 +10668,138 @@ fi
 { echo "$as_me:$LINENO: result: $USEZLIB" >&5
 echo "${ECHO_T}$USEZLIB" >&6; }
 if test "$USEZLIB" = "yes"; then
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
 
 # Check whether --with-zlib_includes was given.
 if test "${with_zlib_includes+set}" = set; then
-  withval=$with_zlib_includes; INCVAL="$withval"
+  withval=$with_zlib_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
+		INCVAL="yes"
+else
+  INCVAL="no"
 fi
 
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
 
 # Check whether --with-zlib_libraries was given.
 if test "${with_zlib_libraries+set}" = set; then
-  withval=$with_zlib_libraries; LIBVAL="$withval"
+  withval=$with_zlib_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
+		LIBVAL="yes"
+else
+  LIBVAL="no"
 fi
 
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for zlib" >&5
+echo $ECHO_N "checking for zlib... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$zlib_CFLAGS"; then
+        pkg_cv_zlib_CFLAGS="$zlib_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"zlib\"") >&5
+  ($PKG_CONFIG --exists --print-errors "zlib") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_zlib_CFLAGS=`$PKG_CONFIG --cflags "zlib" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$zlib_LIBS"; then
+        pkg_cv_zlib_LIBS="$zlib_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"zlib\"") >&5
+  ($PKG_CONFIG --exists --print-errors "zlib") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_zlib_LIBS=`$PKG_CONFIG --libs "zlib" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        zlib_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "zlib"`
+        else
+	        zlib_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "zlib"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$zlib_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (zlib) were not met:
+
+$zlib_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables zlib_CFLAGS
+and zlib_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (zlib) were not met:
+
+$zlib_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables zlib_CFLAGS
+and zlib_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables zlib_CFLAGS
+and zlib_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables zlib_CFLAGS
+and zlib_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	zlib_CFLAGS=$pkg_cv_zlib_CFLAGS
+	zlib_LIBS=$pkg_cv_zlib_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	LIBS="${LIBS} $zlib_LIBS"
+			CPPFLAGS="${CPPFLAGS} $zlib_CFLAGS"
+fi
+	fi
 
 	if test "${ac_cv_header_zlib_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for zlib.h" >&5
@@ -11739,17 +12195,23 @@ ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
 libxml2_LIBS!$libxml2_LIBS$ac_delim
+ncurses_CFLAGS!$ncurses_CFLAGS$ac_delim
+ncurses_LIBS!$ncurses_LIBS$ac_delim
 WITH_PAR2_TRUE!$WITH_PAR2_TRUE$ac_delim
 WITH_PAR2_FALSE!$WITH_PAR2_FALSE$ac_delim
 openssl_CFLAGS!$openssl_CFLAGS$ac_delim
 openssl_LIBS!$openssl_LIBS$ac_delim
+gnutls_CFLAGS!$gnutls_CFLAGS$ac_delim
+gnutls_LIBS!$gnutls_LIBS$ac_delim
+zlib_CFLAGS!$zlib_CFLAGS$ac_delim
+zlib_LIBS!$zlib_LIBS$ac_delim
 WITH_TESTS_TRUE!$WITH_TESTS_TRUE$ac_delim
 WITH_TESTS_FALSE!$WITH_TESTS_FALSE$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 9; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 15; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

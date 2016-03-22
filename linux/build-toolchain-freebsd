@@ -137,6 +137,25 @@ cd ..
 
 cd ..
 
+# Create missing package descriptions
+echo "prefix=$ROOTDIR/output/staging/usr
+
+Name: zlib
+Description: zlib
+Version: 1
+Libs: -L\${prefix}/lib -lz
+Cflags: -I\${prefix}/include
+" > $ROOTDIR/output/staging/usr/lib/pkgconfig/zlib.pc
+
+echo "prefix=$ROOTDIR/output/staging/usr
+
+Name: ncurses
+Description: ncurses
+Version: 5
+Libs: -L\${prefix}/lib -lncurses
+Cflags: -I\${prefix}/include
+" > $ROOTDIR/output/staging/usr/lib/pkgconfig/ncurses.pc
+
 # Cleanup
 rm -r staging/usr/bin
 rm -r staging/usr/share
