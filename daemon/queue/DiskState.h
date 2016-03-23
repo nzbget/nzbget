@@ -28,6 +28,8 @@
 #include "FileSystem.h"
 #include "Log.h"
 
+class StateDiskFile;
+
 class DiskState
 {
 public:
@@ -52,30 +54,32 @@ public:
 	void LoadNzbMessages(int nzbId, MessageList* messages);
 
 private:
-	int fscanf(DiskFile& infile, const char* format, ...);
-	bool SaveFileInfo(FileInfo* fileInfo, const char* filename);
-	bool LoadFileInfo(FileInfo* fileInfo, const char* filename, bool fileSummary, bool articles);
-	void SaveQueue(NzbList* queue, DiskFile& outfile);
-	bool LoadQueue(NzbList* queue, Servers* servers, DiskFile& infile, int formatVersion);
-	void SaveNzbInfo(NzbInfo* nzbInfo, DiskFile& outfile);
-	bool LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, DiskFile& infile, int formatVersion);
-	void SaveDupInfo(DupInfo* dupInfo, DiskFile& outfile);
-	bool LoadDupInfo(DupInfo* dupInfo, DiskFile& infile, int formatVersion);
-	void SaveHistory(HistoryList* history, DiskFile& outfile);
-	bool LoadHistory(HistoryList* history, Servers* servers, DiskFile& infile, int formatVersion);
-	bool SaveFeedStatus(Feeds* feeds, DiskFile& outfile);
-	bool LoadFeedStatus(Feeds* feeds, DiskFile& infile, int formatVersion);
-	bool SaveFeedHistory(FeedHistory* feedHistory, DiskFile& outfile);
-	bool LoadFeedHistory(FeedHistory* feedHistory, DiskFile& infile, int formatVersion);
-	bool SaveServerInfo(Servers* servers, DiskFile& outfile);
-	bool LoadServerInfo(Servers* servers, DiskFile& infile, int formatVersion, bool* perfectMatch);
-	bool SaveVolumeStat(ServerVolumes* serverVolumes, DiskFile& outfile);
-	bool LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, DiskFile& infile, int formatVersion);
+	bool LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles);
+	bool SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile);
+	bool LoadFileInfo(FileInfo* fileInfo, StateDiskFile& outfile, int formatVersion, bool fileSummary, bool articles);
+	bool SaveFileState(FileInfo* fileInfo, StateDiskFile& outfile, bool completed);
+	bool LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFile& infile, int formatVersion, bool completed);
+	void SaveQueue(NzbList* queue, StateDiskFile& outfile);
+	bool LoadQueue(NzbList* queue, Servers* servers, StateDiskFile& infile, int formatVersion);
+	void SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile);
+	bool LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& infile, int formatVersion);
+	void SaveDupInfo(DupInfo* dupInfo, StateDiskFile& outfile);
+	bool LoadDupInfo(DupInfo* dupInfo, StateDiskFile& infile, int formatVersion);
+	void SaveHistory(HistoryList* history, StateDiskFile& outfile);
+	bool LoadHistory(HistoryList* history, Servers* servers, StateDiskFile& infile, int formatVersion);
+	bool SaveFeedStatus(Feeds* feeds, StateDiskFile& outfile);
+	bool LoadFeedStatus(Feeds* feeds, StateDiskFile& infile, int formatVersion);
+	bool SaveFeedHistory(FeedHistory* feedHistory, StateDiskFile& outfile);
+	bool LoadFeedHistory(FeedHistory* feedHistory, StateDiskFile& infile, int formatVersion);
+	bool SaveServerInfo(Servers* servers, StateDiskFile& outfile);
+	bool LoadServerInfo(Servers* servers, StateDiskFile& infile, int formatVersion, bool* perfectMatch);
+	bool SaveVolumeStat(ServerVolumes* serverVolumes, StateDiskFile& outfile);
+	bool LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, StateDiskFile& infile, int formatVersion);
 	void CalcFileStats(DownloadQueue* downloadQueue, int formatVersion);
 	void CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion);
 	bool LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers);
-	void SaveServerStats(ServerStatList* serverStatList, DiskFile& outfile);
-	bool LoadServerStats(ServerStatList* serverStatList, Servers* servers, DiskFile& infile);
+	void SaveServerStats(ServerStatList* serverStatList, StateDiskFile& outfile);
+	bool LoadServerStats(ServerStatList* serverStatList, Servers* servers, StateDiskFile& infile);
 };
 
 extern DiskState* g_DiskState;
