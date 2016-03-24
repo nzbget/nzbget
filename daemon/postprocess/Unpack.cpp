@@ -582,8 +582,6 @@ void UnpackController::RequestParCheck(bool forceRepair)
 
 void UnpackController::CreateUnpackDir()
 {
-	const char* destDir = m_destDir;
-
 	bool useInterDir = !Util::EmptyStr(g_Options->GetInterDir()) &&
 		!strncmp(m_postInfo->GetNzbInfo()->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
 		m_postInfo->GetNzbInfo()->GetDestDir()[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
@@ -597,11 +595,14 @@ void UnpackController::CreateUnpackDir()
 			m_postInfo->GetNzbInfo()->SetFinalDir(m_finalDir);
 		}
 
-		destDir = m_finalDir;
 		m_finalDirCreated = !FileSystem::DirectoryExists(m_finalDir);
 	}
 
+	const char* destDir = !m_finalDir.Empty() ? *m_finalDir : *m_destDir;
+
 	m_unpackDir.Format("%s%c%s", destDir, PATH_SEPARATOR, "_unpack");
+
+	detail("Unpacking into %s", *m_unpackDir);
 
 	CString errmsg;
 	if (!FileSystem::ForceDirectories(m_unpackDir, errmsg))
