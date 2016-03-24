@@ -859,21 +859,23 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 
 	BString<1024> infoName;
 
-	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
-		if (m_fileInfo)
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
-			break;
-		}
-
-		for (FileInfo* fileInfo : nzbInfo->GetFileList())
-		{
-			if (fileInfo->GetCachedArticles() > 0 && (fileInfo->GetActiveDownloads() == 0 || flushEverything))
+			if (m_fileInfo)
 			{
-				m_fileInfo = fileInfo;
-				infoName.Format("%s%c%s", m_fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
 				break;
+			}
+
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
+			{
+				if (fileInfo->GetCachedArticles() > 0 && (fileInfo->GetActiveDownloads() == 0 || flushEverything))
+				{
+					m_fileInfo = fileInfo;
+					infoName.Format("%s%c%s", m_fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
+					break;
+				}
 			}
 		}
 	}
