@@ -859,8 +859,8 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 
 	BString<1024> infoName;
 
-	GuardedDownloadQueue guard = DownloadQueue::Guard();
-	for (NzbInfo* nzbInfo : guard->GetQueue())
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
 		if (m_fileInfo)
 		{
