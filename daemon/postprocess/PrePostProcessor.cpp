@@ -422,7 +422,8 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
  */
 void PrePostProcessor::SanitisePostQueue()
 {
-	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : guard->GetQueue())
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (postInfo)

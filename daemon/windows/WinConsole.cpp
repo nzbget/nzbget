@@ -785,7 +785,8 @@ void WinConsole::UpdateTrayIcon()
 	{
 		int postJobCount = 0;
 		int urlCount = 0;
-		for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		for (NzbInfo* nzbInfo : guard->GetQueue())
 		{
 			postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			urlCount += nzbInfo->GetKind() == NzbInfo::nkUrl ? 1 : 0;

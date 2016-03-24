@@ -1494,7 +1494,8 @@ void ListFilesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : guard->GetQueue())
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
@@ -1906,7 +1907,8 @@ void ListGroupsXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : guard->GetQueue())
 	{
 		uint32 remainingSizeLo, remainingSizeHi, remainingSizeMB;
 		uint32 pausedSizeLo, pausedSizeHi, pausedSizeMB;
@@ -2284,7 +2286,8 @@ void PostQueueXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : guard->GetQueue())
 	{
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (!postInfo)
@@ -2452,7 +2455,8 @@ void HistoryXmlCommand::Execute()
 
 	int index = 0;
 
-	for (HistoryInfo* historyInfo : DownloadQueue::Guard()->GetHistory())
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (HistoryInfo* historyInfo : guard->GetHistory())
 	{
 		if (historyInfo->GetKind() == HistoryInfo::hkDup && !dup)
 		{
@@ -2548,7 +2552,8 @@ void UrlQueueXmlCommand::Execute()
 
 	int index = 0;
 
-	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : guard->GetQueue())
 	{
 		if (nzbInfo->GetKind() == NzbInfo::nkUrl)
 		{

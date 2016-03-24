@@ -338,7 +338,8 @@ int NCursesFrontend::CalcQueueSize()
 	}
 	else
 	{
-		for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+        GuardedDownloadQueue guard = DownloadQueue::Guard();
+		for (NzbInfo* nzbInfo : guard->GetQueue())
 		{
 			queueSize += nzbInfo->GetFileList()->size();
 		}
@@ -660,7 +661,8 @@ void NCursesFrontend::PrintFileQueue()
 	int pausedFiles = 0;
 	int fileNum = 0;
 
-	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+    GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : guard->GetQueue())
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
@@ -1014,7 +1016,8 @@ bool NCursesFrontend::EditQueue(DownloadQueue::EEditAction action, int offset)
 	else
 	{
 		int fileNum = 0;
-		for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		for (NzbInfo* nzbInfo : guard->GetQueue())
 		{
 			for (FileInfo* fileInfo : nzbInfo->GetFileList())
 			{

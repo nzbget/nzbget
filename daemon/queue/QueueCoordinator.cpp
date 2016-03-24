@@ -776,7 +776,8 @@ void QueueCoordinator::SavePartialState()
 		return;
 	}
 
-	for (NzbInfo* nzbInfo : DownloadQueue::Guard()->GetQueue())
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : guard->GetQueue())
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
