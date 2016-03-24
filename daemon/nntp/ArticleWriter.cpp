@@ -772,13 +772,6 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 }
 
 
-ArticleCache::ArticleCache()
-{
-	m_allocated = 0;
-	m_flushing = false;
-	m_fileInfo = nullptr;
-}
-
 CachedSegmentData ArticleCache::Alloc(int size)
 {
 	Guard guard(m_allocMutex);
@@ -809,6 +802,7 @@ bool ArticleCache::Realloc(CachedSegmentData* segment, int newSize)
 	if (p)
 	{
 		m_allocated += newSize - segment->m_size;
+		segment->m_size = newSize;
 	}
 
 	return p;

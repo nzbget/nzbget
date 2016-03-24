@@ -97,7 +97,6 @@ public:
 		friend class ArticleCache;
 	};
 
-	ArticleCache();
 	virtual void Run();
 	CachedSegmentData Alloc(int size);
 	bool Realloc(CachedSegmentData* segment, int newSize);
@@ -109,12 +108,12 @@ public:
 	bool FileBusy(FileInfo* fileInfo) { return fileInfo == m_fileInfo; }
 
 private:
-	size_t m_allocated;
-	bool m_flushing;
+	size_t m_allocated = 0;
+	bool m_flushing = false;
 	Mutex m_allocMutex;
 	Mutex m_flushMutex;
 	Mutex m_contentMutex;
-	FileInfo* m_fileInfo;
+	FileInfo* m_fileInfo = nullptr;
 
 	bool CheckFlush(bool flushEverything);
 };
