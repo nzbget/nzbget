@@ -69,6 +69,10 @@ public:
 	T* operator->() { return m_ptr; }
 	operator T*() { return m_ptr; }
 
+	// for-range loops on GuardedPtr
+	auto begin() { return m_ptr->begin(); }
+	auto end() { return m_ptr->end(); }
+
 private:
 	T* m_ptr;
 	Mutex* m_mutex;

@@ -194,7 +194,7 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 {
 	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	for (Options::OptEntry& optEntry : *g_Options->GuardOptEntries())
+	for (Options::OptEntry& optEntry : g_Options->GuardOptEntries())
 	{
 		if (stripPrefix && !strncmp(optEntry.GetName(), stripPrefix, prefixLen) &&
 			(int)strlen(optEntry.GetName()) > prefixLen)

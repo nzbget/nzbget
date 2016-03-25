@@ -2586,7 +2586,7 @@ void ConfigXmlCommand::Execute()
 
 	int index = 0;
 
-	for (Options::OptEntry& optEntry : *g_Options->GuardOptEntries())
+	for (Options::OptEntry& optEntry : g_Options->GuardOptEntries())
 	{
 		CString xmlValue = EncodeStr(m_userAccess == XmlRpcProcessor::uaRestricted &&
 			optEntry.Restricted() ? "***" : optEntry.GetValue());
@@ -3134,7 +3134,7 @@ void ServerVolumesXmlCommand::Execute()
 
 	int index = 0;
 
-	for (ServerVolume& serverVolume : *g_StatMeter->GuardServerVolumes())
+	for (ServerVolume& serverVolume : g_StatMeter->GuardServerVolumes())
 	{
 		uint32 totalSizeHi, totalSizeLo, totalSizeMB;
 		Util::SplitInt64(serverVolume.GetTotalBytes(), &totalSizeHi, &totalSizeLo);
@@ -3208,7 +3208,7 @@ void ResetServerVolumeXmlCommand::Execute()
 
 	bool ok = false;
 	int index = 0;
-	for (ServerVolume& serverVolume : *g_StatMeter->GuardServerVolumes())
+	for (ServerVolume& serverVolume : g_StatMeter->GuardServerVolumes())
 	{
 		if (index == serverId || serverId == -1)
 		{

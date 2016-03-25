@@ -846,7 +846,7 @@ void NZBGet::Stop(bool reload)
 
 void NZBGet::PrintOptions()
 {
-	for (Options::OptEntry& optEntry : *g_Options->GuardOptEntries())
+	for (Options::OptEntry& optEntry : g_Options->GuardOptEntries())
 	{
 		printf("%s = \"%s\"\n", optEntry.GetName(), optEntry.GetValue());
 	}
