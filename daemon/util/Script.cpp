@@ -44,18 +44,20 @@ const int FORK_ERROR_EXIT_CODE = 254;
  * Workaround:
  * 1) child process prints a line into stdout directly after the start;
  * 2) parent process waits for a line for 60 seconds. If it didn't receive it
- *    the cild process assumed to hang and will be killed. Another attempt
+ *    the child process is assumed to be hanging and will be killed. Another attempt
  *    will be made.
  */
 
 class ChildWatchDog : public Thread
 {
-private:
-	pid_t m_processId;
-protected:
-	virtual void Run();
 public:
 	void SetProcessId(pid_t processId) { m_processId = processId; }
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+protected:
+	virtual void Run();
+private:
+	pid_t m_processId;
+	CString m_infoName;
 };
 
 void ChildWatchDog::Run()
@@ -69,7 +71,7 @@ void ChildWatchDog::Run()
 
 	if (!IsStopped())
 	{
-		info("Restarting hanging child process");
+		info("Restarting hanging child process for %s", *m_infoName);
 		kill(m_processId, SIGKILL);
 	}
 }
@@ -314,6 +316,7 @@ int ScriptController::Execute()
 	ChildWatchDog watchDog;
 	watchDog.SetAutoDestroy(false);
 	watchDog.SetProcessId(m_processId);
+	watchDog.SetInfoName(m_infoName);
 	watchDog.Start();
 #endif
 
