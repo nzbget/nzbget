@@ -791,7 +791,7 @@ CachedSegmentData ArticleCache::Alloc(int size)
 		}
 	}
 
-	return CachedSegmentData((char*)p, size);
+	return CachedSegmentData((char*)p, p ? size : 0);
 }
 
 bool ArticleCache::Realloc(CachedSegmentData* segment, int newSize)
