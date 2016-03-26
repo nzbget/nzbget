@@ -508,6 +508,12 @@ int ScriptController::StartProcess()
 	}
 
 	std::vector<char*> environmentStrings = m_environmentStrings.GetStrings();
+	char** envdata = environmentStrings.data();
+
+	ArgList args;
+	std::copy(m_args.begin(), m_args.end(), std::back_inserter(args));
+	args.emplace_back(nullptr);
+	char* const* argdata = (char* const*)args.data();
 
 	pipein = p[0];
 	pipeout = p[1];
@@ -526,6 +532,10 @@ int ScriptController::StartProcess()
 	{
 		// here goes the second instance
 
+		// only certain functions may be used here or the program may hang.
+		// for a list of functions see chapter "async-signal-safe functions" in
+		// http://man7.org/linux/man-pages/man7/signal.7.html
+
 		// create new process group (see Terminate() where it is used)
 		setsid();
 
@@ -539,28 +549,34 @@ int ScriptController::StartProcess()
 		close(pipeout);
 
 #ifdef CHILD_WATCHDOG
-		fwrite("\n", 1, 1, stdout);
-		fflush(stdout);
+		write(1, "\n", 1);
+		fsync(1);
 #endif
 
 		chdir(workingDir);
-		environ = environmentStrings.data();
-		m_args.emplace_back(nullptr);
+		environ = envdata;
 
-		execvp(m_script, (char* const*)m_args.data());
+		execvp(m_script, argdata);
 
 		if (errno == EACCES)
 		{
-			fprintf(stdout, "[WARNING] Fixing permissions for %s\n", m_script);
-			fflush(stdout);
+			write(1, "[WARNING] Fixing permissions for", 32);
+			write(1, m_script, strlen(m_script));
+			write(1, "\n", 1);
+			fsync(1);
 			FileSystem::FixExecPermission(m_script);
-			execvp(m_script, (char* const*)m_args.data());
+			execvp(m_script, argdata);
 		}
 
 		// NOTE: the text "[ERROR] Could not start " is checked later,
 		// by changing adjust the dependent code below.
-		fprintf(stdout, "[ERROR] Could not start %s: %s", m_script, strerror(errno));
-		fflush(stdout);
+		write(1, "[ERROR] Could not start ", 24);
+		write(1, m_script, strlen(m_script));
+		write(1, ": ", 2);
+		char* errtext = strerror(errno);
+		write(1, errtext, strlen(errtext));
+		write(1, "\n", 1);
+		fsync(1);
 		_exit(FORK_ERROR_EXIT_CODE);
 	}
 
