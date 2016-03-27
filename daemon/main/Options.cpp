@@ -130,6 +130,7 @@ static const char* OPTION_TIMECORRECTION		= "TimeCorrection";
 static const char* OPTION_PROPAGATIONDELAY		= "PropagationDelay";
 static const char* OPTION_ARTICLECACHE			= "ArticleCache";
 static const char* OPTION_EVENTINTERVAL			= "EventInterval";
+static const char* OPTION_SHELLOVERRIDE			= "ShellOverride";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -488,6 +489,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_PROPAGATIONDELAY, "0");
 	SetOption(OPTION_ARTICLECACHE, "0");
 	SetOption(OPTION_EVENTINTERVAL, "0");
+	SetOption(OPTION_SHELLOVERRIDE, "");
 }
 
 void Options::InitOptFile()
@@ -656,6 +658,7 @@ void Options::InitOptions()
 	m_unpackPassFile		= GetOption(OPTION_UNPACKPASSFILE);
 	m_extCleanupDisk		= GetOption(OPTION_EXTCLEANUPDISK);
 	m_parIgnoreExt			= GetOption(OPTION_PARIGNOREEXT);
+	m_shellOverride			= GetOption(OPTION_SHELLOVERRIDE);
 
 	m_downloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10) * 1024;
 	m_articleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);

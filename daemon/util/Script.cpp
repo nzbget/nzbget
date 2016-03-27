@@ -235,12 +235,36 @@ void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, co
 
 void ScriptController::PrepareArgs()
 {
+	if (m_args.empty() && !Util::EmptyStr(g_Options->GetShellOverride()))
+	{
+		const char* extension = strrchr(m_script, '.');
+
+		Tokenizer tok(g_Options->GetShellOverride(), ",;");
+		while (CString shellover = tok.Next())
+		{
+			char* shellcmd = strchr(shellover, '=');
+			if (shellcmd)
+			{
+				*shellcmd = '\0';
+				shellcmd++;
+
+				if (!strcasecmp(extension, shellover))
+				{
+					debug("Using shell override for %s: %s", extension, shellcmd);
+					m_args.emplace_back(shellcmd);
+					m_args.emplace_back(m_script);
+					break;
+				}
+			}
+		}
+	}
+
 #ifdef WIN32
 	if (m_args.empty())
 	{
 		// Special support for script languages:
 		// automatically find the app registered for this extension and run it
-		const char* extension = strrchr(GetScript(), '.');
+		const char* extension = strrchr(m_script, '.');
 		if (extension && strcasecmp(extension, ".exe") && strcasecmp(extension, ".bat") && strcasecmp(extension, ".cmd"))
 		{
 			debug("Looking for associated program for %s", extension);
@@ -258,7 +282,7 @@ void ScriptController::PrepareArgs()
 					command[bufLen] = '\0';
 					debug("Command: %s", command);
 
-					DWORD_PTR args[] = {(DWORD_PTR)GetScript(), (DWORD_PTR)0};
+					DWORD_PTR args[] = {(DWORD_PTR)m_script, (DWORD_PTR)0};
 					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, command, 0, 0,
 						m_cmdLine, sizeof(m_cmdLine), (va_list*)args))
 					{
@@ -268,13 +292,14 @@ void ScriptController::PrepareArgs()
 				}
 			}
 			warn("Could not find associated program for %s. Trying to execute %s directly",
-				extension, FileSystem::BaseFileName(GetScript()));
+				extension, FileSystem::BaseFileName(m_script));
 		}
 	}
 #endif
+
 	if (m_args.empty())
 	{
-		m_args.emplace_back(GetScript());
+		m_args.emplace_back(m_script);
 	}
 }
 
@@ -419,6 +444,8 @@ int ScriptController::StartProcess()
 		workingDir = FileSystem::GetCurrentDirectory();
 	}
 
+	const char* script = m_args[0];
+
 #ifdef WIN32
 	char* cmdLine = m_cmdLine;
 	char cmdLineBuf[2048];
@@ -471,9 +498,9 @@ int ScriptController::StartProcess()
 		{
 			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, errCode);
 		}
-		if (!FileSystem::FileExists(m_script))
+		if (!FileSystem::FileExists(script))
 		{
-			PrintMessage(Message::mkError, "Could not find file %s", m_script);
+			PrintMessage(Message::mkError, "Could not find file %s", script);
 		}
 		if (wcslen(wideWorkingDir) > 260)
 		{
@@ -556,22 +583,22 @@ int ScriptController::StartProcess()
 		chdir(workingDir);
 		environ = envdata;
 
-		execvp(m_script, argdata);
+		execvp(script, argdata);
 
 		if (errno == EACCES)
 		{
 			write(1, "[WARNING] Fixing permissions for", 32);
-			write(1, m_script, strlen(m_script));
+			write(1, script, strlen(script));
 			write(1, "\n", 1);
 			fsync(1);
-			FileSystem::FixExecPermission(m_script);
-			execvp(m_script, argdata);
+			FileSystem::FixExecPermission(script);
+			execvp(script, argdata);
 		}
 
 		// NOTE: the text "[ERROR] Could not start " is checked later,
 		// by changing adjust the dependent code below.
 		write(1, "[ERROR] Could not start ", 24);
-		write(1, m_script, strlen(m_script));
+		write(1, script, strlen(script));
 		write(1, ": ", 2);
 		char* errtext = strerror(errno);
 		write(1, errtext, strlen(errtext));

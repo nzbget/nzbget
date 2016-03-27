@@ -274,6 +274,7 @@ public:
 	int GetPropagationDelay() { return m_propagationDelay; }
 	int GetArticleCache() { return m_articleCache; }
 	int GetEventInterval() { return m_eventInterval; }
+	const char* GetShellOverride() { return m_shellOverride; }
 
 	Categories* GetCategories() { return &m_categories; }
 	Category* FindCategory(const char* name, bool searchAliases) { return m_categories.FindCategory(name, searchAliases); }
@@ -413,6 +414,7 @@ private:
 	int m_propagationDelay = 0;
 	int m_articleCache = 0;
 	int m_eventInterval = 0;
+	CString m_shellOverride;
 
 	// Current state
 	bool m_serverMode = false;
