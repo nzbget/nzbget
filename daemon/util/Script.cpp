@@ -235,9 +235,9 @@ void ScriptController::SetEnvVarSpecial(const char* prefix, const char* name, co
 
 void ScriptController::PrepareArgs()
 {
-	if (m_args.empty() && !Util::EmptyStr(g_Options->GetShellOverride()))
+	if (m_args.size() == 1 && !Util::EmptyStr(g_Options->GetShellOverride()))
 	{
-		const char* extension = strrchr(m_script, '.');
+		const char* extension = strrchr(m_args[0], '.');
 
 		Tokenizer tok(g_Options->GetShellOverride(), ",;");
 		while (CString shellover = tok.Next())
@@ -251,8 +251,7 @@ void ScriptController::PrepareArgs()
 				if (!strcasecmp(extension, shellover))
 				{
 					debug("Using shell override for %s: %s", extension, shellcmd);
-					m_args.emplace_back(shellcmd);
-					m_args.emplace_back(m_script);
+					m_args.emplace(m_args.begin(), shellcmd);
 					break;
 				}
 			}
@@ -260,11 +259,13 @@ void ScriptController::PrepareArgs()
 	}
 
 #ifdef WIN32
-	if (m_args.empty())
+	*m_cmdLine = '\0';
+
+	if (m_args.size() == 1)
 	{
 		// Special support for script languages:
 		// automatically find the app registered for this extension and run it
-		const char* extension = strrchr(m_script, '.');
+		const char* extension = strrchr(m_args[0], '.');
 		if (extension && strcasecmp(extension, ".exe") && strcasecmp(extension, ".bat") && strcasecmp(extension, ".cmd"))
 		{
 			debug("Looking for associated program for %s", extension);
@@ -282,7 +283,7 @@ void ScriptController::PrepareArgs()
 					command[bufLen] = '\0';
 					debug("Command: %s", command);
 
-					DWORD_PTR args[] = {(DWORD_PTR)m_script, (DWORD_PTR)0};
+					DWORD_PTR args[] = {(DWORD_PTR)*m_args[0], (DWORD_PTR)0};
 					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, command, 0, 0,
 						m_cmdLine, sizeof(m_cmdLine), (va_list*)args))
 					{
@@ -292,20 +293,10 @@ void ScriptController::PrepareArgs()
 				}
 			}
 			warn("Could not find associated program for %s. Trying to execute %s directly",
-				extension, FileSystem::BaseFileName(m_script));
+				extension, FileSystem::BaseFileName(m_args[0]));
 		}
 	}
 #endif
-
-	if (m_args.empty())
-	{
-		m_args.emplace_back(m_script);
-	}
-}
-
-void ScriptController::Reset()
-{
-	SetArgs({});
 }
 
 int ScriptController::Execute()
@@ -449,7 +440,7 @@ int ScriptController::StartProcess()
 #ifdef WIN32
 	char* cmdLine = m_cmdLine;
 	char cmdLineBuf[2048];
-	if (!m_args.empty())
+	if (!*m_cmdLine)
 	{
 		BuildCommandLine(cmdLineBuf, sizeof(cmdLineBuf));
 		cmdLine = cmdLineBuf;

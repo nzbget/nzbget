@@ -77,7 +77,6 @@ void NzbScriptController::ExecuteScriptList(const char* scriptList)
 			{
 				if (FileSystem::SameFilename(scriptName, script.GetName()))
 				{
-					Reset();
 					ExecuteScript(&script);
 					break;
 				}

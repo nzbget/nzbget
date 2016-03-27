@@ -122,7 +122,7 @@ bool Maintenance::StartUpdate(EBranch branch)
 	m_messages.clear();
 
 	m_updateScriptController = new UpdateScriptController();
-	m_updateScriptController->SetScript(m_updateScript);
+	m_updateScriptController->SetArgs({*m_updateScript});
 	m_updateScriptController->SetBranch(branch);
 	m_updateScriptController->SetAutoDestroy(true);
 
@@ -274,7 +274,7 @@ void UpdateInfoScriptController::ExecuteScript(const char* script, CString& upda
 	detail("Executing update-info-script %s", FileSystem::BaseFileName(script));
 
 	UpdateInfoScriptController scriptController;
-	scriptController.SetScript(script);
+	scriptController.SetArgs({script});
 
 	BString<1024> infoName("update-info-script %s", FileSystem::BaseFileName(script));
 	scriptController.SetInfoName(infoName);

@@ -58,8 +58,7 @@ public:
 	void Detach();
 	static void TerminateAll();
 
-	void SetScript(const char* script) { m_script = script; }
-	const char* GetScript() { return m_script; }
+	const char* GetScript() { return !m_args.empty() ? *m_args[0] : nullptr; }
 	void SetWorkingDir(const char* workingDir) { m_workingDir = workingDir; }
 	void SetArgs(ArgList&& args) { m_args = std::move(args); }
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
@@ -68,7 +67,6 @@ public:
 	void SetEnvVar(const char* name, const char* value);
 	void SetEnvVarSpecial(const char* prefix, const char* name, const char* value);
 	void SetIntEnvVar(const char* name, int value);
-	void Reset();
 
 protected:
 	void ProcessOutput(char* text);
@@ -87,7 +85,6 @@ protected:
 	void UnregisterRunningScript();
 
 private:
-	const char* m_script = nullptr;
 	ArgList m_args;
 	const char* m_workingDir = nullptr;
 	const char* m_infoName = nullptr;

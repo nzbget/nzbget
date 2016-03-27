@@ -42,7 +42,7 @@ void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	PrintMessage(Message::mkInfo, "Executing feed-script %s for Feed%i", script->GetName(), m_feedId);
 
-	SetScript(script->GetLocation());
+	SetArgs({script->GetLocation()});
 
 	SetInfoName(BString<1024>("feed-script %s for Feed%i", script->GetName(), m_feedId));
 	SetLogPrefix(script->GetDisplayName());
