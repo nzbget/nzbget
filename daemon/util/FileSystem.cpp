@@ -237,7 +237,7 @@ bool FileSystem::SaveBufferIntoFile(const char* filename, const char* buffer, in
 	return writtenBytes == bufLen;
 }
 
-bool FileSystem::CreateSparseFile(const char* filename, int64 size, CString& errmsg)
+bool FileSystem::AllocateFile(const char* filename, int64 size, bool sparse, CString& errmsg)
 {
 	errmsg.Clear();
 	bool ok = false;
@@ -248,10 +248,13 @@ bool FileSystem::CreateSparseFile(const char* filename, int64 size, CString& err
 		errmsg = GetLastErrorMessage();
 		return false;
 	}
-	// first try to create sparse file (supported only on NTFS partitions),
-	// it may fail but that's OK.
-	DWORD dwBytesReturned;
-	DeviceIoControl(hFile, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dwBytesReturned, nullptr);
+
+	if (sparse)
+	{
+		// try to create sparse file (supported only on NTFS partitions); it may fail but that's OK.
+		DWORD dwBytesReturned;
+		DeviceIoControl(hFile, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dwBytesReturned, nullptr);
+	}
 
 	LARGE_INTEGER size64;
 	size64.QuadPart = size;

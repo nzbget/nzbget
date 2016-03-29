@@ -246,7 +246,7 @@ bool ArticleWriter::CreateOutputFile(int64 size)
 		return false;
 	}
 
-	if (!FileSystem::CreateSparseFile(m_outputFilename, size, errmsg))
+	if (!FileSystem::AllocateFile(m_outputFilename, size, g_Options->GetArticleCache() == 0, errmsg))
 	{
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 			"Could not create file %s: %s", *m_outputFilename, *errmsg);

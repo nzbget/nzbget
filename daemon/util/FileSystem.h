@@ -36,7 +36,7 @@ public:
 	static void NormalizePathSeparators(char* path);
 	static bool LoadFileIntoBuffer(const char* filename, CharBuffer& buffer, bool addTrailingNull);
 	static bool SaveBufferIntoFile(const char* filename, const char* buffer, int bufLen);
-	static bool CreateSparseFile(const char* filename, int64 size, CString& errmsg);
+	static bool AllocateFile(const char* filename, int64 size, bool sparse, CString& errmsg);
 	static bool TruncateFile(const char* filename, int size);
 	static void MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes);
 	static CString MakeUniqueFilename(const char* destDir, const char* basename);
