@@ -45,6 +45,7 @@ public:
 	void Changed();
 	int GetGeneration() { return m_generation; }
 	void BlockServer(NewsServer* newsServer);
+	bool IsServerBlocked(NewsServer* newsServer);
 
 protected:
 	virtual void LogDebugInfo();
@@ -77,6 +78,7 @@ private:
 	int m_generation = 0;
 
 	void NormalizeLevels();
+	NntpConnection* LockedGetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers);
 };
 
 extern ServerPool* g_ServerPool;

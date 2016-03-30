@@ -162,7 +162,7 @@ public:
 	virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
 		int port, const char* user, const char* pass, bool joinGroup,
 		bool tls, const char* cipher, int maxConnections, int retention,
-		int level, int group);
+		int level, int group, bool optional);
 	virtual void AddFeed(int id, const char* name, const char* url, int interval,
 		const char* filter, bool backlog, bool pauseNzb, const char* category,
 		int priority, const char* feedScript);
@@ -929,10 +929,10 @@ void NZBGet::Daemonize()
 
 void NZBGet::AddNewsServer(int id, bool active, const char* name, const char* host,
 	int port, const char* user, const char* pass, bool joinGroup, bool tls,
-	const char* cipher, int maxConnections, int retention, int level, int group)
+	const char* cipher, int maxConnections, int retention, int level, int group, bool optional)
 {
 	m_serverPool->AddServer(std::make_unique<NewsServer>(id, active, name, host, port, user, pass, joinGroup,
-		tls, cipher, maxConnections, retention, level, group));
+		tls, cipher, maxConnections, retention, level, group, optional));
 }
 
 void NZBGet::AddFeed(int id, const char* name, const char* url, int interval, const char* filter,

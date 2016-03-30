@@ -137,70 +137,93 @@ void ServerPool::InitConnections()
 	m_generation++;
 }
 
+/* Returns connection from any server on a given level or nullptr if there is no free connection at the moment.
+ * If all servers are blocked and all are optional a connection from the next level is returned instead.
+ */
 NntpConnection* ServerPool::GetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers)
 {
 	Guard guard(m_connectionsMutex);
 
-	PooledConnection* connection = nullptr;
-
-	time_t curTime = Util::CurrentTime();
-
-	if (level < (int)m_levels.size() && m_levels[level] > 0)
+	for (; level < (int)m_levels.size() && m_levels[level] > 0; level++)
 	{
-		std::vector<PooledConnection*> candidates;
-		candidates.reserve(m_connections.size());
-
-		for (PooledConnection* candidateConnection : &m_connections)
-		{
-			NewsServer* candidateServer = candidateConnection->GetNewsServer();
-			if (!candidateConnection->GetInUse() && candidateServer->GetActive() &&
-				candidateServer->GetNormLevel() == level &&
-				(!wantServer || candidateServer == wantServer ||
-				 (wantServer->GetGroup() > 0 && wantServer->GetGroup() == candidateServer->GetGroup())) &&
-				(candidateConnection->GetStatus() == Connection::csConnected ||
-				 !candidateServer->GetBlockTime() ||
-				 candidateServer->GetBlockTime() + m_retryInterval <= curTime ||
-				 candidateServer->GetBlockTime() > curTime))
-			{
-				// free connection found, check if it's not from the server which should be ignored
-				bool useConnection = true;
-				if (ignoreServers && !wantServer)
-				{
-					for (NewsServer* ignoreServer : ignoreServers)
-					{
-						if (ignoreServer == candidateServer ||
-							(ignoreServer->GetGroup() > 0 && ignoreServer->GetGroup() == candidateServer->GetGroup() &&
-							 ignoreServer->GetNormLevel() == candidateServer->GetNormLevel()))
-						{
-							useConnection = false;
-							break;
-						}
-					}
-				}
-
-				candidateServer->SetBlockTime(0);
-
-				if (useConnection)
-				{
-					candidates.push_back(candidateConnection);
-				}
-			}
-		}
-
-		if (!candidates.empty())
-		{
-			// Peeking a random free connection. This is better than taking the first
-			// available connection because provides better distribution across news servers,
-			// especially when one of servers becomes unavailable or doesn't have requested articles.
-			int randomIndex = rand() % candidates.size();
-			connection = candidates[randomIndex];
-			connection->SetInUse(true);
-		}
-
+		NntpConnection* connection = LockedGetConnection(level, wantServer, ignoreServers);
 		if (connection)
 		{
-			m_levels[level]--;
+			return connection;
 		}
+
+		for (NewsServer* newsServer : m_sortedServers)
+		{
+			if (newsServer->GetNormLevel() == level && newsServer->GetActive() &&
+				!(newsServer->GetOptional() && IsServerBlocked(newsServer)))
+			{
+				return nullptr;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+NntpConnection* ServerPool::LockedGetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers)
+{
+	if (level >= (int)m_levels.size() || m_levels[level] == 0)
+	{
+		return nullptr;
+	}
+
+	PooledConnection* connection = nullptr;
+	std::vector<PooledConnection*> candidates;
+	candidates.reserve(m_connections.size());
+
+	for (PooledConnection* candidateConnection : &m_connections)
+	{
+		NewsServer* candidateServer = candidateConnection->GetNewsServer();
+		if (!candidateConnection->GetInUse() && candidateServer->GetActive() &&
+			candidateServer->GetNormLevel() == level &&
+			(!wantServer || candidateServer == wantServer ||
+			 (wantServer->GetGroup() > 0 && wantServer->GetGroup() == candidateServer->GetGroup())) &&
+			(candidateConnection->GetStatus() == Connection::csConnected ||
+			 !IsServerBlocked(candidateServer)))
+		{
+			// free connection found, check if it's not from the server which should be ignored
+			bool useConnection = true;
+			if (ignoreServers && !wantServer)
+			{
+				for (NewsServer* ignoreServer : ignoreServers)
+				{
+					if (ignoreServer == candidateServer ||
+						(ignoreServer->GetGroup() > 0 && ignoreServer->GetGroup() == candidateServer->GetGroup() &&
+						 ignoreServer->GetNormLevel() == candidateServer->GetNormLevel()))
+					{
+						useConnection = false;
+						break;
+					}
+				}
+			}
+
+			candidateServer->SetBlockTime(0);
+
+			if (useConnection)
+			{
+				candidates.push_back(candidateConnection);
+			}
+		}
+	}
+
+	if (!candidates.empty())
+	{
+		// Peeking a random free connection. This is better than taking the first
+		// available connection because provides better distribution across news servers,
+		// especially when one of servers becomes unavailable or doesn't have requested articles.
+		int randomIndex = rand() % candidates.size();
+		connection = candidates[randomIndex];
+		connection->SetInUse(true);
+	}
+
+	if (connection)
+	{
+		m_levels[level]--;
 	}
 
 	return connection;
@@ -241,6 +264,19 @@ void ServerPool::BlockServer(NewsServer* newsServer)
 	{
 		warn("Blocking %s (%s) for %i sec", newsServer->GetName(), newsServer->GetHost(), m_retryInterval);
 	}
+}
+
+bool ServerPool::IsServerBlocked(NewsServer* newsServer)
+{
+	if (!newsServer->GetBlockTime())
+	{
+		return false;
+	}
+
+	time_t curTime = Util::CurrentTime();
+	bool blocked = newsServer->GetBlockTime() <= curTime &&
+		curTime < newsServer->GetBlockTime() + m_retryInterval;
+	return blocked;
 }
 
 void ServerPool::CloseUnusedConnections()

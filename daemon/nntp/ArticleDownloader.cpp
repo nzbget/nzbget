@@ -112,6 +112,7 @@ void ArticleDownloader::Run()
 		}
 
 		lastServer = m_connection->GetNewsServer();
+		level = lastServer->GetNormLevel();
 
 		m_connection->SetSuppressErrors(false);
 
@@ -172,9 +173,11 @@ void ArticleDownloader::Run()
 			remainedRetries--;
 		}
 
+		bool optionalBlocked = false;
 		if (!connected && m_connection && !IsStopped())
 		{
 			g_ServerPool->BlockServer(lastServer);
+			optionalBlocked = lastServer->GetOptional();
 		}
 
 		wantServer = nullptr;
@@ -200,9 +203,12 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if (!wantServer && (connected || retentionFailure))
+		if (!wantServer && (connected || retentionFailure || optionalBlocked))
 		{
-			failedServers.push_back(lastServer);
+			if (!optionalBlocked)
+			{
+				failedServers.push_back(lastServer);
+			}
 
 			// if all servers from current level were tried, increase level
 			// if all servers from all levels were tried, break the loop with failure status
@@ -212,7 +218,8 @@ void ArticleDownloader::Run()
 			{
 				if (candidateServer->GetNormLevel() == level)
 				{
-					bool serverFailed = !candidateServer->GetActive() || candidateServer->GetMaxConnections() == 0;
+					bool serverFailed = !candidateServer->GetActive() || candidateServer->GetMaxConnections() == 0 ||
+						(candidateServer->GetOptional() && g_ServerPool->IsServerBlocked(candidateServer));
 					if (!serverFailed)
 					{
 						for (NewsServer* ignoreServer : failedServers)

@@ -35,7 +35,7 @@ public:
 	NewsServer(int id, bool active, const char* name, const char* host, int port,
 		const char* user, const char* pass, bool joinGroup,
 		bool tls, const char* cipher, int maxConnections, int retention,
-		int level, int group);
+		int level, int group, bool optional);
 	int GetId() { return m_id; }
 	int GetStateId() { return m_stateId; }
 	void SetStateId(int stateId) { m_stateId = stateId; }
@@ -55,6 +55,7 @@ public:
 	bool GetTls() { return m_tls; }
 	const char* GetCipher() { return m_cipher; }
 	int GetRetention() { return m_retention; }
+	bool GetOptional() { return m_optional; }
 	time_t GetBlockTime() { return m_blockTime; }
 	void SetBlockTime(time_t blockTime) { m_blockTime = blockTime; }
 
@@ -75,6 +76,7 @@ private:
 	bool m_tls;
 	CString m_cipher;
 	int m_retention;
+	bool m_optional = false;
 	time_t m_blockTime = 0;
 };
 

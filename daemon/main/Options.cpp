@@ -936,6 +936,13 @@ void Options::InitServers()
 			joinGroup = (bool)ParseEnumValue(BString<100>("Server%i.JoinGroup", n), BoolCount, BoolNames, BoolValues);
 		}
 
+		const char* noptional = GetOption(BString<100>("Server%i.Optional", n));
+		bool optional = false;
+		if (noptional)
+		{
+			optional = (bool)ParseEnumValue(BString<100>("Server%i.Optional", n), BoolCount, BoolNames, BoolValues);
+		}
+
 		const char* ntls = GetOption(BString<100>("Server%i.Encryption", n));
 		bool tls = false;
 		if (ntls)
@@ -955,7 +962,7 @@ void Options::InitServers()
 		const char* nconnections = GetOption(BString<100>("Server%i.Connections", n));
 		const char* nretention = GetOption(BString<100>("Server%i.Retention", n));
 
-		bool definition = nactive || nname || nlevel || ngroup || nhost || nport ||
+		bool definition = nactive || nname || nlevel || ngroup || nhost || nport || noptional ||
 			nusername || npassword || nconnections || njoingroup || ntls || ncipher || nretention;
 		bool completed = nhost && nport && nconnections;
 
@@ -976,7 +983,8 @@ void Options::InitServers()
 					nconnections ? atoi(nconnections) : 1,
 					nretention ? atoi(nretention) : 0,
 					nlevel ? atoi(nlevel) : 0,
-					ngroup ? atoi(ngroup) : 0);
+					ngroup ? atoi(ngroup) : 0,
+					optional);
 			}
 		}
 		else
@@ -1449,7 +1457,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
 			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections") ||
 			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group") ||
-			!strcasecmp(p, ".retention")))
+			!strcasecmp(p, ".retention") || !strcasecmp(p, ".optional")))
 		{
 			return true;
 		}
