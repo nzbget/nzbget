@@ -876,7 +876,6 @@ void WinConsole::OpenConfigFileInTextEdit()
 void WinConsole::SetupFirstStart()
 {
 	SetupConfigFile();
-	SetupScripts();
 }
 
 void WinConsole::SetupConfigFile()
@@ -918,27 +917,6 @@ void WinConsole::SetupConfigFile()
 	// create default destination directory (which is not created on start automatically)
 	BString<1024> completeDir("%s\\NZBGet\\complete", commonAppDataPath);
 	FileSystem::CreateDirectory(completeDir);
-}
-
-void WinConsole::SetupScripts()
-{
-	// copy default scripts
-
-	char appDataPath[MAX_PATH];
-	SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, appDataPath);
-
-	BString<1024> destDir("%s\\NZBGet\\scripts", appDataPath);
-	FileSystem::CreateDirectory(destDir);
-
-	BString<1024> srcDir("%s\\scripts", g_Options->GetAppDir());
-
-	DirBrowser dir(srcDir);
-	while (const char* filename = dir.Next())
-	{
-		BString<1024> srcFullFilename("%s\\%s", srcDir, filename);
-		BString<1024> dstFullFilename("%s\\%s", destDir, filename);
-		CopyFile(srcFullFilename, dstFullFilename, FALSE);
-	}
 }
 
 void WinConsole::ShowFactoryResetDialog()
