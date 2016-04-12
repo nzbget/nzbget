@@ -173,9 +173,16 @@ void Scheduler::ExecuteTask(Task* task)
 			break;
 
 		case scPauseDownload:
-		case scUnpauseDownload:
-			g_Options->SetPauseDownload(task->m_command == scPauseDownload);
+			g_Options->SetPauseDownload(true);
 			m_pauseDownloadChanged = true;
+			break;
+
+		case scUnpauseDownload:
+			if (!g_Options->GetQuotaPause())
+			{
+				g_Options->SetPauseDownload(false);
+				m_pauseDownloadChanged = true;
+			}
 			break;
 
 		case scPausePostProcess:

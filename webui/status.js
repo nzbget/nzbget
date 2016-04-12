@@ -499,6 +499,12 @@ var StatDialog = (new function($)
 		Util.show('#StatDialog_ArticleCache_Row', Options.option('ArticleCache') !== '0');
 		Util.show('#StatDialog_QueueScripts_Row', Status.status.QueueScriptCount > 0);
 		$StatDialog.removeClass('modal-large').addClass('modal-mini');
+
+		if (Options.option('QuotaStartDay') != '1')
+		{
+			$('#StatDialog_MonthTitle').text('Billing month:');
+		}
+
 		monthListInitialized = false;
 		updateServerList();
 		lastTab = null;
@@ -1146,47 +1152,11 @@ var StatDialog = (new function($)
 
 	function updateCounters()
 	{
-		if (servervolumes[curServer].DaySlot > -1)
-		{
-			var bytes = servervolumes[curServer].BytesPerDays[servervolumes[curServer].DaySlot];
-			$StatDialog_TodaySize.html(Util.formatSizeMB(bytes.SizeMB, bytes.SizeLo));
-		}
-
+		$StatDialog_TodaySize.html(Util.formatSizeMB(Status.status.DaySizeMB, Status.status.DaySizeLo));
+		$StatDialog_MonthSize.html(Util.formatSizeMB(Status.status.MonthSizeMB, Status.status.MonthSizeLo));
 		$StatDialog_AllTimeSize.html(Util.formatSizeMB(servervolumes[curServer].TotalSizeMB, servervolumes[curServer].TotalSizeLo));
 		$StatDialog_CustomSize.html(Util.formatSizeMB(servervolumes[curServer].CustomSizeMB, servervolumes[curServer].CustomSizeLo));
 		$StatDialog_Custom.attr('title', 'reset on ' + Util.formatDateTime(servervolumes[curServer].CustomTime));
-
-		// calculate volume for current month
-		
-		var sizeMB = 0;
-		var sizeLo = 0;
-
-		if (clockOK)
-		{
-			var firstDay = servervolumes[0].FirstDay;
-			var monStart = dayToDate(firstDay + servervolumes[0].DaySlot);
-			monStart.setDate(1);
-			var monEnd = new Date(monStart.getFullYear(), monStart.getMonth() + 1);
-			monEnd.setDate(0);
-			
-			monStart = dateToDay(monStart);
-			monEnd = dateToDay(monEnd);
-			var monStartIndex = monStart - firstDay;
-			var monEndIndex = monEnd - firstDay;
-			var slotDelta = servervolumes[0].FirstDay - servervolumes[curServer].FirstDay;
-			for (var i = monStartIndex; i <= monEndIndex; i++)
-			{
-				var slot = i + slotDelta;
-				var bytes = servervolumes[curServer].BytesPerDays[slot];
-				if (bytes)
-				{
-					sizeMB += bytes.SizeMB;
-					sizeLo += bytes.SizeLo;
-				}
-			}
-		}
-
-		$StatDialog_MonthSize.html(Util.formatSizeMB(sizeMB, sizeLo));
 	}
 
 	function chooseMonth()

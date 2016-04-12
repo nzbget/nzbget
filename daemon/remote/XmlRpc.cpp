@@ -1187,6 +1187,12 @@ void StatusXmlCommand::Execute()
 		"<member><name>DownloadedSizeLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>DownloadedSizeHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>DownloadedSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>MonthSizeLo</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>MonthSizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>MonthSizeMB</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>DaySizeLo</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>DaySizeHi</name><value><i4>%u</i4></value></member>\n"
+		"<member><name>DaySizeMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ArticleCacheLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>ArticleCacheHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>ArticleCacheMB</name><value><i4>%i</i4></value></member>\n"
@@ -1229,6 +1235,12 @@ void StatusXmlCommand::Execute()
 		"\"DownloadedSizeLo\" : %u,\n"
 		"\"DownloadedSizeHi\" : %u,\n"
 		"\"DownloadedSizeMB\" : %i,\n"
+		"\"MonthSizeLo\" : %u,\n"
+		"\"MonthSizeHi\" : %u,\n"
+		"\"MonthSizeMB\" : %i,\n"
+		"\"DaySizeLo\" : %u,\n"
+		"\"DaySizeHi\" : %u,\n"
+		"\"DaySizeMB\" : %i,\n"
 		"\"ArticleCacheLo\" : %u,\n"
 		"\"ArticleCacheHi\" : %u,\n"
 		"\"ArticleCacheMB\" : %i,\n"
@@ -1313,10 +1325,22 @@ void StatusXmlCommand::Execute()
 	int downloadedMBytes = (int)(allBytes / 1024 / 1024);
 	Util::SplitInt64(allBytes, &downloadedSizeHi, &downloadedSizeLo);
 	int averageDownloadRate = (int)(downloadTimeSec > 0 ? allBytes / downloadTimeSec : 0);
+
+	int64 monthBytes, dayBytes;
+	g_StatMeter->CalcQuotaUsage(monthBytes, dayBytes);
+	uint32 monthSizeHi, monthSizeLo;
+	int monthMBytes = (int)(monthBytes / 1024 / 1024);
+	Util::SplitInt64(monthBytes, &monthSizeHi, &monthSizeLo);
+
+	uint32 daySizeHi, daySizeLo;
+	int dayMBytes = (int)(dayBytes / 1024 / 1024);
+	Util::SplitInt64(dayBytes, &daySizeHi, &daySizeLo);
+
 	uint32 freeDiskSpaceHi, freeDiskSpaceLo;
 	int64 freeDiskSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
+
 	int serverTime = Util::CurrentTime();
 	int resumeTime = g_Options->GetResumeTime();
 	bool feedActive = g_FeedCoordinator->HasActiveDownloads();
@@ -1324,8 +1348,9 @@ void StatusXmlCommand::Execute()
 
 	AppendFmtResponse(IsJson() ? JSON_STATUS_START : XML_STATUS_START,
 		remainingSizeLo, remainingSizeHi, remainingMBytes, forcedSizeLo,
-		forcedSizeHi, forcedMBytes, downloadedSizeLo, downloadedSizeHi,
-		downloadedMBytes, articleCacheLo, articleCacheHi, articleCacheMBytes,
+		forcedSizeHi, forcedMBytes, downloadedSizeLo, downloadedSizeHi, downloadedMBytes,
+		monthSizeLo, monthSizeHi, monthMBytes, daySizeLo, daySizeHi, dayMBytes,
+		articleCacheLo, articleCacheHi, articleCacheMBytes,
 		downloadRate, averageDownloadRate, downloadLimit, threadCount,
 		postJobCount, postJobCount, urlCount, upTimeSec, downloadTimeSec,
 		BoolToStr(downloadPaused), BoolToStr(downloadPaused), BoolToStr(downloadPaused),

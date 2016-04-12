@@ -224,6 +224,8 @@ void StatMeter::IntervalCheck()
 
 	m_lastCheck = m_curTime;
 
+	CheckQuota();
+
 	if (m_statChanged)
 	{
 		Save();
@@ -450,4 +452,92 @@ bool StatMeter::Load(bool* perfectServerMatch)
 	}
 
 	return ok;
+}
+
+void StatMeter::CheckQuota()
+{
+	if ((g_Options->GetDailyQuota() == 0 && g_Options->GetMonthlyQuota() == 0) || g_Options->GetQuotaPause())
+	{
+		return;
+	}
+
+	int64 monthBytes, dayBytes;
+	CalcQuotaUsage(monthBytes, dayBytes);
+
+	if (g_Options->GetDailyQuota() > 0 && dayBytes >= (int64)g_Options->GetDailyQuota() * 1024 * 1024)
+	{
+		warn("Daily quota reached at %s. Pausing download", *Util::FormatSize(dayBytes));
+		g_Options->SetQuotaPause(true);
+		g_Options->SetPauseDownload(true);
+		return;
+	}
+
+	if (g_Options->GetMonthlyQuota() > 0 && monthBytes >= (int64)g_Options->GetMonthlyQuota() * 1024 * 1024)
+	{
+		warn("Monthly quota reached at %s. Pausing download", *Util::FormatSize(monthBytes));
+		g_Options->SetQuotaPause(true);
+		g_Options->SetPauseDownload(true);
+		return;
+	}
+}
+
+void StatMeter::CalcQuotaUsage(int64& monthBytes, int64& dayBytes)
+{
+	Guard guard(m_volumeMutex);
+
+	ServerVolume totalVolume = m_serverVolumes[0];
+
+	time_t locTime = Util::CurrentTime() + g_Options->GetLocalTimeOffset();
+	int daySlot = locTime / 86400 - totalVolume.GetFirstDay();
+
+	dayBytes = 0;
+	if (daySlot < (int)totalVolume.BytesPerDays()->size())
+	{
+		dayBytes = totalVolume.BytesPerDays()->at(daySlot);
+	}
+
+	int elapsedSlots = CalcMonthSlots(totalVolume);
+	monthBytes = 0;
+	int endSlot = std::max(daySlot - elapsedSlots, -1);
+	for (int slot = daySlot; slot >= 0 && slot > endSlot; slot--)
+	{
+		if (slot < (int)totalVolume.BytesPerDays()->size())
+		{
+			monthBytes += totalVolume.BytesPerDays()->at(slot);
+			debug("adding slot %i: %i", slot, (int)(totalVolume.BytesPerDays()->at(slot) / 1024 / 1024));
+		}
+	}
+
+	debug("month volume: %i MB", (int)(monthBytes / 1024 / 1024));
+}
+
+int StatMeter::CalcMonthSlots(ServerVolume& volume)
+{
+	int elapsedDays;
+
+	time_t locCurTime = Util::CurrentTime() + g_Options->GetLocalTimeOffset();
+	tm dayparts;
+	gmtime_r(&locCurTime, &dayparts);
+
+	if (g_Options->GetQuotaStartDay() > dayparts.tm_mday)
+	{
+		dayparts.tm_mon--;
+		dayparts.tm_mday = g_Options->GetQuotaStartDay();
+		time_t prevMonth = Util::Timegm(&dayparts);
+		tm prevparts;
+		gmtime_r(&prevMonth, &prevparts);
+		if (prevparts.tm_mday != g_Options->GetQuotaStartDay())
+		{
+			dayparts.tm_mday = 1;
+			dayparts.tm_mon++;
+			prevMonth = Util::Timegm(&dayparts);
+		}
+		elapsedDays = (locCurTime - prevMonth) / 60 / 60 / 24 + 1;
+	}
+	else
+	{
+		elapsedDays = dayparts.tm_mday - g_Options->GetQuotaStartDay() + 1;
+	}
+
+	return elapsedDays;
 }

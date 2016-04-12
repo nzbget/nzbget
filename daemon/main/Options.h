@@ -275,6 +275,9 @@ public:
 	int GetArticleCache() { return m_articleCache; }
 	int GetEventInterval() { return m_eventInterval; }
 	const char* GetShellOverride() { return m_shellOverride; }
+	int GetMonthlyQuota() { return m_monthlyQuota; }
+	int GetQuotaStartDay() { return m_quotaStartDay; }
+	int GetDailyQuota() { return m_dailyQuota; }
 
 	Categories* GetCategories() { return &m_categories; }
 	Category* FindCategory(const char* name, bool searchAliases) { return m_categories.FindCategory(name, searchAliases); }
@@ -302,6 +305,8 @@ public:
 	time_t GetResumeTime() const { return m_resumeTime; }
 	void SetLocalTimeOffset(int localTimeOffset) { m_localTimeOffset = localTimeOffset; }
 	int GetLocalTimeOffset() { return m_localTimeOffset; }
+	void SetQuotaPause(bool quotaPause) { m_quotaPause = quotaPause; }
+	bool GetQuotaPause() { return m_quotaPause; }
 
 private:
 	OptEntries m_optEntries;
@@ -415,6 +420,9 @@ private:
 	int m_articleCache = 0;
 	int m_eventInterval = 0;
 	CString m_shellOverride;
+	int m_monthlyQuota = 0;
+	int m_quotaStartDay = 0;
+	int m_dailyQuota = 0;
 
 	// Current state
 	bool m_serverMode = false;
@@ -428,6 +436,7 @@ private:
 	int m_downloadRate = 0;
 	time_t m_resumeTime = 0;
 	int m_localTimeOffset = 0;
+	bool m_quotaPause = false;
 
 	void Init(const char* exeName, const char* configFilename, bool noConfig,
 		CmdOptList* commandLineOptions, bool noDiskAccess, Extender* extender);

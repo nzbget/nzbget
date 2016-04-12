@@ -75,6 +75,25 @@ typedef GuardedPtr<ServerVolumes> GuardedServerVolumes;
 
 class StatMeter : public Debuggable
 {
+public:
+	StatMeter();
+	void Init();
+	int CalcCurrentDownloadSpeed();
+	int CalcMomentaryDownloadSpeed();
+	void AddSpeedReading(int bytes);
+	void AddServerData(int bytes, int serverId);
+	void CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy);
+	void CalcQuotaUsage(int64& monthBytes, int64& dayBytes);
+	bool GetStandBy() { return m_standBy; }
+	void IntervalCheck();
+	void EnterLeaveStandBy(bool enter);
+	GuardedServerVolumes GuardServerVolumes();
+	void Save();
+	bool Load(bool* perfectServerMatch);
+
+protected:
+	virtual void LogDebugInfo();
+
 private:
 	// speed meter
 	static const int SPEEDMETER_SLOTS = 30;
@@ -106,24 +125,8 @@ private:
 
 	void ResetSpeedStat();
 	void AdjustTimeOffset();
-
-protected:
-	virtual void LogDebugInfo();
-
-public:
-	StatMeter();
-	void Init();
-	int CalcCurrentDownloadSpeed();
-	int CalcMomentaryDownloadSpeed();
-	void AddSpeedReading(int bytes);
-	void AddServerData(int bytes, int serverId);
-	void CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy);
-	bool GetStandBy() { return m_standBy; }
-	void IntervalCheck();
-	void EnterLeaveStandBy(bool enter);
-	GuardedServerVolumes GuardServerVolumes();
-	void Save();
-	bool Load(bool* perfectServerMatch);
+	void CheckQuota();
+	int CalcMonthSlots(ServerVolume& volume);
 };
 
 extern StatMeter* g_StatMeter;

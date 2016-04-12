@@ -131,6 +131,9 @@ static const char* OPTION_PROPAGATIONDELAY		= "PropagationDelay";
 static const char* OPTION_ARTICLECACHE			= "ArticleCache";
 static const char* OPTION_EVENTINTERVAL			= "EventInterval";
 static const char* OPTION_SHELLOVERRIDE			= "ShellOverride";
+static const char* OPTION_MONTHLYQUOTA			= "MonthlyQuota";
+static const char* OPTION_QUOTASTARTDAY			= "QuotaStartDay";
+static const char* OPTION_DAILYQUOTA			= "DailyQuota";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -490,6 +493,9 @@ void Options::InitDefaults()
 	SetOption(OPTION_ARTICLECACHE, "0");
 	SetOption(OPTION_EVENTINTERVAL, "0");
 	SetOption(OPTION_SHELLOVERRIDE, "");
+	SetOption(OPTION_MONTHLYQUOTA, "0");
+	SetOption(OPTION_QUOTASTARTDAY, "1");
+	SetOption(OPTION_DAILYQUOTA, "0");
 }
 
 void Options::InitOptFile()
@@ -691,6 +697,9 @@ void Options::InitOptions()
 	m_eventInterval			= ParseIntValue(OPTION_EVENTINTERVAL, 10);
 	m_parBuffer				= ParseIntValue(OPTION_PARBUFFER, 10);
 	m_parThreads			= ParseIntValue(OPTION_PARTHREADS, 10);
+	m_monthlyQuota			= ParseIntValue(OPTION_MONTHLYQUOTA, 10);
+	m_quotaStartDay			= ParseIntValue(OPTION_QUOTASTARTDAY, 10);
+	m_dailyQuota			= ParseIntValue(OPTION_DAILYQUOTA, 10);
 
 	m_brokenLog				= (bool)ParseEnumValue(OPTION_BROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_nzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
