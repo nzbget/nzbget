@@ -631,7 +631,7 @@ void UnpackController::CheckArchiveFiles(bool scanNonStdFiles)
 
 		if (!FileSystem::DirectoryExists(fullFilename))
 		{
-			const char* ext = strchr(filename, '.');
+			const char* ext = strrchr(filename, '.');
 			int extNum = ext ? atoi(ext + 1) : -1;
 
 			if (regExRar.Match(filename))
