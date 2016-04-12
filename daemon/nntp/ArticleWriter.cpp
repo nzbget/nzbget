@@ -494,7 +494,10 @@ void ArticleWriter::CompleteFileParts()
 	{
 		for (ArticleInfo* pa : m_fileInfo->GetArticles())
 		{
-			FileSystem::DeleteFile(pa->GetResultFilename());
+			if (pa->GetResultFilename())
+			{
+				FileSystem::DeleteFile(pa->GetResultFilename());
+			}
 		}
 	}
 
