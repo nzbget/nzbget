@@ -243,11 +243,11 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	filter: alpha(opacity=100);
 }
 
-#StatusTime.scheduled-resume {
+#StatusTime.orange {
 	color: #F08929;
 }
 
-#StatusTime.scheduled-resume:hover {
+#StatusTime.orange:hover {
 	color: #FFA15A;
 }
 
