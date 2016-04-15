@@ -456,7 +456,7 @@ bool StatMeter::Load(bool* perfectServerMatch)
 
 void StatMeter::CheckQuota()
 {
-	if ((g_Options->GetDailyQuota() == 0 && g_Options->GetMonthlyQuota() == 0) || g_Options->GetQuotaPause())
+	if ((g_Options->GetDailyQuota() == 0 && g_Options->GetMonthlyQuota() == 0))
 	{
 		return;
 	}
@@ -464,21 +464,23 @@ void StatMeter::CheckQuota()
 	int64 monthBytes, dayBytes;
 	CalcQuotaUsage(monthBytes, dayBytes);
 
-	if (g_Options->GetDailyQuota() > 0 && dayBytes >= (int64)g_Options->GetDailyQuota() * 1024 * 1024)
+	bool monthlyQuotaReached = g_Options->GetMonthlyQuota() > 0 && monthBytes >= (int64)g_Options->GetMonthlyQuota() * 1024 * 1024;
+	bool dailyQuotaReached = g_Options->GetDailyQuota() > 0 && dayBytes >= (int64)g_Options->GetDailyQuota() * 1024 * 1024;
+
+	if (monthlyQuotaReached && !g_Options->GetQuotaReached())
 	{
-		warn("Daily quota reached at %s. Pausing download", *Util::FormatSize(dayBytes));
-		g_Options->SetQuotaPause(true);
-		g_Options->SetPauseDownload(true);
-		return;
+		warn("Monthly quota reached at %s", *Util::FormatSize(monthBytes));
+	}
+	else if (dailyQuotaReached && !g_Options->GetQuotaReached())
+	{
+		warn("Daily quota reached at %s", *Util::FormatSize(dayBytes));
+	}
+	else if (!monthlyQuotaReached && !dailyQuotaReached && g_Options->GetQuotaReached())
+	{
+		info("Quota lifted");
 	}
 
-	if (g_Options->GetMonthlyQuota() > 0 && monthBytes >= (int64)g_Options->GetMonthlyQuota() * 1024 * 1024)
-	{
-		warn("Monthly quota reached at %s. Pausing download", *Util::FormatSize(monthBytes));
-		g_Options->SetQuotaPause(true);
-		g_Options->SetPauseDownload(true);
-		return;
-	}
+	g_Options->SetQuotaReached(monthlyQuotaReached || dailyQuotaReached);
 }
 
 void StatMeter::CalcQuotaUsage(int64& monthBytes, int64& dayBytes)

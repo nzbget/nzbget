@@ -305,8 +305,8 @@ public:
 	time_t GetResumeTime() const { return m_resumeTime; }
 	void SetLocalTimeOffset(int localTimeOffset) { m_localTimeOffset = localTimeOffset; }
 	int GetLocalTimeOffset() { return m_localTimeOffset; }
-	void SetQuotaPause(bool quotaPause) { m_quotaPause = quotaPause; }
-	bool GetQuotaPause() { return m_quotaPause; }
+	void SetQuotaReached(bool quotaReached) { m_quotaReached = quotaReached; }
+	bool GetQuotaReached() { return m_quotaReached; }
 
 private:
 	OptEntries m_optEntries;
@@ -436,7 +436,7 @@ private:
 	int m_downloadRate = 0;
 	time_t m_resumeTime = 0;
 	int m_localTimeOffset = 0;
-	bool m_quotaPause = false;
+	bool m_quotaReached = false;
 
 	void Init(const char* exeName, const char* configFilename, bool noConfig,
 		CmdOptList* commandLineOptions, bool noDiskAccess, Extender* extender);

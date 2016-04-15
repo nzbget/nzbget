@@ -1211,6 +1211,7 @@ void StatusXmlCommand::Execute()
 		"<member><name>ServerStandBy</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>PostPaused</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>ScanPaused</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>QuotaReached</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>FreeDiskSpaceLo</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>FreeDiskSpaceHi</name><value><i4>%u</i4></value></member>\n"
 		"<member><name>FreeDiskSpaceMB</name><value><i4>%i</i4></value></member>\n"
@@ -1259,6 +1260,7 @@ void StatusXmlCommand::Execute()
 		"\"ServerStandBy\" : %s,\n"
 		"\"PostPaused\" : %s,\n"
 		"\"ScanPaused\" : %s,\n"
+		"\"QuotaReached\" : %s,\n"
 		"\"FreeDiskSpaceLo\" : %u,\n"
 		"\"FreeDiskSpaceHi\" : %u,\n"
 		"\"FreeDiskSpaceMB\" : %i,\n"
@@ -1315,6 +1317,7 @@ void StatusXmlCommand::Execute()
 	bool downloadPaused = g_Options->GetPauseDownload();
 	bool postPaused = g_Options->GetPausePostProcess();
 	bool scanPaused = g_Options->GetPauseScan();
+	bool quotaReached = g_Options->GetQuotaReached();
 	int threadCount = Thread::GetThreadCount() - 1; // not counting itself
 
 	uint32 downloadedSizeHi, downloadedSizeLo;
@@ -1354,7 +1357,7 @@ void StatusXmlCommand::Execute()
 		downloadRate, averageDownloadRate, downloadLimit, threadCount,
 		postJobCount, postJobCount, urlCount, upTimeSec, downloadTimeSec,
 		BoolToStr(downloadPaused), BoolToStr(downloadPaused), BoolToStr(downloadPaused),
-		BoolToStr(serverStandBy), BoolToStr(postPaused), BoolToStr(scanPaused),
+		BoolToStr(serverStandBy), BoolToStr(postPaused), BoolToStr(scanPaused), BoolToStr(quotaReached),
 		freeDiskSpaceLo, freeDiskSpaceHi,	freeDiskSpaceMB, serverTime, resumeTime,
 		BoolToStr(feedActive), queuedScripts);
 

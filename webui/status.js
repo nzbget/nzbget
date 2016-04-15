@@ -179,9 +179,7 @@ var Status = (new function($)
 		$StatusSpeedIcon.toggleClass('icon-plane', !limit);
 		$StatusSpeedIcon.toggleClass('icon-truck', limit);
 
-		var statWarning = (status.ServerStandBy && status.ResumeTime > 0) ||
-			(parseFloat(Options.option('MonthlyQuota')) > 0 && Status.status.MonthSizeMB >= parseFloat(Options.option('MonthlyQuota'))) ||
-			(parseFloat(Options.option('DayQuota')) > 0 && Status.status.DaySizeMB >= parseFloat(Options.option('DayQuota')));
+		var statWarning = (status.ServerStandBy && status.ResumeTime > 0) || status.QuotaReached;
 		$StatusTime.toggleClass('orange', statWarning);
 		$StatusTimeIcon.toggleClass('icon-time', !statWarning);
 		$StatusTimeIcon.toggleClass('icon-time-orange', statWarning);
@@ -579,8 +577,7 @@ var StatDialog = (new function($)
 			'<span class="label label-status label-success">active</span>')) +
 			'</td></tr>';
 
-		if ((parseFloat(Options.option('MonthlyQuota')) > 0 && Status.status.MonthSizeMB >= parseFloat(Options.option('MonthlyQuota'))) ||
-			(parseFloat(Options.option('DayQuota')) > 0 && Status.status.DaySizeMB >= parseFloat(Options.option('DayQuota'))))
+		if (status.QuotaReached)
 		{
 			content += '<tr><td>Download quota</td><td class="text-right"><span class="label label-status label-warning">reached</span></td></tr>';
 		}

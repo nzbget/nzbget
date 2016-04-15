@@ -468,7 +468,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 					!fileInfo1->GetPaused() && !fileInfo1->GetDeleted() &&
 					(g_Options->GetPropagationDelay() == 0 ||
 					 (int)fileInfo1->GetTime() < (int)curDate - g_Options->GetPropagationDelay()) &&
-					(!g_Options->GetPauseDownload() || nzbInfo->GetForcePriority()) &&
+					(!(g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) || nzbInfo->GetForcePriority()) &&
 					(!fileInfo ||
 					 (fileInfo1->GetExtraPriority() == fileInfo->GetExtraPriority() &&
 					  fileInfo1->GetNzbInfo()->GetPriority() > fileInfo->GetNzbInfo()->GetPriority()) ||

@@ -103,7 +103,7 @@ void ArticleDownloader::Run()
 		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
 
-		if (IsStopped() || (g_Options->GetPauseDownload() && !force) ||
+		if (IsStopped() || ((g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) && !force) ||
 			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
 			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
@@ -195,7 +195,7 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if (IsStopped() || (g_Options->GetPauseDownload() && !force) ||
+		if (IsStopped() || ((g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) && !force) ||
 			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
 			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
