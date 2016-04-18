@@ -530,17 +530,17 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 
 		// now can process the feed
 
-		std::unique_ptr<FeedFile> feedFile;
-
-		if (feedInfo->GetStatus() == FeedInfo::fsFinished)
+		if (feedInfo->GetStatus() != FeedInfo::fsFinished)
 		{
-			FeedScriptController::ExecuteScripts(
-				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
-				feedInfo->GetOutputFilename(), feedInfo->GetId(), nullptr);
-			feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
+			return nullptr;
 		}
 
-		bool parsed = feedFile && feedFile->Parse();
+		FeedScriptController::ExecuteScripts(
+			!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
+			feedInfo->GetOutputFilename(), feedInfo->GetId(), nullptr);
+
+		std::unique_ptr<FeedFile> feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
+		bool parsed = feedFile->Parse();
 		FileSystem::DeleteFile(feedInfo->GetOutputFilename());
 
 		if (!parsed)
