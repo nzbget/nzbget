@@ -24,13 +24,20 @@
 #include "Log.h"
 #include "Util.h"
 
-void FeedScriptController::ExecuteScripts(const char* feedScript, const char* feedFile, int feedId)
+static const int FEED_SUCCESS = 93;
+
+void FeedScriptController::ExecuteScripts(const char* feedScript, const char* feedFile, int feedId, bool* success)
 {
 	FeedScriptController scriptController;
 	scriptController.m_feedFile = feedFile;
 	scriptController.m_feedId = feedId;
 
 	scriptController.ExecuteScriptList(feedScript);
+
+	if (success)
+	{
+		*success = scriptController.m_success;
+	}
 }
 
 void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
@@ -44,11 +51,20 @@ void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 
 	SetArgs({script->GetLocation()});
 
-	SetInfoName(BString<1024>("feed-script %s for Feed%i", script->GetName(), m_feedId));
+	BString<1024> infoName("feed-script %s for Feed%i", script->GetName(), m_feedId);
+	SetInfoName(infoName);
+
 	SetLogPrefix(script->GetDisplayName());
 	PrepareParams(script->GetName());
 
-	Execute();
+	int exitCode = Execute();
+
+	if (exitCode != FEED_SUCCESS)
+	{
+		infoName[0] = 'F'; // uppercase
+		PrintMessage(Message::mkError, "%s failed", GetInfoName());
+		m_success = false;
+	}
 
 	SetLogPrefix(nullptr);
 }

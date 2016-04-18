@@ -26,7 +26,7 @@
 class FeedScriptController : public NzbScriptController
 {
 public:
-	static void ExecuteScripts(const char* feedScript, const char* feedFile, int feedId);
+	static void ExecuteScripts(const char* feedScript, const char* feedFile, int feedId, bool* success);
 
 protected:
 	virtual void ExecuteScript(ScriptConfig::Script* script);
@@ -34,6 +34,7 @@ protected:
 private:
 	const char* m_feedFile;
 	int m_feedId;
+	bool m_success = true;
 
 	void PrepareParams(const char* scriptName);
 };

@@ -302,9 +302,15 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 	{
 		if (!feedInfo->GetPreview())
 		{
+			bool scriptSuccess = true;
 			FeedScriptController::ExecuteScripts(
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
-				feedInfo->GetOutputFilename(), feedInfo->GetId());
+				feedInfo->GetOutputFilename(), feedInfo->GetId(), &scriptSuccess);
+			if (!scriptSuccess)
+			{
+				feedInfo->SetStatus(FeedInfo::fsFailed);
+				return;
+			}
 
 			std::unique_ptr<FeedFile> feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
 			bool parsed = feedFile->Parse();
@@ -530,7 +536,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 		{
 			FeedScriptController::ExecuteScripts(
 				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
-				feedInfo->GetOutputFilename(), feedInfo->GetId());
+				feedInfo->GetOutputFilename(), feedInfo->GetId(), nullptr);
 			feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
 		}
 
