@@ -442,6 +442,10 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					{
 						m_editQueueAction = DownloadQueue::eaHistoryRedownload;
 					}
+					else if (!strcasecmp(optarg, "F"))
+					{
+						m_editQueueAction = DownloadQueue::eaHistoryRetryFailed;
+					}
 					else if (!strcasecmp(optarg, "O"))
 					{
 						m_editQueueAction = DownloadQueue::eaHistorySetParameter;
@@ -784,6 +788,7 @@ void CommandLineParser::PrintUsage(const char* com)
 		"       P                    Post-process again\n"
 		"       R                    Download remaining files\n"
 		"       A                    Download again\n"
+		"       F                    Retry download of failed articles\n"
 		"       O <name>=<value>     Set post-process parameter\n"
 		"       B                    Mark as bad\n"
 		"       G                    Mark as good\n"

@@ -1576,6 +1576,7 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Return, #HistoryEdit_ReturnURL').click(itemReturn);
 		$('#HistoryEdit_Reprocess').click(itemReprocess);
 		$('#HistoryEdit_Redownload').click(itemRedownload);
+		$('#HistoryEdit_RetryFailed').click(itemRetryFailed);
 		$('#HistoryEdit_Param, #HistoryEdit_Dupe, #HistoryEdit_Log').click(tabClick);
 		$('#HistoryEdit_Back').click(backClick);
 		$('#HistoryEdit_MarkSuccess').click(itemSuccess);
@@ -1739,6 +1740,7 @@ var HistoryEditDialog = (new function()
 		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
 		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
 		Util.show('#HistoryEdit_Redownload', hist.Kind === 'NZB');
+		Util.show('#HistoryEdit_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.ParStatus !== 'SUCCESS' && hist.DeleteStatus === 'NONE');
 		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
@@ -1952,6 +1954,20 @@ var HistoryEditDialog = (new function()
 		RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
 	}
 
+	function itemRetryFailed(e)
+	{
+		e.preventDefault();
+		disableAllButtons();
+		saveCompleted = retryFailed;
+		saveDupeKey();
+	}
+	
+	function retryFailed()
+	{
+		notification = '#Notif_History_RetryFailed';
+		RPC.call('editqueue', ['HistoryRetryFailed', 0, '', [curHist.ID]], completed);
+	}
+	
 	function completed()
 	{
 		$HistoryEditDialog.modal('hide');

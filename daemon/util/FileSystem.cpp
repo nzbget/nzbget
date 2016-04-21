@@ -573,6 +573,7 @@ int64 FileSystem::FileSize(const char* filename)
 	return -1;
 #else
 	struct stat buffer;
+	buffer.st_size = -1;
 	stat(filename, &buffer);
 	return buffer.st_size;
 #endif

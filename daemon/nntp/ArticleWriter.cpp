@@ -125,7 +125,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 
 	if (!m_articleData.GetData())
 	{
-		bool directWrite = g_Options->GetDirectWrite() && m_format == Decoder::efYenc;
+		bool directWrite = (g_Options->GetDirectWrite() || m_fileInfo->GetForceDirectWrite()) && m_format == Decoder::efYenc;
 		const char* filename = directWrite ? m_outputFilename : m_tempFilename;
 		if (!m_outFile.Open(filename, directWrite ? DiskFile::omReadWrite : DiskFile::omWrite))
 		{
@@ -136,7 +136,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 		}
 		SetWriteBuffer(m_outFile, m_articleInfo->GetSize());
 
-		if (g_Options->GetDirectWrite() && m_format == Decoder::efYenc)
+		if (directWrite)
 		{
 			m_outFile.Seek(m_articleOffset);
 		}
@@ -177,7 +177,7 @@ void ArticleWriter::Finish(bool success)
 		return;
 	}
 
-	bool directWrite = g_Options->GetDirectWrite() && m_format == Decoder::efYenc;
+	bool directWrite = (g_Options->GetDirectWrite() || m_fileInfo->GetForceDirectWrite()) && m_format == Decoder::efYenc;
 
 	if (g_Options->GetDecode())
 	{
@@ -288,7 +288,7 @@ void ArticleWriter::CompleteFileParts()
 	debug("Completing file parts");
 	debug("ArticleFilename: %s", m_fileInfo->GetFilename());
 
-	bool directWrite = g_Options->GetDirectWrite() && m_fileInfo->GetOutputInitialized();
+	bool directWrite = (g_Options->GetDirectWrite() || m_fileInfo->GetForceDirectWrite()) && m_fileInfo->GetOutputInitialized();
 
 	BString<1024> nzbName;
 	BString<1024> nzbDestDir;
@@ -329,7 +329,15 @@ void ArticleWriter::CompleteFileParts()
 		return;
 	}
 
-	CString ofn = FileSystem::MakeUniqueFilename(nzbDestDir, m_fileInfo->GetFilename());
+	CString ofn;
+	if (m_fileInfo->GetForceDirectWrite())
+	{
+		ofn.Format("%s%c%s", *nzbDestDir, PATH_SEPARATOR, m_fileInfo->GetFilename());
+	}
+	else
+	{
+		ofn = FileSystem::MakeUniqueFilename(nzbDestDir, m_fileInfo->GetFilename());
+	}
 
 	DiskFile outfile;
 	BString<1024> tmpdestfile("%s.tmp", *ofn);
@@ -467,7 +475,8 @@ void ArticleWriter::CompleteFileParts()
 
 	if (directWrite)
 	{
-		if (!FileSystem::MoveFile(m_outputFilename, ofn))
+		if (!FileSystem::SameFilename(m_outputFilename, ofn) &&
+			!FileSystem::MoveFile(m_outputFilename, ofn))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 				"Could not move file %s to %s: %s", *m_outputFilename, *ofn,

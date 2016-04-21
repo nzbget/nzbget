@@ -31,6 +31,7 @@
 #include "ParParser.h"
 #include "PrePostProcessor.h"
 #include "DupeCoordinator.h"
+#include "ServerPool.h"
 
 /**
  * Removes old entries from (recent) history
@@ -235,7 +236,11 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 						HistoryRedownload(downloadQueue, itHistory, historyInfo, false);
 						break;
 
- 					case DownloadQueue::eaHistorySetParameter:
+					case DownloadQueue::eaHistoryRetryFailed:
+						HistoryRetryFailed(downloadQueue, itHistory, historyInfo);
+						break;
+
+					case DownloadQueue::eaHistorySetParameter:
 						ok = HistorySetParameter(historyInfo, text);
 						break;
 
@@ -345,7 +350,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList
 		bool unparked = false;
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
-			detail("Unpark file %s", fileInfo->GetFilename());
+			detail("Unparking file %s", fileInfo->GetFilename());
 			unparked = true;
 		}
 
@@ -499,6 +504,94 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	HistoryReturn(downloadQueue, itHistory, historyInfo, false);
 
 	g_PrePostProcessor->NzbAdded(downloadQueue, nzbInfo);
+}
+
+void HistoryCoordinator::HistoryRetryFailed(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
+	HistoryInfo* historyInfo)
+{
+	if (historyInfo->GetKind() != HistoryInfo::hkNzb)
+	{
+		error("Could not retry failed articles for %s: history item has wrong type", historyInfo->GetName());
+		return;
+	}
+
+	NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
+
+	if (!FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
+	{
+		error("Could not retry failed articles for %s: destination directory %s doesn't exist", historyInfo->GetName(), nzbInfo->GetDestDir());
+		return;
+	}
+
+	nzbInfo->PrintMessage(Message::mkInfo, "Retrying failed articles for %s", nzbInfo->GetName());
+
+	// move failed completed files to (parked) file list
+	for (CompletedFileList::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); )
+	{
+		CompletedFile& completedFile = *it;
+		if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
+		{
+			nzbInfo->PrintMessage(Message::mkDetail, "Retrying %s", completedFile.GetFileName());
+			std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
+			fileInfo->SetId(completedFile.GetId());
+			if (g_DiskState->LoadFile(fileInfo.get(), true, true) &&
+				g_DiskState->LoadFileState(fileInfo.get(), g_ServerPool->GetServers(), true))
+			{
+				fileInfo->SetFilename(completedFile.GetFileName());
+
+				BString<1024> outputFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename());
+				if (FileSystem::FileSize(outputFilename) == 0)
+				{
+					FileSystem::DeleteFile(outputFilename);
+				}
+				if (fileInfo->GetSuccessArticles() > 0 && FileSystem::FileExists(outputFilename))
+				{
+					fileInfo->SetOutputFilename(outputFilename);
+					fileInfo->SetOutputInitialized(true);
+					fileInfo->SetForceDirectWrite(true);
+					fileInfo->SetFilenameConfirmed(true);
+				}
+
+				// reset articles state
+				for (ArticleInfo* pa : fileInfo->GetArticles())
+				{
+					if (pa->GetStatus() == ArticleInfo::aiFailed)
+					{
+						pa->SetStatus(ArticleInfo::aiUndefined);
+						fileInfo->SetCompletedArticles(fileInfo->GetCompletedArticles() - 1);
+
+						fileInfo->SetFailedArticles(fileInfo->GetFailedArticles() - 1);
+						fileInfo->SetFailedSize(fileInfo->GetFailedSize() - pa->GetSize());
+						fileInfo->SetRemainingSize(fileInfo->GetRemainingSize() + pa->GetSize());
+
+						nzbInfo->SetFailedArticles(nzbInfo->GetFailedArticles() - 1);
+						nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() - 1);
+						nzbInfo->SetFailedSize(nzbInfo->GetFailedSize() - pa->GetSize());
+						nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() - pa->GetSize());
+						nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() + pa->GetSize());
+
+						if (fileInfo->GetParFile())
+						{
+							nzbInfo->SetParFailedSize(nzbInfo->GetParFailedSize() - pa->GetSize());
+							nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() - pa->GetSize());
+							nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1);
+						}
+					}
+				}
+
+				g_DiskState->SaveFileState(fileInfo.get(), false);
+
+				fileInfo->SetNzbInfo(nzbInfo);
+				nzbInfo->GetFileList()->Add(std::move(fileInfo), true);
+
+				it = nzbInfo->GetCompletedFiles()->erase(it);
+				continue;
+			}
+		}
+		it++;
+	}
+
+	HistoryReturn(downloadQueue, itHistory, historyInfo, false);
 }
 
 bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const char* text)

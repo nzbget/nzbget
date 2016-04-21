@@ -2042,6 +2042,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaHistoryReturn, "HistoryReturn" },
 	{ DownloadQueue::eaHistoryProcess, "HistoryProcess" },
 	{ DownloadQueue::eaHistoryRedownload, "HistoryRedownload" },
+	{ DownloadQueue::eaHistoryRetryFailed, "HistoryRetryFailed" },
 	{ DownloadQueue::eaHistorySetParameter, "HistorySetParameter" },
 	{ DownloadQueue::eaHistorySetDupeKey, "HistorySetDupeKey" },
 	{ DownloadQueue::eaHistorySetDupeScore, "HistorySetDupeScore" },

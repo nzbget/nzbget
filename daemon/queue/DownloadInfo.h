@@ -179,6 +179,8 @@ public:
 	void SetCachedArticles(int cachedArticles) { m_cachedArticles = cachedArticles; }
 	bool GetPartialChanged() { return m_partialChanged; }
 	void SetPartialChanged(bool partialChanged) { m_partialChanged = partialChanged; }
+	bool GetForceDirectWrite() { return m_forceDirectWrite; }
+	void SetForceDirectWrite(bool forceDirectWrite) { m_forceDirectWrite = forceDirectWrite; }
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
 private:
@@ -212,6 +214,7 @@ private:
 	bool m_autoDeleted = false;
 	int m_cachedArticles = 0;
 	bool m_partialChanged = false;
+	bool m_forceDirectWrite = false;
 
 	static int m_idGen;
 	static int m_idMax;
@@ -873,7 +876,8 @@ public:
 		eaHistoryFinalDelete, // delete history-item
 		eaHistoryReturn, // move history-item back to download queue
 		eaHistoryProcess, // move history-item back to download queue and start postprocessing
-		eaHistoryRedownload, // move history-item back to download queue for redownload
+		eaHistoryRedownload, // move history-item back to download queue for full redownload
+		eaHistoryRetryFailed, // move history-item back to download queue for redownload of failed articles
 		eaHistorySetParameter, // set post-process parameter for history-item
 		eaHistorySetDupeKey, // set duplicate key
 		eaHistorySetDupeScore, // set duplicate score

@@ -37,6 +37,7 @@ public:
 	bool SaveDownloadQueue(DownloadQueue* downloadQueue);
 	bool LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers);
 	bool SaveFile(FileInfo* fileInfo);
+	bool LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles);
 	bool SaveFileState(FileInfo* fileInfo, bool completed);
 	bool LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed);
 	bool LoadArticles(FileInfo* fileInfo);
@@ -54,7 +55,6 @@ public:
 	void LoadNzbMessages(int nzbId, MessageList* messages);
 
 private:
-	bool LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles);
 	bool SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile);
 	bool LoadFileInfo(FileInfo* fileInfo, StateDiskFile& outfile, int formatVersion, bool fileSummary, bool articles);
 	bool SaveFileState(FileInfo* fileInfo, StateDiskFile& outfile, bool completed);
