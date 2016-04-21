@@ -133,9 +133,12 @@ var Options = (new function($)
 		}
 
 		var config = [];
+		config.values = serverValues;
+
+		readWebSettings(config);
+		
 		var serverConfig = readConfigTemplate(serverTemplateData[0].Template, undefined, HIDDEN_SECTIONS, '', '');
 		mergeValues(serverConfig.sections, serverValues);
-		config.values = serverValues;
 		config.push(serverConfig);
 
 		// read scripts configs
@@ -160,6 +163,30 @@ var Options = (new function($)
 
 		serverValues = null;
 		loadComplete(config);
+	}
+	
+	function readWebSettings(config)
+	{
+		var webTemplate = '### WEB-INTERFACE ###\n\n';
+		var webValues = [];
+		
+		for (var optname in UISettings.description)
+		{
+			var descript = UISettings.description[optname];
+			var value = UISettings[optname];
+			optname = optname[0].toUpperCase() + optname.substring(1);
+			if (value === true) value = 'yes';
+			if (value === false) value = 'no';
+			
+			descript = descript.replace(/\n/g, '\n# ').replace(/\n# \n/g, '\n#\n');
+			webTemplate += '# ' + descript + '\n' + optname + '=' + value + '\n\n';
+			
+			webValues.push({Name: optname, Value: value.toString()});
+		}
+		
+		var webConfig = readConfigTemplate(webTemplate, undefined, '', '', '');
+		mergeValues(webConfig.sections, webValues);
+		config.push(webConfig);
 	}
 
 	this.reloadConfig = function(_serverValues, _complete)
@@ -915,11 +942,9 @@ var Config = (new function($)
 		$ConfigNav.children().not('.config-static').remove();
 		$ConfigData.children().not('.config-static').remove();
 
-		$ConfigNav.append('<li class="divider"></li>');
-
 		for (var k=0; k < config.length; k++)
 		{
-			if (k == 1)
+			if (k == 1 || k == 2)
 			{
 				$ConfigNav.append('<li class="divider"></li>');
 			}
@@ -932,7 +957,7 @@ var Config = (new function($)
 				{
 					var html = $('<li><a href="#' + section.id + '">' + section.name + '</a></li>');
 					$ConfigNav.append(html);
-					var content = buildOptionsContent(section, k > 0);
+					var content = buildOptionsContent(section, k > 1);
 					$ConfigData.append(content);
 					added = true;
 				}
@@ -964,7 +989,7 @@ var Config = (new function($)
 
 	function extendConfig()
 	{
-		for (var i=1; i < config.length; i++)
+		for (var i=2; i < config.length; i++)
 		{
 			var conf = config[i];
 
@@ -1582,11 +1607,11 @@ var Config = (new function($)
 		return false;
 	}
 
-	function prepareSaveRequest(onlyUserChanges)
+	function prepareSaveRequest(onlyUserChanges, webSettings)
 	{
 		var modified = false;
 		var request = [];
-		for (var k=0; k < config.length; k++)
+		for (var k = (webSettings ? 0 : 1); k < (webSettings ? 1 : config.length); k++)
 		{
 			var sections = config[k].sections;
 			for (var i=0; i < sections.length; i++)
@@ -1632,9 +1657,10 @@ var Config = (new function($)
 	{
 		$LeaveConfigDialog.modal('hide');
 
-		var serverSaveRequest = prepareSaveRequest(false);
+		var serverSaveRequest = prepareSaveRequest(false, false);
+		var webSaveRequest = prepareSaveRequest(false, true);
 
-		if (serverSaveRequest.length === 0)
+		if (serverSaveRequest.length === 0 && webSaveRequest.length === 0)
 		{
 			Notification.show('#Notif_Config_Unchanged');
 			return;
@@ -1644,10 +1670,20 @@ var Config = (new function($)
 
 		Util.show('#ConfigSaved_Reload, #ConfigReload', serverSaveRequest.length > 0);
 
+		if (webSaveRequest.length > 0)
+		{
+			saveWebSettings(webSaveRequest);
+		}
+		
 		if (serverSaveRequest.length > 0)
 		{
 			$('#Notif_Config_Failed_Filename').text(Options.option('ConfigFile'));
 			RPC.call('saveconfig', [serverSaveRequest], saveCompleted);
+		}
+		else
+		{
+			// only web-settings were changed, refresh page
+			document.location.reload(true);
 		}
 	}
 
@@ -1675,6 +1711,21 @@ var Config = (new function($)
 		configSaved = true;
 	}
 
+	function saveWebSettings(values)
+	{
+		for (var i=0; i < values.length; i++)
+		{
+			var option = values[i];
+			var optname = option.Name;
+			var optvalue = option.Value;
+			optname = optname[0].toLowerCase() + optname.substring(1);
+			if (optvalue === 'yes') optvalue = true;
+			if (optvalue === 'no') optvalue = false;
+			UISettings[optname] = optvalue;
+		}
+		UISettings.save();
+	}
+	
 	this.canLeaveTab = function(target)
 	{
 		if (!config || prepareSaveRequest(true).length === 0 || configSaved)

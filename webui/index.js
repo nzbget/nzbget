@@ -33,30 +33,38 @@ var UISettings = (new function($)
 {
 	'use strict';
 
-	/*** Web-interface configuration (edit if neccessary) *************/
+	/*** Web-interface configuration *************/
+
+	// Options having descriptions can be edited directly in web-interface on settings page.
 	
-	// Animation on refresh button.
+	this.description = [];
+	
+	this.description['refreshAnimation'] = 'Animation on refresh button (yes, no).';
 	this.refreshAnimation = true;
 
-	// Animation on play/pause button.
+	this.description['activityAnimation'] = 'Animation on play/pause button (yes, no).';
 	this.activityAnimation = true;
 
-	// Animation of tab changes in tabbed dialogs.
+	this.description['slideAnimation'] = 'Animation of tab changes in tabbed dialogs (yes, no).';
 	this.slideAnimation = true;
 
-	// Automatically set focus to the first control in dialogs.
-	// Not good on touch devices, because may pop up an on-screen-keyboard.
+	this.description['setFocus'] = 'Automatically set focus to the first control in dialogs (yes, no).\n\n' +
+	  'Not recommended for devices without physical keyboard.';
 	this.setFocus = false;
 
-	// Show popup notifications.
-	this.notifications = true;
+	this.description['showNotifications'] = 'Show popup notifications (yes, no).';
+	this.showNotifications = true;
 
-	// Show badges with duplicate info (downloads and history).
+	this.description['dupeBadges'] = 'Show badges with duplicate info in downloads and history (yes, no).';
 	this.dupeBadges = false;
 	
-	// Select records by clicking on any part of the row, not just on the check mark.
+	this.description['rowSelect'] = 'Select records by clicking on any part of the row, not just on the check mark (yes, no).';
 	this.rowSelect = false;
 
+	this.description['refreshRetries'] = 'Number of refresh attempts if a communication error occurs (0-99).\n\n' +
+	  'If all attempts fail, an error is displayed and the automatic refresh stops.'
+	this.refreshRetries = 4;
+	
 	// Time zone correction in hours.
 	// You shouldn't require this unless you can't set the time zone on your computer/device properly.
 	this.timeZoneCorrection = 0;
@@ -66,16 +74,12 @@ var UISettings = (new function($)
 	// The default value sets the interval on first use only.
 	this.refreshInterval = 1;
 	
-	// Number of refresh attempts if a communication error occurs.
-	// If all attempts fail, an error is displayed and the automatic refresh stops.
-	this.refreshRetries = 4;
-
 	// URL for communication with NZBGet via JSON-RPC
 	this.rpcUrl = './jsonrpc';
 
 
 	/*** No user configurable settings below this line (do not edit) *************/
-	
+
 	// Current state
 	this.miniTheme = false;
 	this.showEditButtons = true;
@@ -84,11 +88,27 @@ var UISettings = (new function($)
 	this.load = function()
 	{
 		this.refreshInterval = parseFloat(this.read('RefreshInterval', this.refreshInterval));
+		this.refreshAnimation = this.read('RefreshAnimation', this.refreshAnimation) == 'true';
+		this.slideAnimation = this.read('ActivityAnimation', this.activityAnimation) == 'true';
+		this.slideAnimation = this.read('SlideAnimation', this.slideAnimation) == 'true';
+		this.setFocus = this.read('SetFocus', this.setFocus) == 'true';
+		this.showNotifications = this.read('ShowNotifications', this.showNotifications) == 'true';
+		this.dupeBadges = this.read('DupeBadges', this.dupeBadges) == 'true';
+		this.rowSelect = this.read('RowSelect', this.rowSelect) == 'true';
+		this.refreshRetries = parseFloat(this.read('RefreshRetries', this.refreshRetries));
 	}
 
 	this.save = function()
 	{
 		this.write('RefreshInterval', this.refreshInterval);
+		this.write('RefreshAnimation', this.refreshAnimation);
+		this.write('ActivityAnimation', this.activityAnimation);
+		this.write('SlideAnimation', this.slideAnimation);
+		this.write('SetFocus', this.setFocus);
+		this.write('ShowNotifications', this.showNotifications);
+		this.write('DupeBadges', this.dupeBadges);
+		this.write('RowSelect', this.rowSelect);
+		this.write('RefreshRetries', this.refreshRetries);
 	}
 	
 	this.read = function(key, def)
@@ -869,7 +889,7 @@ var Notification = (new function($)
 	
 	this.show = function(alert, completeFunc)
 	{
-		if (UISettings.notifications || $(alert).hasClass('alert-error'))
+		if (UISettings.showNotifications || $(alert).hasClass('alert-error'))
 		{
 			$(alert).animate({'opacity':'toggle'});
 			var duration = $(alert).attr('data-duration');
