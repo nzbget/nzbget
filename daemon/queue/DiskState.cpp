@@ -251,66 +251,109 @@ StateDiskFile* StateFile::BeginRead()
  * and of one diskstate-file for each file in download queue.
  * This function saves file "queue" and files with NZB-info. It does not
  * save file-infos.
- *
- * For safety:
- * - first save to temp-file (queue.new)
- * - then delete queue
- * - then rename queue.new to queue
  */
-bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue)
+bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory)
 {
-	debug("Saving queue to disk");
+	debug("Saving queue and history to disk");
 
-	StateFile stateFile("queue", 56, true);
+	bool ok = true;
 
-	if (downloadQueue->GetQueue()->empty() &&
-		downloadQueue->GetHistory()->empty())
 	{
-		stateFile.Discard();
-		return true;
+		StateFile stateFile("queue", 57, true);
+		if (!downloadQueue->GetQueue()->empty())
+		{
+			StateDiskFile* outfile = stateFile.BeginWrite();
+			if (!outfile)
+			{
+				return false;
+			}
+
+			// save nzb-infos
+			SaveQueue(downloadQueue->GetQueue(), *outfile);
+
+			// now rename to dest file name
+			ok = stateFile.FinishWrite();
+		}
+		else
+		{
+			stateFile.Discard();
+		}
 	}
 
-	StateDiskFile* outfile = stateFile.BeginWrite();
-	if (!outfile)
+	if (saveHistory)
 	{
-		return false;
+		StateFile stateFile("history", 57, true);
+		if (!downloadQueue->GetHistory()->empty())
+		{
+			StateDiskFile* outfile = stateFile.BeginWrite();
+			if (!outfile)
+			{
+				return false;
+			}
+
+			// save history
+			SaveHistory(downloadQueue->GetHistory(), *outfile);
+
+			// now rename to dest file name
+			ok &= stateFile.FinishWrite();
+		}
+		else
+		{
+			stateFile.Discard();
+		}
 	}
 
-	// save nzb-infos
-	SaveQueue(downloadQueue->GetQueue(), *outfile);
-
-	// save history
-	SaveHistory(downloadQueue->GetHistory(), *outfile);
-
-	// now rename to dest file name
-	return stateFile.FinishWrite();
+	return ok;
 }
 
 bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers)
 {
 	debug("Loading queue from disk");
 
-	StateFile stateFile("queue", 56, true);
-
-	StateDiskFile* infile = stateFile.BeginRead();
-	if (!infile)
-	{
-		return false;
-	}
-
 	bool ok = false;
-	int formatVersion = stateFile.GetFileVersion();
+	int formatVersion = 0;
 
-	if (formatVersion < 47)
 	{
-		error("Failed to read queue and history data. Only queue and history from NZBGet v13 or newer can be converted by this NZBGet version. "
-			"Old queue and history data still can be converted using NZBGet v16 as an intermediate version.");
-		goto error;
+		StateFile stateFile("queue", 57, true);
+		if (stateFile.FileExists())
+		{
+			StateDiskFile* infile = stateFile.BeginRead();
+			if (!infile)
+			{
+				return false;
+			}
+
+			formatVersion = stateFile.GetFileVersion();
+
+			if (formatVersion < 47)
+			{
+				error("Failed to read queue and history data. Only queue and history from NZBGet v13 or newer can be converted by this NZBGet version. "
+					"Old queue and history data still can be converted using NZBGet v16 as an intermediate version.");
+				goto error;
+			}
+
+			if (!LoadQueue(downloadQueue->GetQueue(), servers, *infile, formatVersion)) goto error;
+
+			if (formatVersion < 57)
+			{
+				if (!LoadHistory(downloadQueue->GetHistory(), servers, *infile, formatVersion)) goto error;
+			}
+		}
 	}
 
-	if (!LoadQueue(downloadQueue->GetQueue(), servers, *infile, formatVersion)) goto error;
-
-	if (!LoadHistory(downloadQueue->GetHistory(), servers, *infile, formatVersion)) goto error;
+	if (formatVersion == 0 || formatVersion >= 57)
+	{
+		StateFile stateFile("history", 57, true);
+		if (stateFile.FileExists())
+		{
+			StateDiskFile* infile = stateFile.BeginRead();
+			if (!infile)
+			{
+				return false;
+			}
+			if (!LoadHistory(downloadQueue->GetHistory(), servers, *infile, stateFile.GetFileVersion())) goto error;
+		}
+	}
 
 	if (!LoadAllFileStates(downloadQueue, servers)) goto error;
 
@@ -326,10 +369,7 @@ error:
 	NzbInfo::ResetGenId(true);
 	FileInfo::ResetGenId(true);
 
-	if (formatVersion > 0)
-	{
-		CalcFileStats(downloadQueue, formatVersion);
-	}
+	CalcFileStats(downloadQueue, formatVersion);
 
 	return ok;
 }
@@ -1195,6 +1235,9 @@ void DiskState::DiscardDownloadQueue()
 	BString<1024> fullFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "queue");
 	FileSystem::DeleteFile(fullFilename);
 
+	fullFilename.Format("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "history");
+	FileSystem::DeleteFile(fullFilename);
+
 	DirBrowser dir(g_Options->GetQueueDir());
 	while (const char* filename = dir.Next())
 	{
@@ -1228,8 +1271,8 @@ bool DiskState::DownloadQueueExists()
 {
 	debug("Checking if a saved queue exists on disk");
 
-	BString<1024> fileName("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "queue");
-	return FileSystem::FileExists(fileName);
+	return FileSystem::FileExists(BString<1024>("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "queue")) ||
+		FileSystem::FileExists(BString<1024>("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "history"));
 }
 
 void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState)

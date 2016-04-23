@@ -60,15 +60,16 @@ private:
 	class CoordinatorDownloadQueue : public DownloadQueue
 	{
 	public:
-		CoordinatorDownloadQueue(): m_massEdit(false), m_wantSave(false) {}
 		virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text);
 		virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode,
 			EEditAction action, int offset, const char* text);
+		virtual void HistoryChanged() { m_historyChanged = true; }
 		virtual void Save();
 	private:
 		QueueCoordinator* m_owner;
-		bool m_massEdit;
-		bool m_wantSave;
+		bool m_massEdit = false;
+		bool m_wantSave = false;
+		bool m_historyChanged = false;
 		friend class QueueCoordinator;
 	};
 

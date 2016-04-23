@@ -361,6 +361,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 			std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
 			historyInfo->SetTime(Util::CurrentTime());
 			downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
+			downloadQueue->HistoryChanged();
 		}
 
 		downloadQueue->Save();
@@ -402,6 +403,7 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
 		historyInfo->SetTime(Util::CurrentTime());
 		downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
+		downloadQueue->HistoryChanged();
 	}
 	else
 	{

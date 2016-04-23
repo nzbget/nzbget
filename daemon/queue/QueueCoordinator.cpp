@@ -60,10 +60,11 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
-		g_DiskState->SaveDownloadQueue(this);
+		g_DiskState->SaveDownloadQueue(this, m_historyChanged);
 	}
 
 	m_wantSave = false;
+	m_historyChanged = false;
 }
 
 QueueCoordinator::QueueCoordinator()
@@ -124,6 +125,7 @@ void QueueCoordinator::Load()
 		g_StatMeter->Save();
 
 		// re-save queue into diskstate to update server ids
+		downloadQueue->HistoryChanged();
 		downloadQueue->Save();
 
 		// re-save file states into diskstate to update server ids

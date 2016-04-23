@@ -34,7 +34,7 @@ class DiskState
 {
 public:
 	bool DownloadQueueExists();
-	bool SaveDownloadQueue(DownloadQueue* downloadQueue);
+	bool SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory);
 	bool LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers);
 	bool SaveFile(FileInfo* fileInfo);
 	bool LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles);

@@ -903,6 +903,7 @@ public:
 	HistoryList* GetHistory() { return &m_history; }
 	virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text) = 0;
 	virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text) = 0;
+	virtual void HistoryChanged() = 0;
 	virtual void Save() = 0;
 	void CalcRemainingSize(int64* remaining, int64* remainingForced);
 

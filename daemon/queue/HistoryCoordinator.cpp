@@ -80,6 +80,7 @@ void HistoryCoordinator::ServiceWork()
 
 	if (changed)
 	{
+		downloadQueue->HistoryChanged();
 		downloadQueue->Save();
 	}
 }
@@ -123,6 +124,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
 	historyInfo->SetTime(Util::CurrentTime());
 	downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
+	downloadQueue->HistoryChanged();
 
 	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsNone)
 	{
@@ -283,6 +285,7 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 
 	if (ok)
 	{
+		downloadQueue->HistoryChanged();
 		downloadQueue->Save();
 	}
 

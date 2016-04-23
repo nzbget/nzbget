@@ -483,6 +483,7 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* 
 
 	if (changed)
 	{
+		downloadQueue->HistoryChanged();
 		downloadQueue->Save();
 	}
 }
