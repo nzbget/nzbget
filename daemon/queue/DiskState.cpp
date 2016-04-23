@@ -261,7 +261,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue)
 {
 	debug("Saving queue to disk");
 
-	StateFile stateFile("queue", 55, true);
+	StateFile stateFile("queue", 56, true);
 
 	if (downloadQueue->GetQueue()->empty() &&
 		downloadQueue->GetHistory()->empty())
@@ -290,7 +290,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 {
 	debug("Loading queue from disk");
 
-	StateFile stateFile("queue", 55, true);
+	StateFile stateFile("queue", 56, true);
 
 	StateDiskFile* infile = stateFile.BeginRead();
 	if (!infile)
@@ -450,8 +450,8 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile)
 	{
 		if (!fileInfo->GetDeleted())
 		{
-			outfile.PrintLine("%i,%i,%i,%i", fileInfo->GetId(), (int)fileInfo->GetPaused(),
-				(int)fileInfo->GetTime(), (int)fileInfo->GetExtraPriority());
+			outfile.PrintLine("%i,%i,%i", fileInfo->GetId(), (int)fileInfo->GetPaused(),
+				(int)fileInfo->GetExtraPriority());
 		}
 	}
 }
@@ -703,7 +703,15 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 	{
 		uint32 id, paused, time;
 		int extraPriority;
-		if (infile.ScanLine("%i,%i,%i,%i", &id, &paused, &time, &extraPriority) != 4) goto error;
+
+		if (formatVersion >= 56)
+		{
+			if (infile.ScanLine("%i,%i,%i", &id, &paused, &extraPriority) != 3) goto error;
+		}
+		else
+		{
+			if (infile.ScanLine("%i,%i,%i,%i", &id, &paused, &time, &extraPriority) != 4) goto error;
+		}
 
 		std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
 		fileInfo->SetId(id);
@@ -712,7 +720,10 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 		if (res)
 		{
 			fileInfo->SetPaused(paused);
-			fileInfo->SetTime(time);
+			if (formatVersion < 56)
+			{
+				fileInfo->SetTime(time);
+			}
 			fileInfo->SetExtraPriority(extraPriority != 0);
 			fileInfo->SetNzbInfo(nzbInfo);
 			nzbInfo->GetFileList()->Add(std::move(fileInfo));
@@ -769,7 +780,7 @@ bool DiskState::SaveFile(FileInfo* fileInfo)
 	debug("Saving FileInfo %i to disk", fileInfo->GetId());
 
 	BString<100> filename("%i", fileInfo->GetId());
-	StateFile stateFile(filename, 3, false);
+	StateFile stateFile(filename, 4, false);
 
 	StateDiskFile* outfile = stateFile.BeginWrite();
 	if (!outfile)
@@ -784,6 +795,8 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile)
 {
 	outfile.PrintLine("%s", fileInfo->GetSubject());
 	outfile.PrintLine("%s", fileInfo->GetFilename());
+
+	outfile.PrintLine("%i", (int)fileInfo->GetTime());
 
 	uint32 High, Low;
 	Util::SplitInt64(fileInfo->GetSize(), &High, &Low);
@@ -821,7 +834,7 @@ bool DiskState::LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles)
 	debug("Loading FileInfo %i from disk", fileInfo->GetId());
 
 	BString<100> filename("%i", fileInfo->GetId());
-	StateFile stateFile(filename, 3, false);
+	StateFile stateFile(filename, 4, false);
 
 	StateDiskFile* infile = stateFile.BeginRead();
 	if (!infile)
@@ -841,6 +854,13 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, StateDiskFile& infile, int form
 
 	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (fileSummary) fileInfo->SetFilename(buf);
+
+	if (formatVersion >= 4)
+	{
+		int time;
+		if (infile.ScanLine("%i", &time) != 1) goto error;
+		if (fileSummary) fileInfo->SetTime((time_t)time);
+	}
 
 	uint32 High, Low;
 	if (infile.ScanLine("%u,%u", &High, &Low) != 2) goto error;
