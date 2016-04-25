@@ -1177,7 +1177,7 @@ void ParChecker::CheckEmptyFiles()
 		if (sourcefile && sourcefile->GetDescriptionPacket())
 		{
 			// GetDescriptionPacket()->FileName() returns a temp string object, which we need to hold for a while
-			std::string filenameObj = sourcefile->GetDescriptionPacket()->FileName();
+			std::string filenameObj = Par2::DiskFile::TranslateFilename(sourcefile->GetDescriptionPacket()->FileName());
 			const char* filename = filenameObj.c_str();
 			if (!Util::EmptyStr(filename) && !IsProcessedFile(filename))
 			{

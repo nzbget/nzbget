@@ -822,7 +822,6 @@ string DiskFile::TranslateFilename(string filename)
     unsigned char ch = *p;
 
     bool ok = true;
-#ifdef WIN32
     if (ch < 32)
     {
       ok = false;
@@ -843,21 +842,6 @@ string DiskFile::TranslateFilename(string filename)
         ok = false;
       }
     }
-#else
-    if (ch < 32)
-    {
-      ok = false;
-    }
-    else
-    {
-      switch (ch)
-      {
-      case '/':
-        ok = false;
-      }
-    }
-#endif
-
 
     if (ok)
     {
@@ -865,9 +849,8 @@ string DiskFile::TranslateFilename(string filename)
     }
     else
     {
-      // convert problem characters to hex
-      result += ((ch >> 4) < 10) ? (ch >> 4) + '0' : (ch >> 4) + 'A'-10;
-      result += ((ch & 0xf) < 10) ? (ch & 0xf) + '0' : (ch & 0xf) + 'A'-10;
+      // convert problem characters to underscore
+      result += '_';
     }
 
     ++p;

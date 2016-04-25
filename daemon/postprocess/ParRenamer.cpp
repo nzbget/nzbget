@@ -165,9 +165,9 @@ void ParRenamer::LoadParFile(const char* parFilename)
 			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", parFilename);
 			continue;
 		}
-		m_fileHashList.emplace_back(sourceFile->GetDescriptionPacket()->FileName().c_str(),
-			sourceFile->GetDescriptionPacket()->Hash16k().print().c_str());
-		RegisterParredFile(sourceFile->GetDescriptionPacket()->FileName().c_str());
+		std::string filename = Par2::DiskFile::TranslateFilename(sourceFile->GetDescriptionPacket()->FileName());
+		m_fileHashList.emplace_back(filename.c_str(), sourceFile->GetDescriptionPacket()->Hash16k().print().c_str());
+		RegisterParredFile(filename.c_str());
 	}
 }
 

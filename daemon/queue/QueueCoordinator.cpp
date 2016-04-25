@@ -606,6 +606,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			articleDownloader->GetArticleFilename())
 		{
 			fileInfo->SetFilename(articleDownloader->GetArticleFilename());
+			fileInfo->MakeValidFilename();
 			fileInfo->SetFilenameConfirmed(true);
 			if (g_Options->GetDupeCheck() &&
 				nzbInfo->GetDupeMode() != dmForce &&
