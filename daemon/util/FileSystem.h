@@ -75,6 +75,7 @@ public:
 	static WString UtfPathToWidePath(const char* utfpath);
 	static CString WidePathToUtfPath(const wchar_t* wpath);
 	static CString MakeCanonicalPath(const char* filename);
+	static bool NeedLongPath(const char* path);
 #endif
 };
 

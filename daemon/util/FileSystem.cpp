@@ -22,6 +22,12 @@
 #include "FileSystem.h"
 #include "Util.h"
 
+#ifdef WIN32
+const char* RESERVED_DEVICE_NAMES[] = { "CON", "PRN", "AUX", "NUL",
+"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", NULL };
+#endif
+
 CString FileSystem::GetLastErrorMessage()
 {
 	BString<1024> msg;
@@ -856,10 +862,43 @@ void FileSystem::FixExecPermission(const char* filename)
 }
 #endif
 
+#ifdef WIN32
+bool FileSystem::NeedLongPath(const char* path)
+{
+	bool alreadyLongPath = !strncmp(path, "\\\\?\\", 4);
+	if (alreadyLongPath)
+	{
+		return false;
+	}
+
+	if (strlen(path) > 260 - 14)
+	{
+		return true;
+	}
+
+	// check if any file part starts with reserved device name;
+	// such file names cannot be accessed via standard paths
+	Tokenizer tok(path, "\\/");
+	while (const char* part = tok.Next())
+	{
+		for (const char** ptr = RESERVED_DEVICE_NAMES; const char* reserved = *ptr; ptr++)
+		{
+			int len = strlen(reserved);
+			if (!strncasecmp(part, reserved, len) && (part[len] == '.' || part[len] == '\0'))
+			{
+				return true;
+			}
+		}			
+	}
+
+	return false;
+}
+#endif
+
 CString FileSystem::MakeExtendedPath(const char* path, bool force)
 {
 #ifdef WIN32
-	if (force || strlen(path) > 260 - 14)
+	if (force || NeedLongPath(path))
 	{
 		CString canonicalPath = MakeCanonicalPath(path);
 		BString<1024> longpath;
