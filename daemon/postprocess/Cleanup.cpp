@@ -96,7 +96,7 @@ bool MoveController::MoveFiles()
 		while (const char* filename = dir.Next())
 		{
 			BString<1024> srcFile("%s%c%s",* m_interDir, PATH_SEPARATOR, filename);
-			CString dstFile = FileSystem::MakeUniqueFilename(m_destDir, filename);
+			CString dstFile = FileSystem::MakeUniqueFilename(m_destDir, FileSystem::MakeValidFilename(filename));
 			bool hiddenFile = filename[0] == '.';
 
 			if (!hiddenFile)

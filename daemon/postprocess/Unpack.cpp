@@ -700,7 +700,8 @@ bool UnpackController::Cleanup()
 		while (const char* filename = dir.Next())
 		{
 			BString<1024> srcFile("%s%c%s", *m_unpackDir, PATH_SEPARATOR, filename);
-			BString<1024> dstFile("%s%c%s", !m_finalDir.Empty() ? *m_finalDir : *m_destDir, PATH_SEPARATOR, filename);
+			BString<1024> dstFile("%s%c%s", !m_finalDir.Empty() ? *m_finalDir : *m_destDir,
+				PATH_SEPARATOR, *FileSystem::MakeValidFilename(filename));
 
 			// silently overwrite existing files
 			FileSystem::DeleteFile(dstFile);
