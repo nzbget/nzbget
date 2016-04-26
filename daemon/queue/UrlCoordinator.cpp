@@ -262,19 +262,19 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 	NzbInfo* nzbInfo = urlDownloader->GetNzbInfo();
 
-	BString<1024> filename;
+	const char* origname;
 	if (urlDownloader->GetOriginalFilename())
 	{
-		filename = urlDownloader->GetOriginalFilename();
+		origname = urlDownloader->GetOriginalFilename();
 	}
 	else
 	{
-		filename = FileSystem::BaseFileName(nzbInfo->GetUrl());
+		origname = FileSystem::BaseFileName(nzbInfo->GetUrl());
 
 		// TODO: decode URL escaping
 	}
 
-	FileSystem::MakeValidFilename(filename, '_', false);
+	CString filename = FileSystem::MakeValidFilename(origname);
 
 	debug("Filename: [%s]", *filename);
 

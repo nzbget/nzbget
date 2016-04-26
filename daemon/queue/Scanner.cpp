@@ -507,8 +507,7 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 
 	// move file into NzbDir, make sure the file name is unique
-	BString<1024> validNzbName = FileSystem::BaseFileName(nzbName);
-	FileSystem::MakeValidFilename(validNzbName, '_', false);
+	CString validNzbName = FileSystem::MakeValidFilename(FileSystem::BaseFileName(nzbName));
 
 	const char* extension = strrchr(nzbName, '.');
 	if (nzb && (!extension || strcasecmp(extension, ".nzb")))

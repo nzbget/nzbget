@@ -814,49 +814,7 @@ u64 DiskFile::GetFileSize(string filename)
 // which would be illegal for a file on disk
 string DiskFile::TranslateFilename(string filename)
 {
-  string result;
-
-  string::iterator p = filename.begin();
-  while (p != filename.end())
-  {
-    unsigned char ch = *p;
-
-    bool ok = true;
-    if (ch < 32)
-    {
-      ok = false;
-    }
-    else
-    {
-      switch (ch)
-      {
-      case '"':
-      case '*':
-      case '/':
-      case ':':
-      case '<':
-      case '>':
-      case '?':
-      case '\\':
-      case '|':
-        ok = false;
-      }
-    }
-
-    if (ok)
-    {
-      result += ch;
-    }
-    else
-    {
-      // convert problem characters to underscore
-      result += '_';
-    }
-
-    ++p;
-  }
-
-  return result;
+  return *FileSystem::MakeValidFilename(filename.c_str());
 }
 
 bool DiskFile::Rename(void)

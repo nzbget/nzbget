@@ -196,15 +196,15 @@ void NzbInfo::SetFilename(const char* filename)
 
 CString NzbInfo::MakeNiceNzbName(const char * nzbFilename, bool removeExt)
 {
-	CString nicename = FileSystem::BaseFileName(nzbFilename);
+	BString<1024> nicename = FileSystem::BaseFileName(nzbFilename);
 	if (removeExt)
 	{
 		// wipe out ".nzb"
 		char* p = strrchr(nicename, '.');
 		if (p && !strcasecmp(p, ".nzb")) *p = '\0';
 	}
-	FileSystem::MakeValidFilename(nicename, '_', false);
-	return nicename;
+	CString validname = FileSystem::MakeValidFilename(nicename);
+	return validname;
 }
 
 CString NzbInfo::MakeNiceUrlName(const char* urlStr, const char* nzbFilename)
@@ -258,9 +258,7 @@ CString NzbInfo::BuildFinalDirName()
 
 	if (g_Options->GetAppendCategoryDir() && useCategory)
 	{
-		BString<1024> categoryDir;
-		categoryDir = m_category;
-		FileSystem::MakeValidFilename(categoryDir, '_', true);
+		CString categoryDir = FileSystem::MakeValidFilename(m_category, true);
 		// we can't format with "finalDir.Format" because one of the parameter is "finalDir" itself.
 		finalDir = CString::FormatStr("%s%c%s", *finalDir, PATH_SEPARATOR, *categoryDir);
 	}
@@ -683,7 +681,7 @@ void FileInfo::SetPaused(bool paused)
 
 void FileInfo::MakeValidFilename()
 {
-	FileSystem::MakeValidFilename(m_filename, '_', false);
+	m_filename = FileSystem::MakeValidFilename(m_filename);
 }
 
 void FileInfo::SetActiveDownloads(int activeDownloads)

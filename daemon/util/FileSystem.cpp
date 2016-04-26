@@ -22,11 +22,9 @@
 #include "FileSystem.h"
 #include "Util.h"
 
-#ifdef WIN32
 const char* RESERVED_DEVICE_NAMES[] = { "CON", "PRN", "AUX", "NUL",
-"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", NULL };
-#endif
+	"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+	"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", NULL };
 
 CString FileSystem::GetLastErrorMessage()
 {
@@ -337,33 +335,73 @@ char* FileSystem::BaseFileName(const char* filename)
 	}
 }
 
-//replace bad chars in filename
-void FileSystem::MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes)
+bool FileSystem::ReservedChar(char ch)
 {
-	const char* replaceChars = allowSlashes ? ":*?\"><\n\r\t" : "\\/:*?\"><\n\r\t";
-	char* p = filename;
-	while (*p)
+	if (ch < 32)
 	{
-		if (strchr(replaceChars, *p))
+		return true;
+	}
+	else
+	{
+		switch (ch)
 		{
-			*p = cReplaceChar;
+			case '"':
+			case '*':
+			case '/':
+			case ':':
+			case '<':
+			case '>':
+			case '?':
+			case '\\':
+			case '|':
+				return true;
 		}
-		if (allowSlashes && *p == ALT_PATH_SEPARATOR)
+	}
+
+	return false;
+}
+
+//replace bad chars in filename
+CString FileSystem::MakeValidFilename(const char* filename, bool allowSlashes)
+{
+	CString result = filename;
+
+	for (char* p = result; *p; p++)
+	{
+		if (ReservedChar(*p))
 		{
-			*p = PATH_SEPARATOR;
+			if (allowSlashes && (*p == PATH_SEPARATOR || *p == ALT_PATH_SEPARATOR))
+			{
+				*p = PATH_SEPARATOR;
+				continue;
+			}
+			*p = '_';
 		}
-		p++;
 	}
 
 	// remove trailing dots and spaces. they are not allowed in directory names on windows,
-	// but we remove them on posix also, in a case the directory is accessed from windows via samba.
-	for (int len = strlen(filename); len > 0 && (filename[len - 1] == '.' || filename[len - 1] == ' '); len--)
+	// but we remove them on posix too, in a case the directory is accessed from windows via samba.
+	for (int len = strlen(result); len > 0 && (result[len - 1] == '.' || result[len - 1] == ' '); len--)
 	{
-		filename[len - 1] = '\0';
+		result[len - 1] = '\0';
 	}
+
+	// check if the filename starts with a reserved device name.
+	// although these names are reserved only on Windows we adjust them on posix too,
+	// in a case the directory is accessed from windows via samba.
+	for (const char** ptr = RESERVED_DEVICE_NAMES; const char* reserved = *ptr; ptr++)
+	{
+		int len = strlen(reserved);
+		if (!strncasecmp(result, reserved, len) && (result[len] == '.' || result[len] == '\0'))
+		{
+			result = CString::FormatStr("_%s", *result);
+			break;
+		}
+	}			
+
+	return result;
 }
 
-// returns TRUE if the name was changed by adding duplicate-suffix
 CString FileSystem::MakeUniqueFilename(const char* destDir, const char* basename)
 {
 	CString result;
@@ -876,11 +914,10 @@ bool FileSystem::NeedLongPath(const char* path)
 		return true;
 	}
 
-	// check if any file part starts with reserved device name;
-	// such file names cannot be accessed via standard paths
 	Tokenizer tok(path, "\\/");
 	while (const char* part = tok.Next())
 	{
+		// check if the file part starts with a reserved device name
 		for (const char** ptr = RESERVED_DEVICE_NAMES; const char* reserved = *ptr; ptr++)
 		{
 			int len = strlen(reserved);
@@ -889,6 +926,15 @@ bool FileSystem::NeedLongPath(const char* path)
 				return true;
 			}
 		}			
+
+		// check if the file part contains reserved characters
+		for (const char* p = part; *p; p++)
+		{
+			if (ReservedChar(*p))
+			{
+				return true;
+			}
+		}
 	}
 
 	return false;

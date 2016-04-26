@@ -38,7 +38,8 @@ public:
 	static bool SaveBufferIntoFile(const char* filename, const char* buffer, int bufLen);
 	static bool AllocateFile(const char* filename, int64 size, bool sparse, CString& errmsg);
 	static bool TruncateFile(const char* filename, int size);
-	static void MakeValidFilename(char* filename, char cReplaceChar, bool allowSlashes);
+	static CString MakeValidFilename(const char* filename, bool allowSlashes = false);
+	static bool ReservedChar(char ch);
 	static CString MakeUniqueFilename(const char* destDir, const char* basename);
 	static bool MoveFile(const char* srcFilename, const char* dstFilename);
 	static bool CopyFile(const char* srcFilename, const char* dstFilename);

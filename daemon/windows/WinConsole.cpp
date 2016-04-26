@@ -860,8 +860,7 @@ void WinConsole::ShowCategoryDir(int catIndex)
 
 	if (destDir.Empty())
 	{
-		BString<1024> categoryDir = category.GetName();
-		FileSystem::MakeValidFilename(categoryDir, '_', true);
+		CString categoryDir = FileSystem::MakeValidFilename(category.GetName(), true);
 		destDir.Format("%s%c%s", g_Options->GetDestDir(), PATH_SEPARATOR, *categoryDir);
 	}
 

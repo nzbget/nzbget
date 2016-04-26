@@ -445,8 +445,7 @@ std::unique_ptr<NzbInfo> FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, Feed
 	if (!nzbName.Empty())
 	{
 		BString<1024> nzbName2("%s.nzb", *nzbName);
-		FileSystem::MakeValidFilename(nzbName2, '_', false);
-		nzbInfo->SetFilename(nzbName2);
+		nzbInfo->SetFilename(FileSystem::MakeValidFilename(nzbName2));
 	}
 
 	nzbInfo->SetCategory(feedItemInfo.GetAddCategory());
