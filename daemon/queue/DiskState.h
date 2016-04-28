@@ -80,6 +80,7 @@ private:
 	bool LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers);
 	void SaveServerStats(ServerStatList* serverStatList, StateDiskFile& outfile);
 	bool LoadServerStats(ServerStatList* serverStatList, Servers* servers, StateDiskFile& infile);
+	void CleanupQueueDir(DownloadQueue* downloadQueue);
 };
 
 extern DiskState* g_DiskState;

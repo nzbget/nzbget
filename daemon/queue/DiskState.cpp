@@ -355,6 +355,8 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 		}
 	}
 
+	CleanupQueueDir(downloadQueue);
+
 	if (!LoadAllFileStates(downloadQueue, servers)) goto error;
 
 	ok = true;
@@ -1313,6 +1315,98 @@ void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 			BString<1024> fullFilename("%s%c%s", g_Options->GetTempDir(), PATH_SEPARATOR, filename);
 			FileSystem::DeleteFile(fullFilename);
 		}
+	}
+}
+
+void DiskState::CleanupQueueDir(DownloadQueue* downloadQueue)
+{
+	int deletedFiles = 0;
+
+	DirBrowser dir(g_Options->GetQueueDir());
+	while (const char* filename = dir.Next())
+	{
+		bool del = false;
+
+		int id;
+		char suffix;
+		if ((sscanf(filename, "%i%c", &id, &suffix) == 2 && (suffix == 's' || suffix == 'c')) ||
+			(sscanf(filename, "%i", &id) == 1 && !strchr(filename, '.')))
+		{
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+			{
+				for (FileInfo* fileInfo : nzbInfo->GetFileList())
+				{
+					if (fileInfo->GetId() == id)
+					{
+						goto next;
+					}
+				}
+			}
+
+			for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
+			{
+				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+				{
+					NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
+					for (FileInfo* fileInfo : nzbInfo->GetFileList())
+					{
+						if (fileInfo->GetId() == id)
+						{
+							goto next;
+						}
+					}
+
+					for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
+					{
+						if (completedFile.GetId() == id)
+						{
+							goto next;
+						}
+					}
+				}
+			}
+
+			del = true;
+		}
+
+		if (!del && sscanf(filename, "n%i.log", &id) == 1)
+		{
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+			{
+				if (nzbInfo->GetId() == id)
+				{
+					goto next;
+				}
+			}
+
+			for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
+			{
+				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+				{
+					if (historyInfo->GetNzbInfo()->GetId() == id)
+					{
+						goto next;
+					}
+				}
+			}
+
+			del = true;
+		}
+
+		if (del)
+		{
+			BString<1024> fullFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, filename);
+			detail("Deleting orphaned diskstate file %s", filename);
+			FileSystem::DeleteFile(fullFilename);
+			deletedFiles++;
+		}
+
+		next:;
+	}
+
+	if (deletedFiles > 0)
+	{
+		info("Deleted %i orphaned diskstate file(s)", deletedFiles);
 	}
 }
 
