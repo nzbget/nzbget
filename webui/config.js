@@ -1044,7 +1044,7 @@ var Config = (new function($)
 		}
 
 		// register editors for certain options
-		var conf = config[0];
+		var conf = config[1];
 		for (var j=0; j < conf.sections.length; j++)
 		{
 			var section = conf.sections[j];
