@@ -1023,7 +1023,7 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFil
 	uint32 High1, Low1, High2, Low2, High3, Low3;
 	if (infile.ScanLine("%u,%u,%u,%u,%u,%u", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
 	fileInfo->SetRemainingSize(Util::JoinInt64(High1, Low1));
-	fileInfo->SetSuccessSize(Util::JoinInt64(High2, Low3));
+	fileInfo->SetSuccessSize(Util::JoinInt64(High2, Low2));
 	fileInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
 
 	if (!LoadServerStats(fileInfo->GetServerStats(), servers, infile)) goto error;

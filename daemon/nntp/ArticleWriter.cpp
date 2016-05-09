@@ -588,7 +588,7 @@ void ArticleWriter::FlushCache()
 
 		for (ArticleInfo* pa : cachedArticles)
 		{
-			if (m_fileInfo->GetDeleted())
+			if (m_fileInfo->GetDeleted() && !m_fileInfo->GetNzbInfo()->GetParking())
 			{
 				// the file was deleted during flushing: stop flushing immediately
 				break;

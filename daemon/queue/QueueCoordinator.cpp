@@ -146,10 +146,12 @@ void QueueCoordinator::Load()
 
 				for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 				{
-					if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
+					if ((completedFile.GetStatus() == CompletedFile::cfPartial ||
+						 completedFile.GetStatus() == CompletedFile::cfFailure) &&
+						completedFile.GetId() > 0)
 					{
 						FileInfo fileInfo(completedFile.GetId());
-						if (g_DiskState->LoadFileState(&fileInfo, g_ServerPool->GetServers(), false))
+						if (g_DiskState->LoadFileState(&fileInfo, g_ServerPool->GetServers(), true))
 						{
 							g_DiskState->SaveFileState(&fileInfo, true);
 						}
@@ -615,37 +617,31 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			{
 				warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", fileInfo->GetFilename());
 				fileCompleted = false;
-				fileInfo->SetAutoDeleted(true);
+				fileInfo->SetDupeDeleted(true);
 				DeleteQueueEntry(downloadQueue, fileInfo);
 			}
 		}
 
 		nzbInfo->SetDownloadedSize(nzbInfo->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
+
+		CheckHealth(downloadQueue, fileInfo);
 	}
 
 	bool deleteFileObj = false;
 
-	if (fileCompleted && !fileInfo->GetDeleted())
+	if ((fileCompleted && !fileInfo->GetDeleted()) ||
+		(fileInfo->GetNzbInfo()->GetParking() && fileInfo->GetActiveDownloads() == 1))
 	{
 		// all jobs done
 		articleDownloader->CompleteFileParts();
+		fileInfo->SetPartialChanged(false);
 		deleteFileObj = true;
 	}
 
 	{
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-		CheckHealth(downloadQueue, fileInfo);
-
-		bool hasOtherDownloaders = false;
-		for (ArticleDownloader* downloader : m_activeDownloads)
-		{
-			if (downloader != articleDownloader && downloader->GetFileInfo() == fileInfo)
-			{
-				hasOtherDownloaders = true;
-				break;
-			}
-		}
+		bool hasOtherDownloaders = fileInfo->GetActiveDownloads() > 1;
 		deleteFileObj |= fileInfo->GetDeleted() && !hasOtherDownloaders;
 
 		// remove downloader from downloader list
@@ -721,6 +717,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 		usleep(5*1000);
 	}
 
+	bool parking = fileInfo->GetNzbInfo()->GetParking();
 	bool fileDeleted = fileInfo->GetDeleted();
 	fileInfo->SetDeleted(true);
 
@@ -729,15 +726,21 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() &&
 		(!completed || (fileInfo->GetMissedArticles() == 0 && fileInfo->GetFailedArticles() == 0)))
 	{
-		g_DiskState->DiscardFile(fileInfo, true, true, false);
+		if (parking && fileInfo->GetForceDirectWrite())
+		{
+			g_DiskState->SaveFileState(fileInfo, true);
+		}
+		g_DiskState->DiscardFile(fileInfo, !parking, true, false);
 	}
 
-	if (!completed)
+	if (!completed && !parking)
 	{
 		DiscardDiskFile(fileInfo);
 	}
 
 	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
+
+	fileInfo->SetParking(parking);
 
 	DownloadQueue::Aspect aspect = { completed && !fileDeleted ?
 		DownloadQueue::eaFileCompleted : DownloadQueue::eaFileDeleted,
@@ -745,7 +748,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 	downloadQueue->Notify(&aspect);
 
 	// nzb-file could be deleted from queue in "Notify", check if it is still in queue.
-	if (downloadQueue->GetQueue()->Find(nzbInfo) != downloadQueue->GetQueue()->end())
+	if (downloadQueue->GetQueue()->Find(nzbInfo) != downloadQueue->GetQueue()->end() && !nzbInfo->GetParking())
 	{
 		nzbInfo->GetFileList()->Remove(fileInfo);
 	}

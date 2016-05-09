@@ -126,33 +126,37 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
 	downloadQueue->HistoryChanged();
 
-	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsNone)
+	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsNone || nzbInfo->GetParking())
 	{
-		// park files and delete files marked for deletion
-		int parkedFiles = 0;
-		for (FileList::iterator it = nzbInfo->GetFileList()->begin(); it != nzbInfo->GetFileList()->end(); )
+		// park remaining files
+		nzbInfo->SetParkedFileCount(0);
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
-			FileInfo* fileInfo = (*it).get();
-			if (!fileInfo->GetDeleted())
+			if (!fileInfo->GetDeleted() || fileInfo->GetParking())
 			{
-				detail("Parking file %s", fileInfo->GetFilename());
-				g_QueueCoordinator->DiscardDiskFile(fileInfo);
-				parkedFiles++;
-				it++;
-			}
-			else
-			{
-				// since we removed nzbInfo from queue we need to take care of removing file infos marked for deletion
-				nzbInfo->GetFileList()->erase(it);
-				it = nzbInfo->GetFileList()->begin() + parkedFiles;
+				nzbInfo->PrintMessage(Message::mkDetail, "Parking file %s", fileInfo->GetFilename());
+
+				CompletedFileList::iterator pos = std::find_if(nzbInfo->GetCompletedFiles()->begin(), nzbInfo->GetCompletedFiles()->end(),
+					[fileInfo](CompletedFile& completedFile)
+					{
+						return completedFile.GetId() == fileInfo->GetId();
+					});
+
+				if (pos == nzbInfo->GetCompletedFiles()->end())
+				{
+					nzbInfo->GetCompletedFiles()->emplace_back(fileInfo->GetId(), fileInfo->GetFilename(),
+						fileInfo->GetSuccessArticles() > 0 || fileInfo->GetFailedArticles() > 0 ? CompletedFile::cfPartial : CompletedFile::cfUnknown,
+						0);
+				}
+
+				nzbInfo->SetParkedFileCount(nzbInfo->GetParkedFileCount() + 1);
 			}
 		}
-		nzbInfo->SetParkedFileCount(parkedFiles);
 	}
-	else
-	{
-		nzbInfo->GetFileList()->clear();
-	}
+
+	nzbInfo->GetFileList()->clear();
+	nzbInfo->SetRemainingParCount(0);
+	nzbInfo->SetParking(false);
 
 	nzbInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", nzbInfo->GetName());
 }
@@ -230,8 +234,11 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 						break;
 
 					case DownloadQueue::eaHistoryReturn:
+						HistoryReturn(downloadQueue, itHistory, historyInfo);
+						break;
+
 					case DownloadQueue::eaHistoryProcess:
-						HistoryReturn(downloadQueue, itHistory, historyInfo, action == DownloadQueue::eaHistoryProcess);
+						HistoryProcess(downloadQueue, itHistory, historyInfo);
 						break;
 
 					case DownloadQueue::eaHistoryRedownload:
@@ -239,7 +246,7 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 						break;
 
 					case DownloadQueue::eaHistoryRetryFailed:
-						HistoryRetryFailed(downloadQueue, itHistory, historyInfo);
+						HistoryRetry(downloadQueue, itHistory, historyInfo, true, false);
 						break;
 
 					case DownloadQueue::eaHistorySetParameter:
@@ -333,79 +340,51 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 	}
 }
 
-void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess)
+void HistoryCoordinator::MoveToQueue(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess)
 {
 	debug("Returning %s from history back to download queue", historyInfo->GetName());
-	NzbInfo* nzbInfo = nullptr;
 	CString nicename = historyInfo->GetName();
+	NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
 
-	if (reprocess && historyInfo->GetKind() != HistoryInfo::hkNzb)
+	// unpark files
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		error("Could not restart postprocessing for %s: history item has wrong type", historyInfo->GetName());
-		return;
+		nzbInfo->PrintMessage(Message::mkDetail, "Unparking file %s", fileInfo->GetFilename());
 	}
 
-	if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+	downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
+	historyInfo->DiscardNzbInfo();
+
+	// reset postprocessing status variables
+	nzbInfo->SetParCleanup(false);
+	if (!nzbInfo->GetUnpackCleanedUpDisk())
 	{
-		nzbInfo = historyInfo->GetNzbInfo();
+		nzbInfo->SetUnpackStatus(NzbInfo::usNone);
+		nzbInfo->SetCleanupStatus(NzbInfo::csNone);
+		nzbInfo->SetRenameStatus(NzbInfo::rsNone);
+		nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetUnpackSec());
+		nzbInfo->SetUnpackSec(0);
 
-		// unpark files
-		bool unparked = false;
-		for (FileInfo* fileInfo : nzbInfo->GetFileList())
+		if (ParParser::FindMainPars(nzbInfo->GetDestDir(), nullptr))
 		{
-			detail("Unparking file %s", fileInfo->GetFilename());
-			unparked = true;
+			nzbInfo->SetParStatus(NzbInfo::psNone);
+			nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetParSec());
+			nzbInfo->SetParSec(0);
+			nzbInfo->SetRepairSec(0);
+			nzbInfo->SetParFull(false);
 		}
-
-		if (!(unparked || reprocess))
-		{
-			warn("Could not return %s back from history to download queue: history item does not have any files left for download", historyInfo->GetName());
-			return;
-		}
-
-		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
-		historyInfo->DiscardNzbInfo();
-
-		// reset postprocessing status variables
-		nzbInfo->SetParCleanup(false);
-		if (!nzbInfo->GetUnpackCleanedUpDisk())
-		{
-			nzbInfo->SetUnpackStatus(NzbInfo::usNone);
-			nzbInfo->SetCleanupStatus(NzbInfo::csNone);
-			nzbInfo->SetRenameStatus(NzbInfo::rsNone);
-			nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetUnpackSec());
-			nzbInfo->SetUnpackSec(0);
-
-			if (ParParser::FindMainPars(nzbInfo->GetDestDir(), nullptr))
-			{
-				nzbInfo->SetParStatus(NzbInfo::psNone);
-				nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetParSec());
-				nzbInfo->SetParSec(0);
-				nzbInfo->SetRepairSec(0);
-				nzbInfo->SetParFull(false);
-			}
-		}
-		nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
-		nzbInfo->SetDeletePaused(false);
-		nzbInfo->SetMarkStatus(NzbInfo::ksNone);
-		nzbInfo->GetScriptStatuses()->clear();
-		nzbInfo->SetParkedFileCount(0);
-		if (nzbInfo->GetMoveStatus() == NzbInfo::msFailure)
-		{
-			nzbInfo->SetMoveStatus(NzbInfo::msNone);
-		}
-		nzbInfo->SetReprocess(reprocess);
-		nzbInfo->SetFinalDir("");
 	}
-
-	if (historyInfo->GetKind() == HistoryInfo::hkUrl)
+	nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
+	nzbInfo->SetDeletePaused(false);
+	nzbInfo->SetMarkStatus(NzbInfo::ksNone);
+	nzbInfo->GetScriptStatuses()->clear();
+	nzbInfo->SetParkedFileCount(0);
+	if (nzbInfo->GetMoveStatus() == NzbInfo::msFailure)
 	{
-		nzbInfo = historyInfo->GetNzbInfo();
-		historyInfo->DiscardNzbInfo();
-		nzbInfo->SetUrlStatus(NzbInfo::lsNone);
-		nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
-		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
+		nzbInfo->SetMoveStatus(NzbInfo::msNone);
 	}
+	nzbInfo->SetReprocess(reprocess);
+	nzbInfo->SetFinalDir("");
 
 	downloadQueue->GetHistory()->erase(itHistory);
 	// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
@@ -424,13 +403,17 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 {
 	if (historyInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		HistoryReturn(downloadQueue, itHistory, historyInfo, false);
+		NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
+		historyInfo->DiscardNzbInfo();
+		nzbInfo->SetUrlStatus(NzbInfo::lsNone);
+		nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
+		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
 		return;
 	}
 
 	if (historyInfo->GetKind() != HistoryInfo::hkNzb)
 	{
-		error("Could not return %s from history back to queue: history item has wrong type", historyInfo->GetName());
+		error("Could not download again %s: history item has wrong type", historyInfo->GetName());
 		return;
 	}
 
@@ -439,7 +422,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	if (!FileSystem::FileExists(nzbInfo->GetQueuedFilename()))
 	{
-		error("Could not return %s from history back to queue: could not find source nzb-file %s",
+		error("Could not download again %s: could not find source nzb-file %s",
 			nzbInfo->GetName(), nzbInfo->GetQueuedFilename());
 		return;
 	}
@@ -447,12 +430,11 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	NzbFile nzbFile(nzbInfo->GetQueuedFilename(), "");
 	if (!nzbFile.Parse())
 	{
-		error("Could not return %s from history back to queue: could not parse nzb-file",
-			nzbInfo->GetName());
+		error("Could not download again %s: could not parse nzb-file", nzbInfo->GetName());
 		return;
 	}
 
-	info("Returning %s from history back to queue", nzbInfo->GetName());
+	info("Downloading again %s", nzbInfo->GetName());
 
 	std::unique_ptr<NzbInfo> newNzbInfo = nzbFile.DetachNzbInfo();
 
@@ -484,7 +466,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	g_DiskState->DiscardFiles(nzbInfo);
 
-	// reset status fields (which are not reset by "HistoryReturn")
+	// reset status fields (which are not reset by "MoveToQueue")
 	nzbInfo->SetMoveStatus(NzbInfo::msNone);
 	nzbInfo->SetUnpackCleanedUpDisk(false);
 	nzbInfo->SetParStatus(NzbInfo::psNone);
@@ -504,17 +486,51 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 
 	g_QueueCoordinator->CheckDupeFileInfos(nzbInfo);
 
-	HistoryReturn(downloadQueue, itHistory, historyInfo, false);
+	MoveToQueue(downloadQueue, itHistory, historyInfo, false);
 
 	g_PrePostProcessor->NzbAdded(downloadQueue, nzbInfo);
 }
 
-void HistoryCoordinator::HistoryRetryFailed(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
+void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
 	HistoryInfo* historyInfo)
+{
+	if (historyInfo->GetKind() == HistoryInfo::hkUrl)
+	{
+		HistoryRedownload(downloadQueue, itHistory, historyInfo, false);
+	}
+	else if (historyInfo->GetKind() == HistoryInfo::hkNzb && historyInfo->GetNzbInfo()->GetParkedFileCount() == 0)
+	{
+		warn("Could not download remaining files for %s: history item does not have any files left for download", historyInfo->GetName());
+	}
+	else if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+	{
+		HistoryRetry(downloadQueue, itHistory, historyInfo, false, false);
+	}
+	else
+	{
+		error("Could not download remaining files for %s: history item has wrong type", historyInfo->GetName());
+	}
+}
+
+void HistoryCoordinator::HistoryProcess(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo)
 {
 	if (historyInfo->GetKind() != HistoryInfo::hkNzb)
 	{
-		error("Could not retry failed articles for %s: history item has wrong type", historyInfo->GetName());
+		error("Could not post-process again %s: history item has wrong type", historyInfo->GetName());
+		return;
+	}
+
+	HistoryRetry(downloadQueue, itHistory, historyInfo, false, true);
+}
+
+void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,
+	HistoryInfo* historyInfo, bool resetFailed, bool reprocess)
+{
+	if (historyInfo->GetKind() != HistoryInfo::hkNzb)
+	{
+		error("Could not %s for %s: history item has wrong type",
+			(resetFailed ? "retry failed articles" : "download remaining files"),
+			historyInfo->GetName());
 		return;
 	}
 
@@ -522,31 +538,42 @@ void HistoryCoordinator::HistoryRetryFailed(DownloadQueue* downloadQueue, Histor
 
 	if (!FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
 	{
-		error("Could not retry failed articles for %s: destination directory %s doesn't exist", historyInfo->GetName(), nzbInfo->GetDestDir());
+		error("Could not %s %s: destination directory %s doesn't exist",
+			(resetFailed ? "retry failed articles for" : reprocess ? "post-process again" : "download remaining files for"),
+			historyInfo->GetName(), nzbInfo->GetDestDir());
 		return;
 	}
 
-	nzbInfo->PrintMessage(Message::mkInfo, "Retrying failed articles for %s", nzbInfo->GetName());
+	nzbInfo->PrintMessage(Message::mkInfo, "%s %s",
+		(resetFailed ? "Retrying failed articles for" : reprocess ? "Post-processing again" : "Downloading remaining files for"),
+		nzbInfo->GetName());
 
 	// move failed completed files to (parked) file list
 	for (CompletedFileList::iterator it = nzbInfo->GetCompletedFiles()->begin(); it != nzbInfo->GetCompletedFiles()->end(); )
 	{
 		CompletedFile& completedFile = *it;
-		if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
+		if (completedFile.GetStatus() != CompletedFile::cfSuccess &&
+			(resetFailed || completedFile.GetStatus() != CompletedFile::cfFailure) &&
+			completedFile.GetId() > 0)
 		{
-			nzbInfo->PrintMessage(Message::mkDetail, "Retrying %s", completedFile.GetFileName());
 			std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
 			fileInfo->SetId(completedFile.GetId());
 			if (g_DiskState->LoadFile(fileInfo.get(), true, true) &&
-				g_DiskState->LoadFileState(fileInfo.get(), g_ServerPool->GetServers(), true))
+				(completedFile.GetStatus() == CompletedFile::cfUnknown ||
+				 g_DiskState->LoadFileState(fileInfo.get(), g_ServerPool->GetServers(), true)) &&
+				(resetFailed || fileInfo->GetRemainingSize() > 0))
 			{
 				fileInfo->SetFilename(completedFile.GetFileName());
+				fileInfo->SetPaused(fileInfo->GetParFile());
+				fileInfo->SetNzbInfo(nzbInfo);
 
 				BString<1024> outputFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename());
+
 				if (FileSystem::FileSize(outputFilename) == 0)
 				{
 					FileSystem::DeleteFile(outputFilename);
 				}
+
 				if (fileInfo->GetSuccessArticles() > 0 && FileSystem::FileExists(outputFilename))
 				{
 					fileInfo->SetOutputFilename(outputFilename);
@@ -554,38 +581,19 @@ void HistoryCoordinator::HistoryRetryFailed(DownloadQueue* downloadQueue, Histor
 					fileInfo->SetForceDirectWrite(true);
 					fileInfo->SetFilenameConfirmed(true);
 				}
+				
+				ResetArticles(fileInfo.get(), resetFailed);
 
-				// reset articles state
-				for (ArticleInfo* pa : fileInfo->GetArticles())
+				if (completedFile.GetStatus() != CompletedFile::cfUnknown)
 				{
-					if (pa->GetStatus() == ArticleInfo::aiFailed)
+					if (g_Options->GetContinuePartial())
 					{
-						pa->SetStatus(ArticleInfo::aiUndefined);
-						fileInfo->SetCompletedArticles(fileInfo->GetCompletedArticles() - 1);
-
-						fileInfo->SetFailedArticles(fileInfo->GetFailedArticles() - 1);
-						fileInfo->SetFailedSize(fileInfo->GetFailedSize() - pa->GetSize());
-						fileInfo->SetRemainingSize(fileInfo->GetRemainingSize() + pa->GetSize());
-
-						nzbInfo->SetFailedArticles(nzbInfo->GetFailedArticles() - 1);
-						nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() - 1);
-						nzbInfo->SetFailedSize(nzbInfo->GetFailedSize() - pa->GetSize());
-						nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() - pa->GetSize());
-						nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() + pa->GetSize());
-
-						if (fileInfo->GetParFile())
-						{
-							nzbInfo->SetParFailedSize(nzbInfo->GetParFailedSize() - pa->GetSize());
-							nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() - pa->GetSize());
-							nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1);
-						}
+						g_DiskState->SaveFileState(fileInfo.get(), false);
 					}
+					g_DiskState->DiscardFile(fileInfo.get(), false, false, true);
 				}
 
-				g_DiskState->SaveFileState(fileInfo.get(), false);
-
-				fileInfo->SetNzbInfo(nzbInfo);
-				nzbInfo->GetFileList()->Add(std::move(fileInfo), true);
+				nzbInfo->GetFileList()->Add(std::move(fileInfo), false);
 
 				it = nzbInfo->GetCompletedFiles()->erase(it);
 				continue;
@@ -594,7 +602,62 @@ void HistoryCoordinator::HistoryRetryFailed(DownloadQueue* downloadQueue, Histor
 		it++;
 	}
 
-	HistoryReturn(downloadQueue, itHistory, historyInfo, false);
+	MoveToQueue(downloadQueue, itHistory, historyInfo, reprocess);
+}
+
+void HistoryCoordinator::ResetArticles(FileInfo* fileInfo, bool resetFailed)
+{
+	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
+
+	for (ArticleInfo* pa : fileInfo->GetArticles())
+	{
+		if ((pa->GetStatus() == ArticleInfo::aiFailed && resetFailed) ||
+			(pa->GetStatus() == ArticleInfo::aiFinished && !fileInfo->GetOutputInitialized()))
+		{
+			fileInfo->SetCompletedArticles(fileInfo->GetCompletedArticles() - 1);
+			fileInfo->SetRemainingSize(fileInfo->GetRemainingSize() + pa->GetSize());
+			nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() + pa->GetSize());
+
+			if (pa->GetStatus() == ArticleInfo::aiFailed)
+			{
+				fileInfo->SetFailedArticles(fileInfo->GetFailedArticles() - 1);
+				fileInfo->SetFailedSize(fileInfo->GetFailedSize() - pa->GetSize());
+				nzbInfo->SetFailedArticles(nzbInfo->GetFailedArticles() - 1);
+				nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() - 1);
+				nzbInfo->SetFailedSize(nzbInfo->GetFailedSize() - pa->GetSize());
+				nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() - pa->GetSize());
+				if (fileInfo->GetParFile())
+				{
+					nzbInfo->SetParFailedSize(nzbInfo->GetParFailedSize() - pa->GetSize());
+					nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() - pa->GetSize());
+				}
+			}
+			else if (pa->GetStatus() == ArticleInfo::aiFinished)
+			{
+				fileInfo->SetSuccessArticles(fileInfo->GetSuccessArticles() - 1);
+				fileInfo->SetSuccessSize(fileInfo->GetSuccessSize() - pa->GetSize());
+				nzbInfo->SetSuccessArticles(nzbInfo->GetSuccessArticles() - 1);
+				nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetCurrentSuccessArticles() - 1);
+				nzbInfo->SetSuccessSize(nzbInfo->GetSuccessSize() - pa->GetSize());
+				nzbInfo->SetCurrentSuccessSize(nzbInfo->GetCurrentSuccessSize() - pa->GetSize());
+				if (fileInfo->GetParFile())
+				{
+					nzbInfo->SetParSuccessSize(nzbInfo->GetParSuccessSize() - pa->GetSize());
+					nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() - pa->GetSize());
+				}
+			}
+
+			pa->SetStatus(ArticleInfo::aiUndefined);
+			pa->SetCrc(0);
+			pa->SetSegmentOffset(0);
+			pa->SetSegmentSize(0);
+		}
+	}
+
+	if (fileInfo->GetParFile())
+	{
+		nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1);
+	}
 }
 
 bool HistoryCoordinator::HistorySetParameter(HistoryInfo* historyInfo, const char* text)

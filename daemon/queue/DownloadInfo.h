@@ -173,14 +173,16 @@ public:
 	void SetExtraPriority(bool extraPriority) { m_extraPriority = extraPriority; }
 	int GetActiveDownloads() { return m_activeDownloads; }
 	void SetActiveDownloads(int activeDownloads);
-	bool GetAutoDeleted() { return m_autoDeleted; }
-	void SetAutoDeleted(bool autoDeleted) { m_autoDeleted = autoDeleted; }
+	bool GetDupeDeleted() { return m_dupeDeleted; }
+	void SetDupeDeleted(bool dupeDeleted) { m_dupeDeleted = dupeDeleted; }
 	int GetCachedArticles() { return m_cachedArticles; }
 	void SetCachedArticles(int cachedArticles) { m_cachedArticles = cachedArticles; }
 	bool GetPartialChanged() { return m_partialChanged; }
 	void SetPartialChanged(bool partialChanged) { m_partialChanged = partialChanged; }
 	bool GetForceDirectWrite() { return m_forceDirectWrite; }
 	void SetForceDirectWrite(bool forceDirectWrite) { m_forceDirectWrite = forceDirectWrite; }
+	bool GetParking() { return m_parking; }
+	void SetParking(bool parking) { m_parking = parking; }
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
 private:
@@ -211,10 +213,11 @@ private:
 	std::unique_ptr<Mutex> m_outputFileMutex;
 	bool m_extraPriority = false;
 	int m_activeDownloads = 0;
-	bool m_autoDeleted = false;
+	bool m_dupeDeleted = false;
 	int m_cachedArticles = 0;
 	bool m_partialChanged = false;
 	bool m_forceDirectWrite = false;
+	bool m_parking = false;
 
 	static int m_idGen;
 	static int m_idMax;
@@ -494,6 +497,8 @@ public:
 	void SetQueuedFilename(const char* queuedFilename) { m_queuedFilename = queuedFilename; }
 	bool GetDeleting() { return m_deleting; }
 	void SetDeleting(bool deleting) { m_deleting = deleting; }
+	bool GetParking() { return m_parking; }
+	void SetParking(bool parking) { m_parking = parking; }
 	bool GetDeletePaused() { return m_deletePaused; }
 	void SetDeletePaused(bool deletePaused) { m_deletePaused = deletePaused; }
 	bool GetManyDupeFiles() { return m_manyDupeFiles; }
@@ -614,6 +619,7 @@ private:
 	bool m_manyDupeFiles = false;
 	CString m_queuedFilename = "";
 	bool m_deleting = false;
+	bool m_parking = false;
 	bool m_avoidHistory = false;
 	bool m_healthPaused = false;
 	bool m_parCleanup = false;

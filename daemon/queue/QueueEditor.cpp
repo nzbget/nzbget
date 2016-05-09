@@ -768,6 +768,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 	if (action == DownloadQueue::eaGroupDelete || action == DownloadQueue::eaGroupDupeDelete || action == DownloadQueue::eaGroupFinalDelete)
 	{
 		nzbInfo->SetDeleting(true);
+		nzbInfo->SetParking(action == DownloadQueue::eaGroupDelete && CanPark(nzbInfo));
 		nzbInfo->SetAvoidHistory(action == DownloadQueue::eaGroupFinalDelete);
 		nzbInfo->SetDeletePaused(allPaused);
 		if (action == DownloadQueue::eaGroupDupeDelete)
@@ -1049,6 +1050,15 @@ bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 	}
 
 	return false;
+}
+
+bool QueueEditor::CanPark(NzbInfo* nzbInfo)
+{
+	bool park = !g_Options->GetDeleteCleanupDisk() && g_Options->GetKeepHistory() > 0 &&
+		!nzbInfo->GetUnpackCleanedUpDisk() &&
+		(nzbInfo->GetSuccessArticles() > 0 || nzbInfo->GetFailedArticles() > 0);
+
+	return park;
 }
 
 bool QueueEditor::MergeGroups(ItemList* itemList)
