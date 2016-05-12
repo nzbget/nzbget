@@ -46,7 +46,7 @@ public:
 	NzbInfo* AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, NzbInfo* urlInfo, bool addFirst);
 	void CheckDupeFileInfos(NzbInfo* nzbInfo);
 	bool HasMoreJobs() { return m_hasMoreJobs; }
-	void DiscardDiskFile(FileInfo* fileInfo);
+	void DiscardTempFiles(FileInfo* fileInfo);
 	bool DeleteQueueEntry(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	bool SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* category);
 	bool SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* name);
@@ -90,6 +90,7 @@ private:
 	void AdjustDownloadsLimit();
 	void Load();
 	void SavePartialState();
+	void LoadPartialState(FileInfo* fileInfo);
 };
 
 extern QueueCoordinator* g_QueueCoordinator;

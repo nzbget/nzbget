@@ -119,6 +119,13 @@ typedef std::vector<std::unique_ptr<ArticleInfo>> ArticleList;
 class FileInfo
 {
 public:
+	enum EPartialState
+	{
+		psNone,
+		psPartial,
+		psCompleted
+	};
+
 	typedef std::vector<CString> Groups;
 
 	FileInfo(int id = 0) : m_id(id ? id : ++m_idGen) {}
@@ -181,8 +188,10 @@ public:
 	void SetPartialChanged(bool partialChanged) { m_partialChanged = partialChanged; }
 	bool GetForceDirectWrite() { return m_forceDirectWrite; }
 	void SetForceDirectWrite(bool forceDirectWrite) { m_forceDirectWrite = forceDirectWrite; }
-	bool GetParking() { return m_parking; }
-	void SetParking(bool parking) { m_parking = parking; }
+	EPartialState GetPartialState() { return m_partialState; }
+	void SetPartialState(EPartialState partialState) { m_partialState = partialState; }
+	uint32 GetCrc() { return m_crc; }
+	void SetCrc(uint32 crc) { m_crc = crc; }
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
 private:
@@ -217,7 +226,8 @@ private:
 	int m_cachedArticles = 0;
 	bool m_partialChanged = false;
 	bool m_forceDirectWrite = false;
-	bool m_parking = false;
+	EPartialState m_partialState = psNone;
+	uint32 m_crc = 0;
 
 	static int m_idGen;
 	static int m_idMax;
@@ -233,7 +243,7 @@ class CompletedFile
 public:
 	enum EStatus
 	{
-		cfUnknown,
+		cfNone,
 		cfSuccess,
 		cfPartial,
 		cfFailure
@@ -567,6 +577,7 @@ public:
 	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }
 	int GetCachedMessageCount() { return m_cachedMessageCount; }
 	GuardedMessageList GuardCachedMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
+	void CalcCurrentStats();
 
 	static const int FORCE_PRIORITY = 900;
 

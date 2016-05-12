@@ -664,10 +664,6 @@ bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPar
 
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		if (fileInfo->GetParking())
-		{
-			continue;
-		}
 		if ((!fileInfo->GetPaused() || !ignorePausedPars || !fileInfo->GetParFile()) &&
 			!fileInfo->GetDeleted())
 		{
@@ -687,7 +683,7 @@ bool PrePostProcessor::IsNzbFileDownloading(NzbInfo* nzbInfo)
 
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		if (!fileInfo->GetPaused() && !fileInfo->GetParking())
+		if (!fileInfo->GetPaused())
 		{
 			return true;
 		}

@@ -633,6 +633,44 @@ const char* NzbInfo::MakeTextStatus(bool ignoreScriptStatus)
 	return status;
 }
 
+void NzbInfo::CalcCurrentStats()
+{
+	m_pausedFileCount = 0;
+	m_remainingParCount = 0;
+	m_remainingSize = 0;
+	m_pausedSize = 0;
+	m_currentSuccessArticles = m_successArticles;
+	m_currentFailedArticles = m_failedArticles;
+	m_currentSuccessSize = m_successSize;
+	m_currentFailedSize = m_failedSize;
+	m_parCurrentSuccessSize = m_parSuccessSize;
+	m_parCurrentFailedSize = m_parFailedSize;
+	m_currentServerStats.ListOp(&m_serverStats, ServerStatList::soSet);
+
+	for (FileInfo* fileInfo : &m_fileList)
+	{
+		m_remainingSize += fileInfo->GetRemainingSize();
+		m_currentSuccessArticles += fileInfo->GetSuccessArticles();
+		m_currentFailedArticles += fileInfo->GetFailedArticles();
+		m_currentSuccessSize += fileInfo->GetSuccessSize();
+		m_currentFailedSize += fileInfo->GetFailedSize();
+
+		if (fileInfo->GetPaused())
+		{
+			m_pausedFileCount++;
+			m_pausedSize += fileInfo->GetRemainingSize();
+		}
+		if (fileInfo->GetParFile())
+		{
+			m_remainingParCount++;
+			m_parCurrentSuccessSize += fileInfo->GetSuccessSize();
+			m_parCurrentFailedSize += fileInfo->GetFailedSize();
+		}
+
+		m_currentServerStats.ListOp(fileInfo->GetServerStats(), ServerStatList::soAdd);
+	}
+}
+
 
 void ArticleInfo::AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size)
 {

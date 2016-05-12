@@ -264,7 +264,7 @@ void ArticleWriter::BuildOutputFilename()
 	m_articleInfo->SetResultFilename(filename);
 	m_tempFilename.Format("%s.tmp", *filename);
 
-	if (g_Options->GetDirectWrite())
+	if (g_Options->GetDirectWrite() || m_fileInfo->GetForceDirectWrite())
 	{
 		Guard guard = m_fileInfo->GuardOutputFile();
 
@@ -510,11 +510,11 @@ void ArticleWriter::CompleteFileParts()
 		}
 	}
 
-	if (m_fileInfo->GetMissedArticles() == 0 && m_fileInfo->GetFailedArticles() == 0)
+	if (m_fileInfo->GetTotalArticles() == m_fileInfo->GetSuccessArticles())
 	{
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkInfo, "Successfully downloaded %s", *infoFilename);
 	}
-	else
+	else if (m_fileInfo->GetMissedArticles() + m_fileInfo->GetFailedArticles() > 0)
 	{
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
 			"%i of %i article downloads failed for \"%s\"",
@@ -532,25 +532,17 @@ void ArticleWriter::CompleteFileParts()
 				file.Close();
 			}
 		}
-
-		crc = 0;
-
-		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
-		{
-			g_DiskState->DiscardFile(m_fileInfo, false, true, false);
-			g_DiskState->SaveFileState(m_fileInfo, true);
-		}
+	}
+	else
+	{
+		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkInfo, "Partially downloaded %s", *infoFilename);
 	}
 
-	CompletedFile::EStatus fileStatus = m_fileInfo->GetMissedArticles() == 0 &&
-		m_fileInfo->GetFailedArticles() == 0 ? CompletedFile::cfSuccess :
-		m_fileInfo->GetSuccessArticles() > 0 ? CompletedFile::cfPartial :
-		CompletedFile::cfFailure;
+	m_fileInfo->SetCrc(crc);
+	m_fileInfo->SetOutputFilename(ofn);
 
 	{
 		GuardedDownloadQueue guard = DownloadQueue::Guard();
-		m_fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(
-			m_fileInfo->GetId(), FileSystem::BaseFileName(ofn), fileStatus, crc);
 		if (strcmp(m_fileInfo->GetNzbInfo()->GetDestDir(), nzbDestDir))
 		{
 			// destination directory was changed during completion, need to move the file

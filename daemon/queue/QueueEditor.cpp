@@ -265,10 +265,13 @@ void QueueEditor::PauseUnpauseEntry(FileInfo* fileInfo, bool pause)
  */
 void QueueEditor::DeleteEntry(FileInfo* fileInfo)
 {
-	fileInfo->GetNzbInfo()->PrintMessage(
-		fileInfo->GetNzbInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
-		"Deleting file %s from download queue", fileInfo->GetFilename());
-	g_QueueCoordinator->DeleteQueueEntry(m_downloadQueue, fileInfo);
+	if (!fileInfo->GetDeleted())
+	{
+		fileInfo->GetNzbInfo()->PrintMessage(
+			fileInfo->GetNzbInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
+			"Deleting file %s from download queue", fileInfo->GetFilename());
+		g_QueueCoordinator->DeleteQueueEntry(m_downloadQueue, fileInfo);
+	}
 }
 
 /*

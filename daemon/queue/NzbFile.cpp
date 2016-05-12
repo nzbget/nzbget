@@ -353,6 +353,8 @@ void NzbFile::ProcessFiles()
 
 		m_nzbInfo->SetFileCount(m_nzbInfo->GetFileCount() + 1);
 		m_nzbInfo->SetTotalArticles(m_nzbInfo->GetTotalArticles() + fileInfo->GetTotalArticles());
+		m_nzbInfo->SetFailedArticles(m_nzbInfo->GetFailedArticles() + fileInfo->GetMissedArticles());
+		m_nzbInfo->SetCurrentFailedArticles(m_nzbInfo->GetCurrentFailedArticles() + fileInfo->GetMissedArticles());
 		m_nzbInfo->SetSize(m_nzbInfo->GetSize() + fileInfo->GetSize());
 		m_nzbInfo->SetRemainingSize(m_nzbInfo->GetRemainingSize() + fileInfo->GetRemainingSize());
 		m_nzbInfo->SetFailedSize(m_nzbInfo->GetFailedSize() + fileInfo->GetMissedSize());
