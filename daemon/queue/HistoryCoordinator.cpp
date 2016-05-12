@@ -292,7 +292,7 @@ void HistoryCoordinator::HistoryDelete(DownloadQueue* downloadQueue, HistoryList
 	}
 
 	if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
-		g_Options->GetDeleteCleanupDisk() &&
+		g_Options->GetHistoryCleanupDisk() &&
 		(historyInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsNone ||
 		historyInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psFailure ||
 		historyInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usFailure ||

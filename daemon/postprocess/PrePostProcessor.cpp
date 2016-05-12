@@ -287,7 +287,7 @@ void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbIn
 
 void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 {
-	if ((g_Options->GetDeleteCleanupDisk() && nzbInfo->GetCleanupDisk()) ||
+	if (nzbInfo->GetCleanupDisk() ||
 		nzbInfo->GetDeleteStatus() == NzbInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk

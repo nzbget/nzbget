@@ -1029,17 +1029,13 @@ void QueueEditor::SetNzbName(NzbInfo* nzbInfo, const char* name)
 }
 
 /**
-* Check if deletion of already downloaded files is possible (when nzb id deleted from queue).
-* The deletion is most always possible, except the case if all remaining files in queue
-* (belonging to this nzb-file) are PARS.
+* Check if deletion of already downloaded files is possible when nzb is deleted from queue.
 */
 bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 {
-	if (nzbInfo->GetDeleteStatus() != NzbInfo::dsNone)
-	{
-		return true;
-	}
+	// Special case: deletion is not possible if all remaining files are PARS.
 
+	bool onlyPars = true;
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		BString<1024> loFileName = fileInfo->GetFilename();
@@ -1048,11 +1044,14 @@ bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 		if (!strstr(loFileName, ".par2"))
 		{
 			// non-par file found
-			return true;
+			onlyPars = false;
 		}
 	}
 
-	return false;
+	bool canCleanup = (g_Options->GetDeleteCleanupDisk() && nzbInfo->GetDeleteStatus() != NzbInfo::dsNone) ||
+		(!onlyPars && nzbInfo->GetSuccessArticles() == 0);
+
+	return canCleanup;
 }
 
 bool QueueEditor::CanPark(NzbInfo* nzbInfo)
@@ -1075,7 +1074,7 @@ bool QueueEditor::MergeGroups(ItemList* itemList)
 
 	EditItem& destItem = itemList->front();
 
-	for (EditItem& item : itemList)
+	for (EditItem& item : itemList) 
 	{
 		if (item.m_nzbInfo != destItem.m_nzbInfo)
 		{
