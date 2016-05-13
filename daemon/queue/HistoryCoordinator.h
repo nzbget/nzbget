@@ -49,7 +49,7 @@ private:
 	bool HistorySetName(HistoryInfo* historyInfo, const char* text);
 	void MoveToQueue(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess);
 	void PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action);
-	void ResetArticles(FileInfo* fileInfo, bool resetFailed);
+	void ResetArticles(FileInfo* fileInfo, bool allFailed, bool resetFailed);
 };
 
 extern HistoryCoordinator* g_HistoryCoordinator;

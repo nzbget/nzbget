@@ -570,7 +570,7 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 					}
 				}
 
-				ResetArticles(fileInfo.get(), resetFailed);
+				ResetArticles(fileInfo.get(), completedFile.GetStatus() == CompletedFile::cfFailure, resetFailed);
 
 				g_DiskState->DiscardFile(fileInfo.get(), false, true, fileInfo->GetPartialState() != FileInfo::psCompleted);
 				if (fileInfo->GetPartialState() == FileInfo::psCompleted)
@@ -593,9 +593,17 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 	MoveToQueue(downloadQueue, itHistory, historyInfo, reprocess);
 }
 
-void HistoryCoordinator::ResetArticles(FileInfo* fileInfo, bool resetFailed)
+void HistoryCoordinator::ResetArticles(FileInfo* fileInfo, bool allFailed, bool resetFailed)
 {
 	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
+
+	if (allFailed)
+	{
+		fileInfo->SetFailedSize(fileInfo->GetSize() - fileInfo->GetMissedSize());
+		fileInfo->SetFailedArticles(fileInfo->GetTotalArticles() - fileInfo->GetMissedArticles());
+		fileInfo->SetRemainingSize(0);
+		fileInfo->SetCompletedArticles(fileInfo->GetFailedArticles());
+	}
 
 	nzbInfo->GetServerStats()->ListOp(fileInfo->GetServerStats(), ServerStatList::soSubtract);
 
@@ -613,12 +621,14 @@ void HistoryCoordinator::ResetArticles(FileInfo* fileInfo, bool resetFailed)
 	for (ArticleInfo* pa : fileInfo->GetArticles())
 	{
 		if ((pa->GetStatus() == ArticleInfo::aiFailed && (resetFailed || fileInfo->GetPartialState() == FileInfo::psNone)) ||
+			(pa->GetStatus() == ArticleInfo::aiUndefined && resetFailed && allFailed) ||
 			(pa->GetStatus() == ArticleInfo::aiFinished && fileInfo->GetPartialState() == FileInfo::psNone))
 		{
 			fileInfo->SetCompletedArticles(fileInfo->GetCompletedArticles() - 1);
 			fileInfo->SetRemainingSize(fileInfo->GetRemainingSize() + pa->GetSize());
 
-			if (pa->GetStatus() == ArticleInfo::aiFailed)
+			if (pa->GetStatus() == ArticleInfo::aiFailed ||
+				pa->GetStatus() == ArticleInfo::aiUndefined)
 			{
 				fileInfo->SetFailedArticles(fileInfo->GetFailedArticles() - 1);
 				fileInfo->SetFailedSize(fileInfo->GetFailedSize() - pa->GetSize());
