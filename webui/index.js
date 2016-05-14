@@ -39,11 +39,11 @@ var UISettings = (new function($)
 	
 	this.description = [];
 	
-	this.description['refreshAnimation'] = 'Animation on refresh button (yes, no).';
-	this.refreshAnimation = true;
-
 	this.description['activityAnimation'] = 'Animation on play/pause button (yes, no).';
 	this.activityAnimation = true;
+
+	this.description['refreshAnimation'] = 'Animation on refresh button (yes, no).';
+	this.refreshAnimation = true;
 
 	this.description['slideAnimation'] = 'Animation of tab changes in tabbed dialogs (yes, no).';
 	this.slideAnimation = true;
@@ -60,6 +60,25 @@ var UISettings = (new function($)
 	
 	this.description['rowSelect'] = 'Select records by clicking on any part of the row, not just on the check mark (yes, no).';
 	this.rowSelect = false;
+
+	this.description['windowTitle'] = 'Window-title for browser.\n\n' +
+		'The following variables can be used within placeholders to insert current data:\n' +
+		'   COUNT - number of items in queue;\n' +
+		'   SPEED - current download speed.\n' +
+		'   TIME - remaining time;\n' +
+		'   PAUSE - "download paused"-indicator.\n\n' +
+		'To form a placeholder surround variable with percent-characters, for example: %COUNT%.\n\n' +
+		'To improve formating there is a special syntax. If variable value is empty or null then nothing is inserted:\n' +
+		'%(VARNAME)% - show variable value inside parenthesis;\n' +
+		'%[VARNAME]% - show variable value inside square brackets;\n' +
+		'%VARNAME-% - append hyphen to variable value;\n' +
+		'%(VARNAME-)% - show variable value with hyphen inside parenthesis;\n' +
+		'%[VARNAME-]% - show variable value with hyphen inside square brackets.\n\n' +
+		'Examples:\n' +
+		' "%(COUNT-)% NZBGet" - show number of downloads in parenthesis followed by a hyphen; don\'t show "(0) - " if queue is empty;\n' + 
+		' "%PAUSE% %(COUNT-)% NZBGet" - as above but also show pause-indicator if paused;\n' +
+		' "%[COUNT]% %SPEED-% NZBGet" - show number of downloads and speed if not null (default setting).';
+	this.windowTitle = '%[COUNT]% %SPEED-% NZBGet';
 
 	this.description['refreshRetries'] = 'Number of refresh attempts if a communication error occurs (0-99).\n\n' +
 	  'If all attempts fail, an error is displayed and the automatic refresh stops.'
@@ -95,6 +114,7 @@ var UISettings = (new function($)
 		this.showNotifications = this.read('ShowNotifications', this.showNotifications) == 'true';
 		this.dupeBadges = this.read('DupeBadges', this.dupeBadges) == 'true';
 		this.rowSelect = this.read('RowSelect', this.rowSelect) == 'true';
+		this.windowTitle = this.read('WindowTitle', this.windowTitle);
 		this.refreshRetries = parseFloat(this.read('RefreshRetries', this.refreshRetries));
 	}
 
@@ -108,6 +128,7 @@ var UISettings = (new function($)
 		this.write('ShowNotifications', this.showNotifications);
 		this.write('DupeBadges', this.dupeBadges);
 		this.write('RowSelect', this.rowSelect);
+		this.write('WindowTitle', this.windowTitle);
 		this.write('RefreshRetries', this.refreshRetries);
 	}
 	

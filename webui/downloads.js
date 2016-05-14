@@ -123,6 +123,7 @@ var Downloads = (new function($)
 	function groups_loaded(_groups)
 	{
 		groups = _groups;
+		Downloads.groups = groups;
 		prepare();
 		RPC.next();
 	}

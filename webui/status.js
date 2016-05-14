@@ -60,6 +60,7 @@ var Status = (new function($)
 	var lastAnimState = 0;
 	var playInitialized = false;
 	var modalShown = false;
+	var titleGen = [];
 
 	this.init = function()
 	{
@@ -97,6 +98,7 @@ var Status = (new function($)
 
 		StatDialog.init();
 		FilterMenu.init();
+		initTitle();
 	}
 
 	this.update = function()
@@ -183,6 +185,8 @@ var Status = (new function($)
 		$StatusTime.toggleClass('orange', statWarning);
 		$StatusTimeIcon.toggleClass('icon-time', !statWarning);
 		$StatusTimeIcon.toggleClass('icon-time-orange', statWarning);
+		
+		updateTitle();
 	}
 
 	function updatePlayButton()
@@ -340,7 +344,6 @@ var Status = (new function($)
 		modalShown = false;
 	}
 
-
 	this.serverName = function(server)
 	{
 		var name = Options.option('Server' + server.ID + '.Name');
@@ -353,6 +356,75 @@ var Status = (new function($)
 		return name;
 	}
 
+	function initTitle()
+	{
+		function format(pattern, paramFunc)
+		{
+			if (UISettings.connectionError)
+			{
+				var value = '?';
+				var isEmpty = false;
+			}
+			else
+			{
+				var param = paramFunc();
+				var value = param[0];
+				var isEmpty = param[1];
+			}
+
+			if (isEmpty && pattern != '%VAR%')
+			{
+				return '';
+			}
+
+			switch (pattern)
+			{
+				case '%VAR%': return value;
+				case '%VAR-%': return '' + value + ' - ';
+				case '%(VAR)%': return '(' + value + ')';
+				case '%(VAR-)%': return '(' + value + ') - ';
+				case '%[VAR]%': return '[' + value + ']';
+				case '%[VAR-]%': return '[' + value + '] - ';
+			}
+			
+			return Downloads.groups.length > 0 ? '' + Downloads.groups.length + ' - ' : '';
+		};
+		
+		function fill(varname, paramFunc)
+		{
+			titleGen['%' + varname + '%'] = function() { return format('%VAR%', paramFunc); };
+			titleGen['%' + varname + '-%'] = function() { return format('%VAR-%', paramFunc); };
+			titleGen['%(' + varname + ')%'] = function() { return format('%(VAR)%', paramFunc); };
+			titleGen['%(' + varname + '-)%'] = function() { return format('%(VAR-)%', paramFunc); };
+			titleGen['%[' + varname + ']%'] = function() { return format('%[VAR]%', paramFunc); };
+			titleGen['%[' + varname + '-]%'] = function() { return format('%[VAR-]%', paramFunc); };
+		}
+
+		fill('COUNT', function() { return [Downloads.groups.length, Downloads.groups.length == 0]; });
+		fill('SPEED', function() { return [$StatusSpeed.text(), status.ServerStandBy]; });
+		fill('TIME', function() { return [$StatusTime.text(), status.ServerStandBy]; });
+		fill('PAUSE', function() { return ['||', !status.DownloadPaused]; });
+	}
+
+	function updateTitle()
+	{
+		var title = UISettings.windowTitle;
+
+		for (var name in titleGen)
+		{
+			if (title.indexOf(name) > -1)
+			{
+				var value = titleGen[name]();
+				console.log(name + '=' + value);
+				title = title.replace(name, value);
+			}
+		}
+
+		title = title.trim();
+
+		window.document.title = title;
+	}
+	this.updateTitle = updateTitle;
 }(jQuery));
 
 
