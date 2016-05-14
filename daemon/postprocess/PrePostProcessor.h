@@ -53,7 +53,7 @@ private:
 	NzbInfo* m_curJob = nullptr;
 	const char* m_pauseReason = nullptr;
 
-	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars, bool allowOnlyOneDeleted);
+	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars);
 	bool IsNzbFileDownloading(NzbInfo* nzbInfo);
 	void CheckPostQueue();
 	void JobCompleted(DownloadQueue* downloadQueue, PostInfo* postInfo);

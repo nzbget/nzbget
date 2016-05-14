@@ -265,10 +265,13 @@ void QueueEditor::PauseUnpauseEntry(FileInfo* fileInfo, bool pause)
  */
 void QueueEditor::DeleteEntry(FileInfo* fileInfo)
 {
-	fileInfo->GetNzbInfo()->PrintMessage(
-		fileInfo->GetNzbInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
-		"Deleting file %s from download queue", fileInfo->GetFilename());
-	g_QueueCoordinator->DeleteQueueEntry(m_downloadQueue, fileInfo);
+	if (!fileInfo->GetDeleted())
+	{
+		fileInfo->GetNzbInfo()->PrintMessage(
+			fileInfo->GetNzbInfo()->GetDeleting() ? Message::mkDetail : Message::mkInfo,
+			"Deleting file %s from download queue", fileInfo->GetFilename());
+		g_QueueCoordinator->DeleteQueueEntry(m_downloadQueue, fileInfo);
+	}
 }
 
 /*
@@ -768,6 +771,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 	if (action == DownloadQueue::eaGroupDelete || action == DownloadQueue::eaGroupDupeDelete || action == DownloadQueue::eaGroupFinalDelete)
 	{
 		nzbInfo->SetDeleting(true);
+		nzbInfo->SetParking(action == DownloadQueue::eaGroupDelete && CanPark(nzbInfo));
 		nzbInfo->SetAvoidHistory(action == DownloadQueue::eaGroupFinalDelete);
 		nzbInfo->SetDeletePaused(allPaused);
 		if (action == DownloadQueue::eaGroupDupeDelete)
@@ -1025,17 +1029,13 @@ void QueueEditor::SetNzbName(NzbInfo* nzbInfo, const char* name)
 }
 
 /**
-* Check if deletion of already downloaded files is possible (when nzb id deleted from queue).
-* The deletion is most always possible, except the case if all remaining files in queue
-* (belonging to this nzb-file) are PARS.
+* Check if deletion of already downloaded files is possible when nzb is deleted from queue.
 */
 bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 {
-	if (nzbInfo->GetDeleteStatus() != NzbInfo::dsNone)
-	{
-		return true;
-	}
+	// Special case: deletion is not possible if all remaining files are PARS.
 
+	bool onlyPars = true;
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		BString<1024> loFileName = fileInfo->GetFilename();
@@ -1044,11 +1044,23 @@ bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
 		if (!strstr(loFileName, ".par2"))
 		{
 			// non-par file found
-			return true;
+			onlyPars = false;
 		}
 	}
 
-	return false;
+	bool canCleanup = (g_Options->GetDeleteCleanupDisk() && nzbInfo->GetDeleteStatus() != NzbInfo::dsNone) ||
+		(!onlyPars && nzbInfo->GetSuccessArticles() == 0);
+
+	return canCleanup;
+}
+
+bool QueueEditor::CanPark(NzbInfo* nzbInfo)
+{
+	bool park = !g_Options->GetDeleteCleanupDisk() && g_Options->GetKeepHistory() > 0 &&
+		!nzbInfo->GetUnpackCleanedUpDisk() &&
+		(nzbInfo->GetSuccessArticles() > 0 || nzbInfo->GetFailedArticles() > 0);
+
+	return park;
 }
 
 bool QueueEditor::MergeGroups(ItemList* itemList)
@@ -1062,7 +1074,7 @@ bool QueueEditor::MergeGroups(ItemList* itemList)
 
 	EditItem& destItem = itemList->front();
 
-	for (EditItem& item : itemList)
+	for (EditItem& item : itemList) 
 	{
 		if (item.m_nzbInfo != destItem.m_nzbInfo)
 		{

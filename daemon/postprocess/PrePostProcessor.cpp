@@ -128,34 +128,34 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 			g_QueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeFileDownloaded);
 		}
 
-		if (
 #ifndef DISABLE_PARCHECK
-			!m_parCoordinator.AddPar(queueAspect->fileInfo, queueAspect->action == DownloadQueue::eaFileDeleted) &&
-#endif
-			IsNzbFileCompleted(queueAspect->nzbInfo, true, false) &&
-			!queueAspect->nzbInfo->GetPostInfo() &&
-			(!queueAspect->fileInfo->GetPaused() || IsNzbFileCompleted(queueAspect->nzbInfo, false, false)))
+		if (m_parCoordinator.AddPar(queueAspect->fileInfo, queueAspect->action == DownloadQueue::eaFileDeleted))
 		{
-			if ((queueAspect->action == DownloadQueue::eaFileCompleted ||
-				(queueAspect->fileInfo->GetAutoDeleted() &&
-				 IsNzbFileCompleted(queueAspect->nzbInfo, false, true))) &&
-				 queueAspect->fileInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsHealth)
-			{
-				queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
-					"Collection %s completely downloaded", queueAspect->nzbInfo->GetName());
-				g_QueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeNzbDownloaded);
-				NzbDownloaded(queueAspect->downloadQueue, queueAspect->nzbInfo);
-			}
-			else if ((queueAspect->action == DownloadQueue::eaFileDeleted ||
-				(queueAspect->action == DownloadQueue::eaFileCompleted &&
-				 queueAspect->fileInfo->GetNzbInfo()->GetDeleteStatus() > NzbInfo::dsNone)) &&
-				!queueAspect->nzbInfo->GetParCleanup() &&
-				IsNzbFileCompleted(queueAspect->nzbInfo, false, true))
-			{
-				queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
-					"Collection %s deleted from queue", queueAspect->nzbInfo->GetName());
-				NzbDeleted(queueAspect->downloadQueue, queueAspect->nzbInfo);
-			}
+			return;
+		}
+#endif
+
+		if ((queueAspect->action == DownloadQueue::eaFileCompleted ||
+			 queueAspect->fileInfo->GetDupeDeleted()) &&
+			queueAspect->fileInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsHealth &&
+			!queueAspect->nzbInfo->GetPostInfo() &&
+			IsNzbFileCompleted(queueAspect->nzbInfo, true))
+		{
+			queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
+				"Collection %s completely downloaded", queueAspect->nzbInfo->GetName());
+			g_QueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeNzbDownloaded);
+			NzbDownloaded(queueAspect->downloadQueue, queueAspect->nzbInfo);
+		}
+		else if ((queueAspect->action == DownloadQueue::eaFileDeleted ||
+			(queueAspect->action == DownloadQueue::eaFileCompleted &&
+			 queueAspect->fileInfo->GetNzbInfo()->GetDeleteStatus() > NzbInfo::dsNone)) &&
+			!queueAspect->nzbInfo->GetPostInfo() &&
+			!queueAspect->nzbInfo->GetParCleanup() &&
+			IsNzbFileCompleted(queueAspect->nzbInfo, false))
+		{
+			queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
+				"Collection %s deleted from queue", queueAspect->nzbInfo->GetName());
+			NzbDeleted(queueAspect->downloadQueue, queueAspect->nzbInfo);
 		}
 	}
 }
@@ -287,7 +287,7 @@ void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbIn
 
 void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 {
-	if ((g_Options->GetDeleteCleanupDisk() && nzbInfo->GetCleanupDisk()) ||
+	if (nzbInfo->GetCleanupDisk() ||
 		nzbInfo->GetDeleteStatus() == NzbInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk
@@ -613,7 +613,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 	DeletePostThread(postInfo);
 	nzbInfo->LeavePostProcess();
 
-	if (IsNzbFileCompleted(nzbInfo, true, false))
+	if (IsNzbFileCompleted(nzbInfo, true))
 	{
 		// Cleaning up queue if par-check was successful or unpack was successful or
 		// health is 100% (if unpack and par-check were not performed)
@@ -655,19 +655,17 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 	downloadQueue->Save();
 }
 
-bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars, bool allowOnlyOneDeleted)
+bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars)
 {
-	int deleted = 0;
+	if (nzbInfo->GetActiveDownloads())
+	{
+		return false;
+	}
 
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		if (fileInfo->GetDeleted())
-		{
-			deleted++;
-		}
-		if (((!fileInfo->GetPaused() || !ignorePausedPars || !fileInfo->GetParFile()) &&
-			!fileInfo->GetDeleted()) ||
-			(allowOnlyOneDeleted && deleted > 1))
+		if ((!fileInfo->GetPaused() || !ignorePausedPars || !fileInfo->GetParFile()) &&
+			!fileInfo->GetDeleted())
 		{
 			return false;
 		}

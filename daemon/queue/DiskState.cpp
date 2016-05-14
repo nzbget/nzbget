@@ -961,7 +961,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	debug("Saving FileState %i to disk", fileInfo->GetId());
 
 	BString<100> filename("%i%s", fileInfo->GetId(), completed ? "c" : "s");
-	StateFile stateFile(filename, 3, false);
+	StateFile stateFile(filename, 4, false);
 
 	StateDiskFile* outfile = stateFile.BeginWrite();
 	if (!outfile)
@@ -982,6 +982,8 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, StateDiskFile& outfile, bool c
 	Util::SplitInt64(fileInfo->GetFailedSize(), &High3, &Low3);
 	outfile.PrintLine("%u,%u,%u,%u,%u,%u", High1, Low1, High2, Low2, High3, Low3);
 
+	outfile.PrintLine("%s", fileInfo->GetFilename());
+
 	SaveServerStats(fileInfo->GetServerStats(), outfile);
 
 	outfile.PrintLine("%i", (int)fileInfo->GetArticles()->size());
@@ -1000,7 +1002,7 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	debug("Loading FileInfo %i from disk", fileInfo->GetId());
 
 	BString<100> filename("%i%s", fileInfo->GetId(), completed ? "c" : "s");
-	StateFile stateFile(filename, 3, false);
+	StateFile stateFile(filename, 4, false);
 
 	StateDiskFile* infile = stateFile.BeginRead();
 	if (!infile)
@@ -1023,8 +1025,15 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFil
 	uint32 High1, Low1, High2, Low2, High3, Low3;
 	if (infile.ScanLine("%u,%u,%u,%u,%u,%u", &High1, &Low1, &High2, &Low2, &High3, &Low3) != 6) goto error;
 	fileInfo->SetRemainingSize(Util::JoinInt64(High1, Low1));
-	fileInfo->SetSuccessSize(Util::JoinInt64(High2, Low3));
+	fileInfo->SetSuccessSize(Util::JoinInt64(High2, Low2));
 	fileInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
+
+	if (formatVersion >= 4)
+	{
+		char buf[1024];
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+		fileInfo->SetFilename(buf);
+	}
 
 	if (!LoadServerStats(fileInfo->GetServerStats(), servers, infile)) goto error;
 
@@ -1585,65 +1594,8 @@ void DiskState::CalcFileStats(DownloadQueue* downloadQueue, int formatVersion)
 {
 	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
-		CalcNzbFileStats(nzbInfo, formatVersion);
+		nzbInfo->CalcCurrentStats();
 	}
-
-	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
-	{
-		if (historyInfo->GetKind() == HistoryInfo::hkNzb)
-		{
-			CalcNzbFileStats(historyInfo->GetNzbInfo(), formatVersion);
-		}
-	}
-}
-
-void DiskState::CalcNzbFileStats(NzbInfo* nzbInfo, int formatVersion)
-{
-	int pausedFileCount = 0;
-	int remainingParCount = 0;
-	int successArticles = 0;
-	int failedArticles = 0;
-	int64 remainingSize = 0;
-	int64 pausedSize = 0;
-	int64 successSize = 0;
-	int64 failedSize = 0;
-	int64 parSuccessSize = 0;
-	int64 parFailedSize = 0;
-
-	for (FileInfo* fileInfo : nzbInfo->GetFileList())
-	{
-		remainingSize += fileInfo->GetRemainingSize();
-		successArticles += fileInfo->GetSuccessArticles();
-		failedArticles += fileInfo->GetFailedArticles();
-		successSize += fileInfo->GetSuccessSize();
-		failedSize += fileInfo->GetFailedSize();
-
-		if (fileInfo->GetPaused())
-		{
-			pausedSize += fileInfo->GetRemainingSize();
-			pausedFileCount++;
-		}
-		if (fileInfo->GetParFile())
-		{
-			remainingParCount++;
-			parSuccessSize += fileInfo->GetSuccessSize();
-			parFailedSize += fileInfo->GetFailedSize();
-		}
-
-		nzbInfo->GetCurrentServerStats()->ListOp(fileInfo->GetServerStats(), ServerStatList::soAdd);
-	}
-
-	nzbInfo->SetRemainingSize(remainingSize);
-	nzbInfo->SetPausedSize(pausedSize);
-	nzbInfo->SetPausedFileCount(pausedFileCount);
-	nzbInfo->SetRemainingParCount(remainingParCount);
-
-	nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetSuccessArticles() + successArticles);
-	nzbInfo->SetCurrentFailedArticles(nzbInfo->GetFailedArticles() + failedArticles);
-	nzbInfo->SetCurrentSuccessSize(nzbInfo->GetSuccessSize() + successSize);
-	nzbInfo->SetCurrentFailedSize(nzbInfo->GetFailedSize() + failedSize);
-	nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParSuccessSize() + parSuccessSize);
-	nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParFailedSize() + parFailedSize);
 }
 
 bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers)
@@ -1656,9 +1608,9 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 	{
 		int id;
 		char suffix;
-		if (sscanf(filename, "%i%c", &id, &suffix) == 2 && suffix == 's')
+		if (sscanf(filename, "%i%c", &id, &suffix) == 2)
 		{
-			if (g_Options->GetContinuePartial() && !cacheWasActive)
+			if (suffix == 'c' || (suffix == 's' && g_Options->GetContinuePartial() && !cacheWasActive))
 			{
 				for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 				{
@@ -1666,8 +1618,10 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 					{
 						if (fileInfo->GetId() == id)
 						{
-							if (!LoadArticles(fileInfo)) goto error;
-							if (!LoadFileState(fileInfo, servers, false)) goto error;
+							if (!LoadFileState(fileInfo, servers, suffix == 'c')) goto error;
+							fileInfo->GetArticles()->clear();
+							fileInfo->SetPartialState(suffix == 'c' ? FileInfo::psCompleted : FileInfo::psPartial);
+							goto next;
 						}
 					}
 				}
@@ -1678,6 +1632,7 @@ bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers
 				FileSystem::DeleteFile(fullFilename);
 			}
 		}
+		next:;
 	}
 
 	return true;

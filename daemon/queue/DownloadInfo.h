@@ -119,6 +119,13 @@ typedef std::vector<std::unique_ptr<ArticleInfo>> ArticleList;
 class FileInfo
 {
 public:
+	enum EPartialState
+	{
+		psNone,
+		psPartial,
+		psCompleted
+	};
+
 	typedef std::vector<CString> Groups;
 
 	FileInfo(int id = 0) : m_id(id ? id : ++m_idGen) {}
@@ -173,14 +180,18 @@ public:
 	void SetExtraPriority(bool extraPriority) { m_extraPriority = extraPriority; }
 	int GetActiveDownloads() { return m_activeDownloads; }
 	void SetActiveDownloads(int activeDownloads);
-	bool GetAutoDeleted() { return m_autoDeleted; }
-	void SetAutoDeleted(bool autoDeleted) { m_autoDeleted = autoDeleted; }
+	bool GetDupeDeleted() { return m_dupeDeleted; }
+	void SetDupeDeleted(bool dupeDeleted) { m_dupeDeleted = dupeDeleted; }
 	int GetCachedArticles() { return m_cachedArticles; }
 	void SetCachedArticles(int cachedArticles) { m_cachedArticles = cachedArticles; }
 	bool GetPartialChanged() { return m_partialChanged; }
 	void SetPartialChanged(bool partialChanged) { m_partialChanged = partialChanged; }
 	bool GetForceDirectWrite() { return m_forceDirectWrite; }
 	void SetForceDirectWrite(bool forceDirectWrite) { m_forceDirectWrite = forceDirectWrite; }
+	EPartialState GetPartialState() { return m_partialState; }
+	void SetPartialState(EPartialState partialState) { m_partialState = partialState; }
+	uint32 GetCrc() { return m_crc; }
+	void SetCrc(uint32 crc) { m_crc = crc; }
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
 private:
@@ -211,10 +222,12 @@ private:
 	std::unique_ptr<Mutex> m_outputFileMutex;
 	bool m_extraPriority = false;
 	int m_activeDownloads = 0;
-	bool m_autoDeleted = false;
+	bool m_dupeDeleted = false;
 	int m_cachedArticles = 0;
 	bool m_partialChanged = false;
 	bool m_forceDirectWrite = false;
+	EPartialState m_partialState = psNone;
+	uint32 m_crc = 0;
 
 	static int m_idGen;
 	static int m_idMax;
@@ -230,7 +243,7 @@ class CompletedFile
 public:
 	enum EStatus
 	{
-		cfUnknown,
+		cfNone,
 		cfSuccess,
 		cfPartial,
 		cfFailure
@@ -494,6 +507,8 @@ public:
 	void SetQueuedFilename(const char* queuedFilename) { m_queuedFilename = queuedFilename; }
 	bool GetDeleting() { return m_deleting; }
 	void SetDeleting(bool deleting) { m_deleting = deleting; }
+	bool GetParking() { return m_parking; }
+	void SetParking(bool parking) { m_parking = parking; }
 	bool GetDeletePaused() { return m_deletePaused; }
 	void SetDeletePaused(bool deletePaused) { m_deletePaused = deletePaused; }
 	bool GetManyDupeFiles() { return m_manyDupeFiles; }
@@ -562,6 +577,7 @@ public:
 	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }
 	int GetCachedMessageCount() { return m_cachedMessageCount; }
 	GuardedMessageList GuardCachedMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
+	void CalcCurrentStats();
 
 	static const int FORCE_PRIORITY = 900;
 
@@ -614,6 +630,7 @@ private:
 	bool m_manyDupeFiles = false;
 	CString m_queuedFilename = "";
 	bool m_deleting = false;
+	bool m_parking = false;
 	bool m_avoidHistory = false;
 	bool m_healthPaused = false;
 	bool m_parCleanup = false;

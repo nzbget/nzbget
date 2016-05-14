@@ -1740,7 +1740,8 @@ var HistoryEditDialog = (new function()
 		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
 		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
 		Util.show('#HistoryEdit_Redownload', hist.Kind === 'NZB');
-		Util.show('#HistoryEdit_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.ParStatus !== 'SUCCESS' && hist.DeleteStatus === 'NONE');
+		Util.show('#HistoryEdit_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.ParStatus !== 'SUCCESS' &&
+			(hist.DeleteStatus === 'NONE' || hist.RemainingFileCount > 0));
 		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
