@@ -1350,6 +1350,14 @@ void DiskState::CleanupQueueDir(DownloadQueue* downloadQueue)
 						goto next;
 					}
 				}
+
+				for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
+				{
+					if (completedFile.GetId() == id)
+					{
+						goto next;
+					}
+				}
 			}
 
 			for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
@@ -1357,6 +1365,7 @@ void DiskState::CleanupQueueDir(DownloadQueue* downloadQueue)
 				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
 				{
 					NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
+
 					for (FileInfo* fileInfo : nzbInfo->GetFileList())
 					{
 						if (fileInfo->GetId() == id)
