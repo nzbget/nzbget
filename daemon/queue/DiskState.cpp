@@ -1102,26 +1102,18 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 {
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		DiscardFile(fileInfo, true, true, true);
+		DiscardFile(fileInfo->GetId(), true, true, true);
 	}
-
-	BString<1024> filename;
 
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		if (completedFile.GetStatus() != CompletedFile::cfSuccess && completedFile.GetId() > 0)
+		if (completedFile.GetStatus() != CompletedFile::cfSuccess)
 		{
-			filename.Format("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, completedFile.GetId());
-			FileSystem::DeleteFile(filename);
-
-			filename.Format("%s%c%is", g_Options->GetQueueDir(), PATH_SEPARATOR, completedFile.GetId());
-			FileSystem::DeleteFile(filename);
-
-			filename.Format("%s%c%ic", g_Options->GetQueueDir(), PATH_SEPARATOR, completedFile.GetId());
-			FileSystem::DeleteFile(filename);
+			DiscardFile(completedFile.GetId(), true, true, true);
 		}
 	}
 
+	BString<1024> filename;
 	filename.Format("%s%cn%i.log", g_Options->GetQueueDir(), PATH_SEPARATOR, nzbInfo->GetId());
 	FileSystem::DeleteFile(filename);
 }
@@ -1286,28 +1278,28 @@ bool DiskState::DownloadQueueExists()
 		FileSystem::FileExists(BString<1024>("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "history"));
 }
 
-void DiskState::DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState)
+void DiskState::DiscardFile(int fileId, bool deleteData, bool deletePartialState, bool deleteCompletedState)
 {
 	BString<1024> fileName;
 
 	// info and articles file
 	if (deleteData)
 	{
-		fileName.Format("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
+		fileName.Format("%s%c%i", g_Options->GetQueueDir(), PATH_SEPARATOR, fileId);
 		FileSystem::DeleteFile(fileName);
 	}
 
 	// partial state file
 	if (deletePartialState)
 	{
-		fileName.Format("%s%c%is", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
+		fileName.Format("%s%c%is", g_Options->GetQueueDir(), PATH_SEPARATOR, fileId);
 		FileSystem::DeleteFile(fileName);
 	}
 
 	// completed state file
 	if (deleteCompletedState)
 	{
-		fileName.Format("%s%c%ic", g_Options->GetQueueDir(), PATH_SEPARATOR, fileInfo->GetId());
+		fileName.Format("%s%c%ic", g_Options->GetQueueDir(), PATH_SEPARATOR, fileId);
 		FileSystem::DeleteFile(fileName);
 	}
 }
@@ -1603,7 +1595,7 @@ void DiskState::CalcFileStats(DownloadQueue* downloadQueue, int formatVersion)
 {
 	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
-		nzbInfo->CalcCurrentStats();
+		nzbInfo->UpdateCurrentStats();
 	}
 }
 

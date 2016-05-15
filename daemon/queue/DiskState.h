@@ -42,7 +42,7 @@ public:
 	bool LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed);
 	bool LoadArticles(FileInfo* fileInfo);
 	void DiscardDownloadQueue();
-	void DiscardFile(FileInfo* fileInfo, bool deleteData, bool deletePartialState, bool deleteCompletedState);
+	void DiscardFile(int fileId, bool deleteData, bool deletePartialState, bool deleteCompletedState);
 	void DiscardFiles(NzbInfo* nzbInfo);
 	bool SaveFeeds(Feeds* feeds, FeedHistory* feedHistory);
 	bool LoadFeeds(Feeds* feeds, FeedHistory* feedHistory);

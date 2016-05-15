@@ -104,7 +104,6 @@ static const char* OPTION_DIRECTWRITE			= "DirectWrite";
 static const char* OPTION_WRITEBUFFER			= "WriteBuffer";
 static const char* OPTION_NZBDIRINTERVAL		= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE			= "NzbDirFileAge";
-static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
 static const char* OPTION_DISKSPACE				= "DiskSpace";
 static const char* OPTION_DUMPCORE				= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
@@ -155,6 +154,7 @@ static const char* OPTION_NZBPROCESS			= "NZBProcess";
 static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
 static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_RESETLOG				= "ResetLog";
+static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -464,7 +464,6 @@ void Options::InitDefaults()
 	SetOption(OPTION_WRITEBUFFER, "0");
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
-	SetOption(OPTION_PARCLEANUPQUEUE, "yes");
 	SetOption(OPTION_DISKSPACE, "250");
 	SetOption(OPTION_DUMPCORE, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
@@ -719,7 +718,6 @@ void Options::InitOptions()
 	m_cursesGroup			= (bool)ParseEnumValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
 	m_crcCheck				= (bool)ParseEnumValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
 	m_directWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
-	m_parCleanupQueue		= (bool)ParseEnumValue(OPTION_PARCLEANUPQUEUE, BoolCount, BoolNames, BoolValues);
 	m_decode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
 	m_dumpCore				= (bool)ParseEnumValue(OPTION_DUMPCORE, BoolCount, BoolNames, BoolValues);
 	m_parPauseQueue			= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
@@ -1529,7 +1527,8 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		!strcasecmp(optname, OPTION_MERGENZB) ||
 		!strcasecmp(optname, OPTION_STRICTPARNAME) ||
 		!strcasecmp(optname, OPTION_RELOADURLQUEUE) ||
-		!strcasecmp(optname, OPTION_RELOADPOSTQUEUE))
+		!strcasecmp(optname, OPTION_RELOADPOSTQUEUE) ||
+		!strcasecmp(optname, OPTION_PARCLEANUPQUEUE))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

@@ -517,8 +517,6 @@ public:
 	void SetAvoidHistory(bool avoidHistory) { m_avoidHistory = avoidHistory; }
 	bool GetHealthPaused() { return m_healthPaused; }
 	void SetHealthPaused(bool healthPaused) { m_healthPaused = healthPaused; }
-	bool GetParCleanup() { return m_parCleanup; }
-	void SetParCleanup(bool parCleanup) { m_parCleanup = parCleanup; }
 	bool GetCleanupDisk() { return m_cleanupDisk; }
 	void SetCleanupDisk(bool cleanupDisk) { m_cleanupDisk = cleanupDisk; }
 	bool GetUnpackCleanedUpDisk() { return m_unpackCleanedUpDisk; }
@@ -577,7 +575,9 @@ public:
 	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }
 	int GetCachedMessageCount() { return m_cachedMessageCount; }
 	GuardedMessageList GuardCachedMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
-	void CalcCurrentStats();
+	void UpdateCurrentStats();
+	void UpdateCompletedStats(FileInfo* fileInfo);
+	void UpdateDeletedStats(FileInfo* fileInfo);
 
 	static const int FORCE_PRIORITY = 900;
 
@@ -633,7 +633,6 @@ private:
 	bool m_parking = false;
 	bool m_avoidHistory = false;
 	bool m_healthPaused = false;
-	bool m_parCleanup = false;
 	bool m_parManual = false;
 	bool m_cleanupDisk = false;
 	bool m_unpackCleanedUpDisk = false;

@@ -111,7 +111,6 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 	else if (queueAspect->action == DownloadQueue::eaNzbDeleted &&
 		queueAspect->nzbInfo->GetDeleting() &&
 		!queueAspect->nzbInfo->GetPostInfo() &&
-		!queueAspect->nzbInfo->GetParCleanup() &&
 		queueAspect->nzbInfo->GetFileList()->empty())
 	{
 		// the deleting of nzbs is usually handled via eaFileDeleted-event, but when deleting nzb without
@@ -150,7 +149,6 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 			(queueAspect->action == DownloadQueue::eaFileCompleted &&
 			 queueAspect->fileInfo->GetNzbInfo()->GetDeleteStatus() > NzbInfo::dsNone)) &&
 			!queueAspect->nzbInfo->GetPostInfo() &&
-			!queueAspect->nzbInfo->GetParCleanup() &&
 			IsNzbFileCompleted(queueAspect->nzbInfo, false))
 		{
 			queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
@@ -291,9 +289,8 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 		nzbInfo->GetDeleteStatus() == NzbInfo::dsDupe)
 	{
 		// download was cancelled, deleting already downloaded files from disk
-		for (CompletedFileList::reverse_iterator it = nzbInfo->GetCompletedFiles()->rbegin(); it != nzbInfo->GetCompletedFiles()->rend(); it++)
+		for (CompletedFile& completedFile: nzbInfo->GetCompletedFiles())
 		{
-			CompletedFile& completedFile = *it;
 			BString<1024> fullFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFileName());
 			if (FileSystem::FileExists(fullFileName))
 			{
@@ -615,34 +612,6 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 
 	if (IsNzbFileCompleted(nzbInfo, true))
 	{
-		// Cleaning up queue if par-check was successful or unpack was successful or
-		// health is 100% (if unpack and par-check were not performed)
-		// or health is below critical health
-		bool canCleanupQueue =
-			((nzbInfo->GetParStatus() == NzbInfo::psSuccess ||
-			  nzbInfo->GetParStatus() == NzbInfo::psRepairPossible) &&
-			 nzbInfo->GetUnpackStatus() != NzbInfo::usFailure &&
-			 nzbInfo->GetUnpackStatus() != NzbInfo::usSpace &&
-			 nzbInfo->GetUnpackStatus() != NzbInfo::usPassword) ||
-			(nzbInfo->GetUnpackStatus() == NzbInfo::usSuccess &&
-			 nzbInfo->GetParStatus() != NzbInfo::psFailure) ||
-			(nzbInfo->GetUnpackStatus() <= NzbInfo::usSkipped &&
-			 nzbInfo->GetParStatus() != NzbInfo::psFailure &&
-			 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0) ||
-			(nzbInfo->CalcHealth() < nzbInfo->CalcCriticalHealth(false) &&
-			 nzbInfo->CalcCriticalHealth(false) < 1000);
-		if (g_Options->GetParCleanupQueue() && canCleanupQueue && !nzbInfo->GetFileList()->empty())
-		{
-			nzbInfo->PrintMessage(Message::mkInfo, "Cleaning up download queue for %s", nzbInfo->GetName());
-			nzbInfo->SetParCleanup(true);
-			downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupDelete, 0, nullptr);
-		}
-
-		if (nzbInfo->GetUnpackCleanedUpDisk())
-		{
-			nzbInfo->GetCompletedFiles()->clear();
-		}
-
 		NzbCompleted(downloadQueue, nzbInfo, false);
 	}
 

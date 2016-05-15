@@ -126,6 +126,35 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
 	downloadQueue->HistoryChanged();
 
+	// park remaining files
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
+	{
+		fileInfo->GetNzbInfo()->UpdateCompletedStats(fileInfo);
+		fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(fileInfo->GetId(),
+			fileInfo->GetFilename(), CompletedFile::cfNone, 0);
+	}
+
+	// Cleaning up parked files if par-check was successful or unpack was successful or
+	// health is 100% (if unpack and par-check were not performed)
+	bool cleanupParkedFiles =
+		((nzbInfo->GetParStatus() == NzbInfo::psSuccess ||
+		  nzbInfo->GetParStatus() == NzbInfo::psRepairPossible) &&
+		 nzbInfo->GetUnpackStatus() != NzbInfo::usFailure &&
+		 nzbInfo->GetUnpackStatus() != NzbInfo::usSpace &&
+		 nzbInfo->GetUnpackStatus() != NzbInfo::usPassword) ||
+		(nzbInfo->GetUnpackStatus() == NzbInfo::usSuccess &&
+		 nzbInfo->GetParStatus() != NzbInfo::psFailure) ||
+		(nzbInfo->GetUnpackStatus() <= NzbInfo::usSkipped &&
+		 nzbInfo->GetParStatus() != NzbInfo::psFailure &&
+		 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0) ||
+		nzbInfo->GetUnpackCleanedUpDisk();
+
+	if (cleanupParkedFiles)
+	{
+		g_DiskState->DiscardFiles(nzbInfo);
+		nzbInfo->GetCompletedFiles()->clear();
+	}
+
 	nzbInfo->SetParkedFileCount(0);
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
@@ -338,7 +367,6 @@ void HistoryCoordinator::MoveToQueue(DownloadQueue* downloadQueue, HistoryList::
 	historyInfo->DiscardNzbInfo();
 
 	// reset postprocessing status variables
-	nzbInfo->SetParCleanup(false);
 	if (!nzbInfo->GetUnpackCleanedUpDisk())
 	{
 		nzbInfo->SetUnpackStatus(NzbInfo::usNone);
@@ -572,7 +600,7 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 
 				ResetArticles(fileInfo.get(), completedFile.GetStatus() == CompletedFile::cfFailure, resetFailed);
 
-				g_DiskState->DiscardFile(fileInfo.get(), false, true, fileInfo->GetPartialState() != FileInfo::psCompleted);
+				g_DiskState->DiscardFile(fileInfo->GetId(), false, true, fileInfo->GetPartialState() != FileInfo::psCompleted);
 				if (fileInfo->GetPartialState() == FileInfo::psCompleted)
 				{
 					g_DiskState->SaveFileState(fileInfo.get(), true);
@@ -588,7 +616,7 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 		it++;
 	}
 
-	nzbInfo->CalcCurrentStats();
+	nzbInfo->UpdateCurrentStats();
 
 	MoveToQueue(downloadQueue, itHistory, historyInfo, reprocess);
 }

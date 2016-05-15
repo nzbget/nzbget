@@ -321,7 +321,7 @@ NzbInfo* QueueCoordinator::AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, N
 			allPaused &= fileInfo->GetPaused();
 			if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 			{
-				g_DiskState->DiscardFile(fileInfo, true, false, false);
+				g_DiskState->DiscardFile(fileInfo->GetId(), true, false, false);
 			}
 		}
 		nzbInfo->SetDeletePaused(allPaused);
@@ -418,11 +418,11 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 
 	for (FileInfo* fileInfo : dupeList)
 	{
-		StatFileInfo(fileInfo, false);
+		nzbInfo->UpdateDeletedStats(fileInfo);
 		nzbInfo->GetFileList()->Remove(fileInfo);
 		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 		{
-			g_DiskState->DiscardFile(fileInfo, true, false, false);
+			g_DiskState->DiscardFile(fileInfo->GetId(), true, false, false);
 		}
 	}
 }
@@ -663,59 +663,6 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 	}
 }
 
-void QueueCoordinator::StatFileInfo(FileInfo* fileInfo, bool completed)
-{
-	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
-	if (completed || nzbInfo->GetDeleting())
-	{
-		nzbInfo->SetSuccessSize(nzbInfo->GetSuccessSize() + fileInfo->GetSuccessSize());
-		nzbInfo->SetFailedSize(nzbInfo->GetFailedSize() + fileInfo->GetFailedSize());
-		nzbInfo->SetFailedArticles(nzbInfo->GetFailedArticles() + fileInfo->GetFailedArticles());
-		nzbInfo->SetSuccessArticles(nzbInfo->GetSuccessArticles() + fileInfo->GetSuccessArticles());
-		if (fileInfo->GetParFile())
-		{
-			nzbInfo->SetParSuccessSize(nzbInfo->GetParSuccessSize() + fileInfo->GetSuccessSize());
-			nzbInfo->SetParFailedSize(nzbInfo->GetParFailedSize() + fileInfo->GetFailedSize());
-		}
-		nzbInfo->GetServerStats()->ListOp(fileInfo->GetServerStats(), ServerStatList::soAdd);
-	}
-	else if (!nzbInfo->GetDeleting() && !nzbInfo->GetParCleanup())
-	{
-		// file deleted but not the whole nzb and not par-cleanup
-		nzbInfo->SetFileCount(nzbInfo->GetFileCount() - 1);
-		nzbInfo->SetSize(nzbInfo->GetSize() - fileInfo->GetSize());
-		nzbInfo->SetCurrentSuccessSize(nzbInfo->GetCurrentSuccessSize() - fileInfo->GetSuccessSize());
-		nzbInfo->SetFailedSize(nzbInfo->GetFailedSize() - fileInfo->GetMissedSize());
-		nzbInfo->SetFailedArticles(nzbInfo->GetFailedArticles() - fileInfo->GetMissedArticles());
-		nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() - fileInfo->GetFailedSize() - fileInfo->GetMissedSize());
-		nzbInfo->SetTotalArticles(nzbInfo->GetTotalArticles() - fileInfo->GetTotalArticles());
-		nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetCurrentSuccessArticles() - fileInfo->GetSuccessArticles());
-		nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() - fileInfo->GetFailedArticles() - fileInfo->GetMissedArticles());
-		nzbInfo->GetCurrentServerStats()->ListOp(fileInfo->GetServerStats(), ServerStatList::soSubtract);
-		if (fileInfo->GetParFile())
-		{
-			nzbInfo->SetParSize(nzbInfo->GetParSize() - fileInfo->GetSize());
-			nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() - fileInfo->GetSuccessSize());
-			nzbInfo->SetParFailedSize(nzbInfo->GetParFailedSize() - fileInfo->GetMissedSize());
-			nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() - fileInfo->GetFailedSize() - fileInfo->GetMissedSize());
-		}
-		nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() - fileInfo->GetRemainingSize());
-		if (fileInfo->GetPaused())
-		{
-			nzbInfo->SetPausedSize(nzbInfo->GetPausedSize() - fileInfo->GetRemainingSize());
-		}
-	}
-
-	if (fileInfo->GetParFile())
-	{
-		nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() - 1);
-	}
-	if (fileInfo->GetPaused())
-	{
-		nzbInfo->SetPausedFileCount(nzbInfo->GetPausedFileCount() - 1);
-	}
-}
-
 void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed)
 {
 	while (g_ArticleCache->FileBusy(fileInfo))
@@ -729,7 +676,14 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 
 	fileInfo->SetDeleted(true);
 
-	StatFileInfo(fileInfo, completed);
+	if (completed || nzbInfo->GetDeleting())
+	{
+		nzbInfo->UpdateCompletedStats(fileInfo);
+	}
+	else
+	{
+		nzbInfo->UpdateDeletedStats(fileInfo);
+	}
 
 	CompletedFile::EStatus fileStatus =
 		fileInfo->GetTotalArticles() == fileInfo->GetSuccessArticles() ? CompletedFile::cfSuccess :
@@ -739,7 +693,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
-		g_DiskState->DiscardFile(fileInfo, fileStatus == CompletedFile::cfSuccess || (fileDeleted && !parking), true, false);
+		g_DiskState->DiscardFile(fileInfo->GetId(), fileStatus == CompletedFile::cfSuccess || (fileDeleted && !parking), true, false);
 		if (fileStatus == CompletedFile::cfPartial && (completed || parking))
 		{
 			g_DiskState->SaveFileState(fileInfo, true);
@@ -807,7 +761,7 @@ void QueueCoordinator::SavePartialState()
 				debug("Saving partial state for %s", fileInfo->GetFilename());
 				if (fileInfo->GetPartialState() == FileInfo::psCompleted)
 				{
-					g_DiskState->DiscardFile(fileInfo, false, false, true);
+					g_DiskState->DiscardFile(fileInfo->GetId(), false, false, true);
 				}
 				g_DiskState->SaveFileState(fileInfo, false);
 				fileInfo->SetPartialChanged(false);

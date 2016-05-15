@@ -633,7 +633,7 @@ const char* NzbInfo::MakeTextStatus(bool ignoreScriptStatus)
 	return status;
 }
 
-void NzbInfo::CalcCurrentStats()
+void NzbInfo::UpdateCurrentStats()
 {
 	m_pausedFileCount = 0;
 	m_remainingParCount = 0;
@@ -645,6 +645,7 @@ void NzbInfo::CalcCurrentStats()
 	m_currentFailedSize = m_failedSize;
 	m_parCurrentSuccessSize = m_parSuccessSize;
 	m_parCurrentFailedSize = m_parFailedSize;
+
 	m_currentServerStats.ListOp(&m_serverStats, ServerStatList::soSet);
 
 	for (FileInfo* fileInfo : &m_fileList)
@@ -669,6 +670,59 @@ void NzbInfo::CalcCurrentStats()
 
 		m_currentServerStats.ListOp(fileInfo->GetServerStats(), ServerStatList::soAdd);
 	}
+}
+
+void NzbInfo::UpdateCompletedStats(FileInfo* fileInfo)
+{
+	m_successSize += fileInfo->GetSuccessSize();
+	m_failedSize += fileInfo->GetFailedSize();
+	m_failedArticles += fileInfo->GetFailedArticles();
+	m_successArticles += fileInfo->GetSuccessArticles();
+
+	if (fileInfo->GetParFile())
+	{
+		m_parSuccessSize += fileInfo->GetSuccessSize();
+		m_parFailedSize += fileInfo->GetFailedSize();
+		m_remainingParCount--;
+	}
+
+	if (fileInfo->GetPaused())
+	{
+		m_pausedFileCount--;
+	}
+
+	m_serverStats.ListOp(fileInfo->GetServerStats(), ServerStatList::soAdd);
+}
+
+void NzbInfo::UpdateDeletedStats(FileInfo* fileInfo)
+{
+	m_fileCount--;
+	m_size -= fileInfo->GetSize();
+	m_currentSuccessSize -= fileInfo->GetSuccessSize();
+	m_failedSize -= fileInfo->GetMissedSize();
+	m_failedArticles -= fileInfo->GetMissedArticles();
+	m_currentFailedSize -= fileInfo->GetFailedSize() + fileInfo->GetMissedSize();
+	m_totalArticles -= fileInfo->GetTotalArticles();
+	m_currentSuccessArticles -= fileInfo->GetSuccessArticles();
+	m_currentFailedArticles -= fileInfo->GetFailedArticles() + fileInfo->GetMissedArticles();
+	m_remainingSize -= fileInfo->GetRemainingSize();
+
+	if (fileInfo->GetParFile())
+	{
+		m_remainingParCount--;
+		m_parSize -= fileInfo->GetSize();
+		m_parCurrentSuccessSize -= fileInfo->GetSuccessSize();
+		m_parFailedSize -= fileInfo->GetMissedSize();
+		m_parCurrentFailedSize -= fileInfo->GetFailedSize() + fileInfo->GetMissedSize();
+	}
+
+	if (fileInfo->GetPaused())
+	{
+		m_pausedFileCount--;
+		m_pausedSize -= fileInfo->GetRemainingSize();
+	}
+
+	m_currentServerStats.ListOp(fileInfo->GetServerStats(), ServerStatList::soSubtract);
 }
 
 

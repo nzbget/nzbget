@@ -84,7 +84,6 @@ private:
 	void StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);
 	void ArticleCompleted(ArticleDownloader* articleDownloader);
 	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
-	void StatFileInfo(FileInfo* fileInfo, bool completed);
 	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void ResetHangingDownloads();
 	void AdjustDownloadsLimit();

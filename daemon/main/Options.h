@@ -249,7 +249,6 @@ public:
 	int GetWriteBuffer() { return m_writeBuffer; }
 	int GetNzbDirInterval() { return m_nzbDirInterval; }
 	int GetNzbDirFileAge() { return m_nzbDirFileAge; }
-	bool GetParCleanupQueue() { return m_parCleanupQueue; }
 	int GetDiskSpace() { return m_diskSpace; }
 	bool GetTls() { return m_tls; }
 	bool GetDumpCore() { return m_dumpCore; }
@@ -395,7 +394,6 @@ private:
 	int m_writeBuffer = 0;
 	int m_nzbDirInterval = 0;
 	int m_nzbDirFileAge = 0;
-	bool m_parCleanupQueue = false;
 	int m_diskSpace = 0;
 	bool m_tls = false;
 	bool m_dumpCore = false;
