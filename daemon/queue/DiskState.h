@@ -43,7 +43,7 @@ public:
 	bool LoadArticles(FileInfo* fileInfo);
 	void DiscardDownloadQueue();
 	void DiscardFile(int fileId, bool deleteData, bool deletePartialState, bool deleteCompletedState);
-	void DiscardFiles(NzbInfo* nzbInfo);
+	void DiscardFiles(NzbInfo* nzbInfo, bool deleteLog = true);
 	bool SaveFeeds(Feeds* feeds, FeedHistory* feedHistory);
 	bool LoadFeeds(Feeds* feeds, FeedHistory* feedHistory);
 	bool SaveStats(Servers* servers, ServerVolumes* serverVolumes);

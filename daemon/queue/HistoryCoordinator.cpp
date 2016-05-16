@@ -151,7 +151,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 
 	if (cleanupParkedFiles)
 	{
-		g_DiskState->DiscardFiles(nzbInfo);
+		g_DiskState->DiscardFiles(nzbInfo, false);
 		nzbInfo->GetCompletedFiles()->clear();
 	}
 

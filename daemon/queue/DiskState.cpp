@@ -1098,7 +1098,7 @@ error:
 	return false;
 }
 
-void DiskState::DiscardFiles(NzbInfo* nzbInfo)
+void DiskState::DiscardFiles(NzbInfo* nzbInfo, bool deleteLog)
 {
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
@@ -1113,9 +1113,12 @@ void DiskState::DiscardFiles(NzbInfo* nzbInfo)
 		}
 	}
 
-	BString<1024> filename;
-	filename.Format("%s%cn%i.log", g_Options->GetQueueDir(), PATH_SEPARATOR, nzbInfo->GetId());
-	FileSystem::DeleteFile(filename);
+	if (deleteLog)
+	{
+		BString<1024> filename;
+		filename.Format("%s%cn%i.log", g_Options->GetQueueDir(), PATH_SEPARATOR, nzbInfo->GetId());
+		FileSystem::DeleteFile(filename);
+	}
 }
 
 void DiskState::SaveDupInfo(DupInfo* dupInfo, StateDiskFile& outfile)
