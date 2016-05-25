@@ -108,7 +108,7 @@ var UISettings = (new function($)
 	{
 		this.refreshInterval = parseFloat(this.read('RefreshInterval', this.refreshInterval));
 		this.refreshAnimation = this.read('RefreshAnimation', this.refreshAnimation) == 'true';
-		this.slideAnimation = this.read('ActivityAnimation', this.activityAnimation) == 'true';
+		this.activityAnimation = this.read('ActivityAnimation', this.activityAnimation) == 'true';
 		this.slideAnimation = this.read('SlideAnimation', this.slideAnimation) == 'true';
 		this.setFocus = this.read('SetFocus', this.setFocus) == 'true';
 		this.showNotifications = this.read('ShowNotifications', this.showNotifications) == 'true';
