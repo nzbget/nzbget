@@ -360,6 +360,13 @@ bool TlsSocket::Start()
 		return false;
 	}
 
+	if (m_host && !SSL_set_tlsext_host_name((SSL*)m_session, m_host))
+	{
+		ReportError("Could not set host name for TLS");
+		Close();
+		return false;
+	}
+
 	if (!SSL_set_fd((SSL*)m_session, m_socket))
 	{
 		ReportError("Could not set the file descriptor for TLS");

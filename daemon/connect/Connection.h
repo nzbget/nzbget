@@ -106,9 +106,9 @@ protected:
 	class ConTlsSocket: public TlsSocket
 	{
 	public:
-		ConTlsSocket(SOCKET socket, bool isClient, const char* certFile,
-			const char* keyFile, const char* cipher, Connection* owner) :
-			TlsSocket(socket, isClient, certFile, keyFile, cipher), m_owner(owner) {}
+		ConTlsSocket(SOCKET socket, bool isClient, const char* host,
+			const char* certFile, const char* keyFile, const char* cipher, Connection* owner) :
+			TlsSocket(socket, isClient, host, certFile, keyFile, cipher), m_owner(owner) {}
 	protected:
 		virtual void PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
 	private:

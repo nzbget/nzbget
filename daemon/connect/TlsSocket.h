@@ -27,10 +27,10 @@
 class TlsSocket
 {
 public:
-	TlsSocket(SOCKET socket, bool isClient, const char* certFile,
-		const char* keyFile, const char* cipher) :
-		m_socket(socket), m_isClient(isClient), m_certFile(certFile),
-		m_keyFile(keyFile), m_cipher(cipher) {}
+	TlsSocket(SOCKET socket, bool isClient, const char* host,
+		const char* certFile, const char* keyFile, const char* cipher) :
+		m_socket(socket), m_isClient(isClient), m_host(host),
+		m_certFile(certFile), m_keyFile(keyFile), m_cipher(cipher) {}
 	virtual ~TlsSocket();
 	static void Init();
 	bool Start();
@@ -44,6 +44,7 @@ protected:
 	
 private:
 	bool m_isClient;
+	CString m_host;
 	CString m_certFile;
 	CString m_keyFile;
 	CString m_cipher;

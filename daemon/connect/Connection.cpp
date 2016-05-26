@@ -884,7 +884,7 @@ bool Connection::StartTls(bool isClient, const char* certFile, const char* keyFi
 {
 	debug("Starting TLS");
 
-	m_tlsSocket = std::make_unique<ConTlsSocket>(m_socket, isClient, certFile, keyFile, m_cipher, this);
+	m_tlsSocket = std::make_unique<ConTlsSocket>(m_socket, isClient, m_host, certFile, keyFile, m_cipher, this);
 	m_tlsSocket->SetSuppressErrors(m_suppressErrors);
 
 	return m_tlsSocket->Start();
