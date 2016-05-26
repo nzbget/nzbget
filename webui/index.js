@@ -135,7 +135,7 @@ var UISettings = (new function($)
 	this.read = function(key, def)
 	{
 		var v = localStorage.getItem(key);
-		if (v === null || v === '')
+		if (v === null)
 		{
 			return def.toString();
 		}
