@@ -292,9 +292,20 @@ bool TlsSocket::Start()
 	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, nullptr);
 	if (m_retCode != 0)
 	{
-		ReportError("Could not select cipher for TLS session");
+		ReportError("Could not select cipher for TLS");
 		Close();
 		return false;
+	}
+
+	if (m_host)
+	{
+		m_retCode = gnutls_server_name_set((gnutls_session_t)m_session, GNUTLS_NAME_DNS, m_host, m_host.Length());
+		if (m_retCode != 0)
+		{
+			ReportError("Could not set host name for TLS");
+			Close();
+			return false;
+		}
 	}
 
 	m_retCode = gnutls_credentials_set((gnutls_session_t)m_session, GNUTLS_CRD_CERTIFICATE,
