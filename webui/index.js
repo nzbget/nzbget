@@ -107,13 +107,13 @@ var UISettings = (new function($)
 	this.load = function()
 	{
 		this.refreshInterval = parseFloat(this.read('RefreshInterval', this.refreshInterval));
-		this.refreshAnimation = this.read('RefreshAnimation', this.refreshAnimation) == 'true';
-		this.activityAnimation = this.read('ActivityAnimation', this.activityAnimation) == 'true';
-		this.slideAnimation = this.read('SlideAnimation', this.slideAnimation) == 'true';
-		this.setFocus = this.read('SetFocus', this.setFocus) == 'true';
-		this.showNotifications = this.read('ShowNotifications', this.showNotifications) == 'true';
-		this.dupeBadges = this.read('DupeBadges', this.dupeBadges) == 'true';
-		this.rowSelect = this.read('RowSelect', this.rowSelect) == 'true';
+		this.refreshAnimation = this.read('RefreshAnimation', this.refreshAnimation) === 'true';
+		this.activityAnimation = this.read('ActivityAnimation', this.activityAnimation) === 'true';
+		this.slideAnimation = this.read('SlideAnimation', this.slideAnimation) === 'true';
+		this.setFocus = this.read('SetFocus', this.setFocus) === 'true';
+		this.showNotifications = this.read('ShowNotifications', this.showNotifications) === 'true';
+		this.dupeBadges = this.read('DupeBadges', this.dupeBadges) === 'true';
+		this.rowSelect = this.read('RowSelect', this.rowSelect) === 'true';
 		this.windowTitle = this.read('WindowTitle', this.windowTitle);
 		this.refreshRetries = parseFloat(this.read('RefreshRetries', this.refreshRetries));
 	}
@@ -137,7 +137,7 @@ var UISettings = (new function($)
 		var v = localStorage.getItem(key);
 		if (v === null || v === '')
 		{
-			return def;
+			return def.toString();
 		}
 		else
 		{
