@@ -418,6 +418,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 		nzbInfo->SetUrlStatus(NzbInfo::lsNone);
 		nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
 		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
+		downloadQueue->GetHistory()->erase(itHistory);
 		return;
 	}
 
