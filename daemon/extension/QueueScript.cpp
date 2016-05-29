@@ -416,7 +416,7 @@ void QueueScriptCoordinator::CheckQueue()
 	Guard guard(m_queueMutex);
 
 	NzbInfo* curNzbInfo = nullptr;
-	Queue::iterator itCurItem = m_queue.end();
+	Queue::iterator itCurItem;
 
 	for (Queue::iterator it = m_queue.begin(); it != m_queue.end(); )
 	{
@@ -430,6 +430,12 @@ void QueueScriptCoordinator::CheckQueue()
 			nzbInfo->GetMarkStatus() == NzbInfo::ksBad)
 		{
 			it = m_queue.erase(it);
+			if (curNzbInfo)
+			{
+				// process from the beginning, while "erase" invalidated "itCurItem"
+				curNzbInfo = nullptr;
+				it = m_queue.begin();
+			}
 			continue;
 		}
 
@@ -442,7 +448,7 @@ void QueueScriptCoordinator::CheckQueue()
 		it++;
 	}
 
-	if (itCurItem != m_queue.end())
+	if (curNzbInfo)
 	{
 		m_curItem = std::move(*itCurItem);
 		m_queue.erase(itCurItem);
