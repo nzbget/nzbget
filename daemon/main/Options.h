@@ -67,6 +67,7 @@ public:
 	{
 		hcPause,
 		hcDelete,
+		hcPark,
 		hcNone
 	};
 	enum ESchedulerCommand
@@ -255,8 +256,6 @@ public:
 	bool GetParPauseQueue() { return m_parPauseQueue; }
 	bool GetScriptPauseQueue() { return m_scriptPauseQueue; }
 	bool GetNzbCleanupDisk() { return m_nzbCleanupDisk; }
-	bool GetDeleteCleanupDisk() { return m_deleteCleanupDisk; }
-	bool GetHistoryCleanupDisk() { return m_historyCleanupDisk; }
 	int GetParTimeLimit() { return m_parTimeLimit; }
 	int GetKeepHistory() { return m_keepHistory; }
 	bool GetAccurateRate() { return m_accurateRate; }
@@ -400,8 +399,6 @@ private:
 	bool m_parPauseQueue = false;
 	bool m_scriptPauseQueue = false;
 	bool m_nzbCleanupDisk = false;
-	bool m_deleteCleanupDisk = false;
-	bool m_historyCleanupDisk = false;
 	int m_parTimeLimit = 0;
 	int m_keepHistory = 0;
 	bool m_accurateRate = false;

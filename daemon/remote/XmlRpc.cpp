@@ -2022,6 +2022,7 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaGroupPause, "GroupPause" },
 	{ DownloadQueue::eaGroupResume, "GroupResume" },
 	{ DownloadQueue::eaGroupDelete, "GroupDelete" },
+	{ DownloadQueue::eaGroupParkDelete, "GroupParkDelete" },
 	{ DownloadQueue::eaGroupDupeDelete, "GroupDupeDelete" },
 	{ DownloadQueue::eaGroupFinalDelete, "GroupFinalDelete" },
 	{ DownloadQueue::eaGroupPauseAllPars, "GroupPauseAllPars" },

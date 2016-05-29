@@ -55,8 +55,6 @@ private:
 	void SetNzbPriority(NzbInfo* nzbInfo, const char* priority);
 	void SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool applyParams);
 	void SetNzbName(NzbInfo* nzbInfo, const char* name);
-	bool CanCleanupDisk(NzbInfo* nzbInfo);
-	bool CanPark(NzbInfo* nzbInfo);
 	bool MergeGroups(ItemList* itemList);
 	bool SortGroups(ItemList* itemList, const char* sort);
 	bool SplitGroup(ItemList* itemList, const char* name);

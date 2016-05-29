@@ -796,7 +796,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 		fileInfo->GetNzbInfo()->GetHealthPaused() ||
 		fileInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsHealth ||
 		fileInfo->GetNzbInfo()->CalcHealth() >= fileInfo->GetNzbInfo()->CalcCriticalHealth(true) ||
-		(g_Options->GetParScan() == Options::psDupe && g_Options->GetHealthCheck() == Options::hcDelete &&
+		(g_Options->GetParScan() == Options::psDupe && g_Options->GetHealthCheck() == Options::hcPark &&
 		 fileInfo->GetNzbInfo()->GetSuccessArticles() * 100 / fileInfo->GetNzbInfo()->GetTotalArticles() > 10))
 	{
 		return;
@@ -809,14 +809,17 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 		fileInfo->GetNzbInfo()->SetHealthPaused(true);
 		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, 0, nullptr);
 	}
-	else if (g_Options->GetHealthCheck() == Options::hcDelete)
+	else if (g_Options->GetHealthCheck() == Options::hcDelete ||
+		g_Options->GetHealthCheck() == Options::hcPark)
 	{
 		fileInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
 			"Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%",
 			fileInfo->GetNzbInfo()->GetName(), fileInfo->GetNzbInfo()->CalcHealth() / 10.0,
 			fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
 		fileInfo->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsHealth);
-		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupDelete, 0, nullptr);
+		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(),
+			g_Options->GetHealthCheck() == Options::hcPark ? DownloadQueue::eaGroupParkDelete : DownloadQueue::eaGroupDelete,
+			0, nullptr);
 	}
 }
 

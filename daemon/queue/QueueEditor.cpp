@@ -473,6 +473,7 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 						break;
 
 					case DownloadQueue::eaGroupDelete:
+					case DownloadQueue::eaGroupParkDelete:
 					case DownloadQueue::eaGroupDupeDelete:
 					case DownloadQueue::eaGroupFinalDelete:
 						if (item.m_nzbInfo->GetKind() == NzbInfo::nkUrl)
@@ -768,17 +769,23 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 		allPaused &= fileInfo->GetPaused();
 	}
 
-	if (action == DownloadQueue::eaGroupDelete || action == DownloadQueue::eaGroupDupeDelete || action == DownloadQueue::eaGroupFinalDelete)
+	if (action == DownloadQueue::eaGroupDelete ||
+		action == DownloadQueue::eaGroupParkDelete ||
+		action == DownloadQueue::eaGroupDupeDelete ||
+		action == DownloadQueue::eaGroupFinalDelete)
 	{
 		nzbInfo->SetDeleting(true);
-		nzbInfo->SetParking(action == DownloadQueue::eaGroupDelete && CanPark(nzbInfo));
+		nzbInfo->SetParking(action == DownloadQueue::eaGroupParkDelete &&
+			g_Options->GetKeepHistory() > 0 &&
+			!nzbInfo->GetUnpackCleanedUpDisk() &&
+			(nzbInfo->GetSuccessArticles() > 0 || nzbInfo->GetFailedArticles() > 0));
 		nzbInfo->SetAvoidHistory(action == DownloadQueue::eaGroupFinalDelete);
 		nzbInfo->SetDeletePaused(allPaused);
 		if (action == DownloadQueue::eaGroupDupeDelete)
 		{
 			nzbInfo->SetDeleteStatus(NzbInfo::dsDupe);
 		}
-		nzbInfo->SetCleanupDisk(CanCleanupDisk(nzbInfo));
+		nzbInfo->SetCleanupDisk(action != DownloadQueue::eaGroupParkDelete);
 	}
 
 	DownloadQueue::EEditAction GroupToFileMap[] = {
@@ -1026,41 +1033,6 @@ void QueueEditor::SetNzbName(NzbInfo* nzbInfo, const char* name)
 	debug("QueueEditor: renaming '%s' to '%s'", nzbInfo->GetName(), name);
 
 	g_QueueCoordinator->SetQueueEntryName(m_downloadQueue, nzbInfo, name);
-}
-
-/**
-* Check if deletion of already downloaded files is possible when nzb is deleted from queue.
-*/
-bool QueueEditor::CanCleanupDisk(NzbInfo* nzbInfo)
-{
-	// Special case: deletion is not possible if all remaining files are PARS.
-
-	bool onlyPars = true;
-	for (FileInfo* fileInfo : nzbInfo->GetFileList())
-	{
-		BString<1024> loFileName = fileInfo->GetFilename();
-		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-
-		if (!strstr(loFileName, ".par2"))
-		{
-			// non-par file found
-			onlyPars = false;
-		}
-	}
-
-	bool canCleanup = (g_Options->GetDeleteCleanupDisk() && nzbInfo->GetDeleteStatus() != NzbInfo::dsNone) ||
-		(!onlyPars && nzbInfo->GetSuccessArticles() == 0);
-
-	return canCleanup;
-}
-
-bool QueueEditor::CanPark(NzbInfo* nzbInfo)
-{
-	bool park = !g_Options->GetDeleteCleanupDisk() && g_Options->GetKeepHistory() > 0 &&
-		!nzbInfo->GetUnpackCleanedUpDisk() &&
-		(nzbInfo->GetSuccessArticles() > 0 || nzbInfo->GetFailedArticles() > 0);
-
-	return park;
 }
 
 bool QueueEditor::MergeGroups(ItemList* itemList)

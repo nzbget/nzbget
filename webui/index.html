@@ -1992,20 +1992,12 @@
 				How to delete selected downloads?
 			</p>
 			<div style="margin-left: 30px; margin-bottom: 10px;">
-				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_Delete"> Move downloads to history (recommended)</label>
-				<label class="radio" id="DownloadsDeleteConfirmDialog_DeleteDupeLabel"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDupe"> Move downloads to history as duplicates</label>
-				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteFinal"> Delete downloads without history tracking</label>
+				<label class="radio"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeletePark"> Move downloads to history, keep already downloaded files (recommended)</label>
+				<label class="radio"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDirect"> Move downloads to history, delete already downloaded files</label>
+				<label class="radio" id="DownloadsDeleteConfirmDialog_DeleteDupeLabel"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDupe"> Move downloads to history as duplicates, delete already downloaded files</label>
+				<label class="radio"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteFinal"> Delete downloads without history tracking, delete already downloaded files</label>
 			</div>
 		</div>
-		
-		<p id="DownloadsDeleteConfirmDialog_Remain" class="confirm-help-block">
-			Selected downloads will be removed from queue. Already downloaded files remain on disk (this behavior can be changed via option
-			<strong><em>DeleteCleanupDisk</em></strong>).
-		</p>
-		<p id="DownloadsDeleteConfirmDialog_Cleanup" class="confirm-help-block">
-			Selected downloads will be removed from queue. Already downloaded files will be deleted from disk (this behavior can be changed via option
-			<strong><em>DeleteCleanupDisk</em></strong>).
-		</p>
 	</div>
 	<div id="DownloadsDeleteConfirmDialog_OK">Delete</div>
 	<div id="DownloadsDeleteConfirmDialog_Help">DownloadsDeleteHelp</div>
@@ -2019,10 +2011,12 @@
 	<h3>Help: Explaining delete options</h3>
 	</div>
 	<div class="modal-body">
-	<p>Duplicate check (option <em><strong>DupeCheck</strong></em>) requires information about downloaded and failed nzb-files.</p>
-	<p>If you delete download without creating history record the duplicate check may not be able to detect duplicates and
+	<p>It is recommended to move downloads into history.</p>
+	<p>If you choose to keep already downloaded files, the downloads can be moved back
+	to download queue using commands <em><strong>Download remaining files</strong></em> and <em><strong>Retry failed articles</strong></em>.</p>
+	<p>If you delete downloads without creating of history records the duplicate check may not be able to detect duplicates and
 	the same file or a duplicate may be queued later from RSS feed or other source.</p>
-	<p>History records marked as duplicate backups can be used by duplicate check if the main download fails.</p>
+	<p>History records marked as duplicate backups can be automatically used by duplicate check if the main download fails.</p>
 	</div>
 </div>
 
