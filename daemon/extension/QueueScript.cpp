@@ -27,7 +27,13 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-static const char* QUEUE_EVENT_NAMES[] = { "FILE_DOWNLOADED", "URL_COMPLETED", "NZB_ADDED", "NZB_DOWNLOADED", "NZB_DELETED" };
+static const char* QUEUE_EVENT_NAMES[] = {
+	"FILE_DOWNLOADED",
+	"URL_COMPLETED",
+	"NZB_MARKED",
+	"NZB_ADDED",
+	"NZB_DOWNLOADED",
+	"NZB_DELETED" };
 
 class QueueScriptController : public Thread, public NzbScriptController
 {
@@ -57,6 +63,7 @@ private:
 	bool m_markBad;
 	NzbInfo::EDeleteStatus m_deleteStatus;
 	NzbInfo::EUrlStatus m_urlStatus;
+	NzbInfo::EMarkStatus m_markStatus;
 
 	void PrepareParams(const char* scriptName);
 };
@@ -83,6 +90,7 @@ void QueueScriptController::StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* 
 	scriptController->m_markBad = false;
 	scriptController->m_deleteStatus = nzbInfo->GetDeleteStatus();
 	scriptController->m_urlStatus = nzbInfo->GetUrlStatus();
+	scriptController->m_markStatus = nzbInfo->GetMarkStatus();
 	scriptController->SetAutoDestroy(true);
 
 	scriptController->Start();
@@ -154,6 +162,9 @@ void QueueScriptController::PrepareParams(const char* scriptName)
 
 	const char* urlStatusName[] = { "NONE", "UNKNOWN", "SUCCESS", "FAILURE", "UNKNOWN", "SCAN_SKIPPED", "SCAN_FAILURE" };
 	SetEnvVar("NZBNA_URLSTATUS", urlStatusName[m_urlStatus]);
+
+	const char* markStatusName[] = { "NONE", "BAD", "GOOD", "SUCCESS" };
+	SetEnvVar("NZBNA_MARKSTATUS", markStatusName[m_markStatus]);
 
 	PrepareEnvScript(&m_parameters, scriptName);
 }

@@ -31,6 +31,7 @@ public:
 	{
 		qeFileDownloaded, // lowest priority
 		qeUrlCompleted,
+		qeNzbMarked,
 		qeNzbAdded,
 		qeNzbDownloaded,
 		qeNzbDeleted // highest priority
