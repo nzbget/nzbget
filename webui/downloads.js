@@ -857,7 +857,6 @@ var DownloadsUI = (new function($)
 	this.deleteConfirm = function(actionCallback, multi, hasNzb, hasUrl, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
-		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
 		var history = Options.option('KeepHistory') !== '0';
 		var dialog = null;
 
@@ -872,24 +871,23 @@ var DownloadsUI = (new function($)
 				$('#ConfirmDialog_Text').html(html);
 			}
 
-			$('#DownloadsDeleteConfirmDialog_Delete', dialog).prop('checked', true);
-			$('#DownloadsDeleteConfirmDialog_Delete', dialog).prop('checked', true);
+			$('#DownloadsDeleteConfirmDialog_DeletePark', dialog).prop('checked', true);
+			$('#DownloadsDeleteConfirmDialog_DeleteDirect', dialog).prop('checked', false);
 			$('#DownloadsDeleteConfirmDialog_DeleteDupe', dialog).prop('checked', false);
 			$('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).prop('checked', false);
 			Util.show($('#DownloadsDeleteConfirmDialog_Options', dialog), history);
 			Util.show($('#DownloadsDeleteConfirmDialog_Simple', dialog), !history);
 			Util.show($('#DownloadsDeleteConfirmDialog_DeleteDupe,#DownloadsDeleteConfirmDialog_DeleteDupeLabel', dialog), dupeCheck && hasNzb);
-			Util.show($('#DownloadsDeleteConfirmDialog_Remain', dialog), !cleanupDisk && hasNzb);
-			Util.show($('#DownloadsDeleteConfirmDialog_Cleanup', dialog), cleanupDisk && hasNzb);
 			Util.show('#ConfirmDialog_Help', history && dupeCheck && hasNzb);
 		};
 
 		function action()
 		{
-			var deleteNormal = $('#DownloadsDeleteConfirmDialog_Delete', dialog).is(':checked');
+			var deletePark = $('#DownloadsDeleteConfirmDialog_DeletePark', dialog).is(':checked');
+			var deleteDirect = $('#DownloadsDeleteConfirmDialog_DeleteDirect', dialog).is(':checked');
 			var deleteDupe = $('#DownloadsDeleteConfirmDialog_DeleteDupe', dialog).is(':checked');
 			var deleteFinal = $('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).is(':checked');
-			var command = deleteNormal ? 'GroupDelete' : (deleteDupe ? 'GroupDupeDelete' : 'GroupFinalDelete');
+			var command = deletePark ? "GroupParkDelete" : (deleteDirect ? 'GroupDelete' : (deleteDupe ? 'GroupDupeDelete' : 'GroupFinalDelete'));
 			actionCallback(command);
 		}
 

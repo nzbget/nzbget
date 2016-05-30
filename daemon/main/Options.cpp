@@ -109,8 +109,6 @@ static const char* OPTION_DUMPCORE				= "DumpCore";
 static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
 static const char* OPTION_SCRIPTPAUSEQUEUE		= "ScriptPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK		= "NzbCleanupDisk";
-static const char* OPTION_DELETECLEANUPDISK		= "DeleteCleanupDisk";
-static const char* OPTION_HISTORYCLEANUPDISK	= "HistoryCleanupDisk";
 static const char* OPTION_PARTIMELIMIT			= "ParTimeLimit";
 static const char* OPTION_KEEPHISTORY			= "KeepHistory";
 static const char* OPTION_ACCURATERATE			= "AccurateRate";
@@ -155,6 +153,8 @@ static const char* OPTION_NZBADDEDPROCESS		= "NZBAddedProcess";
 static const char* OPTION_CREATELOG				= "CreateLog";
 static const char* OPTION_RESETLOG				= "ResetLog";
 static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
+static const char* OPTION_DELETECLEANUPDISK		= "DeleteCleanupDisk";
+static const char* OPTION_HISTORYCLEANUPDISK	= "HistoryCleanupDisk";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -469,8 +469,6 @@ void Options::InitDefaults()
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
 	SetOption(OPTION_SCRIPTPAUSEQUEUE, "no");
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
-	SetOption(OPTION_DELETECLEANUPDISK, "no");
-	SetOption(OPTION_HISTORYCLEANUPDISK, "no");
 	SetOption(OPTION_PARTIMELIMIT, "0");
 	SetOption(OPTION_KEEPHISTORY, "7");
 	SetOption(OPTION_ACCURATERATE, "no");
@@ -723,8 +721,6 @@ void Options::InitOptions()
 	m_parPauseQueue			= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_scriptPauseQueue		= (bool)ParseEnumValue(OPTION_SCRIPTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_nzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
-	m_deleteCleanupDisk		= (bool)ParseEnumValue(OPTION_DELETECLEANUPDISK, BoolCount, BoolNames, BoolValues);
-	m_historyCleanupDisk	= (bool)ParseEnumValue(OPTION_HISTORYCLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_accurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
 	m_secureControl			= (bool)ParseEnumValue(OPTION_SECURECONTROL, BoolCount, BoolNames, BoolValues);
 	m_unpack				= (bool)ParseEnumValue(OPTION_UNPACK, BoolCount, BoolNames, BoolValues);
@@ -747,9 +743,9 @@ void Options::InitOptions()
 	const int ParScanCount = 4;
 	m_parScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
 
-	const char* HealthCheckNames[] = { "pause", "delete", "none" };
-	const int HealthCheckValues[] = { hcPause, hcDelete, hcNone };
-	const int HealthCheckCount = 3;
+	const char* HealthCheckNames[] = { "pause", "delete", "park", "none" };
+	const int HealthCheckValues[] = { hcPause, hcDelete, hcPark, hcNone };
+	const int HealthCheckCount = 4;
 	m_healthCheck = (EHealthCheck)ParseEnumValue(OPTION_HEALTHCHECK, HealthCheckCount, HealthCheckNames, HealthCheckValues);
 
 	const char* TargetNames[] = { "screen", "log", "both", "none" };
@@ -1528,7 +1524,9 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		!strcasecmp(optname, OPTION_STRICTPARNAME) ||
 		!strcasecmp(optname, OPTION_RELOADURLQUEUE) ||
 		!strcasecmp(optname, OPTION_RELOADPOSTQUEUE) ||
-		!strcasecmp(optname, OPTION_PARCLEANUPQUEUE))
+		!strcasecmp(optname, OPTION_PARCLEANUPQUEUE) ||
+		!strcasecmp(optname, OPTION_DELETECLEANUPDISK) ||
+		!strcasecmp(optname, OPTION_HISTORYCLEANUPDISK))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

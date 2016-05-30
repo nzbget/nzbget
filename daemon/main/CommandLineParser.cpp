@@ -513,6 +513,10 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					{
 						m_editQueueAction = group ? DownloadQueue::eaGroupDelete : DownloadQueue::eaFileDelete;
 					}
+					else if (!strcasecmp(optarg, "DP"))
+					{
+						m_editQueueAction = DownloadQueue::eaGroupParkDelete;
+					}
 					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K") || !strcasecmp(optarg, "CP"))
 					{
 						// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
@@ -774,6 +778,7 @@ void CommandLineParser::PrintUsage(const char* com)
 		"    - for groups (G):\n"
 		"       A                    Pause all pars\n"
 		"       R                    Pause extra pars\n"
+		"       DP                   Delete but keep downloaded files\n"
 		"       I <priority>         Set priority (signed integer)\n"
 		"       C <name>             Set category\n"
 		"       CP <name>            Set category and apply post-process parameters\n"

@@ -872,9 +872,10 @@ public:
 		eaGroupMoveBottom, // move group to the bottom of download-queue
 		eaGroupPause, // pause group
 		eaGroupResume, // resume (unpause) group
-		eaGroupDelete, // delete group and put to history
-		eaGroupDupeDelete, // delete group, put to history and mark as duplicate
-		eaGroupFinalDelete, // delete group without adding to history
+		eaGroupDelete, // delete group and put to history, delete already downloaded files
+		eaGroupParkDelete, // delete group and put to history, keep already downloaded files
+		eaGroupDupeDelete, // delete group, put to history and mark as duplicate, delete already downloaded files
+		eaGroupFinalDelete, // delete group without adding to history, delete already downloaded files
 		eaGroupPauseAllPars, // pause only (all) pars (does not affect other files) in group
 		eaGroupPauseExtraPars, // pause only (almost all) pars in group, except main par-file (does not affect other files)
 		eaGroupSetPriority, // set priority for groups
