@@ -436,9 +436,12 @@ void QueueScriptCoordinator::CheckQueue()
 		NzbInfo* nzbInfo = FindNzbInfo(downloadQueue, queueItem->GetNzbId());
 
 		// in a case this nzb must not be processed further - delete queue script from queue
-		if (!nzbInfo ||
-			(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone && queueItem->GetEvent() != qeNzbDeleted) ||
-			nzbInfo->GetMarkStatus() == NzbInfo::ksBad)
+		EEvent event = queueItem->GetEvent();
+		bool ignoreEvent = !nzbInfo ||
+			(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone && event != qeNzbDeleted && event != qeNzbMarked) ||
+			(nzbInfo->GetMarkStatus() == NzbInfo::ksBad && event != qeNzbMarked);
+
+		if (ignoreEvent)
 		{
 			it = m_queue.erase(it);
 			if (curNzbInfo)
