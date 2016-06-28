@@ -337,7 +337,7 @@ char* FileSystem::BaseFileName(const char* filename)
 
 bool FileSystem::ReservedChar(char ch)
 {
-	if (ch < 32)
+	if ((unsigned char)ch < 32)
 	{
 		return true;
 	}
