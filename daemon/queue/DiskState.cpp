@@ -65,6 +65,12 @@ char* StateDiskFile::ReadLine(char* buffer, int64 size)
 	// remove traling '\n'
 	if (*buffer)
 	{
+		if (buffer[strlen(buffer) - 1] != '\n')
+		{
+			// the line is longer than "size", scroll file position to the end of the line
+			for (char skipbuf[1024]; DiskFile::ReadLine(skipbuf, 1024) && *skipbuf && skipbuf[strlen(skipbuf) - 1] != '\n'; ) ;
+		}
+
 		buffer[strlen(buffer) - 1] = 0;
 	}
 
