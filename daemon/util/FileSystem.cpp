@@ -915,7 +915,7 @@ bool FileSystem::NeedLongPath(const char* path)
 	}
 
 	Tokenizer tok(path, "\\/");
-	while (const char* part = tok.Next())
+	for (int partNo = 0; const char* part = tok.Next(); partNo++)
 	{
 		// check if the file part starts with a reserved device name
 		for (const char** ptr = RESERVED_DEVICE_NAMES; const char* reserved = *ptr; ptr++)
@@ -930,7 +930,7 @@ bool FileSystem::NeedLongPath(const char* path)
 		// check if the file part contains reserved characters
 		for (const char* p = part; *p; p++)
 		{
-			if (ReservedChar(*p))
+			if (ReservedChar(*p) && !(partNo == 0 && p == part + 1 && *p == ':'))
 			{
 				return true;
 			}
