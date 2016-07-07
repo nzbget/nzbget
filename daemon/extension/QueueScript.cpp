@@ -51,6 +51,7 @@ private:
 	CString m_url;
 	CString m_category;
 	CString m_destDir;
+	CString m_queuedFilename;
 	int m_id;
 	int m_priority;
 	CString m_dupeKey;
@@ -78,6 +79,7 @@ void QueueScriptController::StartScript(NzbInfo* nzbInfo, ScriptConfig::Script* 
 	scriptController->m_url = nzbInfo->GetUrl();
 	scriptController->m_category = nzbInfo->GetCategory();
 	scriptController->m_destDir = nzbInfo->GetDestDir();
+	scriptController->m_queuedFilename = nzbInfo->GetQueuedFilename();
 	scriptController->m_id = nzbInfo->GetId();
 	scriptController->m_priority = nzbInfo->GetPriority();
 	scriptController->m_dupeKey = nzbInfo->GetDupeKey();
@@ -144,6 +146,7 @@ void QueueScriptController::PrepareParams(const char* scriptName)
 	SetIntEnvVar("NZBNA_NZBID", m_id);
 	SetEnvVar("NZBNA_FILENAME", m_nzbFilename);
 	SetEnvVar("NZBNA_DIRECTORY", m_destDir);
+	SetEnvVar("NZBNA_QUEUEDFILE", m_queuedFilename);
 	SetEnvVar("NZBNA_URL", m_url);
 	SetEnvVar("NZBNA_CATEGORY", m_category);
 	SetIntEnvVar("NZBNA_PRIORITY", m_priority);

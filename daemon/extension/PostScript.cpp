@@ -118,6 +118,7 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	SetEnvVar("NZBPP_NZBNAME", m_postInfo->GetNzbInfo()->GetName());
 	SetEnvVar("NZBPP_DIRECTORY", m_postInfo->GetNzbInfo()->GetDestDir());
 	SetEnvVar("NZBPP_NZBFILENAME", m_postInfo->GetNzbInfo()->GetFilename());
+	SetEnvVar("NZBPP_QUEUEDFILE", m_postInfo->GetNzbInfo()->GetQueuedFilename());
 	SetEnvVar("NZBPP_URL", m_postInfo->GetNzbInfo()->GetUrl());
 	SetEnvVar("NZBPP_FINALDIR", m_postInfo->GetNzbInfo()->GetFinalDir());
 	SetEnvVar("NZBPP_CATEGORY", m_postInfo->GetNzbInfo()->GetCategory());
