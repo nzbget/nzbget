@@ -241,6 +241,14 @@ var Frontend = (new function($)
 		
 		$('li > a:has(table)').addClass('has-table');
 
+		$(document).on("keypress", "form", function(event)
+		{
+			// since we use form-tags for a workaround for fieldset-tag,
+			// and we don't have a proper processing of ENTER-key inside forms,
+			// we disable ENTER-key to prevent automatic form submitting.
+			return event.keyCode != 13;
+		});
+
 		$(window).scroll(windowScrolled);
 	}
 	
