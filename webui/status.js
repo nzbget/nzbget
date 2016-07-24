@@ -235,7 +235,7 @@ var Status = (new function($)
 		var Anim = (!status.ServerStandBy || status.FeedActive || status.QueueScriptCount > 0 ||
 			(status.PostJobCount > 0 && !status.PostPaused) ||
 			(status.UrlCount > 0 && (!status.DownloadPaused || Options.option('UrlForce') === 'yes'))) &&
-			(UISettings.refreshInterval !== 0) && !UISettings.connectionError;
+			(UISettings.refreshInterval !== 0) && !UISettings.connectionError && UISettings.activityAnimation;
 		if (Anim === lastAnimState)
 		{
 			return;
@@ -243,7 +243,7 @@ var Status = (new function($)
 
 		lastAnimState = Anim;
 
-		if (UISettings.activityAnimation && !modalShown)
+		if (!modalShown)
 		{
 			if (Anim)
 			{
