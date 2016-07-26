@@ -1,6 +1,133 @@
 nzbget-17.0:
-  - please see repository change log at
-    https://github.com/nzbget/nzbget/commits/develop
+  - reworked the full source code base to utilize modern C++ features:
+        - with the main motivation to make the code nicer and more fun to work
+          with;
+        - to compile NZBGet from source a compiler supporting C++14 is required;
+        - most users don't have to compile on their own and can use official
+          installers offered on download page;
+        - for a detailed list of internal changes see Milestone "Modern C++" on
+          GitHub;
+  - now offering an official installer for FreeBSD:
+        - automatic installation;
+        - built-in update via web-interface;
+        - currently supporting only x86_64 CPU architecture;
+  - full support for Unicode and extra long file paths (more than 260 characters)
+    on Windows including:
+        - downloading;
+        - par-verification and -repair;
+        - par-renaming (deobfuscation);
+        - unpacking;
+        - post-processing;
+  - added download volume quota management:
+        - new options "MonthlyQuota", "QuotaStartDay", "DailyQuota";
+        - downloading is suspended when the quota is reached and automatically
+          resumed when the next billing period starts (month or day);
+        - new fields in RPC-method "status": MonthSizeLo, MonthSizeHi,
+          MonthSizeMB, DaySizeLo, DaySizeHi, DaySizeMB, QuotaReached.
+          MonthSizes are related to current billing month taking option
+          "QuotaStartDay" into account;
+        - download volume for "this month" shown in web-interface in statistics
+          dialog shows data for current billing month (taking option
+          "QuotaStartDay" into account);
+        - remaining time is shown in orange when the quota is reached;
+        - dialog "statistics and status" may show extra row "Download quota:
+          reached";
+  - new function "Retry failed articles" in history:
+        - failed downloads can be now tried again but in contrast to command
+          "Download again" only failed articles are downloaded whereas
+          successfully downloaded pieces are reused;
+        - new command "HistoryRetryFailed" of RPC-method "editqueue";
+        - new subcommand "F" of command line switch "-E/--edit" for history;
+  - reworked options to delete already downloaded files when deleting downloads
+    from queue:
+        - removed option "DeleteCleanupDisk";
+        - in the "Delete downloads confirmation dialog" allowing user to decide
+          if the already downloaded files must be deleted or not;
+        - option "HealthCheck" extended with new possible value "Park"; Health
+          check now offers:
+            - "Delete" - to move download into history and delete already
+               downloaded files;
+            - "Park" - to move download into history and keep already downloaded
+               files;
+        - remote command "GroupDelete" now always delete already downloaded files;
+        - new remote command "GroupParkDelete" keeps already downloaded files;
+        - new subcommand "DP" of console command "--edit/-E" to delete download
+          from queue and keep already downloaded files;
+  - new queue script event "NZB_MARKED"; new env var "NZBNA_MARKSTATUS" is
+    passed to queue scripts:
+  - new option "ShellOverride" allows to configure path to python, bash, etc.;
+    useful on systems with non-standard paths; eliminating the need to change
+    shebang for every script; also makes it possible to put scripts on non-exec
+    file systems;
+  - reduced disk fragmentation in direct write mode on Windows; this improves
+    unpack speed;
+  - news servers can now be configured as optional; marking server as optional
+    tells NZBGet to ignore this server if a connection to this server cannot be
+    established;
+  - added support for tvdbid and tvmazeid in rss feeds;
+  - added button to save nzb-log into a file directly from web-ui;
+  - queue-scripts can now change destination after download is completed and
+    before unpack;
+  - queue-scripts save messages into nzb-log;
+  - showing number of selected items in confirmation box when deleting or
+    performing other actions on multiple items in web-interface;
+  - built-in web-server can now use certificate chain files through option
+    "SecureCert", when compiled using OpenSSL;
+  - added support for SNI in TLS/SSL;
+  - better error reporting when using GnuTLS;
+  - allowing character "=" in dupe-badges;
+  - par-check doesn't ignore files from option "ExtCleanupDisk" anymore; only
+    files listed in option "ParIgnoreExt" are ignored;
+  - low-level messages from par2-module are now added to log (as DETAIL);
+  - option "ScriptDir" now accepts multiple directories;
+  - path to original queued nzb-file is now passed to scripts;
+  - hidden files and directories are now ignored by the scanner of incoming nzb
+    directory;
+  - separated disk state files for queue and history for better performance;
+  - improved replacing of invalid characters in file names in certain cases;
+  - automatically removing orphaned diskstate files from QueueDir;
+  - added support for file names with reserved words on Windows;
+  - added several settings to change behavior of web-interface, new section
+    "WEB-INTERFACE" on settings page;
+  - showing various status info in browser window title:
+        - number of downloads, current speed, remaining time, pause state;
+        - new option "WindowTitle";
+  - improved tray icon (Windows) to look better on a dark background;
+  - feed scripts must now return exit codes; this is to prevent queueing of
+    all files from the feed if the feed script crashes;
+  - improved error reporting on DNS lookup errors;
+  - fixed: splitted files were not always joined;
+  - fixed: wrong encoding in file names of downloaded files;
+  - fixed: queue-scripts not called for failed URLs if the scripts were set in
+    category’s option "PostScript";
+  - fixed: crash when executing command "--printconfig";
+  - fixed: error messages when trying to delete intermediate directory on Windows;
+  - fixed: web-ui didn't load in Chrome on iOS;
+  - improved POSIX configure script - now using pkg-config for all required
+    libraries;
+  - improved Windows installer - scripts are now installed into a subdirectory
+    of default "MainDir" (C:\ProgramData\NZBGet\scripts) instead of program's
+    directory;
+  - updated and corrected option descriptions.
+
+nzbget-16.4:
+  - fixed resource (socket) leak which may cause "too many open files"
+    errors with a possible crash.
+
+nzbget-16.3:
+  - fixed: certain downloads may fail due to a bug in the workaround
+    implemented in v16.2.
+
+nzbget-16.2:
+  - implemented workaround to deal with malformed news server responses,
+    which may still contain useful data.
+
+nzbget-16.1:
+  - fixed issues with reverse proxies;
+  - fixed unpack failure on older AMD CPUs, when installed via
+    universal Linux installer;
+  - fixed: when the program was started from setup the default directories
+    were created with wrong permission (Windows only).
 
 nzbget-16.0:
   - moved project hosting to GitHub:
