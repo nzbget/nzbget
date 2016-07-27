@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,130 +14,95 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-#include <sys/stat.h>
-#include <stdio.h>
 
 #include "nzbget.h"
 #include "SchedulerScript.h"
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
-
-SchedulerScriptController::~SchedulerScriptController()
+void SchedulerScriptController::StartScript(const char* param, bool externalProcess, int taskId)
 {
-	free(m_szScript);
-}
-
-void SchedulerScriptController::StartScript(const char* szParam, bool bExternalProcess, int iTaskID)
-{
-	char** argv = NULL;
-	if (bExternalProcess && !Util::SplitCommandLine(szParam, &argv))
+	std::vector<CString> argv;
+	if (externalProcess && (argv = Util::SplitCommandLine(param)).empty())
 	{
-		error("Could not execute scheduled process-script, failed to parse command line: %s", szParam);
+		error("Could not execute scheduled process-script, failed to parse command line: %s", param);
 		return;
 	}
 
-	SchedulerScriptController* pScriptController = new SchedulerScriptController();
+	SchedulerScriptController* scriptController = new SchedulerScriptController();
 
-	pScriptController->m_bExternalProcess = bExternalProcess;
-	pScriptController->m_szScript = strdup(szParam);
-	pScriptController->m_iTaskID = iTaskID;
+	scriptController->m_externalProcess = externalProcess;
+	scriptController->m_script = param;
+	scriptController->m_taskId = taskId;
 
-	if (bExternalProcess)
+	if (externalProcess)
 	{
-		pScriptController->SetScript(argv[0]);
-		pScriptController->SetArgs((const char**)argv, true);
+		scriptController->SetArgs(std::move(argv));
 	}
 
-	pScriptController->SetAutoDestroy(true);
+	scriptController->SetAutoDestroy(true);
 
-	pScriptController->Start();
+	scriptController->Start();
 }
 
 void SchedulerScriptController::Run()
 {
-	if (m_bExternalProcess)
+	if (m_externalProcess)
 	{
 		ExecuteExternalProcess();
 	}
 	else
 	{
-		ExecuteScriptList(m_szScript);
+		ExecuteScriptList(m_script);
 	}
 }
 
-void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* pScript)
+void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
-	if (!pScript->GetSchedulerScript())
+	if (!script->GetSchedulerScript())
 	{
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", pScript->GetName(), m_iTaskID);
+	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", script->GetName(), m_taskId);
 
-	SetScript(pScript->GetLocation());
-	SetArgs(NULL, false);
+	SetArgs({script->GetLocation()});
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "scheduler-script %s for Task%i", pScript->GetName(), m_iTaskID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	BString<1024> infoName("scheduler-script %s for Task%i", script->GetName(), m_taskId);
+	SetInfoName(infoName);
 
-	SetLogPrefix(pScript->GetDisplayName());
-	PrepareParams(pScript->GetName());
+	SetLogPrefix(script->GetDisplayName());
+	PrepareParams(script->GetName());
 
 	Execute();
 
-	SetLogPrefix(NULL);
+	SetLogPrefix(nullptr);
 }
 
-void SchedulerScriptController::PrepareParams(const char* szScriptName)
+void SchedulerScriptController::PrepareParams(const char* scriptName)
 {
 	ResetEnv();
 
-	SetIntEnvVar("NZBSP_TASKID", m_iTaskID);
+	SetIntEnvVar("NZBSP_TASKID", m_taskId);
 
-	PrepareEnvScript(NULL, szScriptName);
+	PrepareEnvScript(nullptr, scriptName);
 }
 
 void SchedulerScriptController::ExecuteExternalProcess()
 {
-	info("Executing scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_iTaskID);
+	info("Executing scheduled process-script %s for Task%i", FileSystem::BaseFileName(GetScript()), m_taskId);
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "scheduled process-script %s for Task%i", Util::BaseFileName(GetScript()), m_iTaskID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	BString<1024> infoName("scheduled process-script %s for Task%i", FileSystem::BaseFileName(GetScript()), m_taskId);
+	SetInfoName(infoName);
 
-	char szLogPrefix[1024];
-	strncpy(szLogPrefix, Util::BaseFileName(GetScript()), 1024);
-	szLogPrefix[1024-1] = '\0';
-	if (char* ext = strrchr(szLogPrefix, '.')) *ext = '\0'; // strip file extension
-	SetLogPrefix(szLogPrefix);
+	BString<1024> logPrefix = FileSystem::BaseFileName(GetScript());
+	if (char* ext = strrchr(logPrefix, '.')) *ext = '\0'; // strip file extension
+	SetLogPrefix(logPrefix);
 
 	Execute();
 }

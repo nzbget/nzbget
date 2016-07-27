@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,34 +15,26 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef LOG_H
 #define LOG_H
 
-#include <deque>
-#include <list>
-#include <time.h>
-
+#include "NString.h"
 #include "Thread.h"
 
-void error(const char* msg, ...);
-void warn(const char* msg, ...);
-void info(const char* msg, ...);
-void detail(const char* msg, ...);
+void error(const char* msg, ...) PRINTF_SYNTAX(1);
+void warn(const char* msg, ...) PRINTF_SYNTAX(1);
+void info(const char* msg, ...) PRINTF_SYNTAX(1);
+void detail(const char* msg, ...) PRINTF_SYNTAX(1);
 
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
-	void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...);
+void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...) PRINTF_SYNTAX(4);
 #else
-	void debug(const char* msg, ...);
+void debug(const char* msg, ...) PRINTF_SYNTAX(1);
 #endif
 #endif
 
@@ -52,68 +44,64 @@ public:
 	enum EKind
 	{
 		mkInfo,
-	    mkWarning,
-	    mkError,
-	    mkDebug,
-	    mkDetail
+		mkWarning,
+		mkError,
+		mkDebug,
+		mkDetail
 	};
 
+	Message(uint32 id, EKind kind, time_t time, const char* text) :
+		m_id(id), m_kind(kind), m_time(time), m_text(text) {}
+	uint32 GetId() { return m_id; }
+	EKind GetKind() { return m_kind; }
+	time_t GetTime() { return m_time; }
+	const char* GetText() { return m_text; }
+
 private:
-	unsigned int		m_iID;
-	EKind				m_eKind;
-	time_t				m_tTime;
-	char*				m_szText;
+	uint32 m_id;
+	EKind m_kind;
+	time_t m_time;
+	CString m_text;
 
 	friend class Log;
-
-public:
-						Message(unsigned int iID, EKind eKind, time_t tTime, const char* szText);
-						~Message();
-	unsigned int		GetID() { return m_iID; }
-	EKind				GetKind() { return m_eKind; }
-	time_t				GetTime() { return m_tTime; }
-	const char*			GetText() { return m_szText; }
 };
 
-typedef std::deque<Message*> MessageListBase;
+typedef std::deque<Message> MessageList;
+typedef GuardedPtr<MessageList> GuardedMessageList;
 
-class MessageList: public MessageListBase
-{
-public:
-						~MessageList();
-	void				Clear();
-};
-
-class Debuggable
-{
-protected:
-	virtual void		LogDebugInfo() = 0;
-	friend class Log;
-};
+class Debuggable;
 
 class Log
 {
 public:
-	typedef std::list<Debuggable*>	Debuggables;
+	Log();
+	~Log();
+	GuardedMessageList GuardMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
+	void Clear();
+	void ResetLog();
+	void InitOptions();
+	void RegisterDebuggable(Debuggable* debuggable);
+	void UnregisterDebuggable(Debuggable* debuggable);
+	void LogDebugInfo();
 
 private:
-	Mutex				m_mutexLog;
-	MessageList			m_Messages;
-	Debuggables			m_Debuggables;
-	Mutex				m_mutexDebug;
-	char*				m_szLogFilename;
-	unsigned int		m_iIDGen;
-	time_t				m_tLastWritten;
-	bool				m_bOptInit;
+	typedef std::list<Debuggable*> Debuggables;
+
+	Mutex m_logMutex;
+	MessageList m_messages;
+	Debuggables m_debuggables;
+	Mutex m_debugMutex;
+	CString m_logFilename;
+	uint32 m_idGen = 0;
+	time_t m_lastWritten = 0;
+	bool m_optInit = false;
 #ifdef DEBUG
-	bool				m_bExtraDebug;
+	bool m_extraDebug;
 #endif
 
-						Log();
-						~Log();
-	void				Filelog(const char* msg, ...);
-	void				AddMessage(Message::EKind eKind, const char* szText);
-	void				RotateLog();
+	void Filelog(const char* msg, ...) PRINTF_SYNTAX(2);
+	void AddMessage(Message::EKind kind, const char* text);
+	void RotateLog();
 
 	friend void error(const char* msg, ...);
 	friend void warn(const char* msg, ...);
@@ -121,33 +109,31 @@ private:
 	friend void detail(const char* msg, ...);
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
-	friend void debug(const char* szFilename, const char* szFuncname, int iLineNr, const char* msg, ...);
-#else	
+	friend void debug(const char* filename, const char* funcname, int lineNr, const char* msg, ...);
+#else
 	friend void debug(const char* msg, ...);
 #endif
 #endif
-	
-public:
-	static void			Init();
-	static void			Final();
-	MessageList*		LockMessages();
-	void				UnlockMessages();
-	void				Clear();
-	void				ResetLog();
-	void				InitOptions();
-	void				RegisterDebuggable(Debuggable* pDebuggable);
-	void				UnregisterDebuggable(Debuggable* pDebuggable);
-	void				LogDebugInfo();
 };
 
 #ifdef DEBUG
 #ifdef HAVE_VARIADIC_MACROS
-#define debug(...)   debug(__FILE__, FUNCTION_MACRO_NAME, __LINE__, __VA_ARGS__)
+#define debug(...) debug(__FILE__, FUNCTION_MACRO_NAME, __LINE__, __VA_ARGS__)
 #endif
 #else
-#define debug(...)   do { } while(0)
+#define debug(...) do { } while(0)
 #endif
 
-extern Log* g_pLog;
+extern Log* g_Log;
+
+class Debuggable
+{
+public:
+	Debuggable() { g_Log->RegisterDebuggable(this); }
+	virtual ~Debuggable() { g_Log->UnregisterDebuggable(this); }
+protected:
+	virtual void LogDebugInfo() = 0;
+	friend class Log;
+};
 
 #endif

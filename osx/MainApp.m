@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #import "MainApp.h"
@@ -415,6 +410,8 @@ void InstallSignalHandlers()
 												  range:NSMakeRange(0, [dir length])];
 	}
 	
+	dir = [[dir componentsSeparatedByCharactersInSet: [NSCharacterSet characterSetWithCharactersInString:@";,"]] objectAtIndex:0];
+
 	if (dir.length == 0 || ![[NSFileManager defaultManager] fileExistsAtPath:dir]) {
 		[NSApp activateIgnoringOtherApps:TRUE];
 		NSAlert *alert = [[NSAlert alloc] init];
@@ -423,7 +420,7 @@ void InstallSignalHandlers()
 		[alert runModal];
 		return;
 	}
-	
+
 	[[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:@[[NSURL fileURLWithPath:dir isDirectory:YES]]];
 }
 

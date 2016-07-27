@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -29,24 +24,24 @@
 #include "Thread.h"
 #include "NzbScript.h"
 
-class PostScriptController : public Thread, public NZBScriptController
+class PostScriptController : public Thread, public NzbScriptController
 {
-private:
-	PostInfo*			m_pPostInfo;
- 	int					m_iPrefixLen;
-	ScriptConfig::Script*	m_pScript;
-
-	void				PrepareParams(const char* szScriptName);
-	ScriptStatus::EStatus	AnalyseExitCode(int iExitCode);
+public:
+	virtual void Run();
+	virtual void Stop();
+	static void StartJob(PostInfo* postInfo);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
-public:
-	virtual void		Run();
-	virtual void		Stop();
-	static void			StartJob(PostInfo* pPostInfo);
+private:
+	PostInfo* m_postInfo;
+	int m_prefixLen;
+	ScriptConfig::Script* m_script;
+
+	void PrepareParams(const char* scriptName);
+	ScriptStatus::EStatus AnalyseExitCode(int exitCode);
 };
 
 #endif

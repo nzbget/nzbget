@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,18 +14,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
+#include "NString.h"
 #include "Connection.h"
 
 class WebProcessor
@@ -38,6 +34,13 @@ public:
 		hmOptions
 	};
 
+	static void Init();
+	void Execute();
+	void SetConnection(Connection* connection) { m_connection = connection; }
+	void SetUrl(const char* url) { m_url = url; }
+	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+
+private:
 	enum EUserAccess
 	{
 		uaControl,
@@ -45,40 +48,30 @@ public:
 		uaAdd
 	};
 
-private:
-	Connection*			m_pConnection;
-	char*				m_szRequest;
-	char*				m_szUrl;
-	EHttpMethod			m_eHttpMethod;
-	EUserAccess			m_eUserAccess;
-	bool				m_bGZip;
-	char*				m_szOrigin;
-	int					m_iContentLen;
-	char				m_szAuthInfo[256+1];
-	char				m_szAuthToken[48+1];
-	static char			m_szServerAuthToken[3][48+1];
+	Connection* m_connection = nullptr;
+	CString m_request;
+	CString m_url;
+	EHttpMethod m_httpMethod;
+	EUserAccess m_userAccess;
+	bool m_gzip;
+	CString m_origin;
+	int m_contentLen;
+	char m_authInfo[256+1];
+	char m_authToken[48+1];
+	static char m_serverAuthToken[3][48+1];
 
-	void				Dispatch();
-	void				SendAuthResponse();
-	void				SendOptionsResponse();
-	void				SendErrorResponse(const char* szErrCode);
-	void				SendFileResponse(const char* szFilename);
-	void				SendBodyResponse(const char* szBody, int iBodyLen, const char* szContentType);
-	void				SendRedirectResponse(const char* szURL);
-	const char*			DetectContentType(const char* szFilename);
-	bool				IsAuthorizedIP(const char* szRemoteAddr);
-	void				ParseHeaders();
-	void				ParseURL();
-	bool				CheckCredentials();
-
-public:
-						WebProcessor();
-						~WebProcessor();
-	static void			Init();
-	void				Execute();
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
-	void				SetUrl(const char* szUrl);
-	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void Dispatch();
+	void SendAuthResponse();
+	void SendOptionsResponse();
+	void SendErrorResponse(const char* errCode, bool printWarning);
+	void SendFileResponse(const char* filename);
+	void SendBodyResponse(const char* body, int bodyLen, const char* contentType);
+	void SendRedirectResponse(const char* url);
+	const char* DetectContentType(const char* filename);
+	bool IsAuthorizedIp(const char* remoteAddr);
+	void ParseHeaders();
+	void ParseUrl();
+	bool CheckCredentials();
 };
 
 #endif

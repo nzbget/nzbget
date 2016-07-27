@@ -1,7 +1,7 @@
 /*
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -65,6 +60,7 @@ var Status = (new function($)
 	var lastAnimState = 0;
 	var playInitialized = false;
 	var modalShown = false;
+	var titleGen = [];
 
 	this.init = function()
 	{
@@ -102,6 +98,7 @@ var Status = (new function($)
 
 		StatDialog.init();
 		FilterMenu.init();
+		initTitle();
 	}
 
 	this.update = function()
@@ -183,9 +180,13 @@ var Status = (new function($)
 
 		$StatusSpeedIcon.toggleClass('icon-plane', !limit);
 		$StatusSpeedIcon.toggleClass('icon-truck', limit);
-		$StatusTime.toggleClass('scheduled-resume', status.ServerStandBy && status.ResumeTime > 0);
-		$StatusTimeIcon.toggleClass('icon-time', !(status.ServerStandBy && status.ResumeTime > 0));
-		$StatusTimeIcon.toggleClass('icon-time-orange', status.ServerStandBy && status.ResumeTime > 0);
+
+		var statWarning = (status.ServerStandBy && status.ResumeTime > 0) || status.QuotaReached;
+		$StatusTime.toggleClass('orange', statWarning);
+		$StatusTimeIcon.toggleClass('icon-time', !statWarning);
+		$StatusTimeIcon.toggleClass('icon-time-orange', statWarning);
+		
+		updateTitle();
 	}
 
 	function updatePlayButton()
@@ -234,7 +235,7 @@ var Status = (new function($)
 		var Anim = (!status.ServerStandBy || status.FeedActive || status.QueueScriptCount > 0 ||
 			(status.PostJobCount > 0 && !status.PostPaused) ||
 			(status.UrlCount > 0 && (!status.DownloadPaused || Options.option('UrlForce') === 'yes'))) &&
-			(UISettings.refreshInterval !== 0) && !UISettings.connectionError;
+			(UISettings.refreshInterval !== 0) && !UISettings.connectionError && UISettings.activityAnimation;
 		if (Anim === lastAnimState)
 		{
 			return;
@@ -242,7 +243,7 @@ var Status = (new function($)
 
 		lastAnimState = Anim;
 
-		if (UISettings.activityAnimation && !modalShown)
+		if (!modalShown)
 		{
 			if (Anim)
 			{
@@ -343,7 +344,6 @@ var Status = (new function($)
 		modalShown = false;
 	}
 
-
 	this.serverName = function(server)
 	{
 		var name = Options.option('Server' + server.ID + '.Name');
@@ -356,6 +356,75 @@ var Status = (new function($)
 		return name;
 	}
 
+	function initTitle()
+	{
+		function format(pattern, paramFunc)
+		{
+			if (UISettings.connectionError)
+			{
+				var value = '?';
+				var isEmpty = false;
+			}
+			else
+			{
+				var param = paramFunc();
+				var value = param[0];
+				var isEmpty = param[1];
+			}
+
+			if (isEmpty && pattern != '%VAR%')
+			{
+				return '';
+			}
+
+			switch (pattern)
+			{
+				case '%VAR%': return value;
+				case '%VAR-%': return '' + value + ' - ';
+				case '%(VAR)%': return '(' + value + ')';
+				case '%(VAR-)%': return '(' + value + ') - ';
+				case '%[VAR]%': return '[' + value + ']';
+				case '%[VAR-]%': return '[' + value + '] - ';
+			}
+			
+			return Downloads.groups.length > 0 ? '' + Downloads.groups.length + ' - ' : '';
+		};
+		
+		function fill(varname, paramFunc)
+		{
+			titleGen['%' + varname + '%'] = function() { return format('%VAR%', paramFunc); };
+			titleGen['%' + varname + '-%'] = function() { return format('%VAR-%', paramFunc); };
+			titleGen['%(' + varname + ')%'] = function() { return format('%(VAR)%', paramFunc); };
+			titleGen['%(' + varname + '-)%'] = function() { return format('%(VAR-)%', paramFunc); };
+			titleGen['%[' + varname + ']%'] = function() { return format('%[VAR]%', paramFunc); };
+			titleGen['%[' + varname + '-]%'] = function() { return format('%[VAR-]%', paramFunc); };
+		}
+
+		fill('COUNT', function() { return [Downloads.groups.length, Downloads.groups.length == 0]; });
+		fill('SPEED', function() { return [$StatusSpeed.text(), status.ServerStandBy]; });
+		fill('TIME', function() { return [$StatusTime.text(), status.ServerStandBy]; });
+		fill('PAUSE', function() { return ['||', !status.DownloadPaused]; });
+	}
+
+	function updateTitle()
+	{
+		var title = UISettings.windowTitle;
+
+		for (var name in titleGen)
+		{
+			if (title.indexOf(name) > -1)
+			{
+				var value = titleGen[name]();
+				console.log(name + '=' + value);
+				title = title.replace(name, value);
+			}
+		}
+
+		title = title.trim();
+
+		window.document.title = title;
+	}
+	this.updateTitle = updateTitle;
 }(jQuery));
 
 
@@ -504,6 +573,12 @@ var StatDialog = (new function($)
 		Util.show('#StatDialog_ArticleCache_Row', Options.option('ArticleCache') !== '0');
 		Util.show('#StatDialog_QueueScripts_Row', Status.status.QueueScriptCount > 0);
 		$StatDialog.removeClass('modal-large').addClass('modal-mini');
+
+		if (Options.option('QuotaStartDay') != '1')
+		{
+			$('#StatDialog_MonthTitle').text('Billing month:');
+		}
+
 		monthListInitialized = false;
 		updateServerList();
 		lastTab = null;
@@ -573,6 +648,11 @@ var StatDialog = (new function($)
 			'<span class="label label-status label-warning">paused</span>' :
 			'<span class="label label-status label-success">active</span>')) +
 			'</td></tr>';
+
+		if (status.QuotaReached)
+		{
+			content += '<tr><td>Download quota</td><td class="text-right"><span class="label label-status label-warning">reached</span></td></tr>';
+		}
 
 		if (status.ResumeTime > 0)
 		{
@@ -1151,47 +1231,11 @@ var StatDialog = (new function($)
 
 	function updateCounters()
 	{
-		if (servervolumes[curServer].DaySlot > -1)
-		{
-			var bytes = servervolumes[curServer].BytesPerDays[servervolumes[curServer].DaySlot];
-			$StatDialog_TodaySize.html(Util.formatSizeMB(bytes.SizeMB, bytes.SizeLo));
-		}
-
+		$StatDialog_TodaySize.html(Util.formatSizeMB(Status.status.DaySizeMB, Status.status.DaySizeLo));
+		$StatDialog_MonthSize.html(Util.formatSizeMB(Status.status.MonthSizeMB, Status.status.MonthSizeLo));
 		$StatDialog_AllTimeSize.html(Util.formatSizeMB(servervolumes[curServer].TotalSizeMB, servervolumes[curServer].TotalSizeLo));
 		$StatDialog_CustomSize.html(Util.formatSizeMB(servervolumes[curServer].CustomSizeMB, servervolumes[curServer].CustomSizeLo));
 		$StatDialog_Custom.attr('title', 'reset on ' + Util.formatDateTime(servervolumes[curServer].CustomTime));
-
-		// calculate volume for current month
-		
-		var sizeMB = 0;
-		var sizeLo = 0;
-
-		if (clockOK)
-		{
-			var firstDay = servervolumes[0].FirstDay;
-			var monStart = dayToDate(firstDay + servervolumes[0].DaySlot);
-			monStart.setDate(1);
-			var monEnd = new Date(monStart.getFullYear(), monStart.getMonth() + 1);
-			monEnd.setDate(0);
-			
-			monStart = dateToDay(monStart);
-			monEnd = dateToDay(monEnd);
-			var monStartIndex = monStart - firstDay;
-			var monEndIndex = monEnd - firstDay;
-			var slotDelta = servervolumes[0].FirstDay - servervolumes[curServer].FirstDay;
-			for (var i = monStartIndex; i <= monEndIndex; i++)
-			{
-				var slot = i + slotDelta;
-				var bytes = servervolumes[curServer].BytesPerDays[slot];
-				if (bytes)
-				{
-					sizeMB += bytes.SizeMB;
-					sizeLo += bytes.SizeLo;
-				}
-			}
-		}
-
-		$StatDialog_MonthSize.html(Util.formatSizeMB(sizeMB, sizeLo));
 	}
 
 	function chooseMonth()

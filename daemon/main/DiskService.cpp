@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,31 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
 
 #include "nzbget.h"
 #include "DiskService.h"
@@ -46,29 +24,23 @@
 #include "StatMeter.h"
 #include "Log.h"
 #include "Util.h"
-
-DiskService::DiskService()
-{
-	m_iInterval = 0;
-	m_bWaitingReported = false;
-	m_bWaitingRequiredDir = true;
-}
+#include "FileSystem.h"
 
 void DiskService::ServiceWork()
 {
-	m_iInterval++;
-	if (m_iInterval == 5)
+	m_interval++;
+	if (m_interval == 5)
 	{
-		if (!g_pOptions->GetPauseDownload() && 
-			g_pOptions->GetDiskSpace() > 0 && !g_pStatMeter->GetStandBy())
+		if (!g_Options->GetPauseDownload() &&
+			g_Options->GetDiskSpace() > 0 && !g_StatMeter->GetStandBy())
 		{
 			// check free disk space every 1 second
 			CheckDiskSpace();
 		}
-		m_iInterval = 0;
+		m_interval = 0;
 	}
 
-	if (m_bWaitingRequiredDir)
+	if (m_waitingRequiredDir)
 	{
 		CheckRequiredDir();
 	}
@@ -76,56 +48,56 @@ void DiskService::ServiceWork()
 
 void DiskService::CheckDiskSpace()
 {
-	long long lFreeSpace = Util::FreeDiskSize(g_pOptions->GetDestDir());
-	if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+	int64 freeSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
+	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 	{
-		warn("Low disk space on %s. Pausing download", g_pOptions->GetDestDir());
-		g_pOptions->SetPauseDownload(true);
+		warn("Low disk space on %s. Pausing download", g_Options->GetDestDir());
+		g_Options->SetPauseDownload(true);
 	}
 
-	if (!Util::EmptyStr(g_pOptions->GetInterDir()))
+	if (!Util::EmptyStr(g_Options->GetInterDir()))
 	{
-		lFreeSpace = Util::FreeDiskSize(g_pOptions->GetInterDir());
-		if (lFreeSpace > -1 && lFreeSpace / 1024 / 1024 < g_pOptions->GetDiskSpace())
+		freeSpace = FileSystem::FreeDiskSize(g_Options->GetInterDir());
+		if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 		{
-			warn("Low disk space on %s. Pausing download", g_pOptions->GetInterDir());
-			g_pOptions->SetPauseDownload(true);
+			warn("Low disk space on %s. Pausing download", g_Options->GetInterDir());
+			g_Options->SetPauseDownload(true);
 		}
 	}
 }
 
 void DiskService::CheckRequiredDir()
 {
-	if (!Util::EmptyStr(g_pOptions->GetRequiredDir()))
+	if (!Util::EmptyStr(g_Options->GetRequiredDir()))
 	{
-		bool bAllExist = true;
-		bool bWasWaitingReported = m_bWaitingReported;
+		bool allExist = true;
+		bool wasWaitingReported = m_waitingReported;
 		// split RequiredDir into tokens
-		Tokenizer tok(g_pOptions->GetRequiredDir(), ",;");
-		while (const char* szDir = tok.Next())
+		Tokenizer tok(g_Options->GetRequiredDir(), ",;");
+		while (const char* dir = tok.Next())
 		{
-			if (!Util::FileExists(szDir) && !Util::DirectoryExists(szDir))
+			if (!FileSystem::FileExists(dir) && !FileSystem::DirectoryExists(dir))
 			{
-				if (!bWasWaitingReported)
+				if (!wasWaitingReported)
 				{
-					info("Waiting for required directory %s", szDir);
-					m_bWaitingReported = true;
+					info("Waiting for required directory %s", dir);
+					m_waitingReported = true;
 				}
-				bAllExist = false;
+				allExist = false;
 			}
 		}
-		if (!bAllExist)
+		if (!allExist)
 		{
 			return;
 		}
 	}
 
-	if (m_bWaitingReported)
+	if (m_waitingReported)
 	{
 		info("All required directories available");
 	}
 
-	g_pOptions->SetTempPauseDownload(false);
-	g_pOptions->SetTempPausePostprocess(false);
-	m_bWaitingRequiredDir = false;
+	g_Options->SetTempPauseDownload(false);
+	g_Options->SetTempPausePostprocess(false);
+	m_waitingRequiredDir = false;
 }

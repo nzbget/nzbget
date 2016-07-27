@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,48 +15,29 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
+#include "nzbget.h"
 #include "Observer.h"
 #include "Log.h"
 
-Subject::Subject()
+void Subject::Attach(Observer* observer)
 {
-	m_Observers.clear();
+	m_observers.push_back(observer);
 }
 
-void Subject::Attach(Observer* pObserver)
+void Subject::Detach(Observer* observer)
 {
-	m_Observers.push_back(pObserver);
+	m_observers.erase(std::find(m_observers.begin(), m_observers.end(), observer));
 }
 
-void Subject::Detach(Observer* pObserver)
-{
-	m_Observers.remove(pObserver);
-}
-
-void Subject::Notify(void* pAspect)
+void Subject::Notify(void* aspect)
 {
 	debug("Notifying observers");
-	
-	for (std::list<Observer*>::iterator it = m_Observers.begin(); it != m_Observers.end(); it++)
+
+	for (Observer* observer : m_observers)
 	{
-        Observer* Observer = *it;
-		Observer->Update(this, pAspect);
+		observer->Update(this, aspect);
 	}
 }

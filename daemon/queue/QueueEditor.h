@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,69 +14,60 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef QUEUEEDITOR_H
 #define QUEUEEDITOR_H
 
-#include <vector>
-
 #include "DownloadInfo.h"
 
 class QueueEditor
 {
 public:
+	bool EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text);
+	bool EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action, int offset, const char* text);
+
+private:
 	class EditItem
 	{
 	public:
-		int			m_iOffset;
-		FileInfo*	m_pFileInfo;
-		NZBInfo*	m_pNZBInfo;
+		int m_offset;
+		FileInfo* m_fileInfo;
+		NzbInfo* m_nzbInfo;
 
-		EditItem(FileInfo* pFileInfo, NZBInfo* pNZBInfo, int iOffset);
+		EditItem(FileInfo* fileInfo, NzbInfo* nzbInfo, int offset) :
+			m_fileInfo(fileInfo), m_nzbInfo(nzbInfo), m_offset(offset) {}
 	};
 
-	typedef std::vector<EditItem*> ItemList;
+	typedef std::vector<EditItem> ItemList;
 
-private:
-	DownloadQueue*			m_pDownloadQueue;
+	DownloadQueue* m_downloadQueue;
 
-private:
-	FileInfo*				FindFileInfo(int iID);
-	bool					InternEditList(ItemList* pItemList, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	void					PrepareList(ItemList* pItemList, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset);
-	bool					BuildIDListFromNameList(IDList* pIDList, NameList* pNameList, DownloadQueue::EMatchMode eMatchMode, DownloadQueue::EEditAction eAction);
-	bool					EditGroup(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	void					PauseParsInGroups(ItemList* pItemList, bool bExtraParsOnly);
-	void					PausePars(FileList* pFileList, bool bExtraParsOnly);
-	void					SetNZBPriority(NZBInfo* pNZBInfo, const char* szPriority);
-	void					SetNZBCategory(NZBInfo* pNZBInfo, const char* szCategory, bool bApplyParams);
-	void					SetNZBName(NZBInfo* pNZBInfo, const char* szName);
-	bool					CanCleanupDisk(NZBInfo* pNZBInfo);
-	bool					MergeGroups(ItemList* pItemList);
-	bool					SortGroups(ItemList* pItemList, const char* szSort);
-	bool					SplitGroup(ItemList* pItemList, const char* szName);
-	bool					DeleteUrl(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction);
-	void					ReorderFiles(ItemList* pItemList);
-	void					SetNZBParameter(NZBInfo* pNZBInfo, const char* szParamString);
-	void					SetNZBDupeParam(NZBInfo* pNZBInfo, DownloadQueue::EEditAction eAction, const char* szText);
-	void					PauseUnpauseEntry(FileInfo* pFileInfo, bool bPause);
-	void					DeleteEntry(FileInfo* pFileInfo);
-	void					MoveEntry(FileInfo* pFileInfo, int iOffset);
-	void					MoveGroup(NZBInfo* pNZBInfo, int iOffset);
+	FileInfo* FindFileInfo(int id);
+	bool InternEditList(ItemList* itemList, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
+	void PrepareList(ItemList* itemList, IdList* idList, DownloadQueue::EEditAction action, int offset);
+	bool BuildIdListFromNameList(IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action);
+	bool EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, int offset, const char* text);
+	void PauseParsInGroups(ItemList* itemList, bool extraParsOnly);
+	void PausePars(RawFileList* fileList, bool extraParsOnly);
+	void SetNzbPriority(NzbInfo* nzbInfo, const char* priority);
+	void SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool applyParams);
+	void SetNzbName(NzbInfo* nzbInfo, const char* name);
+	bool MergeGroups(ItemList* itemList);
+	bool SortGroups(ItemList* itemList, const char* sort);
+	bool SplitGroup(ItemList* itemList, const char* name);
+	bool DeleteUrl(NzbInfo* nzbInfo, DownloadQueue::EEditAction action);
+	void ReorderFiles(ItemList* itemList);
+	void SetNzbParameter(NzbInfo* nzbInfo, const char* paramString);
+	void SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, const char* text);
+	void PauseUnpauseEntry(FileInfo* fileInfo, bool pause);
+	void DeleteEntry(FileInfo* fileInfo);
+	void MoveEntry(FileInfo* fileInfo, int offset);
+	void MoveGroup(NzbInfo* nzbInfo, int offset);
 
-public:
-							QueueEditor();                
-							~QueueEditor();
-	bool					EditEntry(DownloadQueue* pDownloadQueue, int ID, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	bool					EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, NameList* pNameList, DownloadQueue::EMatchMode eMatchMode, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
+	friend class GroupSorter;
 };
 
 #endif

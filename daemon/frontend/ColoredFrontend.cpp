@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,29 +15,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
 
 #include "nzbget.h"
 #include "ColoredFrontend.h"
@@ -45,119 +25,104 @@
 
 ColoredFrontend::ColoredFrontend()
 {
-	m_bSummary = true;
-	m_bNeedGoBack = false;
+	m_summary = true;
 #ifdef WIN32
-	m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	m_console = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif
 }
 
 void ColoredFrontend::BeforePrint()
 {
-	if (m_bNeedGoBack)
+	if (m_needGoBack)
 	{
 		// go back one line
 #ifdef WIN32
 		CONSOLE_SCREEN_BUFFER_INFO BufInfo;
-		GetConsoleScreenBufferInfo(m_hConsole, &BufInfo);
+		GetConsoleScreenBufferInfo(m_console, &BufInfo);
 		BufInfo.dwCursorPosition.Y--;
-		SetConsoleCursorPosition(m_hConsole, BufInfo.dwCursorPosition);
+		SetConsoleCursorPosition(m_console, BufInfo.dwCursorPosition);
 #else
 		printf("\r\033[1A");
 #endif
-		m_bNeedGoBack = false;
+		m_needGoBack = false;
 	}
 }
 
 void ColoredFrontend::PrintStatus()
 {
-	char tmp[1024];
-	char timeString[100];
-	timeString[0] = '\0';
-	int iCurrentDownloadSpeed = m_bStandBy ? 0 : m_iCurrentDownloadSpeed;
+	BString<100> timeString;
+	int currentDownloadSpeed = m_standBy ? 0 : m_currentDownloadSpeed;
 
-	if (iCurrentDownloadSpeed > 0 && !m_bPauseDownload)
+	if (currentDownloadSpeed > 0 && !m_pauseDownload)
 	{
-		long long remain_sec = (long long)(m_lRemainingSize / iCurrentDownloadSpeed);
+		int64 remain_sec = (int64)(m_remainingSize / currentDownloadSpeed);
 		int h = (int)(remain_sec / 3600);
 		int m = (int)((remain_sec % 3600) / 60);
 		int s = (int)(remain_sec % 60);
-		sprintf(timeString, " (~ %.2d:%.2d:%.2d)", h, m, s);
+		timeString.Format(" (~ %.2d:%.2d:%.2d)", h, m, s);
 	}
 
-	char szDownloadLimit[128];
-	if (m_iDownloadLimit > 0)
+	BString<100> downloadLimit;
+	if (m_downloadLimit > 0)
 	{
-		sprintf(szDownloadLimit, ", Limit %i KB/s", m_iDownloadLimit / 1024);
-	}
-	else
-	{
-		szDownloadLimit[0] = 0;
+		downloadLimit.Format(", Limit %i KB/s", m_downloadLimit / 1024);
 	}
 
-    char szPostStatus[128];
-    if (m_iPostJobCount > 0)
-    {
-        sprintf(szPostStatus, ", %i post-job%s", m_iPostJobCount, m_iPostJobCount > 1 ? "s" : "");
-    }
-    else
-    {
-        szPostStatus[0] = 0;
-    }
+	BString<100> postStatus;
+	if (m_postJobCount > 0)
+	{
+		postStatus.Format(", %i post-job%s", m_postJobCount, m_postJobCount > 1 ? "s" : "");
+	}
 
 #ifdef WIN32
-	char* szControlSeq = "";
+	const char* controlSeq = "";
 #else
 	printf("\033[s");
-	const char* szControlSeq = "\033[K";
+	const char* controlSeq = "\033[K";
 #endif
 
-	char szFileSize[20];
-	char szCurrendSpeed[20];
-	snprintf(tmp, 1024, " %d threads, %s, %s remaining%s%s%s%s%s\n",
-		m_iThreadCount, Util::FormatSpeed(szCurrendSpeed, sizeof(szCurrendSpeed), iCurrentDownloadSpeed),
-		Util::FormatSize(szFileSize, sizeof(szFileSize), m_lRemainingSize),
-		timeString, szPostStatus, m_bPauseDownload ? (m_bStandBy ? ", Paused" : ", Pausing") : "",
-		szDownloadLimit, szControlSeq);
-	tmp[1024-1] = '\0';
-	printf("%s", tmp);
-	m_bNeedGoBack = true;
-} 
+	BString<1024> status(" %d threads, %s, %s remaining%s%s%s%s%s\n",
+		m_threadCount, *Util::FormatSpeed(currentDownloadSpeed),
+		*Util::FormatSize(m_remainingSize), *timeString, *postStatus,
+		m_pauseDownload ? (m_standBy ? ", Paused" : ", Pausing") : "",
+		*downloadLimit, controlSeq);
+	printf("%s", *status);
+	m_needGoBack = true;
+}
 
-void ColoredFrontend::PrintMessage(Message * pMessage)
+void ColoredFrontend::PrintMessage(Message& message)
 {
 #ifdef WIN32
-	switch (pMessage->GetKind())
+	switch (message.GetKind())
 	{
 		case Message::mkDebug:
-			SetConsoleTextAttribute(m_hConsole, 8);
+			SetConsoleTextAttribute(m_console, 8);
 			printf("[DEBUG]");
 			break;
 		case Message::mkError:
-			SetConsoleTextAttribute(m_hConsole, 4);
+			SetConsoleTextAttribute(m_console, 4);
 			printf("[ERROR]");
-			break; 
+			break;
 		case Message::mkWarning:
-			SetConsoleTextAttribute(m_hConsole, 5);
+			SetConsoleTextAttribute(m_console, 5);
 			printf("[WARNING]");
 			break;
 		case Message::mkInfo:
-			SetConsoleTextAttribute(m_hConsole, 2);
+			SetConsoleTextAttribute(m_console, 2);
 			printf("[INFO]");
 			break;
 		case Message::mkDetail:
-			SetConsoleTextAttribute(m_hConsole, 2);
+			SetConsoleTextAttribute(m_console, 2);
 			printf("[DETAIL]");
 			break;
 	}
-	SetConsoleTextAttribute(m_hConsole, 7);
-	char* msg = strdup(pMessage->GetText());
+	SetConsoleTextAttribute(m_console, 7);
+	CString msg = message.GetText();
 	CharToOem(msg, msg);
-	printf(" %s\n", msg);
-	free(msg);
+	printf(" %s\n", *msg);
 #else
-	const char* msg = pMessage->GetText();
-	switch (pMessage->GetKind())
+	const char* msg = message.GetText();
+	switch (message.GetKind())
 	{
 		case Message::mkDebug:
 			printf("[DEBUG] %s\033[K\n", msg);

@@ -1,7 +1,7 @@
 /*
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -128,6 +123,7 @@ var Downloads = (new function($)
 	function groups_loaded(_groups)
 	{
 		groups = _groups;
+		Downloads.groups = groups;
 		prepare();
 		RPC.next();
 	}
@@ -524,7 +520,7 @@ var Downloads = (new function($)
 			}
 		};
 
-		DownloadsUI.deleteConfirm(deleteGroups, true, hasNzb, hasUrl);
+		DownloadsUI.deleteConfirm(deleteGroups, true, hasNzb, hasUrl, downloadIDs.length);
 	}
 
 	this.moveClick = function(action)
@@ -777,10 +773,11 @@ var DownloadsUI = (new function($)
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
 	{
 		dupeKey = dupeKey.replace('rageid=', '');
+		dupeKey = dupeKey.replace('tvdbid=', '');
+		dupeKey = dupeKey.replace('tvmazeid=', '');
 		dupeKey = dupeKey.replace('imdb=', '');
 		dupeKey = dupeKey.replace('series=', '');
 		dupeKey = dupeKey.replace('nzb=', '#');
-		dupeKey = dupeKey.replace('=', ' ');
 		dupeKey = dupeKey === '' ? 'title' : dupeKey;
 		return dupeKey;
 	}
@@ -857,10 +854,9 @@ var DownloadsUI = (new function($)
 		return categoryColumnWidth;
 	}
 
-	this.deleteConfirm = function(actionCallback, multi, hasNzb, hasUrl)
+	this.deleteConfirm = function(actionCallback, multi, hasNzb, hasUrl, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
-		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
 		var history = Options.option('KeepHistory') !== '0';
 		var dialog = null;
 
@@ -875,27 +871,26 @@ var DownloadsUI = (new function($)
 				$('#ConfirmDialog_Text').html(html);
 			}
 
-			$('#DownloadsDeleteConfirmDialog_Delete', dialog).prop('checked', true);
-			$('#DownloadsDeleteConfirmDialog_Delete', dialog).prop('checked', true);
+			$('#DownloadsDeleteConfirmDialog_DeletePark', dialog).prop('checked', true);
+			$('#DownloadsDeleteConfirmDialog_DeleteDirect', dialog).prop('checked', false);
 			$('#DownloadsDeleteConfirmDialog_DeleteDupe', dialog).prop('checked', false);
 			$('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).prop('checked', false);
 			Util.show($('#DownloadsDeleteConfirmDialog_Options', dialog), history);
 			Util.show($('#DownloadsDeleteConfirmDialog_Simple', dialog), !history);
 			Util.show($('#DownloadsDeleteConfirmDialog_DeleteDupe,#DownloadsDeleteConfirmDialog_DeleteDupeLabel', dialog), dupeCheck && hasNzb);
-			Util.show($('#DownloadsDeleteConfirmDialog_Remain', dialog), !cleanupDisk && hasNzb);
-			Util.show($('#DownloadsDeleteConfirmDialog_Cleanup', dialog), cleanupDisk && hasNzb);
 			Util.show('#ConfirmDialog_Help', history && dupeCheck && hasNzb);
 		};
 
 		function action()
 		{
-			var deleteNormal = $('#DownloadsDeleteConfirmDialog_Delete', dialog).is(':checked');
+			var deletePark = $('#DownloadsDeleteConfirmDialog_DeletePark', dialog).is(':checked');
+			var deleteDirect = $('#DownloadsDeleteConfirmDialog_DeleteDirect', dialog).is(':checked');
 			var deleteDupe = $('#DownloadsDeleteConfirmDialog_DeleteDupe', dialog).is(':checked');
 			var deleteFinal = $('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).is(':checked');
-			var command = deleteNormal ? 'GroupDelete' : (deleteDupe ? 'GroupDupeDelete' : 'GroupFinalDelete');
+			var command = deletePark ? "GroupParkDelete" : (deleteDirect ? 'GroupDelete' : (deleteDupe ? 'GroupDupeDelete' : 'GroupFinalDelete'));
 			actionCallback(command);
 		}
 
-		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init);
+		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init, selCount);
 	}
 }(jQuery));

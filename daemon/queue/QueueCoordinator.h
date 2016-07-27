@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,91 +15,83 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef QUEUECOORDINATOR_H
 #define QUEUECOORDINATOR_H
 
-#include <deque>
-#include <list>
-
 #include "Log.h"
 #include "Thread.h"
-#include "NZBFile.h"
+#include "NzbFile.h"
 #include "ArticleDownloader.h"
 #include "DownloadInfo.h"
 #include "Observer.h"
 #include "QueueEditor.h"
-#include "NNTPConnection.h"
-                                            
+#include "NntpConnection.h"
+
 class QueueCoordinator : public Thread, public Observer, public Debuggable
 {
 public:
-	typedef std::list<ArticleDownloader*>	ActiveDownloads;
+	typedef std::list<ArticleDownloader*> ActiveDownloads;
+
+	QueueCoordinator();
+	virtual ~QueueCoordinator();
+	virtual void Run();
+	virtual void Stop();
+	void Update(Subject* Caller, void* Aspect);
+
+	// editing queue
+	NzbInfo* AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, NzbInfo* urlInfo, bool addFirst);
+	void CheckDupeFileInfos(NzbInfo* nzbInfo);
+	bool HasMoreJobs() { return m_hasMoreJobs; }
+	void DiscardTempFiles(FileInfo* fileInfo);
+	bool DeleteQueueEntry(DownloadQueue* downloadQueue, FileInfo* fileInfo);
+	bool SetQueueEntryCategory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* category);
+	bool SetQueueEntryName(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* name);
+	bool MergeQueueEntries(DownloadQueue* downloadQueue, NzbInfo* destNzbInfo, NzbInfo* srcNzbInfo);
+	bool SplitQueueEntries(DownloadQueue* downloadQueue, RawFileList* fileList, const char* name, NzbInfo** newNzbInfo);
+
+protected:
+	virtual void LogDebugInfo();
 
 private:
 	class CoordinatorDownloadQueue : public DownloadQueue
 	{
-	private:
-		QueueCoordinator*	m_pOwner;
-		bool				m_bMassEdit;
-		bool				m_bWantSave;
-		friend class QueueCoordinator;
 	public:
-							CoordinatorDownloadQueue(): m_bMassEdit(false), m_bWantSave(false) {}
-		virtual bool		EditEntry(int ID, EEditAction eAction, int iOffset, const char* szText);
-		virtual bool		EditList(IDList* pIDList, NameList* pNameList, EMatchMode eMatchMode, EEditAction eAction, int iOffset, const char* szText);
-		virtual void		Save();
+		virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text);
+		virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode,
+			EEditAction action, int offset, const char* text);
+		virtual void HistoryChanged() { m_historyChanged = true; }
+		virtual void Save();
+	private:
+		QueueCoordinator* m_owner;
+		bool m_massEdit = false;
+		bool m_wantSave = false;
+		bool m_historyChanged = false;
+		friend class QueueCoordinator;
 	};
 
-private:
-	CoordinatorDownloadQueue	m_DownloadQueue;
-	ActiveDownloads				m_ActiveDownloads;
-	QueueEditor					m_QueueEditor;
-	bool						m_bHasMoreJobs;
-	int							m_iDownloadsLimit;
-	int							m_iServerConfigGeneration;
+	CoordinatorDownloadQueue m_downloadQueue;
+	ActiveDownloads m_activeDownloads;
+	QueueEditor m_queueEditor;
+	bool m_hasMoreJobs = true;
+	int m_downloadsLimit;
+	int m_serverConfigGeneration = 0;
 
-	bool					GetNextArticle(DownloadQueue* pDownloadQueue, FileInfo* &pFileInfo, ArticleInfo* &pArticleInfo);
-	void					StartArticleDownload(FileInfo* pFileInfo, ArticleInfo* pArticleInfo, NNTPConnection* pConnection);
-	void					ArticleCompleted(ArticleDownloader* pArticleDownloader);
-	void					DeleteFileInfo(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bCompleted);
-	void					StatFileInfo(FileInfo* pFileInfo, bool bCompleted);
-	void					CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
-	void					ResetHangingDownloads();
-	void					AdjustDownloadsLimit();
-	void					Load();
-	void					SavePartialState();
-
-protected:
-	virtual void			LogDebugInfo();
-
-public:
-							QueueCoordinator();                
-	virtual					~QueueCoordinator();
-	virtual void			Run();
-	virtual void 			Stop();
-	void					Update(Subject* Caller, void* Aspect);
-
-	// editing queue
-	void					AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, bool bAddFirst);
-	void					CheckDupeFileInfos(NZBInfo* pNZBInfo);
-	bool					HasMoreJobs() { return m_bHasMoreJobs; }
-	void					DiscardDiskFile(FileInfo* pFileInfo);
-	bool					DeleteQueueEntry(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo);
-	bool					SetQueueEntryCategory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szCategory);
-	bool					SetQueueEntryName(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szName);
-	bool					MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo* pDestNZBInfo, NZBInfo* pSrcNZBInfo);
-	bool					SplitQueueEntries(DownloadQueue* pDownloadQueue, FileList* pFileList, const char* szName, NZBInfo** pNewNZBInfo);
+	bool GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
+	void StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);
+	void ArticleCompleted(ArticleDownloader* articleDownloader);
+	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
+	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
+	void ResetHangingDownloads();
+	void AdjustDownloadsLimit();
+	void Load();
+	void SavePartialState();
+	void LoadPartialState(FileInfo* fileInfo);
 };
 
-extern QueueCoordinator* g_pQueueCoordinator;
+extern QueueCoordinator* g_QueueCoordinator;
 
 #endif

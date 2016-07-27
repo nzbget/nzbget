@@ -20,6 +20,9 @@
 #ifndef __VERIFICATIONPACKET_H__
 #define __VERIFICATIONPACKET_H__
 
+namespace Par2
+{
+
 // The file verification packet stores details that allow individual blocks
 // of valid data within a damaged file to be identified.
 
@@ -77,5 +80,6 @@ inline const FILEVERIFICATIONENTRY* VerificationPacket::VerificationEntry(u32 bl
   return &((FILEVERIFICATIONPACKET*)packetdata)->entries[blocknumber];
 }
 
+} // end namespace Par2
 
 #endif // __VERIFICATIONPACKET_H__

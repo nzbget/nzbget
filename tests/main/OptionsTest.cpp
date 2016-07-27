@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,71 +14,50 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
+#include "nzbget.h"
 
 #include "catch.h"
 
-#include "nzbget.h"
 #include "Options.h"
 
 class OptionsExtenderMock : public Options::Extender
 {
 public:
-	int					m_iNewsServers;
-	int					m_iFeeds;
-	int					m_iTasks;
+	int m_newsServers;
+	int m_feeds;
+	int m_tasks;
+
+	OptionsExtenderMock() : m_newsServers(0), m_feeds(0), m_tasks(0) {}
 
 protected:
-	virtual void		AddNewsServer(int iID, bool bActive, const char* szName, const char* szHost,
-							int iPort, const char* szUser, const char* szPass, bool bJoinGroup,
-							bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
-							int iLevel, int iGroup)
+	virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
+		int port, const char* user, const char* pass, bool joinGroup, bool tls,
+		const char* cipher, int maxConnections, int retention, int level, int group, bool optional)
 	{
-		m_iNewsServers++;
+		m_newsServers++;
 	}
 
-	virtual void		AddFeed(int iID, const char* szName, const char* szUrl, int iInterval,
-							const char* szFilter, bool bBacklog, bool bPauseNzb, const char* szCategory, int iPriority, const char* szFeedScript)
+	virtual void AddFeed(int id, const char* name, const char* url, int interval,
+		const char* filter, bool backlog, bool pauseNzb, const char* category, int priority, const char* feedScript)
 	{
-		m_iFeeds++;
+		m_feeds++;
 	}
 
-	virtual void		AddTask(int iID, int iHours, int iMinutes, int iWeekDaysBits, Options::ESchedulerCommand eCommand, const char* szParam)
+	virtual void AddTask(int id, int hours, int minutes, int weekDaysBits, Options::ESchedulerCommand command, const char* param)
 	{
-		m_iTasks++;
+		m_tasks++;
 	}
-
-public:
-						OptionsExtenderMock() : m_iNewsServers(0), m_iFeeds(0), m_iTasks(0) {}
 };
 
 TEST_CASE("Options: initializing without configuration file", "[Options][Quick]")
 {
-	Options options(NULL, NULL);
+	Options options(nullptr, nullptr);
 
-	REQUIRE(options.GetConfigFilename() == NULL);
+	REQUIRE(options.GetConfigFilename() == nullptr);
 #ifdef WIN32
 	REQUIRE(strcmp(options.GetTempDir(), "nzbget/tmp") == 0);
 #else
@@ -92,9 +71,9 @@ TEST_CASE("Options: passing command line options", "[Options][Quick]")
 	cmdOpts.push_back("ControlUsername=my-user-name-1");
 	cmdOpts.push_back("ControlUsername=my-user-name-2");
 
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
-	REQUIRE(options.GetConfigFilename() == NULL);
+	REQUIRE(options.GetConfigFilename() == nullptr);
 	REQUIRE(strcmp(options.GetControlUsername(), "my-user-name-2") == 0);
 }
 
@@ -118,7 +97,7 @@ TEST_CASE("Options: calling extender", "[Options][Quick]")
 	OptionsExtenderMock extender;
 	Options options(&cmdOpts, &extender);
 
-	REQUIRE(extender.m_iNewsServers == 2);
-	REQUIRE(extender.m_iFeeds == 1);
-	REQUIRE(extender.m_iTasks == 24);
+	REQUIRE(extender.m_newsServers == 2);
+	REQUIRE(extender.m_feeds == 1);
+	REQUIRE(extender.m_tasks == 24);
 }

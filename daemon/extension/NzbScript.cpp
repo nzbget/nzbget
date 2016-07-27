@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,109 +14,70 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-#include <sys/stat.h>
-#include <stdio.h>
-#include <algorithm>
 
 #include "nzbget.h"
 #include "NzbScript.h"
 #include "Options.h"
 #include "Log.h"
-#include "Util.h"
+#include "FileSystem.h"
 
-		 
 /**
- * If szStripPrefix is not NULL, only pp-parameters, whose names start with the prefix
+ * If szStripPrefix is not nullptr, only pp-parameters, whose names start with the prefix
  * are processed. The prefix is then stripped from the names.
- * If szStripPrefix is NULL, all pp-parameters are processed; without stripping.
+ * If szStripPrefix is nullptr, all pp-parameters are processed; without stripping.
  */
-void NZBScriptController::PrepareEnvParameters(NZBParameterList* pParameters, const char* szStripPrefix)
+void NzbScriptController::PrepareEnvParameters(NzbParameterList* parameters, const char* stripPrefix)
 {
-	int iPrefixLen = szStripPrefix ? strlen(szStripPrefix) : 0;
+	int prefixLen = stripPrefix ? strlen(stripPrefix) : 0;
 
-	for (NZBParameterList::iterator it = pParameters->begin(); it != pParameters->end(); it++)
+	for (NzbParameter& parameter : parameters)
 	{
-		NZBParameter* pParameter = *it;
-		const char* szValue = pParameter->GetValue();
-		
-#ifdef WIN32
-		char* szAnsiValue = strdup(szValue);
-		WebUtil::Utf8ToAnsi(szAnsiValue, strlen(szAnsiValue) + 1);
-		szValue = szAnsiValue;
-#endif
+		const char* value = parameter.GetValue();
 
-		if (szStripPrefix && !strncmp(pParameter->GetName(), szStripPrefix, iPrefixLen) && (int)strlen(pParameter->GetName()) > iPrefixLen)
+		if (stripPrefix && !strncmp(parameter.GetName(), stripPrefix, prefixLen) && (int)strlen(parameter.GetName()) > prefixLen)
 		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName() + iPrefixLen, szValue);
+			SetEnvVarSpecial("NZBPR", parameter.GetName() + prefixLen, value);
 		}
-		else if (!szStripPrefix)
+		else if (!stripPrefix)
 		{
-			SetEnvVarSpecial("NZBPR", pParameter->GetName(), szValue);
+			SetEnvVarSpecial("NZBPR", parameter.GetName(), value);
 		}
-
-#ifdef WIN32
-		free(szAnsiValue);
-#endif
 	}
 }
 
-void NZBScriptController::PrepareEnvScript(NZBParameterList* pParameters, const char* szScriptName)
+void NzbScriptController::PrepareEnvScript(NzbParameterList* parameters, const char* scriptName)
 {
-	if (pParameters)
+	if (parameters)
 	{
-		PrepareEnvParameters(pParameters, NULL);
+		PrepareEnvParameters(parameters, nullptr);
 	}
 
-	char szParamPrefix[1024];
-	snprintf(szParamPrefix, 1024, "%s:", szScriptName);
-	szParamPrefix[1024-1] = '\0';
+	BString<1024> paramPrefix("%s:", scriptName);
 
-	if (pParameters)
+	if (parameters)
 	{
-		PrepareEnvParameters(pParameters, szParamPrefix);
+		PrepareEnvParameters(parameters, paramPrefix);
 	}
 
-	PrepareEnvOptions(szParamPrefix);
+	PrepareEnvOptions(paramPrefix);
 }
 
-void NZBScriptController::ExecuteScriptList(const char* szScriptList)
+void NzbScriptController::ExecuteScriptList(const char* scriptList)
 {
-	for (ScriptConfig::Scripts::iterator it = g_pScriptConfig->GetScripts()->begin(); it != g_pScriptConfig->GetScripts()->end(); it++)
+	for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
 	{
-		ScriptConfig::Script* pScript = *it;
-
-		if (szScriptList && *szScriptList)
+		if (scriptList && *scriptList)
 		{
 			// split szScriptList into tokens
-			Tokenizer tok(szScriptList, ",;");
-			while (const char* szScriptName = tok.Next())
+			Tokenizer tok(scriptList, ",;");
+			while (const char* scriptName = tok.Next())
 			{
-				if (Util::SameFilename(szScriptName, pScript->GetName()))
+				if (FileSystem::SameFilename(scriptName, script.GetName()))
 				{
-					ExecuteScript(pScript);
+					ExecuteScript(&script);
 					break;
 				}
 			}

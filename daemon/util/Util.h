@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,23 +14,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef UTIL_H
 #define UTIL_H
 
-#ifdef DIRBROWSER_SNAPSHOT
-#include <deque>
-#endif
-#include <time.h>
-#include <stdarg.h>
+#include "NString.h"
 
 #ifdef WIN32
 extern int optind, opterr;
@@ -38,319 +29,225 @@ extern char *optarg;
 int getopt(int argc, char *argv[], char *optstring);
 #endif
 
-class DirBrowser
-{
-private:
-#ifdef WIN32
-	WIN32_FIND_DATA		m_FindData;
-	HANDLE				m_hFile;
-	bool				m_bFirst;
-#else
-	void*				m_pDir;    // DIR*, declared as void* to avoid including of <dirent>
-	struct dirent*		m_pFindData;
-#endif
-
-#ifdef DIRBROWSER_SNAPSHOT
-	bool				m_bSnapshot;
-	typedef std::deque<char*>	FileList;
-	FileList			m_Snapshot;
-	FileList::iterator	m_itSnapshot;
-#endif
-
-public:
-#ifdef DIRBROWSER_SNAPSHOT
-						DirBrowser(const char* szPath, bool bSnapshot = true);
-#else
-						DirBrowser(const char* szPath);
-#endif
-						~DirBrowser();
-	const char*			Next();
-};
-
-class StringBuilder
-{
-private:
-	char*				m_szBuffer;
-	int					m_iBufferSize;
-	int					m_iUsedSize;
-	int					m_iGrowSize;
-
-	void				Reserve(int iSize);
-
-public:
-						StringBuilder();
-						~StringBuilder();
-	void				Append(const char* szStr);
-	void				AppendFmt(const char* szFormat, ...);
-	void				AppendFmtV(const char* szFormat, va_list ap);
-	const char*			GetBuffer() { return m_szBuffer; }
-	void				SetGrowSize(int iGrowSize) { m_iGrowSize = iGrowSize; }
-	int					GetUsedSize() { return m_iUsedSize; }
-	void				Clear();
-};
-
 class Util
 {
 public:
-	static char* BaseFileName(const char* filename);
-	static void NormalizePathSeparators(char* szPath);
-	static bool LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength);
-	static bool SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen);
-	static bool CreateSparseFile(const char* szFilename, long long iSize);
-	static bool TruncateFile(const char* szFilename, int iSize);
-	static void MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes);
-	static bool MakeUniqueFilename(char* szDestBufFilename, int iDestBufSize, const char* szDestDir, const char* szBasename);
-	static bool MoveFile(const char* szSrcFilename, const char* szDstFilename);
-	static bool CopyFile(const char* szSrcFilename, const char* szDstFilename);
-	static bool FileExists(const char* szFilename);
-	static bool FileExists(const char* szPath, const char* szFilenameWithoutPath);
-	static bool DirectoryExists(const char* szDirFilename);
-	static bool CreateDirectory(const char* szDirFilename);
-	static bool RemoveDirectory(const char* szDirFilename);
-	static bool DeleteDirectoryWithContent(const char* szDirFilename, char* szErrBuf, int iBufSize);
-	static bool ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize);
-	static bool GetCurrentDirectory(char* szBuffer, int iBufSize);
-	static bool SetCurrentDirectory(const char* szDirFilename);
-	static long long FileSize(const char* szFilename);
-	static long long FreeDiskSize(const char* szPath);
-	static bool DirEmpty(const char* szDirFilename);
-	static bool RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize);
-#ifndef WIN32
-	static bool ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize);
-	static void FixExecPermission(const char* szFilename);
-#endif
-	static void ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize);
-	static void GetExeFileName(const char* argv0, char* szBuffer, int iBufSize);
-	static char* FormatSpeed(char* szBuffer, int iBufSize, int iBytesPerSecond);
-	static char* FormatSize(char* szBuffer, int iBufLen, long long lFileSize);
-	static bool SameFilename(const char* szFilename1, const char* szFilename2);
-	static bool MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator);
-	static char* GetLastErrorMessage(char* szBuffer, int iBufLen);
-	static long long GetCurrentTicks();
-
-	/* Flush disk buffers for file with given descriptor */
-	static bool FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize);
-
-	/* Flush disk buffers for file metadata (after file renaming) */
-	static bool FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize);
+	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
+	static int64 GetCurrentTicks();
 
 	/*
-	 * Split command line int arguments.
-	 * Uses spaces and single quotation marks as separators.
-	 * Returns bool if sucessful or false if bad escaping was detected.
-	 * Parameter "argv" may be NULL if only a syntax check is needed.
-	 * Parsed parameters returned in Array "argv", which contains at least one element.
-	 * The last element in array is NULL.
-	 * Restrictions: the number of arguments is limited to 100 and each arguments must
-	 * be maximum 1024 chars long.
-	 * If these restrictions are exceeded, only first 100 arguments and only first 1024
-	 * for each argument are returned (the functions still returns "true").
-	 */
-	static bool SplitCommandLine(const char* szCommandLine, char*** argv);
+	* Split command line into arguments.
+	* Uses spaces and single quotation marks as separators.
+	* May return empty list if bad escaping was detected.
+	*/
+	static std::vector<CString> SplitCommandLine(const char* commandLine);
 
-	static long long JoinInt64(unsigned long Hi, unsigned long Lo);
-	static void SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo);
+	static int64 JoinInt64(uint32 Hi, uint32 Lo);
+	static void SplitInt64(int64 Int64, uint32* Hi, uint32* Lo);
 
-	static void TrimRight(char* szStr);
-	static char* Trim(char* szStr);
-	static bool EmptyStr(const char* szStr) { return !szStr || !*szStr; }
+	static void TrimRight(char* str);
+	static char* Trim(char* str);
+	static bool EmptyStr(const char* str) { return !str || !*str; }
+	static std::vector<CString> SplitStr(const char* str, const char* separators);
 
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
-	static char* ReduceStr(char* szStr, const char* szFrom, const char* szTo);
+	static char* ReduceStr(char* str, const char* from, const char* to);
 
 	/* Calculate Hash using Bob Jenkins (1996) algorithm */
-	static unsigned int HashBJ96(const char* szBuffer, int iBufSize, unsigned int iInitValue);
+	static uint32 HashBJ96(const char* buffer, int bufSize, uint32 initValue);
 
 #ifdef WIN32
-	static bool RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen);
+	static bool RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, char* buffer, int* bufLen);
 #endif
 
-	static void SetStandByMode(bool bStandBy);
+	static void SetStandByMode(bool standBy);
+
+	static time_t CurrentTime();
 
 	/* cross platform version of GNU timegm, which is similar to mktime but takes an UTC time as parameter */
 	static time_t Timegm(tm const *t);
 
+	static void FormatTime(time_t timeSec, char* buffer, int bufsize);
+	static CString FormatTime(time_t timeSec);
+
+	static CString FormatSpeed(int bytesPerSecond);
+	static CString FormatSize(int64 fileSize);
+
 	/*
-	 * Returns program version and revision number as string formatted like "0.7.0-r295".
-	 * If revision number is not available only version is returned ("0.7.0").
-	 */
+	* Returns program version and revision number as string formatted like "0.7.0-r295".
+	* If revision number is not available only version is returned ("0.7.0").
+	*/
 	static const char* VersionRevision() { return VersionRevisionBuf; };
-	
+
 	static char VersionRevisionBuf[100];
 
 	static void Init();
 
-	static unsigned long Crc32(unsigned char *block, unsigned long length);
-	static unsigned long Crc32m(unsigned long startCrc, unsigned char *block, unsigned long length);
-	static unsigned long Crc32Combine(unsigned long crc1, unsigned long crc2, unsigned long len2);
+	static uint32 Crc32(uchar *block, uint32 length);
+	static uint32 Crc32m(uint32 startCrc, uchar *block, uint32 length);
+	static uint32 Crc32Combine(uint32 crc1, uint32 crc2, uint32 len2);
 
 	/*
-	 * Returns number of available CPU cores or -1 if it could not be determined
-	 */
+	* Returns number of available CPU cores or -1 if it could not be determined
+	*/
 	static int NumberOfCpuCores();
 };
 
 class WebUtil
 {
 public:
-	static unsigned int DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer);
+	static uint32 DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer);
 
 	/*
-	 * Encodes string to be used as content of xml-tag.
-	 * Returns new string allocated with malloc, it need to be freed by caller.
-	 */
-	static char* XmlEncode(const char* raw);
+	* Encodes string to be used as content of xml-tag.
+	*/
+	static CString XmlEncode(const char* raw);
 
 	/*
-	 * Decodes string from xml.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
+	* Decodes string from xml.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
 	static void XmlDecode(char* raw);
 
 	/*
-	 * Returns pointer to tag-content and length of content in iValueLength
-	 * The returned pointer points to the part of source-string, no additional strings are allocated.
-	 */
-	static const char* XmlFindTag(const char* szXml, const char* szTag, int* pValueLength);
+	* Returns pointer to tag-content and length of content in iValueLength
+	* The returned pointer points to the part of source-string, no additional strings are allocated.
+	*/
+	static const char* XmlFindTag(const char* xml, const char* tag, int* valueLength);
 
 	/*
-	 * Parses tag-content into szValueBuf.
-	 */
-	static bool XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd);
+	* Parses tag-content into szValueBuf.
+	*/
+	static bool XmlParseTagValue(const char* xml, const char* tag, char* valueBuf, int valueBufSize, const char** tagEnd);
 
 	/*
-	 * Replaces all tags with spaces effectively providing the text content only.
-	 * The string is transformed in-place overwriting the previous content.
-	 */
-	static void XmlStripTags(char* szXml);
+	* Replaces all tags with spaces effectively providing the text content only.
+	* The string is transformed in-place overwriting the previous content.
+	*/
+	static void XmlStripTags(char* xml);
 
 	/*
-	 * Replaces all entities with spaces.
-	 * The string is transformed in-place overwriting the previous content.
-	 */
+	* Replaces all entities with spaces.
+	* The string is transformed in-place overwriting the previous content.
+	*/
 	static void XmlRemoveEntities(char* raw);
 
 	/*
-	 * Creates JSON-string by replace the certain characters with escape-sequences.
-	 * Returns new string allocated with malloc, it need to be freed by caller.
-	 */
-	static char* JsonEncode(const char* raw);
+	* Creates JSON-string by replace the certain characters with escape-sequences.
+	*/
+	static CString JsonEncode(const char* raw);
 
 	/*
-	 * Decodes JSON-string.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
+	* Decodes JSON-string.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
 	static void JsonDecode(char* raw);
 
 	/*
-	 * Returns pointer to field-content and length of content in iValueLength
-	 * The returned pointer points to the part of source-string, no additional strings are allocated.
-	 */
-	static const char* JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength);
+	* Returns pointer to field-content and length of content in iValueLength
+	* The returned pointer points to the part of source-string, no additional strings are allocated.
+	*/
+	static const char* JsonFindField(const char* jsonText, const char* fieldName, int* valueLength);
 
 	/*
-	 * Returns pointer to field-content and length of content in iValueLength
-	 * The returned pointer points to the part of source-string, no additional strings are allocated.
-	 */
-	static const char* JsonNextValue(const char* szJsonText, int* pValueLength);
+	* Returns pointer to field-content and length of content in iValueLength
+	* The returned pointer points to the part of source-string, no additional strings are allocated.
+	*/
+	static const char* JsonNextValue(const char* jsonText, int* valueLength);
 
 	/*
-	 * Unquote http quoted string.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
+	* Unquote http quoted string.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
 	static void HttpUnquote(char* raw);
 
 	/*
-	 * Decodes URL-string.
-	 * The string is decoded on the place overwriting the content of raw-data.
-	 */
-	static void URLDecode(char* raw);
+	* Decodes URL-string.
+	* The string is decoded on the place overwriting the content of raw-data.
+	*/
+	static void UrlDecode(char* raw);
 
 	/*
-	 * Makes valid URL by replacing of spaces with "%20".
-	 * Returns new string allocated with malloc, it need to be freed by caller.
-	 */
-	static char* URLEncode(const char* raw);
-
-#ifdef WIN32
-	static bool Utf8ToAnsi(char* szBuffer, int iBufLen);
-	static bool AnsiToUtf8(char* szBuffer, int iBufLen);
-#endif
+	* Makes valid URL by replacing of spaces with "%20".
+	*/
+	static CString UrlEncode(const char* raw);
 
 	/*
-	 * Converts ISO-8859-1 (aka Latin-1) into UTF-8.
-	 * Returns new string allocated with malloc, it needs to be freed by caller.
-	 */
-	static char* Latin1ToUtf8(const char* szStr);
+	* Converts ISO-8859-1 (aka Latin-1) into UTF-8.
+	*/
+	static CString Latin1ToUtf8(const char* str);
 
-	static time_t ParseRfc822DateTime(const char* szDateTimeStr);
+	static time_t ParseRfc822DateTime(const char* dateTimeStr);
 };
 
 class URL
 {
-private:
-	char*				m_szAddress;
-	char*				m_szProtocol;
-	char*				m_szUser;
-	char*				m_szPassword;
-	char*				m_szHost;
-	char*				m_szResource;
-	int					m_iPort;
-	bool				m_bTLS;
-	bool				m_bValid;
-	void				ParseURL();
-
 public:
-	 					URL(const char* szAddress);
-						~URL();
-	bool				IsValid() { return m_bValid; }
-	const char*			GetAddress() { return m_szAddress; }
-	const char*			GetProtocol() { return m_szProtocol; }
-	const char*			GetUser() { return m_szUser; }
-	const char*			GetPassword() { return m_szPassword; }
-	const char*			GetHost() { return m_szHost; }
-	const char*			GetResource() { return m_szResource; }
-	int					GetPort() { return m_iPort; }
-	bool				GetTLS() { return m_bTLS; }
+	URL(const char* address);
+	bool IsValid() { return m_valid; }
+	const char* GetAddress() { return m_address; }
+	const char* GetProtocol() { return m_protocol; }
+	const char* GetUser() { return m_user; }
+	const char* GetPassword() { return m_password; }
+	const char* GetHost() { return m_host; }
+	const char* GetResource() { return m_resource; }
+	int GetPort() { return m_port; }
+	bool GetTls() { return m_tls; }
+
+private:
+	CString m_address;
+	CString m_protocol;
+	CString m_user;
+	CString m_password;
+	CString m_host;
+	CString m_resource;
+	int m_port = 0;
+	bool m_tls = false;
+	bool m_valid = false;
+
+	void ParseUrl();
 };
 
 class RegEx
 {
-private:
-	void*				m_pContext;
-	bool				m_bValid;
-	void*				m_pMatches;
-	int					m_iMatchBufSize;
-
 public:
-						RegEx(const char *szPattern, int iMatchBufSize = 100);
-						~RegEx();
-	bool				IsValid() { return m_bValid; }
-	bool				Match(const char *szStr);
-	int					GetMatchCount();
-	int					GetMatchStart(int index);
-	int					GetMatchLen(int index);
+	RegEx(const char *pattern, int matchBufSize = 100);
+	~RegEx();
+	bool IsValid() { return m_valid; }
+	bool Match(const char* str);
+	int GetMatchCount();
+	int GetMatchStart(int index);
+	int GetMatchLen(int index);
+
+private:
+#ifdef HAVE_REGEX_H
+	regex_t m_context;
+	std::unique_ptr<regmatch_t[]> m_matches;
+#endif
+	bool m_valid;
+	int m_matchBufSize;
 };
 
 class WildMask
 {
-private:
-	char*				m_szPattern;
-	bool				m_bWantsPositions;
-	int					m_iWildCount;
-	int*				m_WildStart;
-	int*				m_WildLen;
-	int					m_iArrLen;
-
-	void				ExpandArray();
-
 public:
-						WildMask(const char *szPattern, bool bWantsPositions = false);
-						~WildMask();
-	bool				Match(const char *szStr);
-	int					GetMatchCount() { return m_iWildCount; }
-	int					GetMatchStart(int index) { return m_WildStart[index]; }
-	int					GetMatchLen(int index) { return m_WildLen[index]; }
+	WildMask(const char* pattern, bool wantsPositions = false):
+		m_pattern(pattern), m_wantsPositions(wantsPositions) {}
+	bool Match(const char* text);
+	int GetMatchCount() { return m_wildCount; }
+	int GetMatchStart(int index) { return m_wildStart[index]; }
+	int GetMatchLen(int index) { return m_wildLen[index]; }
+
+private:
+	typedef std::vector<int> IntList;
+
+	CString m_pattern;
+	bool m_wantsPositions;
+	int m_wildCount;
+	IntList m_wildStart;
+	IntList m_wildLen;
+
+	void ExpandArray();
 };
 
 #ifndef DISABLE_GZIP
@@ -358,14 +255,15 @@ class ZLib
 {
 public:
 	/*
-	 * calculates the size required for output buffer
-	 */
-	static unsigned int GZipLen(int iInputBufferLength);
-	
+	* calculates the size required for output buffer
+	*/
+	static uint32 GZipLen(int inputBufferLength);
+
 	/*
-	 * returns the size of bytes written to szOutputBuffer or 0 if the buffer is too small or an error occured.
-	 */
-	static unsigned int GZip(const void* szInputBuffer, int iInputBufferLength, void* szOutputBuffer, int iOutputBufferLength);
+	* compresses inputBuffer and returns the size of bytes written to
+	* outputBuffer or 0 if the buffer is too small or an error occured.
+	*/
+	static uint32 GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength);
 };
 
 class GUnzipStream
@@ -378,43 +276,42 @@ public:
 		zlOK
 	};
 
+	GUnzipStream(int BufferSize);
+	~GUnzipStream();
+
+	/*
+	* set next memory block for uncompression
+	*/
+	void Write(const void *inputBuffer, int inputBufferLength);
+
+	/*
+	* get next uncompressed memory block.
+	* iOutputBufferLength - the size of uncompressed block. if it is "0" the next compressed block must be provided via "Write".
+	*/
+	EStatus Read(const void **outputBuffer, int *outputBufferLength);
+
 private:
-	void*				m_pZStream;
-	void*				m_pOutputBuffer;
-	int					m_iBufferSize;
-
-public:
-						GUnzipStream(int BufferSize);
-						~GUnzipStream();
-
-	/*
-	 * set next memory block for uncompression
-	 */
-	void				Write(const void *pInputBuffer, int iInputBufferLength);
-
-	/*
-	 * get next uncompressed memory block.
-	 * iOutputBufferLength - the size of uncompressed block. if it is "0" the next compressed block must be provided via "Write".
-	 */
-	EStatus				Read(const void **pOutputBuffer, int *iOutputBufferLength);
+	z_stream m_zStream = {0};
+	std::unique_ptr<Bytef[]> m_outputBuffer;
+	int m_bufferSize;
+	bool m_active = false;
 };
 #endif
 
 class Tokenizer
 {
-private:
-	char				m_szDefaultBuf[2014];
-	char*				m_szDataString;
-	bool				m_bInplaceBuf;
-	const char*			m_szSeparators;
-	char*				m_szSavePtr;
-	bool				m_bWorking;
-
 public:
-						Tokenizer(const char* szDataString, const char* szSeparators);
-						Tokenizer(char* szDataString, const char* szSeparators, bool bInplaceBuf);
-						~Tokenizer();
-	char*				Next();
+	Tokenizer(const char* dataString, const char* separators);
+	Tokenizer(char* dataString, const char* separators, bool inplaceBuf);
+	char* Next();
+
+private:
+	BString<1024> m_shortString;
+	CString m_longString;
+	char* m_dataString;
+	const char* m_separators;
+	char* m_savePtr = nullptr;
+	bool m_working = false;
 };
 
 #endif

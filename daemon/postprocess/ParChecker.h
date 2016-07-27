@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -28,12 +23,13 @@
 
 #ifndef DISABLE_PARCHECK
 
-#include <deque>
-#include <vector>
-#include <string>
-
+#include "NString.h"
+#include "Container.h"
 #include "Thread.h"
+#include "FileSystem.h"
 #include "Log.h"
+
+class Repairer;
 
 class ParChecker : public Thread
 {
@@ -54,6 +50,70 @@ public:
 		ptVerifyingRepaired,
 	};
 
+	class AbstractRepairer
+	{
+	public:
+		virtual ~AbstractRepairer() {};
+		virtual Repairer* GetRepairer() = 0;
+	};
+
+	virtual ~ParChecker();
+	virtual void Run();
+	void SetDestDir(const char* destDir) { m_destDir = destDir; }
+	const char* GetParFilename() { return m_parFilename; }
+	const char* GetInfoName() { return m_infoName; }
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	void SetNzbName(const char* nzbName) { m_nzbName = nzbName; }
+	void SetParQuick(bool parQuick) { m_parQuick = parQuick; }
+	bool GetParQuick() { return m_parQuick; }
+	void SetForceRepair(bool forceRepair) { m_forceRepair = forceRepair; }
+	bool GetForceRepair() { return m_forceRepair; }
+	void SetParFull(bool parFull) { m_parFull = parFull; }
+	bool GetParFull() { return m_parFull; }
+	EStatus GetStatus() { return m_status; }
+	void AddParFile(const char* parFilename);
+	void QueueChanged();
+	void Cancel();
+	bool GetCancelled() { return m_cancelled; }
+
+protected:
+	class Segment
+	{
+	public:
+		Segment(bool success, int64 offset, int size, uint32 crc) :
+			m_success(success), m_offset(offset), m_size(size), m_crc(crc) {}
+		bool GetSuccess() { return m_success; }
+		int64 GetOffset() { return m_offset; }
+		int GetSize() { return m_size; }
+		uint32 GetCrc() { return m_crc; }
+
+	private:
+		bool m_success;
+		int64 m_offset;
+		int m_size;
+		uint32 m_crc;
+	};
+
+	typedef std::deque<Segment> SegmentList;
+
+	class DupeSource
+	{
+	public:
+		DupeSource(int id, const char* directory) :
+			m_id(id), m_directory(directory) {}
+		int GetId() { return m_id; }
+		const char* GetDirectory() { return m_directory; }
+		int GetUsedBlocks() { return m_usedBlocks; }
+		void SetUsedBlocks(int usedBlocks) { m_usedBlocks = usedBlocks; }
+
+	private:
+		int m_id;
+		CString m_directory;
+		int m_usedBlocks = 0;
+	};
+
+	typedef std::deque<DupeSource> DupeSourceList;
+
 	enum EFileStatus
 	{
 		fsUnknown,
@@ -62,153 +122,106 @@ public:
 		fsFailure
 	};
 
-	class Segment
-	{
-	private:
-		bool				m_bSuccess;
-		long long			m_iOffset;
-		int					m_iSize;
-		unsigned long		m_lCrc;
-
-	public:
-							Segment(bool bSuccess, long long iOffset, int iSize, unsigned long lCrc);
-		bool 				GetSuccess() { return m_bSuccess; }
-		long long			GetOffset() { return m_iOffset; }
-		int 				GetSize() { return m_iSize; }
-		unsigned long		GetCrc() { return m_lCrc; }
-	};
-
-	typedef std::deque<Segment*>	SegmentListBase;
-
-	class SegmentList : public SegmentListBase
-	{
-	public:
-							~SegmentList();
-	};
-
-	class DupeSource
-	{
-	private:
-		int					m_iID;
-		char*				m_szDirectory;
-		int					m_iUsedBlocks;
-
-	public:
-							DupeSource(int iID, const char* szDirectory);
-							~DupeSource();
-		int					GetID() { return m_iID; }
-		const char*			GetDirectory() { return m_szDirectory; }
-		int					GetUsedBlocks() { return m_iUsedBlocks; }
-		void				SetUsedBlocks(int iUsedBlocks) { m_iUsedBlocks = iUsedBlocks; }
-	};
-
-	typedef std::deque<DupeSource*>	DupeSourceList;
-
-	typedef std::deque<char*>		FileList;
-	typedef std::deque<void*>		SourceList;
-	typedef std::vector<bool>		ValidBlocks;
-
-	friend class Repairer;
-	
-private:
-	char*				m_szInfoName;
-	char*				m_szDestDir;
-	char*				m_szNZBName;
-	const char*			m_szParFilename;
-	EStatus				m_eStatus;
-	EStage				m_eStage;
-	// declared as void* to prevent the including of libpar2-headers into this header-file
-	void*				m_pRepairer;
-	char*				m_szErrMsg;
-	FileList			m_QueuedParFiles;
-	Mutex			 	m_mutexQueuedParFiles;
-	bool				m_bQueuedParFilesChanged;
-	FileList			m_ProcessedFiles;
-	int					m_iProcessedFiles;
-	int					m_iFilesToRepair;
-	int					m_iExtraFiles;
-	int					m_iQuickFiles;
-	bool				m_bVerifyingExtraFiles;
-	char*				m_szProgressLabel;
-	int					m_iFileProgress;
-	int					m_iStageProgress;
-	bool				m_bCancelled;
-	SourceList			m_sourceFiles;
-	std::string			m_lastFilename;
-	bool				m_bHasDamagedFiles;
-	bool				m_bParQuick;
-	bool				m_bForceRepair;
-	bool				m_bParFull;
-	DupeSourceList		m_DupeSources;
-
-	void				Cleanup();
-	EStatus				RunParCheckAll();
-	EStatus				RunParCheck(const char* szParFilename);
-	int					PreProcessPar();
-	bool				LoadMainParBak();
-	int					ProcessMorePars();
-	bool				LoadMorePars();
-	bool				AddSplittedFragments();
-	bool				AddMissingFiles();
-	bool				AddDupeFiles();
-	bool				AddExtraFiles(bool bOnlyMissing, bool bExternalDir, const char* szDirectory);
-	bool				IsProcessedFile(const char* szFilename);
-	void				WriteBrokenLog(EStatus eStatus);
-	void				SaveSourceList();
-	void				DeleteLeftovers();
-	void				signal_filename(std::string str);
-	void				signal_progress(int progress);
-	void				signal_done(std::string str, int available, int total);
-	// declared as void* to prevent the including of libpar2-headers into this header-file
-	// DiskFile* pDiskfile, Par2RepairerSourceFile* pSourcefile
-	EFileStatus			VerifyDataFile(void* pDiskfile, void* pSourcefile, int* pAvailableBlocks);
-	bool				VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsigned long lDownloadCrc);
-	bool				VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, SegmentList* pSegments, ValidBlocks* pValidBlocks);
-	bool				SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, SegmentList* pSegments,
-							unsigned long* pDownloadCrc);
-	bool				DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc);
-	void				CheckEmptyFiles();
-
-protected:
 	/**
 	* Unpause par2-files
 	* returns true, if the files with required number of blocks were unpaused,
 	* or false if there are no more files in queue for this collection or not enough blocks
 	*/
-	virtual bool		RequestMorePars(int iBlockNeeded, int* pBlockFound) = 0;
-	virtual void		UpdateProgress() {}
-	virtual void		Completed() {}
-	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
-	virtual void		RegisterParredFile(const char* szFilename) {}
-	virtual bool		IsParredFile(const char* szFilename) { return false; }
-	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments) { return fsUnknown; }
-	virtual void		RequestDupeSources(DupeSourceList* pDupeSourceList) {}
-	virtual void		StatDupeSources(DupeSourceList* pDupeSourceList) {}
-	EStage				GetStage() { return m_eStage; }
-	const char*			GetProgressLabel() { return m_szProgressLabel; }
-	int					GetFileProgress() { return m_iFileProgress; }
-	int					GetStageProgress() { return m_iStageProgress; }
+	virtual bool RequestMorePars(int blockNeeded, int* blockFound) = 0;
+	virtual void UpdateProgress() {}
+	virtual void Completed() {}
+	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
+	virtual void RegisterParredFile(const char* filename) {}
+	virtual bool IsParredFile(const char* filename) { return false; }
+	virtual EFileStatus FindFileCrc(const char* filename, uint32* crc, SegmentList* segments) { return fsUnknown; }
+	virtual void RequestDupeSources(DupeSourceList* dupeSourceList) {}
+	virtual void StatDupeSources(DupeSourceList* dupeSourceList) {}
+	EStage GetStage() { return m_stage; }
+	const char* GetProgressLabel() { return m_progressLabel; }
+	int GetFileProgress() { return m_fileProgress; }
+	int GetStageProgress() { return m_stageProgress; }
 
-public:
-						ParChecker();
-	virtual				~ParChecker();
-	virtual void		Run();
-	void				SetDestDir(const char* szDestDir);
-	const char*			GetParFilename() { return m_szParFilename; }
-	const char*			GetInfoName() { return m_szInfoName; }
-	void				SetInfoName(const char* szInfoName);
-	void				SetNZBName(const char* szNZBName);
-	void				SetParQuick(bool bParQuick) { m_bParQuick = bParQuick; }
-	bool				GetParQuick() { return m_bParQuick; }
-	void				SetForceRepair(bool bForceRepair) { m_bForceRepair = bForceRepair; }
-	bool				GetForceRepair() { return m_bForceRepair; }
-	void				SetParFull(bool bParFull) { m_bParFull = bParFull; }
-	bool				GetParFull() { return m_bParFull; }
-	EStatus				GetStatus() { return m_eStatus; }
-	void				AddParFile(const char* szParFilename);
-	void				QueueChanged();
-	void				Cancel();
-	bool				GetCancelled() { return m_bCancelled; }
+private:
+	class StreamBuf : public std::streambuf
+	{
+	public:
+		StreamBuf(ParChecker* owner, Message::EKind kind) : m_owner(owner), m_kind(kind) {}
+		virtual int overflow(int ch) override;
+	private:
+		ParChecker* m_owner;
+		Message::EKind m_kind;
+		StringBuilder m_buffer;
+	};
+
+	typedef std::deque<CString> FileList;
+	typedef std::deque<void*> SourceList;
+	typedef std::vector<bool> ValidBlocks;
+
+	CString m_infoName;
+	CString m_destDir;
+	CString m_nzbName;
+	const char* m_parFilename = nullptr;
+	EStatus m_status = psFailed;
+	EStage m_stage;
+	CString m_errMsg;
+	FileList m_queuedParFiles;
+	Mutex m_queuedParFilesMutex;
+	bool m_queuedParFilesChanged;
+	FileList m_processedFiles;
+	int m_processedCount;
+	int m_filesToRepair;
+	int m_extraFiles;
+	int m_quickFiles;
+	bool m_verifyingExtraFiles;
+	CString m_progressLabel;
+	int m_fileProgress;
+	int m_stageProgress;
+	bool m_cancelled;
+	SourceList m_sourceFiles;
+	std::string m_lastFilename;
+	bool m_hasDamagedFiles;
+	bool m_parQuick = false;
+	bool m_forceRepair = false;
+	bool m_parFull = false;
+	DupeSourceList m_dupeSources;
+	StreamBuf m_parOutStream{this, Message::mkDetail};
+	StreamBuf m_parErrStream{this, Message::mkError};
+
+	// "m_repairer" should be of type "Par2::Par2Repairer", however to prevent the
+	// including of libpar2-headers into this header-file we use an empty abstract class.
+	std::unique_ptr<AbstractRepairer> m_repairer;
+	Repairer* GetRepairer() { return m_repairer->GetRepairer(); }
+
+	void Cleanup();
+	EStatus RunParCheckAll();
+	EStatus RunParCheck(const char* parFilename);
+	int PreProcessPar();
+	bool LoadMainParBak();
+	int ProcessMorePars();
+	bool LoadMorePars();
+	bool AddSplittedFragments();
+	bool AddMissingFiles();
+	bool AddDupeFiles();
+	bool AddExtraFiles(bool onlyMissing, bool externalDir, const char* directory);
+	bool IsProcessedFile(const char* filename);
+	void WriteBrokenLog(EStatus status);
+	void SaveSourceList();
+	void DeleteLeftovers();
+	void signal_filename(std::string str);
+	void signal_progress(int progress);
+	void signal_done(std::string str, int available, int total);
+	// declared as void* to prevent the including of libpar2-headers into this header-file
+	// Par2::DiskFile* pDiskfile, Par2::Par2RepairerSourceFile* pSourcefile
+	EFileStatus VerifyDataFile(void* diskfile, void* sourcefile, int* availableBlocks);
+	bool VerifySuccessDataFile(void* diskfile, void* sourcefile, uint32 downloadCrc);
+	bool VerifyPartialDataFile(void* diskfile, void* sourcefile, SegmentList* segments, ValidBlocks* validBlocks);
+	void SortExtraFiles(void* extrafiles);
+	bool SmartCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, SegmentList* segments,
+		uint32* downloadCrc);
+	bool DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, uint32* downloadCrc);
+	void CheckEmptyFiles();
+
+	friend class Repairer;
 };
 
 #endif

@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,35 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <string.h>
-#include <list>
-#ifdef WIN32
-#include <comutil.h>
-#import <msxml.tlb> named_guids 
-using namespace MSXML;
-#else
-#include <libxml/parser.h>
-#include <libxml/xmlreader.h>
-#include <libxml/xmlerror.h>
-#include <libxml/entities.h>
-#endif
 
 #include "nzbget.h"
 #include "FeedFile.h"
@@ -51,49 +25,28 @@ using namespace MSXML;
 #include "Options.h"
 #include "Util.h"
 
-FeedFile::FeedFile(const char* szFileName)
+FeedFile::FeedFile(const char* fileName) :
+	m_fileName(fileName)
 {
-    debug("Creating FeedFile");
+	debug("Creating FeedFile");
 
-    m_szFileName = strdup(szFileName);
-	m_pFeedItemInfos = new FeedItemInfos();
-	m_pFeedItemInfos->Retain();
+	m_feedItems = std::make_unique<FeedItemList>();
 
 #ifndef WIN32
-	m_pFeedItemInfo = NULL;
-	m_szTagContent = NULL;
-	m_iTagContentLen = 0;
-#endif
-}
-
-FeedFile::~FeedFile()
-{
-	debug("Destroying FeedFile");
-
-	// Cleanup
-	free(m_szFileName);
-	m_pFeedItemInfos->Release();
-
-#ifndef WIN32
-	delete m_pFeedItemInfo;
-	free(m_szTagContent);
+	m_feedItemInfo = nullptr;
+	m_tagContent.Clear();
 #endif
 }
 
 void FeedFile::LogDebugInfo()
 {
-    info(" FeedFile %s", m_szFileName);
+	info(" FeedFile %s", *m_fileName);
 }
 
-void FeedFile::AddItem(FeedItemInfo* pFeedItemInfo)
+void FeedFile::ParseSubject(FeedItemInfo& feedItemInfo)
 {
-	m_pFeedItemInfos->Add(pFeedItemInfo);
-}
-
-void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
-{
-	// if title has quatation marks we use only part within quatation marks 
-	char* p = (char*)pFeedItemInfo->GetTitle();
+	// if title has quatation marks we use only part within quatation marks
+	char* p = (char*)feedItemInfo.GetTitle();
 	char* start = strchr(p, '\"');
 	if (start)
 	{
@@ -105,9 +58,7 @@ void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
 			char* point = strchr(start + 1, '.');
 			if (point && point < end)
 			{
-				char* filename = (char*)malloc(len + 1);
-				strncpy(filename, start, len);
-				filename[len] = '\0';
+				CString filename(start, len);
 
 				char* ext = strrchr(filename, '.');
 				if (ext && !strcasecmp(ext, ".par2"))
@@ -115,81 +66,87 @@ void FeedFile::ParseSubject(FeedItemInfo* pFeedItemInfo)
 					*ext = '\0';
 				}
 
-				pFeedItemInfo->SetFilename(filename);
-				free(filename);
+				feedItemInfo.SetFilename(filename);
 				return;
 			}
 		}
 	}
 
-	pFeedItemInfo->SetFilename(pFeedItemInfo->GetTitle());
+	feedItemInfo.SetFilename(feedItemInfo.GetTitle());
 }
 
 #ifdef WIN32
-FeedFile* FeedFile::Create(const char* szFileName)
+bool FeedFile::Parse()
 {
-    CoInitialize(NULL);
+	CoInitialize(nullptr);
 
 	HRESULT hr;
 
 	MSXML::IXMLDOMDocumentPtr doc;
 	hr = doc.CreateInstance(MSXML::CLSID_DOMDocument);
-    if (FAILED(hr))
-    {
-        return NULL;
-    }
+	if (FAILED(hr))
+	{
+		return false;
+	}
 
-    // Load the XML document file...
+	// Load the XML document file...
 	doc->put_resolveExternals(VARIANT_FALSE);
 	doc->put_validateOnParse(VARIANT_FALSE);
 	doc->put_async(VARIANT_FALSE);
 
-	// filename needs to be properly encoded
-	char* szURL = (char*)malloc(strlen(szFileName)*3 + 1);
-	EncodeURL(szFileName, szURL);
-	debug("url=\"%s\"", szURL);
-	_variant_t v(szURL);
-	free(szURL);
+	_variant_t vFilename(*WString(m_fileName));
 
-	VARIANT_BOOL success = doc->load(v);
+	// 1. first trying to load via filename without URL-encoding (certain charaters doesn't work when encoded)
+	VARIANT_BOOL success = doc->load(vFilename);
+	if (success == VARIANT_FALSE)
+	{
+		// 2. now trying filename encoded as URL
+		char url[2048];
+		EncodeUrl(m_fileName, url, 2048);
+		debug("url=\"%s\"", url);
+		_variant_t vUrl(url);
+
+		success = doc->load(vUrl);
+	}
+
 	if (success == VARIANT_FALSE)
 	{
 		_bstr_t r(doc->GetparseError()->reason);
-		const char* szErrMsg = r;
-		error("Error parsing rss feed: %s", szErrMsg);
-		return NULL;
+		const char* errMsg = r;
+		error("Error parsing rss feed: %s", errMsg);
+		return false;
 	}
 
-    FeedFile* pFile = new FeedFile(szFileName);
-    if (!pFile->ParseFeed(doc))
-	{
-		delete pFile;
-		pFile = NULL;
-	}
+	bool ok = ParseFeed(doc);
 
-    return pFile;
+	return ok;
 }
 
-void FeedFile::EncodeURL(const char* szFilename, char* szURL)
+void FeedFile::EncodeUrl(const char* filename, char* url, int bufLen)
 {
-	while (char ch = *szFilename++)
+	WString widefilename(filename);
+
+	char* end = url + bufLen;
+	for (wchar_t* p = widefilename; *p && url < end - 3; p++)
 	{
+		wchar_t ch = *p;
 		if (('0' <= ch && ch <= '9') ||
 			('a' <= ch && ch <= 'z') ||
-			('A' <= ch && ch <= 'Z') )
+			('A' <= ch && ch <= 'Z') ||
+			ch == '-' || ch == '.' || ch == '_' || ch == '~')
 		{
-			*szURL++ = ch;
+			*url++ = (char)ch;
 		}
 		else
 		{
-			*szURL++ = '%';
-			int a = ch >> 4;
-			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';
+			*url++ = '%';
+			uint32 a = (uint32)ch >> 4;
+			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 			a = ch & 0xF;
-			*szURL++ = a > 9 ? a - 10 + 'a' : a + '0';
+			*url++ = a > 9 ? a - 10 + 'A' : a + '0';
 		}
 	}
-	*szURL = NULL;
+	*url = '\0';
 }
 
 bool FeedFile::ParseFeed(IUnknown* nzb)
@@ -202,13 +159,13 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 	{
 		MSXML::IXMLDOMNodePtr node = itemList->Getitem(i);
 
-		FeedItemInfo* pFeedItemInfo = new FeedItemInfo();
-		AddItem(pFeedItemInfo);
+		m_feedItems->emplace_back();
+		FeedItemInfo& feedItemInfo = m_feedItems->back();
 
 		MSXML::IXMLDOMNodePtr tag;
 		MSXML::IXMLDOMNodePtr attr;
-		
-		// <title>Debian 6</title> 
+
+		// <title>Debian 6</title>
 		tag = node->selectSingleNode("title");
 		if (!tag)
 		{
@@ -216,8 +173,8 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			return false;
 		}
 		_bstr_t title(tag->Gettext());
-		pFeedItemInfo->SetTitle(title);
-		ParseSubject(pFeedItemInfo);
+		feedItemInfo.SetTitle(title);
+		ParseSubject(feedItemInfo);
 
 		// <pubDate>Wed, 26 Jun 2013 00:02:54 -0600</pubDate>
 		tag = node->selectSingleNode("pubDate");
@@ -227,7 +184,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			time_t unixtime = WebUtil::ParseRfc822DateTime(time);
 			if (unixtime > 0)
 			{
-				pFeedItemInfo->SetTime(unixtime);
+				feedItemInfo.SetTime(unixtime);
 			}
 		}
 
@@ -236,21 +193,20 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		if (tag)
 		{
 			_bstr_t category(tag->Gettext());
-			pFeedItemInfo->SetCategory(category);
+			feedItemInfo.SetCategory(category);
 		}
 
 		// <description>long text</description>
 		tag = node->selectSingleNode("description");
 		if (tag)
 		{
-			_bstr_t description(tag->Gettext());
+			_bstr_t bdescription(tag->Gettext());
 			// cleanup CDATA
-			char* szDescription = strdup((const char*)description);
-			WebUtil::XmlStripTags(szDescription);
-			WebUtil::XmlDecode(szDescription);
-			WebUtil::XmlRemoveEntities(szDescription);
-			pFeedItemInfo->SetDescription(szDescription);
-			free(szDescription);
+			CString description = (const char*)bdescription;
+			WebUtil::XmlStripTags(description);
+			WebUtil::XmlDecode(description);
+			WebUtil::XmlRemoveEntities(description);
+			feedItemInfo.SetDescription(description);
 		}
 
 		//<enclosure url="http://myindexer.com/fetch/9eeb264aecce961a6e0d" length="150263340" type="application/x-nzb" />
@@ -261,19 +217,19 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			if (attr)
 			{
 				_bstr_t url(attr->Gettext());
-				pFeedItemInfo->SetUrl(url);
+				feedItemInfo.SetUrl(url);
 			}
 
 			attr = tag->Getattributes()->getNamedItem("length");
 			if (attr)
 			{
-				_bstr_t size(attr->Gettext());
-				long long lSize = atoll(size);
-				pFeedItemInfo->SetSize(lSize);
+				_bstr_t bsize(attr->Gettext());
+				int64 size = atoll(bsize);
+				feedItemInfo.SetSize(size);
 			}
 		}
 
-		if (!pFeedItemInfo->GetUrl())
+		if (!feedItemInfo.GetUrl())
 		{
 			// <link>https://nzb.org/fetch/334534ce/4364564564</link>
 			tag = node->selectSingleNode("link");
@@ -283,14 +239,14 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 				return false;
 			}
 			_bstr_t link(tag->Gettext());
-			pFeedItemInfo->SetUrl(link);
+			feedItemInfo.SetUrl(link);
 		}
 
 
 		// newznab special
 
 		//<newznab:attr name="size" value="5423523453534" />
-		if (pFeedItemInfo->GetSize() == 0)
+		if (feedItemInfo.GetSize() == 0)
 		{
 			tag = node->selectSingleNode("newznab:attr[@name='size']");
 			if (tag)
@@ -298,9 +254,9 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 				attr = tag->Getattributes()->getNamedItem("value");
 				if (attr)
 				{
-					_bstr_t size(attr->Gettext());
-					long long lSize = atoll(size);
-					pFeedItemInfo->SetSize(lSize);
+					_bstr_t bsize(attr->Gettext());
+					int64 size = atoll(bsize);
+					feedItemInfo.SetSize(size);
 				}
 			}
 		}
@@ -312,9 +268,9 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			attr = tag->Getattributes()->getNamedItem("value");
 			if (attr)
 			{
-				_bstr_t val(attr->Gettext());
-				int iVal = atoi(val);
-				pFeedItemInfo->SetImdbId(iVal);
+				_bstr_t bval(attr->Gettext());
+				int val = atoi(bval);
+				feedItemInfo.SetImdbId(val);
 			}
 		}
 
@@ -325,9 +281,35 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			attr = tag->Getattributes()->getNamedItem("value");
 			if (attr)
 			{
-				_bstr_t val(attr->Gettext());
-				int iVal = atoi(val);
-				pFeedItemInfo->SetRageId(iVal);
+				_bstr_t bval(attr->Gettext());
+				int val = atoi(bval);
+				feedItemInfo.SetRageId(val);
+			}
+		}
+
+		//<newznab:attr name="tdvdbid" value="33877"/>
+		tag = node->selectSingleNode("newznab:attr[@name='tvdbid']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t bval(attr->Gettext());
+				int val = atoi(bval);
+				feedItemInfo.SetTvdbId(val);
+			}
+		}
+
+		//<newznab:attr name="tvmazeid" value="33877"/>
+		tag = node->selectSingleNode("newznab:attr[@name='tvmazeid']");
+		if (tag)
+		{
+			attr = tag->Getattributes()->getNamedItem("value");
+			if (attr)
+			{
+				_bstr_t bval(attr->Gettext());
+				int val = atoi(bval);
+				feedItemInfo.SetTvmazeId(val);
 			}
 		}
 
@@ -340,7 +322,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			if (attr)
 			{
 				_bstr_t val(attr->Gettext());
-				pFeedItemInfo->SetEpisode(val);
+				feedItemInfo.SetEpisode(val);
 			}
 		}
 
@@ -353,7 +335,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			if (attr)
 			{
 				_bstr_t val(attr->Gettext());
-				pFeedItemInfo->SetSeason(val);
+				feedItemInfo.SetSeason(val);
 			}
 		}
 
@@ -365,9 +347,9 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			MSXML::IXMLDOMNodePtr value = node->Getattributes()->getNamedItem("value");
 			if (name && value)
 			{
-				_bstr_t name(name->Gettext());
-				_bstr_t val(value->Gettext());
-				pFeedItemInfo->GetAttributes()->Add(name, val);
+				_bstr_t bname(name->Gettext());
+				_bstr_t bval(value->Gettext());
+				feedItemInfo.GetAttributes()->emplace_back(bname, bval);
 			}
 		}
 	}
@@ -376,10 +358,8 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 
 #else
 
-FeedFile* FeedFile::Create(const char* szFileName)
+bool FeedFile::Parse()
 {
-    FeedFile* pFile = new FeedFile(szFileName);
-
 	xmlSAXHandler SAX_handler = {0};
 	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
 	SAX_handler.endElement = reinterpret_cast<endElementSAXFunc>(SAX_EndElement);
@@ -387,132 +367,135 @@ FeedFile* FeedFile::Create(const char* szFileName)
 	SAX_handler.error = reinterpret_cast<errorSAXFunc>(SAX_error);
 	SAX_handler.getEntity = reinterpret_cast<getEntitySAXFunc>(SAX_getEntity);
 
-	pFile->m_bIgnoreNextError = false;
+	m_ignoreNextError = false;
 
-	int ret = xmlSAXUserParseFile(&SAX_handler, pFile, szFileName);
-    
-    if (ret != 0)
+	int ret = xmlSAXUserParseFile(&SAX_handler, this, m_fileName);
+
+	if (ret != 0)
 	{
-        error("Failed to parse rss feed");
-		delete pFile;
-		pFile = NULL;
+		error("Failed to parse rss feed");
+		return false;
 	}
-	
-	return pFile;
+
+	return true;
 }
 
 void FeedFile::Parse_StartElement(const char *name, const char **atts)
 {
 	ResetTagContent();
-	
+
 	if (!strcmp("item", name))
 	{
-		delete m_pFeedItemInfo;
-		m_pFeedItemInfo = new FeedItemInfo();
+		m_feedItems->emplace_back();
+		m_feedItemInfo = &m_feedItems->back();
 	}
-	else if (!strcmp("enclosure", name) && m_pFeedItemInfo)
+	else if (!strcmp("enclosure", name) && m_feedItemInfo)
 	{
 		//<enclosure url="http://myindexer.com/fetch/9eeb264aecce961a6e0d" length="150263340" type="application/x-nzb" />
 		for (; *atts; atts+=2)
 		{
 			if (!strcmp("url", atts[0]))
 			{
-				char* szUrl = strdup(atts[1]);
-				WebUtil::XmlDecode(szUrl);
-				m_pFeedItemInfo->SetUrl(szUrl);
-				free(szUrl);
+				CString url = atts[1];
+				WebUtil::XmlDecode(url);
+				m_feedItemInfo->SetUrl(url);
 			}
 			else if (!strcmp("length", atts[0]))
 			{
-				long long lSize = atoll(atts[1]);
-				m_pFeedItemInfo->SetSize(lSize);
+				int64 size = atoll(atts[1]);
+				m_feedItemInfo->SetSize(size);
 			}
 		}
 	}
-	else if (m_pFeedItemInfo && !strcmp("newznab:attr", name) &&
+	else if (m_feedItemInfo && !strcmp("newznab:attr", name) &&
 		atts[0] && atts[1] && atts[2] && atts[3] &&
 		!strcmp("name", atts[0]) && !strcmp("value", atts[2]))
 	{
-		m_pFeedItemInfo->GetAttributes()->Add(atts[1], atts[3]);
+		m_feedItemInfo->GetAttributes()->emplace_back(atts[1], atts[3]);
 
 		//<newznab:attr name="size" value="5423523453534" />
-		if (m_pFeedItemInfo->GetSize() == 0 &&
+		if (m_feedItemInfo->GetSize() == 0 &&
 			!strcmp("size", atts[1]))
 		{
-			long long lSize = atoll(atts[3]);
-			m_pFeedItemInfo->SetSize(lSize);
+			int64 size = atoll(atts[3]);
+			m_feedItemInfo->SetSize(size);
 		}
 
 		//<newznab:attr name="imdb" value="1588173"/>
 		else if (!strcmp("imdb", atts[1]))
 		{
-			m_pFeedItemInfo->SetImdbId(atoi(atts[3]));
+			m_feedItemInfo->SetImdbId(atoi(atts[3]));
 		}
 
 		//<newznab:attr name="rageid" value="33877"/>
 		else if (!strcmp("rageid", atts[1]))
 		{
-			m_pFeedItemInfo->SetRageId(atoi(atts[3]));
+			m_feedItemInfo->SetRageId(atoi(atts[3]));
+		}
+
+		//<newznab:attr name="tvdbid" value="33877"/>
+		else if (!strcmp("tvdbid", atts[1]))
+		{
+			m_feedItemInfo->SetTvdbId(atoi(atts[3]));
+		}
+
+		//<newznab:attr name="tvmazeid" value="33877"/>
+		else if (!strcmp("tvmazeid", atts[1]))
+		{
+			m_feedItemInfo->SetTvmazeId(atoi(atts[3]));
 		}
 
 		//<newznab:attr name="episode" value="E09"/>
 		//<newznab:attr name="episode" value="9"/>
 		else if (!strcmp("episode", atts[1]))
 		{
-			m_pFeedItemInfo->SetEpisode(atts[3]);
+			m_feedItemInfo->SetEpisode(atts[3]);
 		}
 
 		//<newznab:attr name="season" value="S03"/>
 		//<newznab:attr name="season" value="3"/>
 		else if (!strcmp("season", atts[1]))
 		{
-			m_pFeedItemInfo->SetSeason(atts[3]);
+			m_feedItemInfo->SetSeason(atts[3]);
 		}
 	}
 }
 
 void FeedFile::Parse_EndElement(const char *name)
 {
-	if (!strcmp("item", name))
+	if (!strcmp("title", name) && m_feedItemInfo)
 	{
-		// Close the file element, add the new file to file-list
-		AddItem(m_pFeedItemInfo);
-		m_pFeedItemInfo = NULL;
-	}
-	else if (!strcmp("title", name) && m_pFeedItemInfo)
-	{
-		m_pFeedItemInfo->SetTitle(m_szTagContent);
+		m_feedItemInfo->SetTitle(m_tagContent);
 		ResetTagContent();
-		ParseSubject(m_pFeedItemInfo);
+		ParseSubject(*m_feedItemInfo);
 	}
-	else if (!strcmp("link", name) && m_pFeedItemInfo &&
-		(!m_pFeedItemInfo->GetUrl() || strlen(m_pFeedItemInfo->GetUrl()) == 0))
+	else if (!strcmp("link", name) && m_feedItemInfo &&
+		(!m_feedItemInfo->GetUrl() || strlen(m_feedItemInfo->GetUrl()) == 0))
 	{
-		m_pFeedItemInfo->SetUrl(m_szTagContent);
+		m_feedItemInfo->SetUrl(m_tagContent);
 		ResetTagContent();
 	}
-	else if (!strcmp("category", name) && m_pFeedItemInfo)
+	else if (!strcmp("category", name) && m_feedItemInfo)
 	{
-		m_pFeedItemInfo->SetCategory(m_szTagContent);
+		m_feedItemInfo->SetCategory(m_tagContent);
 		ResetTagContent();
 	}
-	else if (!strcmp("description", name) && m_pFeedItemInfo)
+	else if (!strcmp("description", name) && m_feedItemInfo)
 	{
 		// cleanup CDATA
-		char* szDescription = strdup(m_szTagContent);
-		WebUtil::XmlStripTags(szDescription);
-		WebUtil::XmlDecode(szDescription);
-		WebUtil::XmlRemoveEntities(szDescription);
-		m_pFeedItemInfo->SetDescription(szDescription);
-		free(szDescription);
+		CString description = *m_tagContent;
+		WebUtil::XmlStripTags(description);
+		WebUtil::XmlDecode(description);
+		WebUtil::XmlRemoveEntities(description);
+		m_feedItemInfo->SetDescription(description);
 		ResetTagContent();
 	}
-	else if (!strcmp("pubDate", name) && m_pFeedItemInfo)
+	else if (!strcmp("pubDate", name) && m_feedItemInfo)
 	{
-		time_t unixtime = WebUtil::ParseRfc822DateTime(m_szTagContent);
+		time_t unixtime = WebUtil::ParseRfc822DateTime(m_tagContent);
 		if (unixtime > 0)
 		{
-			m_pFeedItemInfo->SetTime(unixtime);
+			m_feedItemInfo->SetTime(unixtime);
 		}
 		ResetTagContent();
 	}
@@ -520,33 +503,28 @@ void FeedFile::Parse_EndElement(const char *name)
 
 void FeedFile::Parse_Content(const char *buf, int len)
 {
-	m_szTagContent = (char*)realloc(m_szTagContent, m_iTagContentLen + len + 1);
-	strncpy(m_szTagContent + m_iTagContentLen, buf, len);
-	m_iTagContentLen += len;
-	m_szTagContent[m_iTagContentLen] = '\0';
+	m_tagContent.Append(buf, len);
 }
 
 void FeedFile::ResetTagContent()
 {
-	free(m_szTagContent);
-	m_szTagContent = NULL;
-	m_iTagContentLen = 0;
+	m_tagContent.Clear();
 }
 
-void FeedFile::SAX_StartElement(FeedFile* pFile, const char *name, const char **atts)
+void FeedFile::SAX_StartElement(FeedFile* file, const char *name, const char **atts)
 {
-	pFile->Parse_StartElement(name, atts);
+	file->Parse_StartElement(name, atts);
 }
 
-void FeedFile::SAX_EndElement(FeedFile* pFile, const char *name)
+void FeedFile::SAX_EndElement(FeedFile* file, const char *name)
 {
-	pFile->Parse_EndElement(name);
+	file->Parse_EndElement(name);
 }
 
-void FeedFile::SAX_characters(FeedFile* pFile, const char * xmlstr, int len)
+void FeedFile::SAX_characters(FeedFile* file, const char * xmlstr, int len)
 {
 	char* str = (char*)xmlstr;
-	
+
 	// trim starting blanks
 	int off = 0;
 	for (int i = 0; i < len; i++)
@@ -561,9 +539,9 @@ void FeedFile::SAX_characters(FeedFile* pFile, const char * xmlstr, int len)
 			break;
 		}
 	}
-	
+
 	int newlen = len - off;
-	
+
 	// trim ending blanks
 	for (int i = len - 1; i >= off; i--)
 	{
@@ -577,43 +555,43 @@ void FeedFile::SAX_characters(FeedFile* pFile, const char * xmlstr, int len)
 			break;
 		}
 	}
-	
+
 	if (newlen > 0)
 	{
 		// interpret tag content
-		pFile->Parse_Content(str + off, newlen);
+		file->Parse_Content(str + off, newlen);
 	}
 }
 
-void* FeedFile::SAX_getEntity(FeedFile* pFile, const char * name)
+void* FeedFile::SAX_getEntity(FeedFile* file, const char * name)
 {
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
 	if (!e)
 	{
 		warn("entity not found");
-		pFile->m_bIgnoreNextError = true;
+		file->m_ignoreNextError = true;
 	}
 
 	return e;
 }
 
-void FeedFile::SAX_error(FeedFile* pFile, const char *msg, ...)
+void FeedFile::SAX_error(FeedFile* file, const char *msg, ...)
 {
-	if (pFile->m_bIgnoreNextError)
+	if (file->m_ignoreNextError)
 	{
-		pFile->m_bIgnoreNextError = false;
+		file->m_ignoreNextError = false;
 		return;
 	}
-	
-    va_list argp;
-    va_start(argp, msg);
-    char szErrMsg[1024];
-    vsnprintf(szErrMsg, sizeof(szErrMsg), msg, argp);
-    szErrMsg[1024-1] = '\0';
-    va_end(argp);
+
+	va_list argp;
+	va_start(argp, msg);
+	char errMsg[1024];
+	vsnprintf(errMsg, sizeof(errMsg), msg, argp);
+	errMsg[1024-1] = '\0';
+	va_end(argp);
 
 	// remove trailing CRLF
-	for (char* pend = szErrMsg + strlen(szErrMsg) - 1; pend >= szErrMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
-    error("Error parsing rss feed: %s", szErrMsg);
+	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
+	error("Error parsing rss feed: %s", errMsg);
 }
 #endif

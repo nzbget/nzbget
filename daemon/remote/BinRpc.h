@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,12 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -32,16 +27,16 @@
 
 class BinRpcProcessor
 {
-private:
-	SNZBRequestBase		m_MessageBase;
-	Connection*			m_pConnection;
-
-	void				Dispatch();
-
 public:
-						BinRpcProcessor();
-	void				Execute();
-	void				SetConnection(Connection* pConnection) { m_pConnection = pConnection; }
+	BinRpcProcessor();
+	void Execute();
+	void SetConnection(Connection* connection) { m_connection = connection; }
+
+private:
+	SNzbRequestBase m_messageBase;
+	Connection* m_connection;
+
+	void Dispatch();
 };
 
 #endif

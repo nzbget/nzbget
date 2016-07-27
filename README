@@ -206,9 +206,8 @@ TLS/SSL support using option "--disable-tls":
 5. Compiling on Windows
 =====================================
 
-NZBGet is developed using MS Visual C++ 2005. The project file and solution 
-are provided. If you use MS Visual C++ 2005 Express you need to download
-and install Platform SDK.
+NZBGet is developed using MS Visual Studio 2015 (Community Edition). The project
+file is provided.
 
 To compile the program with TLS/SSL support you need either OpenSSL or GnuTLS:
    - OpenSSL  (http://www.openssl.org)

@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,31 +15,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#endif
 
 #include "nzbget.h"
 #include "Options.h"
@@ -55,21 +33,7 @@ Frontend::Frontend()
 {
 	debug("Creating Frontend");
 
-	m_iNeededLogFirstID = 0;
-	m_iNeededLogEntries = 0;
-	m_bSummary = false;
-	m_bFileList = false;
-	m_iCurrentDownloadSpeed = 0;
-	m_lRemainingSize = 0;
-	m_bPauseDownload = false;
-	m_iDownloadLimit = 0;
-	m_iThreadCount = 0;
-	m_iPostJobCount = 0;
-	m_iUpTimeSec = 0;
-	m_iDnTimeSec = 0;
-	m_iAllBytes = 0;
-	m_bStandBy = 0;
-	m_iUpdateInterval = g_pOptions->GetUpdateInterval();
+	m_updateInterval = g_Options->GetUpdateInterval();
 }
 
 bool Frontend::PrepareData()
@@ -80,34 +44,31 @@ bool Frontend::PrepareData()
 		{
 			return false;
 		}
-		if (!RequestMessages() || ((m_bSummary || m_bFileList) && !RequestFileList()))
+		if (!RequestMessages() || ((m_summary || m_fileList) && !RequestFileList()))
 		{
-			const char* szControlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
-			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", szControlIP, g_pOptions->GetControlPort());
+			const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
+			printf("\nUnable to send request to nzbget-server at %s (port %i)    \n", controlIp, g_Options->GetControlPort());
 			Stop();
 			return false;
 		}
 	}
 	else
 	{
-		if (m_bSummary)
+		if (m_summary)
 		{
-			m_iCurrentDownloadSpeed = g_pStatMeter->CalcCurrentDownloadSpeed();
-			m_bPauseDownload = g_pOptions->GetPauseDownload();
-			m_iDownloadLimit = g_pOptions->GetDownloadRate();
-			m_iThreadCount = Thread::GetThreadCount();
-			g_pStatMeter->CalcTotalStat(&m_iUpTimeSec, &m_iDnTimeSec, &m_iAllBytes, &m_bStandBy);
+			m_currentDownloadSpeed = g_StatMeter->CalcCurrentDownloadSpeed();
+			m_pauseDownload = g_Options->GetPauseDownload();
+			m_downloadLimit = g_Options->GetDownloadRate();
+			m_threadCount = Thread::GetThreadCount();
+			g_StatMeter->CalcTotalStat(&m_upTimeSec, &m_dnTimeSec, &m_allBytes, &m_standBy);
 
-			DownloadQueue *pDownloadQueue = DownloadQueue::Lock();
-			m_iPostJobCount = 0;
-			for (NZBList::iterator it = pDownloadQueue->GetQueue()->begin(); it != pDownloadQueue->GetQueue()->end(); it++)
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+			m_postJobCount = 0;
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 			{
-				NZBInfo* pNZBInfo = *it;
-				m_iPostJobCount += pNZBInfo->GetPostInfo() ? 1 : 0;
+				m_postJobCount += nzbInfo->GetPostInfo() ? 1 : 0;
 			}
-			pDownloadQueue->CalcRemainingSize(&m_lRemainingSize, NULL);
-			DownloadQueue::Unlock();
-
+			downloadQueue->CalcRemainingSize(&m_remainingSize, nullptr);
 		}
 	}
 	return true;
@@ -117,107 +78,82 @@ void Frontend::FreeData()
 {
 	if (IsRemoteMode())
 	{
-		m_RemoteMessages.Clear();
-
-		DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-		pDownloadQueue->GetQueue()->Clear();
-		DownloadQueue::Unlock();
+		m_remoteMessages.clear();
+		DownloadQueue::Guard()->GetQueue()->clear();
 	}
 }
 
-MessageList* Frontend::LockMessages()
+GuardedMessageList Frontend::GuardMessages()
 {
 	if (IsRemoteMode())
 	{
-		return &m_RemoteMessages;
+		return GuardedMessageList(&m_remoteMessages, nullptr);
 	}
 	else
 	{
-		return g_pLog->LockMessages();
+		return g_Log->GuardMessages();
 	}
-}
-
-void Frontend::UnlockMessages()
-{
-	if (!IsRemoteMode())
-	{
-		g_pLog->UnlockMessages();
-	}
-}
-
-DownloadQueue* Frontend::LockQueue()
-{
-	return DownloadQueue::Lock();
-}
-
-void Frontend::UnlockQueue()
-{
-	DownloadQueue::Unlock();
 }
 
 bool Frontend::IsRemoteMode()
 {
-	return g_pOptions->GetRemoteClientMode();
+	return g_Options->GetRemoteClientMode();
 }
 
-void Frontend::ServerPauseUnpause(bool bPause)
+void Frontend::ServerPauseUnpause(bool pause)
 {
 	if (IsRemoteMode())
 	{
-		RequestPauseUnpause(bPause);
+		RequestPauseUnpause(pause);
 	}
 	else
 	{
-		g_pOptions->SetResumeTime(0);
-		g_pOptions->SetPauseDownload(bPause);
+		g_Options->SetResumeTime(0);
+		g_Options->SetPauseDownload(pause);
 	}
 }
 
-void Frontend::ServerSetDownloadRate(int iRate)
+void Frontend::ServerSetDownloadRate(int rate)
 {
 	if (IsRemoteMode())
 	{
-		RequestSetDownloadRate(iRate);
+		RequestSetDownloadRate(rate);
 	}
 	else
 	{
-		g_pOptions->SetDownloadRate(iRate);
+		g_Options->SetDownloadRate(rate);
 	}
 }
 
-bool Frontend::ServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iID)
+bool Frontend::ServerEditQueue(DownloadQueue::EEditAction action, int offset, int id)
 {
 	if (IsRemoteMode())
 	{
-		return RequestEditQueue(eAction, iOffset, iID);
+		return RequestEditQueue(action, offset, id);
 	}
 	else
 	{
-		DownloadQueue* pDownloadQueue = LockQueue();
-		bool bOK = pDownloadQueue->EditEntry(iID, eAction, iOffset, NULL);
-		UnlockQueue();
-		return bOK;
+		return DownloadQueue::Guard()->EditEntry(id, action, offset, nullptr);
 	}
-	return false;
 }
 
-void Frontend::InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize)
+void Frontend::InitMessageBase(SNzbRequestBase* messageBase, int request, int size)
 {
-	pMessageBase->m_iSignature	= htonl(NZBMESSAGE_SIGNATURE);
-	pMessageBase->m_iType = htonl(iRequest);
-	pMessageBase->m_iStructSize = htonl(iSize);
+	messageBase->m_signature	= htonl(NZBMESSAGE_SIGNATURE);
+	messageBase->m_type = htonl(request);
+	messageBase->m_structSize = htonl(size);
 
-	strncpy(pMessageBase->m_szUsername, g_pOptions->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
-	pMessageBase->m_szUsername[NZBREQUESTPASSWORDSIZE - 1] = '\0';
+	strncpy(messageBase->m_username, g_Options->GetControlUsername(), NZBREQUESTPASSWORDSIZE - 1);
+	messageBase->m_username[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 
-	strncpy(pMessageBase->m_szPassword, g_pOptions->GetControlPassword(), NZBREQUESTPASSWORDSIZE);
-	pMessageBase->m_szPassword[NZBREQUESTPASSWORDSIZE - 1] = '\0';
+	strncpy(messageBase->m_password, g_Options->GetControlPassword(), NZBREQUESTPASSWORDSIZE);
+	messageBase->m_password[NZBREQUESTPASSWORDSIZE - 1] = '\0';
 }
 
 bool Frontend::RequestMessages()
 {
-	const char* szControlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
-	Connection connection(szControlIP, g_pOptions->GetControlPort(), false);
+	const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
+	Connection connection(controlIp, g_Options->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -225,16 +161,16 @@ bool Frontend::RequestMessages()
 		return false;
 	}
 
-	SNZBLogRequest LogRequest;
-	InitMessageBase(&LogRequest.m_MessageBase, eRemoteRequestLog, sizeof(LogRequest));
-	LogRequest.m_iLines = htonl(m_iNeededLogEntries);
-	if (m_iNeededLogEntries == 0)
+	SNzbLogRequest LogRequest;
+	InitMessageBase(&LogRequest.m_messageBase, rrLog, sizeof(LogRequest));
+	LogRequest.m_lines = htonl(m_neededLogEntries);
+	if (m_neededLogEntries == 0)
 	{
-		LogRequest.m_iIDFrom = htonl(m_iNeededLogFirstID > 0 ? m_iNeededLogFirstID : 1);
+		LogRequest.m_idFrom = htonl(m_neededLogFirstId > 0 ? m_neededLogFirstId : 1);
 	}
 	else
 	{
-		LogRequest.m_iIDFrom = 0;
+		LogRequest.m_idFrom = 0;
 	}
 
 	if (!connection.Send((char*)(&LogRequest), sizeof(LogRequest)))
@@ -243,44 +179,40 @@ bool Frontend::RequestMessages()
 	}
 
 	// Now listen for the returned log
-	SNZBLogResponse LogResponse;
-	bool bRead = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
-	if (!bRead || 
-		(int)ntohl(LogResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
-		ntohl(LogResponse.m_MessageBase.m_iStructSize) != sizeof(LogResponse))
+	SNzbLogResponse LogResponse;
+	bool read = connection.Recv((char*) &LogResponse, sizeof(LogResponse));
+	if (!read ||
+		(int)ntohl(LogResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(LogResponse.m_messageBase.m_structSize) != sizeof(LogResponse))
 	{
 		return false;
 	}
 
-	char* pBuf = NULL;
-	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
+	CharBuffer buf;
+	if (ntohl(LogResponse.m_trailingDataLength) > 0)
 	{
-		pBuf = (char*)malloc(ntohl(LogResponse.m_iTrailingDataLength));
-		if (!connection.Recv(pBuf, ntohl(LogResponse.m_iTrailingDataLength)))
+		buf.Reserve(ntohl(LogResponse.m_trailingDataLength));
+		if (!connection.Recv(buf, buf.Size()))
 		{
-			free(pBuf);
 			return false;
 		}
 	}
 
 	connection.Disconnect();
 
-	if (ntohl(LogResponse.m_iTrailingDataLength) > 0)
+	if (ntohl(LogResponse.m_trailingDataLength) > 0)
 	{
-		char* pBufPtr = (char*)pBuf;
-		for (unsigned int i = 0; i < ntohl(LogResponse.m_iNrTrailingEntries); i++)
+		char* bufPtr = (char*)buf;
+		for (uint32 i = 0; i < ntohl(LogResponse.m_nrTrailingEntries); i++)
 		{
-			SNZBLogResponseEntry* pLogAnswer = (SNZBLogResponseEntry*) pBufPtr;
+			SNzbLogResponseEntry* logAnswer = (SNzbLogResponseEntry*) bufPtr;
 
-			char* szText = pBufPtr + sizeof(SNZBLogResponseEntry);
+			char* text = bufPtr + sizeof(SNzbLogResponseEntry);
 
-			Message* pMessage = new Message(ntohl(pLogAnswer->m_iID), (Message::EKind)ntohl(pLogAnswer->m_iKind), ntohl(pLogAnswer->m_tTime), szText);
-			m_RemoteMessages.push_back(pMessage);
+			m_remoteMessages.emplace_back(ntohl(logAnswer->m_id), (Message::EKind)ntohl(logAnswer->m_kind), ntohl(logAnswer->m_time), text);
 
-			pBufPtr += sizeof(SNZBLogResponseEntry) + ntohl(pLogAnswer->m_iTextLen);
+			bufPtr += sizeof(SNzbLogResponseEntry) + ntohl(logAnswer->m_textLen);
 		}
-
-		free(pBuf);
 	}
 
 	return true;
@@ -288,8 +220,8 @@ bool Frontend::RequestMessages()
 
 bool Frontend::RequestFileList()
 {
-	const char* szControlIP = !strcmp(g_pOptions->GetControlIP(), "0.0.0.0") ? "127.0.0.1" : g_pOptions->GetControlIP();
-	Connection connection(szControlIP, g_pOptions->GetControlPort(), false);
+	const char* controlIp = !strcmp(g_Options->GetControlIp(), "0.0.0.0") ? "127.0.0.1" : g_Options->GetControlIp();
+	Connection connection(controlIp, g_Options->GetControlPort(), false);
 
 	bool OK = connection.Connect();
 	if (!OK)
@@ -297,10 +229,10 @@ bool Frontend::RequestFileList()
 		return false;
 	}
 
-	SNZBListRequest ListRequest;
-	InitMessageBase(&ListRequest.m_MessageBase, eRemoteRequestList, sizeof(ListRequest));
-	ListRequest.m_bFileList = htonl(m_bFileList);
-	ListRequest.m_bServerState = htonl(m_bSummary);
+	SNzbListRequest ListRequest;
+	InitMessageBase(&ListRequest.m_messageBase, rrList, sizeof(ListRequest));
+	ListRequest.m_fileList = htonl(m_fileList);
+	ListRequest.m_serverState = htonl(m_summary);
 
 	if (!connection.Send((char*)(&ListRequest), sizeof(ListRequest)))
 	{
@@ -308,77 +240,70 @@ bool Frontend::RequestFileList()
 	}
 
 	// Now listen for the returned list
-	SNZBListResponse ListResponse;
-	bool bRead = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
-	if (!bRead || 
-		(int)ntohl(ListResponse.m_MessageBase.m_iSignature) != (int)NZBMESSAGE_SIGNATURE ||
-		ntohl(ListResponse.m_MessageBase.m_iStructSize) != sizeof(ListResponse))
+	SNzbListResponse ListResponse;
+	bool read = connection.Recv((char*) &ListResponse, sizeof(ListResponse));
+	if (!read ||
+		(int)ntohl(ListResponse.m_messageBase.m_signature) != (int)NZBMESSAGE_SIGNATURE ||
+		ntohl(ListResponse.m_messageBase.m_structSize) != sizeof(ListResponse))
 	{
 		return false;
 	}
 
-	char* pBuf = NULL;
-	if (ntohl(ListResponse.m_iTrailingDataLength) > 0)
+	CharBuffer buf;
+	if (ntohl(ListResponse.m_trailingDataLength) > 0)
 	{
-		pBuf = (char*)malloc(ntohl(ListResponse.m_iTrailingDataLength));
-		if (!connection.Recv(pBuf, ntohl(ListResponse.m_iTrailingDataLength)))
+		buf.Reserve(ntohl(ListResponse.m_trailingDataLength));
+		if (!connection.Recv(buf, buf.Size()))
 		{
-			free(pBuf);
 			return false;
 		}
 	}
 
 	connection.Disconnect();
 
-	if (m_bSummary)
+	if (m_summary)
 	{
-		m_bPauseDownload = ntohl(ListResponse.m_bDownloadPaused);
-		m_lRemainingSize = Util::JoinInt64(ntohl(ListResponse.m_iRemainingSizeHi), ntohl(ListResponse.m_iRemainingSizeLo));
-		m_iCurrentDownloadSpeed = ntohl(ListResponse.m_iDownloadRate);
-		m_iDownloadLimit = ntohl(ListResponse.m_iDownloadLimit);
-		m_iThreadCount = ntohl(ListResponse.m_iThreadCount);
-		m_iPostJobCount = ntohl(ListResponse.m_iPostJobCount);
-		m_iUpTimeSec = ntohl(ListResponse.m_iUpTimeSec);
-		m_iDnTimeSec = ntohl(ListResponse.m_iDownloadTimeSec);
-		m_bStandBy = ntohl(ListResponse.m_bDownloadStandBy);
-		m_iAllBytes = Util::JoinInt64(ntohl(ListResponse.m_iDownloadedBytesHi), ntohl(ListResponse.m_iDownloadedBytesLo));
+		m_pauseDownload = ntohl(ListResponse.m_downloadPaused);
+		m_remainingSize = Util::JoinInt64(ntohl(ListResponse.m_remainingSizeHi), ntohl(ListResponse.m_remainingSizeLo));
+		m_currentDownloadSpeed = ntohl(ListResponse.m_downloadRate);
+		m_downloadLimit = ntohl(ListResponse.m_downloadLimit);
+		m_threadCount = ntohl(ListResponse.m_threadCount);
+		m_postJobCount = ntohl(ListResponse.m_postJobCount);
+		m_upTimeSec = ntohl(ListResponse.m_upTimeSec);
+		m_dnTimeSec = ntohl(ListResponse.m_downloadTimeSec);
+		m_standBy = ntohl(ListResponse.m_downloadStandBy);
+		m_allBytes = Util::JoinInt64(ntohl(ListResponse.m_downloadedBytesHi), ntohl(ListResponse.m_downloadedBytesLo));
 	}
 
-	if (m_bFileList && ntohl(ListResponse.m_iTrailingDataLength) > 0)
+	if (m_fileList && ntohl(ListResponse.m_trailingDataLength) > 0)
 	{
 		RemoteClient client;
 		client.SetVerbose(false);
-		
-		DownloadQueue* pDownloadQueue = LockQueue();
-		client.BuildFileList(&ListResponse, pBuf, pDownloadQueue);
-		UnlockQueue();
-	}
 
-	if (pBuf)
-	{
-		free(pBuf);
+		client.BuildFileList(&ListResponse, buf, DownloadQueue::Guard());
 	}
 
 	return true;
 }
 
-bool Frontend::RequestPauseUnpause(bool bPause)
+bool Frontend::RequestPauseUnpause(bool pause)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerPauseUnpause(bPause, eRemotePauseUnpauseActionDownload);
+	return client.RequestServerPauseUnpause(pause, rpDownload);
 }
 
-bool Frontend::RequestSetDownloadRate(int iRate)
+bool Frontend::RequestSetDownloadRate(int rate)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerSetDownloadRate(iRate);
+	return client.RequestServerSetDownloadRate(rate);
 }
 
-bool Frontend::RequestEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iID)
+bool Frontend::RequestEditQueue(DownloadQueue::EEditAction action, int offset, int id)
 {
 	RemoteClient client;
 	client.SetVerbose(false);
-	return client.RequestServerEditQueue(eAction, iOffset, NULL, &iID, 1, NULL, eRemoteMatchModeID);
+	IdList ids = { id };
+	return client.RequestServerEditQueue(action, offset, nullptr, &ids, nullptr, rmId);
 }

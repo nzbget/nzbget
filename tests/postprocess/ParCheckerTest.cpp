@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,49 +14,31 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <fstream>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
+#include "nzbget.h"
 
 #include "catch.h"
 
-#include "nzbget.h"
 #include "Options.h"
 #include "ParChecker.h"
 #include "TestUtil.h"
 
 class ParCheckerMock: public ParChecker
 {
-private:
-	unsigned long	CalcFileCrc(const char* szFilename);
-protected:
-	virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound) { return false; }
-	virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments);
 public:
-					ParCheckerMock();
-	void			Execute();
-	void			CorruptFile(const char* szFilename, int iOffset);
+	ParCheckerMock();
+	void Execute();
+	void CorruptFile(const char* filename, int offset);
+
+protected:
+	virtual bool RequestMorePars(int blockNeeded, int* blockFound) { return false; }
+	virtual EFileStatus FindFileCrc(const char* filename, uint32* crc, SegmentList* segments);
+
+private:
+	uint32 CalcFileCrc(const char* filename);
 };
 
 ParCheckerMock::ParCheckerMock()
@@ -76,66 +58,64 @@ void ParCheckerMock::Execute()
 	TestUtil::EnableCout();
 }
 
-void ParCheckerMock::CorruptFile(const char* szFilename, int iOffset)
+void ParCheckerMock::CorruptFile(const char* filename, int offset)
 {
-	std::string fullfilename(TestUtil::WorkingDir() + "/" + szFilename);
+	std::string fullfilename(TestUtil::WorkingDir() + "/" + filename);
 
-	FILE* pFile = fopen(fullfilename.c_str(), FOPEN_RBP);
-	REQUIRE(pFile != NULL);
+	FILE* file = fopen(fullfilename.c_str(), FOPEN_RBP);
+	REQUIRE(file != nullptr);
 
-	fseek(pFile, iOffset, SEEK_SET);
+	fseek(file, offset, SEEK_SET);
 	char b = 0;
-	int written = fwrite(&b, 1, 1, pFile);
+	int written = fwrite(&b, 1, 1, file);
 	REQUIRE(written == 1);
 
-	fclose(pFile);
+	fclose(file);
 }
 
-ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments)
+ParCheckerMock::EFileStatus ParCheckerMock::FindFileCrc(const char* filename, uint32* crc, SegmentList* segments)
 {
 	std::ifstream sm((TestUtil::WorkingDir() + "/crc.txt").c_str());
-	std::string filename, crc;
+	std::string smfilename, smcrc;
 	while (!sm.eof())
 	{
-		sm >> filename >> crc;
-		if (filename == szFilename)
+		sm >> smfilename >> smcrc;
+		if (smfilename == filename)
 		{
-			*lCrc = strtoul(crc.c_str(), NULL, 16);
-			unsigned long lRealCrc = CalcFileCrc((TestUtil::WorkingDir() + "/" + filename).c_str());
-			return *lCrc == lRealCrc ? ParChecker::fsSuccess : ParChecker::fsUnknown;
+			*crc = strtoul(smcrc.c_str(), nullptr, 16);
+			uint32 realCrc = CalcFileCrc((TestUtil::WorkingDir() + "/" + filename).c_str());
+			return *crc == realCrc ? ParChecker::fsSuccess : ParChecker::fsUnknown;
 		}
 	}
 	return ParChecker::fsUnknown;
 }
 
-unsigned long ParCheckerMock::CalcFileCrc(const char* szFilename)
+uint32 ParCheckerMock::CalcFileCrc(const char* filename)
 {
-	FILE* infile = fopen(szFilename, FOPEN_RB);
+	FILE* infile = fopen(filename, FOPEN_RB);
 	REQUIRE(infile);
 
-	static const int BUFFER_SIZE = 1024 * 64;
-	unsigned char* buffer = (unsigned char*)malloc(BUFFER_SIZE);
-	unsigned long lDownloadCrc = 0xFFFFFFFF;
+	CharBuffer buffer(1024 * 64);
+	uint32 downloadCrc = 0xFFFFFFFF;
 
-	int cnt = BUFFER_SIZE;
-	while (cnt == BUFFER_SIZE)
+	int cnt = buffer.Size();
+	while (cnt == buffer.Size())
 	{
-		cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-		lDownloadCrc = Util::Crc32m(lDownloadCrc, buffer, cnt);
+		cnt = (int)fread(buffer, 1, buffer.Size(), infile);
+		downloadCrc = Util::Crc32m(downloadCrc, (uchar*)(char*)buffer, cnt);
 	}
 
-	free(buffer);
 	fclose(infile);
 
-	lDownloadCrc ^= 0xFFFFFFFF;
-	return lDownloadCrc;
+	downloadCrc ^= 0xFFFFFFFF;
+	return downloadCrc;
 }
 
 TEST_CASE("Par-checker: repair not needed", "[Par][ParChecker][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.Execute();
@@ -149,7 +129,7 @@ TEST_CASE("Par-checker: repair possible", "[Par][ParChecker][Slow][TestData]")
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);
@@ -164,7 +144,7 @@ TEST_CASE("Par-checker: repair successful", "[Par][ParChecker][Slow][TestData]")
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);
@@ -179,7 +159,7 @@ TEST_CASE("Par-checker: repair failed", "[Par][ParChecker][Slow][TestData]")
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);
@@ -199,7 +179,7 @@ TEST_CASE("Par-checker: quick verification repair not needed", "[Par][ParChecker
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.SetParQuick(true);
@@ -214,7 +194,7 @@ TEST_CASE("Par-checker: quick verification repair successful", "[Par][ParChecker
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.SetParQuick(true);
@@ -230,7 +210,7 @@ TEST_CASE("Par-checker: quick full verification repair successful", "[Par][ParCh
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.SetParQuick(true);
@@ -250,17 +230,21 @@ TEST_CASE("Par-checker: ignoring extensions", "[Par][ParChecker][Slow][TestData]
 	cmdOpts.push_back("ParRepair=yes");
 	cmdOpts.push_back("BrokenLog=no");
 
+	ParChecker::EStatus expectedStatus;
+
 	SECTION("ParIgnoreExt")
 	{
 		cmdOpts.push_back("ParIgnoreExt=.dat");
+		expectedStatus = ParChecker::psRepairNotNeeded;
 	}
 
 	SECTION("ExtCleanupDisk")
 	{
 		cmdOpts.push_back("ExtCleanupDisk=.dat");
+		expectedStatus = ParChecker::psFailed;
 	}
 
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
 	parChecker.CorruptFile("testfile.dat", 20000);
@@ -273,5 +257,5 @@ TEST_CASE("Par-checker: ignoring extensions", "[Par][ParChecker][Slow][TestData]
 
 	parChecker.Execute();
 
-	REQUIRE(parChecker.GetStatus() == ParChecker::psRepairNotNeeded);
+	REQUIRE(parChecker.GetStatus() == expectedStatus);
 }

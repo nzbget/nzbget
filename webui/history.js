@@ -1,7 +1,7 @@
 /*
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -289,7 +284,7 @@ var History = (new function($)
 		{
 			case 'DELETE':
 				notification = '#Notif_History_Deleted';
-				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true);
+				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true, checkedCount);
 				break;
 
 			case 'REPROCESS':
@@ -311,7 +306,8 @@ var History = (new function($)
 				notification = '#Notif_History_Returned';
 				ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog',
 					function () { historyAction('HistoryRedownload') },
-					function () { HistoryUI.confirmMulti(checkedCount > 1); });
+					function () { HistoryUI.confirmMulti(checkedCount > 1); },
+					checkedCount);
 				break;
 
 			case 'MARKSUCCESS':
@@ -334,7 +330,8 @@ var History = (new function($)
 					function (_dialog) // init
 					{
 						HistoryUI.confirmMulti(checkedCount > 1);
-					}
+					},
+					checkedCount
 				);
 				break;
 		}
@@ -497,7 +494,7 @@ var HistoryUI = (new function($)
 		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 	
-	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi)
+	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
@@ -524,7 +521,7 @@ var HistoryUI = (new function($)
 			actionCallback(command);
 		}
 
-		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init);
+		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init, selCount);
 	}
 	
 	this.confirmMulti = function(multi)

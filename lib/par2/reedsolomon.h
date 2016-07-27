@@ -20,6 +20,9 @@
 #ifndef __REEDSOLOMON_H__
 #define __REEDSOLOMON_H__
 
+namespace Par2
+{
+
 // The ReedSolomon object is used to calculate and store the matrix
 // used during recovery block creation or data block reconstruction.
 //
@@ -506,5 +509,6 @@ inline bool ReedSolomon<g>::GaussElim(CommandLine::NoiseLevel noiselevel, unsign
   return true;
 }
 
+} // end namespace Par2
 
 #endif // __REEDSOLOMON_H__

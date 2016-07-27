@@ -1,7 +1,7 @@
 #
-#  This file is part of nzbget
+#  This file is part of nzbget. See <http://nzbget.net>.
 #
-# Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,28 +14,22 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-#
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(nzbget, 16.4, hugbug@users.sourceforge.net)
+AC_INIT(nzbget, 17.0-testing, hugbug@users.sourceforge.net)
 AC_CONFIG_AUX_DIR(posix)
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
+AM_MAINTAINER_MODE
 
-
-dnl
-dnl Set default library path, if not specified in environment variable "LIBPREF".
-dnl
-if test "$LIBPREF" = ""; then
-	LIBPREF="/usr"
-fi
+m4_include([posix/ax_cxx_compile_stdcxx.m4])
 
 
 dnl
@@ -52,6 +46,21 @@ dnl Do all tests with c++ compiler.
 dnl
 AC_LANG(C++)
 
+dnl
+dnl Determine compiler switches to support C++14 standard.
+dnl
+AC_MSG_CHECKING(whether to test compiler features)
+AC_ARG_ENABLE(cpp-check,
+	[AS_HELP_STRING([--disable-cpp-check], [disable check for C++14 compiler features])],
+	[ ENABLECPPCHECK=$enableval ],
+	[ ENABLECPPCHECK=yes] )
+AC_MSG_RESULT($ENABLECPPCHECK)
+if test "$ENABLECPPCHECK" = "yes"; then
+	AX_CXX_COMPILE_STDCXX(14,,[optional])
+	if test "$HAVE_CXX14" != "1"; then
+		AC_MSG_ERROR("A compiler with support for C++14 language features is required. For details visit http://nzbget.net/cpp14")
+	fi
+fi
 
 dnl
 dnl Checks for header files.
@@ -261,17 +270,23 @@ AC_ARG_ENABLE(curses,
 	[USECURSES=yes] )
 AC_MSG_RESULT($USECURSES)
 if test "$USECURSES" = "yes"; then
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
 	AC_ARG_WITH(libcurses_includes,
 		[AS_HELP_STRING([--with-libcurses-includes=DIR], [libcurses include directory])],
-		[INCVAL="$withval"])
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+		[INCVAL="yes"],
+		[INCVAL="no"])
 	AC_ARG_WITH(libcurses_libraries,
 		[AS_HELP_STRING([--with-libcurses-libraries=DIR], [libcurses library directory])],
-		[LIBVAL="$withval"])
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
-	
+		[LDFLAGS="${LDFLAGS} -L${withval}"]
+		[LIBVAL="yes"],
+		[LIBVAL="no"])
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+		PKG_CHECK_MODULES(ncurses, ncurses,
+			[LIBS="${LIBS} $ncurses_LIBS"]
+			[CPPFLAGS="${CPPFLAGS} $ncurses_CFLAGS"],
+			AC_MSG_ERROR("ncurses library not found"))
+	fi
+
 	AC_CHECK_HEADER(ncurses.h,
 		FOUND=yes
 		AC_DEFINE([HAVE_NCURSES_H],1,[Define to 1 if you have the <ncurses.h> header file.]),
@@ -293,6 +308,8 @@ if test "$USECURSES" = "yes"; then
 	fi
 	AC_SEARCH_LIBS([refresh], [ncurses curses],, 
 		AC_ERROR([Couldn't find curses library]))
+	AC_SEARCH_LIBS([nodelay], [ncurses curses tinfo],, 
+		AC_ERROR([Couldn't find curses library]))
 else
 	AC_DEFINE([DISABLE_CURSES],1,[Define to 1 to not use curses])
 fi
@@ -311,20 +328,13 @@ if test "$ENABLEPARCHECK" = "yes"; then
 	dnl PAR2 checks. 
 	dnl 
 	dnl Checks for header files.
-	AC_HEADER_DIRENT
-	AC_HEADER_STDBOOL
-	AC_HEADER_STDC
-	AC_CHECK_HEADERS([stdio.h] [endian.h] [getopt.h])
+	AC_CHECK_HEADERS([endian.h] [getopt.h])
 	dnl Checks for typedefs, structures, and compiler characteristics.
 	AC_TYPE_SIZE_T
 	AC_C_BIGENDIAN
-	AC_C_CONST
-	AC_C_INLINE
 	AC_FUNC_FSEEKO
 	dnl Checks for library functions.
-	AC_FUNC_MEMCMP
-	AC_CHECK_FUNCS([stricmp] [strcasecmp])
-	AC_CHECK_FUNCS([strchr] [memcpy])
+	AC_CHECK_FUNCS([stricmp])
 	AC_CHECK_FUNCS([getopt])
 	AM_CONDITIONAL(WITH_PAR2, true)
 else
@@ -364,8 +374,7 @@ if test "$USETLS" = "yes"; then
 		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 			PKG_CHECK_MODULES([openssl], [openssl],
 				[LIBS="${LIBS} $openssl_LIBS"]
-				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"],
-				FOUND=no)
+				[CPPFLAGS="${CPPFLAGS} $openssl_CFLAGS"])
 		fi
 
 		AC_CHECK_HEADER(openssl/ssl.h,
@@ -392,16 +401,21 @@ if test "$USETLS" = "yes"; then
 	fi
 
 	if test "$TLSLIB" = "GnuTLS" -o "$TLSLIB" = ""; then
-		INCVAL="${LIBPREF}/include"
-		LIBVAL="${LIBPREF}/lib"
 		AC_ARG_WITH(libgnutls_includes,
 			[AS_HELP_STRING([--with-libgnutls-includes=DIR], [GnuTLS include directory])],
-			[INCVAL="$withval"])
-		CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+			[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+			[INCVAL="yes"],
+			[INCVAL="no"])
 		AC_ARG_WITH(libgnutls_libraries,
 			[AS_HELP_STRING([--with-libgnutls-libraries=DIR], [GnuTLS library directory])],
-			[LIBVAL="$withval"])
-		LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+			[LDFLAGS="${LDFLAGS} -L${withval}"]
+			[LIBVAL="yes"],
+			[LIBVAL="no"])
+		if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+			PKG_CHECK_MODULES([gnutls], [gnutls],
+				[LIBS="${LIBS} $gnutls_LIBS"]
+				[CPPFLAGS="${CPPFLAGS} $gnutls_CFLAGS"])
+		fi
 
 		AC_CHECK_HEADER(gnutls/gnutls.h,
 			FOUND=yes
@@ -467,16 +481,21 @@ AC_ARG_ENABLE(gzip,
 	[USEZLIB=yes] )
 AC_MSG_RESULT($USEZLIB)
 if test "$USEZLIB" = "yes"; then
-	INCVAL="${LIBPREF}/include"
-	LIBVAL="${LIBPREF}/lib"
 	AC_ARG_WITH(zlib_includes,
 		[AS_HELP_STRING([--with-zlib-includes=DIR], [zlib include directory])],
-		[INCVAL="$withval"])
-	CPPFLAGS="${CPPFLAGS} -I${INCVAL}"
+		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+		[INCVAL="yes"],
+		[INCVAL="no"])
 	AC_ARG_WITH(zlib_libraries,
 		[AS_HELP_STRING([--with-zlib-libraries=DIR], [zlib library directory])],
-		[LIBVAL="$withval"])
-	LDFLAGS="${LDFLAGS} -L${LIBVAL}"
+		[LDFLAGS="${LDFLAGS} -L${withval}"]
+		[LIBVAL="yes"],
+		[LIBVAL="no"])
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+		PKG_CHECK_MODULES([zlib], [zlib],
+			[LIBS="${LIBS} $zlib_LIBS"]
+			[CPPFLAGS="${CPPFLAGS} $zlib_CFLAGS"])
+	fi
 	
 	AC_CHECK_HEADER(zlib.h,,
 		AC_MSG_ERROR("zlib header files not found"))

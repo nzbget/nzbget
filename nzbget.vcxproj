@@ -1,0 +1,287 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{41BFB691-0127-4391-9629-F1BA6740DDFE}</ProjectGuid>
+    <RootNamespace>nzbget</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140_xp</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.23107.0</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\bin\</OutDir>
+    <IntDir>..\bin\Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>..\bin\</OutDir>
+    <IntDir>..\bin\Release\</IntDir>
+    <LinkIncremental />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="17.0-testing";_DEBUG;_CONSOLE;DEBUG;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>nzbget.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>WS2_32.lib;ole32.lib;OleAut32.Lib;comsuppwd.lib;Advapi32.lib;Winmm.lib;gdi32.lib;shell32.lib;dbghelp.lib;ssleay32MTd.lib;libeay32MTd.lib;regex.lib;zlib.lib</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="17.0-testing";NDEBUG;_CONSOLE;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PrecompiledHeaderFile>nzbget.h</PrecompiledHeaderFile>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>WS2_32.lib;ole32.lib;OleAut32.Lib;comsuppwd.lib;Advapi32.lib;gdi32.lib;shell32.lib;Winmm.lib;ssleay32MT.lib;libeay32MT.lib;regex.lib;zlib.lib</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="daemon\connect\Connection.cpp" />
+    <ClCompile Include="daemon\connect\TlsSocket.cpp" />
+    <ClCompile Include="daemon\connect\WebDownloader.cpp" />
+    <ClCompile Include="daemon\extension\FeedScript.cpp" />
+    <ClCompile Include="daemon\extension\NzbScript.cpp" />
+    <ClCompile Include="daemon\extension\PostScript.cpp" />
+    <ClCompile Include="daemon\extension\QueueScript.cpp" />
+    <ClCompile Include="daemon\extension\ScanScript.cpp" />
+    <ClCompile Include="daemon\extension\SchedulerScript.cpp" />
+    <ClCompile Include="daemon\extension\ScriptConfig.cpp" />
+    <ClCompile Include="daemon\feed\FeedCoordinator.cpp" />
+    <ClCompile Include="daemon\feed\FeedFile.cpp" />
+    <ClCompile Include="daemon\feed\FeedFilter.cpp" />
+    <ClCompile Include="daemon\feed\FeedInfo.cpp" />
+    <ClCompile Include="daemon\frontend\ColoredFrontend.cpp" />
+    <ClCompile Include="daemon\frontend\Frontend.cpp" />
+    <ClCompile Include="daemon\frontend\LoggableFrontend.cpp" />
+    <ClCompile Include="daemon\frontend\NCursesFrontend.cpp" />
+    <ClCompile Include="daemon\main\CommandLineParser.cpp" />
+    <ClCompile Include="daemon\main\DiskService.cpp" />
+    <ClCompile Include="daemon\main\Maintenance.cpp" />
+    <ClCompile Include="daemon\main\nzbget.cpp" />
+    <ClCompile Include="daemon\main\Options.cpp" />
+    <ClCompile Include="daemon\main\Scheduler.cpp" />
+    <ClCompile Include="daemon\main\StackTrace.cpp" />
+    <ClCompile Include="daemon\nntp\ArticleDownloader.cpp" />
+    <ClCompile Include="daemon\nntp\ArticleWriter.cpp" />
+    <ClCompile Include="daemon\nntp\Decoder.cpp" />
+    <ClCompile Include="daemon\nntp\NewsServer.cpp" />
+    <ClCompile Include="daemon\nntp\NntpConnection.cpp" />
+    <ClCompile Include="daemon\nntp\ServerPool.cpp" />
+    <ClCompile Include="daemon\nntp\StatMeter.cpp" />
+    <ClCompile Include="daemon\postprocess\Cleanup.cpp" />
+    <ClCompile Include="daemon\postprocess\DupeMatcher.cpp" />
+    <ClCompile Include="daemon\postprocess\ParChecker.cpp" />
+    <ClCompile Include="daemon\postprocess\ParCoordinator.cpp" />
+    <ClCompile Include="daemon\postprocess\ParParser.cpp" />
+    <ClCompile Include="daemon\postprocess\ParRenamer.cpp" />
+    <ClCompile Include="daemon\postprocess\PrePostProcessor.cpp" />
+    <ClCompile Include="daemon\postprocess\Unpack.cpp" />
+    <ClCompile Include="daemon\queue\DiskState.cpp" />
+    <ClCompile Include="daemon\queue\DownloadInfo.cpp" />
+    <ClCompile Include="daemon\queue\DupeCoordinator.cpp" />
+    <ClCompile Include="daemon\queue\HistoryCoordinator.cpp" />
+    <ClCompile Include="daemon\queue\NzbFile.cpp" />
+    <ClCompile Include="daemon\queue\QueueCoordinator.cpp" />
+    <ClCompile Include="daemon\queue\QueueEditor.cpp" />
+    <ClCompile Include="daemon\queue\Scanner.cpp" />
+    <ClCompile Include="daemon\queue\UrlCoordinator.cpp" />
+    <ClCompile Include="daemon\remote\BinRpc.cpp" />
+    <ClCompile Include="daemon\remote\RemoteClient.cpp" />
+    <ClCompile Include="daemon\remote\RemoteServer.cpp" />
+    <ClCompile Include="daemon\remote\WebServer.cpp" />
+    <ClCompile Include="daemon\remote\XmlRpc.cpp" />
+    <ClCompile Include="daemon\util\Log.cpp" />
+    <ClCompile Include="daemon\util\Observer.cpp" />
+    <ClCompile Include="daemon\util\Script.cpp" />
+    <ClCompile Include="daemon\util\Service.cpp" />
+    <ClCompile Include="daemon\util\Thread.cpp" />
+    <ClCompile Include="daemon\util\NString.cpp" />
+    <ClCompile Include="daemon\util\Util.cpp" />
+    <ClCompile Include="daemon\util\FileSystem.cpp" />
+    <ClCompile Include="daemon\windows\StdAfx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="daemon\windows\WinService.cpp" />
+    <ClCompile Include="daemon\windows\WinConsole.cpp" />
+    <ClCompile Include="lib\par2\commandline.cpp" />
+    <ClCompile Include="lib\par2\crc.cpp" />
+    <ClCompile Include="lib\par2\creatorpacket.cpp" />
+    <ClCompile Include="lib\par2\criticalpacket.cpp" />
+    <ClCompile Include="lib\par2\datablock.cpp" />
+    <ClCompile Include="lib\par2\descriptionpacket.cpp" />
+    <ClCompile Include="lib\par2\diskfile.cpp" />
+    <ClCompile Include="lib\par2\filechecksummer.cpp" />
+    <ClCompile Include="lib\par2\galois.cpp" />
+    <ClCompile Include="lib\par2\mainpacket.cpp" />
+    <ClCompile Include="lib\par2\md5.cpp" />
+    <ClCompile Include="lib\par2\par2creatorsourcefile.cpp" />
+    <ClCompile Include="lib\par2\par2fileformat.cpp" />
+    <ClCompile Include="lib\par2\par2repairer.cpp" />
+    <ClCompile Include="lib\par2\par2repairersourcefile.cpp" />
+    <ClCompile Include="lib\par2\parheaders.cpp" />
+    <ClCompile Include="lib\par2\recoverypacket.cpp" />
+    <ClCompile Include="lib\par2\reedsolomon.cpp" />
+    <ClCompile Include="lib\par2\verificationhashtable.cpp" />
+    <ClCompile Include="lib\par2\verificationpacket.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="daemon\connect\Connection.h" />
+    <ClInclude Include="daemon\connect\TlsSocket.h" />
+    <ClInclude Include="daemon\connect\WebDownloader.h" />
+    <ClInclude Include="daemon\extension\FeedScript.h" />
+    <ClInclude Include="daemon\extension\NzbScript.h" />
+    <ClInclude Include="daemon\extension\PostScript.h" />
+    <ClInclude Include="daemon\extension\QueueScript.h" />
+    <ClInclude Include="daemon\extension\ScanScript.h" />
+    <ClInclude Include="daemon\extension\SchedulerScript.h" />
+    <ClInclude Include="daemon\extension\ScriptConfig.h" />
+    <ClInclude Include="daemon\feed\FeedCoordinator.h" />
+    <ClInclude Include="daemon\feed\FeedFile.h" />
+    <ClInclude Include="daemon\feed\FeedFilter.h" />
+    <ClInclude Include="daemon\feed\FeedInfo.h" />
+    <ClInclude Include="daemon\frontend\ColoredFrontend.h" />
+    <ClInclude Include="daemon\frontend\Frontend.h" />
+    <ClInclude Include="daemon\frontend\LoggableFrontend.h" />
+    <ClInclude Include="daemon\frontend\NCursesFrontend.h" />
+    <ClInclude Include="daemon\main\CommandLineParser.h" />
+    <ClInclude Include="daemon\main\DiskService.h" />
+    <ClInclude Include="daemon\main\Maintenance.h" />
+    <ClInclude Include="daemon\main\nzbget.h" />
+    <ClInclude Include="daemon\main\Options.h" />
+    <ClInclude Include="daemon\main\Scheduler.h" />
+    <ClInclude Include="daemon\main\StackTrace.h" />
+    <ClInclude Include="daemon\nntp\ArticleDownloader.h" />
+    <ClInclude Include="daemon\nntp\ArticleWriter.h" />
+    <ClInclude Include="daemon\nntp\Decoder.h" />
+    <ClInclude Include="daemon\nntp\NewsServer.h" />
+    <ClInclude Include="daemon\nntp\NntpConnection.h" />
+    <ClInclude Include="daemon\nntp\ServerPool.h" />
+    <ClInclude Include="daemon\nntp\StatMeter.h" />
+    <ClInclude Include="daemon\postprocess\Cleanup.h" />
+    <ClInclude Include="daemon\postprocess\DupeMatcher.h" />
+    <ClInclude Include="daemon\postprocess\ParChecker.h" />
+    <ClInclude Include="daemon\postprocess\ParCoordinator.h" />
+    <ClInclude Include="daemon\postprocess\ParParser.h" />
+    <ClInclude Include="daemon\postprocess\ParRenamer.h" />
+    <ClInclude Include="daemon\postprocess\PrePostProcessor.h" />
+    <ClInclude Include="daemon\postprocess\Unpack.h" />
+    <ClInclude Include="daemon\queue\DiskState.h" />
+    <ClInclude Include="daemon\queue\DownloadInfo.h" />
+    <ClInclude Include="daemon\queue\DupeCoordinator.h" />
+    <ClInclude Include="daemon\queue\HistoryCoordinator.h" />
+    <ClInclude Include="daemon\queue\NzbFile.h" />
+    <ClInclude Include="daemon\queue\QueueCoordinator.h" />
+    <ClInclude Include="daemon\queue\QueueEditor.h" />
+    <ClInclude Include="daemon\queue\Scanner.h" />
+    <ClInclude Include="daemon\queue\UrlCoordinator.h" />
+    <ClInclude Include="daemon\remote\BinRpc.h" />
+    <ClInclude Include="daemon\remote\MessageBase.h" />
+    <ClInclude Include="daemon\remote\RemoteClient.h" />
+    <ClInclude Include="daemon\remote\RemoteServer.h" />
+    <ClInclude Include="daemon\remote\WebServer.h" />
+    <ClInclude Include="daemon\remote\XmlRpc.h" />
+    <ClInclude Include="daemon\util\Log.h" />
+    <ClInclude Include="daemon\util\Observer.h" />
+    <ClInclude Include="daemon\util\Script.h" />
+    <ClInclude Include="daemon\util\Service.h" />
+    <ClInclude Include="daemon\util\Thread.h" />
+    <ClInclude Include="daemon\util\NString.h" />
+    <ClInclude Include="daemon\util\Container.h" />
+    <ClInclude Include="daemon\util\Util.h" />
+    <ClInclude Include="daemon\util\FileSystem.h" />
+    <ClInclude Include="daemon\windows\WinService.h" />
+    <ClInclude Include="daemon\windows\WinConsole.h" />
+    <ClInclude Include="lib\par2\commandline.h" />
+    <ClInclude Include="lib\par2\crc.h" />
+    <ClInclude Include="lib\par2\creatorpacket.h" />
+    <ClInclude Include="lib\par2\criticalpacket.h" />
+    <ClInclude Include="lib\par2\datablock.h" />
+    <ClInclude Include="lib\par2\descriptionpacket.h" />
+    <ClInclude Include="lib\par2\diskfile.h" />
+    <ClInclude Include="lib\par2\filechecksummer.h" />
+    <ClInclude Include="lib\par2\galois.h" />
+    <ClInclude Include="lib\par2\letype.h" />
+    <ClInclude Include="lib\par2\mainpacket.h" />
+    <ClInclude Include="lib\par2\md5.h" />
+    <ClInclude Include="lib\par2\par2cmdline.h" />
+    <ClInclude Include="lib\par2\par2creatorsourcefile.h" />
+    <ClInclude Include="lib\par2\par2fileformat.h" />
+    <ClInclude Include="lib\par2\par2repairer.h" />
+    <ClInclude Include="lib\par2\par2repairersourcefile.h" />
+    <ClInclude Include="lib\par2\parheaders.h" />
+    <ClInclude Include="lib\par2\recoverypacket.h" />
+    <ClInclude Include="lib\par2\reedsolomon.h" />
+    <ClInclude Include="lib\par2\verificationhashtable.h" />
+    <ClInclude Include="lib\par2\verificationpacket.h" />
+    <ClInclude Include="windows\resources\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="windows\resources\mainicon.ico" />
+    <Image Include="windows\resources\trayicon_idle.ico" />
+    <Image Include="windows\resources\trayicon_paused.ico" />
+    <Image Include="windows\resources\trayicon_working.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="windows\resources\nzbget.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

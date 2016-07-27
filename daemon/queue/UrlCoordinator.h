@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,22 +14,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef URLCOORDINATOR_H
 #define URLCOORDINATOR_H
 
-#include <deque>
-#include <list>
-#include <time.h>
-
+#include "NString.h"
 #include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"
@@ -40,52 +32,47 @@ class UrlDownloader;
 
 class UrlCoordinator : public Thread, public Observer, public Debuggable
 {
-private:
-	typedef std::list<UrlDownloader*>	ActiveDownloads;
-
-private:
-	ActiveDownloads			m_ActiveDownloads;
-	bool					m_bHasMoreJobs;
-	bool					m_bForce;
-
-	NZBInfo*				GetNextUrl(DownloadQueue* pDownloadQueue);
-	void					StartUrlDownload(NZBInfo* pNZBInfo);
-	void					UrlCompleted(UrlDownloader* pUrlDownloader);
-	void					ResetHangingDownloads();
-
-protected:
-	virtual void			LogDebugInfo();
-
 public:
-							UrlCoordinator();                
-	virtual					~UrlCoordinator();
-	virtual void			Run();
-	virtual void 			Stop();
-	void					Update(Subject* pCaller, void* pAspect);
+	virtual ~UrlCoordinator();
+	virtual void Run();
+	virtual void Stop();
+	void Update(Subject* caller, void* aspect);
 
 	// Editing the queue
-	void					AddUrlToQueue(NZBInfo* pNZBInfo, bool bAddTop);
-	bool					HasMoreJobs() { return m_bHasMoreJobs; }
-	bool					DeleteQueueEntry(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bAvoidHistory);
+	bool HasMoreJobs() { return m_hasMoreJobs; }
+	bool DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool avoidHistory);
+
+protected:
+	virtual void LogDebugInfo();
+
+private:
+	typedef std::list<UrlDownloader*> ActiveDownloads;
+
+	ActiveDownloads m_activeDownloads;
+	bool m_hasMoreJobs = true;
+	bool m_force;
+
+	NzbInfo* GetNextUrl(DownloadQueue* downloadQueue);
+	void StartUrlDownload(NzbInfo* nzbInfo);
+	void UrlCompleted(UrlDownloader* urlDownloader);
+	void ResetHangingDownloads();
 };
 
-extern UrlCoordinator* g_pUrlCoordinator;
+extern UrlCoordinator* g_UrlCoordinator;
 
 class UrlDownloader : public WebDownloader
 {
-private:
-	NZBInfo*				m_pNZBInfo;
-	char*					m_szCategory;
+public:
+	void SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
+	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
+	const char* GetCategory() { return m_category; }
 
 protected:
-	virtual void			ProcessHeader(const char* szLine);
+	virtual void ProcessHeader(const char* line);
 
-public:
-							UrlDownloader();
-							~UrlDownloader();
-	void					SetNZBInfo(NZBInfo* pNZBInfo) { m_pNZBInfo = pNZBInfo; }
-	NZBInfo*				GetNZBInfo() { return m_pNZBInfo; }
-	const char*				GetCategory() { return m_szCategory; }
+private:
+	NzbInfo* m_nzbInfo;
+	CString m_category;
 };
 
 #endif

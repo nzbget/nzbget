@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,42 +14,38 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef DUPEMATCHER_H
 #define DUPEMATCHER_H
 
+#include "NString.h"
 #include "Log.h"
 
 class DupeMatcher
 {
-private:
-	char*				m_szDestDir;
-	long long			m_lExpectedSize;
-	long long			m_lMaxSize;
-	bool				m_bCompressed;
-
-	void				FindLargestFile(const char* szDirectory, char* szFilenameBuf, int iBufLen,
-							long long* pMaxSize, bool* pCompressed);
-
-	friend class RarLister;
+public:
+	DupeMatcher(const char* destDir, int64 expectedSize) :
+		m_destDir(destDir), m_expectedSize(expectedSize) {}
+	bool Prepare();
+	bool MatchDupeContent(const char* dupeDir);
+	static bool SizeDiffOK(int64 size1, int64 size2, int maxDiffPercent);
 
 protected:
-	virtual void		PrintMessage(Message::EKind eKind, const char* szFormat, ...) {}
+	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 
-public:
-						DupeMatcher(const char* szDestDir, long long lExpectedSize);
-						~DupeMatcher();
-	bool				Prepare();
-	bool				MatchDupeContent(const char* szDupeDir);
-	static bool			SizeDiffOK(long long lSize1, long long lSize2, int iMaxDiffPercent);
+private:
+	CString m_destDir;
+	int64 m_expectedSize;
+	int64 m_maxSize = -1;
+	bool m_compressed = false;
+
+	void FindLargestFile(const char* directory, char* filenameBuf, int bufLen,
+		int64* maxSize, bool* compressed);
+
+	friend class RarLister;
 };
 
 #endif

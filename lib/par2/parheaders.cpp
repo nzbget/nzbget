@@ -17,7 +17,11 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "parheaders.h"
+
+namespace Par2
+{
 
 ParHeaders::ParHeaders(void) {
   packets = -1;
@@ -30,3 +34,5 @@ ParHeaders::ParHeaders(void) {
   setid = "";
   chunk_size = -1;
 }
+
+} // end namespace Par2

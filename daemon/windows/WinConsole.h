@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -30,78 +25,78 @@
 
 class WinConsole : public Thread
 {
-private:
-	bool					m_bAppMode;
-	char**					m_pDefaultArguments;
-	char**					m_pInitialArguments;
-	int						m_iInitialArgumentCount;
-	HWND					m_hTrayWindow;
-	NOTIFYICONDATA*			m_pNidIcon;
-	UINT					UM_TASKBARCREATED;
-	HMENU					m_hMenu;
-	HINSTANCE				m_hInstance;
-	bool					m_bModal;
-	HFONT					m_hLinkFont;
-	HFONT					m_hNameFont;
-	HFONT					m_hTitleFont;
-	HCURSOR					m_hHandCursor;
-	HICON					m_hAboutIcon;
-	HICON					m_hRunningIcon;
-	HICON					m_hIdleIcon;
-	HICON					m_hWorkingIcon;
-	HICON					m_hPausedIcon;
-	bool					m_bAutostart;
-	bool					m_bTray;
-	bool					m_bConsole;
-	bool					m_bWebUI;
-	bool					m_bAutoParam;
-	bool					m_bRunning;
-	bool					m_bRunningService;
-	bool					m_bDoubleClick;
-
-	void					CreateResources();
-	void					CreateTrayIcon();
-	void					ShowWebUI();
-	void					ShowMenu();
-	void					ShowInExplorer(const char* szFileName);
-	void					ShowAboutBox();
-	void					OpenConfigFileInTextEdit();
-	void					ShowPrefsDialog();
-	void					SavePrefs();
-	void					LoadPrefs();
-	void					ApplyPrefs();
-	void					ShowRunningDialog();
-	void					CheckRunning();
-	void					UpdateTrayIcon();
-	void					BuildMenu();
-	void					ShowCategoryDir(int iCatIndex);
-	void					SetupConfigFile();
-	void					SetupScripts();
-	void					ShowFactoryResetDialog();
-	void					ResetFactoryDefaults();
-
-	static BOOL WINAPI		ConsoleCtrlHandler(DWORD dwCtrlType);
-	static LRESULT CALLBACK	TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT					TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK	FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL					FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+public:
+	WinConsole();
+	~WinConsole();
+	virtual void Stop();
+	void InitAppMode();
+	bool GetAppMode() { return m_appMode; }
+	void SetupFirstStart();
 
 protected:
-	virtual void			Run();
+	virtual void Run();
 
-public:
-							WinConsole();
-							~WinConsole();
-	virtual void			Stop();
-	void					InitAppMode();
-	bool					GetAppMode() { return m_bAppMode; }
-	void					SetupFirstStart();
+private:
+	bool m_appMode;
+	char** m_defaultArguments;
+	char** m_initialArguments;
+	int m_initialArgumentCount;
+	HWND m_trayWindow;
+	NOTIFYICONDATA* m_iconData;
+	UINT m_taskbarCreatedMessage;
+	HMENU m_menu;
+	HINSTANCE m_instance;
+	bool m_modal;
+	HFONT m_linkFont;
+	HFONT m_nameFont;
+	HFONT m_titleFont;
+	HCURSOR m_handCursor;
+	HICON m_aboutIcon;
+	HICON m_runningIcon;
+	HICON m_idleIcon;
+	HICON m_workingIcon;
+	HICON m_pausedIcon;
+	bool m_autostart;
+	bool m_showTrayIcon;
+	bool m_showConsole;
+	bool m_showWebUI;
+	bool m_autoParam;
+	bool m_running;
+	bool m_runningService;
+	bool m_doubleClick;
+
+	void CreateResources();
+	void CreateTrayIcon();
+	void ShowWebUI();
+	void ShowMenu();
+	void ShowInExplorer(const char* filename);
+	void ShowAboutBox();
+	void OpenConfigFileInTextEdit();
+	void ShowPrefsDialog();
+	void SavePrefs();
+	void LoadPrefs();
+	void ApplyPrefs();
+	void ShowRunningDialog();
+	void CheckRunning();
+	void UpdateTrayIcon();
+	void BuildMenu();
+	void ShowCategoryDir(int catIndex);
+	void SetupConfigFile();
+	void SetupScripts();
+	void ShowFactoryResetDialog();
+	void ResetFactoryDefaults();
+
+	static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType);
+	static LRESULT CALLBACK TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static BOOL CALLBACK AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static BOOL CALLBACK PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static BOOL CALLBACK RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static BOOL CALLBACK FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
 
 #endif

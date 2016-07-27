@@ -17,6 +17,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "par2cmdline.h"
 
 #ifdef _MSC_VER
@@ -26,6 +27,9 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 #endif
+
+namespace Par2
+{
 
 RecoveryPacket::RecoveryPacket(void)
 {
@@ -125,3 +129,5 @@ bool RecoveryPacket::Load(DiskFile      *_diskfile,
   // Read the rest of the packet header
   return diskfile->Read(offset + sizeof(packet.header), &packet.exponent, sizeof(packet)-sizeof(packet.header));
 }
+
+} // end namespace Par2

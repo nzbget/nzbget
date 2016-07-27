@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2012-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,23 +14,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef WEBDOWNLOADER_H
 #define WEBDOWNLOADER_H
 
-#include <time.h>
-
+#include "NString.h"
 #include "Observer.h"
 #include "Thread.h"
 #include "Connection.h"
+#include "FileSystem.h"
 #include "Util.h"
 
 class WebDownloader : public Thread, public Subject
@@ -48,65 +43,63 @@ public:
 		adConnectError,
 		adFatalError
 	};
-			
-private:
-	char*				m_szURL;
-	char*				m_szOutputFilename;
-	Connection* 		m_pConnection;
-	Mutex			 	m_mutexConnection;
-	EStatus				m_eStatus;
-	time_t				m_tLastUpdateTime;
-	char*				m_szInfoName;
-	FILE*				m_pOutFile;
-	int					m_iContentLen;
-	bool				m_bConfirmedLength;
-	char*				m_szOriginalFilename;
-	bool				m_bForce;
-	bool				m_bRedirecting;
-	bool				m_bRedirected;
-	bool				m_bGZip;
-	bool				m_bRetry;
-#ifndef DISABLE_GZIP
-	GUnzipStream*		m_pGUnzipStream;
-#endif
 
-	void				SetStatus(EStatus eStatus);
-	bool				Write(void* pBuffer, int iLen);
-	bool				PrepareFile();
-	void				FreeConnection();
-	EStatus				CheckResponse(const char* szResponse);
-	EStatus				CreateConnection(URL *pUrl);
-	void				ParseFilename(const char* szContentDisposition);
-	void				SendHeaders(URL *pUrl);
-	EStatus				DownloadHeaders();
-	EStatus				DownloadBody();
-	void				ParseRedirect(const char* szLocation); 
+	WebDownloader();
+	EStatus GetStatus() { return m_status; }
+	virtual void Run();
+	virtual void Stop();
+	EStatus Download();
+	EStatus DownloadWithRedirects(int maxRedirects);
+	bool Terminate();
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	const char* GetInfoName() { return m_infoName; }
+	void SetUrl(const char* url);
+	const char* GetOutputFilename() { return m_outputFilename; }
+	void SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
+	time_t GetLastUpdateTime() { return m_lastUpdateTime; }
+	void SetLastUpdateTimeNow();
+	bool GetConfirmedLength() { return m_confirmedLength; }
+	const char* GetOriginalFilename() { return m_originalFilename; }
+	void SetForce(bool force) { m_force = force; }
+	void SetRetry(bool retry) { m_retry = retry; }
+
+	void LogDebugInfo();
 
 protected:
-	virtual void		ProcessHeader(const char* szLine);
+	virtual void ProcessHeader(const char* line);
 
-public:
-						WebDownloader();
-	virtual				~WebDownloader();
-	EStatus				GetStatus() { return m_eStatus; }
-	virtual void		Run();
-	virtual void		Stop();
-	EStatus				Download();
-	EStatus				DownloadWithRedirects(int iMaxRedirects);
-	bool				Terminate();
-	void				SetInfoName(const char* v);
-	const char*			GetInfoName() { return m_szInfoName; }
-	void 				SetURL(const char* szURL);
-	const char*			GetOutputFilename() { return m_szOutputFilename; }
-	void 				SetOutputFilename(const char* v);
-	time_t				GetLastUpdateTime() { return m_tLastUpdateTime; }
-	void				SetLastUpdateTimeNow() { m_tLastUpdateTime = ::time(NULL); }
-	bool				GetConfirmedLength() { return m_bConfirmedLength; }
-	const char*			GetOriginalFilename() { return m_szOriginalFilename; }
-	void				SetForce(bool bForce) { m_bForce = bForce; }
-	void				SetRetry(bool bRetry) { m_bRetry = bRetry; }
+private:
+	CString m_url;
+	CString m_outputFilename;
+	std::unique_ptr<Connection> m_connection;
+	Mutex m_connectionMutex;
+	EStatus m_status = adUndefined;
+	time_t m_lastUpdateTime;
+	CString m_infoName;
+	DiskFile m_outFile;
+	int m_contentLen;
+	bool m_confirmedLength = false;
+	CString m_originalFilename;
+	bool m_force = false;
+	bool m_redirecting;
+	bool m_redirected;
+	bool m_gzip;
+	bool m_retry = true;
+#ifndef DISABLE_GZIP
+	std::unique_ptr<GUnzipStream> m_gUnzipStream;
+#endif
 
-	void				LogDebugInfo();
+	void SetStatus(EStatus status);
+	bool Write(void* buffer, int len);
+	bool PrepareFile();
+	void FreeConnection();
+	EStatus CheckResponse(const char* response);
+	EStatus CreateConnection(URL *url);
+	void ParseFilename(const char* contentDisposition);
+	void SendHeaders(URL *url);
+	EStatus DownloadHeaders();
+	EStatus DownloadBody();
+	void ParseRedirect(const char* location);
 };
 
 #endif

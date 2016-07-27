@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,289 +14,186 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
+#include "nzbget.h"
 
 #ifndef DISABLE_PARCHECK
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
 
 #include "par2cmdline.h"
 #include "par2repairer.h"
 #include "md5.h"
 
-#include "nzbget.h"
 #include "ParRenamer.h"
 #include "ParParser.h"
 #include "Log.h"
 #include "Options.h"
 #include "Util.h"
+#include "FileSystem.h"
 
-class ParRenamerRepairer : public Par2Repairer
+class ParRenamerRepairer : public Par2::Par2Repairer
 {
 public:
 	friend class ParRenamer;
 };
 
-ParRenamer::FileHash::FileHash(const char* szFilename, const char* szHash)
-{
-	m_szFilename = strdup(szFilename);
-	m_szHash = strdup(szHash);
-	m_bFileExists = false;
-}
-
-ParRenamer::FileHash::~FileHash()
-{
-	free(m_szFilename);
-	free(m_szHash);
-}
-
-ParRenamer::ParRenamer()
-{
-	debug("Creating ParRenamer");
-
-	m_eStatus = psFailed;
-	m_szDestDir = NULL;
-	m_szInfoName = NULL;
-	m_szProgressLabel = (char*)malloc(1024);
-	m_iStageProgress = 0;
-	m_bCancelled = false;
-	m_bHasMissedFiles = false;
-	m_bDetectMissing = false;
-}
-
-ParRenamer::~ParRenamer()
-{
-	debug("Destroying ParRenamer");
-
-	free(m_szDestDir);
-	free(m_szInfoName);
-	free(m_szProgressLabel);
-
-	Cleanup();
-}
 
 void ParRenamer::Cleanup()
 {
-	ClearHashList();
-	
-	for (DirList::iterator it = m_DirList.begin(); it != m_DirList.end(); it++)
-	{
-		free(*it);
-	}
-	m_DirList.clear();
-}
-
-void ParRenamer::ClearHashList()
-{
-	for (FileHashList::iterator it = m_FileHashList.begin(); it != m_FileHashList.end(); it++)
-	{
-		delete *it;
-	}
-	m_FileHashList.clear();
-}
-
-void ParRenamer::SetDestDir(const char * szDestDir)
-{
-	free(m_szDestDir);
-	m_szDestDir = strdup(szDestDir);
-}
-
-void ParRenamer::SetInfoName(const char * szInfoName)
-{
-	free(m_szInfoName);
-	m_szInfoName = strdup(szInfoName);
+	m_dirList.clear();
+	m_fileHashList.clear();
 }
 
 void ParRenamer::Cancel()
 {
-	m_bCancelled = true;
+	m_cancelled = true;
 }
 
 void ParRenamer::Run()
 {
 	Cleanup();
-	m_bCancelled = false;
-	m_iFileCount = 0;
-	m_iCurFile = 0;
-	m_iRenamedCount = 0;
-	m_bHasMissedFiles = false;
-	m_eStatus = psFailed;
+	m_cancelled = false;
+	m_fileCount = 0;
+	m_curFile = 0;
+	m_renamedCount = 0;
+	m_hasMissedFiles = false;
+	m_status = psFailed;
 
-	snprintf(m_szProgressLabel, 1024, "Checking renamed files for %s", m_szInfoName);
-	m_szProgressLabel[1024-1] = '\0';
-	m_iStageProgress = 0;
+	m_progressLabel.Format("Checking renamed files for %s", *m_infoName);
+	m_stageProgress = 0;
 	UpdateProgress();
 
-	BuildDirList(m_szDestDir);
+	BuildDirList(m_destDir);
 
-	for (DirList::iterator it = m_DirList.begin(); it != m_DirList.end(); it++)
+	for (CString& destDir : m_dirList)
 	{
-		char* szDestDir = *it;
-		debug("Checking %s", szDestDir);
-		ClearHashList();
-		LoadParFiles(szDestDir);
+		debug("Checking %s", *destDir);
+		m_fileHashList.clear();
+		LoadParFiles(destDir);
 
-		if (m_FileHashList.empty())
+		if (m_fileHashList.empty())
 		{
-			int iSavedCurFile = m_iCurFile;
-			CheckFiles(szDestDir, true);
-			m_iCurFile = iSavedCurFile; // restore progress indicator
-			LoadParFiles(szDestDir);
+			int savedCurFile = m_curFile;
+			CheckFiles(destDir, true);
+			m_curFile = savedCurFile; // restore progress indicator
+			LoadParFiles(destDir);
 		}
 
-		CheckFiles(szDestDir, false);
+		CheckFiles(destDir, false);
 
-		if (m_bDetectMissing)
+		if (m_detectMissing)
 		{
 			CheckMissing();
 		}
 	}
 
-	if (m_bCancelled)
+	if (m_cancelled)
 	{
-		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", m_szInfoName);
+		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", *m_infoName);
 	}
-	else if (m_iRenamedCount > 0)
+	else if (m_renamedCount > 0)
 	{
-		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_iRenamedCount, m_szInfoName);
-		m_eStatus = psSuccess;
+		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_renamedCount, *m_infoName);
+		m_status = psSuccess;
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, "No renamed files found for %s", m_szInfoName);
+		PrintMessage(Message::mkInfo, "No renamed files found for %s", *m_infoName);
 	}
 
 	Cleanup();
 	Completed();
 }
 
-void ParRenamer::BuildDirList(const char* szDestDir)
+void ParRenamer::BuildDirList(const char* destDir)
 {
-	m_DirList.push_back(strdup(szDestDir));
+	m_dirList.push_back(destDir);
 
-	char* szFullFilename = (char*)malloc(1024);
-	DirBrowser* pDirBrowser = new DirBrowser(szDestDir);
-	
-	while (const char* filename = pDirBrowser->Next())
+	DirBrowser dirBrowser(destDir);
+
+	while (const char* filename = dirBrowser.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") && !m_bCancelled)
+		if (!m_cancelled)
 		{
-			snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, filename);
-			szFullFilename[1024-1] = '\0';
-			
-			if (Util::DirectoryExists(szFullFilename))
+			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
+			if (FileSystem::DirectoryExists(fullFilename))
 			{
-				BuildDirList(szFullFilename);
+				BuildDirList(fullFilename);
 			}
 			else
 			{
-				m_iFileCount++;
+				m_fileCount++;
 			}
 		}
 	}
-	
-	free(szFullFilename);
-	delete pDirBrowser;
 }
 
-void ParRenamer::LoadParFiles(const char* szDestDir)
+void ParRenamer::LoadParFiles(const char* destDir)
 {
 	ParParser::ParFileList parFileList;
-	ParParser::FindMainPars(szDestDir, &parFileList);
+	ParParser::FindMainPars(destDir, &parFileList);
 
-	for (ParParser::ParFileList::iterator it = parFileList.begin(); it != parFileList.end(); it++)
+	for (CString& parFilename : parFileList)
 	{
-		char* szParFilename = *it;
-		
-		char szFullParFilename[1024];
-		snprintf(szFullParFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, szParFilename);
-		szFullParFilename[1024-1] = '\0';
-		
-		LoadParFile(szFullParFilename);
-		
-		free(*it);
+		BString<1024> fullParFilename("%s%c%s", destDir, PATH_SEPARATOR, *parFilename);
+		LoadParFile(fullParFilename);
 	}
 }
 
-void ParRenamer::LoadParFile(const char* szParFilename)
+void ParRenamer::LoadParFile(const char* parFilename)
 {
-	ParRenamerRepairer* pRepairer = new ParRenamerRepairer();
+	ParRenamerRepairer repairer;
 
-	if (!pRepairer->LoadPacketsFromFile(szParFilename))
+	if (!repairer.LoadPacketsFromFile(parFilename))
 	{
-		PrintMessage(Message::mkWarning, "Could not load par2-file %s", szParFilename);
-		delete pRepairer;
+		PrintMessage(Message::mkWarning, "Could not load par2-file %s", parFilename);
 		return;
 	}
 
-	for (map<MD5Hash, Par2RepairerSourceFile*>::iterator it = pRepairer->sourcefilemap.begin(); it != pRepairer->sourcefilemap.end(); it++)
+	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer.sourcefilemap)
 	{
-		if (m_bCancelled)
+		if (m_cancelled)
 		{
 			break;
 		}
-		
-		Par2RepairerSourceFile* sourceFile = (*it).second;
+
+		Par2::Par2RepairerSourceFile* sourceFile = entry.second;
 		if (!sourceFile || !sourceFile->GetDescriptionPacket())
 		{
-			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", szParFilename);
+			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", parFilename);
 			continue;
 		}
-		m_FileHashList.push_back(new FileHash(sourceFile->GetDescriptionPacket()->FileName().c_str(),
-			sourceFile->GetDescriptionPacket()->Hash16k().print().c_str()));
-		RegisterParredFile(sourceFile->GetDescriptionPacket()->FileName().c_str());
+		std::string filename = Par2::DiskFile::TranslateFilename(sourceFile->GetDescriptionPacket()->FileName());
+		m_fileHashList.emplace_back(filename.c_str(), sourceFile->GetDescriptionPacket()->Hash16k().print().c_str());
+		RegisterParredFile(filename.c_str());
 	}
-
-	delete pRepairer;
 }
 
-void ParRenamer::CheckFiles(const char* szDestDir, bool bRenamePars)
+void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 {
-	DirBrowser dir(szDestDir);
+	DirBrowser dir(destDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") && !m_bCancelled)
+		if (!m_cancelled)
 		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, filename);
-			szFullFilename[1024-1] = '\0';
+			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 
-			if (!Util::DirectoryExists(szFullFilename))
+			if (!FileSystem::DirectoryExists(fullFilename))
 			{
-				snprintf(m_szProgressLabel, 1024, "Checking file %s", filename);
-				m_szProgressLabel[1024-1] = '\0';
-				m_iStageProgress = m_iCurFile * 1000 / m_iFileCount;
+				m_progressLabel.Format("Checking file %s", filename);
+				m_stageProgress = m_fileCount > 0 ? m_curFile * 1000 / m_fileCount : 1000;
 				UpdateProgress();
-				m_iCurFile++;
-				
-				if (bRenamePars)
+				m_curFile++;
+
+				if (renamePars)
 				{
-					CheckParFile(szDestDir, szFullFilename);
+					CheckParFile(destDir, fullFilename);
 				}
 				else
 				{
-					CheckRegularFile(szDestDir, szFullFilename);
+					CheckRegularFile(destDir, fullFilename);
 				}
 			}
 		}
@@ -305,98 +202,88 @@ void ParRenamer::CheckFiles(const char* szDestDir, bool bRenamePars)
 
 void ParRenamer::CheckMissing()
 {
-	for (FileHashList::iterator it = m_FileHashList.begin(); it != m_FileHashList.end(); it++)
+	for (FileHash& fileHash : m_fileHashList)
 	{
-		FileHash* pFileHash = *it;
-		if (!pFileHash->GetFileExists())
+		if (!fileHash.GetFileExists())
 		{
-			if (Util::MatchFileExt(pFileHash->GetFilename(), g_pOptions->GetParIgnoreExt(), ",;") ||
-				Util::MatchFileExt(pFileHash->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;"))
+			if (Util::MatchFileExt(fileHash.GetFilename(), g_Options->GetParIgnoreExt(), ",;"))
 			{
-				PrintMessage(Message::mkInfo, "File %s is missing, ignoring", pFileHash->GetFilename());
+				PrintMessage(Message::mkInfo, "File %s is missing, ignoring", fileHash.GetFilename());
 			}
 			else
 			{
-				PrintMessage(Message::mkInfo, "File %s is missing", pFileHash->GetFilename());
-				m_bHasMissedFiles = true;
+				PrintMessage(Message::mkInfo, "File %s is missing", fileHash.GetFilename());
+				m_hasMissedFiles = true;
 			}
 		}
 	}
 }
 
-bool ParRenamer::IsSplittedFragment(const char* szFilename, const char* szCorrectName)
+bool ParRenamer::IsSplittedFragment(const char* filename, const char* correctName)
 {
-	bool bSplittedFragement = false;
-	const char* szDiskBasename = Util::BaseFileName(szFilename);
-	const char* szExtension = strrchr(szDiskBasename, '.');
-	int iBaseLen = strlen(szCorrectName);
-	if (szExtension && !strncasecmp(szDiskBasename, szCorrectName, iBaseLen))
+	bool splittedFragement = false;
+	const char* diskBasename = FileSystem::BaseFileName(filename);
+	const char* extension = strrchr(diskBasename, '.');
+	int baseLen = strlen(correctName);
+	if (extension && !strncasecmp(diskBasename, correctName, baseLen))
 	{
-		const char* p = szDiskBasename + iBaseLen;
+		const char* p = diskBasename + baseLen;
 		if (*p == '.')
 		{
 			for (p++; *p && strchr("0123456789", *p); p++) ;
-			bSplittedFragement = !*p;
-			bSplittedFragement = bSplittedFragement && atoi(szDiskBasename + iBaseLen + 1) <= 1; // .000 or .001
+			splittedFragement = !*p;
+			splittedFragement = splittedFragement && atoi(diskBasename + baseLen + 1) <= 1; // .000 or .001
 		}
 	}
 
-	return bSplittedFragement;
+	return splittedFragement;
 }
 
-void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
+void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 {
-	debug("Computing hash for %s", szFilename);
+	debug("Computing hash for %s", filename);
 
-	const int iBlockSize = 16*1024;
-	
-	FILE* pFile = fopen(szFilename, FOPEN_RB);
-	if (!pFile)
+	DiskFile file;
+	if (!file.Open(filename, DiskFile::omRead))
 	{
-		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
+		PrintMessage(Message::mkError, "Could not open file %s", filename);
 		return;
 	}
 
 	// load first 16K of the file into buffer
-	
-	void* pBuffer = malloc(iBlockSize);
-	
-	int iReadBytes = fread(pBuffer, 1, iBlockSize, pFile);
-	int iError = ferror(pFile);
-	if (iReadBytes != iBlockSize && iError)
+	static const int blockSize = 16*1024;
+	CharBuffer buffer(blockSize);
+
+	int readBytes = (int)file.Read(buffer, buffer.Size());
+	if (readBytes != buffer.Size() && file.Error())
 	{
-		PrintMessage(Message::mkError, "Could not read file %s", szFilename);
+		PrintMessage(Message::mkError, "Could not read file %s", filename);
 		return;
 	}
-	
-	fclose(pFile);
-	
-	MD5Hash hash16k;
-	MD5Context context;
-	context.Update(pBuffer, iReadBytes);
+
+	file.Close();
+
+	Par2::MD5Hash hash16k;
+	Par2::MD5Context context;
+	context.Update(buffer, readBytes);
 	context.Final(hash16k);
-	
-	free(pBuffer);
-	
-	debug("file: %s; hash16k: %s", Util::BaseFileName(szFilename), hash16k.print().c_str());
-	
-	for (FileHashList::iterator it = m_FileHashList.begin(); it != m_FileHashList.end(); it++)
+
+	debug("file: %s; hash16k: %s", FileSystem::BaseFileName(filename), hash16k.print().c_str());
+
+	for (FileHash& fileHash : m_fileHashList)
 	{
-		FileHash* pFileHash = *it;
-		if (!strcmp(pFileHash->GetHash(), hash16k.print().c_str()))
+		if (!strcmp(fileHash.GetHash(), hash16k.print().c_str()))
 		{
-			debug("Found correct filename: %s", pFileHash->GetFilename());
-			pFileHash->SetFileExists(true);
+			debug("Found correct filename: %s", fileHash.GetFilename());
+			fileHash.SetFileExists(true);
 
-			char szDstFilename[1024];
-			snprintf(szDstFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, pFileHash->GetFilename());
-			szDstFilename[1024-1] = '\0';
+			BString<1024> dstFilename("%s%c%s", destDir, PATH_SEPARATOR, fileHash.GetFilename());
 
-			if (!Util::FileExists(szDstFilename) && !IsSplittedFragment(szFilename, pFileHash->GetFilename()))
+			if (!FileSystem::FileExists(dstFilename) && !IsSplittedFragment(filename, fileHash.GetFilename()))
 			{
-				RenameFile(szFilename, szDstFilename);
+				RenameFile(filename, dstFilename);
 			}
-			
+
 			break;
 		}
 	}
@@ -406,82 +293,77 @@ void ParRenamer::CheckRegularFile(const char* szDestDir, const char* szFilename)
 * For files not having par2-extensions: checks if the file is a par2-file and renames
 * it according to its set-id.
 */
-void ParRenamer::CheckParFile(const char* szDestDir, const char* szFilename)
+void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 {
-	debug("Checking par2-header for %s", szFilename);
+	debug("Checking par2-header for %s", filename);
 
-	const char* szBasename = Util::BaseFileName(szFilename);
-	const char* szExtension = strrchr(szBasename, '.');
-	if (szExtension && !strcasecmp(szExtension, ".par2"))
+	const char* basename = FileSystem::BaseFileName(filename);
+	const char* extension = strrchr(basename, '.');
+	if (extension && !strcasecmp(extension, ".par2"))
 	{
 		// do not process files already having par2-extension
 		return;
 	}
 
-	FILE* pFile = fopen(szFilename, FOPEN_RB);
-	if (!pFile)
+	DiskFile file;
+	if (!file.Open(filename, DiskFile::omRead))
 	{
-		PrintMessage(Message::mkError, "Could not open file %s", szFilename);
+		PrintMessage(Message::mkError, "Could not open file %s", filename);
 		return;
 	}
 
 	// load par2-header
-	PACKET_HEADER header;
+	Par2::PACKET_HEADER header;
 
-	int iReadBytes = fread(&header, 1, sizeof(header), pFile);
-	int iError = ferror(pFile);
-	if (iReadBytes != sizeof(header) && iError)
+	int readBytes = (int)file.Read(&header, sizeof(header));
+	if (readBytes != sizeof(header) && file.Error())
 	{
-		PrintMessage(Message::mkError, "Could not read file %s", szFilename);
+		PrintMessage(Message::mkError, "Could not read file %s", filename);
 		return;
 	}
 
-	fclose(pFile);
+	file.Close();
 
 	// Check the packet header
-	if (packet_magic != header.magic ||          // not par2-file
-		sizeof(PACKET_HEADER) > header.length || // packet length is too small
+	if (Par2::packet_magic != header.magic ||          // not par2-file
+		sizeof(Par2::PACKET_HEADER) > header.length || // packet length is too small
 		0 != (header.length & 3) ||              // packet length is not a multiple of 4
-		Util::FileSize(szFilename) < (int)header.length)       // packet would extend beyond the end of the file
+		FileSystem::FileSize(filename) < (int)header.length)       // packet would extend beyond the end of the file
 	{
 		// not par2-file or damaged header, ignoring the file
 		return;
 	}
 
-	char szSetId[33];
-	strncpy(szSetId, header.setid.print().c_str(), sizeof(szSetId));
-	szSetId[33-1] = '\0';
-	for (char* p = szSetId; *p; p++) *p = tolower(*p); // convert string to lowercase
+	BString<100> setId = header.setid.print().c_str();
+	for (char* p = setId; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	debug("Renaming: %s; setid: %s", Util::BaseFileName(szFilename), szSetId);
+	debug("Renaming: %s; setid: %s", FileSystem::BaseFileName(filename), *setId);
 
-	char szDestFileName[1024];
-	int iNum = 1;
-	while (iNum == 1 || Util::FileExists(szDestFileName))
+	BString<1024> destFileName;
+	int num = 1;
+	while (num == 1 || FileSystem::FileExists(destFileName))
 	{
-		snprintf(szDestFileName, 1024, "%s%c%s.vol%03i+01.PAR2", szDestDir, PATH_SEPARATOR, szSetId, iNum);
-		szDestFileName[1024-1] = '\0';
-		iNum++;
+		destFileName.Format("%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, *setId, num);
+		num++;
 	}
 
-	RenameFile(szFilename, szDestFileName);
+	RenameFile(filename, destFileName);
 }
 
-void ParRenamer::RenameFile(const char* szSrcFilename, const char* szDestFileName)
+void ParRenamer::RenameFile(const char* srcFilename, const char* destFileName)
 {
-	PrintMessage(Message::mkInfo, "Renaming %s to %s", Util::BaseFileName(szSrcFilename), Util::BaseFileName(szDestFileName));
-	if (!Util::MoveFile(szSrcFilename, szDestFileName))
+	PrintMessage(Message::mkInfo, "Renaming %s to %s", FileSystem::BaseFileName(srcFilename), FileSystem::BaseFileName(destFileName));
+	if (!FileSystem::MoveFile(srcFilename, destFileName))
 	{
-		char szErrBuf[256];
-		PrintMessage(Message::mkError, "Could not rename %s to %s: %s", szSrcFilename, szDestFileName,
-			Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+		PrintMessage(Message::mkError, "Could not rename %s to %s: %s", srcFilename, destFileName,
+			*FileSystem::GetLastErrorMessage());
 		return;
 	}
 
-	m_iRenamedCount++;
+	m_renamedCount++;
 
 	// notify about new file name
-	RegisterRenamedFile(Util::BaseFileName(szSrcFilename), Util::BaseFileName(szDestFileName));
+	RegisterRenamedFile(FileSystem::BaseFileName(srcFilename), FileSystem::BaseFileName(destFileName));
 }
 
 #endif

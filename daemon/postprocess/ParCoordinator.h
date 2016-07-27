@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,20 +14,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef PARCOORDINATOR_H
 #define PARCOORDINATOR_H
-
-#include <list>
-#include <deque>
 
 #include "DownloadInfo.h"
 
@@ -37,114 +29,114 @@
 #include "DupeMatcher.h"
 #endif
 
-class ParCoordinator 
+class ParCoordinator
 {
-private:
+public:
+	ParCoordinator();
+	virtual ~ParCoordinator();
+	void PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+
 #ifndef DISABLE_PARCHECK
+	bool AddPar(FileInfo* fileInfo, bool deleted);
+	void StartParCheckJob(PostInfo* postInfo);
+	void StartParRenameJob(PostInfo* postInfo);
+	void Stop();
+	bool Cancel();
+
+protected:
+	void UpdateParCheckProgress();
+	void UpdateParRenameProgress();
+	void ParCheckCompleted();
+	void ParRenameCompleted();
+	void CheckPauseState(PostInfo* postInfo);
+	bool RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFound);
+
+private:
 	class PostParChecker: public ParChecker
 	{
-	private:
-		ParCoordinator*	m_pOwner;
-		PostInfo*		m_pPostInfo;
-		time_t			m_tParTime;
-		time_t			m_tRepairTime;
-		int				m_iDownloadSec;
-	protected:
-		virtual bool	RequestMorePars(int iBlockNeeded, int* pBlockFound);
-		virtual void	UpdateProgress();
-		virtual void	Completed() { m_pOwner->ParCheckCompleted(); }
-		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
-		virtual void	RegisterParredFile(const char* szFilename);
-		virtual bool	IsParredFile(const char* szFilename);
-		virtual EFileStatus	FindFileCrc(const char* szFilename, unsigned long* lCrc, SegmentList* pSegments);
-		virtual void	RequestDupeSources(DupeSourceList* pDupeSourceList);
-		virtual void	StatDupeSources(DupeSourceList* pDupeSourceList);
 	public:
-		PostInfo*		GetPostInfo() { return m_pPostInfo; }
-		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
-		time_t			GetParTime() { return m_tParTime; }
-		void			SetParTime(time_t tParTime) { m_tParTime = tParTime; }
-		time_t			GetRepairTime() { return m_tRepairTime; }
-		void			SetRepairTime(time_t tRepairTime) { m_tRepairTime = tRepairTime; }
-		int				GetDownloadSec() { return m_iDownloadSec; }
-		void			SetDownloadSec(int iDownloadSec) { m_iDownloadSec = iDownloadSec; }
+		PostInfo* GetPostInfo() { return m_postInfo; }
+		void SetPostInfo(PostInfo* postInfo) { m_postInfo = postInfo; }
+		time_t GetParTime() { return m_parTime; }
+		void SetParTime(time_t parTime) { m_parTime = parTime; }
+		time_t GetRepairTime() { return m_repairTime; }
+		void SetRepairTime(time_t repairTime) { m_repairTime = repairTime; }
+		int GetDownloadSec() { return m_downloadSec; }
+		void SetDownloadSec(int downloadSec) { m_downloadSec = downloadSec; }
+	protected:
+		virtual bool RequestMorePars(int blockNeeded, int* blockFound);
+		virtual void UpdateProgress();
+		virtual void Completed() { m_owner->ParCheckCompleted(); }
+		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+		virtual void RegisterParredFile(const char* filename);
+		virtual bool IsParredFile(const char* filename);
+		virtual EFileStatus FindFileCrc(const char* filename, uint32* crc, SegmentList* segments);
+		virtual void RequestDupeSources(DupeSourceList* dupeSourceList);
+		virtual void StatDupeSources(DupeSourceList* dupeSourceList);
+	private:
+		ParCoordinator* m_owner;
+		PostInfo* m_postInfo;
+		time_t m_parTime;
+		time_t m_repairTime;
+		int m_downloadSec;
 
 		friend class ParCoordinator;
 	};
 
 	class PostParRenamer: public ParRenamer
 	{
-	private:
-		ParCoordinator*	m_pOwner;
-		PostInfo*		m_pPostInfo;
-	protected:
-		virtual void	UpdateProgress();
-		virtual void	Completed() { m_pOwner->ParRenameCompleted(); }
-		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
-		virtual void	RegisterParredFile(const char* szFilename);
-		virtual void	RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName);
 	public:
-		PostInfo*		GetPostInfo() { return m_pPostInfo; }
-		void			SetPostInfo(PostInfo* pPostInfo) { m_pPostInfo = pPostInfo; }
-		
+		PostInfo* GetPostInfo() { return m_postInfo; }
+		void SetPostInfo(PostInfo* postInfo) { m_postInfo = postInfo; }
+	protected:
+		virtual void UpdateProgress();
+		virtual void Completed() { m_owner->ParRenameCompleted(); }
+		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+		virtual void RegisterParredFile(const char* filename);
+		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName);
+	private:
+		ParCoordinator* m_owner;
+		PostInfo* m_postInfo;
+
 		friend class ParCoordinator;
 	};
 
 	class PostDupeMatcher: public DupeMatcher
 	{
-	private:
-		PostInfo*		m_pPostInfo;
-	protected:
-		virtual void	PrintMessage(Message::EKind eKind, const char* szFormat, ...);
 	public:
-		PostDupeMatcher(PostInfo* pPostInfo):
-			DupeMatcher(pPostInfo->GetNZBInfo()->GetDestDir(),
-				pPostInfo->GetNZBInfo()->GetSize() - pPostInfo->GetNZBInfo()->GetParSize()),
-				m_pPostInfo(pPostInfo) {}
+		PostDupeMatcher(PostInfo* postInfo):
+			DupeMatcher(postInfo->GetNzbInfo()->GetDestDir(),
+				postInfo->GetNzbInfo()->GetSize() - postInfo->GetNzbInfo()->GetParSize()),
+			m_postInfo(postInfo) {}
+	protected:
+		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+	private:
+		PostInfo* m_postInfo;
 	};
 
 	struct BlockInfo
 	{
-		FileInfo*		m_pFileInfo;
-		int				m_iBlockCount;
+		FileInfo* m_fileInfo;
+		int m_blockCount;
+		BlockInfo(FileInfo* fileInfo, int blockCount) :
+			m_fileInfo(fileInfo), m_blockCount(blockCount) {}
 	};
 
-	typedef std::list<BlockInfo*> 	Blocks;
-	
+	typedef std::deque<BlockInfo> Blocks;
+
 	enum EJobKind
 	{
 		jkParCheck,
 		jkParRename
 	};
 
-private:
-	PostParChecker		m_ParChecker;
-	bool				m_bStopped;
-	PostParRenamer		m_ParRenamer;
-	EJobKind			m_eCurrentJob;
+	PostParChecker m_parChecker;
+	bool m_stopped = false;
+	PostParRenamer m_parRenamer;
+	EJobKind m_currentJob;
 
-protected:
-	void				UpdateParCheckProgress();
-	void				UpdateParRenameProgress();
-	void				ParCheckCompleted();
-	void				ParRenameCompleted();
-	void				CheckPauseState(PostInfo* pPostInfo);
-	bool				RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound);
-#endif
-
-public:
-						ParCoordinator();
-	virtual				~ParCoordinator();
-	void				PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-
-#ifndef DISABLE_PARCHECK
-	bool				AddPar(FileInfo* pFileInfo, bool bDeleted);
-	void				FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename, 
-							Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound);
-	void				StartParCheckJob(PostInfo* pPostInfo);
-	void				StartParRenameJob(PostInfo* pPostInfo);
-	void				Stop();
-	bool				Cancel();
+	void FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
+		Blocks& blocks, bool strictParName, bool exactParName, int* blockFound);
 #endif
 };
 

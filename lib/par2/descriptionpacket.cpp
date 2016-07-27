@@ -17,7 +17,9 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "par2cmdline.h"
+#include "Util.h"
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
@@ -26,6 +28,9 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 #endif
+
+namespace Par2
+{
 
 // Construct the packet and store the filename and size.
 
@@ -103,6 +108,8 @@ bool DescriptionPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &head
                       (size_t)packet->header.length - sizeof(PACKET_HEADER)))
     return false;
 
+  filename = *WebUtil::Latin1ToUtf8((char*)((FILEDESCRIPTIONPACKET*)packetdata)->name);
+
   // Are the file and 16k hashes consistent
   if (packet->length <= 16384 && packet->hash16k != packet->hashfull)
   {
@@ -111,3 +118,5 @@ bool DescriptionPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &head
 
   return true;
 }
+
+} // end namespace Par2

@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,31 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
 
 #include "nzbget.h"
 #include "Service.h"
@@ -49,8 +27,7 @@
 
 Service::Service()
 {
-	m_iLastTick = 0;
-	g_pServiceCoordinator->RegisterService(this);
+	g_ServiceCoordinator->RegisterService(this);
 }
 
 
@@ -69,31 +46,30 @@ void ServiceCoordinator::Run()
 {
 	debug("Entering ServiceCoordinator-loop");
 
-	const int iStepMSec = 100;
-	int iCurTick = 0;
+	const int stepMSec = 100;
+	int curTick = 0;
 
 	while (!IsStopped())
 	{
-		for (ServiceList::iterator it = m_Services.begin(); it != m_Services.end(); it++)
+		for (Service* service : m_services)
 		{
-			Service* pService = *it;
-			if (iCurTick >= pService->m_iLastTick + pService->ServiceInterval() ||	// interval expired
-				iCurTick == 0 ||													// first start
-				iCurTick + 10000 < pService->m_iLastTick)							// int overflow
+			if (curTick >= service->m_lastTick + service->ServiceInterval() ||	// interval expired
+				curTick == 0 ||													// first start
+				curTick + 10000 < service->m_lastTick)							// int overflow
 			{
-				pService->ServiceWork();
-				pService->m_iLastTick = iCurTick;
+				service->ServiceWork();
+				service->m_lastTick = curTick;
 			}
 		}
 
-		iCurTick += iStepMSec;
-		usleep(iStepMSec * 1000);
+		curTick += stepMSec;
+		usleep(stepMSec * 1000);
 	}
 
 	debug("Exiting ServiceCoordinator-loop");
 }
 
-void ServiceCoordinator::RegisterService(Service* pService)
+void ServiceCoordinator::RegisterService(Service* service)
 {
-	m_Services.push_back(pService);
+	m_services.push_back(service);
 }

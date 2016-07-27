@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,22 +14,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef SCRIPTCONFIG_H
 #define SCRIPTCONFIG_H
 
-#include <vector>
-#include <list>
-#include <time.h>
-
+#include "NString.h"
+#include "Container.h"
 #include "Options.h"
 
 class ScriptConfig
@@ -37,92 +30,77 @@ class ScriptConfig
 public:
 	class Script
 	{
+	public:
+		Script(const char* name, const char* location);
+		Script(Script&&) = default;
+		const char* GetName() { return m_name; }
+		const char* GetLocation() { return m_location; }
+		void SetDisplayName(const char* displayName) { m_displayName = displayName; }
+		const char* GetDisplayName() { return m_displayName; }
+		bool GetPostScript() { return m_postScript; }
+		void SetPostScript(bool postScript) { m_postScript = postScript; }
+		bool GetScanScript() { return m_scanScript; }
+		void SetScanScript(bool scanScript) { m_scanScript = scanScript; }
+		bool GetQueueScript() { return m_queueScript; }
+		void SetQueueScript(bool queueScript) { m_queueScript = queueScript; }
+		bool GetSchedulerScript() { return m_schedulerScript; }
+		void SetSchedulerScript(bool schedulerScript) { m_schedulerScript = schedulerScript; }
+		bool GetFeedScript() { return m_feedScript; }
+		void SetFeedScript(bool feedScript) { m_feedScript = feedScript; }
+		void SetQueueEvents(const char* queueEvents) { m_queueEvents = queueEvents; }
+		const char* GetQueueEvents() { return m_queueEvents; }
+
 	private:
-		char*			m_szName;
-		char*			m_szLocation;
-		char*			m_szDisplayName;
-		bool			m_bPostScript;
-		bool			m_bScanScript;
-		bool			m_bQueueScript;
-		bool			m_bSchedulerScript;
-		bool			m_bFeedScript;
-		char*			m_szQueueEvents;
-
-	public:
-						Script(const char* szName, const char* szLocation);
-						~Script();
-		const char*		GetName() { return m_szName; }
-		const char*		GetLocation() { return m_szLocation; }
-		void			SetDisplayName(const char* szDisplayName);
-		const char*		GetDisplayName() { return m_szDisplayName; }
-		bool			GetPostScript() { return m_bPostScript; }
-		void			SetPostScript(bool bPostScript) { m_bPostScript = bPostScript; }
-		bool			GetScanScript() { return m_bScanScript; }
-		void			SetScanScript(bool bScanScript) { m_bScanScript = bScanScript; }
-		bool			GetQueueScript() { return m_bQueueScript; }
-		void			SetQueueScript(bool bQueueScript) { m_bQueueScript = bQueueScript; }
-		bool			GetSchedulerScript() { return m_bSchedulerScript; }
-		void			SetSchedulerScript(bool bSchedulerScript) { m_bSchedulerScript = bSchedulerScript; }
-		bool			GetFeedScript() { return m_bFeedScript; }
-		void			SetFeedScript(bool bFeedScript) { m_bFeedScript = bFeedScript; }
-		void			SetQueueEvents(const char* szQueueEvents);
-		const char*		GetQueueEvents() { return m_szQueueEvents; }
+		CString m_name;
+		CString m_location;
+		CString m_displayName;
+		bool m_postScript;
+		bool m_scanScript;
+		bool m_queueScript;
+		bool m_schedulerScript;
+		bool m_feedScript;
+		CString m_queueEvents;
 	};
 
-	typedef std::list<Script*>  ScriptsBase;
-
-	class Scripts: public ScriptsBase
-	{
-	public:
-						~Scripts();
-		void			Clear();
-		Script*			Find(const char* szName);	
-	};
+	typedef std::list<Script> Scripts;
 
 	class ConfigTemplate
 	{
+	public:
+		ConfigTemplate(Script&& script, const char* templ) :
+			m_script(std::move(script)), m_template(templ) {}
+		Script* GetScript() { return &m_script; }
+		const char* GetTemplate() { return m_template; }
+
 	private:
-		Script*			m_pScript;
-		char*			m_szTemplate;
+		Script m_script;
+		CString m_template;
 
 		friend class Options;
-
-	public:
-						ConfigTemplate(Script* pScript, const char* szTemplate);
-						~ConfigTemplate();
-		Script*			GetScript() { return m_pScript; }
-		const char*		GetTemplate() { return m_szTemplate; }
 	};
-	
-	typedef std::vector<ConfigTemplate*>  ConfigTemplatesBase;
 
-	class ConfigTemplates: public ConfigTemplatesBase
-	{
-	public:
-						~ConfigTemplates();
-	};
+	typedef std::deque<ConfigTemplate> ConfigTemplates;
+
+	void InitOptions();
+	Scripts* GetScripts() { return &m_scripts; }
+	bool LoadConfig(Options::OptEntries* optEntries);
+	bool SaveConfig(Options::OptEntries* optEntries);
+	bool LoadConfigTemplates(ConfigTemplates* configTemplates);
+	ConfigTemplates* GetConfigTemplates() { return &m_configTemplates; }
 
 private:
-	Scripts				m_Scripts;
-	ConfigTemplates		m_ConfigTemplates;
+	Scripts m_scripts;
+	ConfigTemplates m_configTemplates;
 
-	void				InitScripts();
-	void				InitConfigTemplates();
-	static bool			CompareScripts(Script* pScript1, Script* pScript2);
-	void				LoadScriptDir(Scripts* pScripts, const char* szDirectory, bool bIsSubDir);
-	void				BuildScriptDisplayNames(Scripts* pScripts);
-	void				LoadScripts(Scripts* pScripts);
-
-public:
-						ScriptConfig();
-						~ScriptConfig();
-	Scripts*			GetScripts() { return &m_Scripts; }
-	bool				LoadConfig(Options::OptEntries* pOptEntries);
-	bool				SaveConfig(Options::OptEntries* pOptEntries);
-	bool				LoadConfigTemplates(ConfigTemplates* pConfigTemplates);
-	ConfigTemplates*	GetConfigTemplates() { return &m_ConfigTemplates; }
+	void InitScripts();
+	void InitConfigTemplates();
+	void LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir);
+	void BuildScriptDisplayNames(Scripts* scripts);
+	void LoadScripts(Scripts* scripts);
+	BString<1024>BuildScriptName(const char* directory, const char* filename, bool isSubDir);
+	bool ScriptExists(Scripts* scripts, const char* scriptName);
 };
 
-extern ScriptConfig* g_pScriptConfig;
+extern ScriptConfig* g_ScriptConfig;
 
 #endif

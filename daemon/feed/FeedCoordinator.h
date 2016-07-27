@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,22 +14,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef FEEDCOORDINATOR_H
 #define FEEDCOORDINATOR_H
 
-#include <deque>
-#include <list>
-#include <time.h>
-
+#include "NString.h"
 #include "Log.h"
 #include "Thread.h"
 #include "WebDownloader.h"
@@ -43,100 +35,102 @@ class FeedDownloader;
 
 class FeedCoordinator : public Thread, public Observer, public Subject, public Debuggable
 {
+public:
+	FeedCoordinator();
+	virtual ~FeedCoordinator();
+	virtual void Run();
+	virtual void Stop();
+	void Update(Subject* caller, void* aspect);
+	void AddFeed(std::unique_ptr<FeedInfo> feedInfo) { m_feeds.push_back(std::move(feedInfo)); }
+
+	/* may return empty pointer on error */
+	std::shared_ptr<FeedItemList> PreviewFeed(int id, const char* name, const char* url,
+		const char* filter, bool backlog, bool pauseNzb, const char* category, int priority,
+		int interval, const char* feedScript, int cacheTimeSec, const char* cacheId);
+
+	/* may return empty pointer on error */
+	std::shared_ptr<FeedItemList> ViewFeed(int id);
+
+	void FetchFeed(int id);
+	bool HasActiveDownloads();
+	Feeds* GetFeeds() { return &m_feeds; }
+
+protected:
+	virtual void LogDebugInfo();
+
 private:
 	class DownloadQueueObserver: public Observer
 	{
 	public:
-		FeedCoordinator*	m_pOwner;
-		virtual void		Update(Subject* pCaller, void* pAspect) { m_pOwner->DownloadQueueUpdate(pCaller, pAspect); }
+		FeedCoordinator* m_owner;
+		virtual void Update(Subject* caller, void* aspect) { m_owner->DownloadQueueUpdate(caller, aspect); }
 	};
 
 	class FeedCacheItem
 	{
-	private:
-		char*				m_szUrl;
-		int					m_iCacheTimeSec;
-		char*				m_szCacheId;
-		time_t				m_tLastUsage;
-		FeedItemInfos*		m_pFeedItemInfos;
-
 	public:
-							FeedCacheItem(const char* szUrl, int iCacheTimeSec,const char* szCacheId,
-								time_t tLastUsage, FeedItemInfos* pFeedItemInfos);
-							~FeedCacheItem();
-		const char*			GetUrl() { return m_szUrl; }
-		int					GetCacheTimeSec() { return m_iCacheTimeSec; }
-		const char*			GetCacheId() { return m_szCacheId; }
-		time_t				GetLastUsage() { return m_tLastUsage; }
-		void				SetLastUsage(time_t tLastUsage) { m_tLastUsage = tLastUsage; }
-		FeedItemInfos*		GetFeedItemInfos() { return m_pFeedItemInfos; }
+		FeedCacheItem(const char* url, int cacheTimeSec,const char* cacheId,
+				time_t lastUsage, std::shared_ptr<FeedItemList> feedItems) :
+			m_url(url), m_cacheTimeSec(cacheTimeSec), m_cacheId(cacheId),
+			m_lastUsage(lastUsage), m_feedItems(feedItems) {}
+		const char* GetUrl() { return m_url; }
+		int GetCacheTimeSec() { return m_cacheTimeSec; }
+		const char* GetCacheId() { return m_cacheId; }
+		time_t GetLastUsage() { return m_lastUsage; }
+		void SetLastUsage(time_t lastUsage) { m_lastUsage = lastUsage; }
+		std::shared_ptr<FeedItemList> GetFeedItems() { return m_feedItems; }
+
+	private:
+		CString m_url;
+		int m_cacheTimeSec;
+		CString m_cacheId;
+		time_t m_lastUsage;
+		std::shared_ptr<FeedItemList> m_feedItems;
 	};
 
 	class FilterHelper : public FeedFilterHelper
 	{
-	private:
-		RegEx*				m_pSeasonEpisodeRegEx;
 	public:
-							FilterHelper();
-							~FilterHelper();
-		virtual RegEx**		GetSeasonEpisodeRegEx() { return &m_pSeasonEpisodeRegEx; };
-		virtual void		CalcDupeStatus(const char* szTitle, const char* szDupeKey, char* szStatusBuf, int iBufLen);
+		virtual std::unique_ptr<RegEx>& GetRegEx(int id);
+		virtual void CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen);
+	private:
+		std::vector<std::unique_ptr<RegEx>> m_regExes;
 	};
 
-	typedef std::deque<FeedCacheItem*>	FeedCache;
-	typedef std::list<FeedDownloader*>	ActiveDownloads;
+	typedef std::list<FeedCacheItem> FeedCache;
+	typedef std::deque<FeedDownloader*> ActiveDownloads;
 
-private:
-	Feeds					m_Feeds;
-	ActiveDownloads			m_ActiveDownloads;
-	FeedHistory				m_FeedHistory;
-	Mutex					m_mutexDownloads;
-	DownloadQueueObserver	m_DownloadQueueObserver;
-	bool					m_bForce;
-	bool					m_bSave;
-	FeedCache				m_FeedCache;
-	FilterHelper			m_FilterHelper;
+	Feeds m_feeds;
+	ActiveDownloads m_activeDownloads;
+	FeedHistory m_feedHistory;
+	Mutex m_downloadsMutex;
+	DownloadQueueObserver m_downloadQueueObserver;
+	bool m_force = false;
+	bool m_save = false;
+	FeedCache m_feedCache;
 
-	void					StartFeedDownload(FeedInfo* pFeedInfo, bool bForce);
-	void					FeedCompleted(FeedDownloader* pFeedDownloader);
-	void					FilterFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos);
-	void					ProcessFeed(FeedInfo* pFeedInfo, FeedItemInfos* pFeedItemInfos, NZBList* pAddedNZBs);
-	NZBInfo*				CreateNZBInfo(FeedInfo* pFeedInfo, FeedItemInfo* pFeedItemInfo);
-	void					ResetHangingDownloads();
-	void					DownloadQueueUpdate(Subject* pCaller, void* pAspect);
-	void					CleanupHistory();
-	void					CleanupCache();
-	void					CheckSaveFeeds();
-
-protected:
-	virtual void			LogDebugInfo();
-
-public:
-							FeedCoordinator();                
-	virtual					~FeedCoordinator();
-	virtual void			Run();
-	virtual void 			Stop();
-	void					Update(Subject* pCaller, void* pAspect);
-	void					AddFeed(FeedInfo* pFeedInfo);
-	bool					PreviewFeed(int iID, const char* szName, const char* szUrl, const char* szFilter, bool bBacklog,
-								bool bPauseNzb, const char* szCategory, int iPriority, int iInterval, const char* szFeedScript,
-								int iCacheTimeSec, const char* szCacheId, FeedItemInfos** ppFeedItemInfos);
-	bool					ViewFeed(int iID, FeedItemInfos** ppFeedItemInfos);
-	void					FetchFeed(int iID);
-	bool					HasActiveDownloads();
-	Feeds*					GetFeeds() { return &m_Feeds; }
+	void StartFeedDownload(FeedInfo* feedInfo, bool force);
+	void FeedCompleted(FeedDownloader* feedDownloader);
+	void FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems);
+	std::vector<std::unique_ptr<NzbInfo>> ProcessFeed(FeedInfo* feedInfo, FeedItemList* feedItems);
+	std::unique_ptr<NzbInfo> CreateNzbInfo(FeedInfo* feedInfo, FeedItemInfo& feedItemInfo);
+	void ResetHangingDownloads();
+	void DownloadQueueUpdate(Subject* caller, void* aspect);
+	void CleanupHistory();
+	void CleanupCache();
+	void CheckSaveFeeds();
 };
 
-extern FeedCoordinator* g_pFeedCoordinator;
+extern FeedCoordinator* g_FeedCoordinator;
 
 class FeedDownloader : public WebDownloader
 {
-private:
-	FeedInfo*				m_pFeedInfo;
-
 public:
-	void					SetFeedInfo(FeedInfo* pFeedInfo) { m_pFeedInfo = pFeedInfo; }
-	FeedInfo*				GetFeedInfo() { return m_pFeedInfo; }
+	void SetFeedInfo(FeedInfo* feedInfo) { m_feedInfo = feedInfo; }
+	FeedInfo* GetFeedInfo() { return m_feedInfo; }
+
+private:
+	FeedInfo* m_feedInfo;
 };
 
 #endif

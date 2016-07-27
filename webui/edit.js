@@ -1,7 +1,7 @@
 /*
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -1099,6 +1094,9 @@ var LogTab = (new function($)
 {
 	'use strict'
 
+	var curLog;
+	var curItem;
+
 	this.init = function(name)
 	{
 		var recordsPerPage = UISettings.read('ItemLogRecordsPerPage', 10);
@@ -1128,8 +1126,12 @@ var LogTab = (new function($)
 
 	this.fill = function(name, item)
 	{
+		curItem = item;
+
 		function logLoaded(log)
 		{
+		curLog = log;
+
 			$('#' + name + 'EditDialog .loading-block').hide();
 			var $LogTable = $('#' + name + 'Edit_LogTable');
 			var data = [];
@@ -1189,7 +1191,7 @@ var LogTab = (new function($)
 			cell.width = '65px';
 		}
 	}
-	
+
 	this.recordsPerPageChange = function(name)
 	{
 		var val = $('#' + name + 'LogRecordsPerPage').val();
@@ -1197,7 +1199,28 @@ var LogTab = (new function($)
 		var $LogTable = $('#' + name + 'Edit_LogTable');
 		$LogTable.fasttable('setPageSize', val);
 	}
-	
+
+	this.export = function()
+	{
+		var filename = curItem.NZBName + '.log';
+		var logstr = '';
+
+		for (var i=0; i < curLog.length; i++)
+		{
+			var message = curLog[i];
+			var time = Util.formatDateTime(message.Time + UISettings.timeZoneCorrection*60*60);
+			logstr += time + '\t' + message.Kind + '\t' + message.Text + '\n';
+		}
+
+		if (!Util.saveToLocalFile(logstr, "text/plain;charset=utf-8", filename))
+		{
+			var queueDir = Options.option('QueueDir');
+			var pathSeparator = queueDir.indexOf('\\') > -1 ? '\\' : '/';
+			alert('Unfortunately your browser doesn\'t support access to local file system.\n\n' +
+				'The log of this nzb can be found in file "' +
+				queueDir + pathSeparator + 'n' + curItem.NZBID + '.log"');
+		}
+	}
 }(jQuery));
 
 
@@ -1553,6 +1576,7 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Return, #HistoryEdit_ReturnURL').click(itemReturn);
 		$('#HistoryEdit_Reprocess').click(itemReprocess);
 		$('#HistoryEdit_Redownload').click(itemRedownload);
+		$('#HistoryEdit_RetryFailed').click(itemRetryFailed);
 		$('#HistoryEdit_Param, #HistoryEdit_Dupe, #HistoryEdit_Log').click(tabClick);
 		$('#HistoryEdit_Back').click(backClick);
 		$('#HistoryEdit_MarkSuccess').click(itemSuccess);
@@ -1716,6 +1740,8 @@ var HistoryEditDialog = (new function()
 		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
 		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
 		Util.show('#HistoryEdit_Redownload', hist.Kind === 'NZB');
+		Util.show('#HistoryEdit_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.ParStatus !== 'SUCCESS' &&
+			(hist.DeleteStatus === 'NONE' || hist.RemainingFileCount > 0));
 		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
@@ -1929,6 +1955,20 @@ var HistoryEditDialog = (new function()
 		RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
 	}
 
+	function itemRetryFailed(e)
+	{
+		e.preventDefault();
+		disableAllButtons();
+		saveCompleted = retryFailed;
+		saveDupeKey();
+	}
+	
+	function retryFailed()
+	{
+		notification = '#Notif_History_RetryFailed';
+		RPC.call('editqueue', ['HistoryRetryFailed', 0, '', [curHist.ID]], completed);
+	}
+	
 	function completed()
 	{
 		$HistoryEditDialog.modal('hide');

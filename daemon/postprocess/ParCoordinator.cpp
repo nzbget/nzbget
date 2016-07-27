@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,33 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <ctype.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
 
 #include "nzbget.h"
 #include "ParCoordinator.h"
@@ -49,42 +25,41 @@
 #include "Options.h"
 #include "DiskState.h"
 #include "Log.h"
-#include "Util.h"
+#include "FileSystem.h"
 
 #ifndef DISABLE_PARCHECK
-bool ParCoordinator::PostParChecker::RequestMorePars(int iBlockNeeded, int* pBlockFound)
+bool ParCoordinator::PostParChecker::RequestMorePars(int blockNeeded, int* blockFound)
 {
-	return m_pOwner->RequestMorePars(m_pPostInfo->GetNZBInfo(), GetParFilename(), iBlockNeeded, pBlockFound);
+	return m_owner->RequestMorePars(m_postInfo->GetNzbInfo(), GetParFilename(), blockNeeded, blockFound);
 }
 
 void ParCoordinator::PostParChecker::UpdateProgress()
 {
-	m_pOwner->UpdateParCheckProgress();
+	m_owner->UpdateParCheckProgress();
 }
 
-void ParCoordinator::PostParChecker::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+void ParCoordinator::PostParChecker::PrintMessage(Message::EKind kind, const char* format, ...)
 {
-	char szText[1024];
+	char text[1024];
 	va_list args;
-	va_start(args, szFormat);
-	vsnprintf(szText, 1024, szFormat, args);
+	va_start(args, format);
+	vsnprintf(text, 1024, format, args);
 	va_end(args);
-	szText[1024-1] = '\0';
+	text[1024-1] = '\0';
 
-	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
-void ParCoordinator::PostParChecker::RegisterParredFile(const char* szFilename)
+void ParCoordinator::PostParChecker::RegisterParredFile(const char* filename)
 {
-	m_pPostInfo->GetParredFiles()->push_back(strdup(szFilename));
+	m_postInfo->GetParredFiles()->push_back(filename);
 }
 
-bool ParCoordinator::PostParChecker::IsParredFile(const char* szFilename)
+bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
 {
-	for (PostInfo::ParredFiles::iterator it = m_pPostInfo->GetParredFiles()->begin(); it != m_pPostInfo->GetParredFiles()->end(); it++)
+	for (CString& parredFile : m_postInfo->GetParredFiles())
 	{
-		const char* szParredFile = *it;
-		if (!strcasecmp(szParredFile, szFilename))
+		if (!strcasecmp(parredFile, filename))
 		{
 			return true;
 		}
@@ -92,170 +67,155 @@ bool ParCoordinator::PostParChecker::IsParredFile(const char* szFilename)
 	return false;
 }
 
-ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* szFilename,
-	unsigned long* lCrc, SegmentList* pSegments)
+ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* filename,
+	uint32* crc, SegmentList* segments)
 {
-	CompletedFile* pCompletedFile = NULL;
+	CompletedFile* completedFile = nullptr;
 
-	for (CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFile& completedFile2 : m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
-		CompletedFile* pCompletedFile2 = *it;
-		if (!strcasecmp(pCompletedFile2->GetFileName(), szFilename))
+		if (!strcasecmp(completedFile2.GetFileName(), filename))
 		{
-			pCompletedFile = pCompletedFile2;
+			completedFile = &completedFile2;
 			break;
 		}
 	}
-	if (!pCompletedFile)
+	if (!completedFile)
 	{
 		return ParChecker::fsUnknown;
 	}
 
-	debug("Found completed file: %s, CRC: %.8x, Status: %i", Util::BaseFileName(pCompletedFile->GetFileName()), pCompletedFile->GetCrc(), (int)pCompletedFile->GetStatus());
+	debug("Found completed file: %s, CRC: %.8x, Status: %i", FileSystem::BaseFileName(completedFile->GetFileName()), completedFile->GetCrc(), (int)completedFile->GetStatus());
 
-	*lCrc = pCompletedFile->GetCrc();
+	*crc = completedFile->GetCrc();
 
-	if (pCompletedFile->GetStatus() == CompletedFile::cfPartial && pCompletedFile->GetID() > 0 &&
-		!m_pPostInfo->GetNZBInfo()->GetReprocess())
+	if (completedFile->GetStatus() == CompletedFile::cfPartial && completedFile->GetId() > 0 &&
+		!m_postInfo->GetNzbInfo()->GetReprocess())
 	{
-		FileInfo* pTmpFileInfo = new FileInfo(pCompletedFile->GetID());
+		FileInfo tmpFileInfo(completedFile->GetId());
 
-		if (!g_pDiskState->LoadFileState(pTmpFileInfo, NULL, true))
+		if (!g_DiskState->LoadFileState(&tmpFileInfo, nullptr, true))
 		{
-			delete pTmpFileInfo;
 			return ParChecker::fsUnknown;
 		}
 
-		for (FileInfo::Articles::iterator it = pTmpFileInfo->GetArticles()->begin(); it != pTmpFileInfo->GetArticles()->end(); it++)
+		for (ArticleInfo* pa : tmpFileInfo.GetArticles())
 		{
-			ArticleInfo* pa = *it;
-			ParChecker::Segment* pSegment = new Segment(pa->GetStatus() == ArticleInfo::aiFinished,
+			segments->emplace_back(pa->GetStatus() == ArticleInfo::aiFinished,
 				pa->GetSegmentOffset(), pa->GetSegmentSize(), pa->GetCrc());
-			pSegments->push_back(pSegment);
 		}
-
-		delete pTmpFileInfo;
 	}
 
-	return pCompletedFile->GetStatus() == CompletedFile::cfSuccess ? ParChecker::fsSuccess :
-		pCompletedFile->GetStatus() == CompletedFile::cfFailure &&
-			!m_pPostInfo->GetNZBInfo()->GetReprocess() ? ParChecker::fsFailure :
-		pCompletedFile->GetStatus() == CompletedFile::cfPartial && pSegments->size() > 0 &&
-			!m_pPostInfo->GetNZBInfo()->GetReprocess()? ParChecker::fsPartial :
+	return completedFile->GetStatus() == CompletedFile::cfSuccess ? ParChecker::fsSuccess :
+		completedFile->GetStatus() == CompletedFile::cfFailure &&
+			!m_postInfo->GetNzbInfo()->GetReprocess() ? ParChecker::fsFailure :
+		completedFile->GetStatus() == CompletedFile::cfPartial && segments->size() > 0 &&
+			!m_postInfo->GetNzbInfo()->GetReprocess()? ParChecker::fsPartial :
 		ParChecker::fsUnknown;
 }
 
-void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* pDupeSourceList)
+void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSourceList)
 {
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	NZBList dupeList;
-	g_pDupeCoordinator->ListHistoryDupes(pDownloadQueue, m_pPostInfo->GetNZBInfo(), &dupeList);
+	RawNzbList dupeList = g_DupeCoordinator->ListHistoryDupes(downloadQueue, m_postInfo->GetNzbInfo());
 
 	if (!dupeList.empty())
 	{
-		PostDupeMatcher dupeMatcher(m_pPostInfo);
-		PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", m_pPostInfo->GetNZBInfo()->GetName());
-		bool bSizeComparisonPossible = dupeMatcher.Prepare();
-		for (NZBList::iterator it = dupeList.begin(); it != dupeList.end(); it++)
+		PostDupeMatcher dupeMatcher(m_postInfo);
+		PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", m_postInfo->GetNzbInfo()->GetName());
+		bool sizeComparisonPossible = dupeMatcher.Prepare();
+		for (NzbInfo* dupeNzbInfo : dupeList)
 		{
-			NZBInfo* pDupeNZBInfo = *it;
-			if (bSizeComparisonPossible)
+			if (sizeComparisonPossible)
 			{
-				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", Util::BaseFileName(pDupeNZBInfo->GetDestDir()));
+				PrintMessage(Message::mkInfo, "Checking %s for dupe scan usability", FileSystem::BaseFileName(dupeNzbInfo->GetDestDir()));
 			}
-			bool bUseDupe = !bSizeComparisonPossible || dupeMatcher.MatchDupeContent(pDupeNZBInfo->GetDestDir());
-			if (bUseDupe)
+			bool useDupe = !sizeComparisonPossible || dupeMatcher.MatchDupeContent(dupeNzbInfo->GetDestDir());
+			if (useDupe)
 			{
-				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", Util::BaseFileName(pDupeNZBInfo->GetDestDir()));
-				pDupeSourceList->push_back(new ParChecker::DupeSource(pDupeNZBInfo->GetID(), pDupeNZBInfo->GetDestDir()));
+				PrintMessage(Message::mkInfo, "Adding %s to dupe scan sources", FileSystem::BaseFileName(dupeNzbInfo->GetDestDir()));
+				dupeSourceList->emplace_back(dupeNzbInfo->GetId(), dupeNzbInfo->GetDestDir());
 			}
 		}
-		if (pDupeSourceList->empty())
+		if (dupeSourceList->empty())
 		{
 			PrintMessage(Message::mkInfo, "No usable dupe scan sources found");
 		}
 	}
-
-	DownloadQueue::Unlock();
 }
 
-void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* pDupeSourceList)
+void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceList)
 {
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	int iTotalExtraParBlocks = 0;
-	for (DupeSourceList::iterator it = pDupeSourceList->begin(); it != pDupeSourceList->end(); it++)
+	int totalExtraParBlocks = 0;
+	for (DupeSource& dupeSource : dupeSourceList)
 	{
-		DupeSource* pDupeSource = *it;
-		if (pDupeSource->GetUsedBlocks() > 0)
+		if (dupeSource.GetUsedBlocks() > 0)
 		{
-			for (HistoryList::iterator it = pDownloadQueue->GetHistory()->begin(); it != pDownloadQueue->GetHistory()->end(); it++)
+			for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 			{
-				HistoryInfo* pHistoryInfo = *it;
-				if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb &&
-					pHistoryInfo->GetNZBInfo()->GetID() == pDupeSource->GetID())
+				if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
+					historyInfo->GetNzbInfo()->GetId() == dupeSource.GetId())
 				{
-					pHistoryInfo->GetNZBInfo()->SetExtraParBlocks(pHistoryInfo->GetNZBInfo()->GetExtraParBlocks() - pDupeSource->GetUsedBlocks());
+					historyInfo->GetNzbInfo()->SetExtraParBlocks(historyInfo->GetNzbInfo()->GetExtraParBlocks() - dupeSource.GetUsedBlocks());
 				}
 			}
 		}
-		iTotalExtraParBlocks += pDupeSource->GetUsedBlocks();
+		totalExtraParBlocks += dupeSource.GetUsedBlocks();
 	}
 
-	m_pPostInfo->GetNZBInfo()->SetExtraParBlocks(m_pPostInfo->GetNZBInfo()->GetExtraParBlocks() + iTotalExtraParBlocks);
-
-	DownloadQueue::Unlock();
+	m_postInfo->GetNzbInfo()->SetExtraParBlocks(m_postInfo->GetNzbInfo()->GetExtraParBlocks() + totalExtraParBlocks);
 }
 
 void ParCoordinator::PostParRenamer::UpdateProgress()
 {
-	m_pOwner->UpdateParRenameProgress();
+	m_owner->UpdateParRenameProgress();
 }
 
-void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind kind, const char* format, ...)
 {
-	char szText[1024];
+	char text[1024];
 	va_list args;
-	va_start(args, szFormat);
-	vsnprintf(szText, 1024, szFormat, args);
+	va_start(args, format);
+	vsnprintf(text, 1024, format, args);
 	va_end(args);
-	szText[1024-1] = '\0';
-	
-	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
+	text[1024-1] = '\0';
+
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
-void ParCoordinator::PostParRenamer::RegisterParredFile(const char* szFilename)
+void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
 {
-	m_pPostInfo->GetParredFiles()->push_back(strdup(szFilename));
+	m_postInfo->GetParredFiles()->push_back(filename);
 }
 
 /**
  *  Update file name in the CompletedFiles-list of NZBInfo
  */
-void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName)
+void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
 {
-	for (CompletedFiles::iterator it = m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->begin(); it != m_pPostInfo->GetNZBInfo()->GetCompletedFiles()->end(); it++)
+	for (CompletedFile& completedFile : m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
-		CompletedFile* pCompletedFile = *it;
-		if (!strcasecmp(pCompletedFile->GetFileName(), szOldFilename))
+		if (!strcasecmp(completedFile.GetFileName(), oldFilename))
 		{
-			pCompletedFile->SetFileName(szNewFileName);
+			completedFile.SetFileName(newFileName);
 			break;
 		}
 	}
 }
 
-void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind kind, const char* format, ...)
 {
-	char szText[1024];
+	char text[1024];
 	va_list args;
-	va_start(args, szFormat);
-	vsnprintf(szText, 1024, szFormat, args);
+	va_start(args, format);
+	vsnprintf(text, 1024, format, args);
 	va_end(args);
-	szText[1024-1] = '\0';
+	text[1024-1] = '\0';
 
-	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
+	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
 #endif
@@ -265,9 +225,8 @@ ParCoordinator::ParCoordinator()
 	debug("Creating ParCoordinator");
 
 #ifndef DISABLE_PARCHECK
-	m_bStopped = false;
-	m_ParChecker.m_pOwner = this;
-	m_ParRenamer.m_pOwner = this;
+	m_parChecker.m_owner = this;
+	m_parRenamer.m_owner = this;
 #endif
 }
 
@@ -281,32 +240,32 @@ void ParCoordinator::Stop()
 {
 	debug("Stopping ParCoordinator");
 
-	m_bStopped = true;
+	m_stopped = true;
 
-	if (m_ParChecker.IsRunning())
+	if (m_parChecker.IsRunning())
 	{
-		m_ParChecker.Stop();
-		int iMSecWait = 5000;
-		while (m_ParChecker.IsRunning() && iMSecWait > 0)
+		m_parChecker.Stop();
+		int mSecWait = 5000;
+		while (m_parChecker.IsRunning() && mSecWait > 0)
 		{
 			usleep(50 * 1000);
-			iMSecWait -= 50;
+			mSecWait -= 50;
 		}
-		if (m_ParChecker.IsRunning())
+		if (m_parChecker.IsRunning())
 		{
-			warn("Terminating par-check for %s", m_ParChecker.GetInfoName());
-			m_ParChecker.Kill();
+			warn("Terminating par-check for %s", m_parChecker.GetInfoName());
+			m_parChecker.Kill();
 		}
 	}
 }
 #endif
 
-void ParCoordinator::PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
+void ParCoordinator::PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
 	debug("ParCoordinator: Pausing pars");
 
-	pDownloadQueue->EditEntry(pNZBInfo->GetID(), 
-		DownloadQueue::eaGroupPauseExtraPars, 0, NULL);
+	downloadQueue->EditEntry(nzbInfo->GetId(),
+		DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
 }
 
 #ifndef DISABLE_PARCHECK
@@ -314,63 +273,61 @@ void ParCoordinator::PausePars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo)
 /**
  * DownloadQueue must be locked prior to call of this function.
  */
-void ParCoordinator::StartParCheckJob(PostInfo* pPostInfo)
+void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
 {
-	m_eCurrentJob = jkParCheck;
-	m_ParChecker.SetPostInfo(pPostInfo);
-	m_ParChecker.SetDestDir(pPostInfo->GetNZBInfo()->GetDestDir());
-	m_ParChecker.SetNZBName(pPostInfo->GetNZBInfo()->GetName());
-	m_ParChecker.SetParTime(time(NULL));
-	m_ParChecker.SetDownloadSec(pPostInfo->GetNZBInfo()->GetDownloadSec());
-	m_ParChecker.SetParQuick(g_pOptions->GetParQuick() && !pPostInfo->GetForceParFull());
-	m_ParChecker.SetForceRepair(pPostInfo->GetForceRepair());
-	m_ParChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", pPostInfo->GetNZBInfo()->GetName());
-	pPostInfo->SetWorking(true);
-	m_ParChecker.Start();
+	m_currentJob = jkParCheck;
+	m_parChecker.SetPostInfo(postInfo);
+	m_parChecker.SetDestDir(postInfo->GetNzbInfo()->GetDestDir());
+	m_parChecker.SetNzbName(postInfo->GetNzbInfo()->GetName());
+	m_parChecker.SetParTime(Util::CurrentTime());
+	m_parChecker.SetDownloadSec(postInfo->GetNzbInfo()->GetDownloadSec());
+	m_parChecker.SetParQuick(g_Options->GetParQuick() && !postInfo->GetForceParFull());
+	m_parChecker.SetForceRepair(postInfo->GetForceRepair());
+	m_parChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", postInfo->GetNzbInfo()->GetName());
+	postInfo->SetWorking(true);
+	m_parChecker.Start();
 }
 
 /**
  * DownloadQueue must be locked prior to call of this function.
  */
-void ParCoordinator::StartParRenameJob(PostInfo* pPostInfo)
+void ParCoordinator::StartParRenameJob(PostInfo* postInfo)
 {
-	const char* szDestDir = pPostInfo->GetNZBInfo()->GetDestDir();
+	const char* destDir = postInfo->GetNzbInfo()->GetDestDir();
 
-	char szFinalDir[1024];
-	if (pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usSuccess)
+	if (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
+		!Util::EmptyStr(postInfo->GetNzbInfo()->GetFinalDir()))
 	{
-		pPostInfo->GetNZBInfo()->BuildFinalDirName(szFinalDir, 1024);
-		szFinalDir[1024-1] = '\0';
-		szDestDir = szFinalDir;
+		destDir = postInfo->GetNzbInfo()->GetFinalDir();
 	}
 
-	m_eCurrentJob = jkParRename;
-	m_ParRenamer.SetPostInfo(pPostInfo);
-	m_ParRenamer.SetDestDir(szDestDir);
-	m_ParRenamer.SetInfoName(pPostInfo->GetNZBInfo()->GetName());
-	m_ParRenamer.SetDetectMissing(pPostInfo->GetNZBInfo()->GetUnpackStatus() == NZBInfo::usNone);
-	m_ParRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", pPostInfo->GetNZBInfo()->GetName());
-	pPostInfo->SetWorking(true);
-	m_ParRenamer.Start();
+	m_currentJob = jkParRename;
+	m_parRenamer.SetPostInfo(postInfo);
+	m_parRenamer.SetDestDir(destDir);
+	m_parRenamer.SetInfoName(postInfo->GetNzbInfo()->GetName());
+	m_parRenamer.SetDetectMissing(postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone);
+	m_parRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", postInfo->GetNzbInfo()->GetName());
+	postInfo->SetWorking(true);
+	m_parRenamer.Start();
 }
 
 bool ParCoordinator::Cancel()
 {
-	if (m_eCurrentJob == jkParCheck)
+	if (m_currentJob == jkParCheck)
 	{
-		if (!m_ParChecker.GetCancelled())
+		if (!m_parChecker.GetCancelled())
 		{
-			debug("Cancelling par-repair for %s", m_ParChecker.GetInfoName());
-			m_ParChecker.Cancel();
+			debug("Cancelling par-repair for %s", m_parChecker.GetInfoName());
+			m_parChecker.Cancel();
 			return true;
 		}
 	}
-	else if (m_eCurrentJob == jkParRename)
+	else if (m_currentJob == jkParRename)
 	{
-		if (!m_ParRenamer.GetCancelled())
+		if (!m_parRenamer.GetCancelled())
 		{
-			debug("Cancelling par-rename for %s", m_ParRenamer.GetInfoName());
-			m_ParRenamer.Cancel();
+			debug("Cancelling par-rename for %s", m_parRenamer.GetInfoName());
+			m_parRenamer.Cancel();
 			return true;
 		}
 	}
@@ -380,61 +337,57 @@ bool ParCoordinator::Cancel()
 /**
  * DownloadQueue must be locked prior to call of this function.
  */
-bool ParCoordinator::AddPar(FileInfo* pFileInfo, bool bDeleted)
+bool ParCoordinator::AddPar(FileInfo* fileInfo, bool deleted)
 {
-	bool bSameCollection = m_ParChecker.IsRunning() &&
-		pFileInfo->GetNZBInfo() == m_ParChecker.GetPostInfo()->GetNZBInfo();
-	if (bSameCollection && !bDeleted)
+	bool sameCollection = m_parChecker.IsRunning() &&
+		fileInfo->GetNzbInfo() == m_parChecker.GetPostInfo()->GetNzbInfo();
+	if (sameCollection && !deleted)
 	{
-		char szFullFilename[1024];
-		snprintf(szFullFilename, 1024, "%s%c%s", pFileInfo->GetNZBInfo()->GetDestDir(), (int)PATH_SEPARATOR, pFileInfo->GetFilename());
-		szFullFilename[1024-1] = '\0';
-		m_ParChecker.AddParFile(szFullFilename);
+		BString<1024> fullFilename("%s%c%s", fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename());
+		m_parChecker.AddParFile(fullFilename);
 	}
 	else
 	{
-		m_ParChecker.QueueChanged();
+		m_parChecker.QueueChanged();
 	}
-	return bSameCollection;
+	return sameCollection;
 }
 
 void ParCoordinator::ParCheckCompleted()
 {
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
+	PostInfo* postInfo = m_parChecker.GetPostInfo();
 
 	// Update ParStatus (accumulate result)
-	if ((m_ParChecker.GetStatus() == ParChecker::psRepaired ||
-		m_ParChecker.GetStatus() == ParChecker::psRepairNotNeeded) &&
-		pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+	if ((m_parChecker.GetStatus() == ParChecker::psRepaired ||
+		m_parChecker.GetStatus() == ParChecker::psRepairNotNeeded) &&
+		postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
 	{
-		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSuccess);
-		pPostInfo->SetParRepaired(m_ParChecker.GetStatus() == ParChecker::psRepaired);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psSuccess);
+		postInfo->SetParRepaired(m_parChecker.GetStatus() == ParChecker::psRepaired);
 	}
-	else if (m_ParChecker.GetStatus() == ParChecker::psRepairPossible &&
-		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)
+	else if (m_parChecker.GetStatus() == ParChecker::psRepairPossible &&
+		postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psFailure)
 	{
-		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psRepairPossible);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psRepairPossible);
 	}
 	else
 	{
-		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psFailure);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psFailure);
 	}
 
-	int iWaitTime = pPostInfo->GetNZBInfo()->GetDownloadSec() - m_ParChecker.GetDownloadSec();
-	pPostInfo->SetStartTime(pPostInfo->GetStartTime() + (time_t)iWaitTime);
-	int iParSec = (int)(time(NULL) - m_ParChecker.GetParTime()) - iWaitTime;
-	pPostInfo->GetNZBInfo()->SetParSec(pPostInfo->GetNZBInfo()->GetParSec() + iParSec);
+	int waitTime = postInfo->GetNzbInfo()->GetDownloadSec() - m_parChecker.GetDownloadSec();
+	postInfo->SetStartTime(postInfo->GetStartTime() + (time_t)waitTime);
+	int parSec = (int)(Util::CurrentTime() - m_parChecker.GetParTime()) - waitTime;
+	postInfo->GetNzbInfo()->SetParSec(postInfo->GetNzbInfo()->GetParSec() + parSec);
 
-	pPostInfo->GetNZBInfo()->SetParFull(m_ParChecker.GetParFull());
+	postInfo->GetNzbInfo()->SetParFull(m_parChecker.GetParFull());
 
-	pPostInfo->SetWorking(false);
-	pPostInfo->SetStage(PostInfo::ptQueued);
+	postInfo->SetWorking(false);
+	postInfo->SetStage(PostInfo::ptQueued);
 
-	pDownloadQueue->Save();
-
-	DownloadQueue::Unlock();
+	downloadQueue->Save();
 }
 
 /**
@@ -444,190 +397,170 @@ void ParCoordinator::ParCheckCompleted()
 * special case: returns true if there are any unpaused par2-files in the queue regardless
 * of the amount of blocks; this is to keep par-checker wait for download completion.
 */
-bool ParCoordinator::RequestMorePars(NZBInfo* pNZBInfo, const char* szParFilename, int iBlockNeeded, int* pBlockFound)
+bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFoundOut)
 {
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-	
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
 	Blocks blocks;
 	blocks.clear();
-	int iBlockFound = 0;
-    int iCurBlockFound = 0;
+	int blockFound = 0;
+	int curBlockFound = 0;
 
-	FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, true, true, &iCurBlockFound);
-    iBlockFound += iCurBlockFound;
-	if (iBlockFound < iBlockNeeded)
+	FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, true, &curBlockFound);
+	blockFound += curBlockFound;
+	if (blockFound < blockNeeded)
 	{
-		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, true, false, &iCurBlockFound);
-        iBlockFound += iCurBlockFound;
+		FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, false, &curBlockFound);
+		blockFound += curBlockFound;
 	}
-	if (iBlockFound < iBlockNeeded)
+	if (blockFound < blockNeeded)
 	{
-		FindPars(pDownloadQueue, pNZBInfo, szParFilename, &blocks, false, false, &iCurBlockFound);
-        iBlockFound += iCurBlockFound;
+		FindPars(downloadQueue, nzbInfo, parFilename, blocks, false, false, &curBlockFound);
+		blockFound += curBlockFound;
 	}
 
-	if (iBlockFound >= iBlockNeeded)
+	if (blockFound >= blockNeeded)
 	{
 		// 1. first unpause all files with par-blocks less or equal iBlockNeeded
 		// starting from the file with max block count.
 		// if par-collection was built exponentially and all par-files present,
 		// this step selects par-files with exact number of blocks we need.
-		while (iBlockNeeded > 0)
-		{               
-			BlockInfo* pBestBlockInfo = NULL;
+		while (blockNeeded > 0)
+		{
+			BlockInfo* bestBlockInfo = nullptr;
+			Blocks::iterator bestBlockIter;
 			for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
 			{
-				BlockInfo* pBlockInfo = *it;
-				if (pBlockInfo->m_iBlockCount <= iBlockNeeded &&
-				   (!pBestBlockInfo || pBestBlockInfo->m_iBlockCount < pBlockInfo->m_iBlockCount))
+				BlockInfo& blockInfo = *it;
+				if (blockInfo.m_blockCount <= blockNeeded &&
+				   (!bestBlockInfo || bestBlockInfo->m_blockCount < blockInfo.m_blockCount))
 				{
-					pBestBlockInfo = pBlockInfo;
+					bestBlockInfo = &blockInfo;
+					bestBlockIter = it;
 				}
 			}
-			if (pBestBlockInfo)
+			if (bestBlockInfo)
 			{
-				if (pBestBlockInfo->m_pFileInfo->GetPaused())
+				if (bestBlockInfo->m_fileInfo->GetPaused())
 				{
-					m_ParChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBestBlockInfo->m_pFileInfo->GetFilename());
-					pBestBlockInfo->m_pFileInfo->SetPaused(false);
-					pBestBlockInfo->m_pFileInfo->SetExtraPriority(true);
+					m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, bestBlockInfo->m_fileInfo->GetFilename());
+					bestBlockInfo->m_fileInfo->SetPaused(false);
+					bestBlockInfo->m_fileInfo->SetExtraPriority(true);
 				}
-				iBlockNeeded -= pBestBlockInfo->m_iBlockCount;
-				blocks.remove(pBestBlockInfo);
-				delete pBestBlockInfo;
+				blockNeeded -= bestBlockInfo->m_blockCount;
+				blocks.erase(bestBlockIter);
 			}
 			else
 			{
 				break;
 			}
 		}
-			
+
 		// 2. then unpause other files
-		// this step only needed if the par-collection was built not exponentially 
+		// this step only needed if the par-collection was built not exponentially
 		// or not all par-files present (or some of them were corrupted)
-		// this step is not optimal, but we hope, that the first step will work good 
+		// this step is not optimal, but we hope, that the first step will work good
 		// in most cases and we will not need the second step often
-		while (iBlockNeeded > 0)
+		while (blockNeeded > 0)
 		{
-			BlockInfo* pBlockInfo = blocks.front();
-			if (pBlockInfo->m_pFileInfo->GetPaused())
+			BlockInfo& blockInfo = blocks.front();
+			if (blockInfo.m_fileInfo->GetPaused())
 			{
-				m_ParChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", pNZBInfo->GetName(), (int)PATH_SEPARATOR, pBlockInfo->m_pFileInfo->GetFilename());
-				pBlockInfo->m_pFileInfo->SetPaused(false);
-				pBlockInfo->m_pFileInfo->SetExtraPriority(true);
+				m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, blockInfo.m_fileInfo->GetFilename());
+				blockInfo.m_fileInfo->SetPaused(false);
+				blockInfo.m_fileInfo->SetExtraPriority(true);
 			}
-			iBlockNeeded -= pBlockInfo->m_iBlockCount;
+			blockNeeded -= blockInfo.m_blockCount;
 		}
 	}
 
-	bool bHasUnpausedParFiles = false;
-	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+	bool hasUnpausedParFiles = false;
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		FileInfo* pFileInfo = *it;
-		if (pFileInfo->GetParFile() && !pFileInfo->GetPaused())
+		if (fileInfo->GetParFile() && !fileInfo->GetPaused())
 		{
-			bHasUnpausedParFiles = true;
+			hasUnpausedParFiles = true;
 			break;
 		}
 	}
 
-	DownloadQueue::Unlock();
-
-	if (pBlockFound)
+	if (blockFoundOut)
 	{
-		*pBlockFound = iBlockFound;
+		*blockFoundOut = blockFound;
 	}
 
-	for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
-	{
-		delete *it;
-	}
-	blocks.clear();
+	bool ok = blockNeeded <= 0 || hasUnpausedParFiles;
 
-	bool bOK = iBlockNeeded <= 0 || bHasUnpausedParFiles;
-
-	return bOK;
+	return ok;
 }
 
-void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, const char* szParFilename,
-	Blocks* pBlocks, bool bStrictParName, bool bExactParName, int* pBlockFound)
+void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
+	Blocks& blocks, bool strictParName, bool exactParName, int* blockFound)
 {
-    *pBlockFound = 0;
-	
+	*blockFound = 0;
+
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
-	char* szBaseParFilename = Util::BaseFileName(szParFilename);
-	char szMainBaseFilename[1024];
-	int iMainBaseLen = 0;
-	if (!ParParser::ParseParFilename(szBaseParFilename, &iMainBaseLen, NULL))
+	char* baseParFilename = FileSystem::BaseFileName(parFilename);
+	int mainBaseLen = 0;
+	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, nullptr))
 	{
 		// should not happen
-        pNZBInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", szBaseParFilename);
+		nzbInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", baseParFilename);
 		return;
 	}
-	int maxlen = iMainBaseLen < 1024 ? iMainBaseLen : 1024 - 1;
-	strncpy(szMainBaseFilename, szBaseParFilename, maxlen);
-	szMainBaseFilename[maxlen] = '\0';
-	for (char* p = szMainBaseFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
+	BString<1024> mainBaseFilename;
+	mainBaseFilename.Set(baseParFilename, mainBaseLen);
+	for (char* p = mainBaseFilename; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	for (FileList::iterator it = pNZBInfo->GetFileList()->begin(); it != pNZBInfo->GetFileList()->end(); it++)
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		FileInfo* pFileInfo = *it;
-		int iBlocks = 0;
-		if (ParParser::ParseParFilename(pFileInfo->GetFilename(), NULL, &iBlocks) &&
-			iBlocks > 0)
+		int blockCount = 0;
+		if (ParParser::ParseParFilename(fileInfo->GetFilename(), nullptr, &blockCount) &&
+			blockCount > 0)
 		{
-			bool bUseFile = true;
+			bool useFile = true;
 
-			if (bExactParName)
+			if (exactParName)
 			{
-				bUseFile = ParParser::SameParCollection(pFileInfo->GetFilename(), Util::BaseFileName(szParFilename));
+				useFile = ParParser::SameParCollection(fileInfo->GetFilename(), FileSystem::BaseFileName(parFilename));
 			}
-			else if (bStrictParName)
+			else if (strictParName)
 			{
 				// the pFileInfo->GetFilename() may be not confirmed and may contain
 				// additional texts if Subject could not be parsed correctly
 
-				char szLoFileName[1024];
-				strncpy(szLoFileName, pFileInfo->GetFilename(), 1024);
-				szLoFileName[1024-1] = '\0';
-				for (char* p = szLoFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-				
-				char szCandidateFileName[1024];
-				snprintf(szCandidateFileName, 1024, "%s.par2", szMainBaseFilename);
-				szCandidateFileName[1024-1] = '\0';
-				if (!strstr(szLoFileName, szCandidateFileName))
+				BString<1024> loFileName = fileInfo->GetFilename();
+				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+				BString<1024> candidateFileName("%s.par2", *mainBaseFilename);
+				if (!strstr(loFileName, candidateFileName))
 				{
-					snprintf(szCandidateFileName, 1024, "%s.vol", szMainBaseFilename);
-					szCandidateFileName[1024-1] = '\0';
-					bUseFile = strstr(szLoFileName, szCandidateFileName);
+					candidateFileName.Format("%s.vol", *mainBaseFilename);
+					useFile = strstr(loFileName, candidateFileName);
 				}
 			}
 
-            bool bAlreadyAdded = false;
-            // check if file is not in the list already
-			if (bUseFile)
+			bool alreadyAdded = false;
+			// check if file is not in the list already
+			if (useFile)
 			{
-				for (Blocks::iterator it = pBlocks->begin(); it != pBlocks->end(); it++)
+				for (BlockInfo& blockInfo : blocks)
 				{
-					BlockInfo* pBlockInfo = *it;
-					if (pBlockInfo->m_pFileInfo == pFileInfo)
+					if (blockInfo.m_fileInfo == fileInfo)
 					{
-						bAlreadyAdded = true;
+						alreadyAdded = true;
 						break;
-                	}
-        		}
+					}
+				}
 			}
-                
+
 			// if it is a par2-file with blocks and it was from the same NZB-request
 			// and it belongs to the same file collection (same base name),
 			// then OK, we can use it
-            if (bUseFile && !bAlreadyAdded)
-            {
-				BlockInfo* pBlockInfo = new BlockInfo();
-				pBlockInfo->m_pFileInfo = pFileInfo;
-				pBlockInfo->m_iBlockCount = iBlocks;
-				pBlocks->push_back(pBlockInfo);
-				*pBlockFound += iBlocks;
+			if (useFile && !alreadyAdded)
+			{
+				blocks.emplace_back(fileInfo, blockCount);
+				*blockFound += blockCount;
 			}
 		}
 	}
@@ -635,98 +568,100 @@ void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 
 void ParCoordinator::UpdateParCheckProgress()
 {
-	DownloadQueue::Lock();
+	PostInfo* postInfo;
 
-	PostInfo* pPostInfo = m_ParChecker.GetPostInfo();
-	if (m_ParChecker.GetFileProgress() == 0)
 	{
-		pPostInfo->SetProgressLabel(m_ParChecker.GetProgressLabel());
-	}
-	pPostInfo->SetFileProgress(m_ParChecker.GetFileProgress());
-	pPostInfo->SetStageProgress(m_ParChecker.GetStageProgress());
-    PostInfo::EStage StageKind[] = { PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired };
-	PostInfo::EStage eStage = StageKind[m_ParChecker.GetStage()];
-	time_t tCurrent = time(NULL);
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
 
-	if (pPostInfo->GetStage() != eStage)
-	{
-		pPostInfo->SetStage(eStage);
-		pPostInfo->SetStageTime(tCurrent);
-		if (pPostInfo->GetStage() == PostInfo::ptRepairing)
+		postInfo = m_parChecker.GetPostInfo();
+		if (m_parChecker.GetFileProgress() == 0)
 		{
-			m_ParChecker.SetRepairTime(tCurrent);
+			postInfo->SetProgressLabel(m_parChecker.GetProgressLabel());
 		}
-		else if (pPostInfo->GetStage() == PostInfo::ptVerifyingRepaired)
-		{
-			int iRepairSec = (int)(tCurrent - m_ParChecker.GetRepairTime());
-			pPostInfo->GetNZBInfo()->SetRepairSec(pPostInfo->GetNZBInfo()->GetRepairSec() + iRepairSec);
-		}
-	}
+		postInfo->SetFileProgress(m_parChecker.GetFileProgress());
+		postInfo->SetStageProgress(m_parChecker.GetStageProgress());
+		PostInfo::EStage StageKind[] = {PostInfo::ptLoadingPars, PostInfo::ptVerifyingSources, PostInfo::ptRepairing, PostInfo::ptVerifyingRepaired};
+		PostInfo::EStage stage = StageKind[m_parChecker.GetStage()];
+		time_t current = Util::CurrentTime();
 
-	bool bParCancel = false;
-	if (!m_ParChecker.GetCancelled())
-	{
-		if ((g_pOptions->GetParTimeLimit() > 0) &&
-			m_ParChecker.GetStage() == ParChecker::ptRepairing &&
-			((g_pOptions->GetParTimeLimit() > 5 && tCurrent - pPostInfo->GetStageTime() > 5 * 60) ||
-			(g_pOptions->GetParTimeLimit() <= 5 && tCurrent - pPostInfo->GetStageTime() > 1 * 60)))
+		if (postInfo->GetStage() != stage)
 		{
-			// first five (or one) minutes elapsed, now can check the estimated time
-			int iEstimatedRepairTime = (int)((tCurrent - pPostInfo->GetStartTime()) * 1000 / 
-				(pPostInfo->GetStageProgress() > 0 ? pPostInfo->GetStageProgress() : 1));
-			if (iEstimatedRepairTime > g_pOptions->GetParTimeLimit() * 60)
+			postInfo->SetStage(stage);
+			postInfo->SetStageTime(current);
+			if (postInfo->GetStage() == PostInfo::ptRepairing)
 			{
-				debug("Estimated repair time %i seconds", iEstimatedRepairTime);
-				m_ParChecker.PrintMessage(Message::mkWarning, "Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_ParChecker.GetInfoName(), iEstimatedRepairTime / 60);
-				bParCancel = true;
+				m_parChecker.SetRepairTime(current);
+			}
+			else if (postInfo->GetStage() == PostInfo::ptVerifyingRepaired)
+			{
+				int repairSec = (int)(current - m_parChecker.GetRepairTime());
+				postInfo->GetNzbInfo()->SetRepairSec(postInfo->GetNzbInfo()->GetRepairSec() + repairSec);
 			}
 		}
+
+		bool parCancel = false;
+		if (!m_parChecker.GetCancelled())
+		{
+			if ((g_Options->GetParTimeLimit() > 0) &&
+				m_parChecker.GetStage() == PostParChecker::ptRepairing &&
+				((g_Options->GetParTimeLimit() > 5 && current - postInfo->GetStageTime() > 5 * 60) ||
+					(g_Options->GetParTimeLimit() <= 5 && current - postInfo->GetStageTime() > 1 * 60)))
+			{
+				// first five (or one) minutes elapsed, now can check the estimated time
+				int estimatedRepairTime = (int)((current - postInfo->GetStartTime()) * 1000 /
+					(postInfo->GetStageProgress() > 0 ? postInfo->GetStageProgress() : 1));
+				if (estimatedRepairTime > g_Options->GetParTimeLimit() * 60)
+				{
+					debug("Estimated repair time %i seconds", estimatedRepairTime);
+					m_parChecker.PrintMessage(Message::mkWarning, "Cancelling par-repair for %s, estimated repair time (%i minutes) exceeds allowed repair time", m_parChecker.GetInfoName(), estimatedRepairTime / 60);
+					parCancel = true;
+				}
+			}
+		}
+
+		if (parCancel)
+		{
+			m_parChecker.Cancel();
+		}
 	}
 
-	if (bParCancel)
-	{
-		m_ParChecker.Cancel();
-	}
-
-	DownloadQueue::Unlock();
-	
-	CheckPauseState(pPostInfo);
+	CheckPauseState(postInfo);
 }
 
-void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
+void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 {
-	if (g_pOptions->GetPausePostProcess() && !pPostInfo->GetNZBInfo()->GetForcePriority())
+	if (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority())
 	{
-		time_t tStageTime = pPostInfo->GetStageTime();
-		time_t tStartTime = pPostInfo->GetStartTime();
-		time_t tParTime = m_ParChecker.GetParTime();
-		time_t tRepairTime = m_ParChecker.GetRepairTime();
-		time_t tWaitTime = time(NULL);
-		
+		time_t stageTime = postInfo->GetStageTime();
+		time_t startTime = postInfo->GetStartTime();
+		time_t parTime = m_parChecker.GetParTime();
+		time_t repairTime = m_parChecker.GetRepairTime();
+		time_t waitTime = Util::CurrentTime();
+
 		// wait until Post-processor is unpaused
-		while (g_pOptions->GetPausePostProcess() && !pPostInfo->GetNZBInfo()->GetForcePriority() && !m_bStopped)
+		while (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
 		{
 			usleep(50 * 1000);
-			
+
 			// update time stamps
-			
-			time_t tDelta = time(NULL) - tWaitTime;
-			
-			if (tStageTime > 0)
+
+			time_t delta = Util::CurrentTime() - waitTime;
+
+			if (stageTime > 0)
 			{
-				pPostInfo->SetStageTime(tStageTime + tDelta);
+				postInfo->SetStageTime(stageTime + delta);
 			}
-			if (tStartTime > 0)
+			if (startTime > 0)
 			{
-				pPostInfo->SetStartTime(tStartTime + tDelta);
+				postInfo->SetStartTime(startTime + delta);
 			}
-			if (tParTime > 0)
+			if (parTime > 0)
 			{
-				m_ParChecker.SetParTime(tParTime + tDelta);
+				m_parChecker.SetParTime(parTime + delta);
 			}
-			if (tRepairTime > 0)
+			if (repairTime > 0)
 			{
-				m_ParChecker.SetRepairTime(tRepairTime + tDelta);
+				m_parChecker.SetRepairTime(repairTime + delta);
 			}
 		}
 	}
@@ -734,43 +669,42 @@ void ParCoordinator::CheckPauseState(PostInfo* pPostInfo)
 
 void ParCoordinator::ParRenameCompleted()
 {
-	DownloadQueue* pDownloadQueue = DownloadQueue::Lock();
-	
-	PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
-	pPostInfo->GetNZBInfo()->SetRenameStatus(m_ParRenamer.GetStatus() == ParRenamer::psSuccess ? NZBInfo::rsSuccess : NZBInfo::rsFailure);
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	if (m_ParRenamer.HasMissedFiles() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+	PostInfo* postInfo = m_parRenamer.GetPostInfo();
+	postInfo->GetNzbInfo()->SetRenameStatus(m_parRenamer.GetStatus() == ParRenamer::psSuccess ? NzbInfo::rsSuccess : NzbInfo::rsFailure);
+
+	if (m_parRenamer.HasMissedFiles() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
 	{
-		m_ParRenamer.PrintMessage(Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_ParRenamer.GetInfoName());
-		pPostInfo->SetRequestParCheck(true);
+		m_parRenamer.PrintMessage(Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_parRenamer.GetInfoName());
+		postInfo->SetRequestParCheck(true);
 	}
 
-	pPostInfo->SetWorking(false);
-	pPostInfo->SetStage(PostInfo::ptQueued);
-	
-	pDownloadQueue->Save();
+	postInfo->SetWorking(false);
+	postInfo->SetStage(PostInfo::ptQueued);
 
-	DownloadQueue::Unlock();
+	downloadQueue->Save();
 }
 
 void ParCoordinator::UpdateParRenameProgress()
 {
-	DownloadQueue::Lock();
-	
-	PostInfo* pPostInfo = m_ParRenamer.GetPostInfo();
-	pPostInfo->SetProgressLabel(m_ParRenamer.GetProgressLabel());
-	pPostInfo->SetStageProgress(m_ParRenamer.GetStageProgress());
-	time_t tCurrent = time(NULL);
-	
-	if (pPostInfo->GetStage() != PostInfo::ptRenaming)
+	PostInfo* postInfo;
 	{
-		pPostInfo->SetStage(PostInfo::ptRenaming);
-		pPostInfo->SetStageTime(tCurrent);
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+
+		postInfo = m_parRenamer.GetPostInfo();
+		postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
+		postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
+		time_t current = Util::CurrentTime();
+
+		if (postInfo->GetStage() != PostInfo::ptRenaming)
+		{
+			postInfo->SetStage(PostInfo::ptRenaming);
+			postInfo->SetStageTime(current);
+		}
 	}
-	
-	DownloadQueue::Unlock();
-	
-	CheckPauseState(pPostInfo);
+
+	CheckPauseState(postInfo);
 }
 
 #endif

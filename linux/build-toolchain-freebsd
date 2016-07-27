@@ -1,0 +1,163 @@
+#!/bin/bash
+#
+#  This file is part of nzbget. See <http://nzbget.net>.
+#
+#  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# This script builds cross-compiling toolchain, which can compile NZBGet for FreeBSD.
+# The toolchain itself runs on Linux.
+
+# Setup strict bash error handling
+set -o nounset
+set -o errexit
+
+# Uncomment next line for debuging
+#set -x
+
+
+GNU_TARGET="x86_64-pc-freebsd9"
+
+# FreeBSD
+FREEBSDIMAGE_URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/amd64/9.1-RELEASE/base.txz"
+
+# GCC
+GCC_VERSION="5.3.0"
+GCC_ARCHIVE="gcc-$GCC_VERSION.tar.bz2"
+GCC_URL="ftp://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/$GCC_ARCHIVE"
+
+# Binutils
+BINUTILS_VERSION="2.25"
+BINUTILS_ARCHIVE="binutils-$BINUTILS_VERSION.tar.bz2"
+BINUTILS_URL="ftp://ftp.gnu.org/gnu/binutils/$BINUTILS_ARCHIVE"
+
+# Libxml
+LIBXML2_VERSION="2.9.2"
+LIBXML2_ARCHIVE="libxml2-$LIBXML2_VERSION.tar.gz"
+LIBXML2_URL="http://xmlsoft.org/sources/$LIBXML2_ARCHIVE"
+
+# OpenSSL
+OPENSSL_VERSION="1.0.2d"
+OPENSSL_ARCHIVE="openssl-$OPENSSL_VERSION.tar.gz"
+OPENSSL_URL="ftp://ftp.openssl.org/source/old/1.0.2/$OPENSSL_ARCHIVE"
+
+
+### START OF THE SCRIPT
+
+ROOTDIR=`pwd`
+
+rm -rf output
+
+# Download all required tools
+mkdir -p downloads
+cd downloads
+if [ ! -f base.txz ]; then
+    wget $FREEBSDIMAGE_URL
+fi
+if [ ! -f $GCC_ARCHIVE ]; then
+    wget $GCC_URL
+fi
+if [ ! -f $BINUTILS_ARCHIVE ]; then
+    wget $BINUTILS_URL
+fi
+if [ ! -f $LIBXML2_ARCHIVE ]; then
+    wget $LIBXML2_URL
+fi
+if [ ! -f $OPENSSL_ARCHIVE ]; then
+    wget $OPENSSL_URL
+fi
+cd ..
+
+# Creating sysroot for FreeBSD from official FreeBSD installation image.
+# Our sysroot contains only a small set of files needed to compile NZBGet and dependent libraries
+mkdir -p output/host/usr/$GNU_TARGET/sysroot
+cd output/host/usr/$GNU_TARGET/sysroot
+tar xvJf ../../../../../downloads/base.txz \
+    ./usr/include \
+    ./usr/lib/crt1.o ./usr/lib/crti.o ./usr/lib/crtn.o ./usr/lib/crtbeginT.o \
+    ./usr/lib/libc.a ./usr/lib/libm.a ./usr/lib/libz.a ./usr/lib/libncurses.a \
+    ./usr/lib/libthr.a
+ln -s libthr.a usr/lib/libpthread.a
+cd ../../../../..
+ 
+mkdir -p output/build && cd output/build
+
+# Unpack everything
+tar xvjf ../../downloads/$BINUTILS_ARCHIVE
+tar xvjf ../../downloads/$GCC_ARCHIVE
+tar xvzf ../../downloads/$LIBXML2_ARCHIVE
+tar xvzf ../../downloads/$OPENSSL_ARCHIVE
+
+## Build binutils (5 minutes)
+mkdir binutils-build && cd binutils-build
+../binutils-$BINUTILS_VERSION/configure --with-gnu-as --with-gnu-ld --disable-libssp --disable-nls --disable-multilib --target=$GNU_TARGET --prefix=$ROOTDIR/output/host/usr --with-sysroot=$ROOTDIR/output/host/usr/$GNU_TARGET/sysroot
+make -j 2
+make install
+cd ..
+
+## Build GCC (30 minutes)
+cd gcc-$GCC_VERSION
+./contrib/download_prerequisites
+rm isl
+cd ..
+mkdir gcc-build && cd gcc-build
+../gcc-$GCC_VERSION/configure --with-gnu-as --with-gnu-ld --enable-languages=c,c++ --disable-bootstrap --without-headers --disable-nls --disable-libssp --disable-libgomp --disable-libmudflap --disable-multilib --disable-decimal-float --disable-libffi --disable-libmudflap --disable-libquadmath --disable-shared --disable-host-shared --disable-multilib --disable-libsanitizer --target=$GNU_TARGET --prefix=$ROOTDIR/output/host/usr --with-sysroot=$ROOTDIR/output/host/usr/$GNU_TARGET/sysroot
+make -j 2
+make install
+cd ..
+
+PATH=$ROOTDIR/output/host/usr/bin:$PATH
+
+# Build libxml2 (2 minutes)
+cd libxml2-$LIBXML2_VERSION
+./configure --host=$GNU_TARGET --prefix=$ROOTDIR/output/staging/usr --disable-shared --disable-dependency-tracking --without-zlib --without-lzma --without-python
+make -j2
+make install
+cd ..
+
+# Build OpenSSL (5 minutes)
+cd openssl-$OPENSSL_VERSION
+CC=$GNU_TARGET-gcc LD=$GNU_TARGET-ld AS=$GNU_TARGET-ad AR=$GNU_TARGET-ar ./Configure --prefix=$ROOTDIR/output/staging/usr no-shared no-dso no-hw no-zlib no-unit-test BSD-x86_64
+make -j2
+make install_sw
+cd ..
+
+cd ..
+
+# Create missing package descriptions
+echo "prefix=$ROOTDIR/output/staging/usr
+
+Name: zlib
+Description: zlib
+Version: 1
+Libs: -L\${prefix}/lib -lz
+Cflags: -I\${prefix}/include
+" > $ROOTDIR/output/staging/usr/lib/pkgconfig/zlib.pc
+
+echo "prefix=$ROOTDIR/output/staging/usr
+
+Name: ncurses
+Description: ncurses
+Version: 5
+Libs: -L\${prefix}/lib -lncurses
+Cflags: -I\${prefix}/include
+" > $ROOTDIR/output/staging/usr/lib/pkgconfig/ncurses.pc
+
+# Cleanup
+rm -r staging/usr/bin
+rm -r staging/usr/share
+rm -r staging/usr/ssl
+

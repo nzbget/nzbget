@@ -1,7 +1,7 @@
 /*
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -38,30 +33,57 @@ var UISettings = (new function($)
 {
 	'use strict';
 
-	/*** Web-interface configuration (edit if neccessary) *************/
-	
-	// Animation on refresh button.
-	this.refreshAnimation = true;
+	/*** Web-interface configuration *************/
 
-	// Animation on play/pause button.
+	// Options having descriptions can be edited directly in web-interface on settings page.
+	
+	this.description = [];
+	
+	this.description['activityAnimation'] = 'Animation on play/pause button (yes, no).';
 	this.activityAnimation = true;
 
-	// Animation of tab changes in tabbed dialogs.
+	this.description['refreshAnimation'] = 'Animation on refresh button (yes, no).';
+	this.refreshAnimation = true;
+
+	this.description['slideAnimation'] = 'Animation of tab changes in tabbed dialogs (yes, no).';
 	this.slideAnimation = true;
 
-	// Automatically set focus to the first control in dialogs.
-	// Not good on touch devices, because may pop up an on-screen-keyboard.
+	this.description['setFocus'] = 'Automatically set focus to the first control in dialogs (yes, no).\n\n' +
+	  'Not recommended for devices without physical keyboard.';
 	this.setFocus = false;
 
-	// Show popup notifications.
-	this.notifications = true;
+	this.description['showNotifications'] = 'Show popup notifications (yes, no).';
+	this.showNotifications = true;
 
-	// Show badges with duplicate info (downloads and history).
+	this.description['dupeBadges'] = 'Show badges with duplicate info in downloads and history (yes, no).';
 	this.dupeBadges = false;
 	
-	// Select records by clicking on any part of the row, not just on the check mark.
+	this.description['rowSelect'] = 'Select records by clicking on any part of the row, not just on the check mark (yes, no).';
 	this.rowSelect = false;
 
+	this.description['windowTitle'] = 'Window-title for browser.\n\n' +
+		'The following variables can be used within placeholders to insert current data:\n' +
+		'   COUNT - number of items in queue;\n' +
+		'   SPEED - current download speed.\n' +
+		'   TIME - remaining time;\n' +
+		'   PAUSE - "download paused"-indicator.\n\n' +
+		'To form a placeholder surround variable with percent-characters, for example: %COUNT%.\n\n' +
+		'To improve formating there is a special syntax. If variable value is empty or null then nothing is inserted:\n' +
+		'%(VARNAME)% - show variable value inside parenthesis;\n' +
+		'%[VARNAME]% - show variable value inside square brackets;\n' +
+		'%VARNAME-% - append hyphen to variable value;\n' +
+		'%(VARNAME-)% - show variable value with hyphen inside parenthesis;\n' +
+		'%[VARNAME-]% - show variable value with hyphen inside square brackets.\n\n' +
+		'Examples:\n' +
+		' "%(COUNT-)% NZBGet" - show number of downloads in parenthesis followed by a hyphen; don\'t show "(0) - " if queue is empty;\n' + 
+		' "%PAUSE% %(COUNT-)% NZBGet" - as above but also show pause-indicator if paused;\n' +
+		' "%[COUNT]% %SPEED-% NZBGet" - show number of downloads and speed if not null (default setting).';
+	this.windowTitle = '%[COUNT]% %SPEED-% NZBGet';
+
+	this.description['refreshRetries'] = 'Number of refresh attempts if a communication error occurs (0-99).\n\n' +
+	  'If all attempts fail, an error is displayed and the automatic refresh stops.'
+	this.refreshRetries = 4;
+	
 	// Time zone correction in hours.
 	// You shouldn't require this unless you can't set the time zone on your computer/device properly.
 	this.timeZoneCorrection = 0;
@@ -71,16 +93,12 @@ var UISettings = (new function($)
 	// The default value sets the interval on first use only.
 	this.refreshInterval = 1;
 	
-	// Number of refresh attempts if a communication error occurs.
-	// If all attempts fail, an error is displayed and the automatic refresh stops.
-	this.refreshRetries = 4;
-
 	// URL for communication with NZBGet via JSON-RPC
 	this.rpcUrl = './jsonrpc';
 
 
 	/*** No user configurable settings below this line (do not edit) *************/
-	
+
 	// Current state
 	this.miniTheme = false;
 	this.showEditButtons = true;
@@ -89,19 +107,37 @@ var UISettings = (new function($)
 	this.load = function()
 	{
 		this.refreshInterval = parseFloat(this.read('RefreshInterval', this.refreshInterval));
+		this.refreshAnimation = this.read('RefreshAnimation', this.refreshAnimation) === 'true';
+		this.activityAnimation = this.read('ActivityAnimation', this.activityAnimation) === 'true';
+		this.slideAnimation = this.read('SlideAnimation', this.slideAnimation) === 'true';
+		this.setFocus = this.read('SetFocus', this.setFocus) === 'true';
+		this.showNotifications = this.read('ShowNotifications', this.showNotifications) === 'true';
+		this.dupeBadges = this.read('DupeBadges', this.dupeBadges) === 'true';
+		this.rowSelect = this.read('RowSelect', this.rowSelect) === 'true';
+		this.windowTitle = this.read('WindowTitle', this.windowTitle);
+		this.refreshRetries = parseFloat(this.read('RefreshRetries', this.refreshRetries));
 	}
 
 	this.save = function()
 	{
 		this.write('RefreshInterval', this.refreshInterval);
+		this.write('RefreshAnimation', this.refreshAnimation);
+		this.write('ActivityAnimation', this.activityAnimation);
+		this.write('SlideAnimation', this.slideAnimation);
+		this.write('SetFocus', this.setFocus);
+		this.write('ShowNotifications', this.showNotifications);
+		this.write('DupeBadges', this.dupeBadges);
+		this.write('RowSelect', this.rowSelect);
+		this.write('WindowTitle', this.windowTitle);
+		this.write('RefreshRetries', this.refreshRetries);
 	}
 	
 	this.read = function(key, def)
 	{
 		var v = localStorage.getItem(key);
-		if (v === null || v === '')
+		if (v === null)
 		{
-			return def;
+			return def.toString();
 		}
 		else
 		{
@@ -204,6 +240,14 @@ var Frontend = (new function($)
 		setupSearch();
 		
 		$('li > a:has(table)').addClass('has-table');
+
+		$(document).on("keypress", "form", function(event)
+		{
+			// since we use form-tags for a workaround for fieldset-tag,
+			// and we don't have a proper processing of ENTER-key inside forms,
+			// we disable ENTER-key to prevent automatic form submitting.
+			return event.keyCode != 13;
+		});
 
 		$(window).scroll(windowScrolled);
 	}
@@ -791,7 +835,7 @@ var ConfirmDialog = (new function($)
 		$('#ConfirmDialog_OK').click(click);
 	}
 
-	this.showModal = function(id, _actionCallback, initCallback)
+	this.showModal = function(id, _actionCallback, initCallback, selCount)
 	{
 		$('#ConfirmDialog_Title').html($('#' + id + '_Title').html());
 		$('#ConfirmDialog_Text').html($('#' + id + '_Text').html());
@@ -799,7 +843,14 @@ var ConfirmDialog = (new function($)
 		var helpId = $('#' + id + '_Help').html();
 		$('#ConfirmDialog_Help').attr('href', '#' + helpId);
 		Util.show('#ConfirmDialog_Help', helpId !== null);
-		
+
+        if (selCount > 1)
+        {
+            var html = $('#ConfirmDialog_Text').html();
+            html = html.replace(/selected/g, selCount + ' selected');
+            $('#ConfirmDialog_Text').html(html);
+        }
+
 		actionCallback = _actionCallback;
 		if (initCallback)
 		{
@@ -867,7 +918,7 @@ var Notification = (new function($)
 	
 	this.show = function(alert, completeFunc)
 	{
-		if (UISettings.notifications || $(alert).hasClass('alert-error'))
+		if (UISettings.showNotifications || $(alert).hasClass('alert-error'))
 		{
 			$(alert).animate({'opacity':'toggle'});
 			var duration = $(alert).attr('data-duration');

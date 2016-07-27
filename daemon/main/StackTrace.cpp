@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,40 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
-#ifdef WIN32
-#include <dbghelp.h>
-#else
-#include <unistd.h>
-#include <sys/resource.h>
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_PRCTL_H
-#include <sys/prctl.h>
-#endif
-#ifdef HAVE_BACKTRACE
-#include <execinfo.h>
-#endif
 
 #include "nzbget.h"
 #include "Log.h"
@@ -60,29 +29,29 @@ extern void ExitProc();
 
 #ifdef DEBUG
 
-void PrintBacktrace(PCONTEXT pContext)
+void PrintBacktrace(PCONTEXT context)
 {
 	HANDLE hProcess = GetCurrentProcess();
 	HANDLE hThread = GetCurrentThread();
 
-	char szAppDir[MAX_PATH + 1];
-	GetModuleFileName(NULL, szAppDir, sizeof(szAppDir));
-	char* end = strrchr(szAppDir, PATH_SEPARATOR);
+	char appDir[MAX_PATH + 1];
+	GetModuleFileName(nullptr, appDir, sizeof(appDir));
+	char* end = strrchr(appDir, PATH_SEPARATOR);
 	if (end) *end = '\0';
 
 	SymSetOptions(SymGetOptions() | SYMOPT_LOAD_LINES | SYMOPT_FAIL_CRITICAL_ERRORS);
 
-	if (!SymInitialize(hProcess, szAppDir, TRUE))
+	if (!SymInitialize(hProcess, appDir, TRUE))
 	{
 		warn("Could not obtain detailed exception information: SymInitialize failed");
 		return;
 	}
 
 	const int MAX_NAMELEN = 1024;
-	IMAGEHLP_SYMBOL64* pSym = (IMAGEHLP_SYMBOL64 *) malloc(sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
-	memset(pSym, 0, sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
-	pSym->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64);
-	pSym->MaxNameLength = MAX_NAMELEN;
+	IMAGEHLP_SYMBOL64* sym = (IMAGEHLP_SYMBOL64 *) malloc(sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
+	memset(sym, 0, sizeof(IMAGEHLP_SYMBOL64) + MAX_NAMELEN);
+	sym->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64);
+	sym->MaxNameLength = MAX_NAMELEN;
 
 	IMAGEHLP_LINE64 ilLine;
 	memset(&ilLine, 0, sizeof(ilLine));
@@ -93,19 +62,19 @@ void PrintBacktrace(PCONTEXT pContext)
 	DWORD imageType;
 #ifdef _M_IX86
 	imageType = IMAGE_FILE_MACHINE_I386;
-	sfStackFrame.AddrPC.Offset = pContext->Eip;
+	sfStackFrame.AddrPC.Offset = context->Eip;
 	sfStackFrame.AddrPC.Mode = AddrModeFlat;
-	sfStackFrame.AddrFrame.Offset = pContext->Ebp;
+	sfStackFrame.AddrFrame.Offset = context->Ebp;
 	sfStackFrame.AddrFrame.Mode = AddrModeFlat;
-	sfStackFrame.AddrStack.Offset = pContext->Esp;
+	sfStackFrame.AddrStack.Offset = context->Esp;
 	sfStackFrame.AddrStack.Mode = AddrModeFlat;
 #elif _M_X64
 	imageType = IMAGE_FILE_MACHINE_AMD64;
-	sfStackFrame.AddrPC.Offset = pContext->Rip;
+	sfStackFrame.AddrPC.Offset = context->Rip;
 	sfStackFrame.AddrPC.Mode = AddrModeFlat;
-	sfStackFrame.AddrFrame.Offset = pContext->Rsp;
+	sfStackFrame.AddrFrame.Offset = context->Rsp;
 	sfStackFrame.AddrFrame.Mode = AddrModeFlat;
-	sfStackFrame.AddrStack.Offset = pContext->Rsp;
+	sfStackFrame.AddrStack.Offset = context->Rsp;
 	sfStackFrame.AddrStack.Mode = AddrModeFlat;
 #else
 	warn("Could not obtain detailed exception information: platform not supported");
@@ -120,47 +89,46 @@ void PrintBacktrace(PCONTEXT pContext)
 			return;
 		}
 
-		if (!StackWalk64(imageType, hProcess, hThread, &sfStackFrame, pContext, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
+		if (!StackWalk64(imageType, hProcess, hThread, &sfStackFrame, context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr))
 		{
 			warn("Could not obtain detailed exception information: StackWalk64 failed");
 			return;
 		}
 
 		DWORD64 dwAddr = sfStackFrame.AddrPC.Offset;
-		char szSymName[1024];
-		char szSrcFileName[1024];
-		int iLineNumber = 0;
+		BString<1024> symName;
+		BString<1024> srcFileName;
+		int lineNumber = 0;
 
 		DWORD64 dwSymbolDisplacement;
-		if (SymGetSymFromAddr64(hProcess, dwAddr, &dwSymbolDisplacement, pSym))
+		if (SymGetSymFromAddr64(hProcess, dwAddr, &dwSymbolDisplacement, sym))
 		{
-			UnDecorateSymbolName(pSym->Name, szSymName, sizeof(szSymName), UNDNAME_COMPLETE);
-			szSymName[sizeof(szSymName) - 1] = '\0';
+			UnDecorateSymbolName(sym->Name, symName, symName.Capacity(), UNDNAME_COMPLETE);
+			symName[sizeof(symName) - 1] = '\0';
 		}
 		else
 		{
-			strncpy(szSymName, "<symbol not available>", sizeof(szSymName));
+			symName = "<symbol not available>";
 		}
 
 		DWORD dwLineDisplacement;
 		if (SymGetLineFromAddr64(hProcess, dwAddr, &dwLineDisplacement, &ilLine))
 		{
-			iLineNumber = ilLine.LineNumber;
-			char* szUseFileName = ilLine.FileName;
-			char* szRoot = strstr(szUseFileName, "\\daemon\\");
-			if (szRoot)
+			lineNumber = ilLine.LineNumber;
+			char* useFileName = ilLine.FileName;
+			char* root = strstr(useFileName, "\\daemon\\");
+			if (root)
 			{
-				szUseFileName = szRoot;
+				useFileName = root;
 			}
-			strncpy(szSrcFileName, szUseFileName, sizeof(szSrcFileName));
-			szSrcFileName[sizeof(szSrcFileName) - 1] = '\0';
+			srcFileName = useFileName;
 		}
 		else
 		{
-			strncpy(szSrcFileName, "<filename not available>", sizeof(szSymName));
+			srcFileName = "<filename not available>";
 		}
 
-		info("%s (%i) : %s", szSrcFileName, iLineNumber, szSymName);
+		info("%s (%i) : %s", *srcFileName, lineNumber, *symName);
 
 		if (sfStackFrame.AddrReturn.Offset == 0)
 		{
@@ -170,15 +138,15 @@ void PrintBacktrace(PCONTEXT pContext)
 }
 #endif
 
-LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* pExPtrs)
+LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* exPtrs)
 {
 	error("Unhandled Exception: code: 0x%8.8X, flags: %d, address: 0x%8.8X",
-		pExPtrs->ExceptionRecord->ExceptionCode,
-		pExPtrs->ExceptionRecord->ExceptionFlags,
-		pExPtrs->ExceptionRecord->ExceptionAddress);
+		exPtrs->ExceptionRecord->ExceptionCode,
+		exPtrs->ExceptionRecord->ExceptionFlags,
+		exPtrs->ExceptionRecord->ExceptionAddress);
 
 #ifdef DEBUG
-	PrintBacktrace(pExPtrs->ContextRecord);
+	PrintBacktrace(exPtrs->ContextRecord);
 #else
 	 info("Detailed exception information can be printed by debug version of NZBGet (available from download page)");
 #endif
@@ -217,7 +185,7 @@ void PrintBacktrace()
 {
 #ifdef HAVE_BACKTRACE
 	printf("Segmentation fault, tracing...\n");
-	
+
 	void *array[100];
 	size_t size;
 	char **strings;
@@ -250,9 +218,9 @@ void PrintBacktrace()
 /*
  * Signal handler
  */
-void SignalProc(int iSignal)
+void SignalProc(int signum)
 {
-	switch (iSignal)
+	switch (signum)
 	{
 		case SIGINT:
 			signal(SIGINT, SIG_DFL);   // Reset the signal handler
@@ -280,7 +248,7 @@ void SignalProc(int iSignal)
 void InstallErrorHandler()
 {
 #ifdef HAVE_SYS_PRCTL_H
-	if (g_pOptions->GetDumpCore())
+	if (g_Options->GetDumpCore())
 	{
 		EnableDumpCore();
 	}
@@ -293,8 +261,8 @@ void InstallErrorHandler()
 	signal(SIGSEGV, SignalProc);
 #endif
 #ifdef SIGCHLD_HANDLER
-    // it could be necessary on some systems to activate a handler for SIGCHLD
-    // however it make troubles on other systems and is deactivated by default
+	// it could be necessary on some systems to activate a handler for SIGCHLD
+	// however it make troubles on other systems and is deactivated by default
 	signal(SIGCHLD, SignalProc);
 #endif
 }
@@ -307,7 +275,7 @@ class SegFault
 public:
 	void DoSegFault()
 	{
-		char* N = NULL;
+		char* N = nullptr;
 		strcpy(N, "");
 	}
 };

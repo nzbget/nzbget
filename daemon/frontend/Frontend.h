@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,12 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -35,48 +30,45 @@
 
 class Frontend : public Thread
 {
-private:
-	MessageList			m_RemoteMessages;
-
-	bool				RequestMessages();
-	bool				RequestFileList();
+public:
+	Frontend();
 
 protected:
-	bool				m_bSummary;
-	bool				m_bFileList;
-	unsigned int		m_iNeededLogEntries;
-	unsigned int		m_iNeededLogFirstID;
-	int					m_iUpdateInterval;
+	bool m_summary = false;
+	bool m_fileList = false;
+	uint32 m_neededLogEntries = 0;
+	uint32 m_neededLogFirstId = 0;
+	int m_updateInterval;
 
 	// summary
-	int					m_iCurrentDownloadSpeed;
-	long long 			m_lRemainingSize;
-	bool				m_bPauseDownload;
-	int					m_iDownloadLimit;
-	int					m_iThreadCount;
-	int					m_iPostJobCount;
-	int					m_iUpTimeSec;
-	int					m_iDnTimeSec;
-	long long			m_iAllBytes;
-	bool				m_bStandBy;
+	int m_currentDownloadSpeed = 0;
+	int64 m_remainingSize = 0;
+	bool m_pauseDownload = false;
+	int m_downloadLimit = 0;
+	int m_threadCount = 0;
+	int m_postJobCount = 0;
+	int m_upTimeSec = 0;
+	int m_dnTimeSec = 0;
+	int64 m_allBytes = 0;
+	bool m_standBy = false;
 
-	bool				PrepareData();
-	void				FreeData();
-	MessageList*		LockMessages();
-	void				UnlockMessages();
-	DownloadQueue*		LockQueue();
-	void				UnlockQueue();
-	bool				IsRemoteMode();
-	void				InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
-	void				ServerPauseUnpause(bool bPause);
-	bool				RequestPauseUnpause(bool bPause);
-	void				ServerSetDownloadRate(int iRate);
-	bool				RequestSetDownloadRate(int iRate);
-	bool 				ServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iEntry);
-	bool 				RequestEditQueue(DownloadQueue::EEditAction eAction, int iOffset, int iID);
+	bool PrepareData();
+	void FreeData();
+	GuardedMessageList GuardMessages();
+	bool IsRemoteMode();
+	void InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
+	void ServerPauseUnpause(bool pause);
+	bool RequestPauseUnpause(bool pause);
+	void ServerSetDownloadRate(int rate);
+	bool RequestSetDownloadRate(int rate);
+	bool ServerEditQueue(DownloadQueue::EEditAction action, int offset, int entry);
+	bool RequestEditQueue(DownloadQueue::EEditAction action, int offset, int id);
 
-public:
-						Frontend();
+private:
+	MessageList m_remoteMessages;
+
+	bool RequestMessages();
+	bool RequestFileList();
 };
 
 #endif

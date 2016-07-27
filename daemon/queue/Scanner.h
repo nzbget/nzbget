@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,11 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -26,8 +22,7 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include <deque>
-#include <time.h>
+#include "NString.h"
 #include "DownloadInfo.h"
 #include "Thread.h"
 #include "Service.h"
@@ -42,101 +37,94 @@ public:
 		asFailed
 	};
 
+	void InitOptions();
+	void ScanNzbDir(bool syncMode);
+	EAddStatus AddExternalFile(const char* nzbName, const char* category, int priority,
+		const char* dupeKey, int dupeScore, EDupeMode dupeMode,
+		NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
+		const char* fileName, const char* buffer, int bufSize, int* nzbId);
+	void InitPPParameters(const char* category, NzbParameterList* parameters, bool reset);
+
+protected:
+	virtual int ServiceInterval() { return 200; }
+	virtual void ServiceWork();
+
 private:
 	class FileData
 	{
-	private:
-		char*			m_szFilename;
-		long long		m_iSize;
-		time_t			m_tLastChange;
-
 	public:
-						FileData(const char* szFilename);
-						~FileData();
-		const char*		GetFilename() { return m_szFilename; }
-		long long		GetSize() { return m_iSize; }
-		void			SetSize(long long lSize) { m_iSize = lSize; }
-		time_t			GetLastChange() { return m_tLastChange; }
-		void			SetLastChange(time_t tLastChange) { m_tLastChange = tLastChange; }
+		FileData(const char* filename, int64 size, time_t lastChange) :
+			m_filename(filename), m_size(size), m_lastChange(lastChange) {}
+		const char* GetFilename() { return m_filename; }
+		int64 GetSize() { return m_size; }
+		void SetSize(int64 size) { m_size = size; }
+		time_t GetLastChange() { return m_lastChange; }
+		void SetLastChange(time_t lastChange) { m_lastChange = lastChange; }
+	private:
+		CString m_filename;
+		int64 m_size;
+		time_t m_lastChange;
 	};
 
-	typedef std::deque<FileData*>		FileList;
+	typedef std::deque<FileData> FileList;
 
 	class QueueData
 	{
-	private:
-		char*				m_szFilename;
-		char*				m_szNZBName;
-		char*				m_szCategory;
-		int					m_iPriority;
-		char*				m_szDupeKey;
-		int					m_iDupeScore;
-		EDupeMode			m_eDupeMode;
-		NZBParameterList	m_Parameters;
-		bool				m_bAddTop;
-		bool				m_bAddPaused;
-		NZBInfo*			m_pUrlInfo;
-		EAddStatus*			m_pAddStatus;
-		int*				m_pNZBID;
-
 	public:
-							QueueData(const char* szFilename, const char* szNZBName, const char* szCategory,
-								int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-								NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, 
-								EAddStatus* pAddStatus, int* pNZBID);
-							~QueueData();
-		const char*			GetFilename() { return m_szFilename; }
-		const char*			GetNZBName() { return m_szNZBName; }
-		const char*			GetCategory() { return m_szCategory; }
-		int					GetPriority() { return m_iPriority; }
-		const char*			GetDupeKey() { return m_szDupeKey; }
-		int					GetDupeScore() { return m_iDupeScore; }
-		EDupeMode			GetDupeMode() { return m_eDupeMode; }
-		NZBParameterList*	GetParameters() { return &m_Parameters; }
-		bool				GetAddTop() { return m_bAddTop; }
-		bool				GetAddPaused() { return m_bAddPaused; }
-		NZBInfo*			GetUrlInfo() { return m_pUrlInfo; }
-		void				SetAddStatus(EAddStatus eAddStatus);
-		void				SetNZBID(int iNZBID);
+		QueueData(const char* filename, const char* nzbName, const char* category,
+			int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
+			NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
+			EAddStatus* addStatus, int* nzbId);
+		const char* GetFilename() { return m_filename; }
+		const char* GetNzbName() { return m_nzbName; }
+		const char* GetCategory() { return m_category; }
+		int GetPriority() { return m_priority; }
+		const char* GetDupeKey() { return m_dupeKey; }
+		int GetDupeScore() { return m_dupeScore; }
+		EDupeMode GetDupeMode() { return m_dupeMode; }
+		NzbParameterList* GetParameters() { return &m_parameters; }
+		bool GetAddTop() { return m_addTop; }
+		bool GetAddPaused() { return m_addPaused; }
+		NzbInfo* GetUrlInfo() { return m_urlInfo; }
+		void SetAddStatus(EAddStatus addStatus);
+		void SetNzbId(int nzbId);
+	private:
+		CString m_filename;
+		CString m_nzbName;
+		CString m_category;
+		int m_priority;
+		CString m_dupeKey;
+		int m_dupeScore;
+		EDupeMode m_dupeMode;
+		NzbParameterList m_parameters;
+		bool m_addTop;
+		bool m_addPaused;
+		NzbInfo* m_urlInfo;
+		EAddStatus* m_addStatus;
+		int* m_nzbId;
 	};
 
-	typedef std::deque<QueueData*>		QueueList;
+	typedef std::deque<QueueData> QueueList;
 
-	bool				m_bRequestedNZBDirScan;
-	int					m_iNZBDirInterval;
-	bool				m_bScanScript;
-	int					m_iPass;
-	FileList			m_FileList;
-	QueueList			m_QueueList;
-	bool				m_bScanning;
-	Mutex				m_mutexScan;
+	bool m_requestedNzbDirScan = false;
+	int m_nzbDirInterval = 0;
+	bool m_scanScript = false;
+	int m_pass = 0;
+	FileList m_fileList;
+	QueueList m_queueList;
+	bool m_scanning = false;
+	Mutex m_scanMutex;
 
-	void				CheckIncomingNZBs(const char* szDirectory, const char* szCategory, bool bCheckStat);
-	bool				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
-							int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, int* pNZBID);
-	void				ProcessIncomingFile(const char* szDirectory, const char* szBaseFilename,
-							const char* szFullFilename, const char* szCategory);
-	bool				CanProcessFile(const char* szFullFilename, bool bCheckStat);
-	void				DropOldFiles();
-	void				ClearQueueList();
-
-protected:
-	virtual int			ServiceInterval() { return 200; }
-	virtual void		ServiceWork();
-
-public:
-						Scanner();
-						~Scanner();
-	void				InitOptions();
-	void				ScanNZBDir(bool bSyncMode);
-	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
-							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,
-							const char* szFileName, const char* szBuffer, int iBufSize, int* pNZBID);
-	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters, bool bReset);
+	void CheckIncomingNzbs(const char* directory, const char* category, bool checkStat);
+	bool AddFileToQueue(const char* filename, const char* nzbName, const char* category,
+		int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
+		NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo, int* nzbId);
+	void ProcessIncomingFile(const char* directory, const char* baseFilename,
+		const char* fullFilename, const char* category);
+	bool CanProcessFile(const char* fullFilename, bool checkStat);
+	void DropOldFiles();
 };
 
-extern Scanner* g_pScanner;
+extern Scanner* g_Scanner;
 
 #endif

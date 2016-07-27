@@ -4,7 +4,7 @@ rem
 rem  Batch file to start nzbget shell
 rem
 rem  Copyright (C) 2009 orbisvicis <orbisvicis@users.sourceforge.net>
-rem  Copyright (C) 2009 Andrey Prygunkov <hugbug@users.sourceforge.net>
+rem  Copyright (C) 2009-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
 rem
 rem  This program is free software; you can redistribute it and/or modify
 rem  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,7 @@ rem  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 rem  GNU General Public License for more details.
 rem
 rem  You should have received a copy of the GNU General Public License
-rem  along with this program; if not, write to the Free Software
-rem  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+rem  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 rem
 
 rem #######################    Usage instructions     #######################

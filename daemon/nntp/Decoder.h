@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,29 +14,26 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef DECODER_H
 #define DECODER_H
 
+#include "NString.h"
+
 class Decoder
 {
 public:
 	enum EStatus
 	{
-		eUnknownError,
-		eFinished,
-		eArticleIncomplete,
-		eCrcError,
-		eInvalidSize,
-		eNoBinaryData
+		dsUnknownError,
+		dsFinished,
+		dsArticleIncomplete,
+		dsCrcError,
+		dsInvalidSize,
+		dsNoBinaryData
 	};
 
 	enum EFormat
@@ -48,59 +45,57 @@ public:
 
 	static const char* FormatNames[];
 
-protected:
-	char*					m_szArticleFilename;
+	virtual ~Decoder() {}
+	virtual EStatus Check() = 0;
+	virtual void Clear();
+	virtual int DecodeBuffer(char* buffer, int len) = 0;
+	const char* GetArticleFilename() { return m_articleFilename; }
+	static EFormat DetectFormat(const char* buffer, int len, bool inBody);
 
-public:
-							Decoder();
-	virtual					~Decoder();
-	virtual EStatus			Check() = 0;
-	virtual void			Clear();
-	virtual int				DecodeBuffer(char* buffer, int len) = 0;
-	const char*				GetArticleFilename() { return m_szArticleFilename; }
-	static EFormat			DetectFormat(const char* buffer, int len, bool inBody);
+protected:
+	CString m_articleFilename;
 };
 
 class YDecoder: public Decoder
 {
-protected:
-	bool					m_bBegin;
-	bool					m_bPart;
-	bool					m_bBody;
-	bool					m_bEnd;
-	bool					m_bCrc;
-	unsigned long			m_lExpectedCRC;
-	unsigned long			m_lCalculatedCRC;
-	long long				m_iBegin;
-	long long				m_iEnd;
-	long long				m_iSize;
-	long long				m_iEndSize;
-	bool					m_bCrcCheck;
-
 public:
-							YDecoder();
-	virtual EStatus			Check();
-	virtual void			Clear();
-	virtual int				DecodeBuffer(char* buffer, int len);
-	void					SetCrcCheck(bool bCrcCheck) { m_bCrcCheck = bCrcCheck; }
-	long long				GetBegin() { return m_iBegin; }
-	long long				GetEnd() { return m_iEnd; }
-	long long				GetSize() { return m_iSize; }
-	unsigned long			GetExpectedCrc() { return m_lExpectedCRC; }
-	unsigned long			GetCalculatedCrc() { return m_lCalculatedCRC; }
+	YDecoder();
+	virtual EStatus Check();
+	virtual void Clear();
+	virtual int DecodeBuffer(char* buffer, int len);
+	void SetCrcCheck(bool crcCheck) { m_crcCheck = crcCheck; }
+	int64 GetBegin() { return m_beginPos; }
+	int64 GetEnd() { return m_endPos; }
+	int64 GetSize() { return m_size; }
+	uint32 GetExpectedCrc() { return m_expectedCRC; }
+	uint32 GetCalculatedCrc() { return m_calculatedCRC; }
+
+private:
+	bool m_begin;
+	bool m_part;
+	bool m_body;
+	bool m_end;
+	bool m_crc;
+	uint32 m_expectedCRC;
+	uint32 m_calculatedCRC;
+	int64 m_beginPos;
+	int64 m_endPos;
+	int64 m_size;
+	int64 m_endSize;
+	bool m_crcCheck;
 };
 
 class UDecoder: public Decoder
 {
-private:
-	bool					m_bBody;
-	bool					m_bEnd;
-
 public:
-							UDecoder();
-	virtual EStatus			Check();
-	virtual void			Clear();
-	virtual int				DecodeBuffer(char* buffer, int len);
+	UDecoder();
+	virtual EStatus Check();
+	virtual void Clear();
+	virtual int DecodeBuffer(char* buffer, int len);
+
+private:
+	bool m_body;
+	bool m_end;
 };
 
 #endif

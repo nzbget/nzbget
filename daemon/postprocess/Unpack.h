@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,20 +14,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef UNPACK_H
 #define UNPACK_H
-
-#include <deque>
-#include <vector>
 
 #include "Log.h"
 #include "Thread.h"
@@ -36,6 +28,15 @@
 
 class UnpackController : public Thread, public ScriptController
 {
+public:
+	virtual void Run();
+	virtual void Stop();
+	static void StartJob(PostInfo* postInfo);
+
+protected:
+	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
 	enum EUnpacker
 	{
@@ -43,76 +44,65 @@ private:
 		upSevenZip
 	};
 
-	typedef std::deque<char*>		FileListBase;
+	typedef std::vector<CString> FileListBase;
 	class FileList : public FileListBase
 	{
 	public:
-		void			Clear();
-		bool			Exists(const char* szFilename);
+		bool Exists(const char* filename);
 	};
 
-	typedef std::vector<char*>		ParamListBase;
+	typedef std::vector<CString> ParamListBase;
 	class ParamList : public ParamListBase
 	{
 	public:
-						~ParamList();
-		bool			Exists(const char* szParam);
+		bool Exists(const char* param);
 	};
 
-private:
-	PostInfo*			m_pPostInfo;
-	char				m_szName[1024];
-	char				m_szInfoName[1024];
-	char				m_szInfoNameUp[1024];
-	char				m_szDestDir[1024];
-	char				m_szFinalDir[1024];
-	char				m_szUnpackDir[1024];
-	char				m_szPassword[1024];
-	bool				m_bInterDir;
-	bool				m_bAllOKMessageReceived;
-	bool				m_bNoFilesMessageReceived;
-	bool				m_bHasParFiles;
-	bool				m_bHasRarFiles;
-	bool				m_bHasNonStdRarFiles;
-	bool				m_bHasSevenZipFiles;
-	bool				m_bHasSevenZipMultiFiles;
-	bool				m_bHasSplittedFiles;
-	bool				m_bUnpackOK;
-	bool				m_bUnpackStartError;
-	bool				m_bUnpackSpaceError;
-	bool				m_bUnpackDecryptError;
-	bool				m_bUnpackPasswordError;
-	bool				m_bCleanedUpDisk;
-	bool				m_bAutoTerminated;
-	EUnpacker			m_eUnpacker;
-	bool				m_bFinalDirCreated;
-	FileList			m_JoinedFiles;
-	bool				m_bPassListTried;
+	PostInfo* m_postInfo;
+	CString m_name;
+	CString m_infoName;
+	CString m_infoNameUp;
+	CString m_destDir;
+	CString m_finalDir;
+	CString m_unpackDir;
+	CString m_password;
+	bool m_interDir;
+	bool m_allOkMessageReceived;
+	bool m_noFilesMessageReceived;
+	bool m_hasParFiles;
+	bool m_hasRarFiles;
+	bool m_hasNonStdRarFiles;
+	bool m_hasSevenZipFiles;
+	bool m_hasSevenZipMultiFiles;
+	bool m_hasSplittedFiles;
+	bool m_unpackOk;
+	bool m_unpackStartError;
+	bool m_unpackSpaceError;
+	bool m_unpackDecryptError;
+	bool m_unpackPasswordError;
+	bool m_cleanedUpDisk;
+	bool m_autoTerminated;
+	EUnpacker m_unpacker;
+	bool m_finalDirCreated;
+	FileList m_joinedFiles;
+	bool m_passListTried;
 
-protected:
-	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-	void				ExecuteUnpack(EUnpacker eUnpacker, const char* szPassword, bool bMultiVolumes);
-	void				ExecuteUnrar(const char* szPassword);
-	void				ExecuteSevenZip(const char* szPassword, bool bMultiVolumes);
-	void				UnpackArchives(EUnpacker eUnpacker, bool bMultiVolumes);
-	void				JoinSplittedFiles();
-	bool				JoinFile(const char* szFragBaseName);
-	void				Completed();
-	void				CreateUnpackDir();
-	bool				Cleanup();
-	void				CheckArchiveFiles(bool bScanNonStdFiles);
-	void				SetProgressLabel(const char* szProgressLabel);
+	void ExecuteUnpack(EUnpacker unpacker, const char* password, bool multiVolumes);
+	void ExecuteUnrar(const char* password);
+	void ExecuteSevenZip(const char* password, bool multiVolumes);
+	void UnpackArchives(EUnpacker unpacker, bool multiVolumes);
+	void JoinSplittedFiles();
+	bool JoinFile(const char* fragBaseName);
+	void Completed();
+	void CreateUnpackDir();
+	bool Cleanup();
+	void CheckArchiveFiles(bool scanNonStdFiles);
+	void SetProgressLabel(const char* progressLabel);
 #ifndef DISABLE_PARCHECK
-	void				RequestParCheck(bool bForceRepair);
+	void RequestParCheck(bool forceRepair);
 #endif
-	bool				FileHasRarSignature(const char* szFilename);
-	bool				PrepareCmdParams(const char* szCommand, ParamList* pParams, const char* szInfoName);
-
-public:
-	virtual void		Run();
-	virtual void		Stop();
-	static void			StartJob(PostInfo* pPostInfo);
+	bool FileHasRarSignature(const char* filename);
+	bool PrepareCmdParams(const char* command, ParamList* params, const char* infoName);
 };
 
 #endif

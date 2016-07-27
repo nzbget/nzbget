@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,17 +14,13 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef MAINTENANCE_H
 #define MAINTENANCE_H
 
+#include "NString.h"
 #include "Thread.h"
 #include "Script.h"
 #include "Log.h"
@@ -34,16 +30,6 @@ class UpdateScriptController;
 
 class Maintenance
 {
-private:
-	MessageList			m_Messages;
-	Mutex				m_mutexLog;
-	Mutex				m_mutexController;
-	int					m_iIDMessageGen;
-	UpdateScriptController*	m_UpdateScriptController;
-	char*				m_szUpdateScript;
-
-	bool				ReadPackageInfoStr(const char* szKey, char** pValue);
-
 public:
 	enum EBranch
 	{
@@ -52,44 +38,52 @@ public:
 		brDevel
 	};
 
-						Maintenance();
-						~Maintenance();
-	void				AddMessage(Message::EKind eKind, time_t tTime, const char* szText);
-	MessageList*		LockMessages();
-	void				UnlockMessages();
-	bool				StartUpdate(EBranch eBranch);
-	void				ResetUpdateController();
-	bool				CheckUpdates(char** pUpdateInfo);
-	static bool			VerifySignature(const char* szInFilename, const char* szSigFilename, const char* szPubKeyFilename);
+	~Maintenance();
+	void AddMessage(Message::EKind kind, time_t time, const char* text);
+	GuardedMessageList GuardMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
+	bool StartUpdate(EBranch branch);
+	void ResetUpdateController();
+	bool CheckUpdates(CString& updateInfo);
+	static bool VerifySignature(const char* inFilename, const char* sigFilename, const char* pubKeyFilename);
+
+private:
+	MessageList m_messages;
+	Mutex m_logMutex;
+	Mutex m_controllerMutex;
+	int m_idMessageGen = 0;
+	UpdateScriptController* m_updateScriptController = nullptr;
+	CString m_updateScript;
+
+	bool ReadPackageInfoStr(const char* key, CString& value);
 };
 
-extern Maintenance* g_pMaintenance;
+extern Maintenance* g_Maintenance;
 
 class UpdateScriptController : public Thread, public ScriptController
 {
-private:
-	Maintenance::EBranch	m_eBranch;
-	int						m_iPrefixLen;
+public:
+	virtual void Run();
+	void SetBranch(Maintenance::EBranch branch) { m_branch = branch; }
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
-public:
-	virtual void		Run();
-	void				SetBranch(Maintenance::EBranch eBranch) { m_eBranch = eBranch; }
+private:
+	Maintenance::EBranch m_branch;
+	int m_prefixLen;
 };
 
 class UpdateInfoScriptController : public ScriptController
 {
+public:
+	static void ExecuteScript(const char* script, CString& updateInfo);
+
 private:
-	int					m_iPrefixLen;
-	StringBuilder		m_UpdateInfo;
+	int m_prefixLen;
+	StringBuilder m_updateInfo;
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-
-public:
-	static void			ExecuteScript(const char* szScript, char** pUpdateInfo);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 };
 
 #endif

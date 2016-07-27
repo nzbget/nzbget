@@ -20,6 +20,9 @@
 #ifndef __DISKFILE_H__
 #define __DISKFILE_H__
 
+namespace Par2
+{
+
 // A disk file can be any type of file that par2cmdline needs
 // to read or write data from or to.
 
@@ -121,5 +124,7 @@ public:
 protected:
   map<string, DiskFile*>    diskfilemap;             // Map from filename to DiskFile
 };
+
+} // end namespace Par2
 
 #endif // __DISKFILE_H__

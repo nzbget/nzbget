@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,30 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-#include <stdio.h>
 
 #include "nzbget.h"
 #include "PostScript.h"
@@ -50,176 +29,159 @@ static const int POSTPROCESS_SUCCESS = 93;
 static const int POSTPROCESS_ERROR = 94;
 static const int POSTPROCESS_NONE = 95;
 
-void PostScriptController::StartJob(PostInfo* pPostInfo)
+void PostScriptController::StartJob(PostInfo* postInfo)
 {
-	PostScriptController* pScriptController = new PostScriptController();
-	pScriptController->m_pPostInfo = pPostInfo;
-	pScriptController->SetWorkingDir(g_pOptions->GetDestDir());
-	pScriptController->SetAutoDestroy(false);
-	pScriptController->m_iPrefixLen = 0;
+	PostScriptController* scriptController = new PostScriptController();
+	scriptController->m_postInfo = postInfo;
+	scriptController->SetAutoDestroy(false);
+	scriptController->m_prefixLen = 0;
 
-	pPostInfo->SetPostThread(pScriptController);
+	postInfo->SetPostThread(scriptController);
 
-	pScriptController->Start();
+	scriptController->Start();
 }
 
 void PostScriptController::Run()
 {
 	StringBuilder scriptCommaList;
 
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	for (NZBParameterList::iterator it = m_pPostInfo->GetNZBInfo()->GetParameters()->begin(); it != m_pPostInfo->GetNZBInfo()->GetParameters()->end(); it++)
 	{
-		NZBParameter* pParameter = *it;
-		const char* szVarname = pParameter->GetName();
-		if (strlen(szVarname) > 0 && szVarname[0] != '*' && szVarname[strlen(szVarname)-1] == ':' &&
-			(!strcasecmp(pParameter->GetValue(), "yes") || !strcasecmp(pParameter->GetValue(), "on") || !strcasecmp(pParameter->GetValue(), "1")))
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		for (NzbParameter& parameter : m_postInfo->GetNzbInfo()->GetParameters())
 		{
-			char* szScriptName = strdup(szVarname);
-			szScriptName[strlen(szScriptName)-1] = '\0'; // remove trailing ':'
-			scriptCommaList.Append(szScriptName);
-			scriptCommaList.Append(",");
-			free(szScriptName);
+			const char* varname = parameter.GetName();
+			if (strlen(varname) > 0 && varname[0] != '*' && varname[strlen(varname) - 1] == ':' &&
+				(!strcasecmp(parameter.GetValue(), "yes") || !strcasecmp(parameter.GetValue(), "on") || !strcasecmp(parameter.GetValue(), "1")))
+			{
+				CString scriptName(varname);
+				scriptName[strlen(scriptName) - 1] = '\0'; // remove trailing ':'
+				scriptCommaList.Append(scriptName);
+				scriptCommaList.Append(",");
+			}
 		}
+		m_postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
 	}
-	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Clear();
-	DownloadQueue::Unlock();
 
-	ExecuteScriptList(scriptCommaList.GetBuffer());
+	ExecuteScriptList(scriptCommaList);
 
-	m_pPostInfo->SetStage(PostInfo::ptFinished);
-	m_pPostInfo->SetWorking(false);
+	m_postInfo->SetStage(PostInfo::ptFinished);
+	m_postInfo->SetWorking(false);
 }
 
-void PostScriptController::ExecuteScript(ScriptConfig::Script* pScript)
+void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
 	// if any script has requested par-check, do not execute other scripts
-	if (!pScript->GetPostScript() || m_pPostInfo->GetRequestParCheck())
+	if (!script->GetPostScript() || m_postInfo->GetRequestParCheck())
 	{
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", pScript->GetName(), m_pPostInfo->GetNZBInfo()->GetName());
+	PrintMessage(Message::mkInfo, "Executing post-process-script %s for %s", script->GetName(), m_postInfo->GetNzbInfo()->GetName());
 
-	char szProgressLabel[1024];
-	snprintf(szProgressLabel, 1024, "Executing post-process-script %s", pScript->GetName());
-	szProgressLabel[1024-1] = '\0';
+	BString<1024> progressLabel("Executing post-process-script %s", script->GetName());
 
-	DownloadQueue::Lock();
-	m_pPostInfo->SetProgressLabel(szProgressLabel);
-	DownloadQueue::Unlock();
+	{
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		m_postInfo->SetProgressLabel(progressLabel);
+	}
 
-	SetScript(pScript->GetLocation());
-	SetArgs(NULL, false);
+	SetArgs({script->GetLocation()});
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "post-process-script %s for %s", pScript->GetName(), m_pPostInfo->GetNZBInfo()->GetName());
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	BString<1024> infoName("post-process-script %s for %s", script->GetName(), m_postInfo->GetNzbInfo()->GetName());
+	SetInfoName(infoName);
 
-	m_pScript = pScript;
-	SetLogPrefix(pScript->GetDisplayName());
-	m_iPrefixLen = strlen(pScript->GetDisplayName()) + 2; // 2 = strlen(": ");
-	PrepareParams(pScript->GetName());
+	m_script = script;
+	SetLogPrefix(script->GetDisplayName());
+	m_prefixLen = strlen(script->GetDisplayName()) + 2; // 2 = strlen(": ");
+	PrepareParams(script->GetName());
 
-	int iExitCode = Execute();
+	int exitCode = Execute();
 
-	szInfoName[0] = 'P'; // uppercase
+	infoName[0] = 'P'; // uppercase
 
-	SetLogPrefix(NULL);
-	ScriptStatus::EStatus eStatus = AnalyseExitCode(iExitCode);
-	
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
-	m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->Add(pScript->GetName(), eStatus);
-	DownloadQueue::Unlock();
+	SetLogPrefix(nullptr);
+	ScriptStatus::EStatus status = AnalyseExitCode(exitCode);
+
+	{
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		m_postInfo->GetNzbInfo()->GetScriptStatuses()->emplace_back(script->GetName(), status);
+	}
 }
 
-void PostScriptController::PrepareParams(const char* szScriptName)
+void PostScriptController::PrepareParams(const char* scriptName)
 {
-	// the locking is needed for accessing the members of NZBInfo
-	DownloadQueue::Lock();
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
 
 	ResetEnv();
 
-	SetIntEnvVar("NZBPP_NZBID", m_pPostInfo->GetNZBInfo()->GetID());
-	SetEnvVar("NZBPP_NZBNAME", m_pPostInfo->GetNZBInfo()->GetName());
-	SetEnvVar("NZBPP_DIRECTORY", m_pPostInfo->GetNZBInfo()->GetDestDir());
-	SetEnvVar("NZBPP_NZBFILENAME", m_pPostInfo->GetNZBInfo()->GetFilename());
-	SetEnvVar("NZBPP_URL", m_pPostInfo->GetNZBInfo()->GetURL());
-	SetEnvVar("NZBPP_FINALDIR", m_pPostInfo->GetNZBInfo()->GetFinalDir());
-	SetEnvVar("NZBPP_CATEGORY", m_pPostInfo->GetNZBInfo()->GetCategory());
-	SetIntEnvVar("NZBPP_HEALTH", m_pPostInfo->GetNZBInfo()->CalcHealth());
-	SetIntEnvVar("NZBPP_CRITICALHEALTH", m_pPostInfo->GetNZBInfo()->CalcCriticalHealth(false));
+	SetIntEnvVar("NZBPP_NZBID", m_postInfo->GetNzbInfo()->GetId());
+	SetEnvVar("NZBPP_NZBNAME", m_postInfo->GetNzbInfo()->GetName());
+	SetEnvVar("NZBPP_DIRECTORY", m_postInfo->GetNzbInfo()->GetDestDir());
+	SetEnvVar("NZBPP_NZBFILENAME", m_postInfo->GetNzbInfo()->GetFilename());
+	SetEnvVar("NZBPP_QUEUEDFILE", m_postInfo->GetNzbInfo()->GetQueuedFilename());
+	SetEnvVar("NZBPP_URL", m_postInfo->GetNzbInfo()->GetUrl());
+	SetEnvVar("NZBPP_FINALDIR", m_postInfo->GetNzbInfo()->GetFinalDir());
+	SetEnvVar("NZBPP_CATEGORY", m_postInfo->GetNzbInfo()->GetCategory());
+	SetIntEnvVar("NZBPP_HEALTH", m_postInfo->GetNzbInfo()->CalcHealth());
+	SetIntEnvVar("NZBPP_CRITICALHEALTH", m_postInfo->GetNzbInfo()->CalcCriticalHealth(false));
 
-	SetEnvVar("NZBPP_DUPEKEY", m_pPostInfo->GetNZBInfo()->GetDupeKey());
-	SetIntEnvVar("NZBPP_DUPESCORE", m_pPostInfo->GetNZBInfo()->GetDupeScore());
+	SetEnvVar("NZBPP_DUPEKEY", m_postInfo->GetNzbInfo()->GetDupeKey());
+	SetIntEnvVar("NZBPP_DUPESCORE", m_postInfo->GetNzbInfo()->GetDupeScore());
 
-	const char* szDupeModeName[] = { "SCORE", "ALL", "FORCE" };
-	SetEnvVar("NZBPP_DUPEMODE", szDupeModeName[m_pPostInfo->GetNZBInfo()->GetDupeMode()]);
+	const char* dupeModeName[] = { "SCORE", "ALL", "FORCE" };
+	SetEnvVar("NZBPP_DUPEMODE", dupeModeName[m_postInfo->GetNzbInfo()->GetDupeMode()]);
 
-	char szStatus[256];
-	strncpy(szStatus, m_pPostInfo->GetNZBInfo()->MakeTextStatus(true), sizeof(szStatus));
-	szStatus[256-1] = '\0';
-	SetEnvVar("NZBPP_STATUS", szStatus);
+	BString<1024> status = m_postInfo->GetNzbInfo()->MakeTextStatus(true);
+	SetEnvVar("NZBPP_STATUS", status);
 
-	char* szDetail = strchr(szStatus, '/');
-	if (szDetail) *szDetail = '\0';
-	SetEnvVar("NZBPP_TOTALSTATUS", szStatus);
+	char* detail = strchr(status, '/');
+	if (detail) *detail = '\0';
+	SetEnvVar("NZBPP_TOTALSTATUS", status);
 
-    const char* szScriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
-	SetEnvVar("NZBPP_SCRIPTSTATUS", szScriptStatusName[m_pPostInfo->GetNZBInfo()->GetScriptStatuses()->CalcTotalStatus()]);
+	const char* scriptStatusName[] = { "NONE", "FAILURE", "SUCCESS" };
+	SetEnvVar("NZBPP_SCRIPTSTATUS", scriptStatusName[m_postInfo->GetNzbInfo()->GetScriptStatuses()->CalcTotalStatus()]);
 
 	// deprecated
-	int iParStatus[] = { 0, 0, 1, 2, 3, 4 };
-	NZBInfo::EParStatus eParStatus = m_pPostInfo->GetNZBInfo()->GetParStatus();
+	int parStatusCodes[] = { 0, 0, 1, 2, 3, 4 };
+	NzbInfo::EParStatus parStatus = m_postInfo->GetNzbInfo()->GetParStatus();
 	// for downloads marked as bad and for deleted downloads pass par status "Failure"
 	// for compatibility with older scripts which don't check "NZBPP_TOTALSTATUS"
-	if (m_pPostInfo->GetNZBInfo()->GetDeleteStatus() != NZBInfo::dsNone ||
-		m_pPostInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad)
+	if (m_postInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsNone ||
+		m_postInfo->GetNzbInfo()->GetMarkStatus() == NzbInfo::ksBad)
 	{
-		eParStatus = NZBInfo::psFailure;
+		parStatus = NzbInfo::psFailure;
 	}
-	SetIntEnvVar("NZBPP_PARSTATUS", iParStatus[eParStatus]);
+	SetIntEnvVar("NZBPP_PARSTATUS", parStatusCodes[parStatus]);
 
 	// deprecated
-	int iUnpackStatus[] = { 0, 0, 1, 2, 3, 4 };
-	SetIntEnvVar("NZBPP_UNPACKSTATUS", iUnpackStatus[m_pPostInfo->GetNZBInfo()->GetUnpackStatus()]);
+	int unpackStatus[] = { 0, 0, 1, 2, 3, 4 };
+	SetIntEnvVar("NZBPP_UNPACKSTATUS", unpackStatus[m_postInfo->GetNzbInfo()->GetUnpackStatus()]);
 
 	// deprecated
-	SetIntEnvVar("NZBPP_HEALTHDELETED", (int)m_pPostInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsHealth);
+	SetIntEnvVar("NZBPP_HEALTHDELETED", (int)m_postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsHealth);
 
-	SetIntEnvVar("NZBPP_TOTALARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetTotalArticles());
-	SetIntEnvVar("NZBPP_SUCCESSARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetSuccessArticles());
-	SetIntEnvVar("NZBPP_FAILEDARTICLES", (int)m_pPostInfo->GetNZBInfo()->GetFailedArticles());
+	SetIntEnvVar("NZBPP_TOTALARTICLES", (int)m_postInfo->GetNzbInfo()->GetTotalArticles());
+	SetIntEnvVar("NZBPP_SUCCESSARTICLES", (int)m_postInfo->GetNzbInfo()->GetSuccessArticles());
+	SetIntEnvVar("NZBPP_FAILEDARTICLES", (int)m_postInfo->GetNzbInfo()->GetFailedArticles());
 
-	for (ServerStatList::iterator it = m_pPostInfo->GetNZBInfo()->GetServerStats()->begin(); it != m_pPostInfo->GetNZBInfo()->GetServerStats()->end(); it++)
+	for (ServerStat& serverStat : m_postInfo->GetNzbInfo()->GetServerStats())
 	{
-		ServerStat* pServerStat = *it;
+		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_SUCCESSARTICLES", serverStat.GetServerId()),
+			serverStat.GetSuccessArticles());
 
-		char szName[50];
-
-		snprintf(szName, 50, "NZBPP_SERVER%i_SUCCESSARTICLES", pServerStat->GetServerID());
-		szName[50-1] = '\0';
-		SetIntEnvVar(szName, pServerStat->GetSuccessArticles());
-
-		snprintf(szName, 50, "NZBPP_SERVER%i_FAILEDARTICLES", pServerStat->GetServerID());
-		szName[50-1] = '\0';
-		SetIntEnvVar(szName, pServerStat->GetFailedArticles());
+		SetIntEnvVar(BString<1024>("NZBPP_SERVER%i_FAILEDARTICLES", serverStat.GetServerId()),
+			serverStat.GetFailedArticles());
 	}
 
-	PrepareEnvScript(m_pPostInfo->GetNZBInfo()->GetParameters(), szScriptName);
-	
-	DownloadQueue::Unlock();
+	PrepareEnvScript(m_postInfo->GetNzbInfo()->GetParameters(), scriptName);
 }
 
-ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
+ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int exitCode)
 {
 	// The ScriptStatus is accumulated for all scripts:
 	// If any script has failed the status is "failure", etc.
 
-	switch (iExitCode)
+	switch (exitCode)
 	{
 		case POSTPROCESS_SUCCESS:
 			PrintMessage(Message::mkInfo, "%s successful", GetInfoName());
@@ -236,7 +198,7 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
 
 #ifndef DISABLE_PARCHECK
 		case POSTPROCESS_PARCHECK:
-			if (m_pPostInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped)
+			if (m_postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped)
 			{
 				PrintMessage(Message::mkError, "%s requested par-check/repair, but the collection was already checked", GetInfoName());
 				return ScriptStatus::srFailure;
@@ -244,8 +206,8 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
 			else
 			{
 				PrintMessage(Message::mkInfo, "%s requested par-check/repair", GetInfoName());
-				m_pPostInfo->SetRequestParCheck(true);
-				m_pPostInfo->SetForceRepair(true);
+				m_postInfo->SetRequestParCheck(true);
+				m_postInfo->SetForceRepair(true);
 				return ScriptStatus::srSuccess;
 			}
 			break;
@@ -257,87 +219,82 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int iExitCode)
 	}
 }
 
-void PostScriptController::AddMessage(Message::EKind eKind, const char* szText)
+void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 {
-	const char* szMsgText = szText + m_iPrefixLen;
+	const char* msgText = text + m_prefixLen;
 
-	if (!strncmp(szMsgText, "[NZB] ", 6))
+	if (!strncmp(msgText, "[NZB] ", 6))
 	{
-		debug("Command %s detected", szMsgText + 6);
-		if (!strncmp(szMsgText + 6, "FINALDIR=", 9))
+		debug("Command %s detected", msgText + 6);
+		if (!strncmp(msgText + 6, "FINALDIR=", 9))
 		{
-			DownloadQueue::Lock();
-			m_pPostInfo->GetNZBInfo()->SetFinalDir(szMsgText + 6 + 9);
-			DownloadQueue::Unlock();
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
+			m_postInfo->GetNzbInfo()->SetFinalDir(msgText + 6 + 9);
 		}
-		else if (!strncmp(szMsgText + 6, "DIRECTORY=", 10))
+		else if (!strncmp(msgText + 6, "DIRECTORY=", 10))
 		{
-			DownloadQueue::Lock();
-			m_pPostInfo->GetNZBInfo()->SetDestDir(szMsgText + 6 + 10);
-			DownloadQueue::Unlock();
+			GuardedDownloadQueue guard = DownloadQueue::Guard();
+			m_postInfo->GetNzbInfo()->SetDestDir(msgText + 6 + 10);
 		}
-		else if (!strncmp(szMsgText + 6, "NZBPR_", 6))
+		else if (!strncmp(msgText + 6, "NZBPR_", 6))
 		{
-			char* szParam = strdup(szMsgText + 6 + 6);
-			char* szValue = strchr(szParam, '=');
-			if (szValue)
+			CString param = msgText + 6 + 6;
+			char* value = strchr(param, '=');
+			if (value)
 			{
-				*szValue = '\0';
-				DownloadQueue::Lock();
-				m_pPostInfo->GetNZBInfo()->GetParameters()->SetParameter(szParam, szValue + 1);
-				DownloadQueue::Unlock();
+				*value = '\0';
+				GuardedDownloadQueue guard = DownloadQueue::Guard();
+				m_postInfo->GetNzbInfo()->GetParameters()->SetParameter(param, value + 1);
 			}
 			else
 			{
-				m_pPostInfo->GetNZBInfo()->PrintMessage(Message::mkError,
-					"Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+				m_postInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+					"Invalid command \"%s\" received from %s", msgText, GetInfoName());
 			}
-			free(szParam);
 		}
-		else if (!strncmp(szMsgText + 6, "MARK=BAD", 8))
+		else if (!strncmp(msgText + 6, "MARK=BAD", 8))
 		{
-			SetLogPrefix(NULL);
-			PrintMessage(Message::mkWarning, "Marking %s as bad", m_pPostInfo->GetNZBInfo()->GetName());
-			SetLogPrefix(m_pScript->GetDisplayName());
-			m_pPostInfo->GetNZBInfo()->SetMarkStatus(NZBInfo::ksBad);
+			SetLogPrefix(nullptr);
+			PrintMessage(Message::mkWarning, "Marking %s as bad", m_postInfo->GetNzbInfo()->GetName());
+			SetLogPrefix(m_script->GetDisplayName());
+			m_postInfo->GetNzbInfo()->SetMarkStatus(NzbInfo::ksBad);
 		}
 		else
 		{
-			m_pPostInfo->GetNZBInfo()->PrintMessage(Message::mkError,
-				"Invalid command \"%s\" received from %s", szMsgText, GetInfoName());
+			m_postInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+				"Invalid command \"%s\" received from %s", msgText, GetInfoName());
 		}
 	}
 	else
 	{
-		m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
-		DownloadQueue::Lock();
-		m_pPostInfo->SetProgressLabel(szText);
-		DownloadQueue::Unlock();
+		m_postInfo->GetNzbInfo()->AddMessage(kind, text);
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		m_postInfo->SetProgressLabel(text);
 	}
 
-	if (g_pOptions->GetPausePostProcess() && !m_pPostInfo->GetNZBInfo()->GetForcePriority())
+	if (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority())
 	{
-		time_t tStageTime = m_pPostInfo->GetStageTime();
-		time_t tStartTime = m_pPostInfo->GetStartTime();
-		time_t tWaitTime = time(NULL);
+		time_t stageTime = m_postInfo->GetStageTime();
+		time_t startTime = m_postInfo->GetStartTime();
+		time_t waitTime = Util::CurrentTime();
 
 		// wait until Post-processor is unpaused
-		while (g_pOptions->GetPausePostProcess() && !m_pPostInfo->GetNZBInfo()->GetForcePriority() && !IsStopped())
+		while (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
 		{
 			usleep(100 * 1000);
 
 			// update time stamps
 
-			time_t tDelta = time(NULL) - tWaitTime;
+			time_t delta = Util::CurrentTime() - waitTime;
 
-			if (tStageTime > 0)
+			if (stageTime > 0)
 			{
-				m_pPostInfo->SetStageTime(tStageTime + tDelta);
+				m_postInfo->SetStageTime(stageTime + delta);
 			}
 
-			if (tStartTime > 0)
+			if (startTime > 0)
 			{
-				m_pPostInfo->SetStartTime(tStartTime + tDelta);
+				m_postInfo->SetStartTime(startTime + delta);
 			}
 		}
 	}

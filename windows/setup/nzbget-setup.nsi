@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,20 +14,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 ; This is setup script for NZBGet for Windows. To compile the script you need
 ; NSIS (http://nsis.sourceforge.net). Moreover a special build of NSIS must be
 ; installed over standard NSIS installation. This special build provides
-; extra logging used in this script: http://nsis.sourceforge.net/Special%5FBuilds.
-; Also requires NSIS Simple Service Plugin:
-; http://nsis.sourceforge.net/NSIS_Simple_Service_Plugin
+; extra logging required by the install script:
+;  - Speical build with extra logging - http://nsis.sourceforge.net/Special%5FBuilds
+; The install script also requires additional plugins:
+;  - NSIS Simple Service Plugin - http://nsis.sourceforge.net/NSIS_Simple_Service_Plugin
+;  - AccessControl plug-in - http://nsis.sourceforge.net/AccessControl_plug-in
 
 
 ;--------------------------------
@@ -134,7 +131,25 @@ ${AndIf} ${FileExists} "$R1\nzbget.exe"
 ${EndIf}
 
 !ifndef DEBUG_UI
-File /r "..\NZBGet\*"
+
+File "..\NZBGet\*"
+SetOutPath "$INSTDIR\webui"
+File /r "..\NZBGet\webui\*"
+
+${If} ${FileExists} "$INSTDIR\nzbget.conf"
+  ; When updating a portable installation install all scripts into exe-directory
+  SetOutPath "$INSTDIR\scripts"
+${Else}
+  ; In default mode install all scripts into app-data-directory
+  SetShellVarContext all
+  SetOutPath "$APPDATA\NZBGet\scripts"
+  # Make directory "$APPDATA\NZBGet" full access by all users
+  AccessControl::GrantOnFile "$APPDATA\NZBGet" "(BU)" "FullAccess"
+  Pop $0
+  SetShellVarContext current
+${EndIf}
+File "..\NZBGet\scripts\*"
+
 !endif
 
 ; Create shortcuts

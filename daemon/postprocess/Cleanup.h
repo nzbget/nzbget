@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,18 +14,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef CLEANUP_H
 #define CLEANUP_H
 
+#include "NString.h"
 #include "Log.h"
 #include "Thread.h"
 #include "DownloadInfo.h"
@@ -33,36 +29,36 @@
 
 class MoveController : public Thread, public ScriptController
 {
-private:
-	PostInfo*			m_pPostInfo;
-	char				m_szInterDir[1024];
-	char				m_szDestDir[1024];
-
-	bool				MoveFiles();
+public:
+	virtual void Run();
+	static void StartJob(PostInfo* postInfo);
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
-public:
-	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
+private:
+	PostInfo* m_postInfo;
+	CString m_interDir;
+	CString m_destDir;
+
+	bool MoveFiles();
 };
 
 class CleanupController : public Thread, public ScriptController
 {
-private:
-	PostInfo*			m_pPostInfo;
-	char				m_szDestDir[1024];
-	char				m_szFinalDir[1024];
-
-	bool				Cleanup(const char* szDestDir, bool *bDeleted);
+public:
+	virtual void Run();
+	static void StartJob(PostInfo* postInfo);
 
 protected:
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
-public:
-	virtual void		Run();
-	static void			StartJob(PostInfo* pPostInfo);
+private:
+	PostInfo* m_postInfo;
+	CString m_destDir;
+	CString m_finalDir;
+
+	bool Cleanup(const char* destDir, bool *deleted);
 };
 
 #endif

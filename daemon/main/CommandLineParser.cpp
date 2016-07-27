@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,74 +14,47 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"					  
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <sys/stat.h>
-#include <set>
-#ifdef WIN32
-#include <direct.h>
-#include <Shlobj.h>
-#else
-#include <unistd.h>
-#include <getopt.h>
-#endif
-
 #include "nzbget.h"
-#include "Util.h"
+#include "CommandLineParser.h"
 #include "Log.h"
 #include "MessageBase.h"
 #include "DownloadInfo.h"
-#include "CommandLineParser.h"
+#include "FileSystem.h"
+#include "Util.h"
 
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
-    {
-	    {"help", no_argument, 0, 'h'},
-	    {"configfile", required_argument, 0, 'c'},
-	    {"noconfigfile", no_argument, 0, 'n'},
-	    {"printconfig", no_argument, 0, 'p'},
-	    {"server", no_argument, 0, 's' },
-	    {"daemon", no_argument, 0, 'D' },
-	    {"version", no_argument, 0, 'v'},
-	    {"serverversion", no_argument, 0, 'V'},
-	    {"option", required_argument, 0, 'o'},
-	    {"append", no_argument, 0, 'A'},
-	    {"list", no_argument, 0, 'L'},
-	    {"pause", no_argument, 0, 'P'},
-	    {"unpause", no_argument, 0, 'U'},
-	    {"rate", required_argument, 0, 'R'},
-	    {"system", no_argument, 0, 'B'},
-	    {"log", required_argument, 0, 'G'},
-	    {"top", no_argument, 0, 'T'},
-	    {"edit", required_argument, 0, 'E'},
-	    {"connect", no_argument, 0, 'C'},
-	    {"quit", no_argument, 0, 'Q'},
-	    {"reload", no_argument, 0, 'O'},
-	    {"write", required_argument, 0, 'W'},
-	    {"category", required_argument, 0, 'K'},
-	    {"scan", no_argument, 0, 'S'},
-	    {0, 0, 0, 0}
-    };
+	{
+		{"help", no_argument, 0, 'h'},
+		{"configfile", required_argument, 0, 'c'},
+		{"noconfigfile", no_argument, 0, 'n'},
+		{"printconfig", no_argument, 0, 'p'},
+		{"server", no_argument, 0, 's' },
+		{"daemon", no_argument, 0, 'D' },
+		{"version", no_argument, 0, 'v'},
+		{"serverversion", no_argument, 0, 'V'},
+		{"option", required_argument, 0, 'o'},
+		{"append", no_argument, 0, 'A'},
+		{"list", no_argument, 0, 'L'},
+		{"pause", no_argument, 0, 'P'},
+		{"unpause", no_argument, 0, 'U'},
+		{"rate", required_argument, 0, 'R'},
+		{"system", no_argument, 0, 'B'},
+		{"log", required_argument, 0, 'G'},
+		{"top", no_argument, 0, 'T'},
+		{"edit", required_argument, 0, 'E'},
+		{"connect", no_argument, 0, 'C'},
+		{"quit", no_argument, 0, 'Q'},
+		{"reload", no_argument, 0, 'O'},
+		{"write", required_argument, 0, 'W'},
+		{"category", required_argument, 0, 'K'},
+		{"scan", no_argument, 0, 'S'},
+		{0, 0, 0, 0}
+	};
 #endif
 
 static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQOVW:";
@@ -89,91 +62,29 @@ static char short_options[] = "c:hno:psvAB:DCE:G:K:LPR:STUQOVW:";
 
 CommandLineParser::CommandLineParser(int argc, const char* argv[])
 {
-	m_bNoConfig = false;
-	m_szConfigFilename = NULL;
-	m_bErrors = false;
-	m_bPrintVersion = false;
-	m_bPrintUsage = false;
-
-	m_iEditQueueAction		= 0;
-	m_pEditQueueIDList		= NULL;
-	m_iEditQueueIDCount		= 0;
-	m_iEditQueueOffset		= 0;
-	m_szEditQueueText		= NULL;
-	m_szArgFilename			= NULL;
-	m_szLastArg				= NULL;
-	m_szAddCategory			= NULL;
-	m_iAddPriority			= 0;
-	m_szAddNZBFilename		= NULL;
-	m_bAddPaused			= false;
-	m_bServerMode			= false;
-	m_bDaemonMode			= false;
-	m_bRemoteClientMode		= false;
-	m_bPrintOptions			= false;
-	m_bAddTop				= false;
-	m_szAddDupeKey			= NULL;
-	m_iAddDupeScore			= 0;
-	m_iAddDupeMode			= 0;
-	m_iLogLines				= 0;
-	m_iWriteLogKind			= 0;
-	m_bTestBacktrace		= false;
-	m_bWebGet				= false;
-	m_szWebGetFilename		= NULL;
-	m_bSigVerify			= false;
-	m_szPubKeyFilename		= NULL;
-	m_szSigFilename			= NULL;
-	m_EMatchMode			= mmID;
-	m_bPauseDownload		= false;
-
 	InitCommandLine(argc, argv);
 
 	if (argc == 1)
 	{
-		m_bPrintUsage = true;
+		m_printUsage = true;
 		return;
 	}
 
-	if (!m_bPrintOptions && !m_bPrintUsage && !m_bPrintVersion)
+	if (!m_printOptions && !m_printUsage && !m_printVersion)
 	{
 		InitFileArg(argc, argv);
 	}
 }
 
-CommandLineParser::~CommandLineParser()
-{
-	free(m_szConfigFilename);
-	free(m_szArgFilename);
-	free(m_szAddCategory);
-	free(m_szEditQueueText);
-	free(m_szLastArg);
-	free(m_pEditQueueIDList);
-	free(m_szAddNZBFilename);
-	free(m_szAddDupeKey);
-	free(m_szWebGetFilename);
-	free(m_szPubKeyFilename);
-	free(m_szSigFilename);
-
-	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
-	{
-		free(*it);
-	}
-	m_EditQueueNameList.clear();
-
-	for (NameList::iterator it = m_OptionList.begin(); it != m_OptionList.end(); it++)
-	{
-		free(*it);
-	}
-	m_OptionList.clear();
-}
-
 void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 {
-	m_eClientOperation = opClientNoOperation; // default
+	m_clientOperation = opClientNoOperation; // default
 
-	char** argv = (char**)malloc(sizeof(char*) * argc);
+	std::vector<CString> argv;
+	argv.reserve(argc);
 	for (int i = 0; i < argc; i++)
 	{
-		argv[i] = strdup(const_argv[i]);
+		argv.emplace_back(const_argv[i]);
 	}
 
 	// reset getopt
@@ -185,9 +96,9 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 
 #ifdef HAVE_GETOPT_LONG
 		int option_index  = 0;
-		c = getopt_long(argc, argv, short_options, long_options, &option_index);
+		c = getopt_long(argc, (char**)argv.data(), short_options, long_options, &option_index);
 #else
-		c = getopt(argc, argv, short_options);
+		c = getopt(argc, (char**)argv.data(), short_options);
 #endif
 
 		if (c == -1) break;
@@ -195,49 +106,49 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 		switch (c)
 		{
 			case 'c':
-				m_szConfigFilename = strdup(optarg);
+				m_configFilename = optarg;
 				break;
 			case 'n':
-				m_szConfigFilename = NULL;
-				m_bNoConfig = true;
+				m_configFilename = nullptr;
+				m_noConfig = true;
 				break;
 			case 'h':
-				m_bPrintUsage = true;
+				m_printUsage = true;
 				return;
 			case 'v':
-				m_bPrintVersion = true;
+				m_printVersion = true;
 				return;
 			case 'p':
-				m_bPrintOptions = true;
+				m_printOptions = true;
 				break;
 			case 'o':
-				m_OptionList.push_back(strdup(optarg));
+				m_optionList.push_back(optarg);
 				break;
 			case 's':
-				m_bServerMode = true;
+				m_serverMode = true;
 				break;
 			case 'D':
-				m_bServerMode = true;
-				m_bDaemonMode = true;
+				m_serverMode = true;
+				m_daemonMode = true;
 				break;
 			case 'A':
-				m_eClientOperation = opClientRequestDownload;
+				m_clientOperation = opClientRequestDownload;
 
 				while (true)
 				{
 					optind++;
-					optarg = optind > argc ? NULL : argv[optind-1];
+					optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 					if (optarg && (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "U")))
 					{
 						// option ignored (but kept for compatibility)
 					}
 					else if (optarg && !strcasecmp(optarg, "T"))
 					{
-						m_bAddTop = true;
+						m_addTop = true;
 					}
 					else if (optarg && !strcasecmp(optarg, "P"))
 					{
-						m_bAddPaused = true;
+						m_addPaused = true;
 					}
 					else if (optarg && !strcasecmp(optarg, "I"))
 					{
@@ -247,7 +158,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						m_iAddPriority = atoi(argv[optind-1]);
+						m_addPriority = atoi(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "C"))
 					{
@@ -257,8 +168,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						free(m_szAddCategory);
-						m_szAddCategory = strdup(argv[optind-1]);
+						m_addCategory = std::move(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "N"))
 					{
@@ -268,8 +178,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						free(m_szAddNZBFilename);
-						m_szAddNZBFilename = strdup(argv[optind-1]);
+						m_addNzbFilename = std::move(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "DK"))
 					{
@@ -279,8 +188,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						free(m_szAddDupeKey);
-						m_szAddDupeKey = strdup(argv[optind-1]);
+						m_addDupeKey = std::move(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "DS"))
 					{
@@ -290,7 +198,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'A'");
 							return;
 						}
-						m_iAddDupeScore = atoi(argv[optind-1]);
+						m_addDupeScore = atoi(argv[optind-1]);
 					}
 					else if (optarg && !strcasecmp(optarg, "DM"))
 					{
@@ -301,18 +209,18 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							return;
 						}
 
-						const char* szDupeMode = argv[optind-1];
-						if (!strcasecmp(szDupeMode, "score"))
+						const char* dupeMode = argv[optind-1];
+						if (!strcasecmp(dupeMode, "score"))
 						{
-							m_iAddDupeMode = dmScore;
+							m_addDupeMode = dmScore;
 						}
-						else if (!strcasecmp(szDupeMode, "all"))
+						else if (!strcasecmp(dupeMode, "all"))
 						{
-							m_iAddDupeMode = dmAll;
+							m_addDupeMode = dmAll;
 						}
-						else if (!strcasecmp(szDupeMode, "force"))
+						else if (!strcasecmp(dupeMode, "force"))
 						{
-							m_iAddDupeMode = dmForce;
+							m_addDupeMode = dmForce;
 						}
 						else
 						{
@@ -329,35 +237,35 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				break;
 			case 'L':
 				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
+				optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
-					m_eClientOperation = opClientRequestListFiles;
+					m_clientOperation = opClientRequestListFiles;
 					optind--;
 				}
 				else if (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "FR"))
 				{
-					m_eClientOperation = opClientRequestListFiles;
+					m_clientOperation = opClientRequestListFiles;
 				}
 				else if (!strcasecmp(optarg, "G") || !strcasecmp(optarg, "GR"))
 				{
-					m_eClientOperation = opClientRequestListGroups;
+					m_clientOperation = opClientRequestListGroups;
 				}
 				else if (!strcasecmp(optarg, "O"))
 				{
-					m_eClientOperation = opClientRequestPostQueue;
+					m_clientOperation = opClientRequestPostQueue;
 				}
 				else if (!strcasecmp(optarg, "S"))
 				{
-					m_eClientOperation = opClientRequestListStatus;
+					m_clientOperation = opClientRequestListStatus;
 				}
 				else if (!strcasecmp(optarg, "H"))
 				{
-					m_eClientOperation = opClientRequestHistory;
+					m_clientOperation = opClientRequestHistory;
 				}
 				else if (!strcasecmp(optarg, "HA"))
 				{
-					m_eClientOperation = opClientRequestHistoryAll;
+					m_clientOperation = opClientRequestHistoryAll;
 				}
 				else
 				{
@@ -367,7 +275,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 
 				if (optarg && (!strcasecmp(optarg, "FR") || !strcasecmp(optarg, "GR")))
 				{
-					m_EMatchMode = mmRegEx;
+					m_matchMode = mmRegEx;
 
 					optind++;
 					if (optind > argc)
@@ -375,29 +283,29 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						ReportError("Could not parse value of option 'L'");
 						return;
 					}
-					m_szEditQueueText = strdup(argv[optind-1]);
+					m_editQueueText = std::move(argv[optind-1]);
 				}
 				break;
 			case 'P':
 			case 'U':
 				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
+				optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
-					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
+					m_clientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
 					optind--;
 				}
 				else if (!strcasecmp(optarg, "D"))
 				{
-					m_eClientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
+					m_clientOperation = c == 'P' ? opClientRequestDownloadPause : opClientRequestDownloadUnpause;
 				}
 				else if (!strcasecmp(optarg, "O"))
 				{
-					m_eClientOperation = c == 'P' ? opClientRequestPostPause : opClientRequestPostUnpause;
+					m_clientOperation = c == 'P' ? opClientRequestPostPause : opClientRequestPostUnpause;
 				}
 				else if (!strcasecmp(optarg, "S"))
 				{
-					m_eClientOperation = c == 'P' ? opClientRequestScanPause : opClientRequestScanUnpause;
+					m_clientOperation = c == 'P' ? opClientRequestScanPause : opClientRequestScanUnpause;
 				}
 				else
 				{
@@ -406,21 +314,21 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				}
 				break;
 			case 'R':
-				m_eClientOperation = opClientRequestSetRate;
-				m_iSetRate = (int)(atof(optarg)*1024);
+				m_clientOperation = opClientRequestSetRate;
+				m_setRate = (int)(atof(optarg)*1024);
 				break;
 			case 'B':
 				if (!strcasecmp(optarg, "dump"))
 				{
-					m_eClientOperation = opClientRequestDumpDebug;
+					m_clientOperation = opClientRequestDumpDebug;
 				}
 				else if (!strcasecmp(optarg, "trace"))
 				{
-					m_bTestBacktrace = true;
+					m_testBacktrace = true;
 				}
 				else if (!strcasecmp(optarg, "webget"))
 				{
-					m_bWebGet = true;
+					m_webGet = true;
 					optind++;
 					if (optind > argc)
 					{
@@ -428,11 +336,11 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						return;
 					}
 					optarg = argv[optind-1];
-					m_szWebGetFilename = strdup(optarg);
+					m_webGetFilename = optarg;
 				}
 				else if (!strcasecmp(optarg, "verify"))
 				{
-					m_bSigVerify = true;
+					m_sigVerify = true;
 					optind++;
 					if (optind > argc)
 					{
@@ -440,7 +348,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						return;
 					}
 					optarg = argv[optind-1];
-					m_szPubKeyFilename = strdup(optarg);
+					m_pubKeyFilename = optarg;
 
 					optind++;
 					if (optind > argc)
@@ -449,7 +357,7 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						return;
 					}
 					optarg = argv[optind-1];
-					m_szSigFilename = strdup(optarg);
+					m_sigFilename = optarg;
 				}
 				else
 				{
@@ -458,40 +366,40 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				}
 				break;
 			case 'G':
-				m_eClientOperation = opClientRequestLog;
-				m_iLogLines = atoi(optarg);
-				if (m_iLogLines == 0)
+				m_clientOperation = opClientRequestLog;
+				m_logLines = atoi(optarg);
+				if (m_logLines == 0)
 				{
 					ReportError("Could not parse value of option 'G'");
 					return;
 				}
 				break;
 			case 'T':
-				m_bAddTop = true;
+				m_addTop = true;
 				break;
 			case 'C':
-				m_bRemoteClientMode = true;
+				m_remoteClientMode = true;
 				break;
 			case 'E':
 			{
-				m_eClientOperation = opClientRequestEditQueue;
-				bool bGroup = !strcasecmp(optarg, "G") || !strcasecmp(optarg, "GN") || !strcasecmp(optarg, "GR");
-				bool bFile = !strcasecmp(optarg, "F") || !strcasecmp(optarg, "FN") || !strcasecmp(optarg, "FR");
+				m_clientOperation = opClientRequestEditQueue;
+				bool group = !strcasecmp(optarg, "G") || !strcasecmp(optarg, "GN") || !strcasecmp(optarg, "GR");
+				bool file = !strcasecmp(optarg, "F") || !strcasecmp(optarg, "FN") || !strcasecmp(optarg, "FR");
 				if (!strcasecmp(optarg, "GN") || !strcasecmp(optarg, "FN"))
 				{
-					m_EMatchMode = mmName;
+					m_matchMode = mmName;
 				}
 				else if (!strcasecmp(optarg, "GR") || !strcasecmp(optarg, "FR"))
 				{
-					m_EMatchMode = mmRegEx;
+					m_matchMode = mmRegEx;
 				}
 				else
 				{
-					m_EMatchMode = mmID;
+					m_matchMode = mmId;
 				};
-				bool bPost = !strcasecmp(optarg, "O");
-				bool bHistory = !strcasecmp(optarg, "H");
-				if (bGroup || bFile || bPost || bHistory)
+				bool post = !strcasecmp(optarg, "O");
+				bool history = !strcasecmp(optarg, "H");
+				if (group || file || post || history)
 				{
 					optind++;
 					if (optind > argc)
@@ -502,12 +410,12 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					optarg = argv[optind-1];
 				}
 
-				if (bPost)
+				if (post)
 				{
 					// edit-commands for post-processor-queue
 					if (!strcasecmp(optarg, "D"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaPostDelete;
+						m_editQueueAction = DownloadQueue::eaPostDelete;
 					}
 					else
 					{
@@ -515,38 +423,42 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 						return;
 					}
 				}
-				else if (bHistory)
+				else if (history)
 				{
 					// edit-commands for history
 					if (!strcasecmp(optarg, "D"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryDelete;
+						m_editQueueAction = DownloadQueue::eaHistoryDelete;
 					}
 					else if (!strcasecmp(optarg, "R"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryReturn;
+						m_editQueueAction = DownloadQueue::eaHistoryReturn;
 					}
 					else if (!strcasecmp(optarg, "P"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryProcess;
+						m_editQueueAction = DownloadQueue::eaHistoryProcess;
 					}
 					else if (!strcasecmp(optarg, "A"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryRedownload;
+						m_editQueueAction = DownloadQueue::eaHistoryRedownload;
+					}
+					else if (!strcasecmp(optarg, "F"))
+					{
+						m_editQueueAction = DownloadQueue::eaHistoryRetryFailed;
 					}
 					else if (!strcasecmp(optarg, "O"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistorySetParameter;
-						
+						m_editQueueAction = DownloadQueue::eaHistorySetParameter;
+
 						optind++;
 						if (optind > argc)
 						{
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_szEditQueueText = strdup(argv[optind-1]);
-						
-						if (!strchr(m_szEditQueueText, '='))
+						m_editQueueText = std::move(argv[optind-1]);
+
+						if (!strchr(m_editQueueText, '='))
 						{
 							ReportError("Could not parse value of option 'E'");
 							return;
@@ -554,15 +466,15 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					}
 					else if (!strcasecmp(optarg, "B"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryMarkBad;
+						m_editQueueAction = DownloadQueue::eaHistoryMarkBad;
 					}
 					else if (!strcasecmp(optarg, "G"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryMarkGood;
+						m_editQueueAction = DownloadQueue::eaHistoryMarkGood;
 					}
 					else if (!strcasecmp(optarg, "S"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaHistoryMarkSuccess;
+						m_editQueueAction = DownloadQueue::eaHistoryMarkSuccess;
 					}
 					else
 					{
@@ -575,41 +487,45 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					// edit-commands for download-queue
 					if (!strcasecmp(optarg, "T"))
 					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveTop : DownloadQueue::eaFileMoveTop;
+						m_editQueueAction = group ? DownloadQueue::eaGroupMoveTop : DownloadQueue::eaFileMoveTop;
 					}
 					else if (!strcasecmp(optarg, "B"))
 					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveBottom : DownloadQueue::eaFileMoveBottom;
+						m_editQueueAction = group ? DownloadQueue::eaGroupMoveBottom : DownloadQueue::eaFileMoveBottom;
 					}
 					else if (!strcasecmp(optarg, "P"))
 					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPause : DownloadQueue::eaFilePause;
+						m_editQueueAction = group ? DownloadQueue::eaGroupPause : DownloadQueue::eaFilePause;
 					}
 					else if (!strcasecmp(optarg, "A"))
 					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPauseAllPars : DownloadQueue::eaFilePauseAllPars;
+						m_editQueueAction = group ? DownloadQueue::eaGroupPauseAllPars : DownloadQueue::eaFilePauseAllPars;
 					}
 					else if (!strcasecmp(optarg, "R"))
 					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupPauseExtraPars : DownloadQueue::eaFilePauseExtraPars;
+						m_editQueueAction = group ? DownloadQueue::eaGroupPauseExtraPars : DownloadQueue::eaFilePauseExtraPars;
 					}
 					else if (!strcasecmp(optarg, "U"))
 					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupResume : DownloadQueue::eaFileResume;
+						m_editQueueAction = group ? DownloadQueue::eaGroupResume : DownloadQueue::eaFileResume;
 					}
 					else if (!strcasecmp(optarg, "D"))
 					{
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupDelete : DownloadQueue::eaFileDelete;
+						m_editQueueAction = group ? DownloadQueue::eaGroupDelete : DownloadQueue::eaFileDelete;
+					}
+					else if (!strcasecmp(optarg, "DP"))
+					{
+						m_editQueueAction = DownloadQueue::eaGroupParkDelete;
 					}
 					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K") || !strcasecmp(optarg, "CP"))
 					{
 						// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
-						if (!bGroup)
+						if (!group)
 						{
 							ReportError("Category can be set only for groups");
 							return;
 						}
-						m_iEditQueueAction = !strcasecmp(optarg, "CP") ? DownloadQueue::eaGroupApplyCategory : DownloadQueue::eaGroupSetCategory;
+						m_editQueueAction = !strcasecmp(optarg, "CP") ? DownloadQueue::eaGroupApplyCategory : DownloadQueue::eaGroupSetCategory;
 
 						optind++;
 						if (optind > argc)
@@ -617,16 +533,16 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_szEditQueueText = strdup(argv[optind-1]);
+						m_editQueueText = std::move(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "N"))
 					{
-						if (!bGroup)
+						if (!group)
 						{
 							ReportError("Only groups can be renamed");
 							return;
 						}
-						m_iEditQueueAction = DownloadQueue::eaGroupSetName;
+						m_editQueueAction = DownloadQueue::eaGroupSetName;
 
 						optind++;
 						if (optind > argc)
@@ -634,20 +550,20 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_szEditQueueText = strdup(argv[optind-1]);
+						m_editQueueText = std::move(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "M"))
 					{
-						if (!bGroup)
+						if (!group)
 						{
 							ReportError("Only groups can be merged");
 							return;
 						}
-						m_iEditQueueAction = DownloadQueue::eaGroupMerge;
+						m_editQueueAction = DownloadQueue::eaGroupMerge;
 					}
 					else if (!strcasecmp(optarg, "S"))
 					{
-						m_iEditQueueAction = DownloadQueue::eaFileSplit;
+						m_editQueueAction = DownloadQueue::eaFileSplit;
 
 						optind++;
 						if (optind > argc)
@@ -655,16 +571,16 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_szEditQueueText = strdup(argv[optind-1]);
+						m_editQueueText = std::move(argv[optind-1]);
 					}
 					else if (!strcasecmp(optarg, "O"))
 					{
-						if (!bGroup)
+						if (!group)
 						{
 							ReportError("Post-process parameter can be set only for groups");
 							return;
 						}
-						m_iEditQueueAction = DownloadQueue::eaGroupSetParameter;
+						m_editQueueAction = DownloadQueue::eaGroupSetParameter;
 
 						optind++;
 						if (optind > argc)
@@ -672,9 +588,9 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_szEditQueueText = strdup(argv[optind-1]);
+						m_editQueueText = std::move(argv[optind-1]);
 
-						if (!strchr(m_szEditQueueText, '='))
+						if (!strchr(m_editQueueText, '='))
 						{
 							ReportError("Could not parse value of option 'E'");
 							return;
@@ -682,12 +598,12 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					}
 					else if (!strcasecmp(optarg, "I"))
 					{
-						if (!bGroup)
+						if (!group)
 						{
 							ReportError("Priority can be set only for groups");
 							return;
 						}
-						m_iEditQueueAction = DownloadQueue::eaGroupSetPriority;
+						m_editQueueAction = DownloadQueue::eaGroupSetPriority;
 
 						optind++;
 						if (optind > argc)
@@ -695,9 +611,9 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_szEditQueueText = strdup(argv[optind-1]);
+						m_editQueueText = std::move(argv[optind-1]);
 
-						if (atoi(m_szEditQueueText) == 0 && strcmp("0", m_szEditQueueText))
+						if (atoi(m_editQueueText) == 0 && strcmp("0", m_editQueueText))
 						{
 							ReportError("Could not parse value of option 'E'");
 							return;
@@ -705,42 +621,42 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					}
 					else
 					{
-						m_iEditQueueOffset = atoi(optarg);
-						if (m_iEditQueueOffset == 0)
+						m_editQueueOffset = atoi(optarg);
+						if (m_editQueueOffset == 0)
 						{
 							ReportError("Could not parse value of option 'E'");
 							return;
 						}
-						m_iEditQueueAction = bGroup ? DownloadQueue::eaGroupMoveOffset : DownloadQueue::eaFileMoveOffset;
+						m_editQueueAction = group ? DownloadQueue::eaGroupMoveOffset : DownloadQueue::eaFileMoveOffset;
 					}
 				}
 				break;
 			}
 			case 'Q':
-				m_eClientOperation = opClientRequestShutdown;
+				m_clientOperation = opClientRequestShutdown;
 				break;
 			case 'O':
-				m_eClientOperation = opClientRequestReload;
+				m_clientOperation = opClientRequestReload;
 				break;
 			case 'V':
-				m_eClientOperation = opClientRequestVersion;
+				m_clientOperation = opClientRequestVersion;
 				break;
 			case 'W':
-				m_eClientOperation = opClientRequestWriteLog;
+				m_clientOperation = opClientRequestWriteLog;
 				if (!strcasecmp(optarg, "I")) {
-					m_iWriteLogKind = (int)Message::mkInfo;
+					m_writeLogKind = (int)Message::mkInfo;
 				}
 				else if (!strcasecmp(optarg, "W")) {
-					m_iWriteLogKind = (int)Message::mkWarning;
+					m_writeLogKind = (int)Message::mkWarning;
 				}
 				else if (!strcasecmp(optarg, "E")) {
-					m_iWriteLogKind = (int)Message::mkError;
+					m_writeLogKind = (int)Message::mkError;
 				}
 				else if (!strcasecmp(optarg, "D")) {
-					m_iWriteLogKind = (int)Message::mkDetail;
+					m_writeLogKind = (int)Message::mkDetail;
 				}
 				else if (!strcasecmp(optarg, "G")) {
-					m_iWriteLogKind = (int)Message::mkDebug;
+					m_writeLogKind = (int)Message::mkDebug;
 				}
 				else
 				{
@@ -750,20 +666,19 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				break;
 			case 'K':
 				// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
-				free(m_szAddCategory);
-				m_szAddCategory = strdup(optarg);
+				m_addCategory = optarg;
 				break;
 			case 'S':
 				optind++;
-				optarg = optind > argc ? NULL : argv[optind-1];
+				optarg = optind > argc ? nullptr : (char*)argv[optind-1];
 				if (!optarg || !strncmp(optarg, "-", 1))
 				{
-					m_eClientOperation = opClientRequestScanAsync;
+					m_clientOperation = opClientRequestScanAsync;
 					optind--;
 				}
 				else if (!strcasecmp(optarg, "W"))
 				{
-					m_eClientOperation = opClientRequestScanSync;
+					m_clientOperation = opClientRequestScanSync;
 				}
 				else
 				{
@@ -772,21 +687,15 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 				}
 				break;
 			case '?':
-				m_bErrors = true;
+				m_errors = true;
 				return;
 		}
 	}
 
-	for (int i = 0; i < argc; i++)
+	if (m_serverMode && m_clientOperation == opClientRequestDownloadPause)
 	{
-		free(argv[i]);
-	}
-	free(argv);
-
-	if (m_bServerMode && m_eClientOperation == opClientRequestDownloadPause)
-	{
-		m_bPauseDownload = true;
-		m_eClientOperation = opClientNoOperation;
+		m_pauseDownload = true;
+		m_clientOperation = opClientNoOperation;
 	}
 }
 
@@ -795,8 +704,8 @@ void CommandLineParser::PrintUsage(const char* com)
 	printf("Usage:\n"
 		"  %s [switches]\n\n"
 		"Switches:\n"
-	    "  -h, --help                Print this help-message\n"
-	    "  -v, --version             Print version and exit\n"
+		"  -h, --help                Print this help-message\n"
+		"  -v, --version             Print version and exit\n"
 		"  -c, --configfile <file>   Filename of configuration-file\n"
 		"  -n, --noconfigfile        Prevent loading of configuration-file\n"
 		"                            (required options must be passed with --option)\n"
@@ -806,7 +715,7 @@ void CommandLineParser::PrintUsage(const char* com)
 #ifndef WIN32
 		"  -D, --daemon              Start nzbget as a server in daemon-mode\n"
 #endif
-	    "  -V, --serverversion       Print server's version and exit\n"
+		"  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
 		"  -O, --reload              Reload config and restart all services\n"
 		"  -A, --append [<options>] <nzb-file/url> Send file/url to server's\n"
@@ -869,6 +778,7 @@ void CommandLineParser::PrintUsage(const char* com)
 		"    - for groups (G):\n"
 		"       A                    Pause all pars\n"
 		"       R                    Pause extra pars\n"
+		"       DP                   Delete but keep downloaded files\n"
 		"       I <priority>         Set priority (signed integer)\n"
 		"       C <name>             Set category\n"
 		"       CP <name>            Set category and apply post-process parameters\n"
@@ -883,6 +793,7 @@ void CommandLineParser::PrintUsage(const char* com)
 		"       P                    Post-process again\n"
 		"       R                    Download remaining files\n"
 		"       A                    Download again\n"
+		"       F                    Retry download of failed articles\n"
 		"       O <name>=<value>     Set post-process parameter\n"
 		"       B                    Mark as bad\n"
 		"       G                    Mark as good\n"
@@ -893,7 +804,7 @@ void CommandLineParser::PrintUsage(const char* com)
 		"                            e. g.: \"my nzb download%cmyfile.nfo\" \"another nzb\"\n"
 		"    <RegExs>                List of regular expressions (options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax\n",
-		Util::BaseFileName(com),
+		FileSystem::BaseFileName(com),
 		PATH_SEPARATOR);
 }
 
@@ -902,12 +813,12 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 	if (optind >= argc)
 	{
 		// no nzb-file passed
-		if (!m_bServerMode && !m_bRemoteClientMode &&
-		        (m_eClientOperation == opClientNoOperation ||
-		         m_eClientOperation == opClientRequestDownload ||
-				 m_eClientOperation == opClientRequestWriteLog))
+		if (!m_serverMode && !m_remoteClientMode &&
+				(m_clientOperation == opClientNoOperation ||
+				 m_clientOperation == opClientRequestDownload ||
+				 m_clientOperation == opClientRequestWriteLog))
 		{
-			if (m_eClientOperation == opClientRequestWriteLog)
+			if (m_clientOperation == opClientRequestWriteLog)
 			{
 				ReportError("Log-text not specified");
 			}
@@ -917,11 +828,11 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 			}
 		}
 	}
-	else if (m_eClientOperation == opClientRequestEditQueue)
+	else if (m_clientOperation == opClientRequestEditQueue)
 	{
-		if (m_EMatchMode == mmID)
+		if (m_matchMode == mmId)
 		{
-			ParseFileIDList(argc, argv, optind);
+			ParseFileIdList(argc, argv, optind);
 		}
 		else
 		{
@@ -930,64 +841,59 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 	}
 	else
 	{
-		m_szLastArg = strdup(argv[optind]);
+		m_lastArg = argv[optind];
 
 		// Check if the file-name is a relative path or an absolute path
 		// If the path starts with '/' its an absolute, else relative
-		const char* szFileName = argv[optind];
+		const char* fileName = argv[optind];
 
 #ifdef WIN32
-			m_szArgFilename = strdup(szFileName);
+		m_argFilename = fileName;
 #else
-		if (szFileName[0] == '/' || !strncasecmp(szFileName, "http://", 6) || !strncasecmp(szFileName, "https://", 7))
+		if (fileName[0] == '/' || !strncasecmp(fileName, "http://", 6) || !strncasecmp(fileName, "https://", 7))
 		{
-			m_szArgFilename = strdup(szFileName);
+			m_argFilename = fileName;
 		}
 		else
 		{
 			// TEST
-			char szFileNameWithPath[1024];
-			getcwd(szFileNameWithPath, 1024);
-			strcat(szFileNameWithPath, "/");
-			strcat(szFileNameWithPath, szFileName);
-			m_szArgFilename = strdup(szFileNameWithPath);
+			m_argFilename.Reserve(1024 - 1);
+			getcwd(m_argFilename, 1024);
+			m_argFilename.AppendFmt("/%s", fileName);
 		}
 #endif
 
-		if (m_bServerMode || m_bRemoteClientMode ||
-		        !(m_eClientOperation == opClientNoOperation ||
-		          m_eClientOperation == opClientRequestDownload ||
-				  m_eClientOperation == opClientRequestWriteLog))
+		if (m_serverMode || m_remoteClientMode ||
+				!(m_clientOperation == opClientNoOperation ||
+				  m_clientOperation == opClientRequestDownload ||
+				  m_clientOperation == opClientRequestWriteLog))
 		{
 			ReportError("Too many arguments");
 		}
 	}
 }
 
-void CommandLineParser::ParseFileIDList(int argc, const char* argv[], int optind)
+void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind)
 {
-	std::vector<int> IDs;
-	IDs.clear();
+	m_editQueueIdList.clear();
 
 	while (optind < argc)
 	{
-		char* szWritableFileIDList = strdup(argv[optind++]);
+		CString writableFileIdList = argv[optind++];
 
-		char* optarg = strtok(szWritableFileIDList, ", ");
+		char* optarg = strtok(writableFileIdList, ", ");
 		while (optarg)
 		{
-			int iEditQueueIDFrom = 0;
-			int iEditQueueIDTo = 0;
+			int editQueueIdFrom = 0;
+			int editQueueIdTo = 0;
 			const char* p = strchr(optarg, '-');
 			if (p)
 			{
-				char buf[101];
-				int maxlen = (int)(p - optarg < 100 ? p - optarg : 100);
-				strncpy(buf, optarg, maxlen);
-				buf[maxlen] = '\0';
-				iEditQueueIDFrom = atoi(buf);
-				iEditQueueIDTo = atoi(p + 1);
-				if (iEditQueueIDFrom <= 0 || iEditQueueIDTo <= 0)
+				BString<100> buf;
+				buf.Set(optarg, p - optarg);
+				editQueueIdFrom = atoi(buf);
+				editQueueIdTo = atoi(p + 1);
+				if (editQueueIdFrom <= 0 || editQueueIdTo <= 0)
 				{
 					ReportError("invalid list of file IDs");
 					return;
@@ -995,55 +901,46 @@ void CommandLineParser::ParseFileIDList(int argc, const char* argv[], int optind
 			}
 			else
 			{
-				iEditQueueIDFrom = atoi(optarg);
-				if (iEditQueueIDFrom <= 0)
+				editQueueIdFrom = atoi(optarg);
+				if (editQueueIdFrom <= 0)
 				{
 					ReportError("invalid list of file IDs");
 					return;
 				}
-				iEditQueueIDTo = iEditQueueIDFrom;
+				editQueueIdTo = editQueueIdFrom;
 			}
 
-			int iEditQueueIDCount = 0;
-			if (iEditQueueIDTo != 0)
+			int editQueueIdCount = 0;
+			if (editQueueIdTo != 0)
 			{
-				if (iEditQueueIDFrom < iEditQueueIDTo)
+				if (editQueueIdFrom < editQueueIdTo)
 				{
-					iEditQueueIDCount = iEditQueueIDTo - iEditQueueIDFrom + 1;
+					editQueueIdCount = editQueueIdTo - editQueueIdFrom + 1;
 				}
 				else
 				{
-					iEditQueueIDCount = iEditQueueIDFrom - iEditQueueIDTo + 1;
+					editQueueIdCount = editQueueIdFrom - editQueueIdTo + 1;
 				}
 			}
 			else
 			{
-				iEditQueueIDCount = 1;
+				editQueueIdCount = 1;
 			}
 
-			for (int i = 0; i < iEditQueueIDCount; i++)
+			for (int i = 0; i < editQueueIdCount; i++)
 			{
-				if (iEditQueueIDFrom < iEditQueueIDTo || iEditQueueIDTo == 0)
+				if (editQueueIdFrom < editQueueIdTo || editQueueIdTo == 0)
 				{
-					IDs.push_back(iEditQueueIDFrom + i);
+					m_editQueueIdList.push_back(editQueueIdFrom + i);
 				}
 				else
 				{
-					IDs.push_back(iEditQueueIDFrom - i);
+					m_editQueueIdList.push_back(editQueueIdFrom - i);
 				}
 			}
 
-			optarg = strtok(NULL, ", ");
+			optarg = strtok(nullptr, ", ");
 		}
-
-		free(szWritableFileIDList);
-	}
-
-	m_iEditQueueIDCount = IDs.size();
-	m_pEditQueueIDList = (int*)malloc(sizeof(int) * m_iEditQueueIDCount);
-	for (int i = 0; i < m_iEditQueueIDCount; i++)
-	{
-		m_pEditQueueIDList[i] = IDs[i];
 	}
 }
 
@@ -1051,12 +948,12 @@ void CommandLineParser::ParseFileNameList(int argc, const char* argv[], int opti
 {
 	while (optind < argc)
 	{
-		m_EditQueueNameList.push_back(strdup(argv[optind++]));
+		m_editQueueNameList.push_back(argv[optind++]);
 	}
 }
 
-void CommandLineParser::ReportError(const char* szErrMessage)
+void CommandLineParser::ReportError(const char* errMessage)
 {
-	m_bErrors = true;
-	printf("%s\n", szErrMessage);
+	m_errors = true;
+	printf("%s\n", errMessage);
 }

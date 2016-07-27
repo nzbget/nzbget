@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,49 +14,31 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
+#include "nzbget.h"
 
 #include "catch.h"
 
-#include "nzbget.h"
 #include "Options.h"
 #include "ParRenamer.h"
+#include "FileSystem.h"
 #include "TestUtil.h"
 
 class ParRenamerMock: public ParRenamer
 {
-private:
-	int				m_iRenamed;
-protected:
-	virtual void	RegisterRenamedFile(const char* szOldFilename, const char* szNewFileName) { m_iRenamed++; }
 public:
-					ParRenamerMock();
-	void			Execute();
-	int				GetRenamedCount() { return m_iRenamed; }
+	ParRenamerMock();
+	void Execute();
+	int GetRenamedCount() { return m_renamed; }
+
+protected:
+	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) { m_renamed++; }
+
+private:
+	int m_renamed;
 };
 
 ParRenamerMock::ParRenamerMock()
@@ -68,7 +50,7 @@ ParRenamerMock::ParRenamerMock()
 void ParRenamerMock::Execute()
 {
 	TestUtil::DisableCout();
-	m_iRenamed = 0;
+	m_renamed = 0;
 	Start();
 	while (IsRunning())
 	{
@@ -81,7 +63,7 @@ TEST_CASE("Par-renamer: rename not needed", "[Par][ParRenamer][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRename=yes");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParRenamerMock parRenamer;
 	parRenamer.Execute();
@@ -94,10 +76,10 @@ TEST_CASE("Par-renamer: rename successful", "[Par][ParRenamer][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRename=yes");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParRenamerMock parRenamer;
-	Util::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
 	parRenamer.Execute();
 
 	REQUIRE(parRenamer.GetStatus() == ParRenamer::psSuccess);
@@ -109,12 +91,12 @@ TEST_CASE("Par-renamer: detecting missing", "[Par][ParRenamer][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRename=yes");
-	Options options(&cmdOpts, NULL);
+	Options options(&cmdOpts, nullptr);
 
 	ParRenamerMock parRenamer;
-	Util::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
 	parRenamer.SetDetectMissing(true);
-	REQUIRE(remove((TestUtil::WorkingDir() + "/testfile.nfo").c_str()) == 0);
+	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile.nfo").c_str()));
 	parRenamer.Execute();
 
 	REQUIRE(parRenamer.GetStatus() == ParRenamer::psSuccess);

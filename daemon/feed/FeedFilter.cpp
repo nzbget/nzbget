@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,26 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
 
 #include "nzbget.h"
 #include "Log.h"
@@ -41,38 +24,19 @@
 #include "Util.h"
 #include "FeedFilter.h"
 
-
-FeedFilter::Term::Term()
+bool FeedFilter::Term::Match(FeedItemInfo& feedItemInfo)
 {
-	m_szField = NULL;
-	m_szParam = NULL;
-	m_bFloat = false;
-	m_iIntParam = 0;
-	m_fFloatParam = 0.0;
-	m_pRegEx = NULL;
-	m_pRefValues = NULL;
-}
+	const char* strValue = nullptr;
+	int64 intValue = 0;
 
-FeedFilter::Term::~Term()
-{
-	free(m_szField);
-	free(m_szParam);
-	delete m_pRegEx;
-}
-
-bool FeedFilter::Term::Match(FeedItemInfo* pFeedItemInfo)
-{
-	const char* szStrValue = NULL;
-	long long iIntValue = 0;
-
-	if (!GetFieldData(m_szField, pFeedItemInfo, &szStrValue, &iIntValue))
+	if (!GetFieldData(m_field, &feedItemInfo, &strValue, &intValue))
 	{
 		return false;
 	}
 
-	bool bMatch = MatchValue(szStrValue, iIntValue);
+	bool match = MatchValue(strValue, intValue);
 
-	if (m_bPositive != bMatch)
+	if (m_positive != match)
 	{
 		return false;
 	}
@@ -80,87 +44,86 @@ bool FeedFilter::Term::Match(FeedItemInfo* pFeedItemInfo)
 	return true;
 }
 
-bool FeedFilter::Term::MatchValue(const char* szStrValue, long long iIntValue)
+bool FeedFilter::Term::MatchValue(const char* strValue, int64 intValue)
 {
-	double fFloatValue = (double)iIntValue;
-	char szIntBuf[100];
+	double fFloatValue = (double)intValue;
+	BString<100> intBuf;
 
-	if (m_eCommand < fcEqual && !szStrValue)
+	if (m_command < fcEqual && !strValue)
 	{
-		snprintf(szIntBuf, 100, "%lld", iIntValue);
-		szIntBuf[100-1] = '\0';
-		szStrValue = szIntBuf;
+		intBuf.Format("%lld", intValue);
+		strValue = intBuf;
 	}
 
-	else if (m_eCommand >= fcEqual && szStrValue)
+	else if (m_command >= fcEqual && strValue)
 	{
-		fFloatValue = atof(szStrValue);
-		iIntValue = (long long)fFloatValue;
+		fFloatValue = atof(strValue);
+		intValue = (int64)fFloatValue;
 	}
 
-	switch (m_eCommand)
+	switch (m_command)
 	{
 		case fcText:
-			return MatchText(szStrValue);
+			return MatchText(strValue);
 
 		case fcRegex:
-			return MatchRegex(szStrValue);
+			return MatchRegex(strValue);
 
 		case fcEqual:
-			return m_bFloat ? fFloatValue == m_fFloatParam : iIntValue == m_iIntParam;
+			return m_float ? fFloatValue == m_floatParam : intValue == m_intParam;
 
 		case fcLess:
-			return m_bFloat ? fFloatValue < m_fFloatParam : iIntValue < m_iIntParam;
+			return m_float ? fFloatValue < m_floatParam : intValue < m_intParam;
 
 		case fcLessEqual:
-			return m_bFloat ? fFloatValue <= m_fFloatParam : iIntValue <= m_iIntParam;
+			return m_float ? fFloatValue <= m_floatParam : intValue <= m_intParam;
 
 		case fcGreater:
-			return m_bFloat ? fFloatValue > m_fFloatParam : iIntValue > m_iIntParam;
+			return m_float ? fFloatValue > m_floatParam : intValue > m_intParam;
 
 		case fcGreaterEqual:
-			return m_bFloat ? fFloatValue >= m_fFloatParam : iIntValue >= m_iIntParam;
+			return m_float ? fFloatValue >= m_floatParam : intValue >= m_intParam;
 
 		default:
 			return false;
 	}
 }
 
-bool FeedFilter::Term::MatchText(const char* szStrValue)
+bool FeedFilter::Term::MatchText(const char* strValue)
 {
 	const char* WORD_SEPARATORS = " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
 	// first check if we should make word-search or substring-search
-	int iParamLen = strlen(m_szParam);
-	bool bSubstr = iParamLen >= 2 && m_szParam[0] == '*' && m_szParam[iParamLen-1] == '*';
-	if (!bSubstr)
+	int paramLen = strlen(m_param);
+	bool substr = paramLen >= 2 && m_param[0] == '*' && m_param[paramLen-1] == '*';
+	if (!substr)
 	{
-		for (const char* p = m_szParam; *p; p++)
+		for (const char* p = m_param; *p; p++)
 		{
 			char ch = *p;
 			if (strchr(WORD_SEPARATORS, ch) && ch != '*' && ch != '?' && ch != '#')
 			{
-				bSubstr = true;
+				substr = true;
 				break;
 			}
 		}
 	}
 
-	bool bMatch = false;
+	bool match = false;
 
-	if (!bSubstr)
+	if (!substr)
 	{
 		// Word-search
 
 		// split szStrValue into tokens
-		Tokenizer tok(szStrValue, WORD_SEPARATORS);
-		while (const char* szWord = tok.Next())
+		Tokenizer tok(strValue, WORD_SEPARATORS);
+		while (const char* word = tok.Next())
 		{
-			WildMask mask(m_szParam, m_pRefValues != NULL);
-			bMatch = mask.Match(szWord);
-			if (bMatch)
+			WildMask mask(m_param, m_refValues != nullptr);
+			match = mask.Match(word);
+			if (match)
 			{
-				FillWildMaskRefValues(szWord, &mask, 0);
+				FillWildMaskRefValues(word, &mask, 0);
 				break;
 			}
 		}
@@ -169,101 +132,94 @@ bool FeedFilter::Term::MatchText(const char* szStrValue)
 	{
 		// Substring-search
 
-		int iRefOffset = 1;
-		const char* szFormat = "*%s*";
-		if (iParamLen >= 2 && m_szParam[0] == '*' && m_szParam[iParamLen-1] == '*')
+		int refOffset = 1;
+		const char* format = "*%s*";
+		if (paramLen >= 2 && m_param[0] == '*' && m_param[paramLen-1] == '*')
 		{
-			szFormat = "%s";
-			iRefOffset = 0;
+			format = "%s";
+			refOffset = 0;
 		}
-		else if (iParamLen >= 1 && m_szParam[0] == '*')
+		else if (paramLen >= 1 && m_param[0] == '*')
 		{
-			szFormat = "%s*";
-			iRefOffset = 0;
+			format = "%s*";
+			refOffset = 0;
 		}
-		else if (iParamLen >= 1 && m_szParam[iParamLen-1] == '*')
+		else if (paramLen >= 1 && m_param[paramLen-1] == '*')
 		{
-			szFormat = "*%s";
-		}
-
-		int iMaskLen = strlen(m_szParam) + 2 + 1;
-		char* szMask = (char*)malloc(iMaskLen);
-		snprintf(szMask, iMaskLen, szFormat, m_szParam);
-		szMask[iMaskLen-1] = '\0';
-
-		WildMask mask(szMask, m_pRefValues != NULL);
-		bMatch = mask.Match(szStrValue);
-
-		if (bMatch)
-		{
-			FillWildMaskRefValues(szStrValue, &mask, iRefOffset);
+			format = "*%s";
 		}
 
-		free(szMask);
+		WildMask mask(CString::FormatStr(format, *m_param), m_refValues != nullptr);
+		match = mask.Match(strValue);
+
+		if (match)
+		{
+			FillWildMaskRefValues(strValue, &mask, refOffset);
+		}
 	}
 
-	return bMatch;
+	return match;
 }
 
-bool FeedFilter::Term::MatchRegex(const char* szStrValue)
+bool FeedFilter::Term::MatchRegex(const char* strValue)
 {
-	if (!m_pRegEx)
+	if (!m_regEx)
 	{
-		m_pRegEx = new RegEx(m_szParam, m_pRefValues == NULL ? 0 : 100);
+		m_regEx = std::make_unique<RegEx>(m_param, m_refValues == nullptr ? 0 : 100);
 	}
 
-	bool bFound = m_pRegEx->Match(szStrValue);
-	if (bFound)
+	bool found = m_regEx->Match(strValue);
+	if (found)
 	{
-		FillRegExRefValues(szStrValue, m_pRegEx);
+		FillRegExRefValues(strValue, m_regEx.get());
 	}
-	return bFound;
+	return found;
 }
 
-bool FeedFilter::Term::Compile(char* szToken)
+bool FeedFilter::Term::Compile(char* token)
 {
-	debug("Token: %s", szToken);
+	debug("Token: %s", token);
 
-	char ch = szToken[0];
+	char ch = token[0];
 
-	m_bPositive = ch != '-';
+	m_positive = ch != '-';
 	if (ch == '-' || ch == '+')
 	{
-		szToken++;
-		ch = szToken[0];
+		token++;
+		ch = token[0];
 	}
 
-	char ch2= szToken[1];
+	char ch2= token[1];
 	if ((ch == '(' || ch == ')' || ch == '|') && (ch2 == ' ' || ch2 == '\0'))
 	{
 		switch (ch)
 		{
 			case '(':
-				m_eCommand = fcOpeningBrace;
+				m_command = fcOpeningBrace;
 				return true;
 			case ')':
-				m_eCommand = fcClosingBrace;
+				m_command = fcClosingBrace;
 				return true;
 			case '|':
-				m_eCommand = fcOrOperator;
+				m_command = fcOrOperator;
 				return true;
 		}
 	}
 
-	char *szField = NULL;
-	m_eCommand = fcText;
+	char *field = nullptr;
+	m_command = fcText;
 
-	char* szColon = NULL;
+	char* colon = nullptr;
 	if (ch != '@' && ch != '$' && ch != '<' && ch != '>' && ch != '=')
 	{
-		szColon = strchr(szToken, ':');
+		colon = strchr(token, ':');
 	}
-	if (szColon)
+	if (colon)
 	{
-		szField = szToken;
-		szColon[0] = '\0';
-		szToken = szColon + 1;
-		ch = szToken[0];
+		field = token;
+		colon[0] = '\0';
+		token = colon + 1;
+		ch = token[0];
 	}
 
 	if (ch == '\0')
@@ -271,154 +227,164 @@ bool FeedFilter::Term::Compile(char* szToken)
 		return false;
 	}
 
-	ch2= szToken[1];
+	ch2= token[1];
 
 	if (ch == '@')
 	{
-		m_eCommand = fcText;
-		szToken++;
+		m_command = fcText;
+		token++;
 	}
 	else if (ch == '$')
 	{
-		m_eCommand = fcRegex;
-		szToken++;
+		m_command = fcRegex;
+		token++;
 	}
 	else if (ch == '=')
 	{
-		m_eCommand = fcEqual;
-		szToken++;
+		m_command = fcEqual;
+		token++;
 	}
 	else if (ch == '<' && ch2 == '=')
 	{
-		m_eCommand = fcLessEqual;
-		szToken += 2;
+		m_command = fcLessEqual;
+		token += 2;
 	}
 	else if (ch == '>' && ch2 == '=')
 	{
-		m_eCommand = fcGreaterEqual;
-		szToken += 2;
+		m_command = fcGreaterEqual;
+		token += 2;
 	}
 	else if (ch == '<')
 	{
-		m_eCommand = fcLess;
-		szToken++;
+		m_command = fcLess;
+		token++;
 	}
 	else if (ch == '>')
 	{
-		m_eCommand = fcGreater;
-		szToken++;
+		m_command = fcGreater;
+		token++;
 	}
 
-	debug("%s, Field: %s, Command: %i, Param: %s", (m_bPositive ? "Positive" : "Negative"), szField, m_eCommand, szToken);
+	debug("%s, Field: %s, Command: %i, Param: %s", (m_positive ? "Positive" : "Negative"), field, m_command, token);
 
-	const char* szStrValue;
-	long long iIntValue;
-	if (!GetFieldData(szField, NULL, &szStrValue, &iIntValue))
+	const char* strValue;
+	int64 intValue;
+	if (!GetFieldData(field, nullptr, &strValue, &intValue))
 	{
 		return false;
 	}
 
-	if (szField && !ParseParam(szField, szToken))
+	if (field && !ParseParam(field, token))
 	{
 		return false;
 	}
 
-	m_szField = szField ? strdup(szField) : NULL;
-	m_szParam = strdup(szToken);
+	m_field = field;
+	m_param = token;
 
 	return true;
 }
 
 /*
- * If pFeedItemInfo is NULL, only field name is validated
+ * If pFeedItemInfo is nullptr, only field name is validated
  */
-bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItemInfo,
-	const char** StrValue, long long* IntValue)
+bool FeedFilter::Term::GetFieldData(const char* field, FeedItemInfo* feedItemInfo,
+	const char** StrValue, int64* IntValue)
 {
-	*StrValue = NULL;
+	*StrValue = nullptr;
 	*IntValue = 0;
 
-	if (!szField || !strcasecmp(szField, "title"))
+	if (!field || !strcasecmp(field, "title"))
 	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetTitle() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetTitle() : nullptr;
 		return true;
 	}
-	else if (!strcasecmp(szField, "filename"))
+	else if (!strcasecmp(field, "filename"))
 	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetFilename() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetFilename() : nullptr;
 		return true;
 	}
-	else if (!strcasecmp(szField, "category"))
+	else if (!strcasecmp(field, "category"))
 	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetCategory() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetCategory() : nullptr;
 		return true;
 	}
-	else if (!strcasecmp(szField, "link") || !strcasecmp(szField, "url"))
+	else if (!strcasecmp(field, "link") || !strcasecmp(field, "url"))
 	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetUrl() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetUrl() : nullptr;
 		return true;
 	}
-	else if (!strcasecmp(szField, "size"))
+	else if (!strcasecmp(field, "size"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSize() : 0;
+		*IntValue = feedItemInfo ? feedItemInfo->GetSize() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "age"))
+	else if (!strcasecmp(field, "age"))
 	{
-		*IntValue = pFeedItemInfo ? time(NULL) - pFeedItemInfo->GetTime() : 0;
+		*IntValue = feedItemInfo ? Util::CurrentTime() - feedItemInfo->GetTime() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "imdbid"))
+	else if (!strcasecmp(field, "imdbid"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetImdbId() : 0;
+		*IntValue = feedItemInfo ? feedItemInfo->GetImdbId() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "rageid"))
+	else if (!strcasecmp(field, "rageid"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetRageId() : 0;
+		*IntValue = feedItemInfo ? feedItemInfo->GetRageId() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "description"))
+	else if (!strcasecmp(field, "tvdbid"))
 	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetDescription() : NULL;
+		*IntValue = feedItemInfo ? feedItemInfo->GetTvdbId() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "season"))
+	else if (!strcasecmp(field, "tvmazeid"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetSeasonNum() : 0;
+		*IntValue = feedItemInfo ? feedItemInfo->GetTvmazeId() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "episode"))
+	else if (!strcasecmp(field, "description"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetEpisodeNum() : 0;
+		*StrValue = feedItemInfo ? feedItemInfo->GetDescription() : nullptr;
 		return true;
 	}
-	else if (!strcasecmp(szField, "priority"))
+	else if (!strcasecmp(field, "season"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetPriority() : 0;
+		*IntValue = feedItemInfo ? feedItemInfo->GetSeasonNum() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "dupekey"))
+	else if (!strcasecmp(field, "episode"))
 	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetDupeKey() : NULL;
+		*IntValue = feedItemInfo ? feedItemInfo->GetEpisodeNum() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "dupescore"))
+	else if (!strcasecmp(field, "priority"))
 	{
-		*IntValue = pFeedItemInfo ? pFeedItemInfo->GetDupeScore() : 0;
+		*IntValue = feedItemInfo ? feedItemInfo->GetPriority() : 0;
 		return true;
 	}
-	else if (!strcasecmp(szField, "dupestatus"))
+	else if (!strcasecmp(field, "dupekey"))
 	{
-		*StrValue = pFeedItemInfo ? pFeedItemInfo->GetDupeStatus() : NULL;
+		*StrValue = feedItemInfo ? feedItemInfo->GetDupeKey() : nullptr;
 		return true;
 	}
-	else if (!strncasecmp(szField, "attr-", 5))
+	else if (!strcasecmp(field, "dupescore"))
 	{
-		if (pFeedItemInfo)
+		*IntValue = feedItemInfo ? feedItemInfo->GetDupeScore() : 0;
+		return true;
+	}
+	else if (!strcasecmp(field, "dupestatus"))
+	{
+		*StrValue = feedItemInfo ? feedItemInfo->GetDupeStatus() : nullptr;
+		return true;
+	}
+	else if (!strncasecmp(field, "attr-", 5))
+	{
+		if (feedItemInfo)
 		{
-			FeedItemInfo::Attr* pAttr = pFeedItemInfo->GetAttributes()->Find(szField + 5);
-			*StrValue = pAttr ? pAttr->GetValue() : NULL;
+			FeedItemInfo::Attr* attr = feedItemInfo->GetAttributes()->Find(field + 5);
+			*StrValue = attr ? attr->GetValue() : nullptr;
 		}
 		return true;
 	}
@@ -426,43 +392,43 @@ bool FeedFilter::Term::GetFieldData(const char* szField, FeedItemInfo* pFeedItem
 	return false;
 }
 
-bool FeedFilter::Term::ParseParam(const char* szField, const char* szParam)
+bool FeedFilter::Term::ParseParam(const char* field, const char* param)
 {
-	if (!strcasecmp(szField, "size"))
+	if (!strcasecmp(field, "size"))
 	{
-		return ParseSizeParam(szParam);
+		return ParseSizeParam(param);
 	}
-	else if (!strcasecmp(szField, "age"))
+	else if (!strcasecmp(field, "age"))
 	{
-		return ParseAgeParam(szParam);
+		return ParseAgeParam(param);
 	}
-	else if (m_eCommand >= fcEqual)
+	else if (m_command >= fcEqual)
 	{
-		return ParseNumericParam(szParam);
+		return ParseNumericParam(param);
 	}
 
 	return true;
 }
 
-bool FeedFilter::Term::ParseSizeParam(const char* szParam)
+bool FeedFilter::Term::ParseSizeParam(const char* param)
 {
-	double fParam = atof(szParam);
+	double fParam = atof(param);
 
 	const char* p;
-	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
+	for (p = param; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
 	if (*p)
 	{
 		if (!strcasecmp(p, "K") || !strcasecmp(p, "KB"))
 		{
-			m_iIntParam = (long long)(fParam*1024);
+			m_intParam = (int64)(fParam*1024);
 		}
 		else if (!strcasecmp(p, "M") || !strcasecmp(p, "MB"))
 		{
-			m_iIntParam = (long long)(fParam*1024*1024);
+			m_intParam = (int64)(fParam*1024*1024);
 		}
 		else if (!strcasecmp(p, "G") || !strcasecmp(p, "GB"))
 		{
-			m_iIntParam = (long long)(fParam*1024*1024*1024);
+			m_intParam = (int64)(fParam*1024*1024*1024);
 		}
 		else
 		{
@@ -471,34 +437,34 @@ bool FeedFilter::Term::ParseSizeParam(const char* szParam)
 	}
 	else
 	{
-		m_iIntParam = (long long)fParam;
+		m_intParam = (int64)fParam;
 	}
 
 	return true;
 }
 
-bool FeedFilter::Term::ParseAgeParam(const char* szParam)
+bool FeedFilter::Term::ParseAgeParam(const char* param)
 {
-	double fParam = atof(szParam);
+	double fParam = atof(param);
 
 	const char* p;
-	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
+	for (p = param; *p && ((*p >= '0' && *p <='9') || *p == '.'); p++) ;
 	if (*p)
 	{
 		if (!strcasecmp(p, "m"))
 		{
 			// minutes
-			m_iIntParam = (long long)(fParam*60);
+			m_intParam = (int64)(fParam*60);
 		}
 		else if (!strcasecmp(p, "h"))
 		{
 			// hours
-			m_iIntParam = (long long)(fParam*60*60);
+			m_intParam = (int64)(fParam*60*60);
 		}
 		else if (!strcasecmp(p, "d"))
 		{
 			// days
-			m_iIntParam = (long long)(fParam*60*60*24);
+			m_intParam = (int64)(fParam*60*60*24);
 		}
 		else
 		{
@@ -508,428 +474,355 @@ bool FeedFilter::Term::ParseAgeParam(const char* szParam)
 	else
 	{
 		// days by default
-		m_iIntParam = (long long)(fParam*60*60*24);
+		m_intParam = (int64)(fParam*60*60*24);
 	}
 
 	return true;
 }
 
-bool FeedFilter::Term::ParseNumericParam(const char* szParam)
+bool FeedFilter::Term::ParseNumericParam(const char* param)
 {
-	m_fFloatParam = atof(szParam);
-	m_iIntParam = (long long)m_fFloatParam;
-	m_bFloat = strchr(szParam, '.');
-	
+	m_floatParam = atof(param);
+	m_intParam = (int64)m_floatParam;
+	m_float = strchr(param, '.');
+
 	const char* p;
-	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.' || *p == '-') ; p++) ;
+	for (p = param; *p && ((*p >= '0' && *p <='9') || *p == '.' || *p == '-') ; p++) ;
 	if (*p)
 	{
 		return false;
 	}
-	
+
 	return true;
 }
 
-void FeedFilter::Term::FillWildMaskRefValues(const char* szStrValue, WildMask* pMask, int iRefOffset)
+void FeedFilter::Term::FillWildMaskRefValues(const char* strValue, WildMask* mask, int refOffset)
 {
-	if (!m_pRefValues)
+	if (!m_refValues)
 	{
 		return;
 	}
 
-	for (int i = iRefOffset; i < pMask->GetMatchCount(); i++)
+	for (int i = refOffset; i < mask->GetMatchCount(); i++)
 	{
-		int iLen = pMask->GetMatchLen(i);
-		char* szValue = (char*)malloc(iLen + 1);
-		strncpy(szValue, szStrValue + pMask->GetMatchStart(i), iLen);
-		szValue[iLen] = '\0';
-
-		m_pRefValues->push_back(szValue);
+		m_refValues->emplace_back(strValue + mask->GetMatchStart(i), mask->GetMatchLen(i));
 	}
 }
 
-void FeedFilter::Term::FillRegExRefValues(const char* szStrValue, RegEx* pRegEx)
+void FeedFilter::Term::FillRegExRefValues(const char* strValue, RegEx* regEx)
 {
-	if (!m_pRefValues)
+	if (!m_refValues)
 	{
 		return;
 	}
 
-	for (int i = 1; i < pRegEx->GetMatchCount(); i++)
+	for (int i = 1; i < regEx->GetMatchCount(); i++)
 	{
-		int iLen = pRegEx->GetMatchLen(i);
-		char* szValue = (char*)malloc(iLen + 1);
-		strncpy(szValue, szStrValue + pRegEx->GetMatchStart(i), iLen);
-		szValue[iLen] = '\0';
-
-		m_pRefValues->push_back(szValue);
+		m_refValues->emplace_back(strValue + regEx->GetMatchStart(i), regEx->GetMatchLen(i));
 	}
 }
 
 
-FeedFilter::Rule::Rule()
+void FeedFilter::Rule::Compile(char* rule)
 {
-	m_eCommand = frAccept;
-	m_bIsValid = false;
-	m_szCategory = NULL;
-	m_iPriority = 0;
-	m_iAddPriority = 0;
-	m_bPause = false;
-	m_szDupeKey = NULL;
-	m_szAddDupeKey = NULL;
-	m_iDupeScore = 0;
-	m_iAddDupeScore = 0;
-	m_eDupeMode = dmScore;
-	m_szRageId = NULL;
-	m_szSeries = NULL;
-	m_bHasCategory = false;
-	m_bHasPriority = false;
-	m_bHasAddPriority = false;
-	m_bHasPause = false;
-	m_bHasDupeScore = false;
-	m_bHasAddDupeScore = false;
-	m_bHasDupeKey = false;
-	m_bHasAddDupeKey = false;
-	m_bHasDupeMode = false;
-	m_bHasRageId = false;
-	m_bHasSeries = false;
-	m_bPatCategory = false;
-	m_bPatDupeKey = false;
-	m_bPatAddDupeKey = false;
-	m_szPatCategory = NULL;
-	m_szPatDupeKey = NULL;
-	m_szPatAddDupeKey = NULL;
-}
+	debug("Compiling rule: %s", rule);
 
-FeedFilter::Rule::~Rule()
-{
-	free(m_szCategory);
-	free(m_szDupeKey);
-	free(m_szAddDupeKey);
-	free(m_szRageId);
-	free(m_szSeries);
-	free(m_szPatCategory);
-	free(m_szPatDupeKey);
-	free(m_szPatAddDupeKey);
+	m_isValid = true;
 
-	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++)
+	char* filter3 = Util::Trim(rule);
+
+	char* term = CompileCommand(filter3);
+	if (!term)
 	{
-		delete *it;
-	}
-
-	for (RefValues::iterator it = m_RefValues.begin(); it != m_RefValues.end(); it++)
-	{
-		delete *it;
-	}
-}
-
-void FeedFilter::Rule::Compile(char* szRule)
-{
-	debug("Compiling rule: %s", szRule);
-
-	m_bIsValid = true;
-
-	char* szFilter3 = Util::Trim(szRule);
-
-	char* szTerm = CompileCommand(szFilter3);
-	if (!szTerm)
-	{
-		m_bIsValid = false;
+		m_isValid = false;
 		return;
 	}
-	if (m_eCommand == frComment)
+	if (m_command == frComment)
 	{
 		return;
 	}
 
-	szTerm = Util::Trim(szTerm);
+	term = Util::Trim(term);
 
-	for (char* p = szTerm; *p && m_bIsValid; p++)
+	for (char* p = term; *p && m_isValid; p++)
 	{
 		char ch = *p;
 		if (ch == ' ')
 		{
 			*p = '\0';
-			m_bIsValid = CompileTerm(szTerm);
-			szTerm = p + 1;
-			while (*szTerm == ' ') szTerm++;
-			p = szTerm;
+			m_isValid = CompileTerm(term);
+			term = p + 1;
+			while (*term == ' ') term++;
+			p = term;
 		}
 	}
 
-	m_bIsValid = m_bIsValid && CompileTerm(szTerm);
+	m_isValid = m_isValid && CompileTerm(term);
 
-	if (m_bIsValid && m_bPatCategory)
+	if (m_isValid && m_hasPatCategory)
 	{
-		m_szPatCategory = m_szCategory;
-		m_szCategory = NULL;
+		m_patCategory.Bind(m_category.Unbind());
 	}
-	if (m_bIsValid && m_bPatDupeKey)
+	if (m_isValid && m_hasPatDupeKey)
 	{
-		m_szPatDupeKey = m_szDupeKey;
-		m_szDupeKey = NULL;
+		m_patDupeKey.Bind(m_dupeKey.Unbind());
 	}
-	if (m_bIsValid && m_bPatAddDupeKey)
+	if (m_isValid && m_hasPatAddDupeKey)
 	{
-		m_szPatAddDupeKey = m_szAddDupeKey;
-		m_szAddDupeKey = NULL;
+		m_patAddDupeKey.Bind(m_addDupeKey.Unbind());
 	}
 }
 
 /* Checks if the rule starts with command and compiles it.
- * Returns a pointer to the next (first) term or NULL in a case of compilation error.
+ * Returns a pointer to the next (first) term or nullptr in a case of compilation error.
  */
-char* FeedFilter::Rule::CompileCommand(char* szRule)
+char* FeedFilter::Rule::CompileCommand(char* rule)
 {
-	if (!strncasecmp(szRule, "A:", 2) || !strncasecmp(szRule, "Accept:", 7) ||
-		!strncasecmp(szRule, "A(", 2) || !strncasecmp(szRule, "Accept(", 7))
+	if (!strncasecmp(rule, "A:", 2) || !strncasecmp(rule, "Accept:", 7) ||
+		!strncasecmp(rule, "A(", 2) || !strncasecmp(rule, "Accept(", 7))
 	{
-		m_eCommand = frAccept;
-		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 7;
+		m_command = frAccept;
+		rule += rule[1] == ':' || rule[1] == '(' ? 2 : 7;
 	}
-	else if (!strncasecmp(szRule, "O(", 2) || !strncasecmp(szRule, "Options(", 8))
+	else if (!strncasecmp(rule, "O(", 2) || !strncasecmp(rule, "Options(", 8))
 	{
-		m_eCommand = frOptions;
-		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 8;
+		m_command = frOptions;
+		rule += rule[1] == ':' || rule[1] == '(' ? 2 : 8;
 	}
-	else if (!strncasecmp(szRule, "R:", 2) || !strncasecmp(szRule, "Reject:", 7))
+	else if (!strncasecmp(rule, "R:", 2) || !strncasecmp(rule, "Reject:", 7))
 	{
-		m_eCommand = frReject;
-		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 7;
+		m_command = frReject;
+		rule += rule[1] == ':' || rule[1] == '(' ? 2 : 7;
 	}
-	else if (!strncasecmp(szRule, "Q:", 2) || !strncasecmp(szRule, "Require:", 8))
+	else if (!strncasecmp(rule, "Q:", 2) || !strncasecmp(rule, "Require:", 8))
 	{
-		m_eCommand = frRequire;
-		szRule += szRule[1] == ':' || szRule[1] == '(' ? 2 : 8;
+		m_command = frRequire;
+		rule += rule[1] == ':' || rule[1] == '(' ? 2 : 8;
 	}
-	else if (*szRule == '#')
+	else if (*rule == '#')
 	{
-		m_eCommand = frComment;
-		return szRule;
+		m_command = frComment;
+		return rule;
 	}
 	else
 	{
 		// not a command
-		return szRule;
+		return rule;
 	}
 
-	if ((m_eCommand == frAccept || m_eCommand == frOptions) && szRule[-1] == '(')
+	if ((m_command == frAccept || m_command == frOptions) && rule[-1] == '(')
 	{
-		szRule = CompileOptions(szRule);
+		rule = CompileOptions(rule);
 	}
 
-	return szRule;
+	return rule;
 }
 
-char* FeedFilter::Rule::CompileOptions(char* szRule)
+char* FeedFilter::Rule::CompileOptions(char* rule)
 {
-	char* p = strchr(szRule, ')');
+	char* p = strchr(rule, ')');
 	if (!p)
 	{
 		// error
-		return NULL;
+		return nullptr;
 	}
 
 	// split command into tokens
 	*p = '\0';
-	Tokenizer tok(szRule, ",", true);
-	while (char* szOption = tok.Next())
+	Tokenizer tok(rule, ",", true);
+	while (char* option = tok.Next())
 	{
-		const char* szValue = "";
-		char* szColon = strchr(szOption, ':');
-		if (szColon)
+		const char* value = "";
+		char* colon = strchr(option, ':');
+		if (colon)
 		{
-			*szColon = '\0';
-			szValue = Util::Trim(szColon + 1);
+			*colon = '\0';
+			value = Util::Trim(colon + 1);
 		}
 
-		if (!strcasecmp(szOption, "category") || !strcasecmp(szOption, "cat") || !strcasecmp(szOption, "c"))
+		if (!strcasecmp(option, "category") || !strcasecmp(option, "cat") || !strcasecmp(option, "c"))
 		{
-			m_bHasCategory = true;
-			free(m_szCategory);
-			m_szCategory = strdup(szValue);
-			m_bPatCategory = strstr(szValue, "${");
+			m_hasCategory = true;
+			m_category = value;
+			m_hasPatCategory = strstr(value, "${");
 		}
-		else if (!strcasecmp(szOption, "pause") || !strcasecmp(szOption, "p"))
+		else if (!strcasecmp(option, "pause") || !strcasecmp(option, "p"))
 		{
-			m_bHasPause = true;
-			m_bPause = !*szValue || !strcasecmp(szValue, "yes") || !strcasecmp(szValue, "y");
-			if (!m_bPause && !(!strcasecmp(szValue, "no") || !strcasecmp(szValue, "n")))
+			m_hasPause = true;
+			m_pause = !*value || !strcasecmp(value, "yes") || !strcasecmp(value, "y");
+			if (!m_pause && !(!strcasecmp(value, "no") || !strcasecmp(value, "n")))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 		}
-		else if (!strcasecmp(szOption, "priority") || !strcasecmp(szOption, "pr") || !strcasecmp(szOption, "r"))
+		else if (!strcasecmp(option, "priority") || !strcasecmp(option, "pr") || !strcasecmp(option, "r"))
 		{
-			if (!strchr("0123456789-+", *szValue))
+			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
-			m_bHasPriority = true;
-			m_iPriority = atoi(szValue);
+			m_hasPriority = true;
+			m_priority = atoi(value);
 		}
-		else if (!strcasecmp(szOption, "priority+") || !strcasecmp(szOption, "pr+") || !strcasecmp(szOption, "r+"))
+		else if (!strcasecmp(option, "priority+") || !strcasecmp(option, "pr+") || !strcasecmp(option, "r+"))
 		{
-			if (!strchr("0123456789-+", *szValue))
+			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
-			m_bHasAddPriority = true;
-			m_iAddPriority = atoi(szValue);
+			m_hasAddPriority = true;
+			m_addPriority = atoi(value);
 		}
-		else if (!strcasecmp(szOption, "dupescore") || !strcasecmp(szOption, "ds") || !strcasecmp(szOption, "s"))
+		else if (!strcasecmp(option, "dupescore") || !strcasecmp(option, "ds") || !strcasecmp(option, "s"))
 		{
-			if (!strchr("0123456789-+", *szValue))
+			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
-			m_bHasDupeScore = true;
-			m_iDupeScore = atoi(szValue);
+			m_hasDupeScore = true;
+			m_dupeScore = atoi(value);
 		}
-		else if (!strcasecmp(szOption, "dupescore+") || !strcasecmp(szOption, "ds+") || !strcasecmp(szOption, "s+"))
+		else if (!strcasecmp(option, "dupescore+") || !strcasecmp(option, "ds+") || !strcasecmp(option, "s+"))
 		{
-			if (!strchr("0123456789-+", *szValue))
+			if (!strchr("0123456789-+", *value))
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
-			m_bHasAddDupeScore = true;
-			m_iAddDupeScore = atoi(szValue);
+			m_hasAddDupeScore = true;
+			m_addDupeScore = atoi(value);
 		}
-		else if (!strcasecmp(szOption, "dupekey") || !strcasecmp(szOption, "dk") || !strcasecmp(szOption, "k"))
+		else if (!strcasecmp(option, "dupekey") || !strcasecmp(option, "dk") || !strcasecmp(option, "k"))
 		{
-			m_bHasDupeKey = true;
-			free(m_szDupeKey);
-			m_szDupeKey = strdup(szValue);
-			m_bPatDupeKey = strstr(szValue, "${");
+			m_hasDupeKey = true;
+			m_dupeKey = value;
+			m_hasPatDupeKey = strstr(value, "${");
 		}
-		else if (!strcasecmp(szOption, "dupekey+") || !strcasecmp(szOption, "dk+") || !strcasecmp(szOption, "k+"))
+		else if (!strcasecmp(option, "dupekey+") || !strcasecmp(option, "dk+") || !strcasecmp(option, "k+"))
 		{
-			m_bHasAddDupeKey = true;
-			free(m_szAddDupeKey);
-			m_szAddDupeKey = strdup(szValue);
-			m_bPatAddDupeKey = strstr(szValue, "${");
+			m_hasAddDupeKey = true;
+			m_addDupeKey = value;
+			m_hasPatAddDupeKey = strstr(value, "${");
 		}
-		else if (!strcasecmp(szOption, "dupemode") || !strcasecmp(szOption, "dm") || !strcasecmp(szOption, "m"))
+		else if (!strcasecmp(option, "dupemode") || !strcasecmp(option, "dm") || !strcasecmp(option, "m"))
 		{
-			m_bHasDupeMode = true;
-			if (!strcasecmp(szValue, "score") || !strcasecmp(szValue, "s"))
+			m_hasDupeMode = true;
+			if (!strcasecmp(value, "score") || !strcasecmp(value, "s"))
 			{
-				m_eDupeMode = dmScore;
+				m_dupeMode = dmScore;
 			}
-			else if (!strcasecmp(szValue, "all") || !strcasecmp(szValue, "a"))
+			else if (!strcasecmp(value, "all") || !strcasecmp(value, "a"))
 			{
-				m_eDupeMode = dmAll;
+				m_dupeMode = dmAll;
 			}
-			else if (!strcasecmp(szValue, "force") || !strcasecmp(szValue, "f"))
+			else if (!strcasecmp(value, "force") || !strcasecmp(value, "f"))
 			{
-				m_eDupeMode = dmForce;
+				m_dupeMode = dmForce;
 			}
 			else
 			{
 				// error
-				return NULL;
+				return nullptr;
 			}
 		}
-		else if (!strcasecmp(szOption, "rageid"))
+		else if (!strcasecmp(option, "rageid"))
 		{
-			m_bHasRageId = true;
-			free(m_szRageId);
-			m_szRageId = strdup(szValue);
+			m_hasRageId = true;
+			m_rageId = value;
 		}
-		else if (!strcasecmp(szOption, "series"))
+		else if (!strcasecmp(option, "tvdbid"))
 		{
-			m_bHasSeries = true;
-			free(m_szSeries);
-			m_szSeries = strdup(szValue);
+			m_hasTvdbId = true;
+			m_tvdbId = value;
+		}
+		else if (!strcasecmp(option, "tvmazeid"))
+		{
+			m_hasTvmazeId = true;
+			m_tvmazeId = value;
+		}
+		else if (!strcasecmp(option, "series"))
+		{
+			m_hasSeries = true;
+			m_series = value;
 		}
 
 		// for compatibility with older version we support old commands too
-		else if (!strcasecmp(szOption, "paused") || !strcasecmp(szOption, "unpaused"))
+		else if (!strcasecmp(option, "paused") || !strcasecmp(option, "unpaused"))
 		{
-			m_bHasPause = true;
-			m_bPause = !strcasecmp(szOption, "paused");
+			m_hasPause = true;
+			m_pause = !strcasecmp(option, "paused");
 		}
-		else if (strchr("0123456789-+", *szOption))
+		else if (strchr("0123456789-+", *option))
 		{
-			m_bHasPriority = true;
-			m_iPriority = atoi(szOption);
+			m_hasPriority = true;
+			m_priority = atoi(option);
 		}
 		else
 		{
-			m_bHasCategory = true;
-			free(m_szCategory);
-			m_szCategory = strdup(szOption);
+			m_hasCategory = true;
+			m_category = option;
 		}
 	}
 
-	szRule = p + 1;
-	if (*szRule == ':')
+	rule = p + 1;
+	if (*rule == ':')
 	{
-		szRule++;
+		rule++;
 	}
 
-	return szRule;
+	return rule;
 }
 
-bool FeedFilter::Rule::CompileTerm(char* szTerm)
+bool FeedFilter::Rule::CompileTerm(char* termstr)
 {
-	Term* pTerm = new Term();
-	pTerm->SetRefValues(m_bPatCategory || m_bPatDupeKey || m_bPatAddDupeKey ? &m_RefValues : NULL);
-	if (pTerm->Compile(szTerm))
+	m_terms.emplace_back();
+	m_terms.back().SetRefValues(m_hasPatCategory || m_hasPatDupeKey || m_hasPatAddDupeKey ? &m_refValues : nullptr);
+	bool ok = m_terms.back().Compile(termstr);
+	if (!ok)
 	{
-		m_Terms.push_back(pTerm);
-		return true;
+		m_terms.pop_back();
 	}
-	else
-	{
-		delete pTerm;
-		return false;
-	}
+	return ok;
 }
 
-bool FeedFilter::Rule::Match(FeedItemInfo* pFeedItemInfo)
+bool FeedFilter::Rule::Match(FeedItemInfo& feedItemInfo)
 {
-	for (RefValues::iterator it = m_RefValues.begin(); it != m_RefValues.end(); it++)
-	{
-		delete *it;
-	}
-	m_RefValues.clear();
+	m_refValues.clear();
 
-	if (!MatchExpression(pFeedItemInfo))
+	if (!MatchExpression(feedItemInfo))
 	{
 		return false;
 	}
 
-	if (m_bPatCategory)
+	if (m_hasPatCategory)
 	{
-		ExpandRefValues(pFeedItemInfo, &m_szCategory, m_szPatCategory);
+		ExpandRefValues(feedItemInfo, &m_category, m_patCategory);
 	}
-	if (m_bPatDupeKey)
+	if (m_hasPatDupeKey)
 	{
-		ExpandRefValues(pFeedItemInfo, &m_szDupeKey, m_szPatDupeKey);
+		ExpandRefValues(feedItemInfo, &m_dupeKey, m_patDupeKey);
 	}
-	if (m_bPatAddDupeKey)
+	if (m_hasPatAddDupeKey)
 	{
-		ExpandRefValues(pFeedItemInfo, &m_szAddDupeKey, m_szPatAddDupeKey);
+		ExpandRefValues(feedItemInfo, &m_addDupeKey, m_patAddDupeKey);
 	}
 
 	return true;
 }
 
-bool FeedFilter::Rule::MatchExpression(FeedItemInfo* pFeedItemInfo)
+bool FeedFilter::Rule::MatchExpression(FeedItemInfo& feedItemInfo)
 {
-	char* expr = (char*)malloc(m_Terms.size() + 1);
+	CString expr;
+	expr.Reserve(m_terms.size());
 
 	int index = 0;
-	for (TermList::iterator it = m_Terms.begin(); it != m_Terms.end(); it++, index++)
+	for (Term& term : m_terms)
 	{
-		Term* pTerm = *it;
-		switch (pTerm->GetCommand())
+		switch (term.GetCommand())
 		{
 			case fcOpeningBrace:
 				expr[index] = '(';
@@ -944,14 +837,15 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* pFeedItemInfo)
 				break;
 
 			default:
-				expr[index] = pTerm->Match(pFeedItemInfo) ? 'T' : 'F';
+				expr[index] = term.Match(feedItemInfo) ? 'T' : 'F';
 				break;
 		}
+		index++;
 	}
 	expr[index] = '\0';
 
 	// reduce result tree to one element (may be longer if expression has syntax errors)
-	for (int iOldLen = 0, iNewLen = strlen(expr); iNewLen != iOldLen; iOldLen = iNewLen, iNewLen = strlen(expr))
+	for (int oldLen = 0, newLen = strlen(expr); newLen != oldLen; oldLen = newLen, newLen = strlen(expr))
 	{
 		// NOTE: there are no operator priorities.
 		// the order of operators "OR" and "AND" is not defined, they can be checked in any order.
@@ -971,141 +865,117 @@ bool FeedFilter::Rule::MatchExpression(FeedItemInfo* pFeedItemInfo)
 		Util::ReduceStr(expr, "(F)", "F");
 	}
 
-	bool bMatch = *expr && *expr == 'T' && expr[1] == '\0';
-	free(expr);
-	return bMatch;
+	bool match = expr.Length() == 1 && expr[0] == 'T';
+	return match;
 }
 
-void FeedFilter::Rule::ExpandRefValues(FeedItemInfo* pFeedItemInfo, char** pDestStr, char* pPatStr)
+void FeedFilter::Rule::ExpandRefValues(FeedItemInfo& feedItemInfo, CString* destStr, const char* patStr)
 {
-	free(*pDestStr);
+	CString curvalue = patStr;
 
-	*pDestStr = strdup(pPatStr);
-	char* curvalue = *pDestStr;
-
-	int iAttempts = 0;
-	while (char* dollar = strstr(curvalue, "${"))
+	int attempts = 0;
+	while (const char* dollar = strstr(curvalue, "${"))
 	{
-		iAttempts++;
-		if (iAttempts > 100)
+		attempts++;
+		if (attempts > 100)
 		{
 			break; // error
 		}
 
-		char* end = strchr(dollar, '}');
+		const char* end = strchr(dollar, '}');
 		if (!end)
 		{
 			break; // error
 		}
 
 		int varlen = (int)(end - dollar - 2);
-		char variable[101];
-		int maxlen = varlen < 100 ? varlen : 100;
-		strncpy(variable, dollar + 2, maxlen);
-		variable[maxlen] = '\0';
-
-		const char* varvalue = GetRefValue(pFeedItemInfo, variable);
+		BString<100> variable;
+		variable.Set(dollar + 2, varlen);
+		const char* varvalue = GetRefValue(feedItemInfo, variable);
 		if (!varvalue)
 		{
 			break; // error
 		}
 
-		int newlen = strlen(varvalue);
-		char* newvalue = (char*)malloc(strlen(curvalue) - varlen - 3 + newlen + 1);
-		strncpy(newvalue, curvalue, dollar - curvalue);
-		strncpy(newvalue + (dollar - curvalue), varvalue, newlen);
-		strcpy(newvalue + (dollar - curvalue) + newlen, end + 1);
-		free(curvalue);
-		curvalue = newvalue;
-		*pDestStr = curvalue;
+		curvalue.Replace(dollar - curvalue, 2 + varlen + 1, varvalue);
 	}
+
+	*destStr = std::move(curvalue);
 }
 
-const char* FeedFilter::Rule::GetRefValue(FeedItemInfo* pFeedItemInfo, const char* szVarName)
+const char* FeedFilter::Rule::GetRefValue(FeedItemInfo& feedItemInfo, const char* varName)
 {
-	if (!strcasecmp(szVarName, "season"))
+	if (!strcasecmp(varName, "season"))
 	{
-		pFeedItemInfo->GetSeasonNum(); // needed to parse title
-		return pFeedItemInfo->GetSeason() ? pFeedItemInfo->GetSeason() : "";
+		feedItemInfo.GetSeasonNum(); // needed to parse title
+		return feedItemInfo.GetSeason() ? feedItemInfo.GetSeason() : "";
 	}
-	else if (!strcasecmp(szVarName, "episode"))
+	else if (!strcasecmp(varName, "episode"))
 	{
-		pFeedItemInfo->GetEpisodeNum(); // needed to parse title
-		return pFeedItemInfo->GetEpisode() ? pFeedItemInfo->GetEpisode() : "";
-	}
-
-	int iIndex = atoi(szVarName) - 1;
-	if (iIndex >= 0 && iIndex < (int)m_RefValues.size())
-	{
-		return m_RefValues[iIndex];
+		feedItemInfo.GetEpisodeNum(); // needed to parse title
+		return feedItemInfo.GetEpisode() ? feedItemInfo.GetEpisode() : "";
 	}
 
-	return NULL;
+	int index = atoi(varName) - 1;
+	if (index >= 0 && index < (int)m_refValues.size())
+	{
+		return m_refValues[index];
+	}
+
+	return nullptr;
 }
 
-FeedFilter::FeedFilter(const char* szFilter)
+FeedFilter::FeedFilter(const char* filter)
 {
-	Compile(szFilter);
+	Compile(filter);
 }
 
-FeedFilter::~FeedFilter()
+void FeedFilter::Compile(const char* filter)
 {
-	for (RuleList::iterator it = m_Rules.begin(); it != m_Rules.end(); it++)
-	{
-		delete *it;
-	}
-}
+	debug("Compiling filter: %s", filter);
 
-void FeedFilter::Compile(const char* szFilter)
-{
-	debug("Compiling filter: %s", szFilter);
+	CString filter2 = filter;
+	char* rule = filter2;
 
-	char* szFilter2 = strdup(szFilter);
-	char* szRule = szFilter2;
-
-	for (char* p = szRule; *p; p++)
+	for (char* p = rule; *p; p++)
 	{
 		char ch = *p;
 		if (ch == '%')
 		{
 			*p = '\0';
-			CompileRule(szRule);
-			szRule = p + 1;
+			CompileRule(rule);
+			rule = p + 1;
 		}
 	}
 
-	CompileRule(szRule);
-
-	free(szFilter2);
+	CompileRule(rule);
 }
 
-void FeedFilter::CompileRule(char* szRule)
+void FeedFilter::CompileRule(char* rulestr)
 {
-	Rule* pRule = new Rule();
-	m_Rules.push_back(pRule);
-	pRule->Compile(szRule);
+	m_rules.emplace_back();
+	m_rules.back().Compile(rulestr);
 }
 
-void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
+void FeedFilter::Match(FeedItemInfo& feedItemInfo)
 {
 	int index = 0;
-	for (RuleList::iterator it = m_Rules.begin(); it != m_Rules.end(); it++)
+	for (Rule& rule : m_rules)
 	{
-		Rule* pRule = *it;
 		index++;
-		if (pRule->IsValid())
+		if (rule.IsValid())
 		{
-			bool bMatch = pRule->Match(pFeedItemInfo);
-			switch (pRule->GetCommand())
+			bool match = rule.Match(feedItemInfo);
+			switch (rule.GetCommand())
 			{
 				case frAccept:
 				case frOptions:
-					if (bMatch)
+					if (match)
 					{
-						pFeedItemInfo->SetMatchStatus(FeedItemInfo::msAccepted);
-						pFeedItemInfo->SetMatchRule(index);
-						ApplyOptions(pRule, pFeedItemInfo);
-						if (pRule->GetCommand() == frAccept)
+						feedItemInfo.SetMatchStatus(FeedItemInfo::msAccepted);
+						feedItemInfo.SetMatchRule(index);
+						ApplyOptions(rule, feedItemInfo);
+						if (rule.GetCommand() == frAccept)
 						{
 							return;
 						}
@@ -1113,19 +983,19 @@ void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 					break;
 
 				case frReject:
-					if (bMatch)
+					if (match)
 					{
-						pFeedItemInfo->SetMatchStatus(FeedItemInfo::msRejected);
-						pFeedItemInfo->SetMatchRule(index);
+						feedItemInfo.SetMatchStatus(FeedItemInfo::msRejected);
+						feedItemInfo.SetMatchRule(index);
 						return;
 					}
 					break;
 
 				case frRequire:
-					if (!bMatch)
+					if (!match)
 					{
-						pFeedItemInfo->SetMatchStatus(FeedItemInfo::msRejected);
-						pFeedItemInfo->SetMatchRule(index);
+						feedItemInfo.SetMatchStatus(FeedItemInfo::msRejected);
+						feedItemInfo.SetMatchRule(index);
 						return;
 					}
 					break;
@@ -1136,50 +1006,50 @@ void FeedFilter::Match(FeedItemInfo* pFeedItemInfo)
 		}
 	}
 
-	pFeedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
-	pFeedItemInfo->SetMatchRule(0);
+	feedItemInfo.SetMatchStatus(FeedItemInfo::msIgnored);
+	feedItemInfo.SetMatchRule(0);
 }
 
-void FeedFilter::ApplyOptions(Rule* pRule, FeedItemInfo* pFeedItemInfo)
+void FeedFilter::ApplyOptions(Rule& rule, FeedItemInfo& feedItemInfo)
 {
-	if (pRule->HasPause())
+	if (rule.HasPause())
 	{
-		pFeedItemInfo->SetPauseNzb(pRule->GetPause());
+		feedItemInfo.SetPauseNzb(rule.GetPause());
 	}
-	if (pRule->HasCategory())
+	if (rule.HasCategory())
 	{
-		pFeedItemInfo->SetAddCategory(pRule->GetCategory());
+		feedItemInfo.SetAddCategory(rule.GetCategory());
 	}
-	if (pRule->HasPriority())
+	if (rule.HasPriority())
 	{
-		pFeedItemInfo->SetPriority(pRule->GetPriority());
+		feedItemInfo.SetPriority(rule.GetPriority());
 	}
-	if (pRule->HasAddPriority())
+	if (rule.HasAddPriority())
 	{
-		pFeedItemInfo->SetPriority(pFeedItemInfo->GetPriority() + pRule->GetAddPriority());
+		feedItemInfo.SetPriority(feedItemInfo.GetPriority() + rule.GetAddPriority());
 	}
-	if (pRule->HasDupeScore())
+	if (rule.HasDupeScore())
 	{
-		pFeedItemInfo->SetDupeScore(pRule->GetDupeScore());
+		feedItemInfo.SetDupeScore(rule.GetDupeScore());
 	}
-	if (pRule->HasAddDupeScore())
+	if (rule.HasAddDupeScore())
 	{
-		pFeedItemInfo->SetDupeScore(pFeedItemInfo->GetDupeScore() + pRule->GetAddDupeScore());
+		feedItemInfo.SetDupeScore(feedItemInfo.GetDupeScore() + rule.GetAddDupeScore());
 	}
-	if (pRule->HasRageId() || pRule->HasSeries())
+	if (rule.HasRageId() || rule.HasTvdbId() || rule.HasTvmazeId() || rule.HasSeries())
 	{
-		pFeedItemInfo->BuildDupeKey(pRule->GetRageId(), pRule->GetSeries());
+		feedItemInfo.BuildDupeKey(rule.GetRageId(), rule.GetTvdbId(), rule.GetTvmazeId(), rule.GetSeries());
 	}
-	if (pRule->HasDupeKey())
+	if (rule.HasDupeKey())
 	{
-		pFeedItemInfo->SetDupeKey(pRule->GetDupeKey());
+		feedItemInfo.SetDupeKey(rule.GetDupeKey());
 	}
-	if (pRule->HasAddDupeKey())
+	if (rule.HasAddDupeKey())
 	{
-		pFeedItemInfo->AppendDupeKey(pRule->GetAddDupeKey());
+		feedItemInfo.AppendDupeKey(rule.GetAddDupeKey());
 	}
-	if (pRule->HasDupeMode())
+	if (rule.HasDupeMode())
 	{
-		pFeedItemInfo->SetDupeMode(pRule->GetDupeMode());
+		feedItemInfo.SetDupeMode(rule.GetDupeMode());
 	}
 }

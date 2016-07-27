@@ -1,7 +1,7 @@
 /*
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -138,9 +133,12 @@ var Options = (new function($)
 		}
 
 		var config = [];
+		config.values = serverValues;
+
+		readWebSettings(config);
+		
 		var serverConfig = readConfigTemplate(serverTemplateData[0].Template, undefined, HIDDEN_SECTIONS, '', '');
 		mergeValues(serverConfig.sections, serverValues);
-		config.values = serverValues;
 		config.push(serverConfig);
 
 		// read scripts configs
@@ -165,6 +163,30 @@ var Options = (new function($)
 
 		serverValues = null;
 		loadComplete(config);
+	}
+	
+	function readWebSettings(config)
+	{
+		var webTemplate = '### WEB-INTERFACE ###\n\n';
+		var webValues = [];
+		
+		for (var optname in UISettings.description)
+		{
+			var descript = UISettings.description[optname];
+			var value = UISettings[optname];
+			optname = optname[0].toUpperCase() + optname.substring(1);
+			if (value === true) value = 'yes';
+			if (value === false) value = 'no';
+			
+			descript = descript.replace(/\n/g, '\n# ').replace(/\n# \n/g, '\n#\n');
+			webTemplate += '# ' + descript + '\n' + optname + '=' + value + '\n\n';
+			
+			webValues.push({Name: optname, Value: value.toString()});
+		}
+		
+		var webConfig = readConfigTemplate(webTemplate, undefined, '', '', '');
+		mergeValues(webConfig.sections, webValues);
+		config.push(webConfig);
 	}
 
 	this.reloadConfig = function(_serverValues, _complete)
@@ -803,7 +825,7 @@ var Config = (new function($)
 			html += '<table class="editor"><tr><td>';
 			html += '<input type="text" id="' + option.formId + '" value="' + Util.textToAttr(value) + '">';
 			html += '</td><td>';
-			html += '<button id="' + option.formId + '_Editor" class="btn" onclick="' + option.editor.click + '($(\'input\', $(this).closest(\'table\')).attr(\'id\'))">' + option.editor.caption + '</button>';
+			html += '<button type="button" id="' + option.formId + '_Editor" class="btn" onclick="' + option.editor.click + '($(\'input\', $(this).closest(\'table\')).attr(\'id\'))">' + option.editor.caption + '</button>';
 			html += '</td></tr></table>';
 		}
 		else
@@ -920,11 +942,9 @@ var Config = (new function($)
 		$ConfigNav.children().not('.config-static').remove();
 		$ConfigData.children().not('.config-static').remove();
 
-		$ConfigNav.append('<li class="divider"></li>');
-
 		for (var k=0; k < config.length; k++)
 		{
-			if (k == 1)
+			if (k == 1 || k == 2)
 			{
 				$ConfigNav.append('<li class="divider"></li>');
 			}
@@ -937,7 +957,7 @@ var Config = (new function($)
 				{
 					var html = $('<li><a href="#' + section.id + '">' + section.name + '</a></li>');
 					$ConfigNav.append(html);
-					var content = buildOptionsContent(section, k > 0);
+					var content = buildOptionsContent(section, k > 1);
 					$ConfigData.append(content);
 					added = true;
 				}
@@ -969,7 +989,7 @@ var Config = (new function($)
 
 	function extendConfig()
 	{
-		for (var i=1; i < config.length; i++)
+		for (var i=2; i < config.length; i++)
 		{
 			var conf = config[i];
 
@@ -1024,7 +1044,7 @@ var Config = (new function($)
 		}
 
 		// register editors for certain options
-		var conf = config[0];
+		var conf = config[1];
 		for (var j=0; j < conf.sections.length; j++)
 		{
 			var section = conf.sections[j];
@@ -1587,11 +1607,11 @@ var Config = (new function($)
 		return false;
 	}
 
-	function prepareSaveRequest(onlyUserChanges)
+	function prepareSaveRequest(onlyUserChanges, webSettings)
 	{
 		var modified = false;
 		var request = [];
-		for (var k=0; k < config.length; k++)
+		for (var k = (webSettings ? 0 : 1); k < (webSettings ? 1 : config.length); k++)
 		{
 			var sections = config[k].sections;
 			for (var i=0; i < sections.length; i++)
@@ -1637,9 +1657,10 @@ var Config = (new function($)
 	{
 		$LeaveConfigDialog.modal('hide');
 
-		var serverSaveRequest = prepareSaveRequest(false);
+		var serverSaveRequest = prepareSaveRequest(false, false);
+		var webSaveRequest = prepareSaveRequest(false, true);
 
-		if (serverSaveRequest.length === 0)
+		if (serverSaveRequest.length === 0 && webSaveRequest.length === 0)
 		{
 			Notification.show('#Notif_Config_Unchanged');
 			return;
@@ -1649,10 +1670,20 @@ var Config = (new function($)
 
 		Util.show('#ConfigSaved_Reload, #ConfigReload', serverSaveRequest.length > 0);
 
+		if (webSaveRequest.length > 0)
+		{
+			saveWebSettings(webSaveRequest);
+		}
+		
 		if (serverSaveRequest.length > 0)
 		{
 			$('#Notif_Config_Failed_Filename').text(Options.option('ConfigFile'));
 			RPC.call('saveconfig', [serverSaveRequest], saveCompleted);
+		}
+		else
+		{
+			// only web-settings were changed, refresh page
+			document.location.reload(true);
 		}
 	}
 
@@ -1680,6 +1711,21 @@ var Config = (new function($)
 		configSaved = true;
 	}
 
+	function saveWebSettings(values)
+	{
+		for (var i=0; i < values.length; i++)
+		{
+			var option = values[i];
+			var optname = option.Name;
+			var optvalue = option.Value;
+			optname = optname[0].toLowerCase() + optname.substring(1);
+			if (optvalue === 'yes') optvalue = true;
+			if (optvalue === 'no') optvalue = false;
+			UISettings[optname] = optvalue;
+		}
+		UISettings.save();
+	}
+	
 	this.canLeaveTab = function(target)
 	{
 		if (!config || prepareSaveRequest(true).length === 0 || configSaved)
@@ -2240,29 +2286,7 @@ var ConfigBackupRestore = (new function($)
 
 		var filename = 'nzbget-' + datestr + '.conf';
 
-		if (window.Blob)
-		{
-			var blob = new Blob([settings], {type: "text/plain;charset=utf-8"});
-
-			if (navigator.msSaveBlob)
-			{
-				navigator.msSaveBlob(blob, filename);
-			}
-			else
-			{
-				var URL = window.URL || window.webkitURL || window;
-				var object_url = URL.createObjectURL(blob);
-
-				var save_link = document.createElement('a');
-				save_link.href = object_url;
-				save_link.download = filename;
-
-				var event = document.createEvent('MouseEvents');
-				event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-				save_link.dispatchEvent(event);
-			}
-		}
-		else
+		if (!Util.saveToLocalFile(settings, "text/plain;charset=utf-8", filename))
 		{
 			alert('Unfortunately your browser doesn\'t support access to local file system.\n\n'+
 				'To backup settings you can manually save file "nzbget.conf" (' +

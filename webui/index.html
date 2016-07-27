@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,11 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  -->
 
@@ -483,7 +479,7 @@
 					<h4 class="alert-heading">Loading configuration failed</h4>
 					Could not load template configuration file <em>nzbget.conf</em>. The file contains descriptions of options
 					and is needed to display settings page. The file comes with NZBGet distribution archive and is usually
-					automaically installed into the right location. This seems not to be a case with your installation though.<br><br>
+					automatically installed into the right location. This seems not to be a case with your installation though.<br><br>
 
 					<span id="ConfigLoadServerTemplateErrorEmpty">Please put the template configuration file <em>nzbget.conf</em> into the
 					directory with web-interface files (<em><span id="ConfigLoadServerTemplateErrorWebDir"></span></em>).</span>
@@ -557,6 +553,12 @@
 									If your scripts define own options they are also shown here and can be configured like NZBGets built-in options.
 									</p>
 
+									<h4>Web-interface settings</h4>
+									<p>
+									Settings in section <em><strong>WEB-INTERFACE</strong></em> are stored within your browser. All other settings are stored
+									in configuration file on computer where NZBGet is running.
+									</p>
+
 									<h4>Backup and restore settings</h4>
 									<p>
 									This can be done in section <em><strong>SYSTEM</strong></em>.
@@ -565,6 +567,7 @@
 
 								<div>
 									<div class="form-horizontal">
+										<form>
 										<fieldset id="ConfigData">
 
 											<!-- *** SYSTEM -->
@@ -628,6 +631,7 @@
 											</div>
 
 										</fieldset>
+										</form>
 									</div>
 								</div>
 
@@ -792,7 +796,7 @@
 				<div id="StatDialog_CountersBlock">
 				<div class="row-fluid" id="StatDialog_Counters">
 					<div class="span3" id="StatDialog_Today">Today: <span id="StatDialog_TodaySize" class="stat-size">1.5 GB</span></div>
-					<div class="span3" id="StatDialog_Month">This month: <span id="StatDialog_MonthSize" class="stat-size">200 GB</span></div>
+					<div class="span3" id="StatDialog_Month"><span id="StatDialog_MonthTitle">This month:</span> <span id="StatDialog_MonthSize" class="stat-size">200 GB</span></div>
 					<div class="span3" id="StatDialog_AllTime">All-time: <span id="StatDialog_AllTimeSize" class="stat-size">20.3 TB</span></div>
 					<div class="span3" id="StatDialog_Custom" title="reset on Fri Apr 04 2014 09:32:24">Custom: <span id="StatDialog_CustomSize" class="stat-size">10.3 TB</span>, <a onclick="StatDialog.resetCounter()">reset</a></div>
 				</div>
@@ -811,6 +815,7 @@
 	</div>
 	<div class="modal-body">
 		<div class="form-horizontal">
+			<form>
 			<fieldset>
 				<div class="control-group">
 					<label class="control-label" for="StatRangeDialog_PeriodGroup">Period</label>
@@ -822,6 +827,7 @@
 				<p class="help-block" ">Type period as <strong>year</strong> or <strong>year-month</strong>, for example:
 				2014 or 2014-12.</p>
 			</fieldset>
+			</form>
 		</div>
 	</div>
 	<div class="modal-footer">
@@ -839,6 +845,7 @@
 	</div>
 	<div class="modal-body">
 		<div class="form-horizontal">
+			<form>
 			<fieldset>
 				<div class="control-group">
 					<label class="control-label" for="LimitDialog_SpeedInputGroup">Speed limit</label>
@@ -863,6 +870,7 @@
 				<div class="hide" id="LimitDialog_ServerTable_pager"></div>
 
 			</fieldset>
+			</form>
 		</div>
 	</div>
 	<div class="modal-footer">
@@ -881,6 +889,7 @@
 	</div>
 	<div class="modal-body">
 		<div class="form-horizontal">
+			<form>
 			<fieldset>
 				<div class="control-group">
 					<label class="control-label" for="PauseForInputGroup">Pause for</label>
@@ -891,6 +900,7 @@
 					</div>
 				</div>
 			</fieldset>
+			</form>
 		</div>
 	</div>
 	<div class="modal-footer">
@@ -909,6 +919,7 @@
 	</div>
 	<div class="modal-body">
 		<div class="form-horizontal">
+			<form>
 			<fieldset>
 				<div class="control-group">
 					<label class="control-label" for="SaveFilterGroup">Name</label>
@@ -919,6 +930,7 @@
 					</div>
 				</div>
 			</fieldset>
+			</form>
 		</div>
 	</div>
 	<div class="modal-footer">
@@ -994,6 +1006,7 @@
 		<div>
 			<div class="modal-tab" id="DownloadsEdit_GeneralTab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset>
 
 						<div class="control-group">
@@ -1049,6 +1062,7 @@
 						</div>
 
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
@@ -1098,8 +1112,10 @@
 
 			<div class="modal-tab hide" id="DownloadsEdit_ParamTab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset id="DownloadsEdit_ParamData">
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
@@ -1120,7 +1136,10 @@
 					<img src="img/transmit.gif"></img>
 				</div>
 				<div>
-					<div class="form-inline clearfix modal-toolbox">
+					<div class="btn-toolbar form-inline clearfix modal-toolbox">
+						<div class="pull-left btn-group">
+							<button class="btn" onclick="LogTab.export()" title="Save log into file"><i class="icon-save"></i><span class="btn-caption"> Save To File</span></button>
+						</div>
 						<div id="DownloadsLogRecordsPerPageBlock" class="pull-left toolbox-length">
 							<select size="1" id="DownloadsLogRecordsPerPage" onchange="LogTab.recordsPerPageChange('Downloads')">
 								<option value="5">5</option>
@@ -1151,6 +1170,7 @@
 
 			<div class="modal-tab hide" id="DownloadsEdit_DupeTab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset>
 						<div class="control-group">
 							<label class="control-label" for="DownloadsEdit_DupeKey">Duplicate key</label>
@@ -1177,6 +1197,7 @@
 							</div>
 						</div>
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
@@ -1219,6 +1240,7 @@
 			<div class="tab-pane active" id="DownloadsMulti_GeneralTab">
 				<a class="hide" href="#DownloadsMulti_GeneralTab" id="DownloadsMulti_GeneralTabLink" data-toggle="tab"></a>
 				<div class="form-horizontal">
+					<form>
 					<fieldset>
 
 						<div class="control-group">
@@ -1257,11 +1279,13 @@
 						-->
 
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
 			<div class="tab-pane" id="DownloadsMulti_PostProcessingTab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset>
 
 						<div class="alert alert-info alert-block hide">
@@ -1276,6 +1300,7 @@
 						<a class="btn" href="#DownloadsMulti_GeneralTab" data-toggle="tab">Go Back</a>
 
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
@@ -1300,12 +1325,14 @@
 
 	<div class="modal-body">
 		<div class="form-horizontal">
+			<form>
 			<fieldset>
 				<p>Merge listed downloads?</p>
 				<div class="dialog-add-files" id="DownloadsMerge_Files"></div>
 				<p class="help-block" style="margin-top:10px;">The first item in the list is the target - the resulting download inherits
 				the properties such as destination directory, category, etc. from that item.</p>
 			</fieldset>
+			</form>
 		</div>
 	</div>
 
@@ -1326,6 +1353,7 @@
 
 	<div class="modal-body">
 		<div class="form-vertical">
+			<form>
 			<fieldset>
 				<p>New download will be created from selected files. Please choose the name for new download.</p>
 
@@ -1340,6 +1368,7 @@
 				This action closes the download-edit-dialog. Any changes made in the dialog will be discarded.</p>
 
 			</fieldset>
+			</form>
 		</div>
 	</div>
 
@@ -1364,6 +1393,7 @@
 		<div>
 			<div class="modal-tab" id="HistoryEdit_GeneralTab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset>
 
 						<div class="control-group">
@@ -1429,13 +1459,16 @@
 						</div>
 
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
 			<div class="modal-tab hide" id="HistoryEdit_ParamTab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset id="HistoryEdit_ParamData">
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
@@ -1444,7 +1477,10 @@
 					<img src="img/transmit.gif"></img>
 				</div>
 				<div>
-					<div class="form-inline clearfix modal-toolbox">
+					<div class="btn-toolbar form-inline clearfix modal-toolbox">
+    					<div class="pull-left btn-group">
+							<button class="btn" onclick="LogTab.export()" title="Save log into file"><i class="icon-save"></i><span class="btn-caption"> Save To File</span></button>
+						</div>
 						<div id="HistoryLogRecordsPerPageBlock" class="pull-left toolbox-length">
 							<select size="1" id="HistoryLogRecordsPerPage" onchange="LogTab.recordsPerPageChange('History')">
 								<option value="5">5</option>
@@ -1499,6 +1535,7 @@
 
 			<div class="modal-tab hide" id="HistoryEdit_DupeTab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset>
 						<div class="control-group">
 							<label class="control-label" for="HistoryEdit_DupeKey">Duplicate key</label>
@@ -1532,6 +1569,7 @@
 							</div>
 						</div>
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
@@ -1549,6 +1587,7 @@
 				<li><a href="#" id="HistoryEdit_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
 				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
 				<li><a href="#" id="HistoryEdit_Redownload"><i class="icon-downloads"></i> Download Again</a></li>
+				<li><a href="#" id="HistoryEdit_RetryFailed"><i class="icon-downloads"></i> Retry Failed Articles</a></li>
 				<li><a href="#" id="HistoryEdit_MarkSuccess"><i class="icon-ok"></i> Mark as Success</a></li>
 				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-plus"></i> Mark as Good</a></li>
 				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-minus"></i> Mark as Bad</a></li>
@@ -1803,6 +1842,8 @@
 				<em>Force</em> - treat item as unique, ignore all duplicate checks.
 				For <em>Score</em> and <em>All</em> item is skipped if a duplicate marked as "good" exists in history.</td></tr>
 		<tr><td>rageid</td><td>generate duplicate key using this rageid (integer number) and season/episode numbers;</td></tr>
+		<tr><td>tvdbid</td><td>similar to rageid but uses tvdbid-field;</td></tr>
+		<tr><td>tvmazeid</td><td>similar to rageid but uses tvmazeid-field;</td></tr>
 		<tr><td>series</td><td>generate duplicate key using series identifier (any unique string) and season/episode numbers.</td></tr>
 		</tbody>
 		</table>
@@ -1869,7 +1910,7 @@
 		<li>Commands @ and $ are for use with text fields (title, filename, category,
 		link, description, dupekey, dupestatus).</li>
 		<li>Commands =, &lt;, &lt;=, &gt; and &gt;= are for use with numeric fields (size, age,
-		imdbid, rageid, season, episode, priority, dupescore).</li>
+		imdbid, rageid, tvdbid, tvmazeid, season, episode, priority, dupescore).</li>
 		<li>Any newznab attribute (encoded as "newznab:attr" in the RSS feed) can be used
 		as search field with prefix "attr-", for example "attr-genre".</li>
 		</ul>
@@ -1951,20 +1992,12 @@
 				How to delete selected downloads?
 			</p>
 			<div style="margin-left: 30px; margin-bottom: 10px;">
-				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_Delete"> Move downloads to history (recommended)</label>
-				<label class="radio" id="DownloadsDeleteConfirmDialog_DeleteDupeLabel"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDupe"> Move downloads to history as duplicates</label>
-				<label class="radio"><input type="radio" name ="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteFinal"> Delete downloads without history tracking</label>
+				<label class="radio"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeletePark"> Move downloads to history, keep already downloaded files (recommended)</label>
+				<label class="radio"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDirect"> Move downloads to history, delete already downloaded files</label>
+				<label class="radio" id="DownloadsDeleteConfirmDialog_DeleteDupeLabel"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteDupe"> Move downloads to history as duplicates, delete already downloaded files</label>
+				<label class="radio"><input type="radio" name="DownloadsDeleteConfirmDialog_Delete" id="DownloadsDeleteConfirmDialog_DeleteFinal"> Delete downloads without history tracking, delete already downloaded files</label>
 			</div>
 		</div>
-		
-		<p id="DownloadsDeleteConfirmDialog_Remain" class="confirm-help-block">
-			Selected downloads will be removed from queue. Already downloaded files remain on disk (this behavior can be changed via option
-			<strong><em>DeleteCleanupDisk</em></strong>).
-		</p>
-		<p id="DownloadsDeleteConfirmDialog_Cleanup" class="confirm-help-block">
-			Selected downloads will be removed from queue. Already downloaded files will be deleted from disk (this behavior can be changed via option
-			<strong><em>DeleteCleanupDisk</em></strong>).
-		</p>
 	</div>
 	<div id="DownloadsDeleteConfirmDialog_OK">Delete</div>
 	<div id="DownloadsDeleteConfirmDialog_Help">DownloadsDeleteHelp</div>
@@ -1978,10 +2011,12 @@
 	<h3>Help: Explaining delete options</h3>
 	</div>
 	<div class="modal-body">
-	<p>Duplicate check (option <em><strong>DupeCheck</strong></em>) requires information about downloaded and failed nzb-files.</p>
-	<p>If you delete download without creating history record the duplicate check may not be able to detect duplicates and
+	<p>It is recommended to move downloads into history.</p>
+	<p>If you choose to keep already downloaded files, the downloads can be moved back
+	to download queue using commands <em><strong>Download remaining files</strong></em> and <em><strong>Retry failed articles</strong></em>.</p>
+	<p>If you delete downloads without creating of history records the duplicate check may not be able to detect duplicates and
 	the same file or a duplicate may be queued later from RSS feed or other source.</p>
-	<p>History records marked as duplicate backups can be used by duplicate check if the main download fails.</p>
+	<p>History records marked as duplicate backups can be automatically used by duplicate check if the main download fails.</p>
 	</div>
 </div>
 
@@ -2160,6 +2195,7 @@
 
 	<div class="modal-body" id="AddDialog_Target">
 		<div class="form-horizontal">
+			<form>
 			<fieldset>
 
 				<div class="control-group">
@@ -2210,6 +2246,7 @@
 				</div>
 
 			</fieldset>
+			</form>
 		</div>
 	</div>
 
@@ -2267,6 +2304,7 @@
 		<div>
 			<div class="modal-tab">
 				<div class="form-horizontal">
+					<form>
 					<fieldset>
 
 						<div class="control-group">
@@ -2298,6 +2336,7 @@
 						</div>
 
 					</fieldset>
+					</form>
 				</div>
 			</div>
 
@@ -2320,6 +2359,7 @@
 
 	<div class="modal-body" style="padding-bottom:0px">
 		<div class="form-vertical">
+			<form>
 			<fieldset>
 
 				<p id="ScriptListDialog_Instruction">Select scripts for option <strong>PostScript</strong></p>
@@ -2337,6 +2377,7 @@
 				<div class="hide" id="ScriptListDialog_ScriptTable_pager"></div>
 
 			</fieldset>
+			</form>
 		</div>
 	</div>
 
@@ -2356,6 +2397,7 @@
 
 	<div class="modal-body" style="padding-bottom:0px">
 		<div class="form-vertical">
+			<form>
 			<fieldset>
 
 				<p id="RestoreSettingsDialog_Instruction">Select sections to restore. Tip: click on the checkbox of the table header to select all sections.</p>
@@ -2370,6 +2412,7 @@
 				<div class="hide" id="RestoreSettingsDialog_SectionTable_pager"></div>
 
 			</fieldset>
+			</form>
 		</div>
 	</div>
 
@@ -2677,6 +2720,10 @@
 
 <div id="Notif_History_Reprocess" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Post-Processing</strong>
+</div>
+
+<div id="Notif_History_RetryFailed" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Retrying failed articles</strong>
 </div>
 
 <div id="Notif_History_Saved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">

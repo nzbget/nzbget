@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,42 +15,13 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
 
 #include "nzbget.h"
 #include "LoggableFrontend.h"
 #include "Log.h"
-
-LoggableFrontend::LoggableFrontend()
-{
-	debug("Creating LoggableFrontend");
-
-	m_iNeededLogEntries = 0;
-	m_bSummary = false;
-	m_bFileList = false;
-}
 
 void LoggableFrontend::Run()
 {
@@ -59,7 +30,7 @@ void LoggableFrontend::Run()
 	while (!IsStopped())
 	{
 		Update();
-		usleep(m_iUpdateInterval * 1000);
+		usleep(m_updateInterval * 1000);
 	}
 	// Printing the last messages
 	Update();
@@ -79,23 +50,24 @@ void LoggableFrontend::Update()
 
 	BeforePrint();
 
-	MessageList* pMessages = LockMessages();
-	if (!pMessages->empty())
 	{
-		Message* pFirstMessage = pMessages->front();
-		int iStart = m_iNeededLogFirstID - pFirstMessage->GetID() + 1;
-		if (iStart < 0)
+		GuardedMessageList messages = GuardMessages();
+		if (!messages->empty())
 		{
-			PrintSkip();
-			iStart = 0;
-		}
-		for (unsigned int i = (unsigned int)iStart; i < pMessages->size(); i++)
-		{
-			PrintMessage((*pMessages)[i]);
-			m_iNeededLogFirstID = (*pMessages)[i]->GetID();
+			Message& firstMessage = messages->front();
+			int start = m_neededLogFirstId - firstMessage.GetId() + 1;
+			if (start < 0)
+			{
+				PrintSkip();
+				start = 0;
+			}
+			for (uint32 i = (uint32)start; i < messages->size(); i++)
+			{
+				PrintMessage(messages->at(i));
+				m_neededLogFirstId = messages->at(i).GetId();
+			}
 		}
 	}
-	UnlockMessages();
 
 	PrintStatus();
 
@@ -104,15 +76,16 @@ void LoggableFrontend::Update()
 	fflush(stdout);
 }
 
-void LoggableFrontend::PrintMessage(Message * pMessage)
+void LoggableFrontend::PrintMessage(Message& message)
 {
 #ifdef WIN32
-	char* msg = strdup(pMessage->GetText());
-	CharToOem(msg, msg);
+	CString cmsg = message.GetText();
+	CharToOem(cmsg, cmsg);
+	const char* msg = cmsg;
 #else
-	const char* msg = pMessage->GetText();
+	const char* msg = message.GetText();
 #endif
-	switch (pMessage->GetKind())
+	switch (message.GetKind())
 	{
 		case Message::mkDebug:
 			printf("[DEBUG] %s\n", msg);
@@ -130,9 +103,6 @@ void LoggableFrontend::PrintMessage(Message * pMessage)
 			printf("[DETAIL] %s\n", msg);
 			break;
 	}
-#ifdef WIN32
-	free(msg);
-#endif
 }
 
 void LoggableFrontend::PrintSkip()

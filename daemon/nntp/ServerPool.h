@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,78 +15,72 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef SERVERPOOL_H
 #define SERVERPOOL_H
 
-#include <vector>
-#include <time.h>
-
 #include "Log.h"
+#include "Container.h"
 #include "Thread.h"
 #include "NewsServer.h"
-#include "NNTPConnection.h"
+#include "NntpConnection.h"
 
 class ServerPool : public Debuggable
 {
-private:
-	class PooledConnection : public NNTPConnection
-	{
-	private:
-		bool			m_bInUse;
-		time_t			m_tFreeTime;
-	public:
-						PooledConnection(NewsServer* server);
-		bool			GetInUse() { return m_bInUse; }
-		void			SetInUse(bool bInUse) { m_bInUse = bInUse; }
-		time_t			GetFreeTime() { return m_tFreeTime; }
-		void			SetFreeTimeNow() { m_tFreeTime = ::time(NULL); }
-	};
+public:
+	typedef std::vector<NewsServer*> RawServerList;
 
-	typedef std::vector<int>				Levels;
-	typedef std::vector<PooledConnection*>	Connections;
-
-	Servers				m_Servers;
-	Servers				m_SortedServers;
-	Connections			m_Connections;
-	Levels				m_Levels;
-	int					m_iMaxNormLevel;
-	Mutex			 	m_mutexConnections;
-	int					m_iTimeout;
-	int					m_iRetryInterval;
-	int					m_iGeneration;
-
-	void				NormalizeLevels();
-	static bool			CompareServers(NewsServer* pServer1, NewsServer* pServer2);
+	void SetTimeout(int timeout) { m_timeout = timeout; }
+	void SetRetryInterval(int retryInterval) { m_retryInterval = retryInterval; }
+	void AddServer(std::unique_ptr<NewsServer> newsServer);
+	void InitConnections();
+	int GetMaxNormLevel() { return m_maxNormLevel; }
+	Servers* GetServers() { return &m_servers; } // Only for read access (no lockings)
+	NntpConnection* GetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers);
+	void FreeConnection(NntpConnection* connection, bool used);
+	void CloseUnusedConnections();
+	void Changed();
+	int GetGeneration() { return m_generation; }
+	void BlockServer(NewsServer* newsServer);
+	bool IsServerBlocked(NewsServer* newsServer);
 
 protected:
-	virtual void		LogDebugInfo();
+	virtual void LogDebugInfo();
 
-public:
-						ServerPool();
-						~ServerPool();
-	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
-	void				SetRetryInterval(int iRetryInterval) { m_iRetryInterval = iRetryInterval; }
-	void 				AddServer(NewsServer* pNewsServer);
-	void				InitConnections();
-	int					GetMaxNormLevel() { return m_iMaxNormLevel; }
-	Servers*			GetServers() { return &m_Servers; } // Only for read access (no lockings)
-	NNTPConnection*		GetConnection(int iLevel, NewsServer* pWantServer, Servers* pIgnoreServers);
-	void 				FreeConnection(NNTPConnection* pConnection, bool bUsed);
-	void				CloseUnusedConnections();
-	void				Changed();
-	int					GetGeneration() { return m_iGeneration; }
-	void				BlockServer(NewsServer* pNewsServer);
+private:
+	class PooledConnection : public NntpConnection
+	{
+	public:
+		using NntpConnection::NntpConnection;
+		bool GetInUse() { return m_inUse; }
+		void SetInUse(bool inUse) { m_inUse = inUse; }
+		time_t GetFreeTime() { return m_freeTime; }
+		void SetFreeTimeNow();
+	private:
+		bool m_inUse = false;
+		time_t m_freeTime = 0;
+	};
+
+	typedef std::vector<int> Levels;
+	typedef std::vector<std::unique_ptr<PooledConnection>> Connections;
+
+	Servers m_servers;
+	RawServerList m_sortedServers;
+	Connections m_connections;
+	Levels m_levels;
+	int m_maxNormLevel = 0;
+	Mutex m_connectionsMutex;
+	int m_timeout = 60;
+	int m_retryInterval = 0;
+	int m_generation = 0;
+
+	void NormalizeLevels();
+	NntpConnection* LockedGetConnection(int level, NewsServer* wantServer, RawServerList* ignoreServers);
 };
 
-extern ServerPool* g_pServerPool;
+extern ServerPool* g_ServerPool;
 
 #endif

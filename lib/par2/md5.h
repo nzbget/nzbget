@@ -27,6 +27,9 @@
 #define PACKED __attribute__ ((packed))
 #endif
 
+namespace Par2
+{
+
 // This file defines the MD5Hash and MD5Context objects which are used
 // to compute and manipulate the MD5 Hash values for a block of data.
 
@@ -144,6 +147,8 @@ inline bool MD5Hash::operator<=(const MD5Hash &other) const
 {
   return !other.operator<(*this);
 }
+
+} // end namespace Par2
 
 #ifdef WIN32
 #pragma pack(pop)

@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,32 +15,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#endif
 
 #include "nzbget.h"
 #include "RemoteServer.h"
@@ -48,40 +25,25 @@
 #include "WebServer.h"
 #include "Log.h"
 #include "Options.h"
-#include "Util.h"
+#include "FileSystem.h"
 
 //*****************************************************************
 // RemoteServer
-
-RemoteServer::RemoteServer(bool bTLS)
-{
-	debug("Creating RemoteServer");
-
-	m_bTLS = bTLS;
-	m_pConnection = NULL;
-}
-
-RemoteServer::~RemoteServer()
-{
-	debug("Destroying RemoteServer");
-
-	delete m_pConnection;
-}
 
 void RemoteServer::Run()
 {
 	debug("Entering RemoteServer-loop");
 
 #ifndef DISABLE_TLS
-	if (m_bTLS)
+	if (m_tls)
 	{
-		if (strlen(g_pOptions->GetSecureCert()) == 0 || !Util::FileExists(g_pOptions->GetSecureCert()))
+		if (strlen(g_Options->GetSecureCert()) == 0 || !FileSystem::FileExists(g_Options->GetSecureCert()))
 		{
 			error("Could not initialize TLS, secure certificate is not configured or the cert-file was not found. Check option <SecureCert>");
 			return;
 		}
 
-		if (strlen(g_pOptions->GetSecureKey()) == 0 || !Util::FileExists(g_pOptions->GetSecureKey()))
+		if (strlen(g_Options->GetSecureKey()) == 0 || !FileSystem::FileExists(g_Options->GetSecureKey()))
 		{
 			error("Could not initialize TLS, secure key is not configured or the key-file was not found. Check option <SecureKey>");
 			return;
@@ -91,49 +53,48 @@ void RemoteServer::Run()
 
 	while (!IsStopped())
 	{
-		bool bBind = true;
+		bool bind = true;
 
-		if (!m_pConnection)
+		if (!m_connection)
 		{
-			m_pConnection = new Connection(g_pOptions->GetControlIP(), 
-				m_bTLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(),
-				m_bTLS);
-			m_pConnection->SetTimeout(g_pOptions->GetUrlTimeout());
-			m_pConnection->SetSuppressErrors(false);
-			bBind = m_pConnection->Bind();
+			m_connection = std::make_unique<Connection>(g_Options->GetControlIp(),
+				m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(),
+				m_tls);
+			m_connection->SetTimeout(g_Options->GetUrlTimeout());
+			m_connection->SetSuppressErrors(false);
+			bind = m_connection->Bind();
 		}
 
 		// Accept connections and store the new Connection
-		Connection* pAcceptedConnection = NULL;
-		if (bBind)
+		std::unique_ptr<Connection> acceptedConnection;
+		if (bind)
 		{
-			pAcceptedConnection = m_pConnection->Accept();
+			acceptedConnection = m_connection->Accept();
 		}
-		if (!bBind || pAcceptedConnection == NULL)
+		if (!bind || !acceptedConnection)
 		{
 			// Remote server could not bind or accept connection, waiting 1/2 sec and try again
 			if (IsStopped())
 			{
-				break; 
+				break;
 			}
+			m_connection.reset();
 			usleep(500 * 1000);
-			delete m_pConnection;
-			m_pConnection = NULL;
 			continue;
 		}
 
 		RequestProcessor* commandThread = new RequestProcessor();
 		commandThread->SetAutoDestroy(true);
-		commandThread->SetConnection(pAcceptedConnection);
+		commandThread->SetConnection(std::move(acceptedConnection));
 #ifndef DISABLE_TLS
-		commandThread->SetTLS(m_bTLS);
+		commandThread->SetTls(m_tls);
 #endif
 		commandThread->Start();
 	}
 
-	if (m_pConnection)
+	if (m_connection)
 	{
-		m_pConnection->Disconnect();
+		m_connection->Disconnect();
 	}
 
 	debug("Exiting RemoteServer-loop");
@@ -142,12 +103,12 @@ void RemoteServer::Run()
 void RemoteServer::Stop()
 {
 	Thread::Stop();
-	if (m_pConnection)
+	if (m_connection)
 	{
-		m_pConnection->SetSuppressErrors(true);
-		m_pConnection->Cancel();
+		m_connection->SetSuppressErrors(true);
+		m_connection->Cancel();
 #ifdef WIN32
-		m_pConnection->Disconnect();
+		m_connection->Disconnect();
 #endif
 	}
 }
@@ -157,18 +118,17 @@ void RemoteServer::Stop()
 
 RequestProcessor::~RequestProcessor()
 {
-	m_pConnection->Disconnect();
-	delete m_pConnection;
+	m_connection->Disconnect();
 }
 
 void RequestProcessor::Run()
 {
-	bool bOK = false;
+	bool ok = false;
 
-	m_pConnection->SetSuppressErrors(true);
+	m_connection->SetSuppressErrors(true);
 
 #ifndef DISABLE_TLS
-	if (m_bTLS && !m_pConnection->StartTLS(false, g_pOptions->GetSecureCert(), g_pOptions->GetSecureKey()))
+	if (m_tls && !m_connection->StartTls(false, g_Options->GetSecureCert(), g_Options->GetSecureKey()))
 	{
 		debug("Could not establish secure connection to web-client: Start TLS failed");
 		return;
@@ -176,63 +136,63 @@ void RequestProcessor::Run()
 #endif
 
 	// Read the first 4 bytes to determine request type
-	int iSignature = 0;
-	if (!m_pConnection->Recv((char*)&iSignature, 4))
+	int signature = 0;
+	if (!m_connection->Recv((char*)&signature, 4))
 	{
 		debug("Could not read request signature");
 		return;
 	}
 
-	if ((int)ntohl(iSignature) == (int)NZBMESSAGE_SIGNATURE)
+	if ((int)ntohl(signature) == (int)NZBMESSAGE_SIGNATURE)
 	{
 		// binary request received
-		bOK = true;
+		ok = true;
 		BinRpcProcessor processor;
-		processor.SetConnection(m_pConnection);
+		processor.SetConnection(m_connection.get());
 		processor.Execute();
 	}
-	else if (!strncmp((char*)&iSignature, "POST", 4) || 
-		!strncmp((char*)&iSignature, "GET ", 4) ||
-		!strncmp((char*)&iSignature, "OPTI", 4))
+	else if (!strncmp((char*)&signature, "POST", 4) ||
+		!strncmp((char*)&signature, "GET ", 4) ||
+		!strncmp((char*)&signature, "OPTI", 4))
 	{
 		// HTTP request received
-		char szBuffer[1024];
-		if (m_pConnection->ReadLine(szBuffer, sizeof(szBuffer), NULL))
+		char buffer[1024];
+		if (m_connection->ReadLine(buffer, sizeof(buffer), nullptr))
 		{
-			WebProcessor::EHttpMethod eHttpMethod = WebProcessor::hmGet;
-			char* szUrl = szBuffer;
-			if (!strncmp((char*)&iSignature, "POST", 4))
+			WebProcessor::EHttpMethod httpMethod = WebProcessor::hmGet;
+			char* url = buffer;
+			if (!strncmp((char*)&signature, "POST", 4))
 			{
-				eHttpMethod = WebProcessor::hmPost;
-				szUrl++;
+				httpMethod = WebProcessor::hmPost;
+				url++;
 			}
-			if (!strncmp((char*)&iSignature, "OPTI", 4) && strlen(szUrl) > 4)
+			if (!strncmp((char*)&signature, "OPTI", 4) && strlen(url) > 4)
 			{
-				eHttpMethod = WebProcessor::hmOptions;
-				szUrl += 4;
+				httpMethod = WebProcessor::hmOptions;
+				url += 4;
 			}
-			if (char* p = strchr(szUrl, ' '))
+			if (char* p = strchr(url, ' '))
 			{
 				*p = '\0';
 			}
 
-			debug("url: %s", szUrl);
+			debug("url: %s", url);
 
 			WebProcessor processor;
-			processor.SetConnection(m_pConnection);
-			processor.SetUrl(szUrl);
-			processor.SetHttpMethod(eHttpMethod);
+			processor.SetConnection(m_connection.get());
+			processor.SetUrl(url);
+			processor.SetHttpMethod(httpMethod);
 			processor.Execute();
 
-			m_pConnection->SetGracefull(true);
-			m_pConnection->Disconnect();
+			m_connection->SetGracefull(true);
+			m_connection->Disconnect();
 
-			bOK = true;
+			ok = true;
 		}
 	}
 
-	if (!bOK)
+	if (!ok)
 	{
-		warn("Non-nzbget request received on port %i from %s", m_bTLS ? g_pOptions->GetSecurePort() : g_pOptions->GetControlPort(), m_pConnection->GetRemoteAddr());
+		warn("Non-nzbget request received on port %i from %s", m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(), m_connection->GetRemoteAddr());
 	}
 }

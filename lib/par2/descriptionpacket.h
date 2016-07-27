@@ -20,6 +20,9 @@
 #ifndef __DESCRIPTIONPACKET_H__
 #define __DESCRIPTIONPACKET_H__
 
+namespace Par2
+{
+
 // The description packet records details about a file (including its name,
 // size, and the Hash of both the whole file and the first 16k of the file).
 
@@ -55,6 +58,8 @@ public:
   // Get the Hash values from the packet
   const MD5Hash& HashFull(void) const;
   const MD5Hash& Hash16k(void) const;
+protected:
+	string filename;
 };
 
 // Get the file id from the packet
@@ -80,10 +85,7 @@ inline u64 DescriptionPacket::FileSize(void) const
 // the packet.
 inline string DescriptionPacket::FileName(void) const
 {
-  assert(packetdata != 0);
-
-//  return (char*)((const FILEDESCRIPTIONPACKET*)packetdata)->name();
-  return (char*)((const FILEDESCRIPTIONPACKET*)packetdata)->name;
+  return filename.c_str();
 }
 
 // Get the full file hash value from the packet
@@ -101,5 +103,7 @@ inline const MD5Hash& DescriptionPacket::Hash16k(void) const
 
   return ((const FILEDESCRIPTIONPACKET*)packetdata)->hash16k;
 }
+
+} // end namespace Par2
 
 #endif // __DESCRIPTIONPACKET_H__

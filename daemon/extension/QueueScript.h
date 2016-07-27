@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,19 +14,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef QUEUESCRIPT_H
 #define QUEUESCRIPT_H
-
-#include <list>
 
 #include "DownloadInfo.h"
 #include "ScriptConfig.h"
@@ -36,49 +29,48 @@ class QueueScriptCoordinator
 public:
 	enum EEvent
 	{
-		qeFileDownloaded,	// lowest priority
+		qeFileDownloaded, // lowest priority
 		qeUrlCompleted,
+		qeNzbMarked,
 		qeNzbAdded,
 		qeNzbDownloaded,
-		qeNzbDeleted		// highest priority
+		qeNzbDeleted // highest priority
 	};
+
+	void Stop() { m_stopped = true; }
+	void InitOptions();
+	void EnqueueScript(NzbInfo* nzbInfo, EEvent event);
+	void CheckQueue();
+	bool HasJob(int nzbId, bool* active);
+	int GetQueueSize();
+	static NzbInfo* FindNzbInfo(DownloadQueue* downloadQueue, int nzbId);
 
 private:
 	class QueueItem
 	{
-	private:
-		int					m_iNZBID;
-		ScriptConfig::Script*	m_pScript;
-		EEvent				m_eEvent;
 	public:
-							QueueItem(int iNZBID, ScriptConfig::Script* pScript, EEvent eEvent);
-		int					GetNZBID() { return m_iNZBID; }
-		ScriptConfig::Script*	GetScript() { return m_pScript; }
-		EEvent				GetEvent() { return m_eEvent; }
+		QueueItem(int nzbId, ScriptConfig::Script* script, EEvent event) :
+			m_nzbId(nzbId), m_script(script), m_event(event) {}
+		int GetNzbId() { return m_nzbId; }
+		ScriptConfig::Script* GetScript() { return m_script; }
+		EEvent GetEvent() { return m_event; }
+	private:
+		int m_nzbId;
+		ScriptConfig::Script* m_script;
+		EEvent m_event;
 	};
 
-	typedef std::list<QueueItem*> Queue;
-	
-	Queue				m_Queue;
-	Mutex				m_mutexQueue;
-	QueueItem*			m_pCurItem;
-	bool				m_bHasQueueScripts;
-	bool				m_bStopped;
+	typedef std::deque<std::unique_ptr<QueueItem>> Queue;
 
-	void				StartScript(NZBInfo* pNZBInfo, QueueItem* pQueueItem);
-	NZBInfo*			FindNZBInfo(DownloadQueue* pDownloadQueue, int iNZBID);
+	Queue m_queue;
+	Mutex m_queueMutex;
+	std::unique_ptr<QueueItem> m_curItem;
+	bool m_hasQueueScripts = false;
+	bool m_stopped = false;
 
-public:
-						QueueScriptCoordinator();
-						~QueueScriptCoordinator();
-	void				Stop() { m_bStopped = true; }
-	void				InitOptions();
-	void				EnqueueScript(NZBInfo* pNZBInfo, EEvent eEvent);
-	void				CheckQueue();
-	bool				HasJob(int iNZBID, bool* pActive);
-	int					GetQueueSize();
+	bool UsableScript(ScriptConfig::Script& script, NzbInfo* nzbInfo, EEvent event);
 };
 
-extern QueueScriptCoordinator* g_pQueueScriptCoordinator;
+extern QueueScriptCoordinator* g_QueueScriptCoordinator;
 
 #endif

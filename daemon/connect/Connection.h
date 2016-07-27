@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,17 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef CONNECTION_H
 #define CONNECTION_H
+
+#include "NString.h"
 
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
@@ -33,7 +30,7 @@
 #endif
 #endif
 #ifndef DISABLE_TLS
-#include "TLS.h"
+#include "TlsSocket.h"
 #endif
 
 class Connection
@@ -47,102 +44,105 @@ public:
 		csCancelled
 	};
 
+	Connection(const char* host, int port, bool tls);
+	Connection(SOCKET socket, bool tls);
+	virtual ~Connection();
+	static void Init();
+	virtual bool Connect();
+	virtual bool Disconnect();
+	bool Bind();
+	bool Send(const char* buffer, int size);
+	bool Recv(char* buffer, int size);
+	int TryRecv(char* buffer, int size);
+	char* ReadLine(char* buffer, int size, int* bytesRead);
+	void ReadBuffer(char** buffer, int *bufLen);
+	int WriteLine(const char* buffer);
+	std::unique_ptr<Connection> Accept();
+	void Cancel();
+	const char* GetHost() { return m_host; }
+	int GetPort() { return m_port; }
+	bool GetTls() { return m_tls; }
+	const char* GetCipher() { return m_cipher; }
+	void SetCipher(const char* cipher) { m_cipher = cipher; }
+	void SetTimeout(int timeout) { m_timeout = timeout; }
+	EStatus GetStatus() { return m_status; }
+	void SetSuppressErrors(bool suppressErrors);
+	bool GetSuppressErrors() { return m_suppressErrors; }
+	const char* GetRemoteAddr();
+	bool GetGracefull() { return m_gracefull; }
+	void SetGracefull(bool gracefull) { m_gracefull = gracefull; }
+#ifndef DISABLE_TLS
+	bool StartTls(bool isClient, const char* certFile, const char* keyFile);
+#endif
+	int FetchTotalBytesRead();
+
 protected:
-	char*				m_szHost;
-	int					m_iPort;
-	SOCKET				m_iSocket;
-	bool				m_bTLS;
-	char*				m_szCipher;
-	char*				m_szReadBuf;
-	int					m_iBufAvail;
-	char*				m_szBufPtr;
-	EStatus				m_eStatus;
-	int					m_iTimeout;
-	bool				m_bSuppressErrors;
-	char				m_szRemoteAddr[20];
-	int					m_iTotalBytesRead;
-	bool				m_bBroken;
-	bool				m_bGracefull;
+	CString m_host;
+	int m_port;
+	bool m_tls;
+	SOCKET m_socket = INVALID_SOCKET;
+	CString m_cipher;
+	CharBuffer m_readBuf;
+	int m_bufAvail = 0;
+	char* m_bufPtr = nullptr;
+	EStatus m_status = csDisconnected;
+	int m_timeout = 60;
+	bool m_suppressErrors = true;
+	BString<100> m_remoteAddr;
+	int m_totalBytesRead = 0;
+	bool m_broken = false;
+	bool m_gracefull = false;
 
 	struct SockAddr
 	{
-		int				ai_family;
-		int				ai_socktype;
-		int				ai_protocol;
-		bool			operator==(const SockAddr& rhs) const
-							{ return memcmp(this, &rhs, sizeof(SockAddr)) == 0; }
+		int ai_family;
+		int ai_socktype;
+		int ai_protocol;
+		bool operator==(const SockAddr& rhs) const
+			{ return memcmp(this, &rhs, sizeof(SockAddr)) == 0; }
 	};
 
 #ifndef DISABLE_TLS
-	class ConTLSSocket: public TLSSocket
+	class ConTlsSocket: public TlsSocket
 	{
-	private:
-		Connection*		m_pOwner;
-	protected:
-		virtual void	PrintError(const char* szErrMsg) { m_pOwner->PrintError(szErrMsg); }
 	public:
-						ConTLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile,
-							const char* szKeyFile, const char* szCipher, Connection* pOwner):
-							TLSSocket(iSocket, bIsClient, szCertFile, szKeyFile, szCipher), m_pOwner(pOwner) {}
+		ConTlsSocket(SOCKET socket, bool isClient, const char* host,
+			const char* certFile, const char* keyFile, const char* cipher, Connection* owner) :
+			TlsSocket(socket, isClient, host, certFile, keyFile, cipher), m_owner(owner) {}
+	protected:
+		virtual void PrintError(const char* errMsg) { m_owner->PrintError(errMsg); }
+	private:
+		Connection* m_owner;
 	};
 
-	ConTLSSocket*		m_pTLSSocket;
-	bool				m_bTLSError;
+	std::unique_ptr<ConTlsSocket> m_tlsSocket;
+	bool m_tlsError = false;
 #endif
 #ifndef HAVE_GETADDRINFO
 #ifndef HAVE_GETHOSTBYNAME_R
-	static Mutex*		m_pMutexGetHostByName;
+	static std::unique_ptr<Mutex> m_getHostByNameMutex;
 #endif
 #endif
 
-						Connection(SOCKET iSocket, bool bTLS);
-	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int herrno);
-	virtual void		PrintError(const char* szErrMsg);
-	bool				DoConnect();
-	bool				DoDisconnect();
-	bool				InitSocketOpts();
-	bool				ConnectWithTimeout(void* address, int address_len);
+	void ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno = 0,
+		const char* herrMsg = nullptr);
+	virtual void PrintError(const char* errMsg);
+	bool DoConnect();
+	bool DoDisconnect();
+	bool InitSocketOpts();
+	bool ConnectWithTimeout(void* address, int address_len);
 #ifndef HAVE_GETADDRINFO
-	unsigned int		ResolveHostAddr(const char* szHost);
+	in_addr_t ResolveHostAddr(const char* host);
 #endif
 #ifndef DISABLE_TLS
-	int					recv(SOCKET s, char* buf, int len, int flags);
-	int					send(SOCKET s, const char* buf, int len, int flags);
-	void				CloseTLS();
+	int recv(SOCKET s, char* buf, int len, int flags);
+	int send(SOCKET s, const char* buf, int len, int flags);
+	void CloseTls();
 #endif
 
-public:
-						Connection(const char* szHost, int iPort, bool bTLS);
-	virtual 			~Connection();
-	static void			Init();
-	static void			Final();
-	virtual bool 		Connect();
-	virtual bool		Disconnect();
-	bool				Bind();
-	bool				Send(const char* pBuffer, int iSize);
-	bool				Recv(char* pBuffer, int iSize);
-	int					TryRecv(char* pBuffer, int iSize);
-	char*				ReadLine(char* pBuffer, int iSize, int* pBytesRead);
-	void				ReadBuffer(char** pBuffer, int *iBufLen);
-	int					WriteLine(const char* pBuffer);
-	Connection*			Accept();
-	void				Cancel();
-	const char*			GetHost() { return m_szHost; }
-	int					GetPort() { return m_iPort; }
-	bool				GetTLS() { return m_bTLS; }
-	const char*			GetCipher() { return m_szCipher; }
-	void				SetCipher(const char* szCipher);
-	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
-	EStatus				GetStatus() { return m_eStatus; }
-	void				SetSuppressErrors(bool bSuppressErrors);
-	bool				GetSuppressErrors() { return m_bSuppressErrors; }
-	const char*			GetRemoteAddr();
-	bool				GetGracefull() { return m_bGracefull; }
-	void				SetGracefull(bool bGracefull) { m_bGracefull = bGracefull; }
-#ifndef DISABLE_TLS
-	bool				StartTLS(bool bIsClient, const char* szCertFile, const char* szKeyFile);
-#endif
-	int					FetchTotalBytesRead();
+private:
+	static void Final();
+	friend class ConnectionFinalizer;
 };
 
 #endif

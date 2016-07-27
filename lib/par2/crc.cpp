@@ -17,6 +17,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "par2cmdline.h"
 
 #ifdef _MSC_VER
@@ -26,6 +27,9 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 #endif
+
+namespace Par2
+{
 
 // The one and only CCITT CRC32 lookup table
 crc32table ccitttable(0xEDB88320L);
@@ -76,3 +80,5 @@ u32 ComputeWindowMask(u64 window)
 
   return result;
 }
+
+} // end namespace Par2

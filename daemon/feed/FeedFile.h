@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,57 +14,48 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef FEEDFILE_H
 #define FEEDFILE_H
 
-#include <vector>
-
+#include "NString.h"
 #include "FeedInfo.h"
 
 class FeedFile
 {
-private:
-	FeedItemInfos*		m_pFeedItemInfos;
-	char*				m_szFileName;
-
-						FeedFile(const char* szFileName);
-	void				AddItem(FeedItemInfo* pFeedItemInfo);
-	void				ParseSubject(FeedItemInfo* pFeedItemInfo);
-#ifdef WIN32
-    bool 				ParseFeed(IUnknown* nzb);
-	static void			EncodeURL(const char* szFilename, char* szURL);
-#else
-	FeedItemInfo*		m_pFeedItemInfo;
-	char*				m_szTagContent;
-	int					m_iTagContentLen;
-	bool				m_bIgnoreNextError;
-
-	static void			SAX_StartElement(FeedFile* pFile, const char *name, const char **atts);
-	static void			SAX_EndElement(FeedFile* pFile, const char *name);
-	static void			SAX_characters(FeedFile* pFile, const char * xmlstr, int len);
-	static void*		SAX_getEntity(FeedFile* pFile, const char * name);
-	static void			SAX_error(FeedFile* pFile, const char *msg, ...);
-	void				Parse_StartElement(const char *name, const char **atts);
-	void				Parse_EndElement(const char *name);
-	void				Parse_Content(const char *buf, int len);
-	void				ResetTagContent();
-#endif
-
 public:
-	virtual 			~FeedFile();
-	static FeedFile*	Create(const char* szFileName);
-	FeedItemInfos*		GetFeedItemInfos() { return m_pFeedItemInfos; }
+	FeedFile(const char* fileName);
+	bool Parse();
+	std::unique_ptr<FeedItemList> DetachFeedItems() { return std::move(m_feedItems); }
 
-	void				LogDebugInfo();
+	void LogDebugInfo();
+
+private:
+	std::unique_ptr<FeedItemList> m_feedItems;
+	CString m_fileName;
+
+	void ParseSubject(FeedItemInfo& feedItemInfo);
+#ifdef WIN32
+	bool ParseFeed(IUnknown* nzb);
+	static void EncodeUrl(const char* filename, char* url, int bufLen);
+#else
+	FeedItemInfo* m_feedItemInfo;
+	StringBuilder m_tagContent;
+	bool m_ignoreNextError;
+
+	static void SAX_StartElement(FeedFile* file, const char *name, const char **atts);
+	static void SAX_EndElement(FeedFile* file, const char *name);
+	static void SAX_characters(FeedFile* file, const char *  xmlstr, int len);
+	static void* SAX_getEntity(FeedFile* file, const char *  name);
+	static void SAX_error(FeedFile* file, const char *msg, ...);
+	void Parse_StartElement(const char *name, const char **atts);
+	void Parse_EndElement(const char *name);
+	void Parse_Content(const char *buf, int len);
+	void ResetTagContent();
+#endif
 };
 
 #endif

@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,24 +14,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision: 0 $
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef FEEDINFO_H
 #define FEEDINFO_H
 
-#include <deque>
-#include <time.h>
-
+#include "NString.h"
 #include "Util.h"
 #include "DownloadInfo.h"
-
 
 class FeedInfo
 {
@@ -44,63 +36,61 @@ public:
 		fsFailed
 	};
 
-private:
-	int					m_iID;
-	char*				m_szName;
-	char*				m_szUrl;
-	int					m_iInterval;
-	char*				m_szFilter;
-	unsigned int		m_iFilterHash;
-	bool				m_bPauseNzb;
-	char*				m_szCategory;
-	char*				m_szFeedScript;
-	int					m_iPriority;
-	time_t				m_tLastUpdate;
-	bool				m_bPreview;
-	EStatus				m_eStatus;
-	char*				m_szOutputFilename;
-	bool				m_bFetch;
-	bool				m_bForce;
-	bool				m_bBacklog;
+	FeedInfo(int id, const char* name, const char* url, bool backlog, int interval,
+		const char* filter, bool pauseNzb, const char* category, int priority,
+		const char* feedScript);
+	int GetId() { return m_id; }
+	const char* GetName() { return m_name; }
+	const char* GetUrl() { return m_url; }
+	int GetInterval() { return m_interval; }
+	const char* GetFilter() { return m_filter; }
+	uint32 GetFilterHash() { return m_filterHash; }
+	bool GetPauseNzb() { return m_pauseNzb; }
+	const char* GetCategory() { return m_category; }
+	int GetPriority() { return m_priority; }
+	const char* GetFeedScript() { return m_feedScript; }
+	time_t GetLastUpdate() { return m_lastUpdate; }
+	void SetLastUpdate(time_t lastUpdate) { m_lastUpdate = lastUpdate; }
+	bool GetPreview() { return m_preview; }
+	void SetPreview(bool preview) { m_preview = preview; }
+	EStatus GetStatus() { return m_status; }
+	void SetStatus(EStatus Status) { m_status = Status; }
+	const char* GetOutputFilename() { return m_outputFilename; }
+	void SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
+	bool GetFetch() { return m_fetch; }
+	void SetFetch(bool fetch) { m_fetch = fetch; }
+	bool GetForce() { return m_force; }
+	void SetForce(bool force) { m_force = force; }
+	bool GetBacklog() { return m_backlog; }
+	void SetBacklog(bool backlog) { m_backlog = backlog; }
 
-public:
-						FeedInfo(int iID, const char* szName, const char* szUrl, bool bBacklog, int iInterval,
-							const char* szFilter, bool bPauseNzb, const char* szCategory, int iPriority,
-							const char* szFeedScript);
-						~FeedInfo();
-	int					GetID() { return m_iID; }
-	const char*			GetName() { return m_szName; }
-	const char*			GetUrl() { return m_szUrl; }
-	int					GetInterval() { return m_iInterval; }
-	const char*			GetFilter() { return m_szFilter; }
-	unsigned int		GetFilterHash() { return m_iFilterHash; }
-	bool				GetPauseNzb() { return m_bPauseNzb; }
-	const char*			GetCategory() { return m_szCategory; }
-	int					GetPriority() { return m_iPriority; }
-	const char*			GetFeedScript() { return m_szFeedScript; }
-	time_t				GetLastUpdate() { return m_tLastUpdate; }
-	void				SetLastUpdate(time_t tLastUpdate) { m_tLastUpdate = tLastUpdate; }
-	bool				GetPreview() { return m_bPreview; }
-	void				SetPreview(bool bPreview) { m_bPreview = bPreview; }
-	EStatus				GetStatus() { return m_eStatus; }
-	void				SetStatus(EStatus Status) { m_eStatus = Status; }
-	const char*			GetOutputFilename() { return m_szOutputFilename; }
-	void 				SetOutputFilename(const char* szOutputFilename);
-	bool				GetFetch() { return m_bFetch; }
-	void				SetFetch(bool bFetch) { m_bFetch = bFetch; }
-	bool				GetForce() { return m_bForce; }
-	void				SetForce(bool bForce) { m_bForce = bForce; }
-	bool				GetBacklog() { return m_bBacklog; }
-	void				SetBacklog(bool bBacklog) { m_bBacklog = bBacklog; }
+private:
+	int m_id;
+	CString m_name;
+	CString m_url;
+	int m_interval;
+	CString m_filter;
+	uint32 m_filterHash;
+	bool m_pauseNzb;
+	CString m_category;
+	CString m_feedScript;
+	int m_priority;
+	time_t m_lastUpdate = 0;
+	bool m_preview = false;
+	EStatus m_status = fsUndefined;
+	CString m_outputFilename;
+	bool m_fetch = false;
+	bool m_force = false;
+	bool m_backlog;
 };
 
-typedef std::deque<FeedInfo*> Feeds;
+typedef std::deque<std::unique_ptr<FeedInfo>> Feeds;
 
 class FeedFilterHelper
 {
 public:
-	virtual RegEx**		GetSeasonEpisodeRegEx() = 0;
-	virtual void		CalcDupeStatus(const char* szTitle, const char* szDupeKey, char* szStatusBuf, int iBufLen) = 0;
+	virtual std::unique_ptr<RegEx>& GetRegEx(int id) = 0;
+	virtual void CalcDupeStatus(const char* title, const char* dupeKey, char* statusBuf, int bufLen) = 0;
 };
 
 class FeedItemInfo
@@ -123,123 +113,113 @@ public:
 
 	class Attr
 	{
-	private:
-		char*			m_szName;
-		char*			m_szValue;
 	public:
-						Attr(const char* szName, const char* szValue);
-						~Attr();
-		const char*		GetName() { return m_szName; }
-		const char*		GetValue() { return m_szValue; }
+		Attr(const char* name, const char* value) :
+			m_name(name ? name : ""), m_value(value ? value : "") {}
+		const char* GetName() { return m_name; }
+		const char* GetValue() { return m_value; }
+	private:
+		CString m_name;
+		CString m_value;
 	};
-	
-	typedef std::deque<Attr*>  AttributesBase;
+
+	typedef std::deque<Attr> AttributesBase;
 
 	class Attributes: public AttributesBase
 	{
 	public:
-						~Attributes();
-		void			Add(const char* szName, const char* szValue);
-		Attr*			Find(const char* szName);
+		Attr* Find(const char* name);
 	};
 
+	FeedItemInfo() {}
+	FeedItemInfo(FeedItemInfo&&) = delete; // catch performance issues
+	void SetFeedFilterHelper(FeedFilterHelper* feedFilterHelper) { m_feedFilterHelper = feedFilterHelper; }
+	const char* GetTitle() { return m_title; }
+	void SetTitle(const char* title) { m_title = title; }
+	const char* GetFilename() { return m_filename; }
+	void SetFilename(const char* filename) { m_filename = filename; }
+	const char* GetUrl() { return m_url; }
+	void SetUrl(const char* url) { m_url = url; }
+	int64 GetSize() { return m_size; }
+	void SetSize(int64 size) { m_size = size; }
+	const char* GetCategory() { return m_category; }
+	void SetCategory(const char* category) { m_category = category; }
+	int GetImdbId() { return m_imdbId; }
+	void SetImdbId(int imdbId) { m_imdbId = imdbId; }
+	int GetRageId() { return m_rageId; }
+	void SetRageId(int rageId) { m_rageId = rageId; }
+	int GetTvdbId() { return m_tvdbId; }
+	void SetTvdbId(int tvdbId) { m_tvdbId = tvdbId; }
+	int GetTvmazeId() { return m_tvmazeId; }
+	void SetTvmazeId(int tvmazeId) { m_tvmazeId = tvmazeId; }
+	const char* GetDescription() { return m_description; }
+	void SetDescription(const char* description) { m_description = description ? description: ""; }
+	const char* GetSeason() { return m_season; }
+	void SetSeason(const char* season);
+	const char* GetEpisode() { return m_episode; }
+	void SetEpisode(const char* episode);
+	int GetSeasonNum();
+	int GetEpisodeNum();
+	const char* GetAddCategory() { return m_addCategory; }
+	void SetAddCategory(const char* addCategory) { m_addCategory = addCategory ? addCategory : ""; }
+	bool GetPauseNzb() { return m_pauseNzb; }
+	void SetPauseNzb(bool pauseNzb) { m_pauseNzb = pauseNzb; }
+	int GetPriority() { return m_priority; }
+	void SetPriority(int priority) { m_priority = priority; }
+	time_t GetTime() { return m_time; }
+	void SetTime(time_t time) { m_time = time; }
+	EStatus GetStatus() { return m_status; }
+	void SetStatus(EStatus status) { m_status = status; }
+	EMatchStatus GetMatchStatus() { return m_matchStatus; }
+	void SetMatchStatus(EMatchStatus matchStatus) { m_matchStatus = matchStatus; }
+	int GetMatchRule() { return m_matchRule; }
+	void SetMatchRule(int matchRule) { m_matchRule = matchRule; }
+	const char* GetDupeKey() { return m_dupeKey; }
+	void SetDupeKey(const char* dupeKey) { m_dupeKey = dupeKey ? dupeKey : ""; }
+	void AppendDupeKey(const char* extraDupeKey);
+	void BuildDupeKey(const char* rageId, const char* tvdbId, const char* tvmazeId, const char* series);
+	int GetDupeScore() { return m_dupeScore; }
+	void SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
+	EDupeMode GetDupeMode() { return m_dupeMode; }
+	void SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
+	const char* GetDupeStatus();
+	Attributes* GetAttributes() { return &m_attributes; }
+
 private:
-	char*				m_szTitle;
-	char*				m_szFilename;
-	char*				m_szUrl;
-	time_t				m_tTime;
-	long long			m_lSize;
-	char*				m_szCategory;
-	int					m_iImdbId;
-	int					m_iRageId;
-	char*				m_szDescription;
-	char*				m_szSeason;
-	char*				m_szEpisode;
-	int					m_iSeasonNum;
-	int					m_iEpisodeNum;
-	bool				m_bSeasonEpisodeParsed;
-	char*				m_szAddCategory;
-	bool				m_bPauseNzb;
-	int					m_iPriority;
-	EStatus				m_eStatus;
-	EMatchStatus		m_eMatchStatus;
-	int					m_iMatchRule;
-	char*				m_szDupeKey;
-	int					m_iDupeScore;
-	EDupeMode			m_eDupeMode;
-	char*				m_szDupeStatus;
-	FeedFilterHelper*	m_pFeedFilterHelper;
-	Attributes			m_Attributes;
+	CString m_title;
+	CString m_filename;
+	CString m_url;
+	time_t m_time = 0;
+	int64 m_size = 0;
+	CString m_category = "";
+	int m_imdbId = 0;
+	int m_rageId = 0;
+	int m_tvdbId = 0;
+	int m_tvmazeId = 0;
+	CString m_description = "";
+	CString m_season;
+	CString m_episode;
+	int m_seasonNum = 0;
+	int m_episodeNum = 0;
+	bool m_seasonEpisodeParsed = false;
+	CString m_addCategory = "";
+	bool m_pauseNzb = false;
+	int m_priority = 0;
+	EStatus m_status = isUnknown;
+	EMatchStatus m_matchStatus = msIgnored;
+	int m_matchRule = 0;
+	CString m_dupeKey;
+	int m_dupeScore = 0;
+	EDupeMode m_dupeMode = dmScore;
+	CString m_dupeStatus;
+	FeedFilterHelper* m_feedFilterHelper = nullptr;
+	Attributes m_attributes;
 
-	int					ParsePrefixedInt(const char *szValue);
-	void				ParseSeasonEpisode();
-
-public:
-						FeedItemInfo();
-						~FeedItemInfo();
-	void				SetFeedFilterHelper(FeedFilterHelper* pFeedFilterHelper) { m_pFeedFilterHelper = pFeedFilterHelper; }
-	const char*			GetTitle() { return m_szTitle; }
-	void				SetTitle(const char* szTitle);
-	const char*			GetFilename() { return m_szFilename; }
-	void				SetFilename(const char* szFilename);
-	const char*			GetUrl() { return m_szUrl; }
-	void				SetUrl(const char* szUrl);
-	long long			GetSize() { return m_lSize; }
-	void				SetSize(long long lSize) { m_lSize = lSize; }
-	const char*			GetCategory() { return m_szCategory; }
-	void				SetCategory(const char* szCategory);
-	int					GetImdbId() { return m_iImdbId; }
-	void				SetImdbId(int iImdbId) { m_iImdbId = iImdbId; }
-	int					GetRageId() { return m_iRageId; }
-	void				SetRageId(int iRageId) { m_iRageId = iRageId; }
-	const char*			GetDescription() { return m_szDescription; }
-	void				SetDescription(const char* szDescription);
-	const char*			GetSeason() { return m_szSeason; }
-	void				SetSeason(const char* szSeason);
-	const char*			GetEpisode() { return m_szEpisode; }
-	void				SetEpisode(const char* szEpisode);
-	int					GetSeasonNum();
-	int					GetEpisodeNum();
-	const char*			GetAddCategory() { return m_szAddCategory; }
-	void				SetAddCategory(const char* szAddCategory);
-	bool				GetPauseNzb() { return m_bPauseNzb; }
-	void				SetPauseNzb(bool bPauseNzb) { m_bPauseNzb = bPauseNzb; }
-	int					GetPriority() { return m_iPriority; }
-	void				SetPriority(int iPriority) { m_iPriority = iPriority; }
-	time_t				GetTime() { return m_tTime; }
-	void				SetTime(time_t tTime) { m_tTime = tTime; }
-	EStatus				GetStatus() { return m_eStatus; }
-	void				SetStatus(EStatus eStatus) { m_eStatus = eStatus; }
-	EMatchStatus		GetMatchStatus() { return m_eMatchStatus; }
-	void				SetMatchStatus(EMatchStatus eMatchStatus) { m_eMatchStatus = eMatchStatus; }
-	int					GetMatchRule() { return m_iMatchRule; }
-	void				SetMatchRule(int iMatchRule) { m_iMatchRule = iMatchRule; }
-	const char*			GetDupeKey() { return m_szDupeKey; }
-	void				SetDupeKey(const char* szDupeKey);
-	void				AppendDupeKey(const char* szExtraDupeKey);
-	void				BuildDupeKey(const char* szRageId, const char* szSeries);
-	int					GetDupeScore() { return m_iDupeScore; }
-	void				SetDupeScore(int iDupeScore) { m_iDupeScore = iDupeScore; }
-	EDupeMode			GetDupeMode() { return m_eDupeMode; }
-	void				SetDupeMode(EDupeMode eDupeMode) { m_eDupeMode = eDupeMode; }
-	const char*			GetDupeStatus();
-	Attributes*			GetAttributes() { return &m_Attributes; }
+	int ParsePrefixedInt(const char *value);
+	void ParseSeasonEpisode();
 };
 
-typedef std::deque<FeedItemInfo*>	FeedItemInfosBase;
-
-class FeedItemInfos : public FeedItemInfosBase
-{
-private:
-	int					m_iRefCount;
-
-public:
-						FeedItemInfos();
-						~FeedItemInfos();
-	void				Retain();
-	void				Release();
-	void				Add(FeedItemInfo* pFeedItemInfo);
-};
+typedef std::deque<FeedItemInfo> FeedItemList;
 
 class FeedHistoryInfo
 {
@@ -251,31 +231,27 @@ public:
 		hsFetched
 	};
 
-private:
-	char*				m_szUrl;
-	EStatus				m_eStatus;
-	time_t				m_tLastSeen;
+	FeedHistoryInfo(const char* url, EStatus status, time_t lastSeen) :
+		m_url(url), m_status(status), m_lastSeen(lastSeen) {}
+	const char* GetUrl() { return m_url; }
+	EStatus GetStatus() { return m_status; }
+	void SetStatus(EStatus Status) { m_status = Status; }
+	time_t GetLastSeen() { return m_lastSeen; }
+	void SetLastSeen(time_t lastSeen) { m_lastSeen = lastSeen; }
 
-public:
-						FeedHistoryInfo(const char* szUrl, EStatus eStatus, time_t tLastSeen);
-						~FeedHistoryInfo();
-	const char*			GetUrl() { return m_szUrl; }
-	EStatus				GetStatus() { return m_eStatus; }
-	void				SetStatus(EStatus Status) { m_eStatus = Status; }
-	time_t				GetLastSeen() { return m_tLastSeen; }
-	void				SetLastSeen(time_t tLastSeen) { m_tLastSeen = tLastSeen; }
+private:
+	CString m_url;
+	EStatus m_status;
+	time_t m_lastSeen;
 };
 
-typedef std::deque<FeedHistoryInfo*> FeedHistoryBase;
+typedef std::deque<FeedHistoryInfo> FeedHistoryBase;
 
 class FeedHistory : public FeedHistoryBase
 {
 public:
-						~FeedHistory();
-	void				Clear();
-	void				Add(const char* szUrl, FeedHistoryInfo::EStatus eStatus, time_t tLastSeen);
-	void				Remove(const char* szUrl);
-	FeedHistoryInfo*	Find(const char* szUrl);
+	void Remove(const char* url);
+	FeedHistoryInfo* Find(const char* url);
 };
 
 #endif

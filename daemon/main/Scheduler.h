@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,22 +14,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include <list>
-#include <vector>
-#include <time.h>
-
+#include "NString.h"
 #include "Thread.h"
 #include "Service.h"
 
@@ -54,59 +46,53 @@ public:
 
 	class Task
 	{
-	private:
-		int				m_iID;
-		int				m_iHours;
-		int				m_iMinutes;
-		int				m_iWeekDaysBits;
-		ECommand		m_eCommand;
-		char*			m_szParam;
-		time_t			m_tLastExecuted;
-
 	public:
-						Task(int iID, int iHours, int iMinutes, int iWeekDaysBits, ECommand eCommand, 
-							const char* szParam);
-						~Task();
-		friend class	Scheduler;
+		Task(int id, int hours, int minutes, int weekDaysBits, ECommand command,
+			const char* param) :
+			m_id(id), m_hours(hours), m_minutes(minutes),
+			m_weekDaysBits(weekDaysBits), m_command(command), m_param(param) {}
+		friend class Scheduler;
+
+	private:
+		int m_id;
+		int m_hours;
+		int m_minutes;
+		int m_weekDaysBits;
+		ECommand m_command;
+		CString m_param;
+		time_t m_lastExecuted = 0;
 	};
 
-private:
-
-	typedef std::list<Task*>		TaskList;
-	typedef std::vector<bool>		ServerStatusList;
-
-	TaskList			m_TaskList;
-	Mutex				m_mutexTaskList;
-	time_t				m_tLastCheck;
-	bool				m_bDownloadRateChanged;
-	bool				m_bExecuteProcess;
-	bool				m_bPauseDownloadChanged;
-	bool				m_bPausePostProcessChanged;
-	bool				m_bPauseScanChanged;
-	bool				m_bServerChanged;
-	ServerStatusList	m_ServerStatusList;
-	bool				m_bFirstChecked;
-
-	void				ExecuteTask(Task* pTask);
-	void				CheckTasks();
-	static bool			CompareTasks(Scheduler::Task* pTask1, Scheduler::Task* pTask2);
-	void				PrepareLog();
-	void				PrintLog();
-	void				EditServer(bool bActive, const char* szServerList);
-	void				FetchFeed(const char* szFeedList);
-	void				CheckScheduledResume();
-	void				FirstCheck();
+	void AddTask(std::unique_ptr<Task> task);
 
 protected:
-	virtual int			ServiceInterval() { return 1000; }
-	virtual void		ServiceWork();
+	virtual int ServiceInterval() { return 1000; }
+	virtual void ServiceWork();
 
-public:
-						Scheduler();
-						~Scheduler();
-	void				AddTask(Task* pTask);
+private:
+	typedef std::vector<std::unique_ptr<Task>> TaskList;
+	typedef std::vector<bool> ServerStatusList;
+
+	TaskList m_taskList;
+	Mutex m_taskListMutex;
+	time_t m_lastCheck = 0;
+	bool m_downloadRateChanged;
+	bool m_executeProcess;
+	bool m_pauseDownloadChanged;
+	bool m_pausePostProcessChanged;
+	bool m_pauseScanChanged;
+	bool m_serverChanged;
+	ServerStatusList m_serverStatusList;
+	bool m_firstChecked = false;
+
+	void ExecuteTask(Task* task);
+	void CheckTasks();
+	void PrepareLog();
+	void PrintLog();
+	void EditServer(bool active, const char* serverList);
+	void FetchFeed(const char* feedList);
+	void CheckScheduledResume();
+	void FirstCheck();
 };
-
-extern Scheduler* g_pScheduler;
 
 #endif

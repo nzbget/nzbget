@@ -17,7 +17,11 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "par2cmdline.h"
+
+namespace Par2
+{
 
 MAGIC      packet_magic                = {{'P', 'A', 'R', '2', '\0','P', 'K', 'T'}};
 PACKETTYPE fileverificationpacket_type = {{'P', 'A', 'R', ' ', '2', '.', '0', '\0', 'I', 'F', 'S', 'C', '\0','\0','\0','\0'}};
@@ -26,3 +30,4 @@ PACKETTYPE mainpacket_type             = {{'P', 'A', 'R', ' ', '2', '.', '0', '\
 PACKETTYPE recoveryblockpacket_type    = {{'P', 'A', 'R', ' ', '2', '.', '0', '\0', 'R', 'e', 'c', 'v', 'S', 'l', 'i', 'c' }};
 PACKETTYPE creatorpacket_type          = {{'P', 'A', 'R', ' ', '2', '.', '0', '\0', 'C', 'r', 'e', 'a', 't', 'o', 'r', '\0'}};
 
+} // end namespace Par2

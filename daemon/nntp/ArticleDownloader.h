@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,24 +15,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef ARTICLEDOWNLOADER_H
 #define ARTICLEDOWNLOADER_H
 
-#include <time.h>
-
+#include "NString.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
 #include "Thread.h"
-#include "NNTPConnection.h"
+#include "NntpConnection.h"
 #include "Decoder.h"
 #include "ArticleWriter.h"
 
@@ -55,63 +49,62 @@ public:
 
 	class ArticleWriterImpl : public ArticleWriter
 	{
-	private:
-		 ArticleDownloader*		m_pOwner;
-	protected:
-		virtual void	SetLastUpdateTimeNow() { m_pOwner->SetLastUpdateTimeNow(); } 
 	public:
-		void			SetOwner(ArticleDownloader* pOwner) { m_pOwner = pOwner; }
+		void SetOwner(ArticleDownloader* owner) { m_owner = owner; }
+	protected:
+		virtual void SetLastUpdateTimeNow() { m_owner->SetLastUpdateTimeNow(); }
+	private:
+		ArticleDownloader* m_owner;
 	};
-			
+
+	ArticleDownloader();
+	virtual ~ArticleDownloader();
+	void SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
+	FileInfo* GetFileInfo() { return m_fileInfo; }
+	void SetArticleInfo(ArticleInfo* articleInfo) { m_articleInfo = articleInfo; }
+	ArticleInfo* GetArticleInfo() { return m_articleInfo; }
+	EStatus GetStatus() { return m_status; }
+	ServerStatList* GetServerStats() { return &m_serverStats; }
+	virtual void Run();
+	virtual void Stop();
+	bool Terminate();
+	time_t GetLastUpdateTime() { return m_lastUpdateTime; }
+	void SetLastUpdateTimeNow();
+	const char* GetArticleFilename() { return m_articleFilename; }
+	void SetInfoName(const char* infoName);
+	const char* GetInfoName() { return m_infoName; }
+	const char* GetConnectionName() { return m_connectionName; }
+	void SetConnection(NntpConnection* connection) { m_connection = connection; }
+	void CompleteFileParts() { m_articleWriter.CompleteFileParts(); }
+	int GetDownloadedSize() { return m_downloadedSize; }
+
+	void LogDebugInfo();
+
 private:
-	FileInfo*			m_pFileInfo;
-	ArticleInfo*		m_pArticleInfo;
-	NNTPConnection* 	m_pConnection;
-	EStatus				m_eStatus;
-	Mutex			 	m_mutexConnection;
-	char*				m_szInfoName;
-	char				m_szConnectionName[250];
-	char*				m_szArticleFilename;
-	time_t				m_tLastUpdateTime;
-	Decoder::EFormat	m_eFormat;
-	YDecoder			m_YDecoder;
-	UDecoder			m_UDecoder;
-	ArticleWriterImpl	m_ArticleWriter;
-	ServerStatList		m_ServerStats;
-	bool				m_bWritingStarted;
-	int					m_iDownloadedSize;
+	FileInfo* m_fileInfo;
+	ArticleInfo* m_articleInfo;
+	NntpConnection* m_connection = nullptr;
+	EStatus m_status = adUndefined;
+	Mutex m_connectionMutex;
+	CString m_infoName;
+	CString m_connectionName;
+	CString m_articleFilename;
+	time_t m_lastUpdateTime;
+	Decoder::EFormat m_format = Decoder::efUnknown;
+	YDecoder m_yDecoder;
+	UDecoder m_uDecoder;
+	ArticleWriterImpl m_articleWriter;
+	ServerStatList m_serverStats;
+	bool m_writingStarted;
+	int m_downloadedSize = 0;
 
-	EStatus				Download();
-	EStatus				DecodeCheck();
-	void				FreeConnection(bool bKeepConnected);
-	EStatus				CheckResponse(const char* szResponse, const char* szComment);
-	void				SetStatus(EStatus eStatus) { m_eStatus = eStatus; }
-	bool				Write(char* szLine, int iLen);
-	void				AddServerData();
-
-public:
-						ArticleDownloader();
-	virtual				~ArticleDownloader();
-	void				SetFileInfo(FileInfo* pFileInfo) { m_pFileInfo = pFileInfo; }
-	FileInfo*			GetFileInfo() { return m_pFileInfo; }
-	void				SetArticleInfo(ArticleInfo* pArticleInfo) { m_pArticleInfo = pArticleInfo; }
-	ArticleInfo*		GetArticleInfo() { return m_pArticleInfo; }
-	EStatus				GetStatus() { return m_eStatus; }
-	ServerStatList*		GetServerStats() { return &m_ServerStats; }
-	virtual void		Run();
-	virtual void		Stop();
-	bool				Terminate();
-	time_t				GetLastUpdateTime() { return m_tLastUpdateTime; }
-	void				SetLastUpdateTimeNow() { m_tLastUpdateTime = ::time(NULL); }
-	const char* 		GetArticleFilename() { return m_szArticleFilename; }
-	void				SetInfoName(const char* szInfoName);
-	const char*			GetInfoName() { return m_szInfoName; }
-	const char*			GetConnectionName() { return m_szConnectionName; }
-	void				SetConnection(NNTPConnection* pConnection) { m_pConnection = pConnection; }
-	void				CompleteFileParts() { m_ArticleWriter.CompleteFileParts(); }
-	int					GetDownloadedSize() { return m_iDownloadedSize; }
-
-	void				LogDebugInfo();
+	EStatus Download();
+	EStatus DecodeCheck();
+	void FreeConnection(bool keepConnected);
+	EStatus CheckResponse(const char* response, const char* comment);
+	void SetStatus(EStatus status) { m_status = status; }
+	bool Write(char* line, int len);
+	void AddServerData();
 };
 
 #endif

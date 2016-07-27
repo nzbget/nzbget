@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2004  Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,38 +15,30 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef OBSERVER_H
 #define OBSERVER_H
 
-#include <list>
-
 class Observer;
 
 class Subject
 {
-private:
-	std::list<Observer*> 	m_Observers;
-
 public:
-					Subject();
-	void 			Attach(Observer* pObserver);
-	void 			Detach(Observer* pObserver);
-	void 			Notify(void* pAspect);
+	void Attach(Observer* observer);
+	void Detach(Observer* observer);
+	void Notify(void* aspect);
+
+private:
+	std::vector<Observer*> m_observers;
 };
 
 class Observer
 {
 protected:
-	virtual void	Update(Subject* pCaller, void* pAspect) = 0;
+	virtual void Update(Subject* caller, void* aspect) = 0;
 	friend class Subject;
 };
 

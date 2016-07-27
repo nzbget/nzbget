@@ -17,6 +17,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "par2cmdline.h"
 
 #ifdef _MSC_VER
@@ -26,6 +27,9 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 #endif
+
+namespace Par2
+{
 
 // Open the file associated with the data block if is not already open
 bool DataBlock::Open(void)
@@ -105,3 +109,5 @@ bool DataBlock::WriteData(u64         position, // Position within the block
 
   return true;
 }
+
+} // end namespace Par2

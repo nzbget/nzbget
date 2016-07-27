@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,21 +14,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef COMMANDLINEPARSER_H
 #define COMMANDLINEPARSER_H
 
-#include <vector>
-#include <list>
-#include <time.h>
+#include "NString.h"
 
 class CommandLineParser
 {
@@ -62,108 +55,100 @@ public:
 	};
 	enum EMatchMode
 	{
-		mmID = 1,
+		mmId = 1,
 		mmName,
 		mmRegEx
 	};
 
-	typedef std::vector<char*>  NameList;
+	typedef std::vector<int> IdList;
+	typedef std::vector<CString> NameList;
+
+	CommandLineParser(int argc, const char* argv[]);
+	void PrintUsage(const char* com);
+	bool GetErrors() { return m_errors; }
+	bool GetNoConfig() { return m_noConfig; }
+	const char* GetConfigFilename() { return m_configFilename; }
+	bool GetServerMode() { return m_serverMode; }
+	bool GetDaemonMode() { return m_daemonMode; }
+	bool GetRemoteClientMode() { return m_remoteClientMode; }
+	EClientOperation GetClientOperation() { return m_clientOperation; }
+	NameList* GetOptionList() { return &m_optionList; }
+	int GetEditQueueAction() { return m_editQueueAction; }
+	int GetEditQueueOffset() { return m_editQueueOffset; }
+	IdList* GetEditQueueIdList() { return &m_editQueueIdList; }
+	NameList* GetEditQueueNameList() { return &m_editQueueNameList; }
+	EMatchMode GetMatchMode() { return m_matchMode; }
+	const char* GetEditQueueText() { return m_editQueueText; }
+	const char* GetArgFilename() { return m_argFilename; }
+	const char* GetAddCategory() { return m_addCategory; }
+	bool GetAddPaused() { return m_addPaused; }
+	const char* GetLastArg() { return m_lastArg; }
+	int GetAddPriority() { return m_addPriority; }
+	const char* GetAddNzbFilename() { return m_addNzbFilename; }
+	bool GetAddTop() { return m_addTop; }
+	const char* GetAddDupeKey() { return m_addDupeKey; }
+	int GetAddDupeScore() { return m_addDupeScore; }
+	int GetAddDupeMode() { return m_addDupeMode; }
+	int GetSetRate() { return m_setRate; }
+	int GetLogLines() { return m_logLines; }
+	int GetWriteLogKind() { return m_writeLogKind; }
+	bool GetTestBacktrace() { return m_testBacktrace; }
+	bool GetWebGet() { return m_webGet; }
+	const char* GetWebGetFilename() { return m_webGetFilename; }
+	bool GetSigVerify() { return m_sigVerify; }
+	const char* GetPubKeyFilename() { return m_pubKeyFilename; }
+	const char* GetSigFilename() { return m_sigFilename; }
+	bool GetPrintOptions() { return m_printOptions; }
+	bool GetPrintVersion() { return m_printVersion; }
+	bool GetPrintUsage() { return m_printUsage; }
+	bool GetPauseDownload() const { return m_pauseDownload; }
 
 private:
-	bool				m_bNoConfig;
-	char*				m_szConfigFilename;
+	bool m_noConfig = false;
+	CString m_configFilename;
 
 	// Parsed command-line parameters
-	bool				m_bErrors;
-	bool				m_bPrintVersion;
-	bool				m_bPrintUsage;
-	bool				m_bServerMode;
-	bool				m_bDaemonMode;
-	bool				m_bRemoteClientMode;
-	EClientOperation	m_eClientOperation;
-	NameList			m_OptionList;
-	int					m_iEditQueueAction;
-	int					m_iEditQueueOffset;
-	int*				m_pEditQueueIDList;
-	int					m_iEditQueueIDCount;
-	NameList			m_EditQueueNameList;
-	EMatchMode			m_EMatchMode;
-	char*				m_szEditQueueText;
-	char*				m_szArgFilename;
-	char*				m_szAddCategory;
-	int					m_iAddPriority;
-	bool				m_bAddPaused;
-	char*				m_szAddNZBFilename;
-	char*				m_szLastArg;
-	bool				m_bPrintOptions;
-	bool				m_bAddTop;
-	char*				m_szAddDupeKey;
-	int					m_iAddDupeScore;
-	int					m_iAddDupeMode;
-	int					m_iSetRate;
-	int					m_iLogLines;
-	int					m_iWriteLogKind;
-	bool				m_bTestBacktrace;
-	bool				m_bWebGet;
-	char*				m_szWebGetFilename;
-	bool				m_bSigVerify;
-	char*				m_szPubKeyFilename;
-	char*				m_szSigFilename;
-	bool				m_bPauseDownload;
+	bool m_errors = false;
+	bool m_printVersion = false;
+	bool m_printUsage = false;
+	bool m_serverMode = false;
+	bool m_daemonMode = false;
+	bool m_remoteClientMode = false;
+	EClientOperation m_clientOperation;
+	NameList m_optionList;
+	int m_editQueueAction = 0;
+	int m_editQueueOffset = 0;
+	IdList m_editQueueIdList;
+	NameList m_editQueueNameList;
+	EMatchMode m_matchMode = mmId;
+	CString m_editQueueText;
+	CString m_argFilename;
+	CString m_addCategory;
+	int m_addPriority = 0;
+	bool m_addPaused = false;
+	CString m_addNzbFilename;
+	CString m_lastArg;
+	bool m_printOptions = false;
+	bool m_addTop = false;
+	CString m_addDupeKey;
+	int m_addDupeScore = 0;
+	int m_addDupeMode = 0;
+	int m_setRate = 0;
+	int m_logLines = 0;
+	int m_writeLogKind = 0;
+	bool m_testBacktrace = false;
+	bool m_webGet = false;
+	CString m_webGetFilename;
+	bool m_sigVerify = false;
+	CString m_pubKeyFilename;
+	CString m_sigFilename;
+	bool m_pauseDownload = false;
 
-	void				InitCommandLine(int argc, const char* argv[]);
-	void				InitFileArg(int argc, const char* argv[]);
-	void				ParseFileIDList(int argc, const char* argv[], int optind);
-	void				ParseFileNameList(int argc, const char* argv[], int optind);
-	bool				ParseTime(const char* szTime, int* pHours, int* pMinutes);
-	void				ReportError(const char* szErrMessage);
-
-public:
-						CommandLineParser(int argc, const char* argv[]);
-						~CommandLineParser();
-
-	void				PrintUsage(const char* com);
-
-	bool				GetErrors() { return m_bErrors; }
-	bool				GetNoConfig() { return m_bNoConfig; }
-	const char*			GetConfigFilename() { return m_szConfigFilename; }
-	bool				GetServerMode() { return m_bServerMode; }
-	bool				GetDaemonMode() { return m_bDaemonMode; }
-	bool				GetRemoteClientMode() { return m_bRemoteClientMode; }
-	EClientOperation	GetClientOperation() { return m_eClientOperation; }
-	NameList*			GetOptionList() { return &m_OptionList; }
-	int					GetEditQueueAction() { return m_iEditQueueAction; }
-	int					GetEditQueueOffset() { return m_iEditQueueOffset; }
-	int*				GetEditQueueIDList() { return m_pEditQueueIDList; }
-	int					GetEditQueueIDCount() { return m_iEditQueueIDCount; }
-	NameList*			GetEditQueueNameList() { return &m_EditQueueNameList; }
-	EMatchMode			GetMatchMode() { return m_EMatchMode; }
-	const char*			GetEditQueueText() { return m_szEditQueueText; }
-	const char*			GetArgFilename() { return m_szArgFilename; }
-	const char*			GetAddCategory() { return m_szAddCategory; }
-	bool				GetAddPaused() { return m_bAddPaused; }
-	const char*			GetLastArg() { return m_szLastArg; }
-	int					GetAddPriority() { return m_iAddPriority; }
-	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
-	bool				GetAddTop() { return m_bAddTop; }
-	const char*			GetAddDupeKey() { return m_szAddDupeKey; }
-	int					GetAddDupeScore() { return m_iAddDupeScore; }
-	int					GetAddDupeMode() { return m_iAddDupeMode; }
-	int					GetSetRate() { return m_iSetRate; }
-	int					GetLogLines() { return m_iLogLines; }
-	int					GetWriteLogKind() { return m_iWriteLogKind; }
-	bool				GetTestBacktrace() { return m_bTestBacktrace; }
-	bool				GetWebGet() { return m_bWebGet; }
-	const char*			GetWebGetFilename() { return m_szWebGetFilename; }
-	bool				GetSigVerify() { return m_bSigVerify; }
-	const char*			GetPubKeyFilename() { return m_szPubKeyFilename; }
-	const char*			GetSigFilename() { return m_szSigFilename; }
-	bool				GetPrintOptions() { return m_bPrintOptions; }
-	bool				GetPrintVersion() { return m_bPrintVersion; }
-	bool				GetPrintUsage() { return m_bPrintUsage; }
-	bool				GetPauseDownload() const { return m_bPauseDownload; }
+	void InitCommandLine(int argc, const char* argv[]);
+	void InitFileArg(int argc, const char* argv[]);
+	void ParseFileIdList(int argc, const char* argv[], int optind);
+	void ParseFileNameList(int argc, const char* argv[], int optind);
+	void ReportError(const char* errMessage);
 };
-
-extern CommandLineParser* g_pCommandLineParser;
 
 #endif

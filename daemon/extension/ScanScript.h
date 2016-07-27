@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -28,34 +23,34 @@
 
 #include "NzbScript.h"
 
-class ScanScriptController : public NZBScriptController
+class ScanScriptController : public NzbScriptController
 {
-private:
-	const char*			m_szNZBFilename;
-	const char*			m_szUrl;
-	const char*			m_szDirectory;
-	char**				m_pNZBName;
-	char**				m_pCategory;
-	int*				m_iPriority;
-	NZBParameterList*	m_pParameters;
-	bool*				m_bAddTop;
-	bool*				m_bAddPaused;
-	char**				m_pDupeKey;
-	int*				m_iDupeScore;
-	EDupeMode*			m_eDupeMode;
-	int					m_iPrefixLen;
-
-	void				PrepareParams(const char* szScriptName);
+public:
+	static void ExecuteScripts(const char* nzbFilename, const char* url,
+		const char* directory, CString* nzbName, CString* category, int* priority,
+		NzbParameterList* parameters, bool* addTop, bool* addPaused,
+		CString* dupeKey, int* dupeScore, EDupeMode* dupeMode);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
-public:
-	static void			ExecuteScripts(const char* szNZBFilename, const char* szUrl,
-							const char* szDirectory, char** pNZBName, char** pCategory, int* iPriority,
-							NZBParameterList* pParameters, bool* bAddTop, bool* bAddPaused,
-							char** pDupeKey, int* iDupeScore, EDupeMode* eDupeMode);
+private:
+	const char* m_nzbFilename;
+	const char* m_url;
+	const char* m_directory;
+	CString* m_nzbName;
+	CString* m_category;
+	int* m_priority;
+	NzbParameterList* m_parameters;
+	bool* m_addTop;
+	bool* m_addPaused;
+	CString* m_dupeKey;
+	int* m_dupeScore;
+	EDupeMode* m_dupeMode;
+	int m_prefixLen;
+
+	void PrepareParams(const char* scriptName);
 };
 
 #endif

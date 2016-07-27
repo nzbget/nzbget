@@ -20,6 +20,9 @@
 #ifndef __PAR2FILEFORMAT_H__
 #define __PAR2FILEFORMAT_H__
 
+namespace Par2
+{
+
 // This file defines the format of a PAR2 file.
 
 // PAR2 files consist of one or more "packets" that contain information
@@ -195,5 +198,6 @@ extern PACKETTYPE mainpacket_type;
 extern PACKETTYPE recoveryblockpacket_type;
 extern PACKETTYPE creatorpacket_type;
 
+} // end namespace Par2
 
 #endif //__PAR2FILEFORMAT_H__

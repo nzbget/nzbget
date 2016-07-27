@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,37 +14,32 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef SCHEDULERSCRIPT_H
 #define SCHEDULERSCRIPT_H
 
+#include "NString.h"
 #include "NzbScript.h"
 
-class SchedulerScriptController : public Thread, public NZBScriptController
+class SchedulerScriptController : public Thread, public NzbScriptController
 {
-private:
-	char*				m_szScript;
-	bool				m_bExternalProcess;
-	int					m_iTaskID;
-
-	void				PrepareParams(const char* szScriptName);
-	void				ExecuteExternalProcess();
+public:
+	virtual void Run();
+	static void StartScript(const char* param, bool externalProcess, int taskId);
 
 protected:
-	virtual void		ExecuteScript(ScriptConfig::Script* pScript);
+	virtual void ExecuteScript(ScriptConfig::Script* script);
 
-public:
-	virtual				~SchedulerScriptController();
-	virtual void		Run();
-	static void			StartScript(const char* szParam, bool bExternalProcess, int iTaskID);
+private:
+	CString m_script;
+	bool m_externalProcess;
+	int m_taskId;
+
+	void PrepareParams(const char* scriptName);
+	void ExecuteExternalProcess();
 };
 
 #endif

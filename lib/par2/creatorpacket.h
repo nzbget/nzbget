@@ -20,6 +20,9 @@
 #ifndef __CREATORPACKET_H__
 #define __CREATORPACKET_H__
 
+namespace Par2
+{
+
 // The creator packet records details as to which PAR2 client
 // created a particular recovery file.
 
@@ -40,5 +43,7 @@ public:
   // Load a creator packet from a specified file
   bool Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &header);
 };
+
+} // end namespace Par2
 
 #endif // __CREATORPACKET_H__

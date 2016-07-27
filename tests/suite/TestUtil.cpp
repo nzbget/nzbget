@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,39 +14,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <string>
-#include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
+#include "nzbget.h"
 
 #include "catch.h"
 
-#include "nzbget.h"
-#include "Util.h"
+#include "FileSystem.h"
 #include "TestUtil.h"
 
-bool TestUtil::m_bUsedWorkingDir = false;
+bool TestUtil::m_usedWorkingDir = false;
 std::string DataDir;
 
 class NullStreamBuf : public std::streambuf
@@ -59,21 +38,20 @@ std::streambuf* oldcoutbuf;
 
 void TestUtil::Init(const char* argv0)
 {
-	m_bUsedWorkingDir = false;
+	m_usedWorkingDir = false;
 
-	char szFilename[MAX_PATH + 1];
-	Util::GetExeFileName(argv0, szFilename, sizeof(szFilename));
-	Util::NormalizePathSeparators(szFilename);
-	char* end = strrchr(szFilename, PATH_SEPARATOR);
+	CString filename = FileSystem::GetExeFileName(argv0);
+	FileSystem::NormalizePathSeparators(filename);
+	char* end = strrchr(filename, PATH_SEPARATOR);
 	if (end) *end = '\0';
-	DataDir = szFilename;
+	DataDir = filename;
 	DataDir += "/testdata";
-	if (!Util::DirectoryExists(DataDir.c_str()))
+	if (!FileSystem::DirectoryExists(DataDir.c_str()))
 	{
-		DataDir = szFilename;
+		DataDir = filename;
 		DataDir += "/tests/testdata";
 	}
-	if (!Util::DirectoryExists(DataDir.c_str()))
+	if (!FileSystem::DirectoryExists(DataDir.c_str()))
 	{
 		DataDir = "";
 	}
@@ -81,7 +59,7 @@ void TestUtil::Init(const char* argv0)
 
 void TestUtil::Final()
 {
-	if (m_bUsedWorkingDir)
+	if (m_usedWorkingDir)
 	{
 		CleanupWorkingDir();
 	}
@@ -104,24 +82,24 @@ const std::string TestUtil::WorkingDir()
 
 void TestUtil::PrepareWorkingDir(const std::string templateDir)
 {
-	m_bUsedWorkingDir = true;
+	m_usedWorkingDir = true;
 
 	std::string workDir = WorkingDir();
 	std::string srcDir(TestDataDir() + "/" + templateDir);
 
-	char szErrStr[256];
+	CString errmsg;
 	int retries = 20;
 
-	Util::DeleteDirectoryWithContent(workDir.c_str(), szErrStr, sizeof(szErrStr));
-	while (Util::DirectoryExists(workDir.c_str()) && retries > 0)
+	FileSystem::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
+	while (FileSystem::DirectoryExists(workDir.c_str()) && retries > 0)
 	{
 		usleep(1000 * 100);
 		retries--;
-		Util::DeleteDirectoryWithContent(workDir.c_str(), szErrStr, sizeof(szErrStr));
+		FileSystem::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
 	}
-	REQUIRE_FALSE(Util::DirectoryExists(workDir.c_str()));
-	Util::CreateDirectory(workDir.c_str());
-	REQUIRE(Util::DirEmpty(workDir.c_str()));
+	REQUIRE_FALSE(FileSystem::DirectoryExists(workDir.c_str()));
+	FileSystem::CreateDirectory(workDir.c_str());
+	REQUIRE(FileSystem::DirEmpty(workDir.c_str()));
 
 	CopyAllFiles(workDir, srcDir);
 }
@@ -131,19 +109,16 @@ void TestUtil::CopyAllFiles(const std::string destDir, const std::string srcDir)
 	DirBrowser dir(srcDir.c_str());
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
-		{
-			std::string srcFile(srcDir + "/" + filename);
-			std::string dstFile(destDir + "/" + filename);
-			REQUIRE(Util::CopyFile(srcFile.c_str(), dstFile.c_str()));
-		}
+		std::string srcFile(srcDir + "/" + filename);
+		std::string dstFile(destDir + "/" + filename);
+		REQUIRE(FileSystem::CopyFile(srcFile.c_str(), dstFile.c_str()));
 	}
 }
 
 void TestUtil::CleanupWorkingDir()
 {
-	char szErrStr[256];
-	Util::DeleteDirectoryWithContent(WorkingDir().c_str(), szErrStr, sizeof(szErrStr));
+	CString errmsg;
+	FileSystem::DeleteDirectoryWithContent(WorkingDir().c_str(), errmsg);
 }
 
 void TestUtil::DisableCout()

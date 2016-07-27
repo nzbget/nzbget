@@ -1,7 +1,7 @@
 /*
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -284,6 +279,36 @@ var Util = (new function($)
 			}
 		}
 		return valueList;
+	}
+
+	this.saveToLocalFile = function(content, type, filename)
+	{
+		if (!window.Blob)
+		{
+			return false;
+		}
+		
+		var blob = new Blob([content], {type: type});
+
+		if (navigator.msSaveBlob)
+		{
+			navigator.msSaveBlob(blob, filename);
+		}
+		else
+		{
+			var URL = window.URL || window.webkitURL || window;
+			var object_url = URL.createObjectURL(blob);
+
+			var save_link = document.createElement('a');
+			save_link.href = object_url;
+			save_link.download = filename;
+
+			var event = document.createEvent('MouseEvents');
+			event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+			save_link.dispatchEvent(event);
+		}
+
+		return true;
 	}
 
 }(jQuery));

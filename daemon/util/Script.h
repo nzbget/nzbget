@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,98 +14,96 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
-#include <vector>
-
+#include "NString.h"
+#include "Container.h"
 #include "Thread.h"
 #include "Log.h"
 
 class EnvironmentStrings
 {
-private:
-	typedef std::vector<char*>		Strings;
-	
-	Strings				m_strings;
-
 public:
-						EnvironmentStrings();
-						~EnvironmentStrings();
-	void				Clear();
-	void				InitFromCurrentProcess();
-	void				Append(char* szString);
+	void Clear();
+	void InitFromCurrentProcess();
+	void Append(const char* envstr);
+	void Append(CString&& envstr);
 #ifdef WIN32
-	char*				GetStrings();
-#else	
-	char**				GetStrings();
+	std::unique_ptr<wchar_t[]> GetStrings();
+#else
+	std::vector<char*> GetStrings();
 #endif
+
+private:
+	typedef std::vector<CString> Strings;
+
+	Strings m_strings;
 };
 
 class ScriptController
 {
-private:
-	const char*			m_szScript;
-	const char*			m_szWorkingDir;
-	const char**		m_szArgs;
-	bool				m_bFreeArgs;
-	const char*			m_szStdArgs[2];
-	const char*			m_szInfoName;
-	const char*			m_szLogPrefix;
-	EnvironmentStrings	m_environmentStrings;
-	bool				m_bTerminated;
-	bool				m_bDetached;
-	FILE*				m_pReadpipe;
-#ifdef WIN32
-	HANDLE				m_hProcess;
-	char				m_szCmdLine[2048];
-#else
-	pid_t				m_hProcess;
-#endif
+public:
+	typedef std::vector<CString> ArgList;
 
-	typedef std::vector<ScriptController*>	RunningScripts;
-	static RunningScripts	m_RunningScripts;
-	static Mutex			m_mutexRunning;
+	ScriptController();
+	virtual ~ScriptController();
+	int Execute();
+	void Terminate();
+	void Resume();
+	void Detach();
+	static void TerminateAll();
+
+	const char* GetScript() { return !m_args.empty() ? *m_args[0] : nullptr; }
+	void SetWorkingDir(const char* workingDir) { m_workingDir = workingDir; }
+	void SetArgs(ArgList&& args) { m_args = std::move(args); }
+	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	const char* GetInfoName() { return m_infoName; }
+	void SetLogPrefix(const char* logPrefix) { m_logPrefix = logPrefix; }
+	void SetEnvVar(const char* name, const char* value);
+	void SetEnvVarSpecial(const char* prefix, const char* name, const char* value);
+	void SetIntEnvVar(const char* name, int value);
 
 protected:
-	void				ProcessOutput(char* szText);
-	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
-	void				PrintMessage(Message::EKind eKind, const char* szFormat, ...);
-	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-	bool				GetTerminated() { return m_bTerminated; }
-	void				ResetEnv();
-	void				PrepareEnvOptions(const char* szStripPrefix);
-	void				PrepareArgs();
-	void				UnregisterRunningScript();
+	void ProcessOutput(char* text);
+	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
+	void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+	bool GetTerminated() { return m_terminated; }
+	void ResetEnv();
+	void PrepareEnvOptions(const char* stripPrefix);
+	void PrepareArgs();
+	int StartProcess();
+	int WaitProcess();
+#ifdef WIN32
+	void BuildCommandLine(char* cmdLineBuf, int bufSize);
+#endif
+	void UnregisterRunningScript();
 
-public:
-						ScriptController();
-	virtual				~ScriptController();
-	int					Execute();
-	void				Terminate();
-	void				Resume();
-	void				Detach();
-	static void			TerminateAll();
+private:
+	ArgList m_args;
+	const char* m_workingDir = nullptr;
+	const char* m_infoName = nullptr;
+	const char* m_logPrefix = nullptr;
+	EnvironmentStrings m_environmentStrings;
+	bool m_terminated = false;
+	bool m_detached = false;
+	FILE* m_readpipe;
+#ifdef WIN32
+	HANDLE m_processId = 0;
+	char m_cmdLine[2048];
+#else
+	pid_t m_processId = 0;
+#endif
 
-	void				SetScript(const char* szScript) { m_szScript = szScript; }
-	const char*			GetScript() { return m_szScript; }
-	void				SetWorkingDir(const char* szWorkingDir) { m_szWorkingDir = szWorkingDir; }
-	void				SetArgs(const char** szArgs, bool bFreeArgs) { m_szArgs = szArgs; m_bFreeArgs = bFreeArgs; }
-	void				SetInfoName(const char* szInfoName) { m_szInfoName = szInfoName; }
-	const char*			GetInfoName() { return m_szInfoName; }
-	void				SetLogPrefix(const char* szLogPrefix) { m_szLogPrefix = szLogPrefix; }
-	void				SetEnvVar(const char* szName, const char* szValue);
-	void				SetEnvVarSpecial(const char* szPrefix, const char* szName, const char* szValue);
-	void				SetIntEnvVar(const char* szName, int iValue);
+	typedef std::vector<ScriptController*> RunningScripts;
+
+	static RunningScripts m_runningScripts;
+	static Mutex m_runningMutex;
 };
 
 #endif

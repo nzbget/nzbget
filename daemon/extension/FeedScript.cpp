@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,31 +14,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-#include <sys/stat.h>
-#include <stdio.h>
 
 #include "nzbget.h"
 #include "FeedScript.h"
@@ -46,50 +24,57 @@
 #include "Log.h"
 #include "Util.h"
 
+static const int FEED_SUCCESS = 93;
 
-void FeedScriptController::ExecuteScripts(const char* szFeedScript, const char* szFeedFile, int iFeedID)
+void FeedScriptController::ExecuteScripts(const char* feedScript, const char* feedFile, int feedId, bool* success)
 {
-	FeedScriptController* pScriptController = new FeedScriptController();
+	FeedScriptController scriptController;
+	scriptController.m_feedFile = feedFile;
+	scriptController.m_feedId = feedId;
 
-	pScriptController->m_szFeedFile = szFeedFile;
-	pScriptController->m_iFeedID = iFeedID;
+	scriptController.ExecuteScriptList(feedScript);
 
-	pScriptController->ExecuteScriptList(szFeedScript);
-
-	delete pScriptController;
+	if (success)
+	{
+		*success = scriptController.m_success;
+	}
 }
 
-void FeedScriptController::ExecuteScript(ScriptConfig::Script* pScript)
+void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 {
-	if (!pScript->GetFeedScript())
+	if (!script->GetFeedScript())
 	{
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing feed-script %s for Feed%i", pScript->GetName(), m_iFeedID);
+	PrintMessage(Message::mkInfo, "Executing feed-script %s for Feed%i", script->GetName(), m_feedId);
 
-	SetScript(pScript->GetLocation());
-	SetArgs(NULL, false);
+	SetArgs({script->GetLocation()});
 
-	char szInfoName[1024];
-	snprintf(szInfoName, 1024, "feed-script %s for Feed%i", pScript->GetName(), m_iFeedID);
-	szInfoName[1024-1] = '\0';
-	SetInfoName(szInfoName);
+	BString<1024> infoName("feed-script %s for Feed%i", script->GetName(), m_feedId);
+	SetInfoName(infoName);
 
-	SetLogPrefix(pScript->GetDisplayName());
-	PrepareParams(pScript->GetName());
+	SetLogPrefix(script->GetDisplayName());
+	PrepareParams(script->GetName());
 
-	Execute();
+	int exitCode = Execute();
 
-	SetLogPrefix(NULL);
+	if (exitCode != FEED_SUCCESS)
+	{
+		infoName[0] = 'F'; // uppercase
+		PrintMessage(Message::mkError, "%s failed", GetInfoName());
+		m_success = false;
+	}
+
+	SetLogPrefix(nullptr);
 }
 
-void FeedScriptController::PrepareParams(const char* szScriptName)
+void FeedScriptController::PrepareParams(const char* scriptName)
 {
 	ResetEnv();
 
-	SetEnvVar("NZBFP_FILENAME", m_szFeedFile);
-	SetIntEnvVar("NZBFP_FEEDID", m_iFeedID);
+	SetEnvVar("NZBFP_FILENAME", m_feedFile);
+	SetIntEnvVar("NZBFP_FEEDID", m_feedId);
 
-	PrepareEnvScript(NULL, szScriptName);
+	PrepareEnvScript(nullptr, scriptName);
 }

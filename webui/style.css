@@ -1,7 +1,7 @@
 /*!
- * This file is part of nzbget
+ * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 body {
@@ -248,11 +243,11 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	filter: alpha(opacity=100);
 }
 
-#StatusTime.scheduled-resume {
+#StatusTime.orange {
 	color: #F08929;
 }
 
-#StatusTime.scheduled-resume:hover {
+#StatusTime.orange:hover {
 	color: #FFA15A;
 }
 
@@ -635,6 +630,10 @@ ul.dropdown-menu > li > a > i {
 	background-position: -304px -48px;
 }
 
+.icon-save {
+	background-position: -464px -80px;
+}
+
 .icon-rss {
 	background-position: -304px -112px;
 }
@@ -770,6 +769,10 @@ table.datatable > tbody > tr > td {
 /* top toolbox (length-combo and pager) for tables */
 .toolbox-top {
 	margin-bottom: 8px;
+}
+
+div.btn-group + div.toolbox-length {
+	margin-left: 10px;
 }
 
 /* combobox with page length for tables */
@@ -2217,6 +2220,10 @@ body.phone,
 
 .phone div.toolbox-length {
 	margin-top: 10px;
+}
+
+.phone .modal-toolbox div.toolbox-length {
+	margin-top: 0;
 }
 
 .phone .pagination {

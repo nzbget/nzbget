@@ -1,7 +1,7 @@
 #
-#  This file is part of nzbget
+#  This file is part of nzbget. See <http://nzbget.net>.
 #
-# Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,9 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-#
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 bin_PROGRAMS = nzbget
@@ -24,8 +22,8 @@ bin_PROGRAMS = nzbget
 nzbget_SOURCES = \
 	daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h \
-	daemon/connect/TLS.cpp \
-	daemon/connect/TLS.h \
+	daemon/connect/TlsSocket.cpp \
+	daemon/connect/TlsSocket.h \
 	daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h \
 	daemon/extension/FeedScript.cpp \
@@ -80,8 +78,8 @@ nzbget_SOURCES = \
 	daemon/nntp/Decoder.h \
 	daemon/nntp/NewsServer.cpp \
 	daemon/nntp/NewsServer.h \
-	daemon/nntp/NNTPConnection.cpp \
-	daemon/nntp/NNTPConnection.h \
+	daemon/nntp/NntpConnection.cpp \
+	daemon/nntp/NntpConnection.h \
 	daemon/nntp/ServerPool.cpp \
 	daemon/nntp/ServerPool.h \
 	daemon/nntp/StatMeter.cpp \
@@ -110,8 +108,8 @@ nzbget_SOURCES = \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h \
-	daemon/queue/NZBFile.cpp \
-	daemon/queue/NZBFile.h \
+	daemon/queue/NzbFile.cpp \
+	daemon/queue/NzbFile.h \
 	daemon/queue/QueueCoordinator.cpp \
 	daemon/queue/QueueCoordinator.h \
 	daemon/queue/QueueEditor.cpp \
@@ -133,6 +131,9 @@ nzbget_SOURCES = \
 	daemon/remote/XmlRpc.h \
 	daemon/util/Log.cpp \
 	daemon/util/Log.h \
+	daemon/util/NString.cpp \
+	daemon/util/NString.h \
+	daemon/util/Container.h \
 	daemon/util/Observer.cpp \
 	daemon/util/Observer.h \
 	daemon/util/Script.cpp \
@@ -141,6 +142,8 @@ nzbget_SOURCES = \
 	daemon/util/Thread.h \
 	daemon/util/Service.cpp \
 	daemon/util/Service.h \
+	daemon/util/FileSystem.cpp \
+	daemon/util/FileSystem.h \
 	daemon/util/Util.cpp \
 	daemon/util/Util.h \
 	code_revision.cpp
@@ -216,7 +219,11 @@ nzbget_SOURCES += \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/ParCheckerTest.cpp \
 	tests/postprocess/ParRenamerTest.cpp \
-	tests/queue/NZBFileTest.cpp \
+	tests/postprocess/DupeMatcherTest.cpp \
+	tests/queue/NzbFileTest.cpp \
+	tests/nntp/ServerPoolTest.cpp \
+	tests/util/FileSystemTest.cpp \
+	tests/util/NStringTest.cpp \
 	tests/util/UtilTest.cpp
 
 AM_CPPFLAGS += \
@@ -228,15 +235,16 @@ EXTRA_DIST = \
 	$(windows_FILES) \
 	$(osx_FILES) \
 	$(linux_FILES) \
-	$(testdata_FILES)
+	$(testdata_FILES) \
+	$(par2doc_FILES)
 
 windows_FILES = \
-	daemon/windows/NTService.cpp \
-	daemon/windows/NTService.h \
-	daemon/windows/win32.h \
+	daemon/windows/StdAfx.cpp \
+	daemon/windows/WinService.cpp \
+	daemon/windows/WinService.h \
 	daemon/windows/WinConsole.cpp \
 	daemon/windows/WinConsole.h \
-	nzbget.vcproj \
+	nzbget.vcxproj \
 	windows/nzbget-command-shell.bat  \
 	windows/install-update.bat  \
 	windows/README-WINDOWS.txt  \
@@ -288,14 +296,17 @@ linux_FILES = \
 	linux/package-info.json \
 	linux/build-info.txt \
 	linux/build-nzbget \
-	linux/build-unpack
+	linux/build-unpack \
+	linux/build-toolchain-freebsd
 
 doc_FILES = \
-	lib/par2/AUTHORS \
-	lib/par2/README \
 	README \
 	ChangeLog \
 	COPYING
+
+par2doc_FILES = \
+	lib/par2/AUTHORS \
+	lib/par2/README
 
 exampleconf_FILES = \
 	nzbget.conf
@@ -421,6 +432,7 @@ code_revision.cpp: FORCE
 			( \
 			echo "/* $$V */" ;\
 			echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
+			echo "#include \"nzbget.h\"" ;\
 			echo "const char* code_revision(void)" ;\
 			echo "{" ;\
 			echo "	const char* revision = \"$$V\";" ;\
@@ -434,6 +446,7 @@ code_revision.cpp: FORCE
 		( \
 		echo "/*  */" ;\
 		echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
+		echo "#include \"nzbget.h\"" ;\
 		echo "const char* code_revision(void)" ;\
 		echo "{" ;\
 		echo "	const char* revision = \"\";" ;\

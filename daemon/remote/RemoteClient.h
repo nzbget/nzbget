@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,12 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -34,50 +29,48 @@
 
 class RemoteClient
 {
+public:
+	void SetVerbose(bool verbose) { m_verbose = verbose; };
+	bool RequestServerDownload(const char* nzbFilename, const char* nzbContent, const char* category,
+		bool addFirst, bool addPaused, int priority,
+		const char* dupeKey, int dupeMode, int dupeScore);
+	bool RequestServerList(bool files, bool groups, const char* pattern);
+	bool RequestServerPauseUnpause(bool pause, ERemotePauseUnpauseAction action);
+	bool RequestServerSetDownloadRate(int rate);
+	bool RequestServerDumpDebug();
+	bool RequestServerEditQueue(DownloadQueue::EEditAction action, int offset, const char* text,
+		IdList* idList, NameList* nameList, ERemoteMatchMode matchMode);
+	bool RequestServerLog(int lines);
+	bool RequestServerShutdown();
+	bool RequestServerReload();
+	bool RequestServerVersion();
+	bool RequestPostQueue();
+	bool RequestWriteLog(int kind, const char* text);
+	bool RequestScan(bool syncMode);
+	bool RequestHistory(bool withHidden);
+	void BuildFileList(SNzbListResponse* listResponse, const char* trailingData, DownloadQueue* downloadQueue);
+
 private:
-	class MatchedNZBInfo: public NZBInfo
+	class MatchedNzbInfo: public NzbInfo
 	{
 	public:
-		bool		m_bMatch;
+		bool m_match;
 	};
 
 	class MatchedFileInfo: public FileInfo
 	{
 	public:
-		bool		m_bMatch;
+		bool m_match;
 	};
 
-	Connection* 	m_pConnection;
-	bool			m_bVerbose;
+	std::unique_ptr<Connection> m_connection;
+	bool m_verbose = true;
 
-	bool			InitConnection();
-	void			InitMessageBase(SNZBRequestBase* pMessageBase, int iRequest, int iSize);
-	bool			ReceiveBoolResponse();
-	void			printf(const char* msg, ...);
-	void			perror(const char* msg);
-
-public:
-					RemoteClient();
-					~RemoteClient();
-	void			SetVerbose(bool bVerbose) { m_bVerbose = bVerbose; };
-	bool 			RequestServerDownload(const char* szNZBFilename, const char* szNZBContent, const char* szCategory,
-						bool bAddFirst, bool bAddPaused, int iPriority,
-						const char* szDupeKey, int iDupeMode, int iDupeScore);
-	bool			RequestServerList(bool bFiles, bool bGroups, const char* szPattern);
-	bool			RequestServerPauseUnpause(bool bPause, eRemotePauseUnpauseAction iAction);
-	bool			RequestServerSetDownloadRate(int iRate);
-	bool			RequestServerDumpDebug();
-	bool 			RequestServerEditQueue(DownloadQueue::EEditAction eAction, int iOffset, const char* szText,
-						int* pIDList, int iIDCount, NameList* pNameList, eRemoteMatchMode iMatchMode);
-	bool			RequestServerLog(int iLines);
-	bool			RequestServerShutdown();
-	bool			RequestServerReload();
-	bool			RequestServerVersion();
-	bool			RequestPostQueue();
-	bool 			RequestWriteLog(int iKind, const char* szText);
-	bool			RequestScan(bool bSyncMode);
-	bool			RequestHistory(bool bWithHidden);
-	void			BuildFileList(SNZBListResponse* pListResponse, const char* pTrailingData, DownloadQueue* pDownloadQueue);
+	bool InitConnection();
+	void InitMessageBase(SNzbRequestBase* messageBase, int request, int size);
+	bool ReceiveBoolResponse();
+	void printf(const char* msg, ...);
+	void perror(const char* msg);
 };
 
 #endif

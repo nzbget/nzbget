@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision: 951 $
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -31,32 +26,32 @@
 
 class HistoryCoordinator : public Service
 {
-private:
-	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
-	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
-	void				HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bRestorePauseState);
-	bool				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
-	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, DownloadQueue::EEditAction eAction, const char* szText);
-	bool				HistorySetCategory(HistoryInfo* pHistoryInfo, const char* szText);
-	bool				HistorySetName(HistoryInfo* pHistoryInfo, const char* szText);
-	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
-	void				SaveQueue(DownloadQueue* pDownloadQueue);
-	void				PrepareEdit(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction);
+public:
+	void AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	bool EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
+	void DeleteDiskFiles(NzbInfo* nzbInfo);
+	void HistoryHide(DownloadQueue* downloadQueue, HistoryInfo* historyInfo, int rindex);
+	void Redownload(DownloadQueue* downloadQueue, HistoryInfo* historyInfo);
 
 protected:
-	virtual int			ServiceInterval() { return 600000; }
-	virtual void		ServiceWork();
+	virtual int ServiceInterval() { return 600000; }
+	virtual void ServiceWork();
 
-public:
-						HistoryCoordinator();
-	virtual				~HistoryCoordinator();
-	void				AddToHistory(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	bool				EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	void				DeleteDiskFiles(NZBInfo* pNZBInfo);
-	void				HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
-	void				Redownload(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo);
+private:
+	void HistoryDelete(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool final);
+	void HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo);
+	void HistoryProcess(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo);
+	void HistoryRedownload(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool restorePauseState);
+	void HistoryRetry(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool resetFailed, bool reprocess);
+	bool HistorySetParameter(HistoryInfo* historyInfo, const char* text);
+	void HistorySetDupeParam(HistoryInfo* historyInfo, DownloadQueue::EEditAction action, const char* text);
+	bool HistorySetCategory(HistoryInfo* historyInfo, const char* text);
+	bool HistorySetName(HistoryInfo* historyInfo, const char* text);
+	void MoveToQueue(DownloadQueue* downloadQueue, HistoryList::iterator itHistory, HistoryInfo* historyInfo, bool reprocess);
+	void PrepareEdit(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action);
+	void ResetArticles(FileInfo* fileInfo, bool allFailed, bool resetFailed);
 };
 
-extern HistoryCoordinator* g_pHistoryCoordinator;
+extern HistoryCoordinator* g_HistoryCoordinator;
 
 #endif

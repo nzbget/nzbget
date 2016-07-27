@@ -1,8 +1,8 @@
 /*
- *  This file if part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,68 +15,23 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #include "nzbget.h"
 #include "NewsServer.h"
 
-NewsServer::NewsServer(int iID, bool bActive, const char* szName, const char* szHost, int iPort,
-	const char* szUser, const char* szPass, bool bJoinGroup, bool bTLS,
-	const char* szCipher, int iMaxConnections, int iRetention, int iLevel, int iGroup)
+NewsServer::NewsServer(int id, bool active, const char* name, const char* host, int port,
+	const char* user, const char* pass, bool joinGroup, bool tls, const char* cipher,
+	int maxConnections, int retention, int level, int group, bool optional) :
+		m_id(id), m_active(active), m_port(port), m_level(level), m_normLevel(level),
+		m_group(group), m_maxConnections(maxConnections), m_joinGroup(joinGroup), m_tls(tls),
+		m_name(name), m_host(host ? host : ""), m_user(user ? user : ""), m_password(pass ? pass : ""),
+		m_cipher(cipher ? cipher : ""), m_retention(retention), m_optional(optional)
 {
-	m_iID = iID;
-	m_iStateID = 0;
-	m_bActive = bActive;
-	m_iPort = iPort;
-	m_iLevel = iLevel;
-	m_iNormLevel = iLevel;
-	m_iGroup = iGroup;
-	m_iMaxConnections = iMaxConnections;
-	m_bJoinGroup = bJoinGroup;
-	m_bTLS = bTLS;
-	m_szHost = strdup(szHost ? szHost : "");
-	m_szUser = strdup(szUser ? szUser : "");
-	m_szPassword = strdup(szPass ? szPass : "");
-	m_szCipher = strdup(szCipher ? szCipher : "");
-	m_iRetention = iRetention;
-	m_tBlockTime = 0;
-
-	if (szName && strlen(szName) > 0)
+	if (m_name.Empty())
 	{
-		m_szName = strdup(szName);
+		m_name.Format("server%i", id);
 	}
-	else
-	{
-		m_szName = (char*)malloc(20);
-		snprintf(m_szName, 20, "server%i", iID);
-		m_szName[20-1] = '\0';
-	}
-}
-
-NewsServer::~NewsServer()
-{
-	free(m_szName);
-	free(m_szHost);
-	free(m_szUser);
-	free(m_szPassword);
-	free(m_szCipher);
 }

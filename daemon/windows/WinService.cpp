@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,33 +14,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include "win32.h"
-
-#include <string.h>
-#include <stdio.h>
-
 #include "nzbget.h"
 #include "Log.h"
-#include "NTService.h"
+#include "WinService.h"
 
 extern void ExitProc();
-RunProc Run = NULL;
+RunProc Run = nullptr;
 
 char* strServiceName = "NZBGet";
-SERVICE_STATUS_HANDLE nServiceStatusHandle; 
+SERVICE_STATUS_HANDLE nServiceStatusHandle;
 DWORD nServiceCurrentStatus;
 
 BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWaitHint)
@@ -70,7 +56,7 @@ BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWaitHint)
 void ServiceCtrlHandler(DWORD nControlCode)
 {
 	switch(nControlCode)
-	{	
+	{
 	case SERVICE_CONTROL_SHUTDOWN:
 	case SERVICE_CONTROL_STOP:
 		nServiceCurrentStatus = SERVICE_STOP_PENDING;
@@ -103,7 +89,7 @@ void ServiceMain(DWORD argc, LPTSTR *argv)
 	{
 		return;
 	}
-	
+
 	Run();
 
 	UpdateServiceStatus(SERVICE_STOPPED, 0);
@@ -116,7 +102,7 @@ void StartService(RunProc RunProcPtr)
 	SERVICE_TABLE_ENTRY servicetable[]=
 	{
 		{strServiceName,(LPSERVICE_MAIN_FUNCTION)ServiceMain},
-		{NULL,NULL}
+		{nullptr,nullptr}
 	};
 	BOOL success = StartServiceCtrlDispatcher(servicetable);
 	if(!success)
@@ -133,20 +119,18 @@ void InstallService(int argc, char *argv[])
 		printf("Could not install service\n");
 		return;
 	}
-	
-	char szExeName[1024];
-	GetModuleFileName(NULL, szExeName, 1024);
-	szExeName[1024-1] = '\0';
 
-	char szCmdLine[1024];
-	snprintf(szCmdLine, 1024, "%s -D", szExeName);
-	szCmdLine[1024-1] = '\0';
+	char exeName[1024];
+	GetModuleFileName(nullptr, exeName, 1024);
+	exeName[1024-1] = '\0';
+
+	BString<1024> cmdLine("%s -D", exeName);
 
 	SC_HANDLE hService = CreateService(scm, strServiceName,
 		strServiceName,
 		SERVICE_ALL_ACCESS,SERVICE_WIN32_OWN_PROCESS,SERVICE_DEMAND_START,
 		SERVICE_ERROR_NORMAL,
-		szCmdLine,
+		cmdLine,
 		0,0,0,0,0);
 	if(!hService)
 	{
@@ -168,7 +152,7 @@ void UnInstallService()
 		printf("Could not uninstall service\n");
 		return;
 	}
-	
+
 	SC_HANDLE hService = OpenService(scm, strServiceName, STANDARD_RIGHTS_REQUIRED);
 	if(!hService)
 	{
@@ -212,13 +196,13 @@ bool IsServiceRunning()
 
 	SC_HANDLE hService = OpenService(scm, "NZBGet", SERVICE_QUERY_STATUS);
 	SERVICE_STATUS ServiceStatus;
-	bool bRunning = false;
+	bool running = false;
 	if (hService && QueryServiceStatus(hService, &ServiceStatus))
 	{
-		bRunning = ServiceStatus.dwCurrentState != SERVICE_STOPPED;
+		running = ServiceStatus.dwCurrentState != SERVICE_STOPPED;
 	}
 
 	CloseServiceHandle(scm);
 
-	return bRunning;
+	return running;
 }

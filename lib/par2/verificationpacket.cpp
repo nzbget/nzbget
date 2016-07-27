@@ -17,6 +17,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+#include "nzbget.h"
 #include "par2cmdline.h"
 
 #ifdef _MSC_VER
@@ -26,6 +27,9 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 #endif
+
+namespace Par2
+{
 
 // Create a packet large enough for the specified number of blocks
 
@@ -101,3 +105,5 @@ bool VerificationPacket::Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &hea
                         &packet->fileid, 
                         (size_t)packet->header.length - sizeof(PACKET_HEADER));
 }
+
+} // end namespace Par2

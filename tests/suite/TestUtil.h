@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -28,18 +23,19 @@
 
 class TestUtil
 {
-private:
-	static bool			m_bUsedWorkingDir;
 public:
-	static void			Init(const char* argv0);
-	static void			Final();
-	static const		std::string TestDataDir();
-	static const		std::string WorkingDir();
-	static void			PrepareWorkingDir(const std::string templateDir);
-	static void			CleanupWorkingDir();
-	static void			DisableCout();
-	static void			EnableCout();
-	static void			CopyAllFiles(const std::string destDir, const std::string srcDir);
+	static void Init(const char* argv0);
+	static void Final();
+	static const std::string TestDataDir();
+	static const std::string WorkingDir();
+	static void PrepareWorkingDir(const std::string templateDir);
+	static void CleanupWorkingDir();
+	static void DisableCout();
+	static void EnableCout();
+	static void CopyAllFiles(const std::string destDir, const std::string srcDir);
+
+private:
+	static bool m_usedWorkingDir;
 };
 
 #endif

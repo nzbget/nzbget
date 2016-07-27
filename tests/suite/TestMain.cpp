@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,64 +14,49 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdio.h>
+#include "nzbget.h"
 
 #define CATCH_CONFIG_RUNNER
 #include "catch.h"
 
-#include "nzbget.h"
 #include "Thread.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 #include "TestUtil.h"
 
 int TestMain(int argc, char * argv[])
 {
 	TestUtil::Init(argv[0]);
-	Log::Init();
+	Log log;
 	Thread::Init();
 
 	if (argc == 1)
 	{
 		printf("Unit and integration tests for nzbget-%s.\nUse '%s -tests [quick]' to run only quick tests or '%s -h' for more options.\n",
-			   Util::VersionRevision(), Util::BaseFileName(argv[0]), Util::BaseFileName(argv[0]));
+			   Util::VersionRevision(), FileSystem::BaseFileName(argv[0]), FileSystem::BaseFileName(argv[0]));
 	}
 
 	// shift arguments for catch to not see the parameter "-tests"
 	char** testsargv = (char**)malloc(sizeof(char*) * (argc + 1));
-	char szFirstArg[1024];
-	snprintf(szFirstArg, 1024, "%s %s", argv[0], argv[1]);
-	szFirstArg[1024-1] = '\0';
-	testsargv[0] = szFirstArg;
+	char firstArg[1024];
+	snprintf(firstArg, 1024, "%s %s", argv[0], argv[1]);
+	firstArg[1024-1] = '\0';
+	testsargv[0] = firstArg;
 	for (int i = 2; i < argc; i++)
 	{
 		testsargv[i-1] = argv[i];
 	}
 	argc--;
-	testsargv[argc] = NULL;
+	testsargv[argc] = nullptr;
 
 	int ret = Catch::Session().run(argc, testsargv);
 	
 	free(testsargv);
-	Thread::Final();
-	Log::Final();
 	TestUtil::Final();
 
 	return ret;

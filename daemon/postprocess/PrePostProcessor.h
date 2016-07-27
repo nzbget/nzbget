@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,19 +14,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 #ifndef PREPOSTPROCESSOR_H
 #define PREPOSTPROCESSOR_H
-
-#include <deque>
 
 #include "Thread.h"
 #include "Observer.h"
@@ -35,50 +28,48 @@
 
 class PrePostProcessor : public Thread
 {
+public:
+	PrePostProcessor();
+	virtual void Run();
+	virtual void Stop();
+	bool HasMoreJobs() { return m_jobCount > 0; }
+	int GetJobCount() { return m_jobCount; }
+	bool EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action,
+		int offset, const char* text);
+	void NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+
 private:
 	class DownloadQueueObserver: public Observer
 	{
 	public:
-		PrePostProcessor* m_pOwner;
-		virtual void	Update(Subject* Caller, void* Aspect) { m_pOwner->DownloadQueueUpdate(Caller, Aspect); }
+		PrePostProcessor* m_owner;
+		virtual void Update(Subject* Caller, void* Aspect) { m_owner->DownloadQueueUpdate(Caller, Aspect); }
 	};
 
-private:
-	ParCoordinator		m_ParCoordinator;
-	DownloadQueueObserver	m_DownloadQueueObserver;
-	int					m_iJobCount;
-	NZBInfo*			m_pCurJob;
-	const char*			m_szPauseReason;
+	ParCoordinator m_parCoordinator;
+	DownloadQueueObserver m_downloadQueueObserver;
+	int m_jobCount = 0;
+	NzbInfo* m_curJob = nullptr;
+	const char* m_pauseReason = nullptr;
 
-	bool				IsNZBFileCompleted(NZBInfo* pNZBInfo, bool bIgnorePausedPars, bool bAllowOnlyOneDeleted);
-	bool				IsNZBFileDownloading(NZBInfo* pNZBInfo);
-	void				CheckPostQueue();
-	void				JobCompleted(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
-	void				StartJob(DownloadQueue* pDownloadQueue, PostInfo* pPostInfo);
-	void				SaveQueue(DownloadQueue* pDownloadQueue);
-	void				SanitisePostQueue(DownloadQueue* pDownloadQueue);
-	void				UpdatePauseState(bool bNeedPause, const char* szReason);
-	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBDeleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, bool bSaveQueue);
-	bool				PostQueueDelete(DownloadQueue* pDownloadQueue, IDList* pIDList);
-	void				DeletePostThread(PostInfo* pPostInfo);
-	NZBInfo*			GetNextJob(DownloadQueue* pDownloadQueue);
-	void				DownloadQueueUpdate(Subject* Caller, void* Aspect);
-	void				DeleteCleanup(NZBInfo* pNZBInfo);
-
-public:
-						PrePostProcessor();
-	virtual				~PrePostProcessor();
-	virtual void		Run();
-	virtual void		Stop();
-	bool				HasMoreJobs() { return m_iJobCount > 0; }
-	int					GetJobCount() { return m_iJobCount; }
-	bool				EditList(DownloadQueue* pDownloadQueue, IDList* pIDList, DownloadQueue::EEditAction eAction, int iOffset, const char* szText);
-	void				NZBAdded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				NZBDownloaded(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
+	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars);
+	bool IsNzbFileDownloading(NzbInfo* nzbInfo);
+	void CheckPostQueue();
+	void JobCompleted(DownloadQueue* downloadQueue, PostInfo* postInfo);
+	void StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo);
+	void SanitisePostQueue();
+	void UpdatePauseState(bool needPause, const char* reason);
+	void NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool saveQueue);
+	bool PostQueueDelete(DownloadQueue* downloadQueue, IdList* idList);
+	void DeletePostThread(PostInfo* postInfo);
+	NzbInfo* GetNextJob(DownloadQueue* downloadQueue);
+	void DownloadQueueUpdate(Subject* Caller, void* Aspect);
+	void DeleteCleanup(NzbInfo* nzbInfo);
 };
 
-extern PrePostProcessor* g_pPrePostProcessor;
+extern PrePostProcessor* g_PrePostProcessor;
 
 #endif

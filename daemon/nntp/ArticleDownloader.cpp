@@ -1,8 +1,8 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,34 +15,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#include <sys/time.h>
-#endif
-#include <sys/stat.h>
-#include <errno.h>
 
 #include "nzbget.h"
 #include "ArticleDownloader.h"
@@ -58,29 +33,19 @@ ArticleDownloader::ArticleDownloader()
 {
 	debug("Creating ArticleDownloader");
 
-	m_szInfoName = NULL;
-	m_szConnectionName[0] = '\0';
-	m_pConnection = NULL;
-	m_eStatus = adUndefined;
-	m_eFormat = Decoder::efUnknown;
-	m_szArticleFilename = NULL;
-	m_iDownloadedSize = 0;
-	m_ArticleWriter.SetOwner(this);
+	m_articleWriter.SetOwner(this);
 	SetLastUpdateTimeNow();
 }
 
 ArticleDownloader::~ArticleDownloader()
 {
 	debug("Destroying ArticleDownloader");
-
-	free(m_szInfoName);
-	free(m_szArticleFilename);
 }
 
-void ArticleDownloader::SetInfoName(const char* szInfoName)
+void ArticleDownloader::SetInfoName(const char* infoName)
 {
-	m_szInfoName = strdup(szInfoName);
-	m_ArticleWriter.SetInfoName(m_szInfoName);
+	m_infoName = infoName;
+	m_articleWriter.SetInfoName(m_infoName);
 }
 
 /*
@@ -110,298 +75,297 @@ void ArticleDownloader::Run()
 
 	SetStatus(adRunning);
 
-	m_ArticleWriter.SetFileInfo(m_pFileInfo);
-	m_ArticleWriter.SetArticleInfo(m_pArticleInfo);
-	m_ArticleWriter.Prepare();
+	m_articleWriter.SetFileInfo(m_fileInfo);
+	m_articleWriter.SetArticleInfo(m_articleInfo);
+	m_articleWriter.Prepare();
 
-	EStatus Status = adFailed;
-	int iRetries = g_pOptions->GetRetries() > 0 ? g_pOptions->GetRetries() : 1;
-	int iRemainedRetries = iRetries;
-	Servers failedServers;
-	failedServers.reserve(g_pServerPool->GetServers()->size());
-	NewsServer* pWantServer = NULL;
-	NewsServer* pLastServer = NULL;
-	int iLevel = 0;
-	int iServerConfigGeneration = g_pServerPool->GetGeneration();
-	bool bForce = m_pFileInfo->GetNZBInfo()->GetForcePriority();
+	EStatus status = adFailed;
+	int retries = g_Options->GetRetries() > 0 ? g_Options->GetRetries() : 1;
+	int remainedRetries = retries;
+	ServerPool::RawServerList failedServers;
+	failedServers.reserve(g_ServerPool->GetServers()->size());
+	NewsServer* wantServer = nullptr;
+	NewsServer* lastServer = nullptr;
+	int level = 0;
+	int serverConfigGeneration = g_ServerPool->GetGeneration();
+	bool force = m_fileInfo->GetNzbInfo()->GetForcePriority();
 
 	while (!IsStopped())
 	{
-		Status = adFailed;
+		status = adFailed;
 
 		SetStatus(adWaiting);
-		while (!m_pConnection && !(IsStopped() || iServerConfigGeneration != g_pServerPool->GetGeneration()))
+		while (!m_connection && !(IsStopped() || serverConfigGeneration != g_ServerPool->GetGeneration()))
 		{
-			m_pConnection = g_pServerPool->GetConnection(iLevel, pWantServer, &failedServers);
+			m_connection = g_ServerPool->GetConnection(level, wantServer, &failedServers);
 			usleep(5 * 1000);
 		}
 		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
 
-		if (IsStopped() || (g_pOptions->GetPauseDownload() && !bForce) ||
-			(g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
-			iServerConfigGeneration != g_pServerPool->GetGeneration())
+		if (IsStopped() || ((g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) && !force) ||
+			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
+			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
-			Status = adRetry;
+			status = adRetry;
 			break;
 		}
 
-		pLastServer = m_pConnection->GetNewsServer();
+		lastServer = m_connection->GetNewsServer();
+		level = lastServer->GetNormLevel();
 
-		m_pConnection->SetSuppressErrors(false);
+		m_connection->SetSuppressErrors(false);
 
-		snprintf(m_szConnectionName, sizeof(m_szConnectionName), "%s (%s)",
-			m_pConnection->GetNewsServer()->GetName(), m_pConnection->GetHost());
-		m_szConnectionName[sizeof(m_szConnectionName) - 1] = '\0';
+		m_connectionName.Format("%s (%s)",
+			m_connection->GetNewsServer()->GetName(), m_connection->GetHost());
 
 		// check server retention
-		bool bRetentionFailure = m_pConnection->GetNewsServer()->GetRetention() > 0 &&
-			(time(NULL) - m_pFileInfo->GetTime()) / 86400 > m_pConnection->GetNewsServer()->GetRetention();
-		if (bRetentionFailure)
+		bool retentionFailure = m_connection->GetNewsServer()->GetRetention() > 0 &&
+			(Util::CurrentTime() - m_fileInfo->GetTime()) / 86400 > m_connection->GetNewsServer()->GetRetention();
+		if (retentionFailure)
 		{
 			detail("Article %s @ %s failed: out of server retention (file age: %i, configured retention: %i)",
-				m_szInfoName, m_szConnectionName,
-				(time(NULL) - m_pFileInfo->GetTime()) / 86400,
-				m_pConnection->GetNewsServer()->GetRetention());
-			Status = adFailed;
+				*m_infoName, *m_connectionName,
+				(int)(Util::CurrentTime() - m_fileInfo->GetTime()) / 86400,
+				m_connection->GetNewsServer()->GetRetention());
+			status = adFailed;
 			FreeConnection(true);
 		}
 
-		if (m_pConnection && !IsStopped())
+		if (m_connection && !IsStopped())
 		{
-			detail("Downloading %s @ %s", m_szInfoName, m_szConnectionName);
+			detail("Downloading %s @ %s", *m_infoName, *m_connectionName);
 		}
 
 		// test connection
-		bool bConnected = m_pConnection && m_pConnection->Connect();
-		if (bConnected && !IsStopped())
+		bool connected = m_connection && m_connection->Connect();
+		if (connected && !IsStopped())
 		{
-			NewsServer* pNewsServer = m_pConnection->GetNewsServer();
+			NewsServer* newsServer = m_connection->GetNewsServer();
 
 			// Download article
-			Status = Download();
+			status = Download();
 
-			if (Status == adFinished || Status == adFailed || Status == adNotFound || Status == adCrcError)
+			if (status == adFinished || status == adFailed || status == adNotFound || status == adCrcError)
 			{
-				m_ServerStats.StatOp(pNewsServer->GetID(), Status == adFinished ? 1 : 0, Status == adFinished ? 0 : 1, ServerStatList::soSet);
+				m_serverStats.StatOp(newsServer->GetId(), status == adFinished ? 1 : 0, status == adFinished ? 0 : 1, ServerStatList::soSet);
 			}
 		}
 
-		if (m_pConnection)
+		if (m_connection)
 		{
 			AddServerData();
 		}
 
-		if (!bConnected && m_pConnection)
+		if (!connected && m_connection)
 		{
-			detail("Article %s @ %s failed: could not establish connection", m_szInfoName, m_szConnectionName);
+			detail("Article %s @ %s failed: could not establish connection", *m_infoName, *m_connectionName);
 		}
 
-		if (Status == adConnectError)
+		if (status == adConnectError)
 		{
-			bConnected = false;
-			Status = adFailed;
+			connected = false;
+			status = adFailed;
 		}
 
-		if (bConnected && Status == adFailed)
+		if (connected && status == adFailed)
 		{
-			iRemainedRetries--;
+			remainedRetries--;
 		}
 
-		if (!bConnected && m_pConnection && !IsStopped())
+		bool optionalBlocked = false;
+		if (!connected && m_connection && !IsStopped())
 		{
-			g_pServerPool->BlockServer(pLastServer);
+			g_ServerPool->BlockServer(lastServer);
+			optionalBlocked = lastServer->GetOptional();
 		}
 
-		pWantServer = NULL;
-		if (bConnected && Status == adFailed && iRemainedRetries > 0 && !bRetentionFailure)
+		wantServer = nullptr;
+		if (connected && status == adFailed && remainedRetries > 0 && !retentionFailure)
 		{
-			pWantServer = pLastServer;
+			wantServer = lastServer;
 		}
 		else
 		{
-			FreeConnection(Status == adFinished || Status == adNotFound);
+			FreeConnection(status == adFinished || status == adNotFound);
 		}
 
-		if (Status == adFinished || Status == adFatalError)
+		if (status == adFinished || status == adFatalError)
 		{
 			break;
 		}
 
-		if (IsStopped() || (g_pOptions->GetPauseDownload() && !bForce) ||
-			(g_pOptions->GetTempPauseDownload() && !m_pFileInfo->GetExtraPriority()) ||
-			iServerConfigGeneration != g_pServerPool->GetGeneration())
+		if (IsStopped() || ((g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) && !force) ||
+			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
+			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
-			Status = adRetry;
+			status = adRetry;
 			break;
 		}
 
-		if (!pWantServer && (bConnected || bRetentionFailure))
+		if (!wantServer && (connected || retentionFailure || optionalBlocked))
 		{
-			failedServers.push_back(pLastServer);
+			if (!optionalBlocked)
+			{
+				failedServers.push_back(lastServer);
+			}
 
 			// if all servers from current level were tried, increase level
 			// if all servers from all levels were tried, break the loop with failure status
 
-			bool bAllServersOnLevelFailed = true;
-			for (Servers::iterator it = g_pServerPool->GetServers()->begin(); it != g_pServerPool->GetServers()->end(); it++)
+			bool allServersOnLevelFailed = true;
+			for (NewsServer* candidateServer : g_ServerPool->GetServers())
 			{
-				NewsServer* pCandidateServer = *it;
-				if (pCandidateServer->GetNormLevel() == iLevel)
+				if (candidateServer->GetNormLevel() == level)
 				{
-					bool bServerFailed = !pCandidateServer->GetActive() || pCandidateServer->GetMaxConnections() == 0;
-					if (!bServerFailed)
+					bool serverFailed = !candidateServer->GetActive() || candidateServer->GetMaxConnections() == 0 ||
+						(candidateServer->GetOptional() && g_ServerPool->IsServerBlocked(candidateServer));
+					if (!serverFailed)
 					{
-						for (Servers::iterator it = failedServers.begin(); it != failedServers.end(); it++)
+						for (NewsServer* ignoreServer : failedServers)
 						{
-							NewsServer* pIgnoreServer = *it;
-							if (pIgnoreServer == pCandidateServer ||
-								(pIgnoreServer->GetGroup() > 0 && pIgnoreServer->GetGroup() == pCandidateServer->GetGroup() &&
-								 pIgnoreServer->GetNormLevel() == pCandidateServer->GetNormLevel()))
+							if (ignoreServer == candidateServer ||
+								(ignoreServer->GetGroup() > 0 && ignoreServer->GetGroup() == candidateServer->GetGroup() &&
+								 ignoreServer->GetNormLevel() == candidateServer->GetNormLevel()))
 							{
-								bServerFailed = true;
+								serverFailed = true;
 								break;
-							}					
+							}
 						}
 					}
-					if (!bServerFailed)
+					if (!serverFailed)
 					{
-						bAllServersOnLevelFailed = false;
+						allServersOnLevelFailed = false;
 						break;
 					}
 				}
 			}
 
-			if (bAllServersOnLevelFailed)
+			if (allServersOnLevelFailed)
 			{
-				if (iLevel < g_pServerPool->GetMaxNormLevel())
+				if (level < g_ServerPool->GetMaxNormLevel())
 				{
-					detail("Article %s @ all level %i servers failed, increasing level", m_szInfoName, iLevel);
-					iLevel++;
+					detail("Article %s @ all level %i servers failed, increasing level", *m_infoName, level);
+					level++;
 				}
 				else
 				{
-					detail("Article %s @ all servers failed", m_szInfoName);
-					Status = adFailed;
+					detail("Article %s @ all servers failed", *m_infoName);
+					status = adFailed;
 					break;
 				}
 			}
-			
-			iRemainedRetries = iRetries;
+
+			remainedRetries = retries;
 		}
 	}
 
-	FreeConnection(Status == adFinished);
+	FreeConnection(status == adFinished);
 
-	if (m_ArticleWriter.GetDuplicate())
+	if (m_articleWriter.GetDuplicate())
 	{
-		Status = adFinished;
+		status = adFinished;
 	}
 
-	if (Status != adFinished && Status != adRetry)
+	if (status != adFinished && status != adRetry)
 	{
-		Status = adFailed;
+		status = adFailed;
 	}
 
 	if (IsStopped())
 	{
-		detail("Download %s cancelled", m_szInfoName);
-		Status = adRetry;
+		detail("Download %s cancelled", *m_infoName);
+		status = adRetry;
 	}
 
-	if (Status == adFailed)
+	if (status == adFailed)
 	{
-		detail("Download %s failed", m_szInfoName);
+		detail("Download %s failed", *m_infoName);
 	}
 
-	SetStatus(Status);
-	Notify(NULL);
+	SetStatus(status);
+	Notify(nullptr);
 
 	debug("Exiting ArticleDownloader-loop");
 }
 
 ArticleDownloader::EStatus ArticleDownloader::Download()
 {
-	const char* szResponse = NULL;
-	EStatus Status = adRunning;
-	m_bWritingStarted = false;
-	m_pArticleInfo->SetCrc(0);
+	const char* response = nullptr;
+	EStatus status = adRunning;
+	m_writingStarted = false;
+	m_articleInfo->SetCrc(0);
 
-	if (m_pConnection->GetNewsServer()->GetJoinGroup())
+	if (m_connection->GetNewsServer()->GetJoinGroup())
 	{
 		// change group
-		for (FileInfo::Groups::iterator it = m_pFileInfo->GetGroups()->begin(); it != m_pFileInfo->GetGroups()->end(); it++)
+		for (CString& group : m_fileInfo->GetGroups())
 		{
-			szResponse = m_pConnection->JoinGroup(*it);
-			if (szResponse && !strncmp(szResponse, "2", 1))
+			response = m_connection->JoinGroup(group);
+			if (response && !strncmp(response, "2", 1))
 			{
-				break; 
+				break;
 			}
 		}
 
-		Status = CheckResponse(szResponse, "could not join group");
-		if (Status != adFinished)
+		status = CheckResponse(response, "could not join group");
+		if (status != adFinished)
 		{
-			return Status;
+			return status;
 		}
 	}
 
 	// retrieve article
-	char tmp[1024];
-	snprintf(tmp, 1024, "ARTICLE %s\r\n", m_pArticleInfo->GetMessageID());
-	tmp[1024-1] = '\0';
-
 	for (int retry = 3; retry > 0; retry--)
 	{
-		szResponse = m_pConnection->Request(tmp);
-		if ((szResponse && !strncmp(szResponse, "2", 1)) || m_pConnection->GetAuthError())
+		response = m_connection->Request(BString<1024>("ARTICLE %s\r\n", m_articleInfo->GetMessageId()));
+		if ((response && !strncmp(response, "2", 1)) || m_connection->GetAuthError())
 		{
 			break;
 		}
 	}
 
-	Status = CheckResponse(szResponse, "could not fetch article");
-	if (Status != adFinished)
+	status = CheckResponse(response, "could not fetch article");
+	if (status != adFinished)
 	{
-		return Status;
+		return status;
 	}
 
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
-		m_YDecoder.Clear();
-		m_YDecoder.SetCrcCheck(g_pOptions->GetCrcCheck());
-		m_UDecoder.Clear();
+		m_yDecoder.Clear();
+		m_yDecoder.SetCrcCheck(g_Options->GetCrcCheck());
+		m_uDecoder.Clear();
 	}
 
-	bool bBody = false;
-	bool bEnd = false;
-	const int LineBufSize = 1024*10;
-	char* szLineBuf = (char*)malloc(LineBufSize);
-	Status = adRunning;
+	bool body = false;
+	bool end = false;
+	CharBuffer lineBuf(1024*10);
+	status = adRunning;
 
 	while (!IsStopped())
 	{
-		time_t tOldTime = m_tLastUpdateTime;
+		time_t oldTime = m_lastUpdateTime;
 		SetLastUpdateTimeNow();
-		if (tOldTime != m_tLastUpdateTime)
+		if (oldTime != m_lastUpdateTime)
 		{
 			AddServerData();
 		}
 
 		// Throttle the bandwidth
-		while (!IsStopped() && (g_pOptions->GetDownloadRate() > 0.0f) &&
-			(g_pStatMeter->CalcCurrentDownloadSpeed() > g_pOptions->GetDownloadRate() ||
-			g_pStatMeter->CalcMomentaryDownloadSpeed() > g_pOptions->GetDownloadRate()))
+		while (!IsStopped() && (g_Options->GetDownloadRate() > 0.0f) &&
+			(g_StatMeter->CalcCurrentDownloadSpeed() > g_Options->GetDownloadRate() ||
+			g_StatMeter->CalcMomentaryDownloadSpeed() > g_Options->GetDownloadRate()))
 		{
 			SetLastUpdateTimeNow();
 			usleep(10 * 1000);
 		}
 
-		int iLen = 0;
-		char* line = m_pConnection->ReadLine(szLineBuf, LineBufSize, &iLen);
+		int len = 0;
+		char* line = m_connection->ReadLine(lineBuf, lineBuf.Size(), &len);
 
-		g_pStatMeter->AddSpeedReading(iLen);
-		if (g_pOptions->GetAccurateRate())
+		g_StatMeter->AddSpeedReading(len);
+		if (g_Options->GetAccurateRate())
 		{
 			AddServerData();
 		}
@@ -411,16 +375,16 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			if (!IsStopped())
 			{
-				detail("Article %s @ %s failed: Unexpected end of article", m_szInfoName, m_szConnectionName);
+				detail("Article %s @ %s failed: Unexpected end of article", *m_infoName, *m_connectionName);
 			}
-			Status = adFailed;
+			status = adFailed;
 			break;
 		}
 
 		//detect end of article
 		if (!strcmp(line, ".\r\n") || !strcmp(line, ".\n"))
 		{
-			bEnd = true;
+			end = true;
 			break;
 		}
 
@@ -428,297 +392,292 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		if (!strncmp(line, "..", 2))
 		{
 			line++;
-			iLen--;
+			len--;
 		}
 
-		if (!bBody)
+		if (!body)
 		{
 			// detect body of article
 			if (*line == '\r' || *line == '\n')
 			{
-				bBody = true;
+				body = true;
 			}
 			// check id of returned article
 			else if (!strncmp(line, "Message-ID: ", 12))
 			{
 				char* p = line + 12;
-				if (strncmp(p, m_pArticleInfo->GetMessageID(), strlen(m_pArticleInfo->GetMessageID())))
+				if (strncmp(p, m_articleInfo->GetMessageId(), strlen(m_articleInfo->GetMessageId())))
 				{
 					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", m_szInfoName,
-						m_szConnectionName, m_pArticleInfo->GetMessageID(), p);
-					Status = adFailed;
+					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", *m_infoName,
+						*m_connectionName, m_articleInfo->GetMessageId(), p);
+					status = adFailed;
 					break;
 				}
 			}
 		}
 
-		if (m_eFormat == Decoder::efUnknown && g_pOptions->GetDecode())
+		if (m_format == Decoder::efUnknown && g_Options->GetDecode())
 		{
-			m_eFormat = Decoder::DetectFormat(line, iLen, bBody);
-			if (m_eFormat != Decoder::efUnknown)
+			m_format = Decoder::DetectFormat(line, len, body);
+			if (m_format != Decoder::efUnknown)
 			{
 				// sometimes news servers misbehave and send article body without new line separator between headers and body
 				// if we found decoder signature we know the body is already arrived
-				bBody = true;
+				body = true;
 			}
 		}
 
 		// write to output file
-		if (((bBody && m_eFormat != Decoder::efUnknown) || !g_pOptions->GetDecode()) && !Write(line, iLen))
+		if (((body && m_format != Decoder::efUnknown) || !g_Options->GetDecode()) && !Write(line, len))
 		{
-			Status = adFatalError;
+			status = adFatalError;
 			break;
 		}
 	}
 
-	free(szLineBuf);
-
-	if (!bEnd && Status == adRunning && !IsStopped())
+	if (!end && status == adRunning && !IsStopped())
 	{
-		detail("Article %s @ %s failed: article incomplete", m_szInfoName, m_szConnectionName);
-		Status = adFailed;
+		detail("Article %s @ %s failed: article incomplete", *m_infoName, *m_connectionName);
+		status = adFailed;
 	}
 
 	if (IsStopped())
 	{
-		Status = adFailed;
+		status = adFailed;
 	}
 
-	if (Status == adRunning)
+	if (status == adRunning)
 	{
 		FreeConnection(true);
-		Status = DecodeCheck();
+		status = DecodeCheck();
 	}
 
-	if (m_bWritingStarted)
+	if (m_writingStarted)
 	{
-		m_ArticleWriter.Finish(Status == adFinished);
+		m_articleWriter.Finish(status == adFinished);
 	}
 
-	if (Status == adFinished)
+	if (status == adFinished)
 	{
-		detail("Successfully downloaded %s", m_szInfoName);
+		detail("Successfully downloaded %s", *m_infoName);
 	}
 
-	return Status;
+	return status;
 }
 
-ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* szResponse, const char* szComment)
+ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response, const char* comment)
 {
-	if (!szResponse)
+	if (!response)
 	{
 		if (!IsStopped())
 		{
 			detail("Article %s @ %s failed, %s: Connection closed by remote host",
-				m_szInfoName, m_szConnectionName, szComment);
+				*m_infoName, *m_connectionName, comment);
 		}
 		return adConnectError;
 	}
-	else if (m_pConnection->GetAuthError() || !strncmp(szResponse, "400", 3) || !strncmp(szResponse, "499", 3))
+	else if (m_connection->GetAuthError() || !strncmp(response, "400", 3) || !strncmp(response, "499", 3))
 	{
-		detail("Article %s @ %s failed, %s: %s", m_szInfoName, m_szConnectionName, szComment, szResponse);
+		detail("Article %s @ %s failed, %s: %s", *m_infoName, *m_connectionName, comment, response);
 		return adConnectError;
 	}
-	else if (!strncmp(szResponse, "41", 2) || !strncmp(szResponse, "42", 2) || !strncmp(szResponse, "43", 2))
+	else if (!strncmp(response, "41", 2) || !strncmp(response, "42", 2) || !strncmp(response, "43", 2))
 	{
-		detail("Article %s @ %s failed, %s: %s", m_szInfoName, m_szConnectionName, szComment, szResponse);
+		detail("Article %s @ %s failed, %s: %s", *m_infoName, *m_connectionName, comment, response);
 		return adNotFound;
 	}
-	else if (!strncmp(szResponse, "2", 1))
+	else if (!strncmp(response, "2", 1))
 	{
 		// OK
 		return adFinished;
 	}
-	else 
+	else
 	{
 		// unknown error, no special handling
-		detail("Article %s @ %s failed, %s: %s", m_szInfoName, m_szConnectionName, szComment, szResponse);
+		detail("Article %s @ %s failed, %s: %s", *m_infoName, *m_connectionName, comment, response);
 		return adFailed;
 	}
 }
 
-bool ArticleDownloader::Write(char* szLine, int iLen)
+bool ArticleDownloader::Write(char* line, int len)
 {
-	const char* szArticleFilename = NULL;
-	long long iArticleFileSize = 0;
-	long long iArticleOffset = 0;
-	int iArticleSize = 0;
+	const char* articleFilename = nullptr;
+	int64 articleFileSize = 0;
+	int64 articleOffset = 0;
+	int articleSize = 0;
 
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
-		if (m_eFormat == Decoder::efYenc)
+		if (m_format == Decoder::efYenc)
 		{
-			iLen = m_YDecoder.DecodeBuffer(szLine, iLen);
-			szArticleFilename = m_YDecoder.GetArticleFilename();
-			iArticleFileSize = m_YDecoder.GetSize();
+			len = m_yDecoder.DecodeBuffer(line, len);
+			articleFilename = m_yDecoder.GetArticleFilename();
+			articleFileSize = m_yDecoder.GetSize();
 		}
-		else if (m_eFormat == Decoder::efUx)
+		else if (m_format == Decoder::efUx)
 		{
-			iLen = m_UDecoder.DecodeBuffer(szLine, iLen);
-			szArticleFilename = m_UDecoder.GetArticleFilename();
+			len = m_uDecoder.DecodeBuffer(line, len);
+			articleFilename = m_uDecoder.GetArticleFilename();
 		}
 		else
 		{
-			detail("Decoding %s failed: unsupported encoding", m_szInfoName);
+			detail("Decoding %s failed: unsupported encoding", *m_infoName);
 			return false;
 		}
 
-		if (iLen > 0 && m_eFormat == Decoder::efYenc)
+		if (len > 0 && m_format == Decoder::efYenc)
 		{
-			if (m_YDecoder.GetBegin() == 0 || m_YDecoder.GetEnd() == 0)
+			if (m_yDecoder.GetBegin() == 0 || m_yDecoder.GetEnd() == 0)
 			{
 				return false;
 			}
-			iArticleOffset = m_YDecoder.GetBegin() - 1;
-			iArticleSize = (int)(m_YDecoder.GetEnd() - m_YDecoder.GetBegin() + 1);
+			articleOffset = m_yDecoder.GetBegin() - 1;
+			articleSize = (int)(m_yDecoder.GetEnd() - m_yDecoder.GetBegin() + 1);
 		}
 	}
 
-	if (!m_bWritingStarted && iLen > 0)
+	if (!m_writingStarted && len > 0)
 	{
-		if (!m_ArticleWriter.Start(m_eFormat, szArticleFilename, iArticleFileSize, iArticleOffset, iArticleSize))
+		if (!m_articleWriter.Start(m_format, articleFilename, articleFileSize, articleOffset, articleSize))
 		{
 			return false;
 		}
-		m_bWritingStarted = true;
+		m_writingStarted = true;
 	}
 
-	bool bOK = iLen == 0 || m_ArticleWriter.Write(szLine, iLen);
+	bool ok = len == 0 || m_articleWriter.Write(line, len);
 
-	return bOK;
+	return ok;
 }
 
 ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 {
-	if (g_pOptions->GetDecode())
+	if (g_Options->GetDecode())
 	{
-		Decoder* pDecoder = NULL;
-		if (m_eFormat == Decoder::efYenc)
+		Decoder* decoder = nullptr;
+		if (m_format == Decoder::efYenc)
 		{
-			pDecoder = &m_YDecoder;
+			decoder = &m_yDecoder;
 		}
-		else if (m_eFormat == Decoder::efUx)
+		else if (m_format == Decoder::efUx)
 		{
-			pDecoder = &m_UDecoder;
+			decoder = &m_uDecoder;
 		}
 		else
 		{
-			detail("Decoding %s failed: no binary data or unsupported encoding format", m_szInfoName);
+			detail("Decoding %s failed: no binary data or unsupported encoding format", *m_infoName);
 			return adFailed;
 		}
 
-		Decoder::EStatus eStatus = pDecoder->Check();
+		Decoder::EStatus status = decoder->Check();
 
-		if (eStatus == Decoder::eFinished)
+		if (status == Decoder::dsFinished)
 		{
-			if (pDecoder->GetArticleFilename())
+			if (decoder->GetArticleFilename())
 			{
-				free(m_szArticleFilename);
-				m_szArticleFilename = strdup(pDecoder->GetArticleFilename());
+				m_articleFilename = decoder->GetArticleFilename();
 			}
 
-			if (m_eFormat == Decoder::efYenc)
+			if (m_format == Decoder::efYenc)
 			{
-				m_pArticleInfo->SetCrc(g_pOptions->GetCrcCheck() ?
-					m_YDecoder.GetCalculatedCrc() : m_YDecoder.GetExpectedCrc());
+				m_articleInfo->SetCrc(g_Options->GetCrcCheck() ?
+					m_yDecoder.GetCalculatedCrc() : m_yDecoder.GetExpectedCrc());
 			}
 
 			return adFinished;
 		}
-		else if (eStatus == Decoder::eCrcError)
+		else if (status == Decoder::dsCrcError)
 		{
-			detail("Decoding %s failed: CRC-Error", m_szInfoName);
+			detail("Decoding %s failed: CRC-Error", *m_infoName);
 			return adCrcError;
 		}
-		else if (eStatus == Decoder::eArticleIncomplete)
+		else if (status == Decoder::dsArticleIncomplete)
 		{
-			detail("Decoding %s failed: article incomplete", m_szInfoName);
+			detail("Decoding %s failed: article incomplete", *m_infoName);
 			return adFailed;
 		}
-		else if (eStatus == Decoder::eInvalidSize)
+		else if (status == Decoder::dsInvalidSize)
 		{
-			detail("Decoding %s failed: size mismatch", m_szInfoName);
+			detail("Decoding %s failed: size mismatch", *m_infoName);
 			return adFailed;
 		}
-		else if (eStatus == Decoder::eNoBinaryData)
+		else if (status == Decoder::dsNoBinaryData)
 		{
-			detail("Decoding %s failed: no binary data found", m_szInfoName);
+			detail("Decoding %s failed: no binary data found", *m_infoName);
 			return adFailed;
 		}
 		else
 		{
-			detail("Decoding %s failed", m_szInfoName);
+			detail("Decoding %s failed", *m_infoName);
 			return adFailed;
 		}
 	}
-	else 
+	else
 	{
 		return adFinished;
 	}
 }
 
+void ArticleDownloader::SetLastUpdateTimeNow()
+{
+	m_lastUpdateTime = Util::CurrentTime();
+}
+
 void ArticleDownloader::LogDebugInfo()
 {
-	char szTime[50];
-#ifdef HAVE_CTIME_R_3
-		ctime_r(&m_tLastUpdateTime, szTime, 50);
-#else
-		ctime_r(&m_tLastUpdateTime, szTime);
-#endif
-	info("      Download: Status=%i, LastUpdateTime=%s, InfoName=%s", m_eStatus, szTime, m_szInfoName);
+	info("      Download: status=%i, LastUpdateTime=%s, InfoName=%s", m_status,
+		 *Util::FormatTime(m_lastUpdateTime), *m_infoName);
 }
 
 void ArticleDownloader::Stop()
 {
 	debug("Trying to stop ArticleDownloader");
 	Thread::Stop();
-	m_mutexConnection.Lock();
-	if (m_pConnection)
+	Guard guard(m_connectionMutex);
+	if (m_connection)
 	{
-		m_pConnection->SetSuppressErrors(true);
-		m_pConnection->Cancel();
+		m_connection->SetSuppressErrors(true);
+		m_connection->Cancel();
 	}
-	m_mutexConnection.Unlock();
 	debug("ArticleDownloader stopped successfully");
 }
 
 bool ArticleDownloader::Terminate()
 {
-	NNTPConnection* pConnection = m_pConnection;
+	NntpConnection* connection = m_connection;
 	bool terminated = Kill();
-	if (terminated && pConnection)
+	if (terminated && connection)
 	{
 		debug("Terminating connection");
-		pConnection->SetSuppressErrors(true);
-		pConnection->Cancel();
-		pConnection->Disconnect();
-		g_pStatMeter->AddServerData(pConnection->FetchTotalBytesRead(), pConnection->GetNewsServer()->GetID());
-		g_pServerPool->FreeConnection(pConnection, true);
+		connection->SetSuppressErrors(true);
+		connection->Cancel();
+		connection->Disconnect();
+		g_StatMeter->AddServerData(connection->FetchTotalBytesRead(), connection->GetNewsServer()->GetId());
+		g_ServerPool->FreeConnection(connection, true);
 	}
 	return terminated;
 }
 
-void ArticleDownloader::FreeConnection(bool bKeepConnected)
+void ArticleDownloader::FreeConnection(bool keepConnected)
 {
-	if (m_pConnection)							
+	if (m_connection)
 	{
 		debug("Releasing connection");
-		m_mutexConnection.Lock();
-		if (!bKeepConnected || m_pConnection->GetStatus() == Connection::csCancelled)
+		Guard guard(m_connectionMutex);
+		if (!keepConnected || m_connection->GetStatus() == Connection::csCancelled)
 		{
-			m_pConnection->Disconnect();
+			m_connection->Disconnect();
 		}
 		AddServerData();
-		g_pServerPool->FreeConnection(m_pConnection, true);
-		m_pConnection = NULL;
-		m_mutexConnection.Unlock();
+		g_ServerPool->FreeConnection(m_connection, true);
+		m_connection = nullptr;
 	}
 }
 
 void ArticleDownloader::AddServerData()
 {
-	int iBytesRead = m_pConnection->FetchTotalBytesRead();
-	g_pStatMeter->AddServerData(iBytesRead, m_pConnection->GetNewsServer()->GetID());
-	m_iDownloadedSize += iBytesRead;
+	int bytesRead = m_connection->FetchTotalBytesRead();
+	g_StatMeter->AddServerData(bytesRead, m_connection->GetNewsServer()->GetId());
+	m_downloadedSize += bytesRead;
 }

@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,38 +14,26 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
+#include "nzbget.h"
 
 #include "catch.h"
 
-#include "nzbget.h"
 #include "FeedFilter.h"
 
-void TestFilter(FeedItemInfo* pFeedItemInfo, const char* szFilter, FeedItemInfo::EMatchStatus eExpectedMatch)
+void TestFilter(FeedItemInfo* feedItemInfo, const char* filterDef, FeedItemInfo::EMatchStatus expectedMatch)
 {
-	pFeedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
-	pFeedItemInfo->SetMatchRule(0);
+	feedItemInfo->SetMatchStatus(FeedItemInfo::msIgnored);
+	feedItemInfo->SetMatchRule(0);
 
-	FeedFilter filter(szFilter);
-	filter.Match(pFeedItemInfo);
+	FeedFilter filter(filterDef);
+	filter.Match(*feedItemInfo);
 
-	INFO(szFilter);
-	REQUIRE(pFeedItemInfo->GetMatchStatus() == eExpectedMatch);
+	INFO(filterDef);
+	REQUIRE(feedItemInfo->GetMatchStatus() == expectedMatch);
 }
 
 TEST_CASE("Feed filter: one liners", "[FeedFilter][Quick]")
@@ -54,7 +42,7 @@ TEST_CASE("Feed filter: one liners", "[FeedFilter][Quick]")
 	item.SetTitle("Game.of.Clowns.S02E06.REAL.1080p.HDTV.X264-Group.WEB-DL");
 	item.SetFilename("Game.of.Clowns.S02E06.REAL.1080p.HDTV.X264-Group.WEB-DL");
 	item.SetSize(1600*1024*1024);
-	item.SetTime(time(NULL) - 60*60*15);   // age: 15 hours
+	item.SetTime(Util::CurrentTime() - 60*60*15);   // age: 15 hours
 	item.SetCategory("TV > HD");
 	item.SetRageId(123456);
 	item.SetSeason("02");

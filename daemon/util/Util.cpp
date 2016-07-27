@@ -1,7 +1,7 @@
 /*
- *  This file is part of nzbget
+ *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,52 +14,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Revision$
- * $Date$
- *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include "win32.h"
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <errno.h>
-#include <ctype.h>
-#include <stdarg.h>
-#ifdef WIN32
-#include <io.h>
-#include <direct.h>
-#include <WinIoCtl.h>
-#else
-#include <unistd.h>
-#include <sys/statvfs.h>
-#include <sys/time.h>
-#include <pwd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#endif
-#ifdef HAVE_REGEX_H
-#include <regex.h>
-#endif
-#ifndef DISABLE_GZIP
-#include <zlib.h>
-#endif
-#include <time.h>
-
 #include "nzbget.h"
-#include "Util.h"
+#include "Util.h"			
 
 #ifndef WIN32
 // function "code_revision" is automatically generated in file "code_revision.cpp" on each build
@@ -67,7 +27,6 @@ const char* code_revision(void);
 #endif
 
 #ifdef WIN32
-
 // getopt for WIN32:
 // from http://www.codeproject.com/cpp/xgetopt.asp
 // Original Author:  Hans Dietrich (hdietrich2@hotmail.com)
@@ -79,20 +38,20 @@ int		optind = 0; 	// global argv index
 
 int getopt(int argc, char *argv[], char *optstring)
 {
-	static char *next = NULL;
+	static char *next = nullptr;
 	if (optind == 0)
-		next = NULL;
+		next = nullptr;
 
-	optarg = NULL;
+	optarg = nullptr;
 
-	if (next == NULL || *next == '\0')
+	if (next == nullptr || *next == '\0')
 	{
 		if (optind == 0)
 			optind++;
 
 		if (optind >= argc || argv[optind][0] != '-' || argv[optind][1] == '\0')
 		{
-			optarg = NULL;
+			optarg = nullptr;
 			if (optind < argc)
 				optarg = argv[optind];
 			return -1;
@@ -101,7 +60,7 @@ int getopt(int argc, char *argv[], char *optstring)
 		if (strcmp(argv[optind], "--") == 0)
 		{
 			optind++;
-			optarg = NULL;
+			optarg = nullptr;
 			if (optind < argc)
 				optarg = argv[optind];
 			return -1;
@@ -115,7 +74,7 @@ int getopt(int argc, char *argv[], char *optstring)
 	char c = *next++;
 	char *cp = strchr(optstring, c);
 
-	if (cp == NULL || c == ':')
+	if (cp == nullptr || c == ':')
 	{
 		fprintf(stderr, "Invalid option %c", c);
 		return '?';
@@ -127,7 +86,7 @@ int getopt(int argc, char *argv[], char *optstring)
 		if (*next != '\0')
 		{
 			optarg = next;
-			next = NULL;
+			next = nullptr;
 		}
 		else if (optind < argc)
 		{
@@ -143,1006 +102,10 @@ int getopt(int argc, char *argv[], char *optstring)
 
 	return c;
 }
-
-DirBrowser::DirBrowser(const char* szPath)
-{
-	char szMask[MAX_PATH + 1];
-	snprintf(szMask, MAX_PATH + 1, "%s%c*.*", szPath, (int)PATH_SEPARATOR);
-	szMask[MAX_PATH] = '\0';
-	m_hFile = FindFirstFile(szMask, &m_FindData);
-	m_bFirst = true;
-}
-
-DirBrowser::~DirBrowser()
-{
-	if (m_hFile != INVALID_HANDLE_VALUE)
-	{
-		FindClose(m_hFile);
-	}
-}
-
-const char* DirBrowser::Next()
-{
-	bool bOK = false;
-	if (m_bFirst)
-	{
-		bOK = m_hFile != INVALID_HANDLE_VALUE;
-		m_bFirst = false;
-	}
-	else
-	{
-		bOK = FindNextFile(m_hFile, &m_FindData) != 0;
-	}
-	if (bOK)
-	{
-		return m_FindData.cFileName;
-	}
-	return NULL;
-}
-
-#else
-
-#ifdef DIRBROWSER_SNAPSHOT
-DirBrowser::DirBrowser(const char* szPath, bool bSnapshot)
-#else
-DirBrowser::DirBrowser(const char* szPath)
 #endif
-{
-#ifdef DIRBROWSER_SNAPSHOT
-	m_bSnapshot = bSnapshot;
-	if (m_bSnapshot)
-	{
-		DirBrowser dir(szPath, false);
-		while (const char* filename = dir.Next())
-		{
-			m_Snapshot.push_back(strdup(filename));
-		}
-		m_itSnapshot = m_Snapshot.begin();
-	}
-	else
-#endif
-	{
-		m_pDir = opendir(szPath);
-	}
-}
-
-DirBrowser::~DirBrowser()
-{
-#ifdef DIRBROWSER_SNAPSHOT
-	if (m_bSnapshot)
-	{
-		for (FileList::iterator it = m_Snapshot.begin(); it != m_Snapshot.end(); it++)
-		{
-			delete *it;
-		}
-	}
-	else
-#endif
-	{
-		if (m_pDir)
-		{
-			closedir((DIR*)m_pDir);
-		}
-	}
-}
-
-const char* DirBrowser::Next()
-{
-#ifdef DIRBROWSER_SNAPSHOT
-	if (m_bSnapshot)
-	{
-		return m_itSnapshot == m_Snapshot.end() ? NULL : *m_itSnapshot++;
-	}
-	else
-#endif
-	{
-		if (m_pDir)
-		{
-			m_pFindData = readdir((DIR*)m_pDir);
-			if (m_pFindData)
-			{
-				return m_pFindData->d_name;
-			}
-		}
-		return NULL;
-	}
-}
-
-#endif
-
-
-StringBuilder::StringBuilder()
-{
-	m_szBuffer = NULL;
-	m_iBufferSize = 0;
-	m_iUsedSize = 0;
-	m_iGrowSize = 10240;
-}
-
-StringBuilder::~StringBuilder()
-{
-	free(m_szBuffer);
-}
-
-void StringBuilder::Clear()
-{
-	free(m_szBuffer);
-	m_szBuffer = NULL;
-	m_iBufferSize = 0;
-	m_iUsedSize = 0;
-}
-
-void StringBuilder::Append(const char* szStr)
-{
-	int iPartLen = strlen(szStr);
-	Reserve(iPartLen + 1);
-	strcpy(m_szBuffer + m_iUsedSize, szStr);
-	m_iUsedSize += iPartLen;
-	m_szBuffer[m_iUsedSize] = '\0';
-}
-
-void StringBuilder::AppendFmt(const char* szFormat, ...)
-{
-	va_list args;
-	va_start(args, szFormat);
-	AppendFmtV(szFormat, args);
-	va_end(args);
-}
-
-void StringBuilder::AppendFmtV(const char* szFormat, va_list ap)
-{
-	va_list ap2;
-	va_copy(ap2, ap);
-
-	int iRemainingSize = m_iBufferSize - m_iUsedSize;
-	int m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap);
-#ifdef WIN32
-	if (m == -1)
-	{
-        m = _vscprintf(szFormat, ap);
-	}
-#endif
-	if (m + 1 > iRemainingSize)
-	{
-		Reserve(m - iRemainingSize + m_iGrowSize);
-		iRemainingSize = m_iBufferSize - m_iUsedSize;
-		m = vsnprintf(m_szBuffer + m_iUsedSize, iRemainingSize, szFormat, ap2);
-	}
-	if (m >= 0)
-	{
-		m_szBuffer[m_iUsedSize += m] = '\0';
-	}
-
-	va_end(ap2);
-}
-
-void StringBuilder::Reserve(int iSize)
-{
-	if (m_iUsedSize + iSize > m_iBufferSize)
-	{
-		m_iBufferSize += iSize + m_iGrowSize;
-		m_szBuffer = (char*)realloc(m_szBuffer, m_iBufferSize);
-	}
-}
 
 
 char Util::VersionRevisionBuf[100];
-
-char* Util::BaseFileName(const char* filename)
-{
-	char* p = (char*)strrchr(filename, PATH_SEPARATOR);
-	char* p1 = (char*)strrchr(filename, ALT_PATH_SEPARATOR);
-	if (p1)
-	{
-		if ((p && p < p1) || !p)
-		{
-			p = p1;
-		}
-	}
-	if (p)
-	{
-		return p + 1;
-	}
-	else
-	{
-		return (char*)filename;
-	}
-}
-
-void Util::NormalizePathSeparators(char* szPath)
-{
-	for (char* p = szPath; *p; p++) 
-	{
-		if (*p == ALT_PATH_SEPARATOR) 
-		{
-			*p = PATH_SEPARATOR;
-		}
-	}
-}
-
-bool Util::ForceDirectories(const char* szPath, char* szErrBuf, int iBufSize)
-{
-	*szErrBuf = '\0';
-	char szSysErrStr[256];
-	char szNormPath[1024];
-	strncpy(szNormPath, szPath, 1024);
-	szNormPath[1024-1] = '\0';
-	NormalizePathSeparators(szNormPath);
-	int iLen = strlen(szNormPath);
-	if ((iLen > 0) && szNormPath[iLen-1] == PATH_SEPARATOR
-#ifdef WIN32
-		&& iLen > 3
-#endif
-		)
-	{
-		szNormPath[iLen-1] = '\0';
-	}
-
-	struct stat buffer;
-	bool bOK = !stat(szNormPath, &buffer);
-	if (!bOK && errno != ENOENT)
-	{
-		snprintf(szErrBuf, iBufSize, "could not read information for directory %s: errno %i, %s", szNormPath, errno, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-		szErrBuf[iBufSize-1] = 0;
-		return false;
-	}
-	
-	if (bOK && !S_ISDIR(buffer.st_mode))
-	{
-		snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
-		szErrBuf[iBufSize-1] = 0;
-		return false;
-	}
-	
-	if (!bOK
-#ifdef WIN32
-		&& strlen(szNormPath) > 2
-#endif
-		)
-	{
-		char szParentPath[1024];
-		strncpy(szParentPath, szNormPath, 1024);
-		szParentPath[1024-1] = '\0';
-		char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
-		if (p)
-		{
-#ifdef WIN32
-			if (p - szParentPath == 2 && szParentPath[1] == ':' && strlen(szParentPath) > 2)
-			{
-				szParentPath[3] = '\0';
-			}
-			else
-#endif
-			{
-				*p = '\0';
-			}
-			if (strlen(szParentPath) != strlen(szPath) && !ForceDirectories(szParentPath, szErrBuf, iBufSize))
-			{
-				return false;
-			}
-		}
-		
-		if (mkdir(szNormPath, S_DIRMODE) != 0 && errno != EEXIST)
-		{
-			snprintf(szErrBuf, iBufSize, "could not create directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-			szErrBuf[iBufSize-1] = 0;
-			return false;
-		}
-			
-		if (stat(szNormPath, &buffer) != 0)
-		{
-			snprintf(szErrBuf, iBufSize, "could not read information for directory %s: %s", szNormPath, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-			szErrBuf[iBufSize-1] = 0;
-			return false;
-		}
-		
-		if (!S_ISDIR(buffer.st_mode))
-		{
-			snprintf(szErrBuf, iBufSize, "path %s is not a directory", szNormPath);
-			szErrBuf[iBufSize-1] = 0;
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool Util::GetCurrentDirectory(char* szBuffer, int iBufSize)
-{
-#ifdef WIN32
-	return ::GetCurrentDirectory(iBufSize, szBuffer) != NULL;
-#else
-	return getcwd(szBuffer, iBufSize) != NULL;
-#endif
-}
-
-bool Util::SetCurrentDirectory(const char* szDirFilename)
-{
-#ifdef WIN32
-	return ::SetCurrentDirectory(szDirFilename);
-#else
-	return chdir(szDirFilename) == 0;
-#endif
-}
-
-bool Util::DirEmpty(const char* szDirFilename)
-{
-	DirBrowser dir(szDirFilename);
-	while (const char* filename = dir.Next())
-	{
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-bool Util::LoadFileIntoBuffer(const char* szFileName, char** pBuffer, int* pBufferLength)
-{
-    FILE* pFile = fopen(szFileName, FOPEN_RB);
-    if (!pFile)
-    {
-        return false;
-    }
-
-    // obtain file size.
-    fseek(pFile , 0 , SEEK_END);
-    int iSize  = (int)ftell(pFile);
-    rewind(pFile);
-
-    // allocate memory to contain the whole file.
-    *pBuffer = (char*) malloc(iSize + 1);
-    if (!*pBuffer)
-    {
-        return false;
-    }
-
-    // copy the file into the buffer.
-    fread(*pBuffer, 1, iSize, pFile);
-
-    fclose(pFile);
-
-    (*pBuffer)[iSize] = 0;
-
-    *pBufferLength = iSize + 1;
-
-    return true;
-}
-
-bool Util::SaveBufferIntoFile(const char* szFileName, const char* szBuffer, int iBufLen)
-{
-    FILE* pFile = fopen(szFileName, FOPEN_WB);
-    if (!pFile)
-    {
-        return false;
-    }
-
-	int iWrittenBytes = fwrite(szBuffer, 1, iBufLen, pFile);
-    fclose(pFile);
-
-	return iWrittenBytes == iBufLen;
-}
-
-bool Util::CreateSparseFile(const char* szFilename, long long iSize)
-{
-	bool bOK = false;
-#ifdef WIN32
-	HANDLE hFile = CreateFile(szFilename, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, NULL);
-	if (hFile != INVALID_HANDLE_VALUE)
-	{
-		// first try to create sparse file (supported only on NTFS partitions),
-		// it may fail but that's OK.
-		DWORD dwBytesReturned;
-		DeviceIoControl(hFile, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
-
-		LARGE_INTEGER iSize64;
-		iSize64.QuadPart = iSize;
-		SetFilePointerEx(hFile, iSize64, NULL, FILE_END);
-		SetEndOfFile(hFile);
-		CloseHandle(hFile);
-		bOK = true;
-	}
-#else
-	// create file
-	FILE* pFile = fopen(szFilename, FOPEN_AB);
-	if (pFile)
-	{
-		fclose(pFile);
-	}
-	// there are no reliable function to expand file on POSIX, so we must try different approaches,
-	// starting with the fastest one and hoping it will work
-	// 1) set file size using function "truncate" (it is fast, if it works)
-	truncate(szFilename, iSize);
-	// check if it worked
-	bOK = FileSize(szFilename) == iSize;
-	if (!bOK)
-	{
-		// 2) truncate did not work, expanding the file by writing in it (it is slow)
-		truncate(szFilename, 0);
-		pFile = fopen(szFilename, FOPEN_AB);
-		char c = '0';
-		fwrite(&c, 1, iSize, pFile);
-		fclose(pFile);
-		bOK = FileSize(szFilename) == iSize;
-	}
-#endif
-	return bOK;
-}
-
-bool Util::TruncateFile(const char* szFilename, int iSize)
-{
-	bool bOK = false;
-#ifdef WIN32
-	FILE *file = fopen(szFilename, FOPEN_RBP);
-	fseek(file, iSize, SEEK_SET);
-	bOK = SetEndOfFile((HANDLE)_get_osfhandle(_fileno(file))) != 0;
-	fclose(file);
-#else
-	bOK = truncate(szFilename, iSize) == 0;
-#endif
-	return bOK;
-}
-
-//replace bad chars in filename
-void Util::MakeValidFilename(char* szFilename, char cReplaceChar, bool bAllowSlashes)
-{
-	const char* szReplaceChars = bAllowSlashes ? ":*?\"><\n\r\t" : "\\/:*?\"><\n\r\t";
-	char* p = szFilename;
-	while (*p)
-	{
-		if (strchr(szReplaceChars, *p))
-		{
-			*p = cReplaceChar;
-		}
-		if (bAllowSlashes && *p == ALT_PATH_SEPARATOR)
-		{
-			*p = PATH_SEPARATOR;
-		}
-		p++;
-	}
-
-	// remove trailing dots and spaces. they are not allowed in directory names on windows,
-	// but we remove them on posix also, in a case the directory is accessed from windows via samba.
-	for (int iLen = strlen(szFilename); iLen > 0 && (szFilename[iLen - 1] == '.' || szFilename[iLen - 1] == ' '); iLen--) 
-	{
-		szFilename[iLen - 1] = '\0';
-	}
-}
-
-// returns TRUE if the name was changed by adding duplicate-suffix
-bool Util::MakeUniqueFilename(char* szDestBufFilename, int iDestBufSize, const char* szDestDir, const char* szBasename)
-{
-	snprintf(szDestBufFilename, iDestBufSize, "%s%c%s", szDestDir, (int)PATH_SEPARATOR, szBasename);
-	szDestBufFilename[iDestBufSize-1] = '\0';
-
-	int iDupeNumber = 0;
-	while (FileExists(szDestBufFilename))
-	{
-		iDupeNumber++;
-
-		const char* szExtension = strrchr(szBasename, '.');
-		if (szExtension && szExtension != szBasename)
-		{
-			char szFilenameWithoutExt[1024];
-			strncpy(szFilenameWithoutExt, szBasename, 1024);
-			int iEnd = szExtension - szBasename;
-			szFilenameWithoutExt[iEnd < 1024 ? iEnd : 1024-1] = '\0';
-
-			if (!strcasecmp(szExtension, ".par2"))
-			{
-				char* szVolExtension = strrchr(szFilenameWithoutExt, '.');
-				if (szVolExtension && szVolExtension != szFilenameWithoutExt && !strncasecmp(szVolExtension, ".vol", 4))
-				{
-					*szVolExtension = '\0';
-					szExtension = szBasename + (szVolExtension - szFilenameWithoutExt);
-				}
-			}
-
-			snprintf(szDestBufFilename, iDestBufSize, "%s%c%s.duplicate%d%s", szDestDir, (int)PATH_SEPARATOR, szFilenameWithoutExt, iDupeNumber, szExtension);
-		}
-		else
-		{
-			snprintf(szDestBufFilename, iDestBufSize, "%s%c%s.duplicate%d", szDestDir, (int)PATH_SEPARATOR, szBasename, iDupeNumber);
-		}
-
-		szDestBufFilename[iDestBufSize-1] = '\0';
-	}
-
-	return iDupeNumber > 0;
-}
-
-long long Util::JoinInt64(unsigned long Hi, unsigned long Lo)
-{
-	return (((long long)Hi) << 32) + Lo;
-}
-
-void Util::SplitInt64(long long Int64, unsigned long* Hi, unsigned long* Lo)
-{
-	*Hi = (unsigned long)(Int64 >> 32);
-	*Lo = (unsigned long)(Int64 & 0xFFFFFFFF);
-}
-
-/* Base64 decryption is taken from 
- *  Article "BASE 64 Decoding and Encoding Class 2003" by Jan Raddatz
- *  http://www.codeguru.com/cpp/cpp/algorithms/article.php/c5099/
- */
-
-const static char BASE64_DEALPHABET [128] = 
-	{
-	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //   0 -   9
-	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  10 -  19
-	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  20 -  29
-	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  30 -  39
-	 0,  0,  0, 62,  0,  0,  0, 63, 52, 53, //  40 -  49
-	54, 55, 56, 57, 58, 59, 60, 61,  0,  0, //  50 -  59
-	 0, 61,  0,  0,  0,  0,  1,  2,  3,  4, //  60 -  69
-	 5,  6,  7,  8,  9, 10, 11, 12, 13, 14, //  70 -  79
-	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, //  80 -  89
-	25,  0,  0,  0,  0,  0,  0, 26, 27, 28, //  90 -  99
-	29, 30, 31, 32, 33, 34, 35, 36, 37, 38, // 100 - 109
-	39, 40, 41, 42, 43, 44, 45, 46, 47, 48, // 110 - 119
-	49, 50, 51,  0,  0,  0,  0,  0			// 120 - 127
-	};
-
-unsigned int DecodeByteQuartet(char* szInputBuffer, char* szOutputBuffer)
-{
-	unsigned int buffer = 0;
-
-	if (szInputBuffer[3] == '=')
-	{
-		if (szInputBuffer[2] == '=')
-		{
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
-			buffer = buffer << 14;
-
-			szOutputBuffer [0] = (char)(buffer >> 24);
-			
-			return 1;
-		}
-		else
-		{
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
-			buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[2]]) << 6;
-			buffer = buffer << 8;
-
-			szOutputBuffer [0] = (char)(buffer >> 24);
-			szOutputBuffer [1] = (char)(buffer >> 16);
-			
-			return 2;
-		}
-	}
-	else
-	{
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[0]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[1]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[2]]) << 6;
-		buffer = (buffer | BASE64_DEALPHABET [(int)szInputBuffer[3]]) << 6; 
-		buffer = buffer << 2;
-
-		szOutputBuffer [0] = (char)(buffer >> 24);
-		szOutputBuffer [1] = (char)(buffer >> 16);
-		szOutputBuffer [2] = (char)(buffer >> 8);
-
-		return 3;
-	}
-
-	return 0;
-}
-
-bool Util::MoveFile(const char* szSrcFilename, const char* szDstFilename)
-{
-	bool bOK = rename(szSrcFilename, szDstFilename) == 0;
-
-#ifndef WIN32
-	if (!bOK && errno == EXDEV)
-	{
-		bOK = CopyFile(szSrcFilename, szDstFilename) && remove(szSrcFilename) == 0;
-	}
-#endif
-
-	return bOK;
-}
-
-bool Util::CopyFile(const char* szSrcFilename, const char* szDstFilename)
-{
-	FILE* infile = fopen(szSrcFilename, FOPEN_RB);
-	if (!infile)
-	{
-		return false;
-	}
-
-	FILE* outfile = fopen(szDstFilename, FOPEN_WBP);
-	if (!outfile)
-	{
-		fclose(infile);
-		return false;
-	}
-
-	static const int BUFFER_SIZE = 1024 * 50;
-	char* buffer = (char*)malloc(BUFFER_SIZE);
-
-	int cnt = BUFFER_SIZE;
-	while (cnt == BUFFER_SIZE)
-	{
-		cnt = (int)fread(buffer, 1, BUFFER_SIZE, infile);
-		fwrite(buffer, 1, cnt, outfile);
-	}
-
-	fclose(infile);
-	fclose(outfile);
-	free(buffer);
-
-	return true;
-}
-
-bool Util::FileExists(const char* szFilename)
-{
-#ifdef WIN32
-	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
-	WIN32_FIND_DATA findData;
-	HANDLE handle = FindFirstFile(szFilename, &findData);
-	if (handle != INVALID_HANDLE_VALUE)
-	{
-		bool bExists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
-		FindClose(handle);
-		return bExists;
-	}
-	return false;
-#else
-	struct stat buffer;
-	bool bExists = !stat(szFilename, &buffer) && S_ISREG(buffer.st_mode);
-	return bExists;
-#endif
-}
-
-bool Util::FileExists(const char* szPath, const char* szFilenameWithoutPath)
-{
-	char fullFilename[1024];
-	snprintf(fullFilename, 1024, "%s%c%s", szPath, (int)PATH_SEPARATOR, szFilenameWithoutPath);
-	fullFilename[1024-1] = '\0';
-	bool bExists = Util::FileExists(fullFilename);
-	return bExists;
-}
-
-bool Util::DirectoryExists(const char* szDirFilename)
-{
-#ifdef WIN32
-	// we use a native windows call because c-lib function "stat" fails on windows if file date is invalid
-	WIN32_FIND_DATA findData;
-	HANDLE handle = FindFirstFile(szDirFilename, &findData);
-	if (handle != INVALID_HANDLE_VALUE)
-	{
-		bool bExists = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-		FindClose(handle);
-		return bExists;
-	}
-	return false;
-#else
-	struct stat buffer;
-	bool bExists = !stat(szDirFilename, &buffer) && S_ISDIR(buffer.st_mode);
-	return bExists;
-#endif
-}
-
-bool Util::CreateDirectory(const char* szDirFilename)
-{
-	mkdir(szDirFilename, S_DIRMODE);
-	return DirectoryExists(szDirFilename);
-}
-
-bool Util::RemoveDirectory(const char* szDirFilename)
-{
-#ifdef WIN32
-	return _rmdir(szDirFilename) == 0;
-#else
-	return remove(szDirFilename) == 0;
-#endif
-}
-
-bool Util::DeleteDirectoryWithContent(const char* szDirFilename, char* szErrBuf, int iBufSize)
-{
-	*szErrBuf = '\0';
-	char szSysErrStr[256];
-
-	bool bDel = false;
-	bool bOK = true;
-
-	DirBrowser dir(szDirFilename);
-	while (const char* filename = dir.Next())
-	{
-		char szFullFilename[1024];
-		snprintf(szFullFilename, 1024, "%s%c%s", szDirFilename, PATH_SEPARATOR, filename);
-		szFullFilename[1024-1] = '\0';
-
-		if (strcmp(filename, ".") && strcmp(filename, ".."))
-		{
-			if (Util::DirectoryExists(szFullFilename))
-			{
-				bDel = DeleteDirectoryWithContent(szFullFilename, szSysErrStr, sizeof(szSysErrStr));
-			}
-			else
-			{
-				bDel = remove(szFullFilename) == 0;
-			}
-			bOK &= bDel;
-			if (!bDel && !*szErrBuf)
-			{
-				snprintf(szErrBuf, iBufSize, "could not delete %s: %s", szFullFilename, GetLastErrorMessage(szSysErrStr, sizeof(szSysErrStr)));
-			}
-		}
-	}
-
-	bDel = RemoveDirectory(szDirFilename);
-	bOK &= bDel;
-	if (!bDel && !*szErrBuf)
-	{
-		GetLastErrorMessage(szErrBuf, iBufSize);
-	}
-	return bOK;
-}
-
-long long Util::FileSize(const char* szFilename)
-{
-#ifdef WIN32
-	struct _stat32i64 buffer;
-	_stat32i64(szFilename, &buffer);
-#else
-	struct stat buffer;
-	stat(szFilename, &buffer);
-#endif
-	return buffer.st_size;
-}
-
-long long Util::FreeDiskSize(const char* szPath)
-{
-#ifdef WIN32
-	ULARGE_INTEGER lFree, lDummy;
-	if (GetDiskFreeSpaceEx(szPath, &lFree, &lDummy, &lDummy))
-	{
-		return lFree.QuadPart;
-	}
-#else
-	struct statvfs diskdata;
-	if (!statvfs(szPath, &diskdata)) 
-	{
-		return (long long)diskdata.f_frsize * (long long)diskdata.f_bavail;
-	}
-#endif
-	return -1;
-}
-
-bool Util::RenameBak(const char* szFilename, const char* szBakPart, bool bRemoveOldExtension, char* szNewNameBuf, int iNewNameBufSize)
-{
-	char szChangedFilename[1024];
-
-	if (bRemoveOldExtension)
-	{
-		strncpy(szChangedFilename, szFilename, 1024);
-		szChangedFilename[1024-1] = '\0';
-		char* szExtension = strrchr(szChangedFilename, '.');
-		if (szExtension)
-		{
-			*szExtension = '\0';
-		}
-	}
-
-	char bakname[1024];
-	snprintf(bakname, 1024, "%s.%s", bRemoveOldExtension ? szChangedFilename : szFilename, szBakPart);
-	bakname[1024-1] = '\0';
-
-	int i = 2;
-	struct stat buffer;
-	while (!stat(bakname, &buffer))
-	{
-		snprintf(bakname, 1024, "%s.%i.%s", bRemoveOldExtension ? szChangedFilename : szFilename, i++, szBakPart);
-		bakname[1024-1] = '\0';
-	}
-
-	if (szNewNameBuf)
-	{
-		strncpy(szNewNameBuf, bakname, iNewNameBufSize);
-	}
-
-	bool bOK = !rename(szFilename, bakname);
-	return bOK;
-}
-
-#ifndef WIN32
-bool Util::ExpandHomePath(const char* szFilename, char* szBuffer, int iBufSize)
-{
-	if (szFilename && (szFilename[0] == '~') && (szFilename[1] == '/'))
-	{
-		// expand home-dir
-
-		char* home = getenv("HOME");
-		if (!home)
-		{
-			struct passwd *pw = getpwuid(getuid());
-			if (pw)
-			{
-				home = pw->pw_dir;
-			}
-		}
-
-		if (!home)
-		{
-			return false;
-		}
-
-		if (home[strlen(home)-1] == '/')
-		{
-			snprintf(szBuffer, iBufSize, "%s%s", home, szFilename + 2);
-		}
-		else
-		{
-			snprintf(szBuffer, iBufSize, "%s/%s", home, szFilename + 2);
-		}
-		szBuffer[iBufSize - 1] = '\0';
-	}
-	else
-	{
-		strncpy(szBuffer, szFilename ? szFilename : "", iBufSize);
-		szBuffer[iBufSize - 1] = '\0';
-	}
-	
-	return true;
-}
-#endif
-
-void Util::ExpandFileName(const char* szFilename, char* szBuffer, int iBufSize)
-{
-#ifdef WIN32
-	_fullpath(szBuffer, szFilename, iBufSize);
-#else
-	if (szFilename[0] != '\0' && szFilename[0] != '/')
-	{
-		char szCurDir[MAX_PATH + 1];
-		getcwd(szCurDir, sizeof(szCurDir) - 1); // 1 char reserved for adding backslash
-		int iOffset = 0;
-		if (szFilename[0] == '.' && szFilename[1] == '/')
-		{
-			iOffset += 2;
-		}
-		snprintf(szBuffer, iBufSize, "%s/%s", szCurDir, szFilename + iOffset);
-	}
-	else
-	{
-		strncpy(szBuffer, szFilename, iBufSize);
-		szBuffer[iBufSize - 1] = '\0';
-	}
-#endif
-}
-
-void Util::GetExeFileName(const char* argv0, char* szBuffer, int iBufSize)
-{
-#ifdef WIN32
-	GetModuleFileName(NULL, szBuffer, iBufSize);
-#else
-	// Linux
-	int r = readlink("/proc/self/exe", szBuffer, iBufSize-1);
-	if (r > 0)
-	{
-		szBuffer[r] = '\0';
-		return;
-	}
-	// FreeBSD
-	r = readlink("/proc/curproc/file", szBuffer, iBufSize-1);
-	if (r > 0)
-	{
-		szBuffer[r] = '\0';
-		return;
-	}
-
-	ExpandFileName(argv0, szBuffer, iBufSize);
-#endif
-}
-
-char* Util::FormatSize(char * szBuffer, int iBufLen, long long lFileSize)
-{
-	if (lFileSize > 1024 * 1024 * 1000)
-	{
-		snprintf(szBuffer, iBufLen, "%.2f GB", (float)((float)lFileSize / 1024 / 1024 / 1024));
-	}
-	else if (lFileSize > 1024 * 1000)
-	{
-		snprintf(szBuffer, iBufLen, "%.2f MB", (float)((float)lFileSize / 1024 / 1024));
-	}
-	else if (lFileSize > 1000)
-	{
-		snprintf(szBuffer, iBufLen, "%.2f KB", (float)((float)lFileSize / 1024));
-	}
-	else if (lFileSize == 0)
-	{
-		strncpy(szBuffer, "0 MB", iBufLen);
-	}
-	else
-	{
-		snprintf(szBuffer, iBufLen, "%i B", (int)lFileSize);
-	}
-	szBuffer[iBufLen - 1] = '\0';
-	return szBuffer;
-}
-
-char* Util::FormatSpeed(char* szBuffer, int iBufSize, int iBytesPerSecond)
-{
-	if (iBytesPerSecond >= 100 * 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufSize, "%i MB/s", iBytesPerSecond / 1024 / 1024);
-	}
-	else if (iBytesPerSecond >= 10 * 1024 * 1024)
-	{
-		snprintf(szBuffer, iBufSize, "%0.1f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
-	}
-	else if (iBytesPerSecond >= 1024 * 1000)
-	{
-		snprintf(szBuffer, iBufSize, "%0.2f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
-	}
-	else
-	{
-		snprintf(szBuffer, iBufSize, "%i KB/s", iBytesPerSecond / 1024);
-	}
-
-	szBuffer[iBufSize - 1] = '\0';
-	return szBuffer;
-}
-
-bool Util::SameFilename(const char* szFilename1, const char* szFilename2)
-{
-#ifdef WIN32
-	return strcasecmp(szFilename1, szFilename2) == 0;
-#else
-	return strcmp(szFilename1, szFilename2) == 0;
-#endif
-}
-
-bool Util::MatchFileExt(const char* szFilename, const char* szExtensionList, const char* szListSeparator)
-{
-	int iFilenameLen = strlen(szFilename);
-
-	Tokenizer tok(szExtensionList, szListSeparator);
-	while (const char* szExt = tok.Next())
-	{
-		int iExtLen = strlen(szExt);
-		if (iFilenameLen >= iExtLen && !strcasecmp(szExt, szFilename + iFilenameLen - iExtLen))
-		{
-			return true;
-		}
-		if (strchr(szExt, '*') || strchr(szExt, '?'))
-		{
-			WildMask mask(szExt);
-			if (mask.Match(szFilename))
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-#ifndef WIN32
-void Util::FixExecPermission(const char* szFilename)
-{
-	struct stat buffer;
-	bool bOK = !stat(szFilename, &buffer);
-	if (bOK)
-	{
-		buffer.st_mode = buffer.st_mode | S_IXUSR | S_IXGRP | S_IXOTH;
-		chmod(szFilename, buffer.st_mode);
-	}
-}
-#endif
-
-char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
-{
-	szBuffer[0] = '\0';
-	strerror_r(errno, szBuffer, iBufLen);
-	szBuffer[iBufLen-1] = '\0';
-	return szBuffer;
-}
 
 void Util::Init()
 {
@@ -1161,68 +124,240 @@ void Util::Init()
 	GetCurrentTicks();
 }
 
-bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
+int64 Util::JoinInt64(uint32 Hi, uint32 Lo)
 {
-	int iArgCount = 0;
-	char szBuf[1024];
-	char* pszArgList[100];
-	unsigned int iLen = 0;
-	bool bEscaping = false;
-	bool bSpace = true;
-	for (const char* p = szCommandLine; ; p++)
+	return (((int64)Hi) << 32) + Lo;
+}
+
+void Util::SplitInt64(int64 Int64, uint32* Hi, uint32* Lo)
+{
+	*Hi = (uint32)(Int64 >> 32);
+	*Lo = (uint32)(Int64 & 0xFFFFFFFF);
+}
+
+/* Base64 decryption is taken from
+*  Article "BASE 64 Decoding and Encoding Class 2003" by Jan Raddatz
+*  http://www.codeguru.com/cpp/cpp/algorithms/article.php/c5099/
+*/
+
+const static char BASE64_DEALPHABET [128] =
+{
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //   0 -   9
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  10 -  19
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  20 -  29
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  30 -  39
+	0,  0,  0, 62,  0,  0,  0, 63, 52, 53, //  40 -  49
+	54, 55, 56, 57, 58, 59, 60, 61,  0,  0, //  50 -  59
+	0, 61,  0,  0,  0,  0,  1,  2,  3,  4, //  60 -  69
+	5,  6,  7,  8,  9, 10, 11, 12, 13, 14, //  70 -  79
+	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, //  80 -  89
+	25,  0,  0,  0,  0,  0,  0, 26, 27, 28, //  90 -  99
+	29, 30, 31, 32, 33, 34, 35, 36, 37, 38, // 100 - 109
+	39, 40, 41, 42, 43, 44, 45, 46, 47, 48, // 110 - 119
+	49, 50, 51,  0,  0,  0,  0,  0			// 120 - 127
+};
+
+uint32 DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
+{
+	uint32 buffer = 0;
+
+	if (inputBuffer[3] == '=')
+	{
+		if (inputBuffer[2] == '=')
+		{
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[1]]) << 6;
+			buffer = buffer << 14;
+
+			outputBuffer [0] = (char)(buffer >> 24);
+
+			return 1;
+		}
+		else
+		{
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[0]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[1]]) << 6;
+			buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[2]]) << 6;
+			buffer = buffer << 8;
+
+			outputBuffer [0] = (char)(buffer >> 24);
+			outputBuffer [1] = (char)(buffer >> 16);
+
+			return 2;
+		}
+	}
+	else
+	{
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[0]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[1]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[2]]) << 6;
+		buffer = (buffer | BASE64_DEALPHABET [(int)inputBuffer[3]]) << 6;
+		buffer = buffer << 2;
+
+		outputBuffer [0] = (char)(buffer >> 24);
+		outputBuffer [1] = (char)(buffer >> 16);
+		outputBuffer [2] = (char)(buffer >> 8);
+
+		return 3;
+	}
+
+	return 0;
+}
+
+CString Util::FormatSize(int64 fileSize)
+{
+	CString result;
+
+	if (fileSize > 1024 * 1024 * 1000)
+	{
+		result.Format("%.2f GB", (float)((float)fileSize / 1024 / 1024 / 1024));
+	}
+	else if (fileSize > 1024 * 1000)
+	{
+		result.Format("%.2f MB", (float)((float)fileSize / 1024 / 1024));
+	}
+	else if (fileSize > 1000)
+	{
+		result.Format("%.2f KB", (float)((float)fileSize / 1024));
+	}
+	else if (fileSize == 0)
+	{
+		result = "0 MB";
+	}
+	else
+	{
+		result.Format("%i B", (int)fileSize);
+	}
+	return result;
+}
+
+CString Util::FormatSpeed(int bytesPerSecond)
+{
+	CString result;
+
+	if (bytesPerSecond >= 100 * 1024 * 1024)
+	{
+		result.Format("%i MB/s", bytesPerSecond / 1024 / 1024);
+	}
+	else if (bytesPerSecond >= 10 * 1024 * 1024)
+	{
+		result.Format("%0.1f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
+	}
+	else if (bytesPerSecond >= 1024 * 1000)
+	{
+		result.Format("%0.2f MB/s", (float)bytesPerSecond / 1024.0 / 1024.0);
+	}
+	else
+	{
+		result.Format("%i KB/s", bytesPerSecond / 1024);
+	}
+
+	return result;
+}
+
+void Util::FormatTime(time_t timeSec, char* buffer, int bufsize)
+{
+#ifdef HAVE_CTIME_R_3
+	ctime_r(&timeSec, buffer, bufsize);
+#else
+	ctime_r(&timeSec, buffer);
+#endif
+	buffer[bufsize-1] = '\0';
+
+	// trim LF
+	buffer[strlen(buffer) - 1] = '\0';
+}
+
+CString Util::FormatTime(time_t timeSec)
+{
+	CString result;
+	result.Reserve(50);
+	FormatTime(timeSec, result, 50);
+	return result;
+}
+
+bool Util::MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator)
+{
+	int filenameLen = strlen(filename);
+
+	Tokenizer tok(extensionList, listSeparator);
+	while (const char* ext = tok.Next())
+	{
+		int extLen = strlen(ext);
+		if (filenameLen >= extLen && !strcasecmp(ext, filename + filenameLen - extLen))
+		{
+			return true;
+		}
+		if (strchr(ext, '*') || strchr(ext, '?'))
+		{
+			WildMask mask(ext);
+			if (mask.Match(filename))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+std::vector<CString> Util::SplitCommandLine(const char* commandLine)
+{
+	std::vector<CString> result;
+	char buf[1024];
+	uint32 len = 0;
+	bool escaping = false;
+	bool space = true;
+	for (const char* p = commandLine; ; p++)
 	{
 		if (*p)
 		{
 			const char c = *p;
-			if (bEscaping)
+			if (escaping)
 			{
 				if (c == '\'')
 				{
-					if (p[1] == '\'' && iLen < sizeof(szBuf) - 1)
+					if (p[1] == '\'' && len < sizeof(buf) - 1)
 					{
-						szBuf[iLen++] = c;
+						buf[len++] = c;
 						p++;
 					}
 					else
 					{
-						bEscaping = false;
-						bSpace = true;
+						escaping = false;
+						space = true;
 					}
 				}
-				else if (iLen < sizeof(szBuf) - 1)
+				else if (len < sizeof(buf) - 1)
 				{
-					szBuf[iLen++] = c;
+					buf[len++] = c;
 				}
 			}
 			else
 			{
 				if (c == ' ')
 				{
-					bSpace = true;
+					space = true;
 				}
-				else if (c == '\'' && bSpace)
+				else if (c == '\'' && space)
 				{
-					bEscaping = true;
-					bSpace = false;
+					escaping = true;
+					space = false;
 				}
-				else if (iLen < sizeof(szBuf) - 1)
+				else if (len < sizeof(buf) - 1)
 				{
-					szBuf[iLen++] = c;
-					bSpace = false;
+					buf[len++] = c;
+					space = false;
 				}
 			}
 		}
 
-		if ((bSpace || !*p) && iLen > 0 && iArgCount < 100)
+		if ((space || !*p) && len > 0)
 		{
 			//add token
-			szBuf[iLen] = '\0';
-			if (argv)
-			{
-				pszArgList[iArgCount] = strdup(szBuf);
-			}
-			(iArgCount)++;
-			iLen = 0;
+			buf[len] = '\0';
+			result.emplace_back(buf);
+			len = 0;
 		}
 
 		if (!*p)
@@ -1231,61 +366,63 @@ bool Util::SplitCommandLine(const char* szCommandLine, char*** argv)
 		}
 	}
 
-	if (argv)
-	{
-		pszArgList[iArgCount] = NULL;
-		*argv = (char**)malloc((iArgCount + 1) * sizeof(char*));
-		memcpy(*argv, pszArgList, sizeof(char*) * (iArgCount + 1));
-	}
-
-	return iArgCount > 0;
+	return result;
 }
 
-void Util::TrimRight(char* szStr)
+void Util::TrimRight(char* str)
 {
-	char* szEnd = szStr + strlen(szStr) - 1;
-	while (szEnd >= szStr && (*szEnd == '\n' || *szEnd == '\r' || *szEnd == ' ' || *szEnd == '\t'))
+	char* end = str + strlen(str) - 1;
+	while (end >= str && (*end == '\n' || *end == '\r' || *end == ' ' || *end == '\t'))
 	{
-		*szEnd = '\0';
-		szEnd--;
+		*end = '\0';
+		end--;
 	}
 }
 
-char* Util::Trim(char* szStr)
+char* Util::Trim(char* str)
 {
-	TrimRight(szStr);
-	while (*szStr == '\n' || *szStr == '\r' || *szStr == ' ' || *szStr == '\t')
+	TrimRight(str);
+	while (*str == '\n' || *str == '\r' || *str == ' ' || *str == '\t')
 	{
-		szStr++;
+		str++;
 	}
-	return szStr;
+	return str;
 }
 
-char* Util::ReduceStr(char* szStr, const char* szFrom, const char* szTo)
+char* Util::ReduceStr(char* str, const char* from, const char* to)
 {
-	int iLenFrom = strlen(szFrom);
-	int iLenTo = strlen(szTo);
+	int lenFrom = strlen(from);
+	int lenTo = strlen(to);
 	// assert(iLenTo < iLenFrom);
 
-	while (char* p = strstr(szStr, szFrom))
+	while (char* p = strstr(str, from))
 	{
-		const char* src = szTo;
+		const char* src = to;
 		while ((*p++ = *src++)) ;
 
-		src = --p - iLenTo + iLenFrom;
+		src = --p - lenTo + lenFrom;
 		while ((*p++ = *src++)) ;
 	}
 
-	return szStr;
+	return str;
+}
+
+std::vector<CString> Util::SplitStr(const char* str, const char* separators)
+{
+	std::vector<CString> result;
+	Tokenizer tok(str, separators);
+	while (const char* substr = tok.Next())
+	{
+		result.emplace_back(substr);
+	}
+	return result;
 }
 
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */
-typedef  unsigned int  ub4;   /* unsigned 4-byte quantities */
-typedef  unsigned char ub1;
 
-#define hashsize(n) ((ub4)1<<(n))
+#define hashsize(n) ((uint32)1<<(n))
 #define hashmask(n) (hashsize(n)-1)
 
 #define mix(a,b,c) \
@@ -1301,43 +438,43 @@ b -= c; b -= a; b ^= (a<<10); \
 c -= a; c -= b; c ^= (b>>15); \
 }
 
-ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
-// register ub1 *k;        /* the key */
-// register ub4  length;   /* the length of the key */
-// register ub4  initval;    /* the previous hash, or an arbitrary value */
+uint32 hash(register uint8 *k, register uint32  length, register uint32  initval)
+// register uint8 *k;        /* the key */
+// register uint32  length;   /* the length of the key */
+// register uint32  initval;    /* the previous hash, or an arbitrary value */
 {
-	register ub4 a,b,c,len;
-	
+	uint32 a,b,c,len;
+
 	/* Set up the internal state */
 	len = length;
 	a = b = 0x9e3779b9;  /* the golden ratio; an arbitrary value */
 	c = initval;           /* the previous hash value */
-	
+
 	/*---------------------------------------- handle most of the key */
 	while (len >= 12)
 	{
-		a += (k[0] +((ub4)k[1]<<8) +((ub4)k[2]<<16) +((ub4)k[3]<<24));
-		b += (k[4] +((ub4)k[5]<<8) +((ub4)k[6]<<16) +((ub4)k[7]<<24));
-		c += (k[8] +((ub4)k[9]<<8) +((ub4)k[10]<<16)+((ub4)k[11]<<24));
+		a += (k[0] +((uint32)k[1]<<8) +((uint32)k[2]<<16) +((uint32)k[3]<<24));
+		b += (k[4] +((uint32)k[5]<<8) +((uint32)k[6]<<16) +((uint32)k[7]<<24));
+		c += (k[8] +((uint32)k[9]<<8) +((uint32)k[10]<<16)+((uint32)k[11]<<24));
 		mix(a,b,c);
 		k += 12; len -= 12;
 	}
-	
+
 	/*------------------------------------- handle the last 11 bytes */
 	c += length;
 	switch(len)              /* all the case statements fall through */
 	{
-		case 11: c+=((ub4)k[10]<<24);
-		case 10: c+=((ub4)k[9]<<16);
-		case 9 : c+=((ub4)k[8]<<8);
+		case 11: c+=((uint32)k[10]<<24);
+		case 10: c+=((uint32)k[9]<<16);
+		case 9 : c+=((uint32)k[8]<<8);
 			/* the first byte of c is reserved for the length */
-		case 8 : b+=((ub4)k[7]<<24);
-		case 7 : b+=((ub4)k[6]<<16);
-		case 6 : b+=((ub4)k[5]<<8);
+		case 8 : b+=((uint32)k[7]<<24);
+		case 7 : b+=((uint32)k[6]<<16);
+		case 6 : b+=((uint32)k[5]<<8);
 		case 5 : b+=k[4];
-		case 4 : a+=((ub4)k[3]<<24);
-		case 3 : a+=((ub4)k[2]<<16);
-		case 2 : a+=((ub4)k[1]<<8);
+		case 4 : a+=((uint32)k[3]<<24);
+		case 3 : a+=((uint32)k[2]<<16);
+		case 2 : a+=((uint32)k[1]<<8);
 		case 1 : a+=k[0];
 			/* case 0: nothing left to add */
 	}
@@ -1346,26 +483,31 @@ ub4 hash(register ub1 *k, register ub4  length, register ub4  initval)
 	return c;
 }
 
-unsigned int Util::HashBJ96(const char* szBuffer, int iBufSize, unsigned int iInitValue)
+uint32 Util::HashBJ96(const char* buffer, int bufSize, uint32 initValue)
 {
-	return (unsigned int)hash((ub1*)szBuffer, (ub4)iBufSize, (ub4)iInitValue);
+	return (uint32)hash((uint8*)buffer, (uint32)bufSize, (uint32)initValue);
 }
 
 #ifdef WIN32
-bool Util::RegReadStr(HKEY hKey, const char* szKeyName, const char* szValueName, char* szBuffer, int* iBufLen)
+bool Util::RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, char* buffer, int* bufLen)
 {
-	HKEY hSubKey;
-	if (!RegOpenKeyEx(hKey, szKeyName, 0, KEY_READ, &hSubKey))
+	HKEY subKey;
+	if (!RegOpenKeyEx(keyRoot, keyName, 0, KEY_READ, &subKey))
 	{
-		DWORD iRetBytes = *iBufLen;
-		LONG iRet = RegQueryValueEx(hSubKey, szValueName, NULL, NULL, (LPBYTE)szBuffer, &iRetBytes);
-		*iBufLen = iRetBytes;
-		RegCloseKey(hSubKey);
-		return iRet == 0;
+		DWORD retBytes = *bufLen;
+		LONG ret = RegQueryValueEx(subKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &retBytes);
+		*bufLen = retBytes;
+		RegCloseKey(subKey);
+		return ret == 0;
 	}
 	return false;
 }
 #endif
+
+time_t Util::CurrentTime()
+{
+	return ::time(nullptr);
+}
 
 /* From boost */
 
@@ -1393,8 +535,8 @@ inline int days_from_1jan(int year,int month,int day)
 {
   static const int days[2][12] =
   {
-    { 0,31,59,90,120,151,181,212,243,273,304,334},
-    { 0,31,60,91,121,152,182,213,244,274,305,335}
+	{ 0,31,59,90,120,151,181,212,243,273,304,334},
+	{ 0,31,60,91,121,152,182,213,244,274,305,335}
   };
   return days[is_leap(year)][month-1] + day - 1;
 }
@@ -1405,14 +547,14 @@ inline time_t internal_timegm(tm const *t)
   int month = t->tm_mon;
   if(month > 11)
   {
-    year += month/12;
-    month %= 12;
+	year += month/12;
+	month %= 12;
   }
   else if(month < 0)
   {
-    int years_diff = (-month + 11)/12;
-    year -= years_diff;
-    month+=12 * years_diff;
+	int years_diff = (-month + 11)/12;
+	year -= years_diff;
+	month+=12 * years_diff;
   }
   month++;
   int day = t->tm_mday;
@@ -1431,14 +573,14 @@ time_t Util::Timegm(tm const *t)
 }
 
 // prevent PC from going to sleep
-void Util::SetStandByMode(bool bStandBy)
+void Util::SetStandByMode(bool standBy)
 {
 #ifdef WIN32
-	SetThreadExecutionState((bStandBy ? 0 : ES_SYSTEM_REQUIRED) | ES_CONTINUOUS);
+	SetThreadExecutionState((standBy ? 0 : ES_SYSTEM_REQUIRED) | ES_CONTINUOUS);
 #endif
 }
 
-static unsigned long crc32_tab[] = {
+static uint32 crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
 	0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -1494,17 +636,17 @@ static unsigned long crc32_tab[] = {
  *				reached. the crc32-checksum will be
  *				the result.
  */
-unsigned long Util::Crc32m(unsigned long startCrc, unsigned char *block, unsigned long length)
+uint32 Util::Crc32m(uint32 startCrc, uchar *block, uint32 length)
 {
-	register unsigned long crc = startCrc;
-	for (unsigned long i = 0; i < length; i++)
+	uint32 crc = startCrc;
+	for (uint32 i = 0; i < length; i++)
 	{
 		crc = ((crc >> 8) & 0x00FFFFFF) ^ crc32_tab[(crc ^ *block++) & 0xFF];
 	}
 	return crc;
 }
 
-unsigned long Util::Crc32(unsigned char *block, unsigned long length)
+uint32 Util::Crc32(uchar *block, uint32 length)
 {
 	return Util::Crc32m(0xFFFFFFFF, block, length) ^ 0xFFFFFFFF;
 }
@@ -1515,79 +657,79 @@ unsigned long Util::Crc32(unsigned char *block, unsigned long length)
 
 #define GF2_DIM 32      /* dimension of GF(2) vectors (length of CRC) */
 
-unsigned long gf2_matrix_times(unsigned long *mat, unsigned long vec)
+uint32 gf2_matrix_times(uint32 *mat, uint32 vec)
 {
-    unsigned long sum;
+	uint32 sum;
 
-    sum = 0;
-    while (vec) {
-        if (vec & 1)
-            sum ^= *mat;
-        vec >>= 1;
-        mat++;
-    }
-    return sum;
+	sum = 0;
+	while (vec) {
+		if (vec & 1)
+			sum ^= *mat;
+		vec >>= 1;
+		mat++;
+	}
+	return sum;
 }
 
-void gf2_matrix_square(unsigned long *square, unsigned long *mat)
+void gf2_matrix_square(uint32 *square, uint32 *mat)
 {
-    int n;
+	int n;
 
-    for (n = 0; n < GF2_DIM; n++)
-        square[n] = gf2_matrix_times(mat, mat[n]);
+	for (n = 0; n < GF2_DIM; n++)
+		square[n] = gf2_matrix_times(mat, mat[n]);
 }
 
-unsigned long Util::Crc32Combine(unsigned long crc1, unsigned long crc2, unsigned long len2)
+uint32 Util::Crc32Combine(uint32 crc1, uint32 crc2, uint32 len2)
 {
-    int n;
-    unsigned long row;
-    unsigned long even[GF2_DIM];    /* even-power-of-two zeros operator */
-    unsigned long odd[GF2_DIM];     /* odd-power-of-two zeros operator */
+	int n;
+	uint32 row;
+	uint32 even[GF2_DIM];    /* even-power-of-two zeros operator */
+	uint32 odd[GF2_DIM];     /* odd-power-of-two zeros operator */
 
-    /* degenerate case (also disallow negative lengths) */
-    if (len2 <= 0)
-        return crc1;
+	/* degenerate case (also disallow negative lengths) */
+	if (len2 <= 0)
+		return crc1;
 
-    /* put operator for one zero bit in odd */
-    odd[0] = 0xedb88320UL;          /* CRC-32 polynomial */
-    row = 1;
-    for (n = 1; n < GF2_DIM; n++) {
-        odd[n] = row;
-        row <<= 1;
-    }
+	/* put operator for one zero bit in odd */
+	odd[0] = 0xedb88320UL;          /* CRC-32 polynomial */
+	row = 1;
+	for (n = 1; n < GF2_DIM; n++) {
+		odd[n] = row;
+		row <<= 1;
+	}
 
-    /* put operator for two zero bits in even */
-    gf2_matrix_square(even, odd);
+	/* put operator for two zero bits in even */
+	gf2_matrix_square(even, odd);
 
-    /* put operator for four zero bits in odd */
-    gf2_matrix_square(odd, even);
+	/* put operator for four zero bits in odd */
+	gf2_matrix_square(odd, even);
 
-    /* apply len2 zeros to crc1 (first square will put the operator for one
-       zero byte, eight zero bits, in even) */
-    do {
-        /* apply zeros operator for this bit of len2 */
-        gf2_matrix_square(even, odd);
-        if (len2 & 1)
-            crc1 = gf2_matrix_times(even, crc1);
-        len2 >>= 1;
+	/* apply len2 zeros to crc1 (first square will put the operator for one
+	   zero byte, eight zero bits, in even) */
+	do {
+		/* apply zeros operator for this bit of len2 */
+		gf2_matrix_square(even, odd);
+		if (len2 & 1)
+			crc1 = gf2_matrix_times(even, crc1);
+		len2 >>= 1;
 
-        /* if no more bits set, then done */
-        if (len2 == 0)
-            break;
+		/* if no more bits set, then done */
+		if (len2 == 0)
+			break;
 
-        /* another iteration of the loop with odd and even swapped */
-        gf2_matrix_square(odd, even);
-        if (len2 & 1)
-            crc1 = gf2_matrix_times(odd, crc1);
-        len2 >>= 1;
+		/* another iteration of the loop with odd and even swapped */
+		gf2_matrix_square(odd, even);
+		if (len2 & 1)
+			crc1 = gf2_matrix_times(odd, crc1);
+		len2 >>= 1;
 
-        /* if no more bits set, then done */
-    } while (len2 != 0);
+		/* if no more bits set, then done */
+	} while (len2 != 0);
 
-    /* return combined crc */
-    crc1 ^= crc2;
+	/* return combined crc */
+	crc1 ^= crc2;
 
-    return crc1;
+	return crc1;
 }
 
 int Util::NumberOfCpuCores()
@@ -1602,105 +744,51 @@ int Util::NumberOfCpuCores()
 	return -1;
 }
 
-bool Util::FlushFileBuffers(int iFileDescriptor, char* szErrBuf, int iBufSize)
+int64 Util::GetCurrentTicks()
 {
 #ifdef WIN32
-	BOOL bOK = ::FlushFileBuffers((HANDLE)_get_osfhandle(iFileDescriptor));
-	if (!bOK)
-	{
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			szErrBuf, iBufSize, NULL);
-	}
-	return bOK;
-#else
-#ifdef HAVE_FULLFSYNC    
-	int ret = fcntl(iFileDescriptor, F_FULLFSYNC) == -1 ? 1 : 0;
-#elif HAVE_FDATASYNC
-    int ret = fdatasync(iFileDescriptor);
-#else
-    int ret = fsync(iFileDescriptor);
-#endif    
-    if (ret != 0)
-    {
-		GetLastErrorMessage(szErrBuf, iBufSize);
-    }
-    return ret == 0;
-#endif
-}
-
-bool Util::FlushDirBuffers(const char* szFilename, char* szErrBuf, int iBufSize)
-{
-	char szParentPath[1024];
-	strncpy(szParentPath, szFilename, 1024);
-	szParentPath[1024-1] = '\0';
-	const char* szFileMode = FOPEN_RBP;
-
-#ifndef WIN32
-	char* p = (char*)strrchr(szParentPath, PATH_SEPARATOR);
-	if (p)
-	{
-	    *p = '\0';
-	}
-	szFileMode = FOPEN_RB;
-#endif
-
-	FILE* pFile = fopen(szParentPath, szFileMode);
-	if (!pFile)
-	{
-		GetLastErrorMessage(szErrBuf, iBufSize);
-		return false;
-	}
-	bool bOK = FlushFileBuffers(fileno(pFile), szErrBuf, iBufSize);
-	fclose(pFile);
-	return bOK;
-}
-
-long long Util::GetCurrentTicks()
-{
-#ifdef WIN32
-	static long long hz=0, hzo=0;
+	static int64 hz=0, hzo=0;
 	if (!hz)
 	{
 		QueryPerformanceFrequency((LARGE_INTEGER*)&hz);
 		QueryPerformanceCounter((LARGE_INTEGER*)&hzo);
 	}
-	long long t;
+	int64 t;
 	QueryPerformanceCounter((LARGE_INTEGER*)&t);
 	return ((t-hzo)*1000000)/hz;
 #else
 	timeval t;
-	gettimeofday(&t, NULL);
-	return (long long)(t.tv_sec) * 1000000ll + (long long)(t.tv_usec);
+	gettimeofday(&t, nullptr);
+	return (int64)(t.tv_sec) * 1000000ll + (int64)(t.tv_usec);
 #endif
 }
 
-unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, char* szOutputBuffer)
+uint32 WebUtil::DecodeBase64(char* inputBuffer, int inputBufferLength, char* outputBuffer)
 {
-	unsigned int InputBufferIndex  = 0;
-	unsigned int OutputBufferIndex = 0;
-	unsigned int InputBufferLength = iInputBufferLength > 0 ? iInputBufferLength : strlen(szInputBuffer);
+	uint32 InputBufferIndex  = 0;
+	uint32 OutputBufferIndex = 0;
+	uint32 InputBufferLength = inputBufferLength > 0 ? inputBufferLength : strlen(inputBuffer);
 
 	char ByteQuartet [4];
 	int i = 0;
 	while (InputBufferIndex < InputBufferLength)
 	{
 		// Ignore all characters except the ones in BASE64_ALPHABET
-		if ((szInputBuffer [InputBufferIndex] >= 48 && szInputBuffer [InputBufferIndex] <=  57) ||
-			(szInputBuffer [InputBufferIndex] >= 65 && szInputBuffer [InputBufferIndex] <=  90) ||
-			(szInputBuffer [InputBufferIndex] >= 97 && szInputBuffer [InputBufferIndex] <= 122) ||
-			szInputBuffer [InputBufferIndex] == '+' || 
-			szInputBuffer [InputBufferIndex] == '/' || 
-			szInputBuffer [InputBufferIndex] == '=')
+		if ((inputBuffer [InputBufferIndex] >= 48 && inputBuffer [InputBufferIndex] <=  57) ||
+			(inputBuffer [InputBufferIndex] >= 65 && inputBuffer [InputBufferIndex] <=  90) ||
+			(inputBuffer [InputBufferIndex] >= 97 && inputBuffer [InputBufferIndex] <= 122) ||
+			inputBuffer [InputBufferIndex] == '+' ||
+			inputBuffer [InputBufferIndex] == '/' ||
+			inputBuffer [InputBufferIndex] == '=')
 		{
-			ByteQuartet [i] = szInputBuffer [InputBufferIndex];
+			ByteQuartet [i] = inputBuffer [InputBufferIndex];
 			i++;
 		}
-		
+
 		InputBufferIndex++;
-		
+
 		if (i == 4) {
-			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, szOutputBuffer + OutputBufferIndex);
+			OutputBufferIndex += DecodeByteQuartet(ByteQuartet, outputBuffer + OutputBufferIndex);
 			i = 0;
 		}
 	}
@@ -1714,42 +802,43 @@ unsigned int WebUtil::DecodeBase64(char* szInputBuffer, int iInputBufferLength, 
 /* END - Base64
 */
 
-char* WebUtil::XmlEncode(const char* raw)
+CString WebUtil::XmlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of xml-entities and their sizes
-	int iReqSize = strlen(raw);
+	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '>':
 			case '<':
-				iReqSize += 4;
+				reqSize += 4;
 				break;
 			case '&':
-				iReqSize += 5;
+				reqSize += 5;
 				break;
 			case '\'':
 			case '\"':
-				iReqSize += 6;
+				reqSize += 6;
 				break;
 			default:
 				if (ch < 0x20 || ch >= 0x80)
 				{
-					iReqSize += 10;
+					reqSize += 10;
 					break;
 				}
 		}
 	}
 
-	char* result = (char*)malloc(iReqSize + 1);
+	CString result;
+	result.Reserve(reqSize);
 
 	// copy string
 	char* output = result;
 	for (const char* p = raw; ; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\0':
@@ -1777,7 +866,7 @@ char* WebUtil::XmlEncode(const char* raw)
 			default:
 				if (ch < 0x20 || ch > 0x80)
 				{
-					unsigned int cp = ch;
+					uint32 cp = ch;
 
 					// decode utf8
 					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
@@ -1806,7 +895,7 @@ char* WebUtil::XmlEncode(const char* raw)
 					}
 
 					// accept only valid XML 1.0 characters
-					if (cp == 0x9 || cp == 0xA || cp == 0xD || 
+					if (cp == 0x9 || cp == 0xA || cp == 0xD ||
 						(0x20 <= cp && cp <= 0xD7FF) ||
 						(0xE000 <= cp && cp <= 0xFFFD) ||
 						(0x10000 <= cp && cp <= 0x10FFFF))
@@ -1817,8 +906,7 @@ char* WebUtil::XmlEncode(const char* raw)
 					else
 					{
 						// replace invalid characters with dots
-						sprintf(output, ".");
-						output += 1;
+						*output++ = '.';
 					}
 				}
 				else
@@ -1896,60 +984,52 @@ BreakLoop:
 	*output = '\0';
 }
 
-const char* WebUtil::XmlFindTag(const char* szXml, const char* szTag, int* pValueLength)
+const char* WebUtil::XmlFindTag(const char* xml, const char* tag, int* valueLength)
 {
-	char szOpenTag[100];
-	snprintf(szOpenTag, 100, "<%s>", szTag);
-	szOpenTag[100-1] = '\0';
+	BString<100> openTag("<%s>", tag);
+	BString<100> closeTag("</%s>", tag);
+	BString<100> openCloseTag("<%s/>", tag);
 
-	char szCloseTag[100];
-	snprintf(szCloseTag, 100, "</%s>", szTag);
-	szCloseTag[100-1] = '\0';
-
-	char szOpenCloseTag[100];
-	snprintf(szOpenCloseTag, 100, "<%s/>", szTag);
-	szOpenCloseTag[100-1] = '\0';
-
-	const char* pstart = strstr(szXml, szOpenTag);
-	const char* pstartend = strstr(szXml, szOpenCloseTag);
-	if (!pstart && !pstartend) return NULL;
+	const char* pstart = strstr(xml, openTag);
+	const char* pstartend = strstr(xml, openCloseTag);
+	if (!pstart && !pstartend) return nullptr;
 
 	if (pstartend && (!pstart || pstartend < pstart))
 	{
-		*pValueLength = 0;
+		*valueLength = 0;
 		return pstartend;
 	}
 
-	const char* pend = strstr(pstart, szCloseTag);
-	if (!pend) return NULL;
+	const char* pend = strstr(pstart, closeTag);
+	if (!pend) return nullptr;
 
-	int iTagLen = strlen(szOpenTag);
-	*pValueLength = (int)(pend - pstart - iTagLen);
+	int tagLen = strlen(openTag);
+	*valueLength = (int)(pend - pstart - tagLen);
 
-	return pstart + iTagLen;
+	return pstart + tagLen;
 }
 
-bool WebUtil::XmlParseTagValue(const char* szXml, const char* szTag, char* szValueBuf, int iValueBufSize, const char** pTagEnd)
+bool WebUtil::XmlParseTagValue(const char* xml, const char* tag, char* valueBuf, int valueBufSize, const char** tagEnd)
 {
-	int iValueLen = 0;
-	const char* szValue = XmlFindTag(szXml, szTag, &iValueLen);
-	if (!szValue)
+	int valueLen = 0;
+	const char* value = XmlFindTag(xml, tag, &valueLen);
+	if (!value)
 	{
 		return false;
 	}
-	int iLen = iValueLen < iValueBufSize ? iValueLen : iValueBufSize - 1;
-	strncpy(szValueBuf, szValue, iLen);
-	szValueBuf[iLen] = '\0';
-	if (pTagEnd)
+	int len = valueLen < valueBufSize ? valueLen : valueBufSize - 1;
+	strncpy(valueBuf, value, len);
+	valueBuf[len] = '\0';
+	if (tagEnd)
 	{
-		*pTagEnd = szValue + iValueLen;
+		*tagEnd = value + valueLen;
 	}
 	return true;
 }
 
-void WebUtil::XmlStripTags(char* szXml)
+void WebUtil::XmlStripTags(char* xml)
 {
-	while (char *start = strchr(szXml, '<'))
+	while (char *start = strchr(xml, '<'))
 	{
 		char *end = strchr(start, '>');
 		if (!end)
@@ -1957,7 +1037,7 @@ void WebUtil::XmlStripTags(char* szXml)
 			break;
 		}
 		memset(start, ' ', end - start + 1);
-		szXml = end + 1;
+		xml = end + 1;
 	}
 }
 
@@ -1995,13 +1075,13 @@ BreakLoop:
 	*output = '\0';
 }
 
-char* WebUtil::JsonEncode(const char* raw)
+CString WebUtil::JsonEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of escape-entities and their sizes
-	int iReqSize = strlen(raw);
+	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\"':
@@ -2012,24 +1092,25 @@ char* WebUtil::JsonEncode(const char* raw)
 			case '\n':
 			case '\r':
 			case '\t':
-				iReqSize++;
-                break;
+				reqSize++;
+				break;
 			default:
 				if (ch < 0x20 || ch >= 0x80)
 				{
-					iReqSize += 6;
+					reqSize += 6;
 					break;
 				}
 		}
 	}
 
-	char* result = (char*)malloc(iReqSize + 1);
+	CString result;
+	result.Reserve(reqSize);
 
 	// copy string
 	char* output = result;
 	for (const char* p = raw; ; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\0':
@@ -2069,7 +1150,7 @@ char* WebUtil::JsonEncode(const char* raw)
 			default:
 				if (ch < 0x20 || ch > 0x80)
 				{
-					unsigned int cp = ch;
+					uint32 cp = ch;
 
 					// decode utf8
 					if ((cp >> 5) == 0x6 && (p[1] & 0xc0) == 0x80)
@@ -2154,7 +1235,7 @@ void WebUtil::JsonDecode(char* raw)
 							*output++ = '\t';
 							break;
 						case 'u':
-							*output++ = (char)strtol(p + 1, NULL, 16);
+							*output++ = (char)strtol(p + 1, nullptr, 16);
 							p += 4;
 							break;
 						default:
@@ -2163,7 +1244,7 @@ void WebUtil::JsonDecode(char* raw)
 							break;
 					}
 					p++;
-                    break;
+					break;
 				}
 			default:
 				*output++ = *p++;
@@ -2175,32 +1256,30 @@ BreakLoop:
 	*output = '\0';
 }
 
-const char* WebUtil::JsonFindField(const char* szJsonText, const char* szFieldName, int* pValueLength)
+const char* WebUtil::JsonFindField(const char* jsonText, const char* fieldName, int* valueLength)
 {
-	char szOpenTag[100];
-	snprintf(szOpenTag, 100, "\"%s\"", szFieldName);
-	szOpenTag[100-1] = '\0';
+	BString<100> openTag("\"%s\"", fieldName);
 
-	const char* pstart = strstr(szJsonText, szOpenTag);
-	if (!pstart) return NULL;
+	const char* pstart = strstr(jsonText, openTag);
+	if (!pstart) return nullptr;
 
-	pstart += strlen(szOpenTag);
+	pstart += strlen(openTag);
 
-	return JsonNextValue(pstart, pValueLength);
+	return JsonNextValue(pstart, valueLength);
 }
 
-const char* WebUtil::JsonNextValue(const char* szJsonText, int* pValueLength)
+const char* WebUtil::JsonNextValue(const char* jsonText, int* valueLength)
 {
-	const char* pstart = szJsonText;
+	const char* pstart = jsonText;
 
 	while (*pstart && strchr(" ,[{:\r\n\t\f", *pstart)) pstart++;
-	if (!*pstart) return NULL;
+	if (!*pstart) return nullptr;
 
 	const char* pend = pstart;
 
 	char ch = *pend;
-	bool bStr = ch == '"';
-	if (bStr)
+	bool str = ch == '"';
+	if (str)
 	{
 		ch = *++pend;
 	}
@@ -2208,22 +1287,22 @@ const char* WebUtil::JsonNextValue(const char* szJsonText, int* pValueLength)
 	{
 		if (ch == '\\')
 		{
-			if (!*++pend || !*++pend) return NULL;
+			if (!*++pend || !*++pend) return nullptr;
 			ch = *pend;
 		}
-		if (bStr && ch == '"')
+		if (str && ch == '"')
 		{
 			pend++;
 			break;
 		}
-		else if (!bStr && strchr(" ,]}\r\n\t\f", ch))
+		else if (!str && strchr(" ,]}\r\n\t\f", ch))
 		{
 			break;
 		}
 		ch = *++pend;
 	}
 
-	*pValueLength = (int)(pend - pstart);
+	*valueLength = (int)(pend - pstart);
 	return pstart;
 }
 
@@ -2256,7 +1335,7 @@ BreakLoop:
 	*output = '\0';
 }
 
-void WebUtil::URLDecode(char* raw)
+void WebUtil::UrlDecode(char* raw)
 {
 	char* output = raw;
 	for (char* p = raw;;)
@@ -2268,15 +1347,15 @@ void WebUtil::URLDecode(char* raw)
 			case '%':
 				{
 					p++;
-					unsigned char c1 = *p++;
-					unsigned char c2 = *p++;
+					uchar c1 = *p++;
+					uchar c2 = *p++;
 					c1 = '0' <= c1 && c1 <= '9' ? c1 - '0' : 'A' <= c1 && c1 <= 'F' ? c1 - 'A' + 10 :
 						'a' <= c1 && c1 <= 'f' ? c1 - 'a' + 10 : 0;
 					c2 = '0' <= c2 && c2 <= '9' ? c2 - '0' : 'A' <= c2 && c2 <= 'F' ? c2 - 'A' + 10 :
 						'a' <= c2 && c2 <= 'f' ? c2 - 'a' + 10 : 0;
-					unsigned char ch = (c1 << 4) + c2;
+					uchar ch = (c1 << 4) + c2;
 					*output++ = (char)ch;
-                    break;
+					break;
 				}
 			default:
 				*output++ = *p++;
@@ -2288,25 +1367,26 @@ BreakLoop:
 	*output = '\0';
 }
 
-char* WebUtil::URLEncode(const char* raw)
+CString WebUtil::UrlEncode(const char* raw)
 {
 	// calculate the required outputstring-size based on number of spaces
-	int iReqSize = strlen(raw);
+	int reqSize = strlen(raw);
 	for (const char* p = raw; *p; p++)
 	{
 		if (*p == ' ')
 		{
-			iReqSize += 3; // length of "%20"
+			reqSize += 3; // length of "%20"
 		}
 	}
 
-	char* result = (char*)malloc(iReqSize + 1);
+	CString result;
+	result.Reserve(reqSize);
 
 	// copy string
 	char* output = result;
 	for (const char* p = raw; ; p++)
 	{
-		unsigned char ch = *p;
+		uchar ch = *p;
 		switch (ch)
 		{
 			case '\0':
@@ -2326,41 +1406,16 @@ BreakLoop:
 	return result;
 }
 
-#ifdef WIN32
-bool WebUtil::Utf8ToAnsi(char* szBuffer, int iBufLen)
+CString WebUtil::Latin1ToUtf8(const char* str)
 {
-	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
-	int errcode = MultiByteToWideChar(CP_UTF8, 0, szBuffer, -1, wstr, iBufLen);
-	if (errcode > 0)
-	{
-		errcode = WideCharToMultiByte(CP_ACP, 0, wstr, -1, szBuffer, iBufLen, "_", NULL);
-	}
-	free(wstr);
-	return errcode > 0;
-}
-
-bool WebUtil::AnsiToUtf8(char* szBuffer, int iBufLen)
-{
-	WCHAR* wstr = (WCHAR*)malloc(iBufLen * 2);
-	int errcode = MultiByteToWideChar(CP_ACP, 0, szBuffer, -1, wstr, iBufLen);
-	if (errcode > 0)
-	{
-		errcode = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, szBuffer, iBufLen, NULL, NULL);
-	}
-	free(wstr);
-	return errcode > 0;
-}
-#endif
-
-char* WebUtil::Latin1ToUtf8(const char* szStr)
-{
-	char *res = (char*)malloc(strlen(szStr) * 2 + 1);
-	const unsigned char *in = (const unsigned char*)szStr;
-	unsigned char *out = (unsigned char*)res;
+	CString res;
+	res.Reserve(strlen(str) * 2);
+	const uchar *in = (const uchar*)str;
+	uchar *out = (uchar*)(char*)res;
 	while (*in)
 	{
 		if (*in < 128)
-		{	
+		{
 			*out++ = *in++;
 		}
 		else
@@ -2382,11 +1437,11 @@ char* WebUtil::Latin1ToUtf8(const char* szStr)
    26 Jun 2013 01:02 A
  This function however supports only the first format!
 */
-time_t WebUtil::ParseRfc822DateTime(const char* szDateTimeStr)
+time_t WebUtil::ParseRfc822DateTime(const char* dateTimeStr)
 {
 	char month[4];
 	int day, year, hours, minutes, seconds, zonehours, zoneminutes;
-	int r = sscanf(szDateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month[0], &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
+	int r = sscanf(dateTimeStr, "%*s %d %3s %d %d:%d:%d %3d %2d", &day, &month[0], &year, &hours, &minutes, &seconds, &zonehours, &zoneminutes);
 	if (r != 8)
 	{
 		return 0;
@@ -2423,36 +1478,16 @@ time_t WebUtil::ParseRfc822DateTime(const char* szDateTimeStr)
 }
 
 
-URL::URL(const char* szAddress)
+URL::URL(const char* address) :
+	m_address(address)
 {
-	m_szAddress = NULL;
-	m_szProtocol = NULL;
-	m_szUser = NULL;
-	m_szPassword = NULL;
-	m_szHost = NULL;
-	m_szResource = NULL;
-	m_iPort = 0;
-	m_bTLS = false;
-	m_bValid = false;
-
-	if (szAddress)
+	if (address)
 	{
-		m_szAddress = strdup(szAddress);
-		ParseURL();
+		ParseUrl();
 	}
 }
 
-URL::~URL()
-{
-	free(m_szAddress);
-	free(m_szProtocol);
-	free(m_szUser);
-	free(m_szPassword);
-	free(m_szHost);
-	free(m_szResource);
-}
-
-void URL::ParseURL()
+void URL::ParseUrl()
 {
 	// Examples:
 	// http://user:password@host:port/path/to/resource?param
@@ -2461,20 +1496,18 @@ void URL::ParseURL()
 	// http://host/path/to/resource?param
 	// http://host
 
-	char* protEnd = strstr(m_szAddress, "://");
+	char* protEnd = strstr(m_address, "://");
 	if (!protEnd)
 	{
 		// Bad URL
 		return;
 	}
 
-	m_szProtocol = (char*)malloc(protEnd - m_szAddress + 1);
-	strncpy(m_szProtocol, m_szAddress, protEnd - m_szAddress);
-	m_szProtocol[protEnd - m_szAddress] = 0;
+	m_protocol.Set(m_address, protEnd - m_address);
 
 	char* hostStart = protEnd + 3;
 	char* slash = strchr(hostStart, '/');
-	char* hostEnd = NULL;
+	char* hostEnd = nullptr;
 	char* amp = strchr(hostStart, '@');
 
 	if (amp && (!slash || amp < slash))
@@ -2484,22 +1517,18 @@ void URL::ParseURL()
 		char* pass = strchr(hostStart, ':');
 		if (pass && pass < amp)
 		{
-			int iLen = (int)(amp - pass - 1);
-			if (iLen > 0)
+			int len = (int)(amp - pass - 1);
+			if (len > 0)
 			{
-				m_szPassword = (char*)malloc(iLen + 1);
-				strncpy(m_szPassword, pass + 1, iLen);
-				m_szPassword[iLen] = 0;
+				m_password.Set(pass + 1, len);
 			}
 			userend = pass - 1;
 		}
 
-		int iLen = (int)(userend - hostStart + 1);
-		if (iLen > 0)
+		int len = (int)(userend - hostStart + 1);
+		if (len > 0)
 		{
-			m_szUser = (char*)malloc(iLen + 1);
-			strncpy(m_szUser, hostStart, iLen);
-			m_szUser[iLen] = 0;
+			m_user.Set(hostStart, len);
 		}
 
 		hostStart = amp + 1;
@@ -2507,66 +1536,60 @@ void URL::ParseURL()
 
 	if (slash)
 	{
-		char* resEnd = m_szAddress + strlen(m_szAddress);
-		m_szResource = (char*)malloc(resEnd - slash + 1 + 1);
-		strncpy(m_szResource, slash, resEnd - slash + 1);
-		m_szResource[resEnd - slash + 1] = 0;
+		char* resEnd = m_address + strlen(m_address);
+		m_resource.Set(slash, resEnd - slash + 1);
 
 		hostEnd = slash - 1;
 	}
 	else
 	{
-		m_szResource = strdup("/");
+		m_resource = "/";
 
-		hostEnd = m_szAddress + strlen(m_szAddress);
+		hostEnd = m_address + strlen(m_address);
 	}
 
 	char* colon = strchr(hostStart, ':');
 	if (colon && colon < hostEnd)
 	{
 		hostEnd = colon - 1;
-		m_iPort = atoi(colon + 1);
+		m_port = atoi(colon + 1);
 	}
 
-	m_szHost = (char*)malloc(hostEnd - hostStart + 1 + 1);
-	strncpy(m_szHost, hostStart, hostEnd - hostStart + 1);
-	m_szHost[hostEnd - hostStart + 1] = 0;
+	m_host.Set(hostStart, hostEnd - hostStart + 1);
 
-	m_bValid = true;
+	m_valid = true;
 }
 
-RegEx::RegEx(const char *szPattern, int iMatchBufSize)
+
+RegEx::RegEx(const char *pattern, int matchBufSize) :
+	m_matchBufSize(matchBufSize)
 {
 #ifdef HAVE_REGEX_H
-	m_pContext = malloc(sizeof(regex_t));
-	m_bValid = regcomp((regex_t*)m_pContext, szPattern, REG_EXTENDED | REG_ICASE | (iMatchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
-	m_iMatchBufSize = iMatchBufSize;
-	if (iMatchBufSize > 0)
+	m_valid = regcomp(&m_context, pattern, REG_EXTENDED | REG_ICASE | (matchBufSize > 0 ? 0 : REG_NOSUB)) == 0;
+	if (matchBufSize > 0)
 	{
-		m_pMatches = malloc(sizeof(regmatch_t) * iMatchBufSize);
+		m_matches = std::make_unique<regmatch_t[]>(matchBufSize);
 	}
 	else
 	{
-		m_pMatches = NULL;
+		m_matches = nullptr;
 	}
 #else
-	m_bValid = false;
+	m_valid = false;
 #endif
 }
 
 RegEx::~RegEx()
 {
 #ifdef HAVE_REGEX_H
-	regfree((regex_t*)m_pContext);
-	free(m_pContext);
-	free(m_pMatches);
+	regfree(&m_context);
 #endif
 }
 
-bool RegEx::Match(const char *szStr)
+bool RegEx::Match(const char *str)
 {
 #ifdef HAVE_REGEX_H
-	return m_bValid ? regexec((regex_t*)m_pContext, szStr, m_iMatchBufSize, (regmatch_t*)m_pMatches, 0) == 0 : false;
+	return m_valid ? regexec(&m_context, str, m_matchBufSize, m_matches.get(), 0) == 0 : false;
 #else
 	return false;
 #endif
@@ -2575,16 +1598,15 @@ bool RegEx::Match(const char *szStr)
 int RegEx::GetMatchCount()
 {
 #ifdef HAVE_REGEX_H
-	int iCount = 0;
-	if (m_pMatches)
+	int count = 0;
+	if (m_matches)
 	{
-		regmatch_t* pMatches = (regmatch_t*)m_pMatches;
-		while (iCount < m_iMatchBufSize && pMatches[iCount].rm_so > -1)
+		while (count < m_matchBufSize && m_matches[count].rm_so > -1)
 		{
-			iCount++;
+			count++;
 		}
 	}
-	return iCount;
+	return count;
 #else
 	return 0;
 #endif
@@ -2593,78 +1615,61 @@ int RegEx::GetMatchCount()
 int RegEx::GetMatchStart(int index)
 {
 #ifdef HAVE_REGEX_H
-	regmatch_t* pMatches = (regmatch_t*)m_pMatches;
-	return pMatches[index].rm_so;
+	return m_matches[index].rm_so;
 #else
-	return NULL;
+	return nullptr;
 #endif
 }
 
 int RegEx::GetMatchLen(int index)
 {
 #ifdef HAVE_REGEX_H
-	regmatch_t* pMatches = (regmatch_t*)m_pMatches;
-	return pMatches[index].rm_eo - pMatches[index].rm_so;
+	return m_matches[index].rm_eo - m_matches[index].rm_so;
 #else
 	return 0;
 #endif
 }
 
 
-WildMask::WildMask(const char *szPattern, bool bWantsPositions)
-{
-	m_szPattern = strdup(szPattern);
-	m_bWantsPositions = bWantsPositions;
-	m_WildStart = NULL;
-	m_WildLen = NULL;
-	m_iArrLen = 0;
-}
-
-WildMask::~WildMask()
-{
-	free(m_szPattern);
-	free(m_WildStart);
-	free(m_WildLen);
-}
-
 void WildMask::ExpandArray()
 {
-	m_iWildCount++;
-	if (m_iWildCount > m_iArrLen)
-	{
-		m_iArrLen += 100;
-		m_WildStart = (int*)realloc(m_WildStart, sizeof(*m_WildStart) * m_iArrLen);
-		m_WildLen = (int*)realloc(m_WildLen, sizeof(*m_WildLen) * m_iArrLen);
-	}
+	m_wildCount++;
+	m_wildStart.resize(m_wildCount);
+	m_wildLen.resize(m_wildCount);
 }
 
 // Based on code from http://bytes.com/topic/c/answers/212179-string-matching
 // Extended to save positions of matches.
-bool WildMask::Match(const char *szStr)
+bool WildMask::Match(const char* text)
 {
-	const char* pat = m_szPattern;
-	const char* str = szStr;
+	m_wildCount = 0;
+	m_wildStart.clear();
+	m_wildStart.reserve(100);
+	m_wildLen.clear();
+	m_wildLen.reserve(100);
+
+	const char* pat = m_pattern;
+	const char* str = text;
 	const char *spos, *wpos;
-	m_iWildCount = 0;
 	bool qmark = false;
 	bool star = false;
 
 	spos = wpos = str;
 	while (*str && *pat != '*')
 	{
-		if (m_bWantsPositions && (*pat == '?' || *pat == '#'))
+		if (m_wantsPositions && (*pat == '?' || *pat == '#'))
 		{
 			if (!qmark)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str - szStr;
-				m_WildLen[m_iWildCount-1] = 0;
+				m_wildStart[m_wildCount-1] = str - text;
+				m_wildLen[m_wildCount-1] = 0;
 				qmark = true;
 			}
 		}
-		else if (m_bWantsPositions && qmark)
+		else if (m_wantsPositions && qmark)
 		{
-			m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+			m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 			qmark = false;
 		}
 
@@ -2677,9 +1682,9 @@ bool WildMask::Match(const char *szStr)
 		pat++;
 	}
 
-	if (m_bWantsPositions && qmark)
+	if (m_wantsPositions && qmark)
 	{
-		m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+		m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 		qmark = false;
 	}
 
@@ -2687,24 +1692,24 @@ bool WildMask::Match(const char *szStr)
 	{
 		if (*pat == '*')
 		{
-			if (m_bWantsPositions && qmark)
+			if (m_wantsPositions && qmark)
 			{
-				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 				qmark = false;
 			}
-			if (m_bWantsPositions && !star)
+			if (m_wantsPositions && !star)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str - szStr;
-				m_WildLen[m_iWildCount-1] = 0;
+				m_wildStart[m_wildCount-1] = str - text;
+				m_wildLen[m_wildCount-1] = 0;
 				star = true;
 			}
 
 			if (*++pat == '\0')
 			{
-				if (m_bWantsPositions && star)
+				if (m_wantsPositions && star)
 				{
-					m_WildLen[m_iWildCount-1] = strlen(str);
+					m_wildLen[m_wildCount-1] = strlen(str);
 				}
 
 				return true;
@@ -2714,11 +1719,11 @@ bool WildMask::Match(const char *szStr)
 		}
 		else if (*pat == '?' || (*pat == '#' && strchr("0123456789", *str)))
 		{
-			if (m_bWantsPositions && !qmark)
+			if (m_wantsPositions && !qmark)
 			{
 				ExpandArray();
-				m_WildStart[m_iWildCount-1] = str - szStr;
-				m_WildLen[m_iWildCount-1] = 0;
+				m_wildStart[m_wildCount-1] = str - text;
+				m_wildLen[m_wildCount-1] = 0;
 				qmark = true;
 			}
 
@@ -2727,14 +1732,14 @@ bool WildMask::Match(const char *szStr)
 		}
 		else if (tolower(*pat) == tolower(*str))
 		{
-			if (m_bWantsPositions && qmark)
+			if (m_wantsPositions && qmark)
 			{
-				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 				qmark = false;
 			}
-			else if (m_bWantsPositions && star)
+			else if (m_wantsPositions && star)
 			{
-				m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 				star = false;
 			}
 
@@ -2743,9 +1748,9 @@ bool WildMask::Match(const char *szStr)
 		}
 		else
 		{
-			if (m_bWantsPositions && qmark)
+			if (m_wantsPositions && qmark)
 			{
-				m_iWildCount--;
+				m_wildCount--;
 				qmark = false;
 			}
 
@@ -2755,16 +1760,16 @@ bool WildMask::Match(const char *szStr)
 		}
 	}
 
-	if (m_bWantsPositions && qmark)
+	if (m_wantsPositions && qmark)
 	{
-		m_WildLen[m_iWildCount-1] = str - (szStr + m_WildStart[m_iWildCount-1]);
+		m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
 	}
 
-	if (*pat == '*' && m_bWantsPositions && !star)
+	if (*pat == '*' && m_wantsPositions && !star)
 	{
 		ExpandArray();
-		m_WildStart[m_iWildCount-1] = str - szStr;
-		m_WildLen[m_iWildCount-1] = strlen(str);
+		m_wildStart[m_wildCount-1] = str - text;
+		m_wildLen[m_wildCount-1] = strlen(str);
 	}
 
 	while (*pat == '*')
@@ -2777,94 +1782,84 @@ bool WildMask::Match(const char *szStr)
 
 
 #ifndef DISABLE_GZIP
-unsigned int ZLib::GZipLen(int iInputBufferLength)
+uint32 ZLib::GZipLen(int inputBufferLength)
 {
-	z_stream zstr;
-	memset(&zstr, 0, sizeof(zstr));
-	return (unsigned int)deflateBound(&zstr, iInputBufferLength);
+	z_stream zstr{0};
+	return (uint32)deflateBound(&zstr, inputBufferLength);
 }
 
-unsigned int ZLib::GZip(const void* szInputBuffer, int iInputBufferLength, void* szOutputBuffer, int iOutputBufferLength)
+uint32 ZLib::GZip(const void* inputBuffer, int inputBufferLength, void* outputBuffer, int outputBufferLength)
 {
 	z_stream zstr;
 	zstr.zalloc = Z_NULL;
 	zstr.zfree = Z_NULL;
 	zstr.opaque = Z_NULL;
-	zstr.next_in = (Bytef*)szInputBuffer;
-	zstr.avail_in = iInputBufferLength;
-	zstr.next_out = (Bytef*)szOutputBuffer;
-	zstr.avail_out = iOutputBufferLength;
-	
+	zstr.next_in = (Bytef*)inputBuffer;
+	zstr.avail_in = inputBufferLength;
+	zstr.next_out = (Bytef*)outputBuffer;
+	zstr.avail_out = outputBufferLength;
+
 	/* add 16 to MAX_WBITS to enforce gzip format */
 	if (Z_OK != deflateInit2(&zstr, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS + 16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))
 	{
 		return 0;
 	}
-	
-	unsigned int total_out = 0;
+
+	uint32 total_out = 0;
 	if (deflate(&zstr, Z_FINISH) == Z_STREAM_END)
 	{
-		total_out = (unsigned int)zstr.total_out;
+		total_out = (uint32)zstr.total_out;
 	}
-	
+
 	deflateEnd(&zstr);
-	
+
 	return total_out;
 }
 
-GUnzipStream::GUnzipStream(int BufferSize)
+GUnzipStream::GUnzipStream(int BufferSize) :
+	m_bufferSize(BufferSize)
 {
-	m_iBufferSize = BufferSize;
-	m_pZStream = malloc(sizeof(z_stream));
-	m_pOutputBuffer = malloc(BufferSize);
-
-	memset(m_pZStream, 0, sizeof(z_stream));
+	m_outputBuffer = std::make_unique<Bytef[]>(BufferSize);
 
 	/* add 16 to MAX_WBITS to enforce gzip format */
-	int ret = inflateInit2(((z_stream*)m_pZStream), MAX_WBITS + 16);
-	if (ret != Z_OK)
-	{
-		free(m_pZStream);
-		m_pZStream = NULL;
-	}
+	int ret = inflateInit2(&m_zStream, MAX_WBITS + 16);
+	m_active = ret == Z_OK;
 }
 
 GUnzipStream::~GUnzipStream()
 {
-	if (m_pZStream)
+	if (m_active)
 	{
-		inflateEnd(((z_stream*)m_pZStream));
-		free(m_pZStream);
+		inflateEnd(&m_zStream);
 	}
-	free(m_pOutputBuffer);
 }
 
-void GUnzipStream::Write(const void *pInputBuffer, int iInputBufferLength)
+void GUnzipStream::Write(const void *inputBuffer, int inputBufferLength)
 {
-	((z_stream*)m_pZStream)->next_in = (Bytef*)pInputBuffer;
-	((z_stream*)m_pZStream)->avail_in = iInputBufferLength;
+	m_zStream.next_in = (Bytef*)inputBuffer;
+	m_zStream.avail_in = inputBufferLength;
 }
 
-GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutputBufferLength)
+GUnzipStream::EStatus GUnzipStream::Read(const void **outputBuffer, int *outputBufferLength)
 {
-	((z_stream*)m_pZStream)->next_out = (Bytef*)m_pOutputBuffer;
-	((z_stream*)m_pZStream)->avail_out = m_iBufferSize;
+	m_zStream.next_out = (Bytef*)m_outputBuffer.get();
+	m_zStream.avail_out = m_bufferSize;
 
-	*iOutputBufferLength = 0;
+	*outputBufferLength = 0;
 
-	if (!m_pZStream)
+	if (!m_active)
 	{
 		return zlError;
 	}
 
-	int ret = inflate(((z_stream*)m_pZStream), Z_NO_FLUSH);
+	int ret = inflate(&m_zStream, Z_NO_FLUSH);
 
 	switch (ret)
 	{
 		case Z_STREAM_END:
 		case Z_OK:
-			*iOutputBufferLength = m_iBufferSize - ((z_stream*)m_pZStream)->avail_out;
-			*pOutputBuffer = m_pOutputBuffer;
+			*outputBufferLength = m_bufferSize - m_zStream.avail_out;
+			*outputBuffer = m_outputBuffer.get();
 			return ret == Z_STREAM_END ? zlFinished : zlOK;
 
 		case Z_BUF_ERROR:
@@ -2873,60 +1868,52 @@ GUnzipStream::EStatus GUnzipStream::Read(const void **pOutputBuffer, int *iOutpu
 
 	return zlError;
 }
-
 #endif
 
-Tokenizer::Tokenizer(const char* szDataString, const char* szSeparators)
+Tokenizer::Tokenizer(const char* dataString, const char* separators) :
+	m_separators(separators)
 {
-	// an optimization to avoid memory allocation for short data string (shorten than 1024 chars)
-	int iLen = strlen(szDataString);
-	if (iLen < sizeof(m_szDefaultBuf) - 1)
+	// an optimization to avoid memory allocation for short data string
+	int len = strlen(dataString);
+	if (len < m_shortString.Capacity())
 	{
-		strncpy(m_szDefaultBuf, szDataString, sizeof(m_szDefaultBuf));
-		m_szDefaultBuf[1024- 1] = '\0';
-		m_szDataString = m_szDefaultBuf;
-		m_bInplaceBuf = true;
+		m_shortString.Set(dataString);
+		m_dataString = m_shortString;
 	}
 	else
 	{
-		m_szDataString = strdup(szDataString);
-		m_bInplaceBuf = false;
+		m_longString.Set(dataString);
+		m_dataString = m_longString;
 	}
 
-	m_szSeparators = szSeparators;
-	m_szSavePtr = NULL;
-	m_bWorking = false;
 }
 
-Tokenizer::Tokenizer(char* szDataString, const char* szSeparators, bool bInplaceBuf)
+Tokenizer::Tokenizer(char* dataString, const char* separators, bool inplaceBuf) :
+	m_separators(separators)
 {
-	m_szDataString = bInplaceBuf ? szDataString : strdup(szDataString);
-	m_szSeparators = szSeparators;
-	m_szSavePtr = NULL;
-	m_bWorking = false;
-	m_bInplaceBuf = bInplaceBuf;
-}
-
-Tokenizer::~Tokenizer()
-{
-	if (!m_bInplaceBuf)
+	if (inplaceBuf)
 	{
-		free(m_szDataString);
+		m_dataString = dataString;
+	}
+	else
+	{
+		m_longString.Set(dataString);
+		m_dataString = m_longString;
 	}
 }
 
 char* Tokenizer::Next()
 {
-	char* szToken = NULL;
-	while (!szToken || !*szToken)
+	char* token = nullptr;
+	while (!token || !*token)
 	{
-		szToken = strtok_r(m_bWorking ? NULL : m_szDataString, m_szSeparators, &m_szSavePtr);
-		m_bWorking = true;
-		if (!szToken)
+		token = strtok_r(m_working ? nullptr : m_dataString, m_separators, &m_savePtr);
+		m_working = true;
+		if (!token)
 		{
-			return NULL;
+			return nullptr;
 		}
-		szToken = Util::Trim(szToken);
+		token = Util::Trim(token);
 	}
-	return szToken;
+	return token;
 }
