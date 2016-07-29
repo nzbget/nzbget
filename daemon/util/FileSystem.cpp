@@ -30,6 +30,16 @@ CString FileSystem::GetLastErrorMessage()
 {
 	BString<1024> msg;
 	strerror_r(errno, msg, msg.Capacity());
+
+#ifdef WIN32
+	if (!errno)
+	{
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			msg, 1024, nullptr);
+	}
+#endif
+
 	return *msg;
 }
 
@@ -250,6 +260,7 @@ bool FileSystem::AllocateFile(const char* filename, int64 size, bool sparse, CSt
 	HANDLE hFile = CreateFileW(UtfPathToWidePath(filename), GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, nullptr);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
+		errno = 0; // wanting error message from WinAPI instead of C-lib 
 		errmsg = GetLastErrorMessage();
 		return false;
 	}
@@ -846,10 +857,8 @@ bool FileSystem::FlushFileBuffers(int fileDescriptor, CString& errmsg)
 	BOOL ok = ::FlushFileBuffers((HANDLE)_get_osfhandle(fileDescriptor));
 	if (!ok)
 	{
-		errmsg.Reserve(1024 - 1);
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			errmsg, 1024, nullptr);
+		errno = 0; // wanting error message from WinAPI instead of C-lib 
+		errmsg = GetLastErrorMessage();
 	}
 	return ok;
 #else
