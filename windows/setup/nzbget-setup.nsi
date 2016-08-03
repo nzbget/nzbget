@@ -103,26 +103,24 @@ LogSet on
 SetOutPath "$INSTDIR"
 
 ; Stop NZBGet (if running)
-ReadRegStr $R1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "InstallLocation"
-${If} $R1 != ""
-${AndIf} ${FileExists} "$R1\nzbget.exe"
-  Delete "$R1\nzbget.exe"
-  ExecWait '"$R1\nzbget.exe" -Q' $R2
+${If} ${FileExists} "$INSTDIR\nzbget.exe"
+  Delete "$INSTDIR\nzbget.exe"
+  ExecWait '"$INSTDIR\nzbget.exe" -Q' $R2
   DetailPrint "Stopping NZBGet..."
 
   try_delete:
   ; Wait up to 10 seconds until stopped
   StrCpy $R2 20
-  ${While} ${FileExists} "$R1\nzbget.exe"
+  ${While} ${FileExists} "$INSTDIR\nzbget.exe"
     ${If} $R2 = 0
       ${Break}
     ${EndIf}
     Sleep 500
     IntOp $R2 $R2 - 1
-    Delete "$R1\nzbget.exe"
+    Delete "$INSTDIR\nzbget.exe"
   ${EndWhile}
 
-  ${If} ${FileExists} "$R1\nzbget.exe"
+  ${If} ${FileExists} "$INSTDIR\nzbget.exe"
     MessageBox MB_RETRYCANCEL "NZBGet seems to be running right now. Please stop NZBGet and try again." \
       IDRETRY try_delete IDCANCEL cancel
     cancel:
