@@ -40,7 +40,7 @@ void Scheduler::FirstCheck()
 		Guard guard(m_taskListMutex);
 
 		std::sort(m_taskList.begin(), m_taskList.end(),
-			[](std::unique_ptr<Task>& task1, std::unique_ptr<Task>& task2)
+			[](const std::unique_ptr<Task>& task1, const std::unique_ptr<Task>& task2)
 		{
 			return (task1->m_hours < task2->m_hours) ||
 				((task1->m_hours == task2->m_hours) && (task1->m_minutes < task2->m_minutes));
