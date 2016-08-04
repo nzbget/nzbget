@@ -217,14 +217,18 @@ nzbget_SOURCES += \
 	tests/main/CommandLineParserTest.cpp \
 	tests/main/OptionsTest.cpp \
 	tests/feed/FeedFilterTest.cpp \
-	tests/postprocess/ParCheckerTest.cpp \
-	tests/postprocess/ParRenamerTest.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
 	tests/queue/NzbFileTest.cpp \
 	tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp \
 	tests/util/NStringTest.cpp \
 	tests/util/UtilTest.cpp
+
+if WITH_PAR2
+nzbget_SOURCES += \
+	tests/postprocess/ParCheckerTest.cpp \
+	tests/postprocess/ParRenamerTest.cpp
+endif
 
 AM_CPPFLAGS += \
 	-I$(srcdir)/lib/catch \
