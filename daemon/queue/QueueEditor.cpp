@@ -778,7 +778,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 		nzbInfo->SetParking(action == DownloadQueue::eaGroupParkDelete &&
 			g_Options->GetKeepHistory() > 0 &&
 			!nzbInfo->GetUnpackCleanedUpDisk() &&
-			(nzbInfo->GetCurrentSuccessArticles() > 0 || nzbInfo->GetCurrentFailedArticles() > 0));
+			nzbInfo->GetCurrentSuccessArticles() > 0);
 		nzbInfo->SetAvoidHistory(action == DownloadQueue::eaGroupFinalDelete);
 		nzbInfo->SetDeletePaused(allPaused);
 		if (action == DownloadQueue::eaGroupDupeDelete)
