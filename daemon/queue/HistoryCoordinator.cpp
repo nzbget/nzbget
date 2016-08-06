@@ -581,7 +581,6 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 				  (resetFailed || fileInfo->GetRemainingSize() > 0))))
 			{
 				fileInfo->SetFilename(completedFile.GetFileName());
-				fileInfo->SetPaused(fileInfo->GetParFile());
 				fileInfo->SetNzbInfo(nzbInfo);
 
 				BString<1024> outputFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename());
@@ -624,6 +623,11 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 	nzbInfo->UpdateCurrentStats();
 
 	MoveToQueue(downloadQueue, itHistory, historyInfo, reprocess);
+
+	if (g_Options->GetParCheck() != Options::pcForce)
+	{
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
+	}
 }
 
 void HistoryCoordinator::ResetArticles(FileInfo* fileInfo, bool allFailed, bool resetFailed)
