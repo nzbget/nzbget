@@ -129,8 +129,8 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	// park remaining files
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		fileInfo->GetNzbInfo()->UpdateCompletedStats(fileInfo);
-		fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(fileInfo->GetId(),
+		nzbInfo->UpdateCompletedStats(fileInfo);
+		nzbInfo->GetCompletedFiles()->emplace_back(fileInfo->GetId(),
 			fileInfo->GetFilename(), CompletedFile::cfNone, 0);
 	}
 
@@ -146,8 +146,13 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 		 nzbInfo->GetParStatus() != NzbInfo::psFailure) ||
 		(nzbInfo->GetUnpackStatus() <= NzbInfo::usSkipped &&
 		 nzbInfo->GetParStatus() != NzbInfo::psFailure &&
-		 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0) ||
-		nzbInfo->GetUnpackCleanedUpDisk();
+		 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0);
+
+	// Do not cleanup when parking
+	cleanupParkedFiles &= !nzbInfo->GetParking();
+
+	// Parking not possible if files were already deleted
+	cleanupParkedFiles |= nzbInfo->GetUnpackCleanedUpDisk();
 
 	if (cleanupParkedFiles)
 	{
