@@ -2426,6 +2426,7 @@ void HistoryXmlCommand::Execute()
 		"<member><name>ID</name><value><i4>%i</i4></value></member>\n"					// Deprecated, use "NZBID" instead
 		"<member><name>Name</name><value><string>%s</string></value></member>\n"
 		"<member><name>RemainingFileCount</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>RetryData</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>HistoryTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>Status</name><value><string>%s</string></value></member>\n"
 		"<member><name>Log</name><value><array><data></data></array></value></member>\n";	// Deprected, always empty
@@ -2435,6 +2436,7 @@ void HistoryXmlCommand::Execute()
 		"\"ID\" : %i,\n"								// Deprecated, use "NZBID" instead
 		"\"Name\" : \"%s\",\n"
 		"\"RemainingFileCount\" : %i,\n"
+		"\"RetryData\" : %s,\n"
 		"\"HistoryTime\" : %i,\n"
 		"\"Status\" : \"%s\",\n"
 		"\"Log\" : [],\n";								// Deprected, always empty
@@ -2506,7 +2508,7 @@ void HistoryXmlCommand::Execute()
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				historyInfo->GetId(), *EncodeStr(historyInfo->GetName()), nzbInfo->GetParkedFileCount(),
-				historyInfo->GetTime(), status);
+				BoolToStr(nzbInfo->GetCompletedFiles()->size()), historyInfo->GetTime(), status);
 		}
 		else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 		{
