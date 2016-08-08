@@ -135,7 +135,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	}
 
 	// Cleaning up parked files if par-check was successful or unpack was successful or
-	// health is 100% (if unpack and par-check were not performed)
+	// health is 100% (if unpack and par-check were not performed) or if deleted
 	bool cleanupParkedFiles =
 		((nzbInfo->GetParStatus() == NzbInfo::psSuccess ||
 		  nzbInfo->GetParStatus() == NzbInfo::psRepairPossible) &&
@@ -146,7 +146,8 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 		 nzbInfo->GetParStatus() != NzbInfo::psFailure) ||
 		(nzbInfo->GetUnpackStatus() <= NzbInfo::usSkipped &&
 		 nzbInfo->GetParStatus() != NzbInfo::psFailure &&
-		 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0);
+		 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0) ||
+		(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone);
 
 	// Do not cleanup when parking
 	cleanupParkedFiles &= !nzbInfo->GetParking();
