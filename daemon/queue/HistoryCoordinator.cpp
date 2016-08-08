@@ -603,6 +603,7 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 					else if (!reprocess)
 					{
 						nzbInfo->PrintMessage(Message::mkWarning, "File %s could not be found on disk, downloading again", fileInfo->GetFilename());
+						fileInfo->SetPartialState(FileInfo::psNone);
 					}
 				}
 
