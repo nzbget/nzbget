@@ -164,7 +164,10 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	nzbInfo->SetParkedFileCount(0);
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		if (completedFile.GetStatus() == CompletedFile::cfNone)
+		if (completedFile.GetStatus() == CompletedFile::cfNone ||
+			// consider last completed file with partial status not completely tried
+			(completedFile.GetStatus() == CompletedFile::cfPartial &&
+			 &completedFile == &*nzbInfo->GetCompletedFiles()->rbegin()))
 		{
 			nzbInfo->PrintMessage(Message::mkDetail, "Parking file %s", completedFile.GetFileName());
 			nzbInfo->SetParkedFileCount(nzbInfo->GetParkedFileCount() + 1);
