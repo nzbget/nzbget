@@ -709,7 +709,8 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 	{
 		fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(
 			fileInfo->GetId(),
-			completed ? FileSystem::BaseFileName(fileInfo->GetOutputFilename()) : fileInfo->GetFilename(),
+			completed && fileInfo->GetOutputFilename() ?
+			FileSystem::BaseFileName(fileInfo->GetOutputFilename()) : fileInfo->GetFilename(),
 			fileStatus,
 			fileStatus == CompletedFile::cfSuccess ? fileInfo->GetCrc() : 0);
 	}
