@@ -807,7 +807,8 @@ var Config = (new function($)
 				'<span class="add-on">'+ option.select[0] +'</span>'+
 				'</div>';
 		}
-		else if (option.name.toLowerCase().indexOf('password') > -1)
+		else if (option.name.toLowerCase().indexOf('password') > -1 &&
+                                option.name.toLowerCase() !== '*unpack:password')
 		{
 			option.type = 'password';
 			html += '<div class="password-field input-append">' +
