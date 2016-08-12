@@ -110,7 +110,7 @@ void QueueScriptController::Run()
 		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_id);
 		if (nzbInfo)
 		{
-			PrintMessage(Message::mkWarning, "Cancelling download and deleting %s", *m_nzbName);
+			nzbInfo->PrintMessage(Message::mkWarning, "Cancelling download and deleting %s", *m_nzbName);
 			nzbInfo->SetDeleteStatus(NzbInfo::dsBad);
 			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, 0, nullptr);
 		}
@@ -215,9 +215,7 @@ void QueueScriptController::AddMessage(Message::EKind kind, const char* text)
 			NzbInfo* nzbInfo = QueueScriptCoordinator::FindNzbInfo(downloadQueue, m_id);
 			if (nzbInfo)
 			{
-				SetLogPrefix(nullptr);
-				PrintMessage(Message::mkWarning, "Marking %s as bad", *m_nzbName);
-				SetLogPrefix(m_script->GetDisplayName());
+				nzbInfo->PrintMessage(Message::mkWarning, "Marking %s as bad", *m_nzbName);
 				nzbInfo->SetMarkStatus(NzbInfo::ksBad);
 			}
 		}
