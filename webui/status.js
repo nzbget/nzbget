@@ -415,7 +415,6 @@ var Status = (new function($)
 			if (title.indexOf(name) > -1)
 			{
 				var value = titleGen[name]();
-				console.log(name + '=' + value);
 				title = title.replace(name, value);
 			}
 		}
