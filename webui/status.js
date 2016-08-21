@@ -208,7 +208,7 @@ var Status = (new function($)
 			showBtn.fadeIn(500);
 			if (!Play && !status.ServerStandBy)
 			{
-				Notification.show('#Notif_Downloads_Pausing');
+				PopupNotification.show('#Notif_Downloads_Pausing');
 			}
 		}
 		else
@@ -258,7 +258,7 @@ var Status = (new function($)
 
 	this.playClick = function()
 	{
-		//Notification.show('#Notif_Play');
+		//PopupNotification.show('#Notif_Play');
 
 		if (lastPlayState)
 		{
@@ -1272,7 +1272,7 @@ var StatDialog = (new function($)
 			var year = parseInt(period);
 			if (year < 2013 || year > 2050)
 			{
-				Notification.show('#Notif_StatRangeError');
+				PopupNotification.show('#Notif_StatRangeError');
 				return;
 			}
 			period = '' + year;
@@ -1283,7 +1283,7 @@ var StatDialog = (new function($)
 			var year = parseInt(period.substring(0, 4));
 			if (year < 2013 || year > 2050 || month < 1 || month > 12)
 			{
-				Notification.show('#Notif_StatRangeError');
+				PopupNotification.show('#Notif_StatRangeError');
 				return;
 			}
 			period = year + '-' + (month-1);
@@ -1304,7 +1304,7 @@ var StatDialog = (new function($)
 	{
 		RPC.call('resetservervolume', [curServer === 0 ? -1 : curServer, 'CUSTOM'], function()
 		{
-			Notification.show('#Notif_StatReset');
+			PopupNotification.show('#Notif_StatReset');
 			Refresher.update();
 		});
 	}
@@ -1475,7 +1475,7 @@ var LimitDialog = (new function($)
 		$LimitDialog.modal('hide');
 		if (changed)
 		{
-			Notification.show('#Notif_SetSpeedLimit');
+			PopupNotification.show('#Notif_SetSpeedLimit');
 		}
 		Refresher.update();
 	}
@@ -1598,7 +1598,7 @@ var FilterMenu = (new function($)
 	{
 		if ($Table_filter.val() === '')
 		{
-			Notification.show('#Notif_SaveFilterEmpty');
+			PopupNotification.show('#Notif_SaveFilterEmpty');
 			return;
 		}
 

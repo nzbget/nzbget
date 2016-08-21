@@ -80,7 +80,7 @@ var Feeds = (new function($)
 		var id = parseInt($(this).attr('data-id'));
 		RPC.call('fetchfeed', [id], function()
 		{
-			Notification.show('#Notif_Feeds_Fetch');
+			PopupNotification.show('#Notif_Feeds_Fetch');
 		});
 	}
 
@@ -88,7 +88,7 @@ var Feeds = (new function($)
 	{
 		RPC.call('fetchfeed', [0], function()
 		{
-			Notification.show('#Notif_Feeds_Fetch');
+			PopupNotification.show('#Notif_Feeds_Fetch');
 		});
 	}
 }(jQuery));
@@ -333,7 +333,7 @@ var FeedDialog = (new function($)
 		var checkedCount = $ItemTable.fasttable('checkedCount');
 		if (checkedCount === 0)
 		{
-			Notification.show('#Notif_FeedDialog_Select');
+			PopupNotification.show('#Notif_FeedDialog_Select');
 			return;
 		}
 
@@ -372,7 +372,7 @@ var FeedDialog = (new function($)
 		else
 		{
 			$FeedDialog.modal('hide');
-			Notification.show('#Notif_FeedDialog_Fetched');
+			PopupNotification.show('#Notif_FeedDialog_Fetched');
 		}
 	}
 

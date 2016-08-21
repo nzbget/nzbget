@@ -1298,7 +1298,7 @@ ul.help > li {
 	filter: alpha(opacity=0);
 }
 
-/* BEGIN: Notification alerts */
+/* BEGIN: PopupNotification alerts */
 .alert-inverse {
 	color: #ffffff;
 	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
@@ -1339,7 +1339,7 @@ ul.help > li {
 .alert-info.alert-center {
 	border-color: #3a87ad;
 }
-/* END: Notification alerts */
+/* END: PopupNotification alerts */
 
 .confirm-help-block {
 	color: #555555;

@@ -304,7 +304,7 @@ var Messages = (new function($)
 		Refresher.update();
 		if (notification)
 		{
-			Notification.show(notification);
+			PopupNotification.show(notification);
 			notification = null;
 		}
 	}

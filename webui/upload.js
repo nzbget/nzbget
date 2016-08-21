@@ -448,7 +448,7 @@ var Upload = (new function($)
 			$AddDialog.modal('hide');
 			if (index > 0)
 			{
-				Notification.show('#Notif_AddFiles');
+				PopupNotification.show('#Notif_AddFiles');
 			}
 		}
 	}
@@ -465,7 +465,7 @@ var Upload = (new function($)
 		{
 			needRefresh = true;
 			$AddDialog.modal('hide');
-			Notification.show('#Notif_Scan');
+			PopupNotification.show('#Notif_Scan');
 		});
 	}
 }(jQuery));

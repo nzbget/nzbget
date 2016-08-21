@@ -812,7 +812,7 @@ var Refresher = (new function($)
 function TODO(text)
 {
 	$('#Notif_NotImplemented_Param').html(text === undefined ? '' : ': ' + text);
-	Notification.show('#Notif_NotImplemented');
+	PopupNotification.show('#Notif_NotImplemented');
 }
 
 
@@ -912,7 +912,7 @@ var AlertDialog = (new function($)
 
 /*** NOTIFICATIONS *********************************************************/
 
-var Notification = (new function($)
+var PopupNotification = (new function($)
 {
 	'use strict';
 	

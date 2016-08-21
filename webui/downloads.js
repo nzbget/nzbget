@@ -355,7 +355,7 @@ var Downloads = (new function($)
 		Refresher.update();
 		if (notification)
 		{
-			Notification.show(notification);
+			PopupNotification.show(notification);
 			notification = null;
 		}
 	}
@@ -375,12 +375,12 @@ var Downloads = (new function($)
 			{
 				if (group.postprocess && !allowPostProcess)
 				{
-					Notification.show('#Notif_Downloads_CheckPostProcess');
+					PopupNotification.show('#Notif_Downloads_CheckPostProcess');
 					return null;
 				}
 				if (group.Kind === 'URL' && !allowUrl)
 				{
-					Notification.show('#Notif_Downloads_CheckURL');
+					PopupNotification.show('#Notif_Downloads_CheckURL');
 					return null;
 				}
 
@@ -390,7 +390,7 @@ var Downloads = (new function($)
 
 		if (checkedEditIDs.length === 0 && !allowEmpty)
 		{
-			Notification.show('#Notif_Downloads_Select');
+			PopupNotification.show('#Notif_Downloads_Select');
 			return null;
 		}
 
@@ -427,7 +427,7 @@ var Downloads = (new function($)
 
 		if (checkedEditIDs.length < 2)
 		{
-			Notification.show('#Notif_Downloads_SelectMulti');
+			PopupNotification.show('#Notif_Downloads_SelectMulti');
 			return;
 		}
 
@@ -490,7 +490,7 @@ var Downloads = (new function($)
 
 		if (downloadIDs.length === 0 && postprocessIDs.length === 0)
 		{
-			Notification.show('#Notif_Downloads_Select');
+			PopupNotification.show('#Notif_Downloads_Select');
 			return;
 		}
 

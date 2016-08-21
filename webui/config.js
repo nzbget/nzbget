@@ -1537,7 +1537,7 @@ var Config = (new function($)
 					$('#Notif_Config_TestConnectionProgress').fadeOut(function() {
 						if (errtext == '')
 						{
-							Notification.show('#Notif_Config_TestConnectionOK');
+							PopupNotification.show('#Notif_Config_TestConnectionOK');
 						}
 						else
 						{
@@ -1662,7 +1662,7 @@ var Config = (new function($)
 
 		if (serverSaveRequest.length === 0 && webSaveRequest.length === 0)
 		{
-			Notification.show('#Notif_Config_Unchanged');
+			PopupNotification.show('#Notif_Config_Unchanged');
 			return;
 		}
 
@@ -1706,7 +1706,7 @@ var Config = (new function($)
 		}
 		else
 		{
-			Notification.show('#Notif_Config_Failed');
+			PopupNotification.show('#Notif_Config_Failed');
 		}
 		configSaved = true;
 	}
@@ -2556,7 +2556,7 @@ var RestoreSettingsDialog = (new function($)
 		var checkedCount = $SectionTable.fasttable('checkedCount');
 		if (checkedCount === 0)
 		{
-			Notification.show('#Notif_Config_RestoreSections');
+			PopupNotification.show('#Notif_Config_RestoreSections');
 			return;
 		}
 
@@ -2814,7 +2814,7 @@ var UpdateDialog = (new function($)
 	{
 		if (!started)
 		{
-			Notification.show('#Notif_StartUpdate_Failed');
+			PopupNotification.show('#Notif_StartUpdate_Failed');
 			return;
 		}
 

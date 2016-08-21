@@ -260,7 +260,7 @@ var History = (new function($)
 		var checkedCount = $HistoryTable.fasttable('checkedCount');
 		if (checkedCount === 0)
 		{
-			Notification.show('#Notif_History_Select');
+			PopupNotification.show('#Notif_History_Select');
 			return;
 		}
 
@@ -290,7 +290,7 @@ var History = (new function($)
 			case 'REPROCESS':
 				if (hasUrl || hasDup)
 				{
-					Notification.show('#Notif_History_CantReprocess');
+					PopupNotification.show('#Notif_History_CantReprocess');
 					return;
 				}
 				notification = '#Notif_History_Reprocess';
@@ -300,7 +300,7 @@ var History = (new function($)
 			case 'REDOWNLOAD':
 				if (hasDup)
 				{
-					Notification.show('#Notif_History_CantRedownload');
+					PopupNotification.show('#Notif_History_CantRedownload');
 					return;
 				}
 				notification = '#Notif_History_Returned';
@@ -315,7 +315,7 @@ var History = (new function($)
 			case 'MARKBAD':
 				if (hasUrl)
 				{
-					Notification.show('#Notif_History_CantMark');
+					PopupNotification.show('#Notif_History_CantMark');
 					return;
 				}
 				notification = '#Notif_History_Marked';
@@ -359,7 +359,7 @@ var History = (new function($)
 		Refresher.update();
 		if (notification)
 		{
-			Notification.show(notification);
+			PopupNotification.show(notification);
 			notification = null;
 		}
 	}
