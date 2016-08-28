@@ -1901,7 +1901,8 @@ var HistoryEditDialog = (new function()
 	{
 		e.preventDefault();
 		HistoryUI.deleteConfirm(doItemDelete, curHist.Kind === 'NZB', curHist.Kind === 'DUP',
-			curHist.ParStatus === 'FAILURE' || curHist.UnpackStatus === 'FAILURE', false);
+			curHist.ParStatus === 'FAILURE' || curHist.UnpackStatus === 'FAILURE' ||
+			curHist.DeleteStatus != 'NONE', false);
 	}
 
 	function doItemDelete(command)
