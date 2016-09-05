@@ -260,7 +260,7 @@ var History = (new function($)
 		var checkedCount = $HistoryTable.fasttable('checkedCount');
 		if (checkedCount === 0)
 		{
-			Notification.show('#Notif_History_Select');
+			PopupNotification.show('#Notif_History_Select');
 			return;
 		}
 
@@ -276,7 +276,8 @@ var History = (new function($)
 				hasNzb |= hist.Kind === 'NZB';
 				hasUrl |= hist.Kind === 'URL';
 				hasDup |= hist.Kind === 'DUP';
-				hasFailed |= hist.ParStatus === 'FAILURE' || hist.UnpackStatus === 'FAILURE';
+				hasFailed |= hist.ParStatus === 'FAILURE' || hist.UnpackStatus === 'FAILURE' ||
+					hist.DeleteStatus != 'NONE';
 			}
 		}
 
@@ -290,7 +291,7 @@ var History = (new function($)
 			case 'REPROCESS':
 				if (hasUrl || hasDup)
 				{
-					Notification.show('#Notif_History_CantReprocess');
+					PopupNotification.show('#Notif_History_CantReprocess');
 					return;
 				}
 				notification = '#Notif_History_Reprocess';
@@ -300,7 +301,7 @@ var History = (new function($)
 			case 'REDOWNLOAD':
 				if (hasDup)
 				{
-					Notification.show('#Notif_History_CantRedownload');
+					PopupNotification.show('#Notif_History_CantRedownload');
 					return;
 				}
 				notification = '#Notif_History_Returned';
@@ -315,7 +316,7 @@ var History = (new function($)
 			case 'MARKBAD':
 				if (hasUrl)
 				{
-					Notification.show('#Notif_History_CantMark');
+					PopupNotification.show('#Notif_History_CantMark');
 					return;
 				}
 				notification = '#Notif_History_Marked';
@@ -359,7 +360,7 @@ var History = (new function($)
 		Refresher.update();
 		if (notification)
 		{
-			Notification.show(notification);
+			PopupNotification.show(notification);
 			notification = null;
 		}
 	}
@@ -497,7 +498,6 @@ var HistoryUI = (new function($)
 	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
-		var cleanupDisk = Options.option('DeleteCleanupDisk') === 'yes';
 		var dialog = null;
 
 		function init(_dialog)
@@ -507,8 +507,7 @@ var HistoryUI = (new function($)
 			$('#HistoryDeleteConfirmDialog_Hide', dialog).prop('checked', true);
 			Util.show($('#HistoryDeleteConfirmDialog_Options', dialog), hasNzb && dupeCheck);
 			Util.show($('#HistoryDeleteConfirmDialog_Simple', dialog), !(hasNzb && dupeCheck));
-			Util.show($('#HistoryDeleteConfirmDialog_DeleteWillCleanup', dialog), hasNzb && hasFailed && cleanupDisk);
-			Util.show($('#HistoryDeleteConfirmDialog_DeleteCanCleanup', dialog), hasNzb && hasFailed && !cleanupDisk);
+			Util.show($('#HistoryDeleteConfirmDialog_DeleteWillCleanup', dialog), hasNzb && hasFailed);
 			Util.show($('#HistoryDeleteConfirmDialog_DeleteNoCleanup', dialog), !(hasNzb && hasFailed));
 			Util.show($('#HistoryDeleteConfirmDialog_DupAlert', dialog), !hasNzb && dupeCheck && hasDup);
 			Util.show('#ConfirmDialog_Help', hasNzb && dupeCheck);

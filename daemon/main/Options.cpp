@@ -957,7 +957,8 @@ void Options::InitServers()
 #ifdef DISABLE_TLS
 			if (tls)
 			{
-				ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support", optname);
+				ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support",
+					*BString<100>("Server%i.Encryption", n));
 				tls = false;
 			}
 #endif

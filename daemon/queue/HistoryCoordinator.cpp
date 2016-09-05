@@ -129,13 +129,13 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	// park remaining files
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		fileInfo->GetNzbInfo()->UpdateCompletedStats(fileInfo);
-		fileInfo->GetNzbInfo()->GetCompletedFiles()->emplace_back(fileInfo->GetId(),
+		nzbInfo->UpdateCompletedStats(fileInfo);
+		nzbInfo->GetCompletedFiles()->emplace_back(fileInfo->GetId(),
 			fileInfo->GetFilename(), CompletedFile::cfNone, 0);
 	}
 
 	// Cleaning up parked files if par-check was successful or unpack was successful or
-	// health is 100% (if unpack and par-check were not performed)
+	// health is 100% (if unpack and par-check were not performed) or if deleted
 	bool cleanupParkedFiles =
 		((nzbInfo->GetParStatus() == NzbInfo::psSuccess ||
 		  nzbInfo->GetParStatus() == NzbInfo::psRepairPossible) &&
@@ -147,7 +147,13 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 		(nzbInfo->GetUnpackStatus() <= NzbInfo::usSkipped &&
 		 nzbInfo->GetParStatus() != NzbInfo::psFailure &&
 		 nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() == 0) ||
-		nzbInfo->GetUnpackCleanedUpDisk();
+		(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone);
+
+	// Do not cleanup when parking
+	cleanupParkedFiles &= !nzbInfo->GetParking();
+
+	// Parking not possible if files were already deleted
+	cleanupParkedFiles |= nzbInfo->GetUnpackCleanedUpDisk();
 
 	if (cleanupParkedFiles)
 	{
@@ -158,7 +164,10 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	nzbInfo->SetParkedFileCount(0);
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		if (completedFile.GetStatus() == CompletedFile::cfNone)
+		if (completedFile.GetStatus() == CompletedFile::cfNone ||
+			// consider last completed file with partial status not completely tried
+			(completedFile.GetStatus() == CompletedFile::cfPartial &&
+			 &completedFile == &*nzbInfo->GetCompletedFiles()->rbegin()))
 		{
 			nzbInfo->PrintMessage(Message::mkDetail, "Parking file %s", completedFile.GetFileName());
 			nzbInfo->SetParkedFileCount(nzbInfo->GetParkedFileCount() + 1);
@@ -576,7 +585,6 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 				  (resetFailed || fileInfo->GetRemainingSize() > 0))))
 			{
 				fileInfo->SetFilename(completedFile.GetFileName());
-				fileInfo->SetPaused(fileInfo->GetParFile());
 				fileInfo->SetNzbInfo(nzbInfo);
 
 				BString<1024> outputFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename());
@@ -595,6 +603,7 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 					else if (!reprocess)
 					{
 						nzbInfo->PrintMessage(Message::mkWarning, "File %s could not be found on disk, downloading again", fileInfo->GetFilename());
+						fileInfo->SetPartialState(FileInfo::psNone);
 					}
 				}
 
@@ -619,6 +628,11 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 	nzbInfo->UpdateCurrentStats();
 
 	MoveToQueue(downloadQueue, itHistory, historyInfo, reprocess);
+
+	if (g_Options->GetParCheck() != Options::pcForce)
+	{
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
+	}
 }
 
 void HistoryCoordinator::ResetArticles(FileInfo* fileInfo, bool allFailed, bool resetFailed)

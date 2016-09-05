@@ -506,7 +506,23 @@ bool Util::RegReadStr(HKEY keyRoot, const char* keyName, const char* valueName, 
 
 time_t Util::CurrentTime()
 {
+#ifdef WIN32
+	// C-library function "time()" works on Windows too but is very CPU intensive
+	// since it uses high performance timer which we don't need anyway.
+	// A combination of GetSystemTime() + Timegm() works much faster.
+	SYSTEMTIME systm;
+	GetSystemTime(&systm);
+	struct tm tm;
+	tm.tm_year = systm.wYear - 1900;
+	tm.tm_mon = systm.wMonth - 1;
+	tm.tm_mday = systm.wDay;
+	tm.tm_hour = systm.wHour;
+	tm.tm_min = systm.wMinute;
+	tm.tm_sec = systm.wSecond;
+	return Timegm(&tm);
+#else
 	return ::time(nullptr);
+#endif
 }
 
 /* From boost */

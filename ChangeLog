@@ -1,3 +1,22 @@
+nzbget-17.1:
+  - adjustments and fixes for "Retry failed articles" function, better handling
+    of certain corner cases;
+  - partial compatibility with gcc 4.8;
+  - removed unnecessary debug logging to javascript console;
+  - improved error reporting on certain file operations;
+  - corrected option description;
+  - corrected text in history delete confirmation dialog;
+  - fixed performance issue on certain Windows systems;
+  - fixed: root drive paths on Windows could not be used (for example
+    "NzbDir=N:\");
+  - fixed hanging after marking as BAD from queue script;
+  - fixed: old nzbget.exe was deleted even when installing into a new directory
+    (Windows only);
+  - fixed: compilation error if configured with unit tests but without par-module;
+  - fixed crash on malformed articles;
+  - fixed javascript error on Chrome for Linux;
+  - fixed compilation error if configured without TLS.
+
 nzbget-17.0:
   - reworked the full source code base to utilize modern C++ features:
         - with the main motivation to make the code nicer and more fun to work

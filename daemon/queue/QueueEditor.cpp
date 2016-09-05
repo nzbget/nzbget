@@ -38,7 +38,7 @@ public:
 	GroupSorter(NzbList* nzbList, QueueEditor::ItemList* sortItemList) :
 		m_nzbList(nzbList), m_sortItemList(sortItemList) {}
 	bool Execute(const char* sort);
-	bool operator()(std::unique_ptr<NzbInfo>& refNzbInfo1, std::unique_ptr<NzbInfo>& refNzbInfo2) const;
+	bool operator()(const std::unique_ptr<NzbInfo>& refNzbInfo1, const std::unique_ptr<NzbInfo>& refNzbInfo2) const;
 
 private:
 	enum ESortCriteria
@@ -129,7 +129,7 @@ bool GroupSorter::Execute(const char* sort)
 	std::sort(m_nzbList->begin(), m_nzbList->end(), *this);
 
 	if (origSortOrder == soAuto &&
-		std::equal(tempList.begin(), tempList.end(), m_nzbList->begin(), m_nzbList->end(),
+		std::equal(tempList.begin(), tempList.end(), m_nzbList->begin(),
 		[](NzbInfo* nzbInfo1, std::unique_ptr<NzbInfo>& nzbInfo2)
 		{
 			return nzbInfo1 == nzbInfo2.get();
@@ -142,7 +142,7 @@ bool GroupSorter::Execute(const char* sort)
 	return true;
 }
 
-bool GroupSorter::operator()(std::unique_ptr<NzbInfo>& refNzbInfo1, std::unique_ptr<NzbInfo>& refNzbInfo2) const
+bool GroupSorter::operator()(const std::unique_ptr<NzbInfo>& refNzbInfo1, const std::unique_ptr<NzbInfo>& refNzbInfo2) const
 {
 	NzbInfo* nzbInfo1 = refNzbInfo1.get();
 	NzbInfo* nzbInfo2 = refNzbInfo2.get();
@@ -778,7 +778,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 		nzbInfo->SetParking(action == DownloadQueue::eaGroupParkDelete &&
 			g_Options->GetKeepHistory() > 0 &&
 			!nzbInfo->GetUnpackCleanedUpDisk() &&
-			(nzbInfo->GetSuccessArticles() > 0 || nzbInfo->GetFailedArticles() > 0));
+			nzbInfo->GetCurrentSuccessArticles() > 0);
 		nzbInfo->SetAvoidHistory(action == DownloadQueue::eaGroupFinalDelete);
 		nzbInfo->SetDeletePaused(allPaused);
 		if (action == DownloadQueue::eaGroupDupeDelete)

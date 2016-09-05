@@ -299,7 +299,7 @@ var DownloadsEditDialog = (new function($)
 		Refresher.update();
 		if (notification)
 		{
-			Notification.show(notification);
+			PopupNotification.show(notification);
 			notification = null;
 		}
 	}
@@ -655,7 +655,7 @@ var DownloadsEditDialog = (new function($)
 		var checkedCount = $DownloadsFileTable.fasttable('checkedCount');
 		if (checkedCount === 0)
 		{
-			Notification.show('#Notif_Edit_Select');
+			PopupNotification.show('#Notif_Edit_Select');
 			return;
 		}
 
@@ -748,7 +748,7 @@ var DownloadsEditDialog = (new function($)
 		{
 			if (splitError)
 			{
-				Notification.show('#Notif_Downloads_SplitNotPossible');
+				PopupNotification.show('#Notif_Downloads_SplitNotPossible');
 			}
 			else
 			{
@@ -1416,7 +1416,7 @@ var DownloadsMultiDialog = (new function($)
 		Refresher.update();
 		if (notification)
 		{
-			Notification.show(notification);
+			PopupNotification.show(notification);
 		}
 	}
 }(jQuery));
@@ -1484,7 +1484,7 @@ var DownloadsMergeDialog = (new function($)
 	{
 		$DownloadsMergeDialog.modal('hide');
 		Refresher.update();
-		Notification.show('#Notif_Downloads_Merged');
+		PopupNotification.show('#Notif_Downloads_Merged');
 	}
 }(jQuery));
 
@@ -1541,7 +1541,7 @@ var DownloadsSplitDialog = (new function($)
 		$('#DownloadsEditDialog').modal('hide');
 		$DownloadsSplitDialog.modal('hide');
 		Refresher.update();
-		Notification.show(result ? '#Notif_Downloads_Splitted' : '#Notif_Downloads_SplitError');
+		PopupNotification.show(result ? '#Notif_Downloads_Splitted' : '#Notif_Downloads_SplitError');
 	}
 }(jQuery));
 
@@ -1740,8 +1740,7 @@ var HistoryEditDialog = (new function()
 		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
 		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
 		Util.show('#HistoryEdit_Redownload', hist.Kind === 'NZB');
-		Util.show('#HistoryEdit_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.ParStatus !== 'SUCCESS' &&
-			(hist.DeleteStatus === 'NONE' || hist.RemainingFileCount > 0));
+		Util.show('#HistoryEdit_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.RetryData);
 		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
@@ -1902,7 +1901,8 @@ var HistoryEditDialog = (new function()
 	{
 		e.preventDefault();
 		HistoryUI.deleteConfirm(doItemDelete, curHist.Kind === 'NZB', curHist.Kind === 'DUP',
-			curHist.ParStatus === 'FAILURE' || curHist.UnpackStatus === 'FAILURE', false);
+			curHist.ParStatus === 'FAILURE' || curHist.UnpackStatus === 'FAILURE' ||
+			curHist.DeleteStatus != 'NONE', false);
 	}
 
 	function doItemDelete(command)
@@ -1975,7 +1975,7 @@ var HistoryEditDialog = (new function()
 		Refresher.update();
 		if (notification)
 		{
-			Notification.show(notification);
+			PopupNotification.show(notification);
 			notification = null;
 		}
 	}
