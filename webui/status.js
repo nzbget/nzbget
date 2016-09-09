@@ -332,37 +332,48 @@ var Status = (new function($)
 		this.scheduledPauseClick(seconds);
 	}
 
-        function calculateSeconds(parsable) {
+	function calculateSeconds(parsable) {
 		var preview = $('#PauseForPreview');
 		var parsed = $.trim(parsable).toLowerCase().match(/^(?!=\d{1,2}(?:(?::[ap])?(?:m|h)))(?!\d{1,2}:?(?:am|pm))(=)?(\d{1,2})(?:(?::)(?!\d{1,2}(?:m|h))(\d{1,2})?)?(h|m|am|pm)?$/i);
 		var now = new Date(), future = new Date();
 		var hours = 0, minutes = 0;
 
-                if (!parsed)
+		if (!parsed)
 		{
 			preview.hide();
 			return;
 		}
 
+		var mode = parsed[1] === '=' ? 'exact' : 'relative';
+		var indicator = parsed[4]; // am, pm, h, m
+		var primaryValue = parsed[2];
+		var secondaryValue = parsed[3];
+		var is12H = (indicator === 'am' || indicator === 'pm')
 
-		if (parsed[4] === undefined && parsed[3] === undefined)
+		if (indicator === undefined && secondaryValue === undefined)
 		{
-			if (parsed[1] === '=') hours = parseInt(parsed[2]);
-                        else minutes = parseInt(parsed[2]);
+			if (mode === 'exact') hours = parseInt(primaryValue);
+			else minutes = parseInt(primaryValue);
 		}
 		else
 		{
-			if (parsed[4] !== 'm') hours = parsed[4] === 'pm' ? parseInt(parsed[2]) + 12 : parseInt(parsed[2])
-                        minutes = parseInt(parsed[4] === 'm' ? parsed[2] : parsed[3]) || 0;
+			if (indicator === 'm') minutes = parseInt(primaryValue);
+			else
+			{
+				hours = parseInt(primaryValue);
+				if (secondaryValue) minutes = parseInt(secondaryValue);
+				if (indicator === 'pm') hours += 12;
+			}
 		}
 
-		if (((parsed[4] === 'am' || parsed[4] === 'pm') && parsed[1] !== '=') || hours > 0 && minutes > 59)
+		if ((mode !== 'exact' && (is12H || (hours > 0 && minutes > 59))) ||
+			(mode === 'exact' && (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)))
 		{
 			preview.hide();
 			return;
 		}
 
-		if (parsed[1] === '=')
+		if (mode === 'exact')
 		{
 			future.setHours(hours, minutes, 0, 0);
 
