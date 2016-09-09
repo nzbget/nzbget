@@ -1,3 +1,7 @@
+nzbget-18.0:
+  -  please see repository change log at
+     https://github.com/nzbget/nzbget/commits/develop
+
 nzbget-17.1:
   - adjustments and fixes for "Retry failed articles" function, better handling
     of certain corner cases;
