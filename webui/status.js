@@ -315,15 +315,64 @@ var Status = (new function($)
 	this.pauseForClick = function()
 	{
 		var val = $PauseForInput.val();
-		var minutes = parseInt(val);
+		var seconds = calculateSeconds(val);
 
-		if (isNaN(minutes) || minutes <= 0)
+		if (isNaN(seconds) || seconds <= 0)
 		{
 			return;
 		}
 
 		$ScheduledPauseDialog.modal('hide');
-		this.scheduledPauseClick(minutes * 60);
+		this.scheduledPauseClick(seconds);
+	}
+
+        function calculateSeconds(parsable) {
+		var preview = $('#PauseForPreview');
+		var parsed = $.trim(parsable).toLowerCase().match(/^(=)?(\d+)(?::)?(\d+)?(h|m|am|pm)?$/i);
+		var now = new Date(), future = new Date();
+		var hours = 0, minutes = 0;
+
+                if (!parsed)
+		{
+			preview.hide();
+			return;
+		}
+
+
+		if (parsed[4] === undefined && parsed[3] === undefined)
+		{
+			if (parsed[1] === '=') hours = parseInt(parsed[2]);
+                        else minutes = parseInt(parsed[2]);
+		}
+		else
+		{
+			if (parsed[4] !== 'm') hours = parsed[4] === 'pm' ? parseInt(parsed[2]) + 12 : parseInt(parsed[2])
+                        minutes = parseInt(parsed[4] === 'm' ? parsed[2] : parsed[3]) || 0;
+		}
+
+		if (((parsed[4] === 'am' || parsed[4] === 'pm') && parsed[1] !== '=') || hours > 0 && minutes > 59)
+		{
+			preview.hide();
+			return;
+		}
+
+		if (parsed[1] === '=')
+		{
+			future.setHours(hours, minutes, 0, 0);
+
+			if (future < now) future.setDate(now.getDate() + 1);
+		}
+		else
+		{
+			future.setHours(now.getHours() + hours, now.getMinutes() + minutes);
+		}
+
+		preview.find('strong')
+			.text((future.getDay() !== now.getDay()) ? future.toLocaleString() : future.toLocaleTimeString())
+			.end()
+			.show();
+
+		return (future - now)/1000;
 	}
 
 	function modalShow()
