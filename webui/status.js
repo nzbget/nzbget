@@ -334,7 +334,7 @@ var Status = (new function($)
 
         function calculateSeconds(parsable) {
 		var preview = $('#PauseForPreview');
-		var parsed = $.trim(parsable).toLowerCase().match(/^(=)?(\d+)(?::)?(\d+)?(h|m|am|pm)?$/i);
+		var parsed = $.trim(parsable).toLowerCase().match(/^(?!=\d{1,2}(?:(?::[ap])?(?:m|h)))(?!\d{1,2}:?(?:am|pm))(=)?(\d{1,2})(?:(?::)(?!\d{1,2}(?:m|h))(\d{1,2})?)?(h|m|am|pm)?$/i);
 		var now = new Date(), future = new Date();
 		var hours = 0, minutes = 0;
 
