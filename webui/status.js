@@ -91,6 +91,12 @@ var Status = (new function($)
 		}
 
 		$PlayAnimation.hover(function() { $PlayBlock.addClass('hover'); }, function() { $PlayBlock.removeClass('hover'); });
+		$PauseForInput.keyup(function(e)
+		{
+			if (e.which == 13) return;
+
+			calculateSeconds($(this).val());
+		});
 
 		// temporary pause the play animation if any modal is shown (to avoid artifacts in safari)
 		$('body >.modal').on('show', modalShow);
