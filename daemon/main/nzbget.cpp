@@ -865,16 +865,12 @@ void NZBGet::Daemonize()
 	// obtain a new process group
 	setsid();
 
-	// close all descriptors
-	for (int i = getdtablesize(); i >= 0; --i)
-	{
-		close(i);
-	}
-
 	// handle standart I/O
 	int d = open("/dev/null", O_RDWR);
-	dup(d);
-	dup(d);
+	dup2(d, 0);
+	dup2(d, 1);
+	dup2(d, 2);
+	close(d);
 
 	// set up lock-file
 	int lfp = -1;
