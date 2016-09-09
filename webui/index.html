@@ -892,13 +892,63 @@
 			<form>
 			<fieldset>
 				<div class="control-group">
-					<label class="control-label" for="PauseForInputGroup">Pause for</label>
+					<label class="control-label" for="PauseForInputGroup">Pause</label>
 					<div class="controls" id="PauseForInputGroup">
 						<div class="input-append">
-							<input class="input-mini" id="PauseForInput" size="16" type="text"><span class="add-on">Minutes</span>
+							<input class="input-mini" id="PauseForInput" size="16" type="text"><span class="add-on" style="display:none"></span>
 						</div>
 					</div>
 				</div>
+				<p id="PauseForPreview" class="text-center" style="display:none">
+					Will remain paused until <strong></strong>
+				</p>
+				<hr />
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Format</th>
+							<th>Example</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>##:##</td>
+							<td>1:30</td>
+							<td>Pause for 1 hour and 30 min</td>
+						</tr>
+						<tr>
+							<td>##h</td>
+							<td>3h</td>
+							<td>Pause for 3 hours</td>
+						</tr>
+						<tr>
+							<td>##m</td>
+							<td>30m</td>
+							<td>Pause for 30 min</td>
+						</tr>
+						<tr>
+							<td>=##:##</td>
+							<td>=16:30</td>
+							<td>Pause until 16:30 (4:30PM)</td>
+						</tr>
+						<tr>
+							<td>=##</td>
+							<td>=16</td>
+							<td>Pause until 16:00 (4:00PM)</td>
+						</tr>
+						<tr>
+							<td>=##:##AM|PM</td>
+							<td>=4:30PM</td>
+							<td>Pause until 4:30PM (16:30)</td>
+						</tr>
+						<tr>
+							<td>=##AM|PM</td>
+							<td>=4PM</td>
+							<td>Pause until 4:00PM (16:00)</td>
+						</tr>
+					</tbody>
+				</table>
 			</fieldset>
 			</form>
 		</div>
