@@ -961,13 +961,11 @@ form {
     margin-bottom: 0px;
 }
 
-/* text-align for tables */
-td.text-right,th.text-right {
+.text-right {
 	text-align: right;
 }
 
-/* text-align for tables */
-td.text-center,th.text-center {
+.text-center {
 	text-align: center;
 }
 
