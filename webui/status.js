@@ -63,6 +63,13 @@ var Status = (new function($)
 	var modalShown = false;
 	var titleGen = [];
 
+	var validTimePatterns = [
+		/^=\d{1,2}(:[0-5][0-9])?$/, // 24h exact
+		/^=\d{1,2}(:[0-5][0-9])?(AM|PM)$/i, // 12h exact
+		/^\d+(:[0-5][0-9])?$/, // 24h relative
+		/^\d+(h|m)?$/i, // relative minutes or hours
+	];
+
 	this.init = function()
 	{
 		$CHPauseDownload = $('#CHPauseDownload');
@@ -332,6 +339,14 @@ var Status = (new function($)
 
 		$ScheduledPauseDialog.modal('hide');
 		this.scheduledPauseClick(seconds);
+	}
+
+	function isTimeInputValid(str)
+	{
+		for (var i = 0; i < validTimePatterns.length; i++)
+		{
+			if (validTimePatterns[i].test(str)) return true;
+		}
 	}
 
 	function calculateSeconds(parsable) {
