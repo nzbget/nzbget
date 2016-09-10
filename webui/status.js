@@ -350,21 +350,22 @@ var Status = (new function($)
 	}
 
 	function calculateSeconds(parsable) {
-		var preview = $('#PauseForPreview');
-		var parsed = $.trim(parsable).toLowerCase().match(/^(?!=\d{1,2}(?:(?::[ap])?(?:m|h)))(?!\d{1,2}:?(?:am|pm))(=)?(\d{1,2})(?:(?::)(?!\d{1,2}(?:m|h))(\d{1,2})?)?(h|m|am|pm)?$/i);
-		var now = new Date(), future = new Date();
-		var hours = 0, minutes = 0;
+		parsable = parsable.toLowerCase();
 
-		if (!parsed)
+		if (!isTimeInputValid(parsable))
 		{
-			preview.hide();
+			$PauseForPreview.hide();
 			return;
 		}
 
-		var mode = parsed[1] === '=' ? 'exact' : 'relative';
-		var indicator = parsed[4]; // am, pm, h, m
-		var primaryValue = parsed[2];
-		var secondaryValue = parsed[3];
+		var now = new Date(), future = new Date();
+		var hours = 0, minutes = 0;
+
+		var mode = /^=/.test(parsable) ? 'exact' : 'relative';
+		var indicator = (parsable.match(/h|m|am|pm$/i) || [])[0];
+		var parsedTime = parsable.match(/(\d+):?(\d+)?/) || [];
+		var primaryValue = parsedTime[1];
+		var secondaryValue = parsedTime[2];
 		var is12H = (indicator === 'am' || indicator === 'pm')
 
 		if (indicator === undefined && secondaryValue === undefined)
@@ -372,21 +373,21 @@ var Status = (new function($)
 			if (mode === 'exact') hours = parseInt(primaryValue);
 			else minutes = parseInt(primaryValue);
 		}
+		else if (indicator === 'm')
+		{
+			minutes = parseInt(primaryValue);
+		}
 		else
 		{
-			if (indicator === 'm') minutes = parseInt(primaryValue);
-			else
-			{
-				hours = parseInt(primaryValue);
-				if (secondaryValue) minutes = parseInt(secondaryValue);
-				if (indicator === 'pm') hours += 12;
-			}
+			hours = parseInt(primaryValue);
+			if (secondaryValue) minutes = parseInt(secondaryValue);
+			if (indicator === 'pm' && hours < 12) hours += 12;
 		}
 
 		if ((mode !== 'exact' && (is12H || (hours > 0 && minutes > 59))) ||
 			(mode === 'exact' && (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)))
 		{
-			preview.hide();
+			$PauseForPreview.hide();
 			return;
 		}
 
@@ -401,7 +402,7 @@ var Status = (new function($)
 			future.setHours(now.getHours() + hours, now.getMinutes() + minutes);
 		}
 
-		preview.find('strong')
+		$PauseForPreview.find('strong')
 			.text((future.getDay() !== now.getDay()) ? future.toLocaleString() : future.toLocaleTimeString())
 			.end()
 			.show();
