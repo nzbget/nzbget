@@ -146,6 +146,16 @@ nzbget_SOURCES = \
 	daemon/util/FileSystem.h \
 	daemon/util/Util.cpp \
 	daemon/util/Util.h \
+	daemon/nserv/NServMain.h \
+	daemon/nserv/NServMain.cpp \
+	daemon/nserv/NServFrontend.h \
+	daemon/nserv/NServFrontend.cpp \
+	daemon/nserv/NntpServer.h \
+	daemon/nserv/NntpServer.cpp \
+	daemon/nserv/NzbGenerator.h \
+	daemon/nserv/NzbGenerator.cpp \
+	daemon/nserv/YEncoder.h \
+	daemon/nserv/YEncoder.cpp \
 	code_revision.cpp
 
 if WITH_PAR2
@@ -205,6 +215,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/queue \
 	-I$(srcdir)/daemon/remote \
 	-I$(srcdir)/daemon/util \
+	-I$(srcdir)/daemon/nserv \
 	-I$(srcdir)/lib/par2
 
 if WITH_TESTS

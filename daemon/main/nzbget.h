@@ -196,6 +196,7 @@ using namespace MSXML;
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <functional>
 
 #ifdef HAVE_LIBGNUTLS
 #ifdef WIN32

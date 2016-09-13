@@ -126,6 +126,7 @@ public:
 	explicit operator char*() { return m_data; }
 	const char* operator*() const { return m_data; }
 	int Length() const { return m_length; }
+	void SetLength(int length) { m_length = length; }
 	int Capacity() const { return m_capacity; }
 	void Reserve(int capacity, bool exact = false);
 	bool Empty() const { return m_length == 0; }
