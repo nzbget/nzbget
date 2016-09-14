@@ -743,6 +743,10 @@ ul.dropdown-menu > li > a > i {
 	line-height: 22px;
 }
 
+.invisible {
+	visibility: hidden;
+}
+
 /* links in black color */
 .table a {
 	color: #000000;

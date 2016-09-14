@@ -324,6 +324,7 @@ var Status = (new function($)
 	this.scheduledPauseDialogClick = function()
 	{
 		$PauseForInput.val('');
+		$PauseForPreview.addClass('invisible');
 		$ScheduledPauseDialog.modal();
 	}
 
@@ -354,7 +355,7 @@ var Status = (new function($)
 
 		if (!isTimeInputValid(parsable))
 		{
-			$PauseForPreview.hide();
+			$PauseForPreview.addClass('invisible');
 			return;
 		}
 
@@ -387,7 +388,7 @@ var Status = (new function($)
 		if ((mode !== 'exact' && (is12H || (hours > 0 && minutes > 59))) ||
 			(mode === 'exact' && (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)))
 		{
-			$PauseForPreview.hide();
+			$PauseForPreview.addClass('invisible');
 			return;
 		}
 
@@ -405,7 +406,7 @@ var Status = (new function($)
 		$PauseForPreview.find('strong')
 			.text((future.getDay() !== now.getDay()) ? future.toLocaleString() : future.toLocaleTimeString())
 			.end()
-			.show();
+			.removeClass('invisible');
 
 		return (future - now)/1000;
 	}
