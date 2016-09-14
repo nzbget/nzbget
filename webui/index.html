@@ -900,58 +900,18 @@
 				<p id="PauseForPreview" class="text-center invisible">
 					Will remain paused until <strong></strong>
 				</p>
-				<hr />
-				<table class="table">
-					<thead>
-						<tr>
-							<th>Format</th>
-							<th>Example</th>
-							<th>Description</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>##:##</td>
-							<td>1:30</td>
-							<td>Pause for 1 hour and 30 min</td>
-						</tr>
-						<tr>
-							<td>##h</td>
-							<td>3h</td>
-							<td>Pause for 3 hours</td>
-						</tr>
-						<tr>
-							<td>##m</td>
-							<td>30m</td>
-							<td>Pause for 30 min</td>
-						</tr>
-						<tr>
-							<td>=##:##</td>
-							<td>=16:30</td>
-							<td>Pause until 16:30 (4:30PM)</td>
-						</tr>
-						<tr>
-							<td>=##</td>
-							<td>=16</td>
-							<td>Pause until 16:00 (4:00PM)</td>
-						</tr>
-						<tr>
-							<td>=##:##AM|PM</td>
-							<td>=4:30PM</td>
-							<td>Pause until 4:30PM (16:30)</td>
-						</tr>
-						<tr>
-							<td>=##AM|PM</td>
-							<td>=4PM</td>
-							<td>Pause until 4:00PM (16:00)</td>
-						</tr>
-					</tbody>
-				</table>
+				<p class="text-center">
+					<span class="label label-info">INFO:</span> For example 30m, 2h, or =18:00
+				</p>
 			</fieldset>
 			</form>
 		</div>
 	</div>
 	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#ScheduledPauseDialogHelp" class="btn pull-left">Quick Help</a>
+		</div>
+
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="ScheduledPause_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" onclick="Status.pauseForClick()">Pause</a>
@@ -998,6 +958,67 @@
 	<p>With command <strong>Pause download</strong> you can manually pause the download queue.</p>
 	<p>The pausing of <strong>post-processing</strong> depends on how the post-processing-script handles screen output and may not always work.</p>
 	<p>The <strong>Pause/Resume Button</strong> (the round one) pauses or resumes all three activities: download, post-processing and nzb directory scan.</p>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: EXPLAINING SCHEDULED PAUSE FORMATS ************************************************************ -->
+
+<div class="modal no-footer hide" id="ScheduledPauseDialogHelp">
+	<div class="modal-header">
+		<a class="close" href="#" data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Help: Explaining temporary pause time formats</h3>
+	</div>
+	<div class="modal-body">
+		<p>Below you'll find the accepted formats</p>
+		<table class="table table table-condensed table-striped">
+			<thead>
+				<tr>
+					<th>Format</th>
+					<th>Example</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>##(m)</td>
+					<td>30m</td>
+					<td>
+						Pause for 30 minutes <br />
+						<em>"m" is optional</em>
+					</td>
+				</tr>
+				<tr>
+					<td>##h</td>
+					<td>3h</td>
+					<td>Pause for 3 hours</td>
+				</tr>
+				<tr>
+					<td>##:##</td>
+					<td>1:30</td>
+					<td>Pause for 1 hour and 30 min</td>
+				</tr>
+				<tr>
+					<td>=##:##</td>
+					<td>=16:30</td>
+					<td>Pause until 16:30 (4:30PM)</td>
+				</tr>
+				<tr>
+					<td>=##</td>
+					<td>=16</td>
+					<td>Pause until 16:00 (4:00PM)</td>
+				</tr>
+				<tr>
+					<td>=##:##AM|PM</td>
+					<td>=4:30PM</td>
+					<td>Pause until 4:30PM (16:30)</td>
+				</tr>
+				<tr>
+					<td>=##AM|PM</td>
+					<td>=4PM</td>
+					<td>Pause until 4:00PM (16:00)</td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 </div>
 
