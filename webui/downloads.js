@@ -100,7 +100,7 @@ var Downloads = (new function($)
 		$DownloadsTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
 			function(event) { $DownloadsTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$DownloadsTable.on('click', 'thead div.check',
-			function() { $DownloadsTable.fasttable('titleCheckClick') });
+			function(e) { $DownloadsTable.fasttable('titleCheckClick', e); });
 		$DownloadsTable.on('mousedown', Util.disableShiftMouseDown);
 	}
 

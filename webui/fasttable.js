@@ -644,7 +644,7 @@
 		refresh(data);
 	}
 
-	function titleCheckClick()
+	function titleCheckClick(e)
 	{
 		var data = $(this).data('fasttable');
 		var filteredContent = data.filteredContent;

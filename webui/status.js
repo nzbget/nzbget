@@ -1428,7 +1428,7 @@ var LimitDialog = (new function($)
 		$ServerTable.on('click', 'tbody div.check',
 			function(event) { $ServerTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
 		$ServerTable.on('click', 'thead div.check',
-			function() { $ServerTable.fasttable('titleCheckClick') });
+			function(e) { $ServerTable.fasttable('titleCheckClick', e); });
 		$ServerTable.on('mousedown', Util.disableShiftMouseDown);
 
 		if (UISettings.setFocus)

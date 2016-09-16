@@ -129,7 +129,7 @@ var FeedDialog = (new function($)
 		$ItemTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
 			function(event) { $ItemTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$ItemTable.on('click', 'thead div.check',
-			function() { $ItemTable.fasttable('titleCheckClick') });
+			function(e) { $ItemTable.fasttable('titleCheckClick', e); });
 		$ItemTable.on('mousedown', Util.disableShiftMouseDown);
 
 		$FeedDialog.on('hidden', function()

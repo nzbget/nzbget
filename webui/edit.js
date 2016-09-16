@@ -91,7 +91,7 @@ var DownloadsEditDialog = (new function($)
 		$DownloadsFileTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
 			function(event) { $DownloadsFileTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$DownloadsFileTable.on('click', 'thead div.check',
-			function() { $DownloadsFileTable.fasttable('titleCheckClick') });
+			function(e) { $DownloadsFileTable.fasttable('titleCheckClick', e); });
 		$DownloadsFileTable.on('mousedown', Util.disableShiftMouseDown);
 
 		$DownloadsEditDialog.on('hidden', function()
