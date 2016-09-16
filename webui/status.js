@@ -53,6 +53,7 @@ var Status = (new function($)
 	var $StatDialog;
 	var $ScheduledPauseDialog;
 	var $PauseForInput;
+	var $PauseForPreview;
 
 	// State
 	var status;
@@ -61,6 +62,13 @@ var Status = (new function($)
 	var playInitialized = false;
 	var modalShown = false;
 	var titleGen = [];
+
+	var validTimePatterns = [
+		/^=\d{1,2}(:[0-5][0-9])?$/, // 24h exact
+		/^=\d{1,2}(:[0-5][0-9])?(AM|PM)$/i, // 12h exact
+		/^\d+(:[0-5][0-9])?$/, // 24h relative
+		/^\d+(h|m)?$/i, // relative minutes or hours
+	];
 
 	this.init = function()
 	{
@@ -81,6 +89,7 @@ var Status = (new function($)
 		$StatusURLs = $('#StatusURLs');
 		$ScheduledPauseDialog = $('#ScheduledPauseDialog')
 		$PauseForInput = $('#PauseForInput');
+		$PauseForPreview = $('#PauseForPreview');
 
 		if (UISettings.setFocus)
 		{
@@ -91,6 +100,12 @@ var Status = (new function($)
 		}
 
 		$PlayAnimation.hover(function() { $PlayBlock.addClass('hover'); }, function() { $PlayBlock.removeClass('hover'); });
+		$PauseForInput.keyup(function(e)
+		{
+			if (e.which == 13) return;
+
+			calculateSeconds($(this).val());
+		});
 
 		// temporary pause the play animation if any modal is shown (to avoid artifacts in safari)
 		$('body >.modal').on('show', modalShow);
@@ -309,21 +324,91 @@ var Status = (new function($)
 	this.scheduledPauseDialogClick = function()
 	{
 		$PauseForInput.val('');
+		$PauseForPreview.addClass('invisible');
 		$ScheduledPauseDialog.modal();
 	}
 
 	this.pauseForClick = function()
 	{
 		var val = $PauseForInput.val();
-		var minutes = parseInt(val);
+		var seconds = calculateSeconds(val);
 
-		if (isNaN(minutes) || minutes <= 0)
+		if (isNaN(seconds) || seconds <= 0)
 		{
 			return;
 		}
 
 		$ScheduledPauseDialog.modal('hide');
-		this.scheduledPauseClick(minutes * 60);
+		this.scheduledPauseClick(seconds);
+	}
+
+	function isTimeInputValid(str)
+	{
+		for (var i = 0; i < validTimePatterns.length; i++)
+		{
+			if (validTimePatterns[i].test(str)) return true;
+		}
+	}
+
+	function calculateSeconds(parsable) {
+		parsable = parsable.toLowerCase();
+
+		if (!isTimeInputValid(parsable))
+		{
+			$PauseForPreview.addClass('invisible');
+			return;
+		}
+
+		var now = new Date(), future = new Date();
+		var hours = 0, minutes = 0;
+
+		var mode = /^=/.test(parsable) ? 'exact' : 'relative';
+		var indicator = (parsable.match(/h|m|am|pm$/i) || [])[0];
+		var parsedTime = parsable.match(/(\d+):?(\d+)?/) || [];
+		var primaryValue = parsedTime[1];
+		var secondaryValue = parsedTime[2];
+		var is12H = (indicator === 'am' || indicator === 'pm')
+
+		if (indicator === undefined && secondaryValue === undefined)
+		{
+			if (mode === 'exact') hours = parseInt(primaryValue);
+			else minutes = parseInt(primaryValue);
+		}
+		else if (indicator === 'm')
+		{
+			minutes = parseInt(primaryValue);
+		}
+		else
+		{
+			hours = parseInt(primaryValue);
+			if (secondaryValue) minutes = parseInt(secondaryValue);
+			if (indicator === 'pm' && hours < 12) hours += 12;
+		}
+
+		if ((mode !== 'exact' && (is12H || (hours > 0 && minutes > 59))) ||
+			(mode === 'exact' && (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)))
+		{
+			$PauseForPreview.addClass('invisible');
+			return;
+		}
+
+		if (mode === 'exact')
+		{
+			future.setHours(hours, minutes, 0, 0);
+
+			if (future < now) future.setDate(now.getDate() + 1);
+		}
+		else
+		{
+			future.setHours(now.getHours() + hours, now.getMinutes() + minutes);
+		}
+
+		$PauseForPreview.find('strong')
+			.text((future.getDay() !== now.getDay()) ? future.toLocaleString() : future.toLocaleTimeString())
+			.end()
+			.removeClass('invisible');
+
+		return (future - now)/1000;
 	}
 
 	function modalShow()
