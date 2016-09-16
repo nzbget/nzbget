@@ -681,12 +681,12 @@
 		}
 	}
 	
-	function checkAll(data, checked, selectEverything)
+	function checkAll(data, checked, selectVisible)
 	{
 		var filteredContent = data.filteredContent;
 		var checkedItemCount =
-			selectEverything || filteredContent.length < data.pageSize ?
-			filteredContent.length : data.pageSize;
+			selectVisible && filteredContent.length > data.pageSize ?
+			data.pageSize : filteredContent.length;
 
 		for (var i = 0; i < checkedItemCount; i++)
 		{
