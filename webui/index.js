@@ -240,6 +240,7 @@ var Frontend = (new function($)
 		setupSearch();
 		
 		$('li > a:has(table)').addClass('has-table');
+		$('table.table-cancheck th .check').attr({ title: 'Hold Ctrl or Windows/Command key to apply action to ALL items' });
 
 		$(document).on("keypress", "form", function(event)
 		{
