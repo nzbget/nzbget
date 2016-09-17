@@ -371,7 +371,10 @@ NzbInfo* QueueCoordinator::AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, N
 	{
 		// in a case if none of listeners did already delete the temporary object - we do it ourselves
 		downloadQueue->GetQueue()->Remove(addedNzb);
-		addedNzb = nullptr;
+		if (!downloadQueue->GetHistory()->Find(addedNzb->GetId()))
+		{
+			addedNzb = nullptr;
+		}
 	}
 
 	downloadQueue->Save();

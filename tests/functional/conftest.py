@@ -150,13 +150,13 @@ class Nzbget:
 			raise Exception('Could not start nzbget')
 		print('Started')
 
-	def append_nzb(self, nzb_name, nzb_content, unpack = False):
+	def append_nzb(self, nzb_name, nzb_content, unpack = False, dupekey = '', dupescore = 0, dupemode = 'FORCE'):
 		nzbcontent64 = base64.standard_b64encode(nzb_content)
 		if unpack:
 			params = [('*unpack:', 'yes')]
 		else:
 			params = [('*unpack:', 'no')]
-		return self.api.append(nzb_name, nzbcontent64, 'test', 0, False, False, '', 0, 'FORCE', params)
+		return self.api.append(nzb_name, nzbcontent64, 'test', 0, False, False, dupekey, dupescore, dupemode, params)
 
 	def load_nzb(self, nzb_name):
 		fullfilename = nserv_datadir + '/' + nzb_name
@@ -168,10 +168,10 @@ class Nzbget:
 		return nzbcontent
 
 
-	def download_nzb(self, nzb_name, nzb_content = None, unpack = False):
+	def download_nzb(self, nzb_name, nzb_content = None, unpack = False, dupekey = '', dupescore = 0, dupemode = 'FORCE'):
 		if not nzb_content:
 			nzb_content = self.load_nzb(nzb_name)
-		self.append_nzb(nzb_name, nzb_content, unpack)
+		self.append_nzb(nzb_name, nzb_content, unpack, dupekey, dupescore, dupemode)
 		hist = self.wait_nzb(nzb_name)
 		return hist
 
@@ -187,6 +187,8 @@ class Nzbget:
 			time.sleep(0.1)
 		return hist
 
+	def clear(self):
+		self.api.editqueue('HistoryFinalDelete', 0, '', range(1, 1000));
 
 @pytest.fixture(scope='module')
 
