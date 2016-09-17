@@ -124,6 +124,7 @@
     <ClCompile Include="daemon\nntp\NntpConnection.cpp" />
     <ClCompile Include="daemon\nntp\ServerPool.cpp" />
     <ClCompile Include="daemon\nntp\StatMeter.cpp" />
+    <ClCompile Include="daemon\nserv\NntpServer.cpp" />
     <ClCompile Include="daemon\nserv\NServFrontend.cpp" />
     <ClCompile Include="daemon\nserv\NServMain.cpp" />
     <ClCompile Include="daemon\nserv\NzbGenerator.cpp" />
