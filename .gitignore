@@ -61,3 +61,6 @@ ipch/
 # NZBGet specific
 nzbget
 code_revision.cpp
+*.temp
+*.pyc
+pytest.ini
