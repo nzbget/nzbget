@@ -60,6 +60,9 @@
 #ifdef ENABLE_TESTS
 #include "TestMain.h"
 #endif
+#ifndef DISABLE_NSERV
+#include "NServMain.h"
+#endif
 
 // Prototypes
 void RunMain();
@@ -126,6 +129,16 @@ int main(int argc, char *argv[], char *argp[])
 #ifdef ENABLE_TESTS
 	TestCleanup();
 #endif
+
+	if (argc > 1 && (!strcmp(argv[1], "--nserv")))
+	{
+#ifndef DISABLE_NSERV
+		return NServMain(argc, argv);
+#else
+		printf("ERROR: Could not start NServ, the program was compiled without NServ\n");
+		return 1;
+#endif
+	}
 
 #ifdef WIN32
 	InstallUninstallServiceCheck(argc, argv);
