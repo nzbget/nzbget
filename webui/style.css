@@ -1045,7 +1045,7 @@ tr.checked:nth-child(odd) .progress {
 
 .table tbody tr.checked:hover,
 .table tbody tr.checked:hover td {
-	background-color: #FFFFCC;
+	background-color: #FFFFC0;
 }
 
 .check-simple tr.checked,
