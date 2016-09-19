@@ -513,15 +513,15 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 #endif
 
 	NzbParameter* unpackParameter = postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
-	bool unpackParam = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
-	bool unpack = unpackParam && postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone &&
+	bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
+	bool unpack = wantUnpack && postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone;
 
 	bool parFailed = postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psFailure ||
 		postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psRepairPossible ||
 		postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psManual;
 
-	bool cleanup = !unpack &&
+	bool cleanup = !unpack && wantUnpack &&
 		postInfo->GetNzbInfo()->GetCleanupStatus() == NzbInfo::csNone &&
 		!Util::EmptyStr(g_Options->GetExtCleanupDisk()) &&
 		((postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSuccess &&
