@@ -25,8 +25,8 @@
 #include "Options.h"
 #include "Util.h"
 
-FeedFile::FeedFile(const char* fileName) :
-	m_fileName(fileName)
+FeedFile::FeedFile(const char* fileName, const char* infoName) :
+	m_fileName(fileName), m_infoName(infoName)
 {
 	debug("Creating FeedFile");
 
@@ -113,7 +113,7 @@ bool FeedFile::Parse()
 	{
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* errMsg = r;
-		error("Error parsing rss feed: %s", errMsg);
+		error("Error parsing rss feed %s: %s", *m_infoName, errMsg);
 		return false;
 	}
 
@@ -373,7 +373,7 @@ bool FeedFile::Parse()
 
 	if (ret != 0)
 	{
-		error("Failed to parse rss feed");
+		error("Failed to parse rss feed %s", *m_infoName);
 		return false;
 	}
 
@@ -592,6 +592,6 @@ void FeedFile::SAX_error(FeedFile* file, const char *msg, ...)
 
 	// remove trailing CRLF
 	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
-	error("Error parsing rss feed: %s", errMsg);
+	error("Error parsing rss feed %s: %s", *file->m_infoName, errMsg);
 }
 #endif

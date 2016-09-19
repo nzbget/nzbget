@@ -26,6 +26,7 @@
 #include "Thread.h"
 #include "WebDownloader.h"
 #include "DownloadInfo.h"
+#include "FeedFile.h"
 #include "FeedInfo.h"
 #include "Observer.h"
 #include "Util.h"
@@ -119,6 +120,7 @@ private:
 	void CleanupHistory();
 	void CleanupCache();
 	void CheckSaveFeeds();
+	std::unique_ptr<FeedFile> parseFeed(FeedInfo* feedInfo);
 };
 
 extern FeedCoordinator* g_FeedCoordinator;

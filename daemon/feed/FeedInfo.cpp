@@ -28,6 +28,10 @@ FeedInfo::FeedInfo(int id, const char* name, const char* url, bool backlog, int 
 {
 	m_id = id;
 	m_name = name ? name : "";
+	if (m_name.Length() == 0)
+	{
+		m_name.Format("Feed%i", m_id);
+	}
 	m_url = url ? url : "";
 	m_filter = filter ? filter : "";
 	m_filterHash = Util::HashBJ96(m_filter, strlen(m_filter), 0);
