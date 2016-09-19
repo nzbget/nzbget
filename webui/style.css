@@ -1035,17 +1035,19 @@ table.table-cancheck tr.checkremove div.img-check {
 }
 
 tr.checked,
-tr.checked td {
-	background-color: #FFFFE1;
+tr.checked td,
+tr.checked:nth-child(odd) .progress {
+	background-color: #FFFFE8;
 }
 
-.table-striped tbody tr.checked:nth-child(odd) td {
-	background-color: #FFFFE1;
+.table-striped tbody tr.checked:nth-child(odd) td,
+.checked .progress {
+	background-color: #FFFFD8;
 }
 
 .table tbody tr.checked:hover,
 .table tbody tr.checked:hover td {
-	background-color: #FFFFCC;
+	background-color: #FFFFC0;
 }
 
 .check-simple tr.checked,
