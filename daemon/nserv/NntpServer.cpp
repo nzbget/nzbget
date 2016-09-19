@@ -217,9 +217,13 @@ void NntpProcessor::ServArticle()
 			SendSegment();
 			return;
 		}
-	}
 
-	if (!ok)
+		if (!ok)
+		{
+			m_connection->WriteLine("430 No Such Article Found\r\n");
+		}
+	}
+	else
 	{
 		m_connection->WriteLine("430 No Such Article Found (invalid message id format)\r\n");
 	}
