@@ -778,12 +778,12 @@ var DownloadsUI = (new function($)
 			if (parameters[i]['Name'] === '*Unpack:Password' &&
 				parameters[i]['Value'])
 			{
-				isEncrypted = true;
+				isEncrypted = parameters[i]['Value'];
 				break;
 			}
 		}
-		return isEncrypted ?
-			' <span class="label label-info">ENCRYPTED</span>' : '';
+		return isEncrypted !== false ?
+			' <span class="label label-info" title="'+ isEncrypted +'">ENCRYPTED</span>' : '';
 	}
 
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
