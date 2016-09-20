@@ -771,7 +771,8 @@ var DownloadsUI = (new function($)
 		}
 	}
 
-	this.buildEncryptedLabel = function(parameters) {
+	this.buildEncryptedLabel = function(parameters)
+	{
 		var isEncrypted = false;
 
 		for (var i=0; i < parameters.length; i++) {
@@ -783,7 +784,7 @@ var DownloadsUI = (new function($)
 			}
 		}
 		return isEncrypted !== false ?
-			' <span class="label label-info" title="'+ isEncrypted +'">ENCRYPTED</span>' : '';
+			' <span class="label label-info" title="'+ isEncrypted +'">encrypted</span>' : '';
 	}
 
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
