@@ -784,7 +784,7 @@ var DownloadsUI = (new function($)
 			}
 		}
 		return isEncrypted !== false ?
-			' <span class="label label-info" title="'+ Util.textToAttr(isEncrypted) +'">encrypted</span>' : '';
+			' <span class="label label-status label-info" title="'+ Util.textToAttr(isEncrypted) +'">encrypted</span>' : '';
 	}
 
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
