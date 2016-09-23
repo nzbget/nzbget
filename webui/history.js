@@ -189,6 +189,8 @@ var History = (new function($)
 		var status = HistoryUI.buildStatus(hist);
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
+		name += DownloadsUI.buildEncryptedLabel(hist.Parameters);
+
 		var dupe = DownloadsUI.buildDupe(hist.DupeKey, hist.DupeScore, hist.DupeMode);
 		var category = '';
 

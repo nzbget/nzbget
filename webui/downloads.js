@@ -213,6 +213,7 @@ var Downloads = (new function($)
 		}
 
 		var name = '<a href="#" data-nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
+		name += DownloadsUI.buildEncryptedLabel(group.Parameters);
 
 		var url = '';
 		if (group.Kind === 'URL')
@@ -769,7 +770,23 @@ var DownloadsUI = (new function($)
 			return ' <span class="label label-priority label-info">priority: ' + priority + '</span>';
 		}
 	}
-	
+
+	this.buildEncryptedLabel = function(parameters)
+	{
+		var encryptedPassword;
+
+		for (var i=0; i < parameters.length; i++) {
+			if (parameters[i]['Name'] === '*Unpack:Password' &&
+				parameters[i]['Value'])
+			{
+				encryptedPassword = parameters[i]['Value'];
+				break;
+			}
+		}
+		return encryptedPassword ?
+			' <span class="label label-status label-info" title="'+ Util.textToAttr(encryptedPassword) +'">encrypted</span>' : '';
+	}
+
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
 	{
 		dupeKey = dupeKey.replace('rageid=', '');
