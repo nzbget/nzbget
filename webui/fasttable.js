@@ -644,11 +644,12 @@
 		refresh(data);
 	}
 
-	function titleCheckClick()
+	function titleCheckClick(e)
 	{
 		var data = $(this).data('fasttable');
 		var filteredContent = data.filteredContent;
 		var checkedRows = data.checkedRows;
+		var modifiedClick = (e.metaKey || e.ctrlKey)
 
 		var hasSelectedItems = false;
 		for (var i = 0; i < filteredContent.length; i++)
@@ -661,7 +662,7 @@
 		}
 
 		data.lastClickedRowID = null;
-		checkAll(data, !hasSelectedItems);
+		checkAll(data, !hasSelectedItems, modifiedClick);
 	}
 
 	function toggleCheck(data, id)
@@ -680,11 +681,14 @@
 		}
 	}
 	
-	function checkAll(data, checked)
+	function checkAll(data, checked, selectVisible)
 	{
 		var filteredContent = data.filteredContent;
+		var checkedItemCount =
+			selectVisible && filteredContent.length > data.pageSize ?
+			data.pageSize : filteredContent.length;
 
-		for (var i = 0; i < filteredContent.length; i++)
+		for (var i = 0; i < checkedItemCount; i++)
 		{
 			checkRow(data, filteredContent[i].id, checked);
 		}

@@ -76,7 +76,7 @@ var History = (new function($)
 		$HistoryTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
 			function(event) { $HistoryTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$HistoryTable.on('click', 'thead div.check',
-			function() { $HistoryTable.fasttable('titleCheckClick') });
+			function(e) { $HistoryTable.fasttable('titleCheckClick', e); });
 		$HistoryTable.on('mousedown', Util.disableShiftMouseDown);
 	}
 

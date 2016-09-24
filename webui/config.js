@@ -2040,7 +2040,7 @@ var ScriptListDialog = (new function($)
 		$ScriptTable.on('click', 'tbody div.check',
 			function(event) { $ScriptTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
 		$ScriptTable.on('click', 'thead div.check',
-			function() { $ScriptTable.fasttable('titleCheckClick') });
+			function(e) { $ScriptTable.fasttable('titleCheckClick', e); });
 		$ScriptTable.on('mousedown', Util.disableShiftMouseDown);
 
 		$ScriptListDialog.on('hidden', function()
