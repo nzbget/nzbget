@@ -46,6 +46,27 @@ static const uint16 RAR3_ENDARC_NEXTVOL = 0x0001;
 static const uint16 RAR3_ENDARC_DATACRC = 0x0002;
 static const uint16 RAR3_ENDARC_VOLNUMBER = 0x0008;
 
+// RAR5 constants
+
+static const uint8 RAR5_BLOCK_MAIN = 1;
+static const uint8 RAR5_BLOCK_FILE = 2;
+//static const uint8 RAR5_BLOCK_ENCRYPTION = 4;
+static const uint8 RAR5_BLOCK_ENDARC = 5;
+
+static const uint8 RAR5_BLOCK_EXTRADATA = 0x01;
+static const uint8 RAR5_BLOCK_DATAAREA = 0x02;
+static const uint8 RAR5_BLOCK_SPLITBEFORE = 0x08;
+static const uint8 RAR5_BLOCK_SPLITAFTER = 0x10;
+
+static const uint8 RAR5_MAIN_ISVOL = 0x01;
+static const uint8 RAR5_MAIN_VOLNR = 0x02;
+
+static const uint8 RAR5_FILE_TIME = 0x02;
+static const uint8 RAR5_FILE_CRC = 0x04;
+static const uint8 RAR5_FILE_EXTRATIME = 0x03;
+static const uint8 RAR5_FILE_EXTRATIMEUNIXFORMAT = 0x01;
+
+static const uint8 RAR5_ENDARC_NEXTVOL = 0x01;
 
 //TODO: delete debug-function
 #undef debug
@@ -168,7 +189,7 @@ void RarRenamer::CheckRegularFile(const char* destDir, const char* filename)
 			break;
 
 		case 5:
-			//ok = ReadRar5Volume(file, volume);
+			ok = ReadRar5Volume(file, volume);
 			break;
 	}
 
@@ -384,6 +405,170 @@ bool RarRenamer::ReadRar3File(DiskFile& file, RarVolume& volume, RarBlock& block
 	name[namelen] = '\0';
 	innerFile.m_filename = name;
 	debug("%i, %i, %s", (int)block.trailsize, (int)namelen, (const char*)name);
+
+	return true;
+}
+
+bool RarRenamer::ReadRar5Volume(DiskFile& file, RarVolume& volume)
+{
+	debug("Reading rar5-file %s", *volume.m_filename);
+
+	if (!Seek(file, nullptr, 8)) return false;
+
+	while (!file.Eof())
+	{
+		RarBlock block = ReadRar5Block(file);
+		if (!block.type)
+		{
+			return false;
+		}
+
+		if (block.type == RAR5_BLOCK_MAIN)
+		{
+			uint64 arcflags;
+			if (!ReadV(file, &block, &arcflags)) return false;
+			if (arcflags & RAR5_MAIN_VOLNR)
+			{
+				uint64 volnr;
+				if (!ReadV(file, &block, &volnr)) return false;
+				volume.m_volumeNo = (uint32)volnr;
+			}
+			volume.m_newNaming = true;
+			volume.m_multiVolume = (arcflags & RAR5_MAIN_ISVOL) != 0;
+		}
+
+		else if (block.type == RAR5_BLOCK_FILE)
+		{
+			RarFile innerFile;
+			if (!ReadRar5File(file, volume, block, innerFile)) return false;
+			volume.m_files.push_back(std::move(innerFile));
+		}
+
+		else if (block.type == RAR5_BLOCK_ENDARC)
+		{
+			uint64 endflags;
+			if (!ReadV(file, &block, &endflags)) return false;
+			volume.m_hasNextVolume = (endflags & RAR5_ENDARC_NEXTVOL) != 0;
+			break;
+		}
+
+		if (!file.Seek(block.trailsize, DiskFile::soCur))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+RarRenamer::RarBlock RarRenamer::ReadRar5Block(DiskFile& file)
+{
+	RarBlock block{ 0 };
+	uint64 buf = 0;
+
+	if (!Read32(file, nullptr, &block.crc)) return{ 0 };
+
+	if (!ReadV(file, nullptr, &buf)) return{ 0 };
+	uint32 size = (uint32)buf;
+	block.trailsize = size;
+
+	if (!ReadV(file, &block, &buf)) return{ 0 };
+	block.type = (uint8)buf;
+
+	if (!ReadV(file, &block, &buf)) return{ 0 };
+	block.flags = (uint16)buf;
+
+	block.addsize = 0;
+	if ((block.flags & RAR5_BLOCK_EXTRADATA) && !ReadV(file, &block, &block.addsize)) return{ 0 };
+
+	uint64 datasize = 0;
+	if ((block.flags & RAR5_BLOCK_DATAAREA) && !ReadV(file, &block, &datasize)) return{ 0 };
+	block.trailsize += datasize;
+
+	static int num = 0;
+	debug("%i) %llu, %i, %i, %i, %u, %llu", ++num, (long long)block.crc, (int)block.type, (int)block.flags, (int)size, (int)block.addsize, (long long)block.trailsize);
+
+	return block;
+}
+
+bool RarRenamer::ReadRar5File(DiskFile& file, RarVolume& volume, RarBlock& block, RarFile& innerFile)
+{
+	innerFile.m_splitBefore = block.flags & RAR5_BLOCK_SPLITBEFORE;
+	innerFile.m_splitAfter = block.flags & RAR5_BLOCK_SPLITAFTER;
+
+	uint64 val;
+
+	uint64 fileflags;
+	if (!ReadV(file, &block, &fileflags)) return false;
+
+	if (fileflags & 1)
+	{
+		if (!ReadV(file, &block, &val)) return false;
+		volume.m_volumeNo = (uint32)val;
+	}
+
+	if (!ReadV(file, &block, &val)) return false; // skip
+	innerFile.m_size = (int64)val;
+
+	if (!ReadV(file, &block, &val)) return false;
+	innerFile.m_attr = (uint32)val;
+
+	if (fileflags & RAR5_FILE_TIME && !Read32(file, &block, &innerFile.m_time)) return false;
+	if (fileflags & RAR5_FILE_CRC && !Seek(file, &block, 4)) return false;
+
+	if (!ReadV(file, &block, &val)) return false; // skip
+	if (!ReadV(file, &block, &val)) return false; // skip
+
+	uint64 namelen;
+	if (!ReadV(file, &block, &namelen)) return false;
+	if (namelen > 8192) return false; // an error
+	CharBuffer name;
+	name.Reserve((uint32)namelen + 1);
+	if (!Read(file, &block, (char*)name, namelen)) return false;
+	name[namelen] = '\0';
+	innerFile.m_filename = name;
+
+	// reading extra headers to find file time
+	if (block.flags & RAR5_BLOCK_EXTRADATA)
+	{
+		uint64 remsize = block.addsize;
+		while (remsize > 0)
+		{
+			uint64 trailsize = block.trailsize;
+
+			uint64 len;
+			if (!ReadV(file, &block, &len)) return false;
+			remsize -= trailsize - block.trailsize + len;
+			trailsize = block.trailsize;
+
+			uint64 type;
+			if (!ReadV(file, &block, &type)) return false;
+
+			if (type == RAR5_FILE_EXTRATIME)
+			{
+				uint64 flags;
+				if (!ReadV(file, &block, &flags)) return false;
+				if (flags & RAR5_FILE_EXTRATIMEUNIXFORMAT)
+				{
+					if (!Read32(file, &block, &innerFile.m_time)) return false;
+				}
+				else
+				{
+					uint32 timelow, timehigh;
+					if (!Read32(file, &block, &timelow)) return false;
+					if (!Read32(file, &block, &timehigh)) return false;
+					uint64 wintime = ((uint64)timehigh << 32) + timelow;
+					innerFile.m_time = (uint32)(wintime / 10000000 - 11644473600LL);
+				}
+			}
+
+			len -= trailsize - block.trailsize;
+
+			if (!Seek(file, &block, len)) return false;
+		}
+	}
+
+	debug("%llu, %i, %s", (long long)block.trailsize, (int)namelen, (const char*)name);
 
 	return true;
 }

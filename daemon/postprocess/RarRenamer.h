@@ -116,6 +116,9 @@ private:
 	bool ReadRar3Volume(DiskFile& file, RarVolume& volume);
 	RarBlock ReadRar3Block(DiskFile& file);
 	bool ReadRar3File(DiskFile& file, RarVolume& volume, RarBlock& block, RarFile& innerFile);
+	bool ReadRar5Volume(DiskFile& file, RarVolume& volume);
+	RarBlock ReadRar5Block(DiskFile& file);
+	bool ReadRar5File(DiskFile& file, RarVolume& volume, RarBlock& block, RarFile& innerFile);
 };
 
 #endif
