@@ -113,6 +113,7 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	tests/main/OptionsTest.cpp \
 @WITH_TESTS_TRUE@	tests/feed/FeedFilterTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/DupeMatcherTest.cpp \
+@WITH_TESTS_TRUE@	tests/postprocess/RarRenamerTest.cpp \
 @WITH_TESTS_TRUE@	tests/queue/NzbFileTest.cpp \
 @WITH_TESTS_TRUE@	tests/nntp/ServerPoolTest.cpp \
 @WITH_TESTS_TRUE@	tests/util/FileSystemTest.cpp \
@@ -201,10 +202,11 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
-	daemon/postprocess/Unpack.cpp daemon/postprocess/Unpack.h \
-	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
-	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
-	daemon/queue/DupeCoordinator.cpp \
+	daemon/postprocess/RarRenamer.cpp \
+	daemon/postprocess/RarRenamer.h daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/Unpack.h daemon/queue/DiskState.cpp \
+	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
+	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
@@ -257,6 +259,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	tests/suite/TestUtil.h tests/main/CommandLineParserTest.cpp \
 	tests/main/OptionsTest.cpp tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
+	tests/postprocess/RarRenamerTest.cpp \
 	tests/queue/NzbFileTest.cpp tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp tests/util/NStringTest.cpp \
 	tests/util/UtilTest.cpp tests/postprocess/ParCheckerTest.cpp \
@@ -280,6 +283,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_TESTS_TRUE@	OptionsTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	FeedFilterTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	DupeMatcherTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	RarRenamerTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	NzbFileTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ServerPoolTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	FileSystemTest.$(OBJEXT) \
@@ -304,8 +308,8 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	StatMeter.$(OBJEXT) Cleanup.$(OBJEXT) DupeMatcher.$(OBJEXT) \
 	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
 	ParParser.$(OBJEXT) ParRenamer.$(OBJEXT) \
-	PrePostProcessor.$(OBJEXT) Unpack.$(OBJEXT) \
-	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
+	PrePostProcessor.$(OBJEXT) RarRenamer.$(OBJEXT) \
+	Unpack.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
 	NzbFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) Scanner.$(OBJEXT) \
@@ -522,10 +526,11 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
-	daemon/postprocess/Unpack.cpp daemon/postprocess/Unpack.h \
-	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
-	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
-	daemon/queue/DupeCoordinator.cpp \
+	daemon/postprocess/RarRenamer.cpp \
+	daemon/postprocess/RarRenamer.h daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/Unpack.h daemon/queue/DiskState.cpp \
+	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
+	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
@@ -691,7 +696,13 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.par2 \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
-	tests/testdata/parchecker/testfile.vol03+3.PAR2
+	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
+	tests/testdata/rarrenamer/testfile3.part01.rar \
+	tests/testdata/rarrenamer/testfile3.part02.rar \
+	tests/testdata/rarrenamer/testfile3.part03.rar \
+	tests/testdata/rarrenamer/testfile5.part01.rar \
+	tests/testdata/rarrenamer/testfile5.part02.rar \
+	tests/testdata/rarrenamer/testfile5.part03.rar
 
 
 # Install
@@ -875,6 +886,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueEditor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueScript.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarRenamer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarRenamerTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RemoteClient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RemoteServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ScanScript.Po@am__quote@
@@ -1482,6 +1495,20 @@ PrePostProcessor.obj: daemon/postprocess/PrePostProcessor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/PrePostProcessor.cpp' object='PrePostProcessor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PrePostProcessor.obj `if test -f 'daemon/postprocess/PrePostProcessor.cpp'; then $(CYGPATH_W) 'daemon/postprocess/PrePostProcessor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/PrePostProcessor.cpp'; fi`
+
+RarRenamer.o: daemon/postprocess/RarRenamer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamer.o -MD -MP -MF "$(DEPDIR)/RarRenamer.Tpo" -c -o RarRenamer.o `test -f 'daemon/postprocess/RarRenamer.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarRenamer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamer.Tpo" "$(DEPDIR)/RarRenamer.Po"; else rm -f "$(DEPDIR)/RarRenamer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarRenamer.cpp' object='RarRenamer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamer.o `test -f 'daemon/postprocess/RarRenamer.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarRenamer.cpp
+
+RarRenamer.obj: daemon/postprocess/RarRenamer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamer.obj -MD -MP -MF "$(DEPDIR)/RarRenamer.Tpo" -c -o RarRenamer.obj `if test -f 'daemon/postprocess/RarRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarRenamer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamer.Tpo" "$(DEPDIR)/RarRenamer.Po"; else rm -f "$(DEPDIR)/RarRenamer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarRenamer.cpp' object='RarRenamer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamer.obj `if test -f 'daemon/postprocess/RarRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarRenamer.cpp'; fi`
 
 Unpack.o: daemon/postprocess/Unpack.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Unpack.o -MD -MP -MF "$(DEPDIR)/Unpack.Tpo" -c -o Unpack.o `test -f 'daemon/postprocess/Unpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/Unpack.cpp; \
@@ -2239,6 +2266,20 @@ DupeMatcherTest.obj: tests/postprocess/DupeMatcherTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DupeMatcherTest.obj `if test -f 'tests/postprocess/DupeMatcherTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/DupeMatcherTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/DupeMatcherTest.cpp'; fi`
 
+RarRenamerTest.o: tests/postprocess/RarRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamerTest.o -MD -MP -MF "$(DEPDIR)/RarRenamerTest.Tpo" -c -o RarRenamerTest.o `test -f 'tests/postprocess/RarRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarRenamerTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamerTest.Tpo" "$(DEPDIR)/RarRenamerTest.Po"; else rm -f "$(DEPDIR)/RarRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarRenamerTest.cpp' object='RarRenamerTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamerTest.o `test -f 'tests/postprocess/RarRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarRenamerTest.cpp
+
+RarRenamerTest.obj: tests/postprocess/RarRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamerTest.obj -MD -MP -MF "$(DEPDIR)/RarRenamerTest.Tpo" -c -o RarRenamerTest.obj `if test -f 'tests/postprocess/RarRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarRenamerTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamerTest.Tpo" "$(DEPDIR)/RarRenamerTest.Po"; else rm -f "$(DEPDIR)/RarRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarRenamerTest.cpp' object='RarRenamerTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamerTest.obj `if test -f 'tests/postprocess/RarRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarRenamerTest.cpp'; fi`
+
 NzbFileTest.o: tests/queue/NzbFileTest.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFileTest.o -MD -MP -MF "$(DEPDIR)/NzbFileTest.Tpo" -c -o NzbFileTest.o `test -f 'tests/queue/NzbFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NzbFileTest.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbFileTest.Tpo" "$(DEPDIR)/NzbFileTest.Po"; else rm -f "$(DEPDIR)/NzbFileTest.Tpo"; exit 1; fi
@@ -2442,7 +2483,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/tests/testdata/rarrenamer $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
