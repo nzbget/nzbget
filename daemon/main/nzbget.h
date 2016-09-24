@@ -319,12 +319,16 @@ typedef int pid_t;
 
 #ifdef HAVE_STDINT_H
 typedef uint8_t uint8;
+typedef int16_t int16;
+typedef uint16_t uint16;
 typedef uint32_t int32;
 typedef uint32_t uint32;
 typedef int64_t int64;
 typedef uint64_t uint64;
 #else
 typedef unsigned char uint8;
+typedef signed short int16;
+typedef unsigned short uint16;
 typedef signed int int32;
 typedef unsigned int uint32;
 typedef signed long long int64;

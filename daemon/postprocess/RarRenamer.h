@@ -54,6 +54,42 @@ protected:
 private:
 	typedef std::deque<CString> DirList;
 
+	struct RarBlock
+	{
+		uint32 crc;
+		uint8 type;
+		uint16 flags;
+		uint64 addsize;
+		uint64 trailsize;
+	};
+
+	struct RarFile
+	{
+		CString m_filename;
+		uint32 m_time = 0;
+		uint32 m_attr = 0;
+		int64 m_size = 0;
+		bool m_splitBefore = false;
+		bool m_splitAfter = false;
+	};
+
+	typedef std::deque<RarFile> FileList;
+
+	struct RarVolume
+	{
+		CString m_filename;
+		int m_version = 0;
+		uint32 m_volumeNo = 0;
+		bool m_newNaming = false;
+		bool m_hasNextVolume = false;
+		bool m_multiVolume = false;
+		FileList m_files;
+
+		RarVolume(int version, const char* filename) : m_version(version), m_filename(filename) {}
+	};
+
+	typedef std::deque<RarVolume> RarVolumeList;
+
 	CString m_infoName;
 	CString m_destDir;
 	EStatus m_status = rsFailed;
@@ -64,11 +100,22 @@ private:
 	int m_fileCount = 0;
 	int m_curFile = 0;
 	int m_renamedCount = 0;
+	RarVolumeList m_volumes;
 
 	void BuildDirList(const char* destDir);
 	void CheckFiles(const char* destDir);
 	void CheckRegularFile(const char* destDir, const char* filename);
 	void RenameFile(const char* srcFilename, const char* destFileName);
+	int DetectRarVersion(DiskFile& file);
+	void LogDebugInfo();
+	bool Seek(DiskFile& file, RarBlock* block, int64 relpos);
+	bool Read(DiskFile& file, RarBlock* block, void* buffer, int64 size);
+	bool Read16(DiskFile& file, RarBlock* block, uint16* result);
+	bool Read32(DiskFile& file, RarBlock* block, uint32* result);
+	bool ReadV(DiskFile& file, RarBlock* block, uint64* result);
+	bool ReadRar3Volume(DiskFile& file, RarVolume& volume);
+	RarBlock ReadRar3Block(DiskFile& file);
+	bool ReadRar3File(DiskFile& file, RarVolume& volume, RarBlock& block, RarFile& innerFile);
 };
 
 #endif
