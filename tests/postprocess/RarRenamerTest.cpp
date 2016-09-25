@@ -37,7 +37,7 @@ protected:
 	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) { m_renamed++; }
 
 private:
-	int m_renamed;
+	int m_renamed = 0;
 };
 
 RarRenamerMock::RarRenamerMock()
