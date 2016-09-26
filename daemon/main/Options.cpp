@@ -90,6 +90,7 @@ static const char* OPTION_PARQUICK				= "ParQuick";
 static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_PARBUFFER				= "ParBuffer";
 static const char* OPTION_PARTHREADS			= "ParThreads";
+static const char* OPTION_RARRENAME				= "RarRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
 static const char* OPTION_SCANSCRIPT			= "ScanScript";
 static const char* OPTION_QUEUESCRIPT			= "QueueScript";
@@ -447,6 +448,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_PARBUFFER, "16");
 	SetOption(OPTION_PARTHREADS, "1");
+	SetOption(OPTION_RARRENAME, "yes");
 	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
 	SetOption(OPTION_POSTSCRIPT, "");
@@ -710,6 +712,7 @@ void Options::InitOptions()
 	m_parRepair				= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_parQuick				= (bool)ParseEnumValue(OPTION_PARQUICK, BoolCount, BoolNames, BoolValues);
 	m_parRename				= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
+	m_rarRename				= (bool)ParseEnumValue(OPTION_RARRENAME, BoolCount, BoolNames, BoolValues);
 	m_reloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
 	m_cursesNzbName			= (bool)ParseEnumValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_cursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);

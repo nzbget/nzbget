@@ -209,7 +209,8 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 			nzbInfo->SetParStatus(NzbInfo::psSkipped);
 		}
 
-		if (nzbInfo->GetRenameStatus() == NzbInfo::rsNone && !g_Options->GetParRename())
+		if (nzbInfo->GetRenameStatus() == NzbInfo::rsNone &&
+			!(g_Options->GetParRename() || g_Options->GetRarRename()))
 		{
 			nzbInfo->SetRenameStatus(NzbInfo::rsSkipped);
 		}
@@ -456,7 +457,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	if (postInfo->GetNzbInfo()->GetRenameStatus() == NzbInfo::rsNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
 	{
-		UpdatePauseState(g_Options->GetParPauseQueue(), "par-rename");
+		UpdatePauseState(g_Options->GetParPauseQueue(), "rename");
 		RenameController::StartJob(postInfo);
 		return;
 	}

@@ -118,5 +118,32 @@ void RarRenamer::RenameFile(const char* srcFilename, const char* destFileName)
 
 void RarRenamer::RenameFiles(const char* destDir)
 {
-	//TODO: implement renaming
+	BString<1024> newBasename;
+	for (RarVolume& volume : m_volumes)
+	{
+		if (!volume.GetFiles()->empty())
+		{
+			newBasename = FileSystem::BaseFileName(volume.GetFiles()->at(0).GetFilename());
+			break;
+		}
+	}
+
+	if (newBasename.Empty())
+	{
+		PrintMessage(Message::mkError, "Could not determine base archive name for %s", *m_infoName);
+		return;
+	}
+
+	RegEx regExRar(".*\\.rar$");
+	RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
+
+	for (RarVolume& volume : m_volumes)
+	{
+		const char* baseFilename = FileSystem::BaseFileName(volume.GetFilename());
+		if (!regExRar.Match(baseFilename) && !regExRarMultiSeq.Match(baseFilename))
+		{
+			BString<1024> newname("%s%c%s.part%03i.rar", destDir, PATH_SEPARATOR, *newBasename, volume.GetVolumeNo() + 1);
+			RenameFile(volume.GetFilename(), newname);
+		}
+	}
 }

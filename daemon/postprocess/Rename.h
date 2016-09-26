@@ -24,6 +24,7 @@
 #include "Thread.h"
 #include "DownloadInfo.h"
 #include "Script.h"
+#include "RarRenamer.h"
 
 #ifndef DISABLE_PARCHECK
 #include "ParRenamer.h"
@@ -47,21 +48,16 @@ private:
 #ifndef DISABLE_PARCHECK
 	class PostParRenamer : public ParRenamer
 	{
-	public:
-		PostInfo* GetPostInfo() { return m_postInfo; }
-		void SetPostInfo(PostInfo* postInfo) { m_postInfo = postInfo; }
 	protected:
 		virtual void UpdateProgress() { m_owner->UpdateParRenameProgress(); }
 		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 		virtual void RegisterParredFile(const char* filename) 
-			{ m_postInfo->GetParredFiles()->push_back(filename); }
+			{ m_owner->m_postInfo->GetParredFiles()->push_back(filename); }
 		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) 
 			{ m_owner->RegisterRenamedFile(oldFilename, newFileName); }
 		virtual bool IsStopped() { return m_owner->IsStopped(); };
 	private:
 		RenameController* m_owner;
-		PostInfo* m_postInfo;
-
 		friend class RenameController;
 	};
 
@@ -69,6 +65,23 @@ private:
 
 	void UpdateParRenameProgress();
 #endif
+
+	class PostRarRenamer : public RarRenamer
+	{
+	protected:
+		virtual void UpdateProgress() { m_owner->UpdateParRenameProgress(); }
+		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
+		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName)
+			{ m_owner->RegisterRenamedFile(oldFilename, newFileName); }
+		virtual bool IsStopped() { return m_owner->IsStopped(); };
+	private:
+		RenameController* m_owner;
+		friend class RenameController;
+	};
+
+	PostRarRenamer m_rarRenamer;
+
+	void UpdateRarRenameProgress();
 
 	void ExecRename(const char* destDir, const char* finalDir, const char* nzbName);
 	void RenameCompleted();

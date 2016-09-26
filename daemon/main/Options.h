@@ -234,6 +234,7 @@ public:
 	bool GetParRename() { return m_parRename; }
 	int GetParBuffer() { return m_parBuffer; }
 	int GetParThreads() { return m_parThreads; }
+	bool GetRarRename() { return m_rarRename; }
 	EHealthCheck GetHealthCheck() { return m_healthCheck; }
 	const char* GetScriptOrder() { return m_scriptOrder; }
 	const char* GetPostScript() { return m_postScript; }
@@ -377,6 +378,7 @@ private:
 	bool m_parRename = false;
 	int m_parBuffer = 0;
 	int m_parThreads = 0;
+	bool m_rarRename = false;
 	EHealthCheck m_healthCheck = hcNone;
 	CString m_postScript;
 	CString m_scriptOrder;

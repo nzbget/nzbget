@@ -35,9 +35,23 @@ void RenameController::PostParRenamer::PrintMessage(Message::EKind kind, const c
 	va_end(args);
 	text[1024-1] = '\0';
 
-	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
+	m_owner->m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 #endif
+
+
+void RenameController::PostRarRenamer::PrintMessage(Message::EKind kind, const char* format, ...)
+{
+	char text[1024];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(text, 1024, format, args);
+	va_end(args);
+	text[1024 - 1] = '\0';
+
+	m_owner->m_postInfo->GetNzbInfo()->AddMessage(kind, text);
+}
+
 
 RenameController::RenameController()
 {
@@ -46,6 +60,8 @@ RenameController::RenameController()
 #ifndef DISABLE_PARCHECK
 	m_parRenamer.m_owner = this;
 #endif
+
+	m_rarRenamer.m_owner = this;
 }
 
 void RenameController::StartJob(PostInfo* postInfo)
@@ -105,14 +121,23 @@ void RenameController::ExecRename(const char* destDir, const char* finalDir, con
 	m_postInfo->SetStage(PostInfo::ptRenaming);
 	m_postInfo->SetWorking(true);
 
+	if (g_Options->GetParRename())
+	{
 #ifndef DISABLE_PARCHECK
-	m_parRenamer.SetPostInfo(m_postInfo);
-	m_parRenamer.SetDestDir(m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
-		!Util::EmptyStr(finalDir) ? finalDir : destDir);
-	m_parRenamer.SetInfoName(m_postInfo->GetNzbInfo()->GetName());
-	m_parRenamer.SetDetectMissing(m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone);
-	m_parRenamer.Execute();
+		m_parRenamer.SetDestDir(m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
+			!Util::EmptyStr(finalDir) ? finalDir : destDir);
+		m_parRenamer.SetInfoName(nzbName);
+		m_parRenamer.SetDetectMissing(m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone);
+		m_parRenamer.Execute();
 #endif
+	}
+
+	if (g_Options->GetRarRename() && m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone)
+	{
+		m_rarRenamer.SetDestDir(destDir);
+		m_rarRenamer.SetInfoName(nzbName);
+		m_rarRenamer.Execute();
+	}
 }
 
 void RenameController::RenameCompleted()
@@ -144,6 +169,14 @@ void RenameController::UpdateParRenameProgress()
 	m_postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
 }
 #endif
+
+void RenameController::UpdateRarRenameProgress()
+{
+	GuardedDownloadQueue guard = DownloadQueue::Guard();
+
+	m_postInfo->SetProgressLabel(m_rarRenamer.GetProgressLabel());
+	m_postInfo->SetStageProgress(m_rarRenamer.GetStageProgress());
+}
 
 /**
 *  Update file name in the CompletedFiles-list of NZBInfo
