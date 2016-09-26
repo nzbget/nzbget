@@ -100,6 +100,8 @@ nzbget_SOURCES = \
 	daemon/postprocess/PrePostProcessor.h \
 	daemon/postprocess/RarRenamer.cpp \
 	daemon/postprocess/RarRenamer.h \
+	daemon/postprocess/RarReader.cpp \
+	daemon/postprocess/RarReader.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
 	daemon/queue/DiskState.cpp \
@@ -232,6 +234,7 @@ nzbget_SOURCES += \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
 	tests/postprocess/RarRenamerTest.cpp \
+	tests/postprocess/RarReaderTest.cpp \
 	tests/queue/NzbFileTest.cpp \
 	tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp \
@@ -380,13 +383,7 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.par2 \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
-	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
-	tests/testdata/rarrenamer/testfile3.part01.rar \
-	tests/testdata/rarrenamer/testfile3.part02.rar \
-	tests/testdata/rarrenamer/testfile3.part03.rar \
-	tests/testdata/rarrenamer/testfile5.part01.rar \
-	tests/testdata/rarrenamer/testfile5.part02.rar \
-	tests/testdata/rarrenamer/testfile5.part03.rar
+	tests/testdata/parchecker/testfile.vol03+3.PAR2
 
 # Install
 dist_doc_DATA = $(doc_FILES)

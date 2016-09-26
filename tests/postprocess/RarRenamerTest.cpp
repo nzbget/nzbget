@@ -49,6 +49,7 @@ RarRenamerMock::RarRenamerMock()
 TEST_CASE("Rar-renamer: rename not needed", "[Rar][RarRenamer][Slow][TestData]")
 {
 	RarRenamerMock rarRenamer;
+
 	rarRenamer.Execute();
 
 	REQUIRE(rarRenamer.GetStatus() == RarRenamer::rsFailed);
@@ -58,6 +59,7 @@ TEST_CASE("Rar-renamer: rename not needed", "[Rar][RarRenamer][Slow][TestData]")
 TEST_CASE("Rar-renamer: rename successful", "[Rar][RarRenamer][Slow][TestData]")
 {
 	RarRenamerMock rarRenamer;
+
 	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str(), (TestUtil::WorkingDir() + "/12345").c_str());
 	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12342").c_str());
 	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part03.rar").c_str(), (TestUtil::WorkingDir() + "/12346").c_str());

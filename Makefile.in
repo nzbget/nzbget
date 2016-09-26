@@ -114,6 +114,7 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	tests/feed/FeedFilterTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/DupeMatcherTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/RarRenamerTest.cpp \
+@WITH_TESTS_TRUE@	tests/postprocess/RarReaderTest.cpp \
 @WITH_TESTS_TRUE@	tests/queue/NzbFileTest.cpp \
 @WITH_TESTS_TRUE@	tests/nntp/ServerPoolTest.cpp \
 @WITH_TESTS_TRUE@	tests/util/FileSystemTest.cpp \
@@ -203,7 +204,9 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
 	daemon/postprocess/RarRenamer.cpp \
-	daemon/postprocess/RarRenamer.h daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/RarRenamer.h \
+	daemon/postprocess/RarReader.cpp \
+	daemon/postprocess/RarReader.h daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h daemon/queue/DiskState.cpp \
 	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
 	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
@@ -260,6 +263,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	tests/main/OptionsTest.cpp tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
 	tests/postprocess/RarRenamerTest.cpp \
+	tests/postprocess/RarReaderTest.cpp \
 	tests/queue/NzbFileTest.cpp tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp tests/util/NStringTest.cpp \
 	tests/util/UtilTest.cpp tests/postprocess/ParCheckerTest.cpp \
@@ -284,7 +288,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_TESTS_TRUE@	FeedFilterTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	DupeMatcherTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	RarRenamerTest.$(OBJEXT) \
-@WITH_TESTS_TRUE@	NzbFileTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	RarReaderTest.$(OBJEXT) NzbFileTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ServerPoolTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	FileSystemTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	NStringTest.$(OBJEXT) UtilTest.$(OBJEXT)
@@ -309,11 +313,11 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
 	ParParser.$(OBJEXT) ParRenamer.$(OBJEXT) \
 	PrePostProcessor.$(OBJEXT) RarRenamer.$(OBJEXT) \
-	Unpack.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
-	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
-	NzbFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
-	QueueEditor.$(OBJEXT) Scanner.$(OBJEXT) \
-	UrlCoordinator.$(OBJEXT) BinRpc.$(OBJEXT) \
+	RarReader.$(OBJEXT) Unpack.$(OBJEXT) DiskState.$(OBJEXT) \
+	DownloadInfo.$(OBJEXT) DupeCoordinator.$(OBJEXT) \
+	HistoryCoordinator.$(OBJEXT) NzbFile.$(OBJEXT) \
+	QueueCoordinator.$(OBJEXT) QueueEditor.$(OBJEXT) \
+	Scanner.$(OBJEXT) UrlCoordinator.$(OBJEXT) BinRpc.$(OBJEXT) \
 	RemoteClient.$(OBJEXT) RemoteServer.$(OBJEXT) \
 	WebServer.$(OBJEXT) XmlRpc.$(OBJEXT) Log.$(OBJEXT) \
 	NString.$(OBJEXT) Observer.$(OBJEXT) Script.$(OBJEXT) \
@@ -527,7 +531,9 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
 	daemon/postprocess/RarRenamer.cpp \
-	daemon/postprocess/RarRenamer.h daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/RarRenamer.h \
+	daemon/postprocess/RarReader.cpp \
+	daemon/postprocess/RarReader.h daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h daemon/queue/DiskState.cpp \
 	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
 	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
@@ -696,13 +702,7 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.par2 \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
-	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
-	tests/testdata/rarrenamer/testfile3.part01.rar \
-	tests/testdata/rarrenamer/testfile3.part02.rar \
-	tests/testdata/rarrenamer/testfile3.part03.rar \
-	tests/testdata/rarrenamer/testfile5.part01.rar \
-	tests/testdata/rarrenamer/testfile5.part02.rar \
-	tests/testdata/rarrenamer/testfile5.part03.rar
+	tests/testdata/parchecker/testfile.vol03+3.PAR2
 
 
 # Install
@@ -886,6 +886,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueEditor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueScript.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarReaderTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarRenamer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarRenamerTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RemoteClient.Po@am__quote@
@@ -1509,6 +1511,20 @@ RarRenamer.obj: daemon/postprocess/RarRenamer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarRenamer.cpp' object='RarRenamer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamer.obj `if test -f 'daemon/postprocess/RarRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarRenamer.cpp'; fi`
+
+RarReader.o: daemon/postprocess/RarReader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReader.o -MD -MP -MF "$(DEPDIR)/RarReader.Tpo" -c -o RarReader.o `test -f 'daemon/postprocess/RarReader.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarReader.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReader.Tpo" "$(DEPDIR)/RarReader.Po"; else rm -f "$(DEPDIR)/RarReader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarReader.cpp' object='RarReader.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReader.o `test -f 'daemon/postprocess/RarReader.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarReader.cpp
+
+RarReader.obj: daemon/postprocess/RarReader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReader.obj -MD -MP -MF "$(DEPDIR)/RarReader.Tpo" -c -o RarReader.obj `if test -f 'daemon/postprocess/RarReader.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarReader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarReader.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReader.Tpo" "$(DEPDIR)/RarReader.Po"; else rm -f "$(DEPDIR)/RarReader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarReader.cpp' object='RarReader.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReader.obj `if test -f 'daemon/postprocess/RarReader.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarReader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarReader.cpp'; fi`
 
 Unpack.o: daemon/postprocess/Unpack.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Unpack.o -MD -MP -MF "$(DEPDIR)/Unpack.Tpo" -c -o Unpack.o `test -f 'daemon/postprocess/Unpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/Unpack.cpp; \
@@ -2280,6 +2296,20 @@ RarRenamerTest.obj: tests/postprocess/RarRenamerTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamerTest.obj `if test -f 'tests/postprocess/RarRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarRenamerTest.cpp'; fi`
 
+RarReaderTest.o: tests/postprocess/RarReaderTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReaderTest.o -MD -MP -MF "$(DEPDIR)/RarReaderTest.Tpo" -c -o RarReaderTest.o `test -f 'tests/postprocess/RarReaderTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarReaderTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReaderTest.Tpo" "$(DEPDIR)/RarReaderTest.Po"; else rm -f "$(DEPDIR)/RarReaderTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarReaderTest.cpp' object='RarReaderTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReaderTest.o `test -f 'tests/postprocess/RarReaderTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarReaderTest.cpp
+
+RarReaderTest.obj: tests/postprocess/RarReaderTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReaderTest.obj -MD -MP -MF "$(DEPDIR)/RarReaderTest.Tpo" -c -o RarReaderTest.obj `if test -f 'tests/postprocess/RarReaderTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarReaderTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarReaderTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReaderTest.Tpo" "$(DEPDIR)/RarReaderTest.Po"; else rm -f "$(DEPDIR)/RarReaderTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarReaderTest.cpp' object='RarReaderTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReaderTest.obj `if test -f 'tests/postprocess/RarReaderTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarReaderTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarReaderTest.cpp'; fi`
+
 NzbFileTest.o: tests/queue/NzbFileTest.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFileTest.o -MD -MP -MF "$(DEPDIR)/NzbFileTest.Tpo" -c -o NzbFileTest.o `test -f 'tests/queue/NzbFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NzbFileTest.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbFileTest.Tpo" "$(DEPDIR)/NzbFileTest.Po"; else rm -f "$(DEPDIR)/NzbFileTest.Tpo"; exit 1; fi
@@ -2483,7 +2513,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/tests/testdata/rarrenamer $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
