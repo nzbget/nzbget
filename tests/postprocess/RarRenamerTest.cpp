@@ -31,13 +31,6 @@ class RarRenamerMock: public RarRenamer
 {
 public:
 	RarRenamerMock();
-	int GetRenamedCount() { return m_renamed; }
-
-protected:
-	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) { m_renamed++; }
-
-private:
-	int m_renamed = 0;
 };
 
 RarRenamerMock::RarRenamerMock()
@@ -52,11 +45,42 @@ TEST_CASE("Rar-renamer: rename not needed", "[Rar][RarRenamer][Slow][TestData]")
 
 	rarRenamer.Execute();
 
-	REQUIRE(rarRenamer.GetStatus() == RarRenamer::rsFailed);
 	REQUIRE(rarRenamer.GetRenamedCount() == 0);
 }
 
-TEST_CASE("Rar-renamer: rename successful", "[Rar][RarRenamer][Slow][TestData]")
+TEST_CASE("Rar-renamer: rename rar3", "[Rar][RarRenamer][Slow][TestData]")
+{
+	RarRenamerMock rarRenamer;
+
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str(), (TestUtil::WorkingDir() + "/12345").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12342").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part03.rar").c_str(), (TestUtil::WorkingDir() + "/12346").c_str());
+	FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part01.rar").c_str());
+	FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part02.rar").c_str());
+	FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part03.rar").c_str());
+
+	rarRenamer.Execute();
+
+	REQUIRE(rarRenamer.GetRenamedCount() == 3);
+}
+
+TEST_CASE("Rar-renamer: rename rar5", "[Rar][RarRenamer][Slow][TestData]")
+{
+	RarRenamerMock rarRenamer;
+
+	FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str());
+	FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile3.part02.rar").c_str());
+	FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile3.part03.rar").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5.part01.rar").c_str(), (TestUtil::WorkingDir() + "/12348").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12343").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5.part03.rar").c_str(), (TestUtil::WorkingDir() + "/12344").c_str());
+
+	rarRenamer.Execute();
+
+	REQUIRE(rarRenamer.GetRenamedCount() == 3);
+}
+
+TEST_CASE("Rar-renamer: rename two sets", "[Rar][RarRenamer][Slow][TestData]")
 {
 	RarRenamerMock rarRenamer;
 
@@ -69,6 +93,5 @@ TEST_CASE("Rar-renamer: rename successful", "[Rar][RarRenamer][Slow][TestData]")
 
 	rarRenamer.Execute();
 
-	REQUIRE(rarRenamer.GetStatus() == RarRenamer::rsSuccess);
-	REQUIRE(rarRenamer.GetRenamedCount() == 1);
+	REQUIRE(rarRenamer.GetRenamedCount() == 6);
 }

@@ -102,6 +102,8 @@ nzbget_SOURCES = \
 	daemon/postprocess/RarRenamer.h \
 	daemon/postprocess/RarReader.cpp \
 	daemon/postprocess/RarReader.h \
+	daemon/postprocess/Rename.cpp \
+	daemon/postprocess/Rename.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
 	daemon/queue/DiskState.cpp \

@@ -26,11 +26,6 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-void RarRenamer::Cancel()
-{
-	m_cancelled = true;
-}
-
 void RarRenamer::Execute()
 {
 	m_progressLabel.Format("Checking renamed rar-files for %s", *m_infoName);
@@ -44,22 +39,6 @@ void RarRenamer::Execute()
 		debug("Checking %s", *destDir);
 		CheckFiles(destDir);
 	}
-
-	if (m_cancelled)
-	{
-		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", *m_infoName);
-	}
-	else if (m_renamedCount > 0)
-	{
-		PrintMessage(Message::mkInfo, "Successfully renamed %i rar-file(s) for %s", m_renamedCount, *m_infoName);
-		m_status = rsSuccess;
-	}
-	else
-	{
-		PrintMessage(Message::mkInfo, "No renamed rar-files found for %s", *m_infoName);
-	}
-
-	Completed();
 }
 
 void RarRenamer::BuildDirList(const char* destDir)
@@ -70,7 +49,7 @@ void RarRenamer::BuildDirList(const char* destDir)
 
 	while (const char* filename = dirBrowser.Next())
 	{
-		if (!m_cancelled)
+		if (!IsStopped())
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 			if (FileSystem::DirectoryExists(fullFilename))
@@ -90,7 +69,7 @@ void RarRenamer::CheckFiles(const char* destDir)
 	DirBrowser dir(destDir);
 	while (const char* filename = dir.Next())
 	{
-		if (!m_cancelled)
+		if (!IsStopped())
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 
@@ -104,6 +83,11 @@ void RarRenamer::CheckFiles(const char* destDir)
 				CheckRegularFile(destDir, fullFilename);
 			}
 		}
+	}
+
+	if (!m_volumes.empty())
+	{
+		RenameFiles(destDir);
 	}
 }
 
@@ -130,4 +114,9 @@ void RarRenamer::RenameFile(const char* srcFilename, const char* destFileName)
 
 	// notify about new file name
 	RegisterRenamedFile(FileSystem::BaseFileName(srcFilename), FileSystem::BaseFileName(destFileName));
+}
+
+void RarRenamer::RenameFiles(const char* destDir)
+{
+	//TODO: implement renaming
 }

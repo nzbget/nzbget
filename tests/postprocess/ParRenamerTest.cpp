@@ -32,13 +32,6 @@ class ParRenamerMock: public ParRenamer
 public:
 	ParRenamerMock();
 	void Execute();
-	int GetRenamedCount() { return m_renamed; }
-
-protected:
-	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) { m_renamed++; }
-
-private:
-	int m_renamed;
 };
 
 ParRenamerMock::ParRenamerMock()
@@ -50,12 +43,7 @@ ParRenamerMock::ParRenamerMock()
 void ParRenamerMock::Execute()
 {
 	TestUtil::DisableCout();
-	m_renamed = 0;
-	Start();
-	while (IsRunning())
-	{
-		usleep(10*1000);
-	}
+	ParRenamer::Execute();
 	TestUtil::EnableCout();
 }
 
@@ -68,7 +56,6 @@ TEST_CASE("Par-renamer: rename not needed", "[Par][ParRenamer][Slow][TestData]")
 	ParRenamerMock parRenamer;
 	parRenamer.Execute();
 
-	REQUIRE(parRenamer.GetStatus() == ParRenamer::psFailed);
 	REQUIRE(parRenamer.GetRenamedCount() == 0);
 }
 
@@ -82,7 +69,6 @@ TEST_CASE("Par-renamer: rename successful", "[Par][ParRenamer][Slow][TestData]")
 	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
 	parRenamer.Execute();
 
-	REQUIRE(parRenamer.GetStatus() == ParRenamer::psSuccess);
 	REQUIRE(parRenamer.GetRenamedCount() == 1);
 	REQUIRE_FALSE(parRenamer.HasMissedFiles());
 }
@@ -99,7 +85,6 @@ TEST_CASE("Par-renamer: detecting missing", "[Par][ParRenamer][Slow][TestData]")
 	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile.nfo").c_str()));
 	parRenamer.Execute();
 
-	REQUIRE(parRenamer.GetStatus() == ParRenamer::psSuccess);
 	REQUIRE(parRenamer.GetRenamedCount() == 1);
 	REQUIRE(parRenamer.HasMissedFiles());
 }

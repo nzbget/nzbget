@@ -67,18 +67,6 @@ static const uint8 RAR5_FILE_EXTRATIMEUNIXFORMAT = 0x01;
 
 static const uint8 RAR5_ENDARC_NEXTVOL = 0x01;
 
-//TODO: delete debug-function
-void RarReader_debug(const char* format, ...)
-{
-	BString<1024> tmp2;
-	va_list ap;
-	va_start(ap, format);
-	tmp2.FormatV(format, ap);
-	va_end(ap);
-	printf("%s\n", *tmp2);
-}
-#undef debug
-#define debug RarReader_debug
 
 bool RarVolume::Read()
 {

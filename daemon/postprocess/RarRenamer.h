@@ -29,23 +29,15 @@
 class RarRenamer
 {
 public:
-	enum EStatus
-	{
-		rsFailed,
-		rsSuccess
-	};
-
 	void Execute();
 	void SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char* GetInfoName() { return m_infoName; }
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
-	EStatus GetStatus() { return m_status; }
-	void Cancel();
-	bool GetCancelled() { return m_cancelled; }
+	int GetRenamedCount() { return m_renamedCount; }
 
 protected:
 	virtual void UpdateProgress() {}
-	virtual void Completed() {}
+	virtual bool IsStopped() { return false; };
 	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) {}
 	const char* GetProgressLabel() { return m_progressLabel; }
@@ -57,7 +49,6 @@ private:
 
 	CString m_infoName;
 	CString m_destDir;
-	EStatus m_status = rsFailed;
 	CString m_progressLabel;
 	int m_stageProgress = 0;
 	bool m_cancelled = false;
@@ -71,6 +62,7 @@ private:
 	void CheckFiles(const char* destDir);
 	void CheckRegularFile(const char* destDir, const char* filename);
 	void RenameFile(const char* srcFilename, const char* destFileName);
+	void RenameFiles(const char* destDir);
 };
 
 #endif

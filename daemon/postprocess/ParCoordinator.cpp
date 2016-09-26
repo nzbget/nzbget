@@ -169,42 +169,6 @@ void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceL
 	m_postInfo->GetNzbInfo()->SetExtraParBlocks(m_postInfo->GetNzbInfo()->GetExtraParBlocks() + totalExtraParBlocks);
 }
 
-void ParCoordinator::PostParRenamer::UpdateProgress()
-{
-	m_owner->UpdateParRenameProgress();
-}
-
-void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind kind, const char* format, ...)
-{
-	char text[1024];
-	va_list args;
-	va_start(args, format);
-	vsnprintf(text, 1024, format, args);
-	va_end(args);
-	text[1024-1] = '\0';
-
-	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
-}
-
-void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
-{
-	m_postInfo->GetParredFiles()->push_back(filename);
-}
-
-/**
- *  Update file name in the CompletedFiles-list of NZBInfo
- */
-void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
-{
-	for (CompletedFile& completedFile : m_postInfo->GetNzbInfo()->GetCompletedFiles())
-	{
-		if (!strcasecmp(completedFile.GetFileName(), oldFilename))
-		{
-			completedFile.SetFileName(newFileName);
-			break;
-		}
-	}
-}
 
 void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind kind, const char* format, ...)
 {
@@ -226,7 +190,6 @@ ParCoordinator::ParCoordinator()
 
 #ifndef DISABLE_PARCHECK
 	m_parChecker.m_owner = this;
-	m_parRenamer.m_owner = this;
 #endif
 }
 
@@ -275,7 +238,6 @@ void ParCoordinator::PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
  */
 void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
 {
-	m_currentJob = jkParCheck;
 	m_parChecker.SetPostInfo(postInfo);
 	m_parChecker.SetDestDir(postInfo->GetNzbInfo()->GetDestDir());
 	m_parChecker.SetNzbName(postInfo->GetNzbInfo()->GetName());
@@ -288,48 +250,13 @@ void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
 	m_parChecker.Start();
 }
 
-/**
- * DownloadQueue must be locked prior to call of this function.
- */
-void ParCoordinator::StartParRenameJob(PostInfo* postInfo)
-{
-	const char* destDir = postInfo->GetNzbInfo()->GetDestDir();
-
-	if (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
-		!Util::EmptyStr(postInfo->GetNzbInfo()->GetFinalDir()))
-	{
-		destDir = postInfo->GetNzbInfo()->GetFinalDir();
-	}
-
-	m_currentJob = jkParRename;
-	m_parRenamer.SetPostInfo(postInfo);
-	m_parRenamer.SetDestDir(destDir);
-	m_parRenamer.SetInfoName(postInfo->GetNzbInfo()->GetName());
-	m_parRenamer.SetDetectMissing(postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone);
-	m_parRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", postInfo->GetNzbInfo()->GetName());
-	postInfo->SetWorking(true);
-	m_parRenamer.Start();
-}
-
 bool ParCoordinator::Cancel()
 {
-	if (m_currentJob == jkParCheck)
+	if (!m_parChecker.GetCancelled())
 	{
-		if (!m_parChecker.GetCancelled())
-		{
-			debug("Cancelling par-repair for %s", m_parChecker.GetInfoName());
-			m_parChecker.Cancel();
-			return true;
-		}
-	}
-	else if (m_currentJob == jkParRename)
-	{
-		if (!m_parRenamer.GetCancelled())
-		{
-			debug("Cancelling par-rename for %s", m_parRenamer.GetInfoName());
-			m_parRenamer.Cancel();
-			return true;
-		}
+		debug("Cancelling par-repair for %s", m_parChecker.GetInfoName());
+		m_parChecker.Cancel();
+		return true;
 	}
 	return false;
 }
@@ -665,46 +592,6 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 			}
 		}
 	}
-}
-
-void ParCoordinator::ParRenameCompleted()
-{
-	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
-
-	PostInfo* postInfo = m_parRenamer.GetPostInfo();
-	postInfo->GetNzbInfo()->SetRenameStatus(m_parRenamer.GetStatus() == ParRenamer::psSuccess ? NzbInfo::rsSuccess : NzbInfo::rsFailure);
-
-	if (m_parRenamer.HasMissedFiles() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
-	{
-		m_parRenamer.PrintMessage(Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_parRenamer.GetInfoName());
-		postInfo->SetRequestParCheck(true);
-	}
-
-	postInfo->SetWorking(false);
-	postInfo->SetStage(PostInfo::ptQueued);
-
-	downloadQueue->Save();
-}
-
-void ParCoordinator::UpdateParRenameProgress()
-{
-	PostInfo* postInfo;
-	{
-		GuardedDownloadQueue guard = DownloadQueue::Guard();
-
-		postInfo = m_parRenamer.GetPostInfo();
-		postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
-		postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
-		time_t current = Util::CurrentTime();
-
-		if (postInfo->GetStage() != PostInfo::ptRenaming)
-		{
-			postInfo->SetStage(PostInfo::ptRenaming);
-			postInfo->SetStageTime(current);
-		}
-	}
-
-	CheckPauseState(postInfo);
 }
 
 #endif

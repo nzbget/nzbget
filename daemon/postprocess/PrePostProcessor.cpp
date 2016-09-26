@@ -29,6 +29,7 @@
 #include "FileSystem.h"
 #include "Unpack.h"
 #include "Cleanup.h"
+#include "Rename.h"
 #include "NzbFile.h"
 #include "QueueScript.h"
 #include "ParParser.h"
@@ -452,14 +453,14 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->SetStartTime(Util::CurrentTime());
 	}
 
-#ifndef DISABLE_PARCHECK
 	if (postInfo->GetNzbInfo()->GetRenameStatus() == NzbInfo::rsNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
 	{
 		UpdatePauseState(g_Options->GetParPauseQueue(), "par-rename");
-		m_parCoordinator.StartParRenameJob(postInfo);
+		RenameController::StartJob(postInfo);
 		return;
 	}
+#ifndef DISABLE_PARCHECK
 	else if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
 	{
@@ -705,7 +706,7 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 						"Deleting active post-job %s", postInfo->GetNzbInfo()->GetName());
 					postInfo->SetDeleted(true);
 #ifndef DISABLE_PARCHECK
-					if (PostInfo::ptLoadingPars <= postInfo->GetStage() && postInfo->GetStage() <= PostInfo::ptRenaming)
+					if (PostInfo::ptLoadingPars <= postInfo->GetStage() && postInfo->GetStage() <= PostInfo::ptVerifyingRepaired)
 					{
 						if (m_parCoordinator.Cancel())
 						{

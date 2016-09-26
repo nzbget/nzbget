@@ -25,7 +25,6 @@
 
 #ifndef DISABLE_PARCHECK
 #include "ParChecker.h"
-#include "ParRenamer.h"
 #include "DupeMatcher.h"
 #endif
 
@@ -39,15 +38,12 @@ public:
 #ifndef DISABLE_PARCHECK
 	bool AddPar(FileInfo* fileInfo, bool deleted);
 	void StartParCheckJob(PostInfo* postInfo);
-	void StartParRenameJob(PostInfo* postInfo);
 	void Stop();
 	bool Cancel();
 
 protected:
 	void UpdateParCheckProgress();
-	void UpdateParRenameProgress();
 	void ParCheckCompleted();
-	void ParRenameCompleted();
 	void CheckPauseState(PostInfo* postInfo);
 	bool RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFound);
 
@@ -83,24 +79,6 @@ private:
 		friend class ParCoordinator;
 	};
 
-	class PostParRenamer: public ParRenamer
-	{
-	public:
-		PostInfo* GetPostInfo() { return m_postInfo; }
-		void SetPostInfo(PostInfo* postInfo) { m_postInfo = postInfo; }
-	protected:
-		virtual void UpdateProgress();
-		virtual void Completed() { m_owner->ParRenameCompleted(); }
-		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
-		virtual void RegisterParredFile(const char* filename);
-		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName);
-	private:
-		ParCoordinator* m_owner;
-		PostInfo* m_postInfo;
-
-		friend class ParCoordinator;
-	};
-
 	class PostDupeMatcher: public DupeMatcher
 	{
 	public:
@@ -124,16 +102,8 @@ private:
 
 	typedef std::deque<BlockInfo> Blocks;
 
-	enum EJobKind
-	{
-		jkParCheck,
-		jkParRename
-	};
-
 	PostParChecker m_parChecker;
 	bool m_stopped = false;
-	PostParRenamer m_parRenamer;
-	EJobKind m_currentJob;
 
 	void FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
 		Blocks& blocks, bool strictParName, bool exactParName, int* blockFound);

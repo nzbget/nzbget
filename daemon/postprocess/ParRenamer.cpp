@@ -40,27 +40,8 @@ public:
 };
 
 
-void ParRenamer::Cleanup()
+void ParRenamer::Execute()
 {
-	m_dirList.clear();
-	m_fileHashList.clear();
-}
-
-void ParRenamer::Cancel()
-{
-	m_cancelled = true;
-}
-
-void ParRenamer::Run()
-{
-	Cleanup();
-	m_cancelled = false;
-	m_fileCount = 0;
-	m_curFile = 0;
-	m_renamedCount = 0;
-	m_hasMissedFiles = false;
-	m_status = psFailed;
-
 	m_progressLabel.Format("Checking renamed files for %s", *m_infoName);
 	m_stageProgress = 0;
 	UpdateProgress();
@@ -88,23 +69,6 @@ void ParRenamer::Run()
 			CheckMissing();
 		}
 	}
-
-	if (m_cancelled)
-	{
-		PrintMessage(Message::mkWarning, "Renaming cancelled for %s", *m_infoName);
-	}
-	else if (m_renamedCount > 0)
-	{
-		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_renamedCount, *m_infoName);
-		m_status = psSuccess;
-	}
-	else
-	{
-		PrintMessage(Message::mkInfo, "No renamed files found for %s", *m_infoName);
-	}
-
-	Cleanup();
-	Completed();
 }
 
 void ParRenamer::BuildDirList(const char* destDir)
@@ -115,7 +79,7 @@ void ParRenamer::BuildDirList(const char* destDir)
 
 	while (const char* filename = dirBrowser.Next())
 	{
-		if (!m_cancelled)
+		if (!IsStopped())
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 			if (FileSystem::DirectoryExists(fullFilename))
@@ -154,7 +118,7 @@ void ParRenamer::LoadParFile(const char* parFilename)
 
 	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer.sourcefilemap)
 	{
-		if (m_cancelled)
+		if (IsStopped())
 		{
 			break;
 		}
@@ -176,7 +140,7 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 	DirBrowser dir(destDir);
 	while (const char* filename = dir.Next())
 	{
-		if (!m_cancelled)
+		if (!IsStopped())
 		{
 			BString<1024> fullFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
 

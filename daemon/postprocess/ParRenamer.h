@@ -24,32 +24,22 @@
 #ifndef DISABLE_PARCHECK
 
 #include "NString.h"
-#include "Thread.h"
 #include "Log.h"
 
-class ParRenamer : public Thread
+class ParRenamer
 {
 public:
-	enum EStatus
-	{
-		psFailed,
-		psSuccess
-	};
-
-	virtual void Run();
+	void Execute();
 	void SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char* GetInfoName() { return m_infoName; }
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
-	void SetStatus(EStatus status);
-	EStatus GetStatus() { return m_status; }
-	void Cancel();
-	bool GetCancelled() { return m_cancelled; }
+	int GetRenamedCount() { return m_renamedCount; }
 	bool HasMissedFiles() { return m_hasMissedFiles; }
 	void SetDetectMissing(bool detectMissing) { m_detectMissing = detectMissing; }
 
 protected:
 	virtual void UpdateProgress() {}
-	virtual void Completed() {}
+	virtual bool IsStopped() { return false; };
 	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 	virtual void RegisterParredFile(const char* filename) {}
 	virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName) {}
@@ -77,20 +67,17 @@ private:
 
 	CString m_infoName;
 	CString m_destDir;
-	EStatus m_status;
 	CString m_progressLabel;
-	int m_stageProgress;
-	bool m_cancelled;
+	int m_stageProgress = 0;
 	DirList m_dirList;
 	FileHashList m_fileHashList;
-	int m_fileCount;
-	int m_curFile;
-	int m_renamedCount;
-	bool m_hasMissedFiles;
+	int m_fileCount = 0;
+	int m_curFile = 0;
+	int m_renamedCount = 0;
+	bool m_hasMissedFiles = false;
 	bool m_detectMissing = false;
 
 	void BuildDirList(const char* destDir);
-	void CheckDir(const char* destDir);
 	void LoadParFiles(const char* destDir);
 	void LoadParFile(const char* parFilename);
 	void CheckFiles(const char* destDir, bool renamePars);
@@ -99,7 +86,6 @@ private:
 	bool IsSplittedFragment(const char* filename, const char* correctName);
 	void CheckMissing();
 	void RenameFile(const char* srcFilename, const char* destFileName);
-	void Cleanup();
 };
 
 #endif
