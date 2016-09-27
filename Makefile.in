@@ -705,7 +705,16 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.par2 \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
-	tests/testdata/parchecker/testfile.vol03+3.PAR2
+	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
+	tests/testdata/rarrenamer/testfile3.part01.rar \
+	tests/testdata/rarrenamer/testfile3.part02.rar \
+	tests/testdata/rarrenamer/testfile3.part03.rar \
+	tests/testdata/rarrenamer/testfile5.part01.rar \
+	tests/testdata/rarrenamer/testfile5.part02.rar \
+	tests/testdata/rarrenamer/testfile5.part03.rar \
+	tests/testdata/rarrenamer/testfile3on.rar \
+	tests/testdata/rarrenamer/testfile3on.r00 \
+	tests/testdata/rarrenamer/testfile3on.r01
 
 
 # Install
@@ -2531,7 +2540,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/tests/testdata/rarrenamer $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

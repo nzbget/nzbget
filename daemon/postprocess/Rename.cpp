@@ -100,7 +100,19 @@ void RenameController::Run()
 	}
 	else if (m_renamedCount > 0)
 	{
-		PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_renamedCount, *nzbName);
+		if (m_renamedUsingPar == 0)
+		{
+			PrintMessage(Message::mkInfo, "Successfully renamed %i archive file(s) for %s", m_renamedCount, *nzbName);
+		}
+		else if (m_renamedUsingPar < m_renamedCount)
+		{
+			PrintMessage(Message::mkInfo, "Successfully renamed %i archive file(s) and %i other file(s) for %s",
+				m_renamedCount - m_renamedUsingPar, m_renamedUsingPar, *nzbName);
+		}
+		else
+		{
+			PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_renamedCount, *nzbName);
+		}
 	}
 	else
 	{
@@ -131,6 +143,8 @@ void RenameController::ExecRename(const char* destDir, const char* finalDir, con
 		m_parRenamer.Execute();
 #endif
 	}
+
+	m_renamedUsingPar = m_renamedCount;
 
 	if (g_Options->GetRarRename() && m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone)
 	{

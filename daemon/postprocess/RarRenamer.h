@@ -46,6 +46,8 @@ protected:
 private:
 	typedef std::deque<CString> DirList;
 	typedef std::deque<RarVolume> RarVolumeList;
+	typedef std::deque<RarVolume*> RarVolumeSet;
+	typedef std::deque<RarVolumeSet> RarSets;
 
 	CString m_infoName;
 	CString m_destDir;
@@ -57,12 +59,19 @@ private:
 	int m_curFile = 0;
 	int m_renamedCount = 0;
 	RarVolumeList m_volumes;
+	RarSets m_sets;
 
 	void BuildDirList(const char* destDir);
 	void CheckFiles(const char* destDir);
 	void CheckRegularFile(const char* destDir, const char* filename);
 	void RenameFile(const char* srcFilename, const char* destFileName);
 	void RenameFiles(const char* destDir);
+	CString GenNewVolumeFilename(const char* destDir, const char* newBasename, RarVolume* volume);
+	CString GenNewExtension(int volumeNo);
+	CString GenOldExtension(int volumeNo);
+	void MakeSets();
+	bool IsSetProperlyNamed(RarVolumeSet& set);
+	RarFile* FindMainFile(RarVolumeSet& set);
 };
 
 #endif

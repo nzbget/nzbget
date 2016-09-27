@@ -26,7 +26,7 @@
 #include "FileSystem.h"
 #include "TestUtil.h"
 
-TEST_CASE("Rar-reader", "[Rar][RarReader][Slow][TestData]")
+TEST_CASE("Rar-reader: rar3", "[Rar][RarReader][Slow][TestData]")
 {
 	{
 		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3.part01.rar").c_str());
@@ -52,7 +52,10 @@ TEST_CASE("Rar-reader", "[Rar][RarReader][Slow][TestData]")
 		REQUIRE(volume.GetNewNaming() == true);
 		REQUIRE(volume.GetVolumeNo() == 2);
 	}
+}
 
+TEST_CASE("Rar-reader: rar5", "[Rar][RarReader][Slow][TestData]")
+{
 	{
 		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile5.part01.rar").c_str());
 		REQUIRE(volume.Read() == true);
@@ -75,6 +78,34 @@ TEST_CASE("Rar-reader", "[Rar][RarReader][Slow][TestData]")
 		REQUIRE(volume.GetVersion() == 5);
 		REQUIRE(volume.GetMultiVolume() == true);
 		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 2);
+	}
+}
+
+TEST_CASE("Rar-reader: rar3 old naming", "[Rar][RarReader][Slow][TestData]")
+{
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3on.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == false);
+		REQUIRE(volume.GetVolumeNo() == 0);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3on.r00").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == false);
+		REQUIRE(volume.GetVolumeNo() == 1);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3on.r01").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == false);
 		REQUIRE(volume.GetVolumeNo() == 2);
 	}
 }

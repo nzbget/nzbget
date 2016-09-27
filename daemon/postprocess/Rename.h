@@ -44,6 +44,7 @@ private:
 	PostInfo* m_postInfo;
 	CString m_destDir;
 	int m_renamedCount = 0;
+	int m_renamedUsingPar = 0;
 
 #ifndef DISABLE_PARCHECK
 	class PostParRenamer : public ParRenamer

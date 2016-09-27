@@ -47,9 +47,24 @@ def prepare_testdata(request):
 		shutil.copyfile(testdata_dir + '/rarrenamer/testfile5.part01.rar', nserv_datadir + '/rarrename2sets/abc.22')
 		shutil.copyfile(testdata_dir + '/rarrenamer/testfile5.part02.rar', nserv_datadir + '/rarrename2sets/abc.03')
 		shutil.copyfile(testdata_dir + '/rarrenamer/testfile5.part03.rar', nserv_datadir + '/rarrename2sets/abc.14')
-		os.chdir(nserv_datadir + '/rarrename2sets')
-		if 0 != subprocess.call([par2_bin, 'c', '-b20', 'parrename.par2', '*']):
-			pytest.exit('Test file generation failed')
+
+	if not os.path.exists(nserv_datadir + '/rarrename3on'):
+		os.makedirs(nserv_datadir + '/rarrename3on')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.rar', nserv_datadir + '/rarrename3on/abc.61')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.r00', nserv_datadir + '/rarrename3on/abc.32')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.r01', nserv_datadir + '/rarrename3on/abc.45')
+
+	if not os.path.exists(nserv_datadir + '/rarrename3badext'):
+		os.makedirs(nserv_datadir + '/rarrename3badext')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.rar', nserv_datadir + '/rarrename3badext/testfile3on.rar')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.r00', nserv_datadir + '/rarrename3badext/testfile3on.r03')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.r01', nserv_datadir + '/rarrename3badext/testfile3on.r02')
+
+	if not os.path.exists(nserv_datadir + '/rarrename5badext'):
+		os.makedirs(nserv_datadir + '/rarrename5badext')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part01.rar', nserv_datadir + '/rarrename5badext/testfile3.part01.rar')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part02.rar', nserv_datadir + '/rarrename5badext/testfile3.part0002.rar')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part03.rar', nserv_datadir + '/rarrename5badext/testfile3.part03.rar')
 
 	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '3000', '-q']):
 		pytest.exit('Test file generation failed')

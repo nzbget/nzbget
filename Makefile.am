@@ -385,7 +385,16 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.par2 \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
-	tests/testdata/parchecker/testfile.vol03+3.PAR2
+	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
+	tests/testdata/rarrenamer/testfile3.part01.rar \
+	tests/testdata/rarrenamer/testfile3.part02.rar \
+	tests/testdata/rarrenamer/testfile3.part03.rar \
+	tests/testdata/rarrenamer/testfile5.part01.rar \
+	tests/testdata/rarrenamer/testfile5.part02.rar \
+	tests/testdata/rarrenamer/testfile5.part03.rar \
+	tests/testdata/rarrenamer/testfile3on.rar \
+	tests/testdata/rarrenamer/testfile3on.r00 \
+	tests/testdata/rarrenamer/testfile3on.r01
 
 # Install
 dist_doc_DATA = $(doc_FILES)
