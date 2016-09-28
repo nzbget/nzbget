@@ -87,7 +87,7 @@ void UnpackController::Run()
 
 	if (unpack)
 	{
-		bool scanNonStdFiles = m_postInfo->GetNzbInfo()->GetRenameStatus() > NzbInfo::rsSkipped ||
+		bool scanNonStdFiles = m_postInfo->GetNzbInfo()->GetParRenameStatus() > NzbInfo::rsSkipped ||
 			m_postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSuccess ||
 			!m_hasParFiles;
 		CheckArchiveFiles(scanNonStdFiles);
@@ -145,7 +145,7 @@ void UnpackController::Run()
 
 #ifndef DISABLE_PARCHECK
 		if (unpack && m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
-			m_postInfo->GetNzbInfo()->GetRenameStatus() <= NzbInfo::rsSkipped && m_hasParFiles)
+			m_postInfo->GetNzbInfo()->GetParRenameStatus() <= NzbInfo::rsSkipped && m_hasParFiles)
 		{
 			RequestParCheck(false);
 		}
@@ -532,7 +532,7 @@ void UnpackController::Completed()
 		if (g_Options->GetParRename())
 		{
 			//request par-rename check for extracted files
-			m_postInfo->GetNzbInfo()->SetRenameStatus(NzbInfo::rsNone);
+			m_postInfo->GetNzbInfo()->SetParRenameStatus(NzbInfo::rsNone);
 		}
 		m_postInfo->SetStage(PostInfo::ptQueued);
 	}

@@ -33,9 +33,15 @@
 class RenameController : public Thread, public ScriptController
 {
 public:
+	enum EJobKind
+	{
+		jkPar,
+		jkRar
+	};
+
 	RenameController();
 	virtual void Run();
-	static void StartJob(PostInfo* postInfo);
+	static void StartJob(PostInfo* postInfo, EJobKind kind);
 
 protected:
 	virtual void AddMessage(Message::EKind kind, const char* text);
@@ -44,7 +50,7 @@ private:
 	PostInfo* m_postInfo;
 	CString m_destDir;
 	int m_renamedCount = 0;
-	int m_renamedUsingPar = 0;
+	EJobKind m_kind;
 
 #ifndef DISABLE_PARCHECK
 	class PostParRenamer : public ParRenamer

@@ -209,10 +209,14 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 			nzbInfo->SetParStatus(NzbInfo::psSkipped);
 		}
 
-		if (nzbInfo->GetRenameStatus() == NzbInfo::rsNone &&
-			!(g_Options->GetParRename() || g_Options->GetRarRename()))
+		if (nzbInfo->GetParRenameStatus() == NzbInfo::rsNone && !g_Options->GetParRename())
 		{
-			nzbInfo->SetRenameStatus(NzbInfo::rsSkipped);
+			nzbInfo->SetParRenameStatus(NzbInfo::rsSkipped);
+		}
+
+		if (nzbInfo->GetRarRenameStatus() == NzbInfo::rsNone && !g_Options->GetRarRename())
+		{
+			nzbInfo->SetRarRenameStatus(NzbInfo::rsSkipped);
 		}
 
 		downloadQueue->Save();
@@ -454,11 +458,11 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->SetStartTime(Util::CurrentTime());
 	}
 
-	if (postInfo->GetNzbInfo()->GetRenameStatus() == NzbInfo::rsNone &&
+	if (postInfo->GetNzbInfo()->GetParRenameStatus() == NzbInfo::rsNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
 	{
-		UpdatePauseState(g_Options->GetParPauseQueue(), "rename");
-		RenameController::StartJob(postInfo);
+		UpdatePauseState(g_Options->GetParPauseQueue(), "par-rename");
+		RenameController::StartJob(postInfo, RenameController::jkPar);
 		return;
 	}
 #ifndef DISABLE_PARCHECK
@@ -513,6 +517,14 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		return;
 	}
 #endif
+
+	if (postInfo->GetNzbInfo()->GetRarRenameStatus() == NzbInfo::rsNone &&
+		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
+	{
+		UpdatePauseState(g_Options->GetUnpackPauseQueue(), "rar-rename");
+		RenameController::StartJob(postInfo, RenameController::jkRar);
+		return;
+	}
 
 	NzbParameter* unpackParameter = postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
 	bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));

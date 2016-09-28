@@ -336,7 +336,7 @@ public:
 	{
 		rsNone,
 		rsSkipped,
-		rsFailure,
+		rsNothing,
 		rsSuccess
 	};
 
@@ -485,8 +485,10 @@ public:
 	void BuildDestDirName();
 	CString BuildFinalDirName();
 	CompletedFileList* GetCompletedFiles() { return &m_completedFiles; }
-	ERenameStatus GetRenameStatus() { return m_renameStatus; }
-	void SetRenameStatus(ERenameStatus renameStatus) { m_renameStatus = renameStatus; }
+	ERenameStatus GetParRenameStatus() { return m_parRenameStatus; }
+	void SetParRenameStatus(ERenameStatus renameStatus) { m_parRenameStatus = renameStatus; }
+	ERenameStatus GetRarRenameStatus() { return m_rarRenameStatus; }
+	void SetRarRenameStatus(ERenameStatus renameStatus) { m_rarRenameStatus = renameStatus; }
 	EParStatus GetParStatus() { return m_parStatus; }
 	void SetParStatus(EParStatus parStatus) { m_parStatus = parStatus; }
 	EUnpackStatus GetUnpackStatus() { return m_unpackStatus; }
@@ -616,7 +618,8 @@ private:
 	time_t m_maxTime = 0;
 	int m_priority = 0;
 	CompletedFileList m_completedFiles;
-	ERenameStatus m_renameStatus = rsNone;
+	ERenameStatus m_parRenameStatus = rsNone;
+	ERenameStatus m_rarRenameStatus = rsNone;
 	EParStatus m_parStatus = psNone;
 	EUnpackStatus m_unpackStatus = usNone;
 	ECleanupStatus m_cleanupStatus = csNone;

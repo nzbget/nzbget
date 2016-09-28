@@ -36,8 +36,23 @@ def prepare_testdata(request):
 		os.rename(nserv_datadir + '/parrename/testfile3.part02.rar', nserv_datadir + '/parrename/abc.02')
 		os.rename(nserv_datadir + '/parrename/testfile3.part03.rar', nserv_datadir + '/parrename/abc.15')
 
-	prepare_rarrenametest('rarrename3', 'testfile3', testdata_dir, nserv_datadir, par2_bin)
-	prepare_rarrenametest('rarrename5', 'testfile5', testdata_dir, nserv_datadir, par2_bin)
+	if not os.path.exists(nserv_datadir + '/rarrename3'):
+		os.makedirs(nserv_datadir + '/rarrename3')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part01.rar', nserv_datadir + '/rarrename3/abc.21')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part02.rar', nserv_datadir + '/rarrename3/abc.02')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part03.rar', nserv_datadir + '/rarrename3/abc.15')
+		os.chdir(nserv_datadir + '/rarrename3')
+		if 0 != subprocess.call([par2_bin, 'c', '-b20', 'parrename.par2', '*']):
+			pytest.exit('Test file generation failed')
+
+	if not os.path.exists(nserv_datadir + '/rarrename5'):
+		os.makedirs(nserv_datadir + '/rarrename5')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile5.part01.rar', nserv_datadir + '/rarrename5/abc.21')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile5.part02.rar', nserv_datadir + '/rarrename5/abc.02')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile5.part03.rar', nserv_datadir + '/rarrename5/abc.15')
+		os.chdir(nserv_datadir + '/rarrename5')
+		if 0 != subprocess.call([par2_bin, 'c', '-b20', 'parrename.par2', '*']):
+			pytest.exit('Test file generation failed')
 
 	if not os.path.exists(nserv_datadir + '/rarrename2sets'):
 		os.makedirs(nserv_datadir + '/rarrename2sets')
@@ -69,12 +84,13 @@ def prepare_testdata(request):
 	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '3000', '-q']):
 		pytest.exit('Test file generation failed')
 
-def prepare_rarrenametest(dirname, testfile, testdata_dir, nserv_datadir, par2_bin):
-	if not os.path.exists(nserv_datadir + '/' + dirname + '.nzb'):
-		os.makedirs(nserv_datadir + '/' + dirname)
-		shutil.copyfile(testdata_dir + '/rarrenamer/' + testfile + '.part01.rar', nserv_datadir + '/' + dirname + '/abc.21')
-		shutil.copyfile(testdata_dir + '/rarrenamer/' + testfile + '.part02.rar', nserv_datadir + '/' + dirname + '/abc.02')
-		shutil.copyfile(testdata_dir + '/rarrenamer/' + testfile + '.part03.rar', nserv_datadir + '/' + dirname + '/abc.15')
-		os.chdir(nserv_datadir + '/' + dirname)
-		if 0 != subprocess.call([par2_bin, 'c', '-b20', 'parrename.par2', '*']):
+	if not os.path.exists(nserv_datadir + '/rarrename3sm'):
+		os.makedirs(nserv_datadir + '/rarrename3sm')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.rar', nserv_datadir + '/rarrename3sm/abc.61')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.r00', nserv_datadir + '/rarrename3sm/abc.32')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3on.r01', nserv_datadir + '/rarrename3sm/abc.45')
+		os.chdir(nserv_datadir + '/rarrename3sm')
+		if 0 != subprocess.call([par2_bin, 'c', '-b100', 'parrename.par2', '*']):
 			pytest.exit('Test file generation failed')
+	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '500', '-q']):
+		pytest.exit('Test file generation failed')

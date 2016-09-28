@@ -64,10 +64,11 @@ RenameController::RenameController()
 	m_rarRenamer.m_owner = this;
 }
 
-void RenameController::StartJob(PostInfo* postInfo)
+void RenameController::StartJob(PostInfo* postInfo, EJobKind kind)
 {
 	RenameController* renameController = new RenameController();
 	renameController->m_postInfo = postInfo;
+	renameController->m_kind = kind;
 	renameController->SetAutoDestroy(false);
 
 	postInfo->SetPostThread(renameController);
@@ -90,7 +91,8 @@ void RenameController::Run()
 	BString<1024> infoName("rename for %s", *nzbName);
 	SetInfoName(infoName);
 
-	PrintMessage(Message::mkInfo, "Checking renamed files for %s", *nzbName);
+	PrintMessage(Message::mkInfo, "Checking renamed %sfiles for %s",
+		m_kind == jkRar ? "archive " : "", *nzbName);
 
 	ExecRename(destDir, finalDir, nzbName);
 
@@ -100,23 +102,13 @@ void RenameController::Run()
 	}
 	else if (m_renamedCount > 0)
 	{
-		if (m_renamedUsingPar == 0)
-		{
-			PrintMessage(Message::mkInfo, "Successfully renamed %i archive file(s) for %s", m_renamedCount, *nzbName);
-		}
-		else if (m_renamedUsingPar < m_renamedCount)
-		{
-			PrintMessage(Message::mkInfo, "Successfully renamed %i archive file(s) and %i other file(s) for %s",
-				m_renamedCount - m_renamedUsingPar, m_renamedUsingPar, *nzbName);
-		}
-		else
-		{
-			PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", m_renamedCount, *nzbName);
-		}
+		PrintMessage(Message::mkInfo, "Successfully renamed %i %sfile(s) for %s",
+			m_renamedCount, m_kind == jkRar ? "archive " : "", *nzbName);
 	}
 	else
 	{
-		PrintMessage(Message::mkInfo, "No renamed files found for %s", *nzbName);
+		PrintMessage(Message::mkInfo, "No renamed %sfiles found for %s",
+			m_kind == jkRar ? "archive " : "", *nzbName);
 	}
 
 	RenameCompleted();
@@ -133,7 +125,7 @@ void RenameController::ExecRename(const char* destDir, const char* finalDir, con
 	m_postInfo->SetStage(PostInfo::ptRenaming);
 	m_postInfo->SetWorking(true);
 
-	if (g_Options->GetParRename())
+	if (m_kind == jkPar)
 	{
 #ifndef DISABLE_PARCHECK
 		m_parRenamer.SetDestDir(m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
@@ -143,10 +135,7 @@ void RenameController::ExecRename(const char* destDir, const char* finalDir, con
 		m_parRenamer.Execute();
 #endif
 	}
-
-	m_renamedUsingPar = m_renamedCount;
-
-	if (g_Options->GetRarRename() && m_postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone)
+	else if (m_kind == jkRar)
 	{
 		m_rarRenamer.SetDestDir(destDir);
 		m_rarRenamer.SetInfoName(nzbName);
@@ -158,7 +147,14 @@ void RenameController::RenameCompleted()
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	m_postInfo->GetNzbInfo()->SetRenameStatus(m_renamedCount > 0 ? NzbInfo::rsSuccess : NzbInfo::rsFailure);
+	if (m_kind == jkPar)
+	{
+		m_postInfo->GetNzbInfo()->SetParRenameStatus(m_renamedCount > 0 ? NzbInfo::rsSuccess : NzbInfo::rsNothing);
+	}
+	else if (m_kind == jkRar)
+	{
+		m_postInfo->GetNzbInfo()->SetRarRenameStatus(m_renamedCount > 0 ? NzbInfo::rsSuccess : NzbInfo::rsNothing);
+	}
 
 #ifndef DISABLE_PARCHECK
 	if (m_parRenamer.HasMissedFiles() && m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)

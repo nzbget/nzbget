@@ -27,3 +27,9 @@ def test_rarrename5badext(nserv, nzbget):
 def test_rarrename2sets(nserv, nzbget):
 	hist = nzbget.download_nzb('rarrename2sets.nzb', unpack=True)
 	assert hist['Status'] == 'SUCCESS/UNPACK'
+
+def test_rarrename3_damaged(nserv, nzbget):
+	nzb_content = nzbget.load_nzb('rarrename3sm.nzb')
+	nzb_content = nzb_content.replace('abc.32?14=6500:500', 'abc.32?14=6500:500!2')
+	hist = nzbget.download_nzb('rarrename3sm.nzb', nzb_content, unpack=True)
+	assert hist['Status'] == 'SUCCESS/UNPACK'
