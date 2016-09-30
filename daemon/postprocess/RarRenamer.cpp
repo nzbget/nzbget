@@ -94,6 +94,7 @@ void RarRenamer::CheckFiles(const char* destDir)
 void RarRenamer::CheckRegularFile(const char* destDir, const char* filename)
 {
 	RarVolume volume(filename);
+	volume.SetPassword(m_password);
 	if (volume.Read())
 	{
 		m_volumes.push_back(std::move(volume));

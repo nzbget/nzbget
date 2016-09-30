@@ -33,6 +33,7 @@ public:
 	void SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char* GetInfoName() { return m_infoName; }
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
+	void SetPassword(const char* password) { m_password = password; }
 	int GetRenamedCount() { return m_renamedCount; }
 
 protected:
@@ -60,6 +61,7 @@ private:
 	int m_renamedCount = 0;
 	RarVolumeList m_volumes;
 	RarSets m_sets;
+	CString m_password;
 
 	void BuildDirList(const char* destDir);
 	void CheckFiles(const char* destDir);

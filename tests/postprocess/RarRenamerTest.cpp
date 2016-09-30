@@ -55,9 +55,6 @@ TEST_CASE("Rar-renamer: rename rar3", "[Rar][RarRenamer][Slow][TestData]")
 	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str(), (TestUtil::WorkingDir() + "/12345").c_str()));
 	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12342").c_str()));
 	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3.part03.rar").c_str(), (TestUtil::WorkingDir() + "/12346").c_str()));
-	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part01.rar").c_str()));
-	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part02.rar").c_str()));
-	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part03.rar").c_str()));
 
 	rarRenamer.Execute();
 
@@ -68,9 +65,6 @@ TEST_CASE("Rar-renamer: rename rar5", "[Rar][RarRenamer][Slow][TestData]")
 {
 	RarRenamerMock rarRenamer;
 
-	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str()));
-	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile3.part02.rar").c_str()));
-	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile3.part03.rar").c_str()));
 	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5.part01.rar").c_str(), (TestUtil::WorkingDir() + "/12348").c_str()));
 	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12343").c_str()));
 	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5.part03.rar").c_str(), (TestUtil::WorkingDir() + "/12344").c_str()));
@@ -188,6 +182,20 @@ TEST_CASE("Rar-renamer: rename duplicate", "[Rar][RarRenamer][Slow][TestData]")
 	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5.part01.rar").c_str(), (TestUtil::WorkingDir() + "/testfile3.dat.part0001.rar").c_str()));
 	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part02.rar").c_str()));
 	REQUIRE(FileSystem::DeleteFile((TestUtil::WorkingDir() + "/testfile5.part03.rar").c_str()));
+
+	rarRenamer.Execute();
+
+	REQUIRE(rarRenamer.GetRenamedCount() == 3);
+}
+
+TEST_CASE("Rar-renamer: rename rar5 encrypted", "[Rar][RarRenamer][Slow][TestData]")
+{
+	RarRenamerMock rarRenamer;
+	rarRenamer.SetPassword("123");
+
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5encnam.part01.rar").c_str(), (TestUtil::WorkingDir() + "/12348").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5encnam.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12343").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile5encnam.part03.rar").c_str(), (TestUtil::WorkingDir() + "/12344").c_str()));
 
 	rarRenamer.Execute();
 

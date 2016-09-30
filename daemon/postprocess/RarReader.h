@@ -58,6 +58,8 @@ public:
 	bool GetNewNaming() { return m_newNaming; }
 	bool GetHasNextVolume() { return m_hasNextVolume; }
 	bool GetMultiVolume() { return m_multiVolume; }
+	bool GetEncrypted() { return m_encrypted; }
+	void SetPassword(const char* password) { m_password = password; }
 	FileList* GetFiles() { return &m_files; }
 
 private:
@@ -77,10 +79,19 @@ private:
 	bool m_hasNextVolume = false;
 	bool m_multiVolume = false;
 	FileList m_files;
+	bool m_encrypted = false;
+	CString m_password;
+	uint8 m_key[32];
+	uint8 m_decryptBuf[16];
+	uint8 m_decryptPos = 16;
+
+	// using "void*" to prevent the including of GnuTLS/OpenSSL header files into TlsSocket.h
+	void* m_context = nullptr;
+	void* m_session = nullptr;
 
 	int DetectRarVersion(DiskFile& file);
 	void LogDebugInfo();
-	bool Seek(DiskFile& file, RarBlock* block, int64 relpos);
+	bool Skip(DiskFile& file, RarBlock* block, int64 size);
 	bool Read(DiskFile& file, RarBlock* block, void* buffer, int64 size);
 	bool Read16(DiskFile& file, RarBlock* block, uint16* result);
 	bool Read32(DiskFile& file, RarBlock* block, uint32* result);
@@ -91,6 +102,11 @@ private:
 	RarBlock ReadRar5Block(DiskFile& file);
 	bool ReadRar3File(DiskFile& file, RarBlock& block, RarFile& innerFile);
 	bool ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile);
+	bool DecryptRar5Prepare(uint8 kdfCount, const uint8 salt[16]);
+	bool DecryptRar5Start(DiskFile& file);
+	bool DecryptBuf(const uint8 in[16], uint8 out[16]);
+	void DecryptFree();
+	bool DecryptRead(DiskFile& file, void* buffer, int64 size);
 };
 
 #endif

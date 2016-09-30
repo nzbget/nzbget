@@ -49,7 +49,7 @@ static const uint16 RAR3_ENDARC_VOLNUMBER = 0x0008;
 
 static const uint8 RAR5_BLOCK_MAIN = 1;
 static const uint8 RAR5_BLOCK_FILE = 2;
-//static const uint8 RAR5_BLOCK_ENCRYPTION = 4;
+static const uint8 RAR5_BLOCK_ENCRYPTION = 4;
 static const uint8 RAR5_BLOCK_ENDARC = 5;
 
 static const uint8 RAR5_BLOCK_EXTRADATA = 0x01;
@@ -95,6 +95,7 @@ bool RarVolume::Read()
 	}
 
 	file.Close();
+	DecryptFree();
 
 	LogDebugInfo();
 
@@ -117,23 +118,22 @@ int RarVolume::DetectRarVersion(DiskFile& file)
 	return rar3 ? 3 : rar5 ? 5 : 0;
 }
 
-bool RarVolume::Seek(DiskFile& file, RarBlock* block, int64 relpos)
-{
-	if (!file.Seek(relpos, DiskFile::soCur)) return false;
-	if (block)
-	{
-		block->trailsize -= relpos;
-	}
-	return true;
-}
-
 bool RarVolume::Read(DiskFile& file, RarBlock* block, void* buffer, int64 size)
 {
-	if (file.Read(buffer, size) != size) return false;
+	if (m_encrypted)
+	{
+		if (!DecryptRead(file, buffer, size)) return false;
+	}
+	else
+	{
+		if (file.Read(buffer, size) != size) return false;
+	}
+
 	if (block)
 	{
 		block->trailsize -= size;
 	}
+
 	return true;
 }
 
@@ -165,6 +165,18 @@ bool RarVolume::ReadV(DiskFile& file, RarBlock* block, uint64* result)
 		bits += 7;
 	} while (val & 0x80);
 
+	return true;
+}
+
+bool RarVolume::Skip(DiskFile& file, RarBlock* block, int64 size)
+{
+	uint8 buf[256];
+	while (size > 0)
+	{
+		int64 len = size <= sizeof(buf) ? size : sizeof(buf);
+		if (!Read(file, block, buf, len)) return false;
+		size -= len;
+	}
 	return true;
 }
 
@@ -202,7 +214,7 @@ bool RarVolume::ReadRar3Volume(DiskFile& file)
 		{
 			if (block.flags & RAR3_ENDARC_DATACRC)
 			{
-				if (!Seek(file, &block, 4)) return false;
+				if (!Skip(file, &block, 4)) return false;
 			}
 			if (block.flags & RAR3_ENDARC_VOLNUMBER)
 			{
@@ -265,10 +277,10 @@ bool RarVolume::ReadRar3File(DiskFile& file, RarBlock& block, RarFile& innerFile
 	if (!Read32(file, &block, &size)) return false;
 	innerFile.m_size = size;
 
-	if (!Seek(file, &block, 1)) return false;
-	if (!Seek(file, &block, 4)) return false;
+	if (!Skip(file, &block, 1)) return false;
+	if (!Skip(file, &block, 4)) return false;
 	if (!Read32(file, &block, &innerFile.m_time)) return false;
-	if (!Seek(file, &block, 2)) return false;
+	if (!Skip(file, &block, 2)) return false;
 	if (!Read16(file, &block, &namelen)) return false;
 	if (!Read32(file, &block, &innerFile.m_attr)) return false;
 
@@ -297,7 +309,7 @@ bool RarVolume::ReadRar5Volume(DiskFile& file)
 {
 	debug("Reading rar5-file %s", *m_filename);
 
-	if (!Seek(file, nullptr, 8)) return false;
+	file.Seek(8);
 
 	while (!file.Eof())
 	{
@@ -321,6 +333,21 @@ bool RarVolume::ReadRar5Volume(DiskFile& file)
 			m_multiVolume = (arcflags & RAR5_MAIN_ISVOL) != 0;
 		}
 
+		else if (block.type == RAR5_BLOCK_ENCRYPTION)
+		{
+			uint64 val;
+			if (!ReadV(file, &block, &val)) return false;
+			if (val != 0) return false; // supporting only AES
+			if (!ReadV(file, &block, &val)) return false;
+			uint8 kdfCount;
+			uint8 salt[16];
+			if (!Read(file, &block, &kdfCount, sizeof(kdfCount))) return false;
+			if (!Read(file, &block, &salt, sizeof(salt))) return false;
+			m_encrypted = true;
+			if (m_password.Empty()) return false;
+			if (!DecryptRar5Prepare(kdfCount, salt)) return false;
+		}
+		
 		else if (block.type == RAR5_BLOCK_FILE)
 		{
 			RarFile innerFile;
@@ -336,7 +363,19 @@ bool RarVolume::ReadRar5Volume(DiskFile& file)
 			break;
 		}
 
-		if (!file.Seek(block.trailsize, DiskFile::soCur))
+		uint64 skip = block.trailsize;
+		if (m_encrypted)
+		{
+			skip -= 16 - m_decryptPos;
+			if (m_decryptPos < 16)
+			{
+				skip += skip % 16 > 0 ? 16 - skip % 16 : 0;
+				m_decryptPos = 16;
+			}
+			DecryptFree();
+		}
+
+		if (!file.Seek(skip, DiskFile::soCur))
 		{
 			return false;
 		}
@@ -350,23 +389,25 @@ RarVolume::RarBlock RarVolume::ReadRar5Block(DiskFile& file)
 	RarBlock block{ 0 };
 	uint64 buf = 0;
 
-	if (!Read32(file, nullptr, &block.crc)) return{ 0 };
+	if (m_encrypted && !DecryptRar5Start(file)) return {0};
 
-	if (!ReadV(file, nullptr, &buf)) return{ 0 };
+	if (!Read32(file, nullptr, &block.crc)) return {0};
+
+	if (!ReadV(file, nullptr, &buf)) return {0};
 	uint32 size = (uint32)buf;
 	block.trailsize = size;
 
-	if (!ReadV(file, &block, &buf)) return{ 0 };
+	if (!ReadV(file, &block, &buf)) return {0};
 	block.type = (uint8)buf;
 
-	if (!ReadV(file, &block, &buf)) return{ 0 };
+	if (!ReadV(file, &block, &buf)) return {0};
 	block.flags = (uint16)buf;
 
 	block.addsize = 0;
-	if ((block.flags & RAR5_BLOCK_EXTRADATA) && !ReadV(file, &block, &block.addsize)) return{ 0 };
+	if ((block.flags & RAR5_BLOCK_EXTRADATA) && !ReadV(file, &block, &block.addsize)) return {0};
 
 	uint64 datasize = 0;
-	if ((block.flags & RAR5_BLOCK_DATAAREA) && !ReadV(file, &block, &datasize)) return{ 0 };
+	if ((block.flags & RAR5_BLOCK_DATAAREA) && !ReadV(file, &block, &datasize)) return {0};
 	block.trailsize += datasize;
 
 	static int num = 0;
@@ -398,7 +439,7 @@ bool RarVolume::ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile
 	innerFile.m_attr = (uint32)val;
 
 	if (fileflags & RAR5_FILE_TIME && !Read32(file, &block, &innerFile.m_time)) return false;
-	if (fileflags & RAR5_FILE_CRC && !Seek(file, &block, 4)) return false;
+	if (fileflags & RAR5_FILE_CRC && !Skip(file, &block, 4)) return false;
 
 	if (!ReadV(file, &block, &val)) return false; // skip
 	if (!ReadV(file, &block, &val)) return false; // skip
@@ -448,7 +489,7 @@ bool RarVolume::ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile
 
 			len -= trailsize - block.trailsize;
 
-			if (!Seek(file, &block, len)) return false;
+			if (!Skip(file, &block, len)) return false;
 		}
 	}
 
@@ -459,10 +500,9 @@ bool RarVolume::ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile
 
 void RarVolume::LogDebugInfo()
 {
-	debug("Volume: version:%i, multi:%i, vol-no:%i, new-naming:%i, has-next:%i, file-count:%i, [%s]",
-		(int)m_version, (int)m_multiVolume, m_volumeNo,
-		(int)m_newNaming, (int)m_hasNextVolume, (int)m_files.size(),
-		FileSystem::BaseFileName(m_filename));
+	debug("Volume: version:%i, multi:%i, vol-no:%i, new-naming:%i, has-next:%i, encrypted:%i, file-count:%i, [%s]",
+		(int)m_version, (int)m_multiVolume, m_volumeNo, (int)m_newNaming, (int)m_hasNextVolume,
+		(int)m_encrypted, (int)m_files.size(), FileSystem::BaseFileName(m_filename));
 
 	for (RarFile& file : m_files)
 	{
@@ -470,4 +510,103 @@ void RarVolume::LogDebugInfo()
 			(int)file.m_time, (long long)file.m_size, (int)file.m_attr,
 			(int)file.m_splitBefore, (int)file.m_splitAfter, *file.m_filename);
 	}
+}
+
+bool RarVolume::DecryptRar5Prepare(uint8 kdfCount, const uint8 salt[16])
+{
+	if (kdfCount > 24) return false;
+
+#ifdef HAVE_OPENSSL
+	if (!PKCS5_PBKDF2_HMAC(m_password, m_password.Length(), salt, 16,
+		1 << kdfCount, EVP_sha256(), sizeof(m_key), m_key)) return false;
+
+	return true;
+#endif
+
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+	return false;
+#endif
+
+#ifdef DISABLE_TLS
+	return false;
+#endif
+}
+
+bool RarVolume::DecryptRar5Start(DiskFile& file)
+{
+	uint8 initVector[16];
+	if (file.Read(initVector, sizeof(initVector)) != sizeof(initVector)) return false;
+
+#ifdef HAVE_OPENSSL
+	if (!(m_context = EVP_CIPHER_CTX_new())) return false;
+
+	if (!EVP_DecryptInit((EVP_CIPHER_CTX*)m_context, EVP_aes_256_cbc(), m_key, initVector))
+		return false;
+
+	return true;
+#endif
+
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+	return false;
+#endif
+
+#ifdef DISABLE_TLS
+	return false;
+#endif
+}
+
+bool RarVolume::DecryptBuf(const uint8 in[16], uint8 out[16])
+{
+#ifdef HAVE_OPENSSL
+	uint8 outbuf[32];
+	int outlen = 0;
+	if (!EVP_DecryptUpdate((EVP_CIPHER_CTX*)m_context, outbuf, &outlen, in, 16)) return false;
+	memcpy(out, outbuf + outlen, 16);
+	return true;
+#endif
+
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+	return false;
+#endif
+
+#ifdef DISABLE_TLS
+	return false;
+#endif
+}
+
+bool RarVolume::DecryptRead(DiskFile& file, void* buffer, int64 size)
+{
+	while (size > 0)
+	{
+		if (m_decryptPos >= 16)
+		{
+			uint8 buf[16];
+			if (file.Read(&buf, sizeof(buf)) != sizeof(buf)) return false;
+			m_decryptPos = 0;
+			if (!DecryptBuf(buf, m_decryptBuf)) return false;
+		}
+
+		uint8 remainingBuf = 16 - m_decryptPos;
+		uint8 len = size <= remainingBuf ? (uint8)size : remainingBuf;
+		memcpy(buffer, m_decryptBuf + m_decryptPos, len);
+		m_decryptPos += len;
+		size -= len;
+		buffer = (char*)buffer + len;
+	}
+
+	return true;
+}
+
+void RarVolume::DecryptFree()
+{
+#ifdef HAVE_OPENSSL
+	if (m_context)
+	{
+		EVP_CIPHER_CTX_free((EVP_CIPHER_CTX*)m_context);
+		m_context = nullptr;
+	}
+#endif
 }
