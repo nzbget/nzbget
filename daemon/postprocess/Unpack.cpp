@@ -871,7 +871,7 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 		m_unpackDecryptError = true;
 	}
 
-	if (m_unpacker == upUnrar && !strncmp(text, "Unrar: The specified password is incorrect.'", 43))
+	if (m_unpacker == upUnrar && !strncmp(text, "Unrar: The specified password is incorrect.", 43))
 	{
 		m_unpackPasswordError = true;
 	}

@@ -465,7 +465,7 @@ int ScriptController::StartProcess()
 	STARTUPINFOW startupInfo = { 0 };
 	startupInfo.cb = sizeof(startupInfo);
 	startupInfo.dwFlags = STARTF_USESTDHANDLES;
-	startupInfo.hStdInput = 0;
+	startupInfo.hStdInput = GetStdHandle(1);
 	startupInfo.hStdOutput = writePipe;
 	startupInfo.hStdError = writePipe;
 

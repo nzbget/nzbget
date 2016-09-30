@@ -142,7 +142,7 @@ TEST_CASE("Rar-renamer: rename rar3 bad naming 5", "[Rar][RarRenamer][Slow][Test
 {
 	RarRenamerMock rarRenamer;
 
-	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3on.rar").c_str(), (TestUtil::WorkingDir() + "/testfile3oA.rar").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3oldnam.rar").c_str(), (TestUtil::WorkingDir() + "/testfile3oldnamA.rar").c_str()));
 
 	rarRenamer.Execute();
 
@@ -153,9 +153,9 @@ TEST_CASE("Rar-renamer: rename rar3 bad naming 6", "[Rar][RarRenamer][Slow][Test
 {
 	RarRenamerMock rarRenamer;
 
-	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3on.rar").c_str(), (TestUtil::WorkingDir() + "/testfile3onA.rar").c_str()));
-	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3on.r00").c_str(), (TestUtil::WorkingDir() + "/testfile3onB.r00").c_str()));
-	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3on.r01").c_str(), (TestUtil::WorkingDir() + "/testfile3onA.r01").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3oldnam.rar").c_str(), (TestUtil::WorkingDir() + "/testfile3oldnamA.rar").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3oldnam.r00").c_str(), (TestUtil::WorkingDir() + "/testfile3oldnamB.r00").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3oldnam.r01").c_str(), (TestUtil::WorkingDir() + "/testfile3oldnamA.r01").c_str()));
 
 	rarRenamer.Execute();
 

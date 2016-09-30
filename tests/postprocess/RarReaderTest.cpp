@@ -85,7 +85,7 @@ TEST_CASE("Rar-reader: rar5", "[Rar][RarReader][Slow][TestData]")
 TEST_CASE("Rar-reader: rar3 old naming", "[Rar][RarReader][Slow][TestData]")
 {
 	{
-		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3on.rar").c_str());
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3oldnam.rar").c_str());
 		REQUIRE(volume.Read() == true);
 		REQUIRE(volume.GetVersion() == 3);
 		REQUIRE(volume.GetMultiVolume() == true);
@@ -93,7 +93,7 @@ TEST_CASE("Rar-reader: rar3 old naming", "[Rar][RarReader][Slow][TestData]")
 		REQUIRE(volume.GetVolumeNo() == 0);
 	}
 	{
-		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3on.r00").c_str());
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3oldnam.r00").c_str());
 		REQUIRE(volume.Read() == true);
 		REQUIRE(volume.GetVersion() == 3);
 		REQUIRE(volume.GetMultiVolume() == true);
@@ -101,11 +101,123 @@ TEST_CASE("Rar-reader: rar3 old naming", "[Rar][RarReader][Slow][TestData]")
 		REQUIRE(volume.GetVolumeNo() == 1);
 	}
 	{
-		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3on.r01").c_str());
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3oldnam.r01").c_str());
 		REQUIRE(volume.Read() == true);
 		REQUIRE(volume.GetVersion() == 3);
 		REQUIRE(volume.GetMultiVolume() == true);
 		REQUIRE(volume.GetNewNaming() == false);
+		REQUIRE(volume.GetVolumeNo() == 2);
+	}
+}
+
+TEST_CASE("Rar-reader: rar3 encrypted data", "[Rar][RarReader][Slow][TestData]")
+{
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3encdata.part01.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 0);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3encdata.part02.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 1);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3encdata.part03.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 2);
+	}
+}
+
+TEST_CASE("Rar-reader: rar5 encrypted data", "[Rar][RarReader][Slow][TestData]")
+{
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile5encdata.part01.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 5);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 0);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile5encdata.part02.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 5);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 1);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile5encdata.part03.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 5);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 2);
+	}
+}
+
+TEST_CASE("Rar-reader: rar3 encrypted names", "[Rar][RarReader][Slow][TestData]")
+{
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3encnam.part01.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 0);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3encnam.part02.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 1);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile3encnam.part03.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 3);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 2);
+	}
+}
+
+TEST_CASE("Rar-reader: rar5 encrypted names", "[Rar][RarReader][Slow][TestData]")
+{
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile5encnam.part01.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 5);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 0);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile5encnam.part02.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 5);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
+		REQUIRE(volume.GetVolumeNo() == 1);
+	}
+	{
+		RarVolume volume((TestUtil::TestDataDir() + "/rarrenamer/testfile5encnam.part03.rar").c_str());
+		REQUIRE(volume.Read() == true);
+		REQUIRE(volume.GetVersion() == 5);
+		REQUIRE(volume.GetMultiVolume() == true);
+		REQUIRE(volume.GetNewNaming() == true);
 		REQUIRE(volume.GetVolumeNo() == 2);
 	}
 }

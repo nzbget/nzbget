@@ -712,9 +712,21 @@ testdata_FILES = \
 	tests/testdata/rarrenamer/testfile5.part01.rar \
 	tests/testdata/rarrenamer/testfile5.part02.rar \
 	tests/testdata/rarrenamer/testfile5.part03.rar \
-	tests/testdata/rarrenamer/testfile3on.rar \
-	tests/testdata/rarrenamer/testfile3on.r00 \
-	tests/testdata/rarrenamer/testfile3on.r01
+	tests/testdata/rarrenamer/testfile3oldnam.rar \
+	tests/testdata/rarrenamer/testfile3oldnam.r00 \
+	tests/testdata/rarrenamer/testfile3oldnam.r01 \
+	tests/testdata/rarrenamer/testfile3encdata.part01.rar \
+	tests/testdata/rarrenamer/testfile3encdata.part02.rar \
+	tests/testdata/rarrenamer/testfile3encdata.part03.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part01.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part02.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part03.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part01.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part02.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part03.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part01.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part02.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part03.rar
 
 
 # Install

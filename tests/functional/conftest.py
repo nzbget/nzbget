@@ -150,12 +150,13 @@ class Nzbget:
 			raise Exception('Could not start nzbget')
 		print('Started')
 
-	def append_nzb(self, nzb_name, nzb_content, unpack = False, dupekey = '', dupescore = 0, dupemode = 'FORCE'):
+	def append_nzb(self, nzb_name, nzb_content, unpack = None, dupekey = '', dupescore = 0, dupemode = 'FORCE', params = []):
 		nzbcontent64 = base64.standard_b64encode(nzb_content)
-		if unpack:
-			params = [('*unpack:', 'yes')]
-		else:
-			params = [('*unpack:', 'no')]
+		if unpack == True:
+			params.append(('*unpack:', 'yes'))
+		elif unpack == False:
+			params.append(('*unpack:', 'no'))
+		print(params)
 		return self.api.append(nzb_name, nzbcontent64, 'test', 0, False, False, dupekey, dupescore, dupemode, params)
 
 	def load_nzb(self, nzb_name):
@@ -168,10 +169,10 @@ class Nzbget:
 		return nzbcontent
 
 
-	def download_nzb(self, nzb_name, nzb_content = None, unpack = False, dupekey = '', dupescore = 0, dupemode = 'FORCE'):
+	def download_nzb(self, nzb_name, nzb_content = None, unpack = None, dupekey = '', dupescore = 0, dupemode = 'FORCE', params = []):
 		if not nzb_content:
 			nzb_content = self.load_nzb(nzb_name)
-		self.append_nzb(nzb_name, nzb_content, unpack, dupekey, dupescore, dupemode)
+		self.append_nzb(nzb_name, nzb_content, unpack, dupekey, dupescore, dupemode, params)
 		hist = self.wait_nzb(nzb_name)
 		return hist
 

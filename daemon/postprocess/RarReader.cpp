@@ -140,11 +140,7 @@ bool RarVolume::Read(DiskFile& file, RarBlock* block, void* buffer, int64 size)
 bool RarVolume::Read16(DiskFile& file, RarBlock* block, uint16* result)
 {
 	uint8 buf[2];
-	if (file.Read(buf, sizeof(buf)) != sizeof(buf)) return false;
-	if (block)
-	{
-		block->trailsize -= sizeof(buf);
-	}
+	if (!Read(file, block, buf, sizeof(buf))) return false;
 	*result = ((uint16)buf[1] << 8) + buf[0];
 	return true;
 }
@@ -152,11 +148,7 @@ bool RarVolume::Read16(DiskFile& file, RarBlock* block, uint16* result)
 bool RarVolume::Read32(DiskFile& file, RarBlock* block, uint32* result)
 {
 	uint8 buf[4];
-	if (file.Read(buf, sizeof(buf)) != sizeof(buf)) return false;
-	if (block)
-	{
-		block->trailsize -= sizeof(buf);
-	}
+	if (!Read(file, block, buf, sizeof(buf))) return false;
 	*result = ((uint32)buf[3] << 24) + ((uint32)buf[2] << 16) + ((uint32)buf[1] << 8) + buf[0];
 	return true;
 }
@@ -168,13 +160,9 @@ bool RarVolume::ReadV(DiskFile& file, RarBlock* block, uint64* result)
 	uint8 bits = 0;
 	do
 	{
-		if (file.Read(&val, sizeof(val)) != sizeof(val)) return false;
+		if (Read(file, block, &val, sizeof(val)) != sizeof(val)) return false;
 		*result += (uint64)(val & 0x7f) << bits;
 		bits += 7;
-		if (block)
-		{
-			block->trailsize -= 1;
-		}
 	} while (val & 0x80);
 
 	return true;
@@ -238,11 +226,7 @@ RarVolume::RarBlock RarVolume::ReadRar3Block(DiskFile& file)
 	RarBlock block {0};
 	uint8 buf[7];
 
-	if (file.Read(&buf, sizeof(buf)) != sizeof(buf))
-	{
-		debug("Bad read at: %lli", file.Position());
-		return {0};
-	}
+	if (!Read(file, nullptr, &buf, sizeof(buf))) return {0};
 	block.crc = ((uint16)buf[1] << 8) + buf[0];
 	block.type = buf[2];
 	block.flags = ((uint16)buf[4] << 8) + buf[3];
@@ -252,7 +236,7 @@ RarVolume::RarBlock RarVolume::ReadRar3Block(DiskFile& file)
 	block.trailsize = blocksize - sizeof(buf);
 
 	uint8 addbuf[4];
-	if ((block.flags & RAR3_BLOCK_ADDSIZE) && file.Read(&addbuf, sizeof(addbuf)) != sizeof(addbuf))
+	if ((block.flags & RAR3_BLOCK_ADDSIZE) && !Read(file, nullptr, &addbuf, sizeof(addbuf)))
 	{
 		return {0};
 	}
