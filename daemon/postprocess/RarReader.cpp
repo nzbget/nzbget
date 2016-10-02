@@ -536,19 +536,18 @@ void RarVolume::LogDebugInfo()
 
 bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 {
-	std::string str = *m_password;
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter("");
-	std::wstring wstr = converter.from_bytes(str);
-	if (wstr.length() == 0) return false;
+	WString wstr(*m_password);
+	int len = wstr.Length();
+	if (len == 0) return false;
 
-	CharBuffer seed(wstr.length() * 2 + 8);
-	for (size_t i = 0; i < wstr.length(); i++)
+	CharBuffer seed(len * 2 + 8);
+	for (int i = 0; i < len; i++)
 	{
 		wchar_t ch = wstr[i];
 		seed[i * 2] = ch & 0xFF;
 		seed[i * 2 + 1] = (ch & 0xFF00) >> 8;
 	}
-	memcpy(seed + wstr.length() * 2, salt, 8);
+	memcpy(seed + len * 2, salt, 8);
 
 	debug("seed: %s", *Util::FormatBuffer((const char*)seed, seed.Size()));
 

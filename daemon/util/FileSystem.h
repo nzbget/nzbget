@@ -23,10 +23,6 @@
 
 #include "NString.h"
 
-#ifdef WIN32
-class WString;
-#endif
-
 class FileSystem
 {
 public:

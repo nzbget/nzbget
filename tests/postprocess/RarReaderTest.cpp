@@ -166,7 +166,6 @@ TEST_CASE("Rar-reader: rar5 encrypted data", "[Rar][RarReader][Slow][TestData]")
 	}
 }
 
-/*
 TEST_CASE("Rar-reader: rar3 encrypted names", "[Rar][RarReader][Slow][TestData]")
 {
 	{
@@ -204,7 +203,6 @@ TEST_CASE("Rar-reader: rar3 encrypted names", "[Rar][RarReader][Slow][TestData]"
 		REQUIRE(volume.GetVolumeNo() == 2);
 	}
 }
-*/
 
 TEST_CASE("Rar-reader: rar5 encrypted names", "[Rar][RarReader][Slow][TestData]")
 {
