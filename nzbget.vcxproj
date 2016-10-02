@@ -136,7 +136,9 @@
     <ClCompile Include="daemon\postprocess\ParParser.cpp" />
     <ClCompile Include="daemon\postprocess\ParRenamer.cpp" />
     <ClCompile Include="daemon\postprocess\PrePostProcessor.cpp" />
+    <ClCompile Include="daemon\postprocess\RarReader.cpp" />
     <ClCompile Include="daemon\postprocess\RarRenamer.cpp" />
+    <ClCompile Include="daemon\postprocess\Rename.cpp" />
     <ClCompile Include="daemon\postprocess\Unpack.cpp" />
     <ClCompile Include="daemon\queue\DiskState.cpp" />
     <ClCompile Include="daemon\queue\DownloadInfo.cpp" />
@@ -232,7 +234,9 @@
     <ClInclude Include="daemon\postprocess\ParParser.h" />
     <ClInclude Include="daemon\postprocess\ParRenamer.h" />
     <ClInclude Include="daemon\postprocess\PrePostProcessor.h" />
+    <ClInclude Include="daemon\postprocess\RarReader.h" />
     <ClInclude Include="daemon\postprocess\RarRenamer.h" />
+    <ClInclude Include="daemon\postprocess\Rename.h" />
     <ClInclude Include="daemon\postprocess\Unpack.h" />
     <ClInclude Include="daemon\queue\DiskState.h" />
     <ClInclude Include="daemon\queue\DownloadInfo.h" />

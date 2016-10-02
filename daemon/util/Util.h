@@ -72,6 +72,7 @@ public:
 
 	static CString FormatSpeed(int bytesPerSecond);
 	static CString FormatSize(int64 fileSize);
+	static CString FormatBuffer(const char* buf, int len);
 
 	/*
 	* Returns program version and revision number as string formatted like "0.7.0-r295".

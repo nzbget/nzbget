@@ -81,7 +81,8 @@ private:
 	FileList m_files;
 	bool m_encrypted = false;
 	CString m_password;
-	uint8 m_key[32];
+	uint8 m_decryptKey[32];
+	uint8 m_decryptIV[16];
 	uint8 m_decryptBuf[16];
 	uint8 m_decryptPos = 16;
 
@@ -102,8 +103,9 @@ private:
 	RarBlock ReadRar5Block(DiskFile& file);
 	bool ReadRar3File(DiskFile& file, RarBlock& block, RarFile& innerFile);
 	bool ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile);
+	bool DecryptRar3Prepare(const uint8 salt[8]);
 	bool DecryptRar5Prepare(uint8 kdfCount, const uint8 salt[16]);
-	bool DecryptRar5Start(DiskFile& file);
+	bool DecryptInit(int keyLength);
 	bool DecryptBuf(const uint8 in[16], uint8 out[16]);
 	void DecryptFree();
 	bool DecryptRead(DiskFile& file, void* buffer, int64 size);

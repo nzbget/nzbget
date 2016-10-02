@@ -276,6 +276,17 @@ CString Util::FormatTime(time_t timeSec)
 	return result;
 }
 
+CString Util::FormatBuffer(const char* buf, int len)
+{
+	CString result;
+	result.Reserve(len * 3 + 1);
+	while (len--)
+	{
+		result.AppendFmt("%02x ", (int)(uchar)*buf++);
+	}
+	return result;
+}
+
 bool Util::MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator)
 {
 	int filenameLen = strlen(filename);

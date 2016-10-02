@@ -196,8 +196,8 @@ bool RarVolume::ReadRar3Volume(DiskFile& file)
 		{
 			if (block.flags & RAR3_MAIN_PASSWORD)
 			{
-				// no support for encrypted headers
-				return false;
+				m_encrypted = true;
+				if (m_password.Empty()) return false;
 			}
 			m_newNaming = block.flags & RAR3_MAIN_NEWNUMBERING;
 			m_multiVolume = block.flags & RAR3_MAIN_VOLUME;
@@ -224,7 +224,15 @@ bool RarVolume::ReadRar3Volume(DiskFile& file)
 			break;
 		}
 
-		if (!file.Seek(block.trailsize, DiskFile::soCur))
+		uint64 skip = block.trailsize;
+		if (m_encrypted)
+		{
+			skip -= 16 - m_decryptPos;
+			m_decryptPos = 16;
+			DecryptFree();
+		}
+
+		if (!file.Seek(skip, DiskFile::soCur))
 		{
 			return false;
 		}
@@ -236,6 +244,15 @@ bool RarVolume::ReadRar3Volume(DiskFile& file)
 RarVolume::RarBlock RarVolume::ReadRar3Block(DiskFile& file)
 {
 	RarBlock block {0};
+	uint8 salt[8];
+
+	if (m_encrypted &&
+		!(file.Read(salt, sizeof(salt)) == sizeof(salt) &&
+		  DecryptRar3Prepare(salt) && DecryptInit(128)))
+	{
+		return {0};
+	}
+
 	uint8 buf[7];
 
 	if (!Read(file, nullptr, &buf, sizeof(buf))) return {0};
@@ -386,10 +403,15 @@ bool RarVolume::ReadRar5Volume(DiskFile& file)
 
 RarVolume::RarBlock RarVolume::ReadRar5Block(DiskFile& file)
 {
-	RarBlock block{ 0 };
+	RarBlock block {0};
 	uint64 buf = 0;
 
-	if (m_encrypted && !DecryptRar5Start(file)) return {0};
+	if (m_encrypted &&
+		!(file.Read(m_decryptIV, sizeof(m_decryptIV)) == sizeof(m_decryptIV) &&
+		  DecryptInit(256)))
+	{
+		return {0};
+	}
 
 	if (!Read32(file, nullptr, &block.crc)) return {0};
 
@@ -512,13 +534,111 @@ void RarVolume::LogDebugInfo()
 	}
 }
 
+bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
+{
+	std::string str = *m_password;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter("");
+	std::wstring wstr = converter.from_bytes(str);
+	if (wstr.length() == 0) return false;
+
+	CharBuffer seed(wstr.length() * 2 + 8);
+	for (size_t i = 0; i < wstr.length(); i++)
+	{
+		wchar_t ch = wstr[i];
+		seed[i * 2] = ch & 0xFF;
+		seed[i * 2 + 1] = (ch & 0xFF00) >> 8;
+	}
+	memcpy(seed + wstr.length() * 2, salt, 8);
+
+	debug("seed: %s", *Util::FormatBuffer((const char*)seed, seed.Size()));
+
+#ifdef DISABLE_TLS
+	return false;
+#endif
+
+#ifdef HAVE_OPENSSL
+	EVP_MD_CTX context;
+	EVP_MD_CTX_init(&context);
+
+	if (!EVP_DigestInit(&context, EVP_sha1()))
+	{
+		EVP_MD_CTX_cleanup(&context);
+		return false;
+	}
+#endif
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+	return false;
+#endif
+
+	const int rounds = 0x40000;
+	for (int i = 0; i < rounds; i++)
+	{
+#ifdef HAVE_OPENSSL
+		EVP_DigestUpdate(&context, *seed, seed.Size());
+#endif
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+#endif
+
+		uint8 buf[3];
+		buf[0] = (uint8)i;
+		buf[1] = (uint8)(i >> 8);
+		buf[2] = (uint8)(i >> 16);
+
+#ifdef HAVE_OPENSSL
+		EVP_DigestUpdate(&context, buf, sizeof(buf));
+#endif
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+#endif
+
+		if (i % (rounds / 16) == 0)
+		{
+			uint8 digest[SHA_DIGEST_LENGTH];
+#ifdef HAVE_OPENSSL
+			EVP_MD_CTX ivContext;
+			EVP_MD_CTX_copy(&ivContext, &context);
+			EVP_DigestFinal(&ivContext, digest, nullptr);
+#endif
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+#endif
+			m_decryptIV[i / (rounds / 16)] = digest[SHA_DIGEST_LENGTH - 1];
+		}
+	}
+
+	uint8 digest[SHA_DIGEST_LENGTH];
+#ifdef HAVE_OPENSSL
+	EVP_DigestFinal(&context, digest, nullptr);
+#endif
+#ifdef HAVE_LIBGNUTLS
+	// TODO: GnuTLS support
+#endif
+
+	debug("digest: %s", *Util::FormatBuffer((const char*)digest, sizeof(digest)));
+
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			m_decryptKey[i * 4 + j] = digest[i * 4 + 3 - j];
+		}
+	}
+
+	debug("key: %s", *Util::FormatBuffer((const char*)m_decryptKey, sizeof(m_decryptKey)));
+	debug("iv: %s", *Util::FormatBuffer((const char*)m_decryptIV, sizeof(m_decryptIV)));
+
+	return true;
+}
+
 bool RarVolume::DecryptRar5Prepare(uint8 kdfCount, const uint8 salt[16])
 {
 	if (kdfCount > 24) return false;
 
 #ifdef HAVE_OPENSSL
 	if (!PKCS5_PBKDF2_HMAC(m_password, m_password.Length(), salt, 16,
-		1 << kdfCount, EVP_sha256(), sizeof(m_key), m_key)) return false;
+		1 << kdfCount, EVP_sha256(), sizeof(m_decryptKey), m_decryptKey)) return false;
 
 	return true;
 #endif
@@ -533,15 +653,14 @@ bool RarVolume::DecryptRar5Prepare(uint8 kdfCount, const uint8 salt[16])
 #endif
 }
 
-bool RarVolume::DecryptRar5Start(DiskFile& file)
+bool RarVolume::DecryptInit(int keyLength)
 {
-	uint8 initVector[16];
-	if (file.Read(initVector, sizeof(initVector)) != sizeof(initVector)) return false;
-
 #ifdef HAVE_OPENSSL
 	if (!(m_context = EVP_CIPHER_CTX_new())) return false;
 
-	if (!EVP_DecryptInit((EVP_CIPHER_CTX*)m_context, EVP_aes_256_cbc(), m_key, initVector))
+	if (!EVP_DecryptInit((EVP_CIPHER_CTX*)m_context,
+		keyLength == 128 ? EVP_aes_128_cbc() : EVP_aes_256_cbc(),
+		m_decryptKey, m_decryptIV))
 		return false;
 
 	return true;
