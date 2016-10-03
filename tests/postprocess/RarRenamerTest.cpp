@@ -201,3 +201,17 @@ TEST_CASE("Rar-renamer: rename rar5 encrypted", "[Rar][RarRenamer][Slow][TestDat
 
 	REQUIRE(rarRenamer.GetRenamedCount() == 3);
 }
+
+TEST_CASE("Rar-renamer: rename rar3 encrypted", "[Rar][RarRenamer][Slow][TestData]")
+{
+	RarRenamerMock rarRenamer;
+	rarRenamer.SetPassword("123");
+
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3encnam.part01.rar").c_str(), (TestUtil::WorkingDir() + "/12348").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3encnam.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12343").c_str()));
+	REQUIRE(FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile3encnam.part03.rar").c_str(), (TestUtil::WorkingDir() + "/12344").c_str()));
+
+	rarRenamer.Execute();
+
+	REQUIRE(rarRenamer.GetRenamedCount() == 3);
+}

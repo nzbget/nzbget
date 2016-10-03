@@ -594,7 +594,7 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 
 		if (i % (rounds / 16) == 0)
 		{
-			uint8 digest[SHA_DIGEST_LENGTH];
+			uint8 digest[20];
 #ifdef HAVE_OPENSSL
 			EVP_MD_CTX ivContext;
 			EVP_MD_CTX_copy(&ivContext, &context);
@@ -603,11 +603,11 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 #ifdef HAVE_LIBGNUTLS
 	// TODO: GnuTLS support
 #endif
-			m_decryptIV[i / (rounds / 16)] = digest[SHA_DIGEST_LENGTH - 1];
+			m_decryptIV[i / (rounds / 16)] = digest[sizeof(digest) - 1];
 		}
 	}
 
-	uint8 digest[SHA_DIGEST_LENGTH];
+	uint8 digest[20];
 #ifdef HAVE_OPENSSL
 	EVP_DigestFinal(&context, digest, nullptr);
 #endif
