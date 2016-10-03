@@ -395,7 +395,7 @@ if test "$USETLS" = "yes"; then
 			fi
 			if test "$FOUND" = "yes"; then
 				TLSLIB="OpenSSL"
-				AC_DEFINE([HAVE_OPENSSL],1,[Define to 1 to use OpenSSL library for TLS/SSL-support.])
+				AC_DEFINE([HAVE_OPENSSL],1,[Define to 1 to use OpenSSL library for TLS/SSL-support and decryption.])
 			fi
 		fi
 	fi
@@ -455,6 +455,39 @@ if test "$USETLS" = "yes"; then
 			if test "$FOUND" = "yes"; then
 				TLSLIB="GnuTLS"
 				AC_DEFINE([HAVE_LIBGNUTLS],1,[Define to 1 to use GnuTLS library for TLS/SSL-support.])
+			fi
+		fi
+
+		if test "$TLSLIB" = "GnuTLS"; then
+			AC_ARG_WITH(libnettle_includes,
+				[AS_HELP_STRING([--with-libnettle-includes=DIR], [Nettle include directory])],
+				[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+				[INCVAL="yes"],
+				[INCVAL="no"])
+			AC_ARG_WITH(libnettle_libraries,
+				[AS_HELP_STRING([--with-libnettle-libraries=DIR], [Nettle library directory])],
+				[LDFLAGS="${LDFLAGS} -L${withval}"]
+				[LIBVAL="yes"],
+				[LIBVAL="no"])
+			if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+				PKG_CHECK_MODULES([nettle], [nettle],
+					[LIBS="${LIBS} $nettle_LIBS"]
+					[CPPFLAGS="${CPPFLAGS} $nettle_CFLAGS"])
+			fi
+			AC_CHECK_HEADER(nettle/sha.h,
+				FOUND=yes,
+				FOUND=no)
+			if test "$FOUND" = "no"; then
+				AC_MSG_ERROR([Couldn't find Nettle headers (sha.h)])
+			fi
+			AC_SEARCH_LIBS([nettle_pbkdf2_hmac_sha256], [nettle],
+				FOUND=yes,
+				FOUND=no)
+			if test "$FOUND" = "no"; then
+				AC_MSG_ERROR([Couldn't find Nettle library, required when using GnuTLS])
+			fi
+			if test "$FOUND" = "yes"; then
+				AC_DEFINE([HAVE_NETTLE],1,[Define to 1 to use Nettle library for decryption.])
 			fi
 		fi
 	fi

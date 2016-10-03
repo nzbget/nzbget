@@ -551,10 +551,6 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 
 	debug("seed: %s", *Util::FormatBuffer((const char*)seed, seed.Size()));
 
-#ifdef DISABLE_TLS
-	return false;
-#endif
-
 #ifdef HAVE_OPENSSL
 	EVP_MD_CTX context;
 	EVP_MD_CTX_init(&context);
@@ -564,20 +560,22 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 		EVP_MD_CTX_cleanup(&context);
 		return false;
 	}
-#endif
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
+#elif defined(HAVE_NETTLE)
+	sha1_ctx context;
+	sha1_init(&context);
+#else
 	return false;
 #endif
 
+	uint8 digest[20];
 	const int rounds = 0x40000;
+
 	for (int i = 0; i < rounds; i++)
 	{
 #ifdef HAVE_OPENSSL
 		EVP_DigestUpdate(&context, *seed, seed.Size());
-#endif
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
+#elif defined(HAVE_NETTLE)
+		sha1_update(&context, seed.Size(), (const uint8_t*)*seed);
 #endif
 
 		uint8 buf[3];
@@ -587,32 +585,28 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 
 #ifdef HAVE_OPENSSL
 		EVP_DigestUpdate(&context, buf, sizeof(buf));
-#endif
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
+#elif defined(HAVE_NETTLE)
+		sha1_update(&context, sizeof(buf), buf);
 #endif
 
 		if (i % (rounds / 16) == 0)
 		{
-			uint8 digest[20];
 #ifdef HAVE_OPENSSL
 			EVP_MD_CTX ivContext;
 			EVP_MD_CTX_copy(&ivContext, &context);
 			EVP_DigestFinal(&ivContext, digest, nullptr);
-#endif
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
+#elif defined(HAVE_NETTLE)
+			sha1_ctx ivContext = context;
+			sha1_digest(&ivContext, sizeof(digest), digest);
 #endif
 			m_decryptIV[i / (rounds / 16)] = digest[sizeof(digest) - 1];
 		}
 	}
 
-	uint8 digest[20];
 #ifdef HAVE_OPENSSL
 	EVP_DigestFinal(&context, digest, nullptr);
-#endif
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
+#elif defined(HAVE_NETTLE)
+	sha1_digest(&context, sizeof(digest), digest);
 #endif
 
 	debug("digest: %s", *Util::FormatBuffer((const char*)digest, sizeof(digest)));
@@ -635,19 +629,17 @@ bool RarVolume::DecryptRar5Prepare(uint8 kdfCount, const uint8 salt[16])
 {
 	if (kdfCount > 24) return false;
 
+	int iterations = 1 << kdfCount;
+
 #ifdef HAVE_OPENSSL
 	if (!PKCS5_PBKDF2_HMAC(m_password, m_password.Length(), salt, 16,
-		1 << kdfCount, EVP_sha256(), sizeof(m_decryptKey), m_decryptKey)) return false;
-
+		iterations, EVP_sha256(), sizeof(m_decryptKey), m_decryptKey)) return false;
 	return true;
-#endif
-
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
-	return false;
-#endif
-
-#ifdef DISABLE_TLS
+#elif defined(HAVE_NETTLE)
+	pbkdf2_hmac_sha256(m_password.Length(), (const uint8_t*)*m_password,
+		iterations, 16, salt, sizeof(m_decryptKey), m_decryptKey);
+	return true;
+#else
 	return false;
 #endif
 }
@@ -656,21 +648,16 @@ bool RarVolume::DecryptInit(int keyLength)
 {
 #ifdef HAVE_OPENSSL
 	if (!(m_context = EVP_CIPHER_CTX_new())) return false;
-
 	if (!EVP_DecryptInit((EVP_CIPHER_CTX*)m_context,
 		keyLength == 128 ? EVP_aes_128_cbc() : EVP_aes_256_cbc(),
 		m_decryptKey, m_decryptIV))
 		return false;
-
 	return true;
-#endif
-
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
-	return false;
-#endif
-
-#ifdef DISABLE_TLS
+#elif defined(HAVE_NETTLE)
+	m_context = new aes_ctx;
+	aes_set_decrypt_key((aes_ctx*)m_context, keyLength == 128 ? 16 : 32, m_decryptKey);
+	return true;
+#else
 	return false;
 #endif
 }
@@ -682,17 +669,33 @@ bool RarVolume::DecryptBuf(const uint8 in[16], uint8 out[16])
 	int outlen = 0;
 	if (!EVP_DecryptUpdate((EVP_CIPHER_CTX*)m_context, outbuf, &outlen, in, 16)) return false;
 	memcpy(out, outbuf + outlen, 16);
+	debug("decrypted: %s", *Util::FormatBuffer((const char*)out, 16));
 	return true;
-#endif
-
-#ifdef HAVE_LIBGNUTLS
-	// TODO: GnuTLS support
+#elif defined(HAVE_NETTLE)
+	aes_decrypt((aes_ctx*)m_context, 16, out, in);
+	for (int i = 0; i < 16; i++)
+	{
+		out[i] ^= m_decryptIV[i];
+	}
+	memcpy(m_decryptIV, in, 16);
+	debug("decrypted: %s", *Util::FormatBuffer((const char*)out, 16));
+	return true;
+#else
 	return false;
 #endif
+}
 
-#ifdef DISABLE_TLS
-	return false;
+void RarVolume::DecryptFree()
+{
+	if (m_context)
+	{
+#ifdef HAVE_OPENSSL
+		EVP_CIPHER_CTX_free((EVP_CIPHER_CTX*)m_context);
+#elif defined(HAVE_NETTLE)
+		delete (aes_ctx*)m_context;
 #endif
+		m_context = nullptr;
+	}
 }
 
 bool RarVolume::DecryptRead(DiskFile& file, void* buffer, int64 size)
@@ -718,13 +721,3 @@ bool RarVolume::DecryptRead(DiskFile& file, void* buffer, int64 size)
 	return true;
 }
 
-void RarVolume::DecryptFree()
-{
-#ifdef HAVE_OPENSSL
-	if (m_context)
-	{
-		EVP_CIPHER_CTX_free((EVP_CIPHER_CTX*)m_context);
-		m_context = nullptr;
-	}
-#endif
-}

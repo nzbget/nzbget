@@ -92,7 +92,10 @@
 /* Define to 1 if you have the <ncurses/ncurses.h> header file. */
 #undef HAVE_NCURSES_NCURSES_H
 
-/* Define to 1 to use OpenSSL library for TLS/SSL-support. */
+/* Define to 1 to use Nettle library for decryption. */
+#undef HAVE_NETTLE
+
+/* Define to 1 to use OpenSSL library for TLS/SSL-support and decryption. */
 #undef HAVE_OPENSSL
 
 /* Define to 1 if you have the <regex.h> header file. */

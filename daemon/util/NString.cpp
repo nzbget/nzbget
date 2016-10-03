@@ -244,6 +244,7 @@ void CString::Reserve(int capacity)
 	if (capacity > curLen || curLen == 0)
 	{
 		m_data = (char*)realloc(m_data, capacity + 1);
+		m_data[curLen] = '\0';
 	}
 }
 

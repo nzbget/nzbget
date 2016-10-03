@@ -721,6 +721,8 @@ openssl_CFLAGS
 openssl_LIBS
 gnutls_CFLAGS
 gnutls_LIBS
+nettle_CFLAGS
+nettle_LIBS
 zlib_CFLAGS
 zlib_LIBS
 WITH_TESTS_TRUE
@@ -747,6 +749,8 @@ openssl_CFLAGS
 openssl_LIBS
 gnutls_CFLAGS
 gnutls_LIBS
+nettle_CFLAGS
+nettle_LIBS
 zlib_CFLAGS
 zlib_LIBS'
 
@@ -1369,6 +1373,10 @@ Optional Packages:
                           GnuTLS include directory
   --with-libgnutls-libraries=DIR
                           GnuTLS library directory
+  --with-libnettle-includes=DIR
+                          Nettle include directory
+  --with-libnettle-libraries=DIR
+                          Nettle library directory
   --with-zlib-includes=DIR
                           zlib include directory
   --with-zlib-libraries=DIR
@@ -1399,6 +1407,9 @@ Some influential environment variables:
   gnutls_CFLAGS
               C compiler flags for gnutls, overriding pkg-config
   gnutls_LIBS linker flags for gnutls, overriding pkg-config
+  nettle_CFLAGS
+              C compiler flags for nettle, overriding pkg-config
+  nettle_LIBS linker flags for nettle, overriding pkg-config
   zlib_CFLAGS C compiler flags for zlib, overriding pkg-config
   zlib_LIBS   linker flags for zlib, overriding pkg-config
 
@@ -10634,6 +10645,380 @@ _ACEOF
 
 			fi
 		fi
+
+		if test "$TLSLIB" = "GnuTLS"; then
+
+# Check whether --with-libnettle_includes was given.
+if test "${with_libnettle_includes+set}" = set; then
+  withval=$with_libnettle_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
+				INCVAL="yes"
+else
+  INCVAL="no"
+fi
+
+
+# Check whether --with-libnettle_libraries was given.
+if test "${with_libnettle_libraries+set}" = set; then
+  withval=$with_libnettle_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
+				LIBVAL="yes"
+else
+  LIBVAL="no"
+fi
+
+			if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for nettle" >&5
+echo $ECHO_N "checking for nettle... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$nettle_CFLAGS"; then
+        pkg_cv_nettle_CFLAGS="$nettle_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"nettle\"") >&5
+  ($PKG_CONFIG --exists --print-errors "nettle") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_nettle_CFLAGS=`$PKG_CONFIG --cflags "nettle" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$nettle_LIBS"; then
+        pkg_cv_nettle_LIBS="$nettle_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"nettle\"") >&5
+  ($PKG_CONFIG --exists --print-errors "nettle") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_nettle_LIBS=`$PKG_CONFIG --libs "nettle" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        nettle_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "nettle"`
+        else
+	        nettle_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "nettle"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$nettle_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (nettle) were not met:
+
+$nettle_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables nettle_CFLAGS
+and nettle_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (nettle) were not met:
+
+$nettle_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables nettle_CFLAGS
+and nettle_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables nettle_CFLAGS
+and nettle_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables nettle_CFLAGS
+and nettle_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	nettle_CFLAGS=$pkg_cv_nettle_CFLAGS
+	nettle_LIBS=$pkg_cv_nettle_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	LIBS="${LIBS} $nettle_LIBS"
+					CPPFLAGS="${CPPFLAGS} $nettle_CFLAGS"
+fi
+			fi
+			if test "${ac_cv_header_nettle_sha_h+set}" = set; then
+  { echo "$as_me:$LINENO: checking for nettle/sha.h" >&5
+echo $ECHO_N "checking for nettle/sha.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_nettle_sha_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_nettle_sha_h" >&5
+echo "${ECHO_T}$ac_cv_header_nettle_sha_h" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking nettle/sha.h usability" >&5
+echo $ECHO_N "checking nettle/sha.h usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <nettle/sha.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking nettle/sha.h presence" >&5
+echo $ECHO_N "checking nettle/sha.h presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <nettle/sha.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: nettle/sha.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: nettle/sha.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: nettle/sha.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: nettle/sha.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: nettle/sha.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: nettle/sha.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: nettle/sha.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: nettle/sha.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: nettle/sha.h: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ------------------------------------------- ##
+## Report this to hugbug@users.sourceforge.net ##
+## ------------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for nettle/sha.h" >&5
+echo $ECHO_N "checking for nettle/sha.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_nettle_sha_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_nettle_sha_h=$ac_header_preproc
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_nettle_sha_h" >&5
+echo "${ECHO_T}$ac_cv_header_nettle_sha_h" >&6; }
+
+fi
+if test $ac_cv_header_nettle_sha_h = yes; then
+  FOUND=yes
+else
+  FOUND=no
+fi
+
+
+			if test "$FOUND" = "no"; then
+				{ { echo "$as_me:$LINENO: error: Couldn't find Nettle headers (sha.h)" >&5
+echo "$as_me: error: Couldn't find Nettle headers (sha.h)" >&2;}
+   { (exit 1); exit 1; }; }
+			fi
+			{ echo "$as_me:$LINENO: checking for library containing nettle_pbkdf2_hmac_sha256" >&5
+echo $ECHO_N "checking for library containing nettle_pbkdf2_hmac_sha256... $ECHO_C" >&6; }
+if test "${ac_cv_search_nettle_pbkdf2_hmac_sha256+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char nettle_pbkdf2_hmac_sha256 ();
+int
+main ()
+{
+return nettle_pbkdf2_hmac_sha256 ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' nettle; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_nettle_pbkdf2_hmac_sha256=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_nettle_pbkdf2_hmac_sha256+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_nettle_pbkdf2_hmac_sha256+set}" = set; then
+  :
+else
+  ac_cv_search_nettle_pbkdf2_hmac_sha256=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_nettle_pbkdf2_hmac_sha256" >&5
+echo "${ECHO_T}$ac_cv_search_nettle_pbkdf2_hmac_sha256" >&6; }
+ac_res=$ac_cv_search_nettle_pbkdf2_hmac_sha256
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  FOUND=yes
+else
+  FOUND=no
+fi
+
+			if test "$FOUND" = "no"; then
+				{ { echo "$as_me:$LINENO: error: Couldn't find Nettle library, required when using GnuTLS" >&5
+echo "$as_me: error: Couldn't find Nettle library, required when using GnuTLS" >&2;}
+   { (exit 1); exit 1; }; }
+			fi
+			if test "$FOUND" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NETTLE 1
+_ACEOF
+
+			fi
+		fi
 	fi
 
 	if test "$TLSLIB" = ""; then
@@ -12203,6 +12588,8 @@ openssl_CFLAGS!$openssl_CFLAGS$ac_delim
 openssl_LIBS!$openssl_LIBS$ac_delim
 gnutls_CFLAGS!$gnutls_CFLAGS$ac_delim
 gnutls_LIBS!$gnutls_LIBS$ac_delim
+nettle_CFLAGS!$nettle_CFLAGS$ac_delim
+nettle_LIBS!$nettle_LIBS$ac_delim
 zlib_CFLAGS!$zlib_CFLAGS$ac_delim
 zlib_LIBS!$zlib_LIBS$ac_delim
 WITH_TESTS_TRUE!$WITH_TESTS_TRUE$ac_delim
@@ -12211,7 +12598,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 15; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 17; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -211,6 +211,9 @@ typedef int pid_t;
 #ifdef NEED_GCRYPT_LOCKING
 #include <gcrypt.h>
 #endif /* NEED_GCRYPT_LOCKING */
+#include <nettle/sha.h>
+#include <nettle/pbkdf2.h>
+#include <nettle/aes.h>
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
