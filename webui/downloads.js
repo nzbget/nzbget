@@ -773,18 +773,18 @@ var DownloadsUI = (new function($)
 
 	this.buildEncryptedLabel = function(parameters)
 	{
-		var encryptedPassword;
+		var encryptedPassword = '';
 
-		for (var i=0; i < parameters.length; i++) {
-			if (parameters[i]['Name'] === '*Unpack:Password' &&
-				parameters[i]['Value'])
+		for (var i = 0; i < parameters.length; i++)
+		{
+			if (parameters[i]['Name'].toLowerCase() === '*unpack:password')
 			{
 				encryptedPassword = parameters[i]['Value'];
 				break;
 			}
 		}
-		return encryptedPassword ?
-			' <span class="label label-status label-info" title="'+ Util.textToAttr(encryptedPassword) +'">encrypted</span>' : '';
+		return encryptedPassword != '' ?
+			' <span class="label label-info" title="'+ Util.textToAttr(encryptedPassword) +'">encrypted</span>' : '';
 	}
 
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
