@@ -706,6 +706,30 @@ ul.dropdown-menu > li > a > i {
 	background-position: -432px -144px;
 }
 
+.icon-ring-red {
+	background-position: -528px -16px;
+}
+
+.icon-ring-fill-red {
+	background-position: -560px -16px;
+}
+
+.icon-circle-red {
+	background-position: -496px -16px;
+}
+
+.icon-ring-blue {
+	background-position: -528px -48px;
+}
+
+.icon-ring-fill-blue {
+	background-position: -560px -48px;
+}
+
+.icon-ring-ltgrey {
+	background-position: -496px -48px;
+}
+
 /* END: Icons */
 
 .btn-toolbar {
@@ -965,11 +989,22 @@ form {
     margin-bottom: 0px;
 }
 
+.table-bordered {
+	border-left: 1px solid #dddddd;
+}
+
+.table-bordered th,
+.table-bordered td {
+	border-left: none;
+}
+
 .text-right {
 	text-align: right;
 }
 
-.text-center {
+.text-center,
+table td.text-center,
+table th.text-center {
 	text-align: center;
 }
 

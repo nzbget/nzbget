@@ -242,13 +242,13 @@ var Downloads = (new function($)
 
 		if (!UISettings.miniTheme)
 		{
-			var info = name + ' ' + url + priority + dupe + health + backup + propagation + progresslabel;
-			item.fields = ['<div class="check img-check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
+			var info = name + ' ' + url + dupe + health + backup + propagation + progresslabel;
+			item.fields = ['<div class="check img-check"></div>', priority, status, info, category, item.data.age, progress, item.data.estimated];
 		}
 		else
 		{
 			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + url +
-				' ' + (group.Status === 'QUEUED' ? '' : status) + ' ' + priority + dupe + health + backup + propagation;
+				' ' + (group.Status === 'QUEUED' ? '' : status) + ' ' + (group.MaxPriority == 0 ? '' : priority) + dupe + health + backup + propagation;
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
@@ -264,7 +264,11 @@ var Downloads = (new function($)
 
 	function renderCellCallback(cell, index, item)
 	{
-		if (4 <= index && index <= 7)
+		if (index == 1)
+		{
+			cell.className = 'text-center';
+		}
+		else if (5 <= index && index <= 8)
 		{
 			cell.className = 'text-right';
 		}
@@ -752,23 +756,20 @@ var DownloadsUI = (new function($)
 
 	this.buildPriority = function(priority)
 	{
-		switch (priority)
+		var text;
+
+		if (priority >= 900) text = ' <div class="icon-circle-red" title="Force priority"></div>';
+		else if (priority > 50) text = ' <div class="icon-ring-fill-red" title="Very high priority"></div>';
+		else if (priority > 0) text = ' <div class="icon-ring-red" title="High priority"></div>';
+		else if (priority == 0) text = ' <div class="icon-ring-ltgrey" title="Normal priority"></div>';
+		else if (priority >= -50) text = ' <i class="icon-ring-blue" title="Low priority"></i>';
+		else text = ' <div class="icon-ring-fill-blue" title="Very low priority"></div>';
+
+		if ([900, 100, 50, 0, -50, -100].indexOf(priority) == -1)
 		{
-			case 0: return '';
-			case 900: return ' <span class="label label-priority label-important">force priority</span>';
-			case 100: return ' <span class="label label-priority label-important">very high priority</span>';
-			case 50: return ' <span class="label label-priority label-important">high priority</span>';
-			case -50: return ' <span class="label label-priority label-info">low priority</span>';
-			case -100: return ' <span class="label label-priority label-info">very low priority</span>';
+			text = text.replace('priority', 'priority (' + priority + ')');
 		}
-		if (priority > 0)
-		{
-			return ' <span class="label label-priority label-important">priority: ' + priority + '</span>';
-		}
-		else if (priority < 0)
-		{
-			return ' <span class="label label-priority label-info">priority: ' + priority + '</span>';
-		}
+		return text;
 	}
 
 	this.buildEncryptedLabel = function(parameters)
