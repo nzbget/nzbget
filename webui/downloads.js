@@ -762,7 +762,7 @@ var DownloadsUI = (new function($)
 		else if (priority > 50) text = ' <div class="icon-ring-fill-red" title="Very high priority"></div>';
 		else if (priority > 0) text = ' <div class="icon-ring-red" title="High priority"></div>';
 		else if (priority == 0) text = ' <div class="icon-ring-ltgrey" title="Normal priority"></div>';
-		else if (priority >= -50) text = ' <i class="icon-ring-blue" title="Low priority"></i>';
+		else if (priority >= -50) text = ' <div class="icon-ring-blue" title="Low priority"></div>';
 		else text = ' <div class="icon-ring-fill-blue" title="Very low priority"></div>';
 
 		if ([900, 100, 50, 0, -50, -100].indexOf(priority) == -1)
