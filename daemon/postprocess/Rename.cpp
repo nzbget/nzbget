@@ -72,6 +72,7 @@ void RenameController::StartJob(PostInfo* postInfo, EJobKind kind)
 	renameController->SetAutoDestroy(false);
 
 	postInfo->SetPostThread(renameController);
+	postInfo->SetWorking(true);
 
 	renameController->Start();
 }
@@ -123,7 +124,6 @@ void RenameController::ExecRename(const char* destDir, const char* finalDir, con
 {
 	m_postInfo->SetStageTime(Util::CurrentTime());
 	m_postInfo->SetStage(PostInfo::ptRenaming);
-	m_postInfo->SetWorking(true);
 
 	if (m_kind == jkPar)
 	{

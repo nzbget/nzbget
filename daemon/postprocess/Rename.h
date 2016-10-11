@@ -76,7 +76,7 @@ private:
 	class PostRarRenamer : public RarRenamer
 	{
 	protected:
-		virtual void UpdateProgress() { m_owner->UpdateParRenameProgress(); }
+		virtual void UpdateProgress() { m_owner->UpdateRarRenameProgress(); }
 		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName)
 			{ m_owner->RegisterRenamedFile(oldFilename, newFileName); }

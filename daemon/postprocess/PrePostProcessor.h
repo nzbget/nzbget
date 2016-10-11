@@ -24,7 +24,6 @@
 #include "Thread.h"
 #include "Observer.h"
 #include "DownloadInfo.h"
-#include "ParCoordinator.h"
 
 class PrePostProcessor : public Thread
 {
@@ -47,7 +46,6 @@ private:
 		virtual void Update(Subject* Caller, void* Aspect) { m_owner->DownloadQueueUpdate(Caller, Aspect); }
 	};
 
-	ParCoordinator m_parCoordinator;
 	DownloadQueueObserver m_downloadQueueObserver;
 	int m_jobCount = 0;
 	NzbInfo* m_curJob = nullptr;
@@ -66,7 +64,7 @@ private:
 	bool PostQueueDelete(DownloadQueue* downloadQueue, IdList* idList);
 	void DeletePostThread(PostInfo* postInfo);
 	NzbInfo* GetNextJob(DownloadQueue* downloadQueue);
-	void DownloadQueueUpdate(Subject* Caller, void* Aspect);
+	void DownloadQueueUpdate(Subject* caller, void* aspect);
 	void DeleteCleanup(NzbInfo* nzbInfo);
 };
 

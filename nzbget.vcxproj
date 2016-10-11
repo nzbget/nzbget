@@ -132,7 +132,7 @@
     <ClCompile Include="daemon\postprocess\Cleanup.cpp" />
     <ClCompile Include="daemon\postprocess\DupeMatcher.cpp" />
     <ClCompile Include="daemon\postprocess\ParChecker.cpp" />
-    <ClCompile Include="daemon\postprocess\ParCoordinator.cpp" />
+    <ClCompile Include="daemon\postprocess\Repair.cpp" />
     <ClCompile Include="daemon\postprocess\ParParser.cpp" />
     <ClCompile Include="daemon\postprocess\ParRenamer.cpp" />
     <ClCompile Include="daemon\postprocess\PrePostProcessor.cpp" />
@@ -230,7 +230,7 @@
     <ClInclude Include="daemon\postprocess\Cleanup.h" />
     <ClInclude Include="daemon\postprocess\DupeMatcher.h" />
     <ClInclude Include="daemon\postprocess\ParChecker.h" />
-    <ClInclude Include="daemon\postprocess\ParCoordinator.h" />
+    <ClInclude Include="daemon\postprocess\Repair.h" />
     <ClInclude Include="daemon\postprocess\ParParser.h" />
     <ClInclude Include="daemon\postprocess\ParRenamer.h" />
     <ClInclude Include="daemon\postprocess\PrePostProcessor.h" />

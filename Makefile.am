@@ -90,8 +90,6 @@ nzbget_SOURCES = \
 	daemon/postprocess/DupeMatcher.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
-	daemon/postprocess/ParCoordinator.cpp \
-	daemon/postprocess/ParCoordinator.h \
 	daemon/postprocess/ParParser.cpp \
 	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
@@ -104,6 +102,8 @@ nzbget_SOURCES = \
 	daemon/postprocess/RarReader.h \
 	daemon/postprocess/Rename.cpp \
 	daemon/postprocess/Rename.h \
+	daemon/postprocess/Repair.cpp \
+	daemon/postprocess/Repair.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
 	daemon/queue/DiskState.cpp \

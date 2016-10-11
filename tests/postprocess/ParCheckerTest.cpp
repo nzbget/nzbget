@@ -50,11 +50,7 @@ ParCheckerMock::ParCheckerMock()
 void ParCheckerMock::Execute()
 {
 	TestUtil::DisableCout();
-	Start();
-	while (IsRunning())
-	{
-		usleep(10*1000);
-	}
+	ParChecker::Execute();
 	TestUtil::EnableCout();
 }
 

@@ -25,13 +25,12 @@
 
 #include "NString.h"
 #include "Container.h"
-#include "Thread.h"
 #include "FileSystem.h"
 #include "Log.h"
 
 class Repairer;
 
-class ParChecker : public Thread
+class ParChecker
 {
 public:
 	enum EStatus
@@ -57,8 +56,8 @@ public:
 		virtual Repairer* GetRepairer() = 0;
 	};
 
-	virtual ~ParChecker();
-	virtual void Run();
+	~ParChecker();
+	void Execute();
 	void SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char* GetParFilename() { return m_parFilename; }
 	const char* GetInfoName() { return m_infoName; }
@@ -74,7 +73,6 @@ public:
 	void AddParFile(const char* parFilename);
 	void QueueChanged();
 	void Cancel();
-	bool GetCancelled() { return m_cancelled; }
 
 protected:
 	class Segment
@@ -129,6 +127,7 @@ protected:
 	*/
 	virtual bool RequestMorePars(int blockNeeded, int* blockFound) = 0;
 	virtual void UpdateProgress() {}
+	virtual bool IsStopped() { return false; };
 	virtual void Completed() {}
 	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 	virtual void RegisterParredFile(const char* filename) {}

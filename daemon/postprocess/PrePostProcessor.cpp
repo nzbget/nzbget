@@ -30,6 +30,7 @@
 #include "Unpack.h"
 #include "Cleanup.h"
 #include "Rename.h"
+#include "Repair.h"
 #include "NzbFile.h"
 #include "QueueScript.h"
 #include "ParParser.h"
@@ -77,14 +78,7 @@ void PrePostProcessor::Stop()
 	Thread::Stop();
 	GuardedDownloadQueue guard = DownloadQueue::Guard();
 
-#ifndef DISABLE_PARCHECK
-	m_parCoordinator.Stop();
-#endif
-
-	if (m_curJob && m_curJob->GetPostInfo() &&
-		(m_curJob->GetPostInfo()->GetStage() == PostInfo::ptUnpacking ||
-		 m_curJob->GetPostInfo()->GetStage() == PostInfo::ptExecutingScript) &&
-		m_curJob->GetPostInfo()->GetPostThread())
+	if (m_curJob && m_curJob->GetPostInfo() && m_curJob->GetPostInfo()->GetPostThread())
 	{
 		Thread* postThread = m_curJob->GetPostInfo()->GetPostThread();
 		m_curJob->GetPostInfo()->SetPostThread(nullptr);
@@ -93,14 +87,47 @@ void PrePostProcessor::Stop()
 	}
 }
 
-void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
+/**
+ * Reset the state of items after reloading from disk and
+ * delete items which could not be resumed.
+ * Also count the number of post-jobs.
+ */
+void PrePostProcessor::SanitisePostQueue()
+{
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	{
+		PostInfo* postInfo = nzbInfo->GetPostInfo();
+		if (postInfo)
+		{
+			m_jobCount++;
+			if (postInfo->GetStage() == PostInfo::ptExecutingScript ||
+				!FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
+			{
+				postInfo->SetStage(PostInfo::ptFinished);
+			}
+			else
+			{
+				postInfo->SetStage(PostInfo::ptQueued);
+			}
+		}
+	}
+}
+
+void PrePostProcessor::DeletePostThread(PostInfo* postInfo)
+{
+	delete postInfo->GetPostThread();
+	postInfo->SetPostThread(nullptr);
+}
+
+void PrePostProcessor::DownloadQueueUpdate(Subject* caller, void* aspect)
 {
 	if (IsStopped())
 	{
 		return;
 	}
 
-	DownloadQueue::Aspect* queueAspect = (DownloadQueue::Aspect*)Aspect;
+	DownloadQueue::Aspect* queueAspect = (DownloadQueue::Aspect*)aspect;
 	if (queueAspect->action == DownloadQueue::eaNzbFound)
 	{
 		NzbFound(queueAspect->downloadQueue, queueAspect->nzbInfo);
@@ -129,7 +156,11 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* Caller, void* Aspect)
 		}
 
 #ifndef DISABLE_PARCHECK
-		if (m_parCoordinator.AddPar(queueAspect->fileInfo, queueAspect->action == DownloadQueue::eaFileDeleted))
+		if (m_curJob && m_curJob->GetPostInfo() && m_curJob->GetPostInfo()->GetPostThread() &&
+			m_curJob->GetPostInfo()->GetStage() >= PostInfo::ptLoadingPars &&
+			m_curJob->GetPostInfo()->GetStage() <= PostInfo::ptVerifyingRepaired &&
+			((RepairController*)m_curJob->GetPostInfo()->GetPostThread())->AddPar(
+			  queueAspect->fileInfo, queueAspect->action == DownloadQueue::eaFileDeleted))
 		{
 			return;
 		}
@@ -171,7 +202,8 @@ void PrePostProcessor::NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
 	if (g_Options->GetParCheck() != Options::pcForce)
 	{
-		m_parCoordinator.PausePars(downloadQueue, nzbInfo);
+		downloadQueue->EditEntry(nzbInfo->GetId(),
+			DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
 	}
 
 	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsDupe ||
@@ -335,69 +367,74 @@ void PrePostProcessor::CheckPostQueue()
 		m_curJob = GetNextJob(downloadQueue);
 	}
 
-	if (m_curJob)
+	if (!m_curJob)
 	{
-		PostInfo* postInfo = m_curJob->GetPostInfo();
-		if (!postInfo->GetWorking() && !IsNzbFileDownloading(m_curJob))
-		{
+		return;
+	}
+
+	PostInfo* postInfo = m_curJob->GetPostInfo();
+
+	if (postInfo->GetWorking() || IsNzbFileDownloading(m_curJob))
+	{
+		return;
+	}
+
 #ifndef DISABLE_PARCHECK
-			if (postInfo->GetRequestParCheck() &&
-				(postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
-				 (postInfo->GetForceRepair() && !postInfo->GetNzbInfo()->GetParFull())) &&
-				g_Options->GetParCheck() != Options::pcManual)
-			{
-				postInfo->SetForceParFull(postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
-				postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psNone);
-				postInfo->SetRequestParCheck(false);
-				postInfo->SetStage(PostInfo::ptQueued);
-				postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
-				DeletePostThread(postInfo);
-			}
-			else if (postInfo->GetRequestParCheck() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
-				g_Options->GetParCheck() == Options::pcManual)
-			{
-				postInfo->SetRequestParCheck(false);
-				postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psManual);
-				DeletePostThread(postInfo);
+	if (postInfo->GetRequestParCheck() &&
+		(postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
+		 (postInfo->GetForceRepair() && !postInfo->GetNzbInfo()->GetParFull())) &&
+		g_Options->GetParCheck() != Options::pcManual)
+	{
+		postInfo->SetForceParFull(postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psNone);
+		postInfo->SetRequestParCheck(false);
+		postInfo->SetStage(PostInfo::ptQueued);
+		postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
+		DeletePostThread(postInfo);
+	}
+	else if (postInfo->GetRequestParCheck() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
+		g_Options->GetParCheck() == Options::pcManual)
+	{
+		postInfo->SetRequestParCheck(false);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psManual);
+		DeletePostThread(postInfo);
 
-				if (!postInfo->GetNzbInfo()->GetFileList()->empty())
-				{
-					postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
-						"Downloading all remaining files for manual par-check for %s", postInfo->GetNzbInfo()->GetName());
-					downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, 0, nullptr);
-					postInfo->SetStage(PostInfo::ptFinished);
-				}
-				else
-				{
-					postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
-						"There are no par-files remain for download for %s", postInfo->GetNzbInfo()->GetName());
-					postInfo->SetStage(PostInfo::ptQueued);
-				}
-			}
-
-#endif
-			if (postInfo->GetDeleted())
-			{
-				postInfo->SetStage(PostInfo::ptFinished);
-			}
-
-			if (postInfo->GetStage() == PostInfo::ptQueued &&
-				(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
-			{
-				DeletePostThread(postInfo);
-				StartJob(downloadQueue, postInfo);
-			}
-			else if (postInfo->GetStage() == PostInfo::ptFinished)
-			{
-				UpdatePauseState(false, nullptr);
-				JobCompleted(downloadQueue, postInfo);
-			}
-			else if (!g_Options->GetPausePostProcess())
-			{
-				error("Internal error: invalid state in post-processor");
-				// TODO: cancel (delete) current job
-			}
+		if (!postInfo->GetNzbInfo()->GetFileList()->empty())
+		{
+			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
+				"Downloading all remaining files for manual par-check for %s", postInfo->GetNzbInfo()->GetName());
+			downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, 0, nullptr);
+			postInfo->SetStage(PostInfo::ptFinished);
 		}
+		else
+		{
+			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
+				"There are no par-files remain for download for %s", postInfo->GetNzbInfo()->GetName());
+			postInfo->SetStage(PostInfo::ptQueued);
+		}
+	}
+#endif
+
+	if (postInfo->GetDeleted())
+	{
+		postInfo->SetStage(PostInfo::ptFinished);
+	}
+
+	if (postInfo->GetStage() == PostInfo::ptQueued &&
+		(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
+	{
+		DeletePostThread(postInfo);
+		StartJob(downloadQueue, postInfo);
+	}
+	else if (postInfo->GetStage() == PostInfo::ptFinished)
+	{
+		UpdatePauseState(false, nullptr);
+		JobCompleted(downloadQueue, postInfo);
+	}
+	else if (!g_Options->GetPausePostProcess())
+	{
+		error("Internal error: invalid state in post-processor");
+		// TODO: cancel (delete) current job
 	}
 }
 
@@ -416,39 +453,6 @@ NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
 	}
 
 	return nzbInfo;
-}
-
-/**
- * Reset the state of items after reloading from disk and
- * delete items which could not be resumed.
- * Also count the number of post-jobs.
- */
-void PrePostProcessor::SanitisePostQueue()
-{
-	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-	{
-		PostInfo* postInfo = nzbInfo->GetPostInfo();
-		if (postInfo)
-		{
-			m_jobCount++;
-			if (postInfo->GetStage() == PostInfo::ptExecutingScript ||
-				!FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
-			{
-				postInfo->SetStage(PostInfo::ptFinished);
-			}
-			else
-			{
-				postInfo->SetStage(PostInfo::ptQueued);
-			}
-		}
-	}
-}
-
-void PrePostProcessor::DeletePostThread(PostInfo* postInfo)
-{
-	delete postInfo->GetPostThread();
-	postInfo->SetPostThread(nullptr);
 }
 
 void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo)
@@ -472,7 +476,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		if (ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
 		{
 			UpdatePauseState(g_Options->GetParPauseQueue(), "par-check");
-			m_parCoordinator.StartParCheckJob(postInfo);
+			RepairController::StartJob(postInfo);
 		}
 		else
 		{
@@ -718,19 +722,9 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 					postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 						"Deleting active post-job %s", postInfo->GetNzbInfo()->GetName());
 					postInfo->SetDeleted(true);
-#ifndef DISABLE_PARCHECK
-					if (PostInfo::ptLoadingPars <= postInfo->GetStage() && postInfo->GetStage() <= PostInfo::ptVerifyingRepaired)
-					{
-						if (m_parCoordinator.Cancel())
-						{
-							ok = true;
-						}
-					}
-					else
-#endif
 					if (postInfo->GetPostThread())
 					{
-						debug("Terminating %s for %s", (postInfo->GetStage() == PostInfo::ptUnpacking ? "unpack" : "post-process-script"), postInfo->GetNzbInfo()->GetName());
+						debug("Terminating post-process thread for %s", postInfo->GetNzbInfo()->GetName());
 						postInfo->GetPostThread()->Stop();
 						ok = true;
 					}
