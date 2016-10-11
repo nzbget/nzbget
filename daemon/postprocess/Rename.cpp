@@ -73,6 +73,7 @@ void RenameController::StartJob(PostInfo* postInfo, EJobKind kind)
 
 	postInfo->SetPostThread(renameController);
 	postInfo->SetWorking(true);
+	postInfo->SetStage(PostInfo::ptRenaming);
 
 	renameController->Start();
 }
@@ -122,9 +123,6 @@ void RenameController::AddMessage(Message::EKind kind, const char* text)
 
 void RenameController::ExecRename(const char* destDir, const char* finalDir, const char* nzbName)
 {
-	m_postInfo->SetStageTime(Util::CurrentTime());
-	m_postInfo->SetStage(PostInfo::ptRenaming);
-
 	if (m_kind == jkPar)
 	{
 #ifndef DISABLE_PARCHECK

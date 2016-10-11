@@ -212,6 +212,7 @@ void RepairController::StartJob(PostInfo* postInfo)
 
 	postInfo->SetPostThread(repairController);
 	postInfo->SetWorking(true);
+	postInfo->SetStage(PostInfo::ptLoadingPars);
 
 	repairController->Start();
 }

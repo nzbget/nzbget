@@ -39,8 +39,7 @@ PrePostProcessor::PrePostProcessor()
 {
 	debug("Creating PrePostProcessor");
 
-	m_downloadQueueObserver.m_owner = this;
-	DownloadQueue::Guard()->Attach(&m_downloadQueueObserver);
+	DownloadQueue::Guard()->Attach(this);
 }
 
 void PrePostProcessor::Run()
@@ -65,8 +64,6 @@ void PrePostProcessor::Run()
 			CheckPostQueue();
 		}
 
-		Util::SetStandByMode(!m_curJob);
-
 		usleep(200 * 1000);
 	}
 
@@ -78,12 +75,15 @@ void PrePostProcessor::Stop()
 	Thread::Stop();
 	GuardedDownloadQueue guard = DownloadQueue::Guard();
 
-	if (m_curJob && m_curJob->GetPostInfo() && m_curJob->GetPostInfo()->GetPostThread())
+	for (NzbInfo* postJob : m_activeJobs)
 	{
-		Thread* postThread = m_curJob->GetPostInfo()->GetPostThread();
-		m_curJob->GetPostInfo()->SetPostThread(nullptr);
-		postThread->SetAutoDestroy(true);
-		postThread->Stop();
+		if (postJob && postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread())
+		{
+			Thread* postThread = postJob->GetPostInfo()->GetPostThread();
+			postJob->GetPostInfo()->SetPostThread(nullptr);
+			postThread->SetAutoDestroy(true);
+			postThread->Stop();
+		}
 	}
 }
 
@@ -120,7 +120,7 @@ void PrePostProcessor::DeletePostThread(PostInfo* postInfo)
 	postInfo->SetPostThread(nullptr);
 }
 
-void PrePostProcessor::DownloadQueueUpdate(Subject* caller, void* aspect)
+void PrePostProcessor::DownloadQueueUpdate(void* aspect)
 {
 	if (IsStopped())
 	{
@@ -156,13 +156,17 @@ void PrePostProcessor::DownloadQueueUpdate(Subject* caller, void* aspect)
 		}
 
 #ifndef DISABLE_PARCHECK
-		if (m_curJob && m_curJob->GetPostInfo() && m_curJob->GetPostInfo()->GetPostThread() &&
-			m_curJob->GetPostInfo()->GetStage() >= PostInfo::ptLoadingPars &&
-			m_curJob->GetPostInfo()->GetStage() <= PostInfo::ptVerifyingRepaired &&
-			((RepairController*)m_curJob->GetPostInfo()->GetPostThread())->AddPar(
-			  queueAspect->fileInfo, queueAspect->action == DownloadQueue::eaFileDeleted))
+		for (NzbInfo* postJob : m_activeJobs)
 		{
-			return;
+			if (postJob && queueAspect->fileInfo->GetNzbInfo() == postJob &&
+				postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread() &&
+				postJob->GetPostInfo()->GetStage() >= PostInfo::ptLoadingPars &&
+				postJob->GetPostInfo()->GetStage() <= PostInfo::ptVerifyingRepaired &&
+				((RepairController*)postJob->GetPostInfo()->GetPostThread())->AddPar(
+					queueAspect->fileInfo, queueAspect->action == DownloadQueue::eaFileDeleted))
+			{
+				return;
+			}
 		}
 #endif
 
@@ -239,16 +243,6 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 			g_Options->GetParCheck() != Options::pcForce)
 		{
 			nzbInfo->SetParStatus(NzbInfo::psSkipped);
-		}
-
-		if (nzbInfo->GetParRenameStatus() == NzbInfo::rsNone && !g_Options->GetParRename())
-		{
-			nzbInfo->SetParRenameStatus(NzbInfo::rsSkipped);
-		}
-
-		if (nzbInfo->GetRarRenameStatus() == NzbInfo::rsNone && !g_Options->GetRarRename())
-		{
-			nzbInfo->SetRarRenameStatus(NzbInfo::rsSkipped);
 		}
 
 		downloadQueue->Save();
@@ -358,62 +352,90 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 	}
 }
 
+void PrePostProcessor::CleanupJobs()
+{
+	m_activeJobs.erase(std::remove_if(m_activeJobs.begin(), m_activeJobs.end(),
+		[](NzbInfo* postJob)
+		{
+			PostInfo* postInfo = postJob->GetPostInfo();
+			if (!postInfo->GetWorking())
+			{
+				postInfo->SetStageTime(0);
+				postInfo->SetStageProgress(0);
+				postInfo->SetFileProgress(0);
+				postInfo->SetProgressLabel("");
+				if (postInfo->GetStartTime() > 0)
+				{
+					postJob->SetPostTotalSec(postJob->GetPostTotalSec() +
+						(int)(Util::CurrentTime() - postInfo->GetStartTime()));
+					postInfo->SetStartTime(0);
+				}
+			}
+			return !postInfo->GetWorking();
+		}),
+		m_activeJobs.end());
+}
+
+NzbInfo* PrePostProcessor::PickNextJob(DownloadQueue* downloadQueue, bool allowPar)
+{
+	NzbInfo* nzbInfo = nullptr;
+
+	for (NzbInfo* nzbInfo1: downloadQueue->GetQueue())
+	{
+		if (nzbInfo1->GetPostInfo() && !nzbInfo1->GetPostInfo()->GetWorking() &&
+			!g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
+			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
+			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()) &&
+			(allowPar || !nzbInfo1->GetPostInfo()->GetNeedParCheck()))
+		{
+			nzbInfo = nzbInfo1;
+		}
+	}
+
+	return nzbInfo;
+}
+
 void PrePostProcessor::CheckPostQueue()
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	if (!m_curJob && m_jobCount > 0)
-	{
-		m_curJob = GetNextJob(downloadQueue);
-	}
-
-	if (!m_curJob)
+	if (!m_jobCount)
 	{
 		return;
 	}
 
-	PostInfo* postInfo = m_curJob->GetPostInfo();
+	bool hasParJob = false;
+	bool hasOtherJob = false;
+	for (NzbInfo* postJob : m_activeJobs)
+	{
+		CheckRequestPar(downloadQueue, postJob->GetPostInfo());
 
-	if (postInfo->GetWorking() || IsNzbFileDownloading(m_curJob))
+		bool parJob = postJob->GetPostInfo()->GetStage() >= PostInfo::ptLoadingPars &&
+			postJob->GetPostInfo()->GetStage() <= PostInfo::ptVerifyingRepaired;
+		hasParJob |= parJob;
+		hasOtherJob |= !parJob;
+	}
+
+	CleanupJobs();
+
+	// TODO: replace with an option
+	static const bool PAR_EXCLUSIVE = false;
+
+	if (hasOtherJob || (hasParJob && PAR_EXCLUSIVE))
 	{
 		return;
 	}
 
-#ifndef DISABLE_PARCHECK
-	if (postInfo->GetRequestParCheck() &&
-		(postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
-		 (postInfo->GetForceRepair() && !postInfo->GetNzbInfo()->GetParFull())) &&
-		g_Options->GetParCheck() != Options::pcManual)
+	NzbInfo* postJob = PickNextJob(downloadQueue, !hasParJob);
+	if (!postJob)
 	{
-		postInfo->SetForceParFull(postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
-		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psNone);
-		postInfo->SetRequestParCheck(false);
-		postInfo->SetStage(PostInfo::ptQueued);
-		postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
-		DeletePostThread(postInfo);
+		return;
 	}
-	else if (postInfo->GetRequestParCheck() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
-		g_Options->GetParCheck() == Options::pcManual)
-	{
-		postInfo->SetRequestParCheck(false);
-		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psManual);
-		DeletePostThread(postInfo);
 
-		if (!postInfo->GetNzbInfo()->GetFileList()->empty())
-		{
-			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
-				"Downloading all remaining files for manual par-check for %s", postInfo->GetNzbInfo()->GetName());
-			downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, 0, nullptr);
-			postInfo->SetStage(PostInfo::ptFinished);
-		}
-		else
-		{
-			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
-				"There are no par-files remain for download for %s", postInfo->GetNzbInfo()->GetName());
-			postInfo->SetStage(PostInfo::ptQueued);
-		}
-	}
-#endif
+	Util::SetStandByMode(false);
+
+	m_activeJobs.push_back(postJob);
+	PostInfo* postInfo = postJob->GetPostInfo();
 
 	if (postInfo->GetDeleted())
 	{
@@ -424,7 +446,7 @@ void PrePostProcessor::CheckPostQueue()
 		(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
 	{
 		DeletePostThread(postInfo);
-		StartJob(downloadQueue, postInfo);
+		StartJob(downloadQueue, postInfo, !hasParJob);
 	}
 	else if (postInfo->GetStage() == PostInfo::ptFinished)
 	{
@@ -438,44 +460,40 @@ void PrePostProcessor::CheckPostQueue()
 	}
 }
 
-NzbInfo* PrePostProcessor::GetNextJob(DownloadQueue* downloadQueue)
-{
-	NzbInfo* nzbInfo = nullptr;
-
-	for (NzbInfo* nzbInfo1: downloadQueue->GetQueue())
-	{
-		if (nzbInfo1->GetPostInfo() && !g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
-			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
-			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()))
-		{
-			nzbInfo = nzbInfo1;
-		}
-	}
-
-	return nzbInfo;
-}
-
-void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo)
+void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo, bool allowPar)
 {
 	if (!postInfo->GetStartTime())
 	{
 		postInfo->SetStartTime(Util::CurrentTime());
 	}
+	postInfo->SetStageTime(Util::CurrentTime());
+	postInfo->SetStageProgress(0);
+	postInfo->SetFileProgress(0);
+	postInfo->SetProgressLabel("");
 
 	if (postInfo->GetNzbInfo()->GetParRenameStatus() == NzbInfo::rsNone &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
+		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
+		g_Options->GetParRename())
 	{
 		UpdatePauseState(g_Options->GetParPauseQueue(), "par-rename");
 		RenameController::StartJob(postInfo, RenameController::jkPar);
 		return;
 	}
+
 #ifndef DISABLE_PARCHECK
-	else if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psNone &&
+	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
 	{
 		if (ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
 		{
+			if (!allowPar)
+			{
+				postInfo->SetNeedParCheck(true);
+				return;
+			}
+
 			UpdatePauseState(g_Options->GetParPauseQueue(), "par-check");
+			postInfo->SetNeedParCheck(false);
 			RepairController::StartJob(postInfo);
 		}
 		else
@@ -483,12 +501,11 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 				"Nothing to par-check for %s", postInfo->GetNzbInfo()->GetName());
 			postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psSkipped);
-			postInfo->SetWorking(false);
-			postInfo->SetStage(PostInfo::ptQueued);
 		}
 		return;
 	}
-	else if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
+	
+	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
 		((g_Options->GetParScan() != Options::psDupe &&
 		  postInfo->GetNzbInfo()->CalcHealth() < postInfo->GetNzbInfo()->CalcCriticalHealth(false) &&
 		  postInfo->GetNzbInfo()->CalcCriticalHealth(false) < 1000) ||
@@ -510,7 +527,8 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psFailure);
 		return;
 	}
-	else if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
+	
+	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
 		postInfo->GetNzbInfo()->GetFailedSize() - postInfo->GetNzbInfo()->GetParFailedSize() > 0 &&
 		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
 	{
@@ -523,7 +541,8 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 #endif
 
 	if (postInfo->GetNzbInfo()->GetRarRenameStatus() == NzbInfo::rsNone &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
+		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
+		g_Options->GetRarRename())
 	{
 		UpdatePauseState(g_Options->GetUnpackPauseQueue(), "rar-rename");
 		RenameController::StartJob(postInfo, RenameController::jkRar);
@@ -566,8 +585,6 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		!strncmp(postInfo->GetNzbInfo()->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
 		postInfo->GetNzbInfo()->GetDestDir()[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
 
-	bool postScript = true;
-
 	if (unpack && parFailed)
 	{
 		postInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
@@ -577,21 +594,11 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		unpack = false;
 	}
 
-	if (!unpack && !moveInter && !postScript)
-	{
-		postInfo->SetStage(PostInfo::ptFinished);
-		return;
-	}
-
 	postInfo->SetProgressLabel(unpack ? "Unpacking" : moveInter ? "Moving" : "Executing post-process-script");
 	postInfo->SetWorking(true);
 	postInfo->SetStage(unpack ? PostInfo::ptUnpacking : moveInter ? PostInfo::ptMoving : PostInfo::ptExecutingScript);
-	postInfo->SetFileProgress(0);
-	postInfo->SetStageProgress(0);
 
 	downloadQueue->Save();
-
-	postInfo->SetStageTime(Util::CurrentTime());
 
 	if (unpack)
 	{
@@ -615,15 +622,49 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	}
 }
 
+void PrePostProcessor::CheckRequestPar(DownloadQueue* downloadQueue, PostInfo* postInfo)
+{
+#ifndef DISABLE_PARCHECK
+	if (postInfo->GetRequestParCheck() &&
+		(postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped ||
+		(postInfo->GetForceRepair() && !postInfo->GetNzbInfo()->GetParFull())) &&
+		g_Options->GetParCheck() != Options::pcManual)
+	{
+		postInfo->SetForceParFull(postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psNone);
+		postInfo->SetRequestParCheck(false);
+		postInfo->SetStage(PostInfo::ptQueued);
+		postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
+		DeletePostThread(postInfo);
+	}
+	else if (postInfo->GetRequestParCheck() &&
+		postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
+		g_Options->GetParCheck() == Options::pcManual)
+	{
+		postInfo->SetRequestParCheck(false);
+		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psManual);
+		DeletePostThread(postInfo);
+
+		if (!postInfo->GetNzbInfo()->GetFileList()->empty())
+		{
+			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
+				"Downloading all remaining files for manual par-check for %s", postInfo->GetNzbInfo()->GetName());
+			downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, 0, nullptr);
+			postInfo->SetStage(PostInfo::ptFinished);
+		}
+		else
+		{
+			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
+				"There are no par-files remain for download for %s", postInfo->GetNzbInfo()->GetName());
+			postInfo->SetStage(PostInfo::ptQueued);
+		}
+	}
+#endif
+}
+
 void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* postInfo)
 {
 	NzbInfo* nzbInfo = postInfo->GetNzbInfo();
-
-	if (postInfo->GetStartTime() > 0)
-	{
-		nzbInfo->SetPostTotalSec((int)(Util::CurrentTime() - postInfo->GetStartTime()));
-		postInfo->SetStartTime(0);
-	}
 
 	DeletePostThread(postInfo);
 	nzbInfo->LeavePostProcess();
@@ -633,10 +674,10 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 		NzbCompleted(downloadQueue, nzbInfo, false);
 	}
 
-	if (nzbInfo == m_curJob)
-	{
-		m_curJob = nullptr;
-	}
+	m_activeJobs.erase(std::remove_if(m_activeJobs.begin(), m_activeJobs.end(),
+		[nzbInfo](NzbInfo* postJob) { return postJob == nzbInfo; }),
+		m_activeJobs.end());
+
 	m_jobCount--;
 
 	downloadQueue->Save();
@@ -659,24 +700,6 @@ bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPar
 	}
 
 	return true;
-}
-
-bool PrePostProcessor::IsNzbFileDownloading(NzbInfo* nzbInfo)
-{
-	if (nzbInfo->GetActiveDownloads())
-	{
-		return true;
-	}
-
-	for (FileInfo* fileInfo : nzbInfo->GetFileList())
-	{
-		if (!fileInfo->GetPaused())
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void PrePostProcessor::UpdatePauseState(bool needPause, const char* reason)

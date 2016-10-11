@@ -729,6 +729,8 @@ public:
 	void SetPassListTried(bool passListTried) { m_passListTried = passListTried; }
 	int GetLastUnpackStatus() { return m_lastUnpackStatus; }
 	void SetLastUnpackStatus(int unpackStatus) { m_lastUnpackStatus = unpackStatus; }
+	bool GetNeedParCheck() { return m_needParCheck; }
+	void SetNeedParCheck(bool needParCheck) { m_needParCheck = needParCheck; }
 	Thread* GetPostThread() { return m_postThread; }
 	void SetPostThread(Thread* postThread) { m_postThread = postThread; }
 	ParredFiles* GetParredFiles() { return &m_parredFiles; }
@@ -744,6 +746,7 @@ private:
 	bool m_unpackTried = false;
 	bool m_passListTried = false;
 	int m_lastUnpackStatus = 0;
+	bool m_needParCheck = false;
 	EStage m_stage = ptQueued;
 	CString m_progressLabel = "";
 	int m_fileProgress = 0;
