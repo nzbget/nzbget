@@ -418,10 +418,7 @@ void PrePostProcessor::CheckPostQueue()
 
 	CleanupJobs();
 
-	// TODO: replace with an option
-	static const bool PAR_EXCLUSIVE = false;
-
-	if (hasOtherJob || (hasParJob && PAR_EXCLUSIVE))
+	if (hasOtherJob || (hasParJob && g_Options->GetParExclusive()))
 	{
 		return;
 	}

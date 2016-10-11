@@ -87,6 +87,7 @@ static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
 static const char* OPTION_PARQUICK				= "ParQuick";
+static const char* OPTION_PAREXCLUSIVE			= "ParExclusive";
 static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_PARBUFFER				= "ParBuffer";
 static const char* OPTION_PARTHREADS			= "ParThreads";
@@ -445,6 +446,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "extended");
 	SetOption(OPTION_PARQUICK, "yes");
+	SetOption(OPTION_PAREXCLUSIVE, "yes");
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_PARBUFFER, "16");
 	SetOption(OPTION_PARTHREADS, "1");
@@ -711,6 +713,7 @@ void Options::InitOptions()
 	m_dupeCheck				= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_parRepair				= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_parQuick				= (bool)ParseEnumValue(OPTION_PARQUICK, BoolCount, BoolNames, BoolValues);
+	m_parExclusive			= (bool)ParseEnumValue(OPTION_PAREXCLUSIVE, BoolCount, BoolNames, BoolValues);
 	m_parRename				= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_rarRename				= (bool)ParseEnumValue(OPTION_RARRENAME, BoolCount, BoolNames, BoolValues);
 	m_reloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);

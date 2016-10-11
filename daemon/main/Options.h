@@ -231,6 +231,7 @@ public:
 	bool GetParRepair() { return m_parRepair; }
 	EParScan GetParScan() { return m_parScan; }
 	bool GetParQuick() { return m_parQuick; }
+	bool GetParExclusive() { return m_parExclusive; }
 	bool GetParRename() { return m_parRename; }
 	int GetParBuffer() { return m_parBuffer; }
 	int GetParThreads() { return m_parThreads; }
@@ -375,6 +376,7 @@ private:
 	bool m_parRepair = false;
 	EParScan m_parScan = psLimited;
 	bool m_parQuick = true;
+	bool m_parExclusive = true;
 	bool m_parRename = false;
 	int m_parBuffer = 0;
 	int m_parThreads = 0;
