@@ -1,8 +1,8 @@
-nzbget_options = ['ParCheck=force']
+nzbget_options = ['ParCheck=auto', 'ParQuick=yes', 'ParExclusive=yes']
 
 def test_parchecker_healthy(nserv, nzbget):
 	hist = nzbget.download_nzb('parchecker.nzb')
-	assert hist['Status'] == 'SUCCESS/PAR'
+	assert hist['Status'] == 'SUCCESS/HEALTH'
 
 def test_parchecker_repair(nserv, nzbget):
 	nzb_content = nzbget.load_nzb('parchecker.nzb')
