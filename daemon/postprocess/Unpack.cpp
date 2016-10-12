@@ -107,7 +107,6 @@ void UnpackController::Run()
 				 "%s failed: checksum error in the encrypted file. Corrupt file or wrong password." : "%s failed.",
 			*m_infoNameUp);
 		m_postInfo->GetNzbInfo()->SetUnpackStatus((NzbInfo::EUnpackStatus)m_postInfo->GetLastUnpackStatus());
-		m_postInfo->SetStage(PostInfo::ptQueued);
 	}
 	else if (unpack && hasFiles)
 	{
@@ -153,7 +152,6 @@ void UnpackController::Run()
 #endif
 		{
 			m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSkipped);
-			m_postInfo->SetStage(PostInfo::ptQueued);
 		}
 	}
 
@@ -534,7 +532,6 @@ void UnpackController::Completed()
 			//request par-rename check for extracted files
 			m_postInfo->GetNzbInfo()->SetParRenameStatus(NzbInfo::rsNone);
 		}
-		m_postInfo->SetStage(PostInfo::ptQueued);
 	}
 	else
 	{
@@ -558,7 +555,6 @@ void UnpackController::Completed()
 				m_unpackSpaceError ? NzbInfo::usSpace :
 				m_unpackPasswordError || m_unpackDecryptError ? NzbInfo::usPassword :
 				NzbInfo::usFailure);
-			m_postInfo->SetStage(PostInfo::ptQueued);
 		}
 	}
 }
@@ -569,7 +565,6 @@ void UnpackController::RequestParCheck(bool forceRepair)
 	PrintMessage(Message::mkInfo, "%s requested %s", *m_infoNameUp, forceRepair ? "par-check with forced repair" : "par-check/repair");
 	m_postInfo->SetRequestParCheck(true);
 	m_postInfo->SetForceRepair(forceRepair);
-	m_postInfo->SetStage(PostInfo::ptFinished);
 	m_postInfo->SetUnpackTried(true);
 	m_postInfo->SetPassListTried(m_passListTried);
 	m_postInfo->SetLastUnpackStatus((int)(m_unpackSpaceError ? NzbInfo::usSpace :

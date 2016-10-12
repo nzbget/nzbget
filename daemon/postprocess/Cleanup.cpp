@@ -76,7 +76,6 @@ void MoveController::Run()
 		m_postInfo->GetNzbInfo()->SetMoveStatus(NzbInfo::msFailure);
 	}
 
-	m_postInfo->SetStage(PostInfo::ptQueued);
 	m_postInfo->SetWorking(false);
 }
 
@@ -182,7 +181,6 @@ void CleanupController::Run()
 		m_postInfo->GetNzbInfo()->SetCleanupStatus(NzbInfo::csFailure);
 	}
 
-	m_postInfo->SetStage(PostInfo::ptQueued);
 	m_postInfo->SetWorking(false);
 }
 

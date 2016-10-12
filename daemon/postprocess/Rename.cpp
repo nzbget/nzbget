@@ -72,8 +72,6 @@ void RenameController::StartJob(PostInfo* postInfo, EJobKind kind)
 	renameController->SetAutoDestroy(false);
 
 	postInfo->SetPostThread(renameController);
-	postInfo->SetWorking(true);
-	postInfo->SetStage(PostInfo::ptRenaming);
 
 	renameController->Start();
 }
@@ -170,9 +168,6 @@ void RenameController::RenameCompleted()
 #endif
 
 	m_postInfo->SetWorking(false);
-	m_postInfo->SetStage(PostInfo::ptQueued);
-
-	downloadQueue->Save();
 }
 
 #ifndef DISABLE_PARCHECK

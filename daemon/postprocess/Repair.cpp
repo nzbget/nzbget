@@ -211,8 +211,6 @@ void RepairController::StartJob(PostInfo* postInfo)
 	repairController->SetAutoDestroy(false);
 
 	postInfo->SetPostThread(repairController);
-	postInfo->SetWorking(true);
-	postInfo->SetStage(PostInfo::ptLoadingPars);
 
 	repairController->Start();
 }
@@ -290,9 +288,6 @@ void RepairController::ParCheckCompleted()
 	postInfo->GetNzbInfo()->SetParFull(m_parChecker.GetParFull());
 
 	postInfo->SetWorking(false);
-	postInfo->SetStage(PostInfo::ptQueued);
-
-	downloadQueue->Save();
 }
 
 /**

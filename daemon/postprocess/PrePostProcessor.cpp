@@ -352,10 +352,12 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 	}
 }
 
-void PrePostProcessor::CleanupJobs()
+void PrePostProcessor::CleanupJobs(DownloadQueue* downloadQueue)
 {
+	size_t countBefore = m_activeJobs.size();
+
 	m_activeJobs.erase(std::remove_if(m_activeJobs.begin(), m_activeJobs.end(),
-		[](NzbInfo* postJob)
+		[processor = this](NzbInfo* postJob)
 		{
 			PostInfo* postInfo = postJob->GetPostInfo();
 			if (!postInfo->GetWorking())
@@ -364,16 +366,29 @@ void PrePostProcessor::CleanupJobs()
 				postInfo->SetStageProgress(0);
 				postInfo->SetFileProgress(0);
 				postInfo->SetProgressLabel("");
+
 				if (postInfo->GetStartTime() > 0)
 				{
 					postJob->SetPostTotalSec(postJob->GetPostTotalSec() +
 						(int)(Util::CurrentTime() - postInfo->GetStartTime()));
 					postInfo->SetStartTime(0);
 				}
+
+				if (postInfo->GetStage() != PostInfo::ptFinished)
+				{
+					postInfo->SetStage(PostInfo::ptQueued);
+				}
+
+				processor->DeletePostThread(postInfo);
 			}
 			return !postInfo->GetWorking();
 		}),
 		m_activeJobs.end());
+
+	if (m_activeJobs.size() != countBefore)
+	{
+		downloadQueue->Save();
+	}
 }
 
 NzbInfo* PrePostProcessor::PickNextJob(DownloadQueue* downloadQueue, bool allowPar)
@@ -416,7 +431,7 @@ void PrePostProcessor::CheckPostQueue()
 		hasOtherJob |= !parJob;
 	}
 
-	CleanupJobs();
+	CleanupJobs(downloadQueue);
 
 	if (hasOtherJob || (hasParJob && g_Options->GetParExclusive()))
 	{
@@ -442,7 +457,6 @@ void PrePostProcessor::CheckPostQueue()
 	if (postInfo->GetStage() == PostInfo::ptQueued &&
 		(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
 	{
-		DeletePostThread(postInfo);
 		StartJob(downloadQueue, postInfo, !hasParJob);
 	}
 	else if (postInfo->GetStage() == PostInfo::ptFinished)
@@ -473,6 +487,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		g_Options->GetParRename())
 	{
 		UpdatePauseState(g_Options->GetParPauseQueue(), "par-rename");
+		EnterStage(downloadQueue, postInfo, PostInfo::ptRenaming);
 		RenameController::StartJob(postInfo, RenameController::jkPar);
 		return;
 	}
@@ -490,6 +505,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 			}
 
 			UpdatePauseState(g_Options->GetParPauseQueue(), "par-check");
+			EnterStage(downloadQueue, postInfo, PostInfo::ptLoadingPars);
 			postInfo->SetNeedParCheck(false);
 			RepairController::StartJob(postInfo);
 		}
@@ -542,6 +558,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		g_Options->GetRarRename())
 	{
 		UpdatePauseState(g_Options->GetUnpackPauseQueue(), "rar-rename");
+		EnterStage(downloadQueue, postInfo, PostInfo::ptRenaming);
 		RenameController::StartJob(postInfo, RenameController::jkRar);
 		return;
 	}
@@ -591,32 +608,37 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		unpack = false;
 	}
 
-	postInfo->SetProgressLabel(unpack ? "Unpacking" : moveInter ? "Moving" : "Executing post-process-script");
-	postInfo->SetWorking(true);
-	postInfo->SetStage(unpack ? PostInfo::ptUnpacking : moveInter ? PostInfo::ptMoving : PostInfo::ptExecutingScript);
-
-	downloadQueue->Save();
-
 	if (unpack)
 	{
 		UpdatePauseState(g_Options->GetUnpackPauseQueue(), "unpack");
+		EnterStage(downloadQueue, postInfo, PostInfo::ptUnpacking);
 		UnpackController::StartJob(postInfo);
 	}
 	else if (cleanup)
 	{
 		UpdatePauseState(g_Options->GetUnpackPauseQueue() || g_Options->GetScriptPauseQueue(), "cleanup");
+		EnterStage(downloadQueue, postInfo, PostInfo::ptMoving);
 		CleanupController::StartJob(postInfo);
 	}
 	else if (moveInter)
 	{
 		UpdatePauseState(g_Options->GetUnpackPauseQueue() || g_Options->GetScriptPauseQueue(), "move");
+		EnterStage(downloadQueue, postInfo, PostInfo::ptMoving);
 		MoveController::StartJob(postInfo);
 	}
 	else
 	{
 		UpdatePauseState(g_Options->GetScriptPauseQueue(), "post-process-script");
+		EnterStage(downloadQueue, postInfo, PostInfo::ptExecutingScript);
 		PostScriptController::StartJob(postInfo);
 	}
+}
+
+void PrePostProcessor::EnterStage(DownloadQueue* downloadQueue, PostInfo* postInfo, PostInfo::EStage stage)
+{
+	postInfo->SetWorking(true);
+	postInfo->SetStage(stage);
+	downloadQueue->Save();
 }
 
 void PrePostProcessor::CheckRequestPar(DownloadQueue* downloadQueue, PostInfo* postInfo)
@@ -630,9 +652,8 @@ void PrePostProcessor::CheckRequestPar(DownloadQueue* downloadQueue, PostInfo* p
 		postInfo->SetForceParFull(postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped);
 		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psNone);
 		postInfo->SetRequestParCheck(false);
-		postInfo->SetStage(PostInfo::ptQueued);
 		postInfo->GetNzbInfo()->GetScriptStatuses()->clear();
-		DeletePostThread(postInfo);
+		postInfo->SetWorking(false);
 	}
 	else if (postInfo->GetRequestParCheck() &&
 		postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
@@ -640,7 +661,6 @@ void PrePostProcessor::CheckRequestPar(DownloadQueue* downloadQueue, PostInfo* p
 	{
 		postInfo->SetRequestParCheck(false);
 		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psManual);
-		DeletePostThread(postInfo);
 
 		if (!postInfo->GetNzbInfo()->GetFileList()->empty())
 		{
@@ -653,8 +673,8 @@ void PrePostProcessor::CheckRequestPar(DownloadQueue* downloadQueue, PostInfo* p
 		{
 			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 				"There are no par-files remain for download for %s", postInfo->GetNzbInfo()->GetName());
-			postInfo->SetStage(PostInfo::ptQueued);
 		}
+		postInfo->SetWorking(false);
 	}
 #endif
 }
