@@ -39,8 +39,8 @@ public:
 public:
   // Construct the main packet from the source file list and block size.
   // "sourcefiles" will be sorted base on their FileId value.
-  bool Create(vector<Par2CreatorSourceFile*> &sourcefiles, 
-              u64 _blocksize);
+  /*bool Create(vector<Par2CreatorSourceFile*> &sourcefiles,
+              u64 _blocksize);*/
 
   // Load a main packet from a specified file
   bool Load(DiskFile *diskfile, u64 offset, PACKET_HEADER &header);

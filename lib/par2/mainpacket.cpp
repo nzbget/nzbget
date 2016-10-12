@@ -32,7 +32,7 @@ namespace Par2
 {
 
 // Construct the main packet from the source files and the block size
-
+/*
 bool MainPacket::Create(vector<Par2CreatorSourceFile*> &sourcefiles, u64 _blocksize)
 {
   recoverablefilecount = totalfilecount =(u32)sourcefiles.size();
@@ -80,6 +80,7 @@ bool MainPacket::Create(vector<Par2CreatorSourceFile*> &sourcefiles, u64 _blocks
 
   return true;
 }
+*/
 
 // Load a main packet from a specified file
 

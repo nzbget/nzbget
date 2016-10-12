@@ -190,8 +190,6 @@ nzbget_SOURCES += \
 	lib/par2/md5.cpp \
 	lib/par2/md5.h \
 	lib/par2/par2cmdline.h \
-	lib/par2/par2creatorsourcefile.cpp \
-	lib/par2/par2creatorsourcefile.h \
 	lib/par2/par2fileformat.cpp \
 	lib/par2/par2fileformat.h \
 	lib/par2/par2repairer.cpp \

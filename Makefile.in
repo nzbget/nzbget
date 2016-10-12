@@ -84,8 +84,6 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_PAR2_TRUE@	lib/par2/md5.cpp \
 @WITH_PAR2_TRUE@	lib/par2/md5.h \
 @WITH_PAR2_TRUE@	lib/par2/par2cmdline.h \
-@WITH_PAR2_TRUE@	lib/par2/par2creatorsourcefile.cpp \
-@WITH_PAR2_TRUE@	lib/par2/par2creatorsourcefile.h \
 @WITH_PAR2_TRUE@	lib/par2/par2fileformat.cpp \
 @WITH_PAR2_TRUE@	lib/par2/par2fileformat.h \
 @WITH_PAR2_TRUE@	lib/par2/par2repairer.cpp \
@@ -247,10 +245,9 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	lib/par2/galois.cpp lib/par2/galois.h lib/par2/letype.h \
 	lib/par2/mainpacket.cpp lib/par2/mainpacket.h lib/par2/md5.cpp \
 	lib/par2/md5.h lib/par2/par2cmdline.h \
-	lib/par2/par2creatorsourcefile.cpp \
-	lib/par2/par2creatorsourcefile.h lib/par2/par2fileformat.cpp \
-	lib/par2/par2fileformat.h lib/par2/par2repairer.cpp \
-	lib/par2/par2repairer.h lib/par2/par2repairersourcefile.cpp \
+	lib/par2/par2fileformat.cpp lib/par2/par2fileformat.h \
+	lib/par2/par2repairer.cpp lib/par2/par2repairer.h \
+	lib/par2/par2repairersourcefile.cpp \
 	lib/par2/par2repairersourcefile.h lib/par2/parheaders.cpp \
 	lib/par2/parheaders.h lib/par2/recoverypacket.cpp \
 	lib/par2/recoverypacket.h lib/par2/reedsolomon.cpp \
@@ -274,7 +271,6 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_PAR2_TRUE@	descriptionpacket.$(OBJEXT) diskfile.$(OBJEXT) \
 @WITH_PAR2_TRUE@	filechecksummer.$(OBJEXT) galois.$(OBJEXT) \
 @WITH_PAR2_TRUE@	mainpacket.$(OBJEXT) md5.$(OBJEXT) \
-@WITH_PAR2_TRUE@	par2creatorsourcefile.$(OBJEXT) \
 @WITH_PAR2_TRUE@	par2fileformat.$(OBJEXT) \
 @WITH_PAR2_TRUE@	par2repairer.$(OBJEXT) \
 @WITH_PAR2_TRUE@	par2repairersourcefile.$(OBJEXT) \
@@ -952,7 +948,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mainpacket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nzbget.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2creatorsourcefile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2fileformat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2repairer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2repairersourcefile.Po@am__quote@
@@ -2109,20 +2104,6 @@ md5.obj: lib/par2/md5.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/md5.cpp' object='md5.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md5.obj `if test -f 'lib/par2/md5.cpp'; then $(CYGPATH_W) 'lib/par2/md5.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/md5.cpp'; fi`
-
-par2creatorsourcefile.o: lib/par2/par2creatorsourcefile.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2creatorsourcefile.o -MD -MP -MF "$(DEPDIR)/par2creatorsourcefile.Tpo" -c -o par2creatorsourcefile.o `test -f 'lib/par2/par2creatorsourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2creatorsourcefile.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2creatorsourcefile.Tpo" "$(DEPDIR)/par2creatorsourcefile.Po"; else rm -f "$(DEPDIR)/par2creatorsourcefile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2creatorsourcefile.cpp' object='par2creatorsourcefile.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2creatorsourcefile.o `test -f 'lib/par2/par2creatorsourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2creatorsourcefile.cpp
-
-par2creatorsourcefile.obj: lib/par2/par2creatorsourcefile.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2creatorsourcefile.obj -MD -MP -MF "$(DEPDIR)/par2creatorsourcefile.Tpo" -c -o par2creatorsourcefile.obj `if test -f 'lib/par2/par2creatorsourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2creatorsourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2creatorsourcefile.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2creatorsourcefile.Tpo" "$(DEPDIR)/par2creatorsourcefile.Po"; else rm -f "$(DEPDIR)/par2creatorsourcefile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2creatorsourcefile.cpp' object='par2creatorsourcefile.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2creatorsourcefile.obj `if test -f 'lib/par2/par2creatorsourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2creatorsourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2creatorsourcefile.cpp'; fi`
 
 par2fileformat.o: lib/par2/par2fileformat.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2fileformat.o -MD -MP -MF "$(DEPDIR)/par2fileformat.Tpo" -c -o par2fileformat.o `test -f 'lib/par2/par2fileformat.cpp' || echo '$(srcdir)/'`lib/par2/par2fileformat.cpp; \

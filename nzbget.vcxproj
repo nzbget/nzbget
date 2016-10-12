@@ -179,7 +179,6 @@
     <ClCompile Include="lib\par2\galois.cpp" />
     <ClCompile Include="lib\par2\mainpacket.cpp" />
     <ClCompile Include="lib\par2\md5.cpp" />
-    <ClCompile Include="lib\par2\par2creatorsourcefile.cpp" />
     <ClCompile Include="lib\par2\par2fileformat.cpp" />
     <ClCompile Include="lib\par2\par2repairer.cpp" />
     <ClCompile Include="lib\par2\par2repairersourcefile.cpp" />
@@ -277,7 +276,6 @@
     <ClInclude Include="lib\par2\mainpacket.h" />
     <ClInclude Include="lib\par2\md5.h" />
     <ClInclude Include="lib\par2\par2cmdline.h" />
-    <ClInclude Include="lib\par2\par2creatorsourcefile.h" />
     <ClInclude Include="lib\par2\par2fileformat.h" />
     <ClInclude Include="lib\par2\par2repairer.h" />
     <ClInclude Include="lib\par2\par2repairersourcefile.h" />
