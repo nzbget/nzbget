@@ -47,7 +47,7 @@ class ReedSolomon
 public:
   typedef g G;
 
-  ReedSolomon(void);
+  ReedSolomon(std::ostream& cout, std::ostream& cerr);
   ~ReedSolomon(void);
 
   // Set which input blocks are present or missing
@@ -105,10 +105,14 @@ protected:
 #ifdef LONGMULTIPLY
   GaloisLongMultiplyTable<g> *glmt;  // A multiplication table used by Process()
 #endif
+
+  std::ostream& cout;
+  std::ostream& cerr;
 };
 
 template<class g>
-inline ReedSolomon<g>::ReedSolomon(void)
+inline ReedSolomon<g>::ReedSolomon(std::ostream& cout, std::ostream& cerr) :
+  cout(cout), cerr(cerr)
 {
   inputcount = 0;
 

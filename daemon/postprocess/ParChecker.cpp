@@ -55,7 +55,9 @@ class RepairThread;
 class Repairer : public Par2::Par2Repairer, public ParChecker::AbstractRepairer
 {
 public:
-	Repairer(ParChecker* owner) { m_owner = owner; }
+	Repairer(ParChecker* owner):
+		Par2::Par2Repairer(owner->m_parCout, owner->m_parCerr),
+		m_owner(owner), commandLine(owner->m_parCout, owner->m_parCerr) {}
 	Par2::Result PreProcess(const char *parFilename);
 	Par2::Result Process(bool dorepair);
 	virtual Repairer* GetRepairer() { return this; }
@@ -364,13 +366,6 @@ int ParChecker::StreamBuf::overflow(int ch)
 }
 
 
-ParChecker::~ParChecker()
-{
-	debug("Destroying ParChecker");
-
-	Cleanup();
-}
-
 void ParChecker::Cleanup()
 {
 	m_repairer.reset();
@@ -383,9 +378,6 @@ void ParChecker::Cleanup()
 
 void ParChecker::Execute()
 {
-	Par2::cout.rdbuf(&m_parOutStream);
-	Par2::cerr.rdbuf(&m_parErrStream);
-
 	m_status = RunParCheckAll();
 
 	if (m_status == psRepairNotNeeded && m_parQuick && m_forceRepair && !IsStopped())
@@ -396,9 +388,6 @@ void ParChecker::Execute()
 	}
 
 	Completed();
-
-	Par2::cout.rdbuf(&Par2::nullStreamBuf);
-	Par2::cerr.rdbuf(&Par2::nullStreamBuf);
 }
 
 ParChecker::EStatus ParChecker::RunParCheckAll()

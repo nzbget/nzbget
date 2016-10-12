@@ -27,7 +27,7 @@ namespace Par2 {
 class Par2Repairer
 {
 public:
-  Par2Repairer(void);
+  Par2Repairer(std::ostream& cout, std::ostream& cerr);
   ~Par2Repairer(void);
 
   Result PreProcess(const CommandLine &commandline);
@@ -196,6 +196,9 @@ protected:
   u64                       totalsize;               // Total data size
 
   bool                      cancelled;               // repair cancelled
+
+  std::ostream&             cout;
+  std::ostream&             cerr;
 };
 
 } // end namespace Par2

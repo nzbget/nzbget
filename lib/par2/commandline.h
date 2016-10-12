@@ -30,7 +30,7 @@ namespace Par2
 class CommandLine
 {
 public:
-  CommandLine(void);
+  CommandLine(std::ostream& cout, std::ostream& cerr);
 
   // Parse the supplied command line arguments. 
   bool Parse(int argc, char *argv[]);
@@ -153,6 +153,9 @@ protected:
   size_t memorylimit;          // How much memory is permitted to be used
                                // for the output buffer when creating
                                // or repairing.
+
+  std::ostream& cout;
+  std::ostream& cerr;
 };
 
 typedef list<CommandLine::ExtraFile>::const_iterator ExtraFileIterator;

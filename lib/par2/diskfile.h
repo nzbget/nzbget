@@ -29,7 +29,7 @@ namespace Par2
 class DiskFile
 {
 public:
-  DiskFile(void);
+  DiskFile(std::ostream& cerr);
   ~DiskFile(void);
 
   // Create a file and set its length
@@ -106,6 +106,8 @@ protected:
 #ifdef WIN32
   static string ErrorMessage(DWORD error);
 #endif
+
+  std::ostream& cerr;
 };
 
 // This class keeps track of which DiskFile objects exist

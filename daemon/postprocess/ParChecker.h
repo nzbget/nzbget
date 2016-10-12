@@ -56,7 +56,6 @@ public:
 		virtual Repairer* GetRepairer() = 0;
 	};
 
-	~ParChecker();
 	void Execute();
 	void SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char* GetParFilename() { return m_parFilename; }
@@ -185,6 +184,8 @@ private:
 	DupeSourceList m_dupeSources;
 	StreamBuf m_parOutStream{this, Message::mkDetail};
 	StreamBuf m_parErrStream{this, Message::mkError};
+	std::ostream m_parCout{&m_parOutStream};
+	std::ostream m_parCerr{&m_parErrStream};
 
 	// "m_repairer" should be of type "Par2::Par2Repairer", however to prevent the
 	// including of libpar2-headers into this header-file we use an empty abstract class.

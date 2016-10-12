@@ -365,7 +365,8 @@ list<string>* DiskFile::FindFiles(string path, string wildcard)
 #define LengthType unsigned int
 #define MaxLength 0xffffffffUL
 
-DiskFile::DiskFile(void)
+DiskFile::DiskFile(std::ostream& cerr) :
+  cerr(cerr)
 {
   //filename;
   filesize = 0;

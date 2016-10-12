@@ -36,7 +36,12 @@
 class ParRenamerRepairer : public Par2::Par2Repairer
 {
 public:
+	ParRenamerRepairer() : Par2::Par2Repairer(m_nout, m_nout) {};
 	friend class ParRenamer;
+private:
+	class NullStreamBuf : public std::streambuf {};
+	NullStreamBuf m_nullbuf;
+	std::ostream m_nout{&m_nullbuf};
 };
 
 
