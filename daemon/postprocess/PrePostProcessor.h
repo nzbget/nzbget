@@ -48,9 +48,10 @@ private:
 
 	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars);
 	void CheckPostQueue();
+	void CheckRequestPar(DownloadQueue* downloadQueue);
 	void CleanupJobs(DownloadQueue* downloadQueue);
+	bool CanRunMoreJobs(bool* allowPar);
 	NzbInfo* PickNextJob(DownloadQueue* downloadQueue, bool allowPar);
-	void CheckRequestPar(DownloadQueue* downloadQueue, PostInfo* postInfo);
 	void StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo, bool allowPar);
 	void EnterStage(DownloadQueue* downloadQueue, PostInfo* postInfo, PostInfo::EStage stage);
 	void SanitisePostQueue();
