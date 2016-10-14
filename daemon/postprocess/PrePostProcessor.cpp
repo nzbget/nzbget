@@ -440,11 +440,13 @@ bool PrePostProcessor::CanRunMoreJobs(bool* allowPar)
 	int totalJobs = (int)m_activeJobs.size();
 	int parJobs = 0;
 	int otherJobs = 0;
+	bool repairJobs = false;
 
 	for (NzbInfo* postJob : m_activeJobs)
 	{
 		bool parJob = postJob->GetPostInfo()->GetStage() >= PostInfo::ptLoadingPars &&
 			postJob->GetPostInfo()->GetStage() <= PostInfo::ptVerifyingRepaired;
+		repairJobs |= postJob->GetPostInfo()->GetStage() == PostInfo::ptRepairing;
 		parJobs += parJob ? 1 : 0;
 		otherJobs += parJob ? 0 : 1;
 	}
@@ -457,7 +459,7 @@ bool PrePostProcessor::CanRunMoreJobs(bool* allowPar)
 
 		case Options::ppBalanced:
 			*allowPar = parJobs == 0;
-			return otherJobs == 0;
+			return otherJobs == 0 && (parJobs == 0 || repairJobs);
 
 		case Options::ppAggressive:
 			*allowPar = parJobs < 1;
