@@ -265,7 +265,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 	bool ok = true;
 
 	{
-		StateFile stateFile("queue", 58, true);
+		StateFile stateFile("queue", 59, true);
 		if (!downloadQueue->GetQueue()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -288,7 +288,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 
 	if (saveHistory)
 	{
-		StateFile stateFile("history", 58, true);
+		StateFile stateFile("history", 59, true);
 		if (!downloadQueue->GetHistory()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -320,7 +320,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	int formatVersion = 0;
 
 	{
-		StateFile stateFile("queue", 58, true);
+		StateFile stateFile("queue", 59, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -349,7 +349,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 
 	if (formatVersion == 0 || formatVersion >= 57)
 	{
-		StateFile stateFile("history", 58, true);
+		StateFile stateFile("history", 59, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -556,6 +556,14 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 	if (postStage > 0)
 	{
 		nzbInfo->EnterPostProcess();
+		if (formatVersion < 59 && postStage == 6)
+		{
+			postStage++;
+		}
+		else if (formatVersion < 59 && postStage > 6)
+		{
+			postStage += 2;
+		}
 		nzbInfo->GetPostInfo()->SetStage((PostInfo::EStage)postStage);
 	}
 	nzbInfo->SetFeedId(feedId);

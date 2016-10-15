@@ -688,8 +688,10 @@ public:
 		ptVerifyingSources,
 		ptRepairing,
 		ptVerifyingRepaired,
-		ptRenaming,
+		ptParRenaming,
+		ptRarRenaming,
 		ptUnpacking,
+		ptCleaningUp,
 		ptMoving,
 		ptExecutingScript,
 		ptFinished

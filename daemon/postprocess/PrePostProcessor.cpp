@@ -539,7 +539,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
 		g_Options->GetParRename())
 	{
-		EnterStage(downloadQueue, postInfo, PostInfo::ptRenaming);
+		EnterStage(downloadQueue, postInfo, PostInfo::ptParRenaming);
 		RenameController::StartJob(postInfo, RenameController::jkPar);
 		return;
 	}
@@ -608,7 +608,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
 		g_Options->GetRarRename())
 	{
-		EnterStage(downloadQueue, postInfo, PostInfo::ptRenaming);
+		EnterStage(downloadQueue, postInfo, PostInfo::ptRarRenaming);
 		RenameController::StartJob(postInfo, RenameController::jkRar);
 		return;
 	}
@@ -665,7 +665,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	}
 	else if (cleanup)
 	{
-		EnterStage(downloadQueue, postInfo, PostInfo::ptMoving);
+		EnterStage(downloadQueue, postInfo, PostInfo::ptCleaningUp);
 		CleanupController::StartJob(postInfo);
 	}
 	else if (moveInter)
@@ -730,14 +730,13 @@ void PrePostProcessor::UpdatePauseState()
 			case PostInfo::ptVerifyingSources:
 			case PostInfo::ptRepairing:
 			case PostInfo::ptVerifyingRepaired:
+			case PostInfo::ptParRenaming:
 				needPause |= g_Options->GetParPauseQueue();
 				break;
 
-			case PostInfo::ptRenaming:
-				needPause |= g_Options->GetParPauseQueue() || g_Options->GetUnpackPauseQueue();
-				break;
-
+			case PostInfo::ptRarRenaming:
 			case PostInfo::ptUnpacking:
+			case PostInfo::ptCleaningUp:
 			case PostInfo::ptMoving:
 				needPause |= g_Options->GetUnpackPauseQueue();
 				break;
