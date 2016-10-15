@@ -58,7 +58,7 @@ void PrePostProcessor::Run()
 
 	while (!IsStopped())
 	{
-		if (!g_Options->GetTempPausePostprocess())
+		if (!g_Options->GetTempPausePostprocess() && m_queuedJobs)
 		{
 			// check post-queue every 200 msec
 			CheckPostQueue();
@@ -100,7 +100,7 @@ void PrePostProcessor::SanitisePostQueue()
 		PostInfo* postInfo = nzbInfo->GetPostInfo();
 		if (postInfo)
 		{
-			m_jobCount++;
+			m_queuedJobs++;
 			if (postInfo->GetStage() == PostInfo::ptExecutingScript ||
 				!FileSystem::DirectoryExists(nzbInfo->GetDestDir()))
 			{
@@ -112,12 +112,6 @@ void PrePostProcessor::SanitisePostQueue()
 			}
 		}
 	}
-}
-
-void PrePostProcessor::DeletePostThread(PostInfo* postInfo)
-{
-	delete postInfo->GetPostThread();
-	postInfo->SetPostThread(nullptr);
 }
 
 void PrePostProcessor::DownloadQueueUpdate(void* aspect)
@@ -236,7 +230,7 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 		nzbInfo->PrintMessage(Message::mkInfo, "Queueing %s for post-processing", nzbInfo->GetName());
 
 		nzbInfo->EnterPostProcess();
-		m_jobCount++;
+		m_queuedJobs++;
 
 		if (nzbInfo->GetParStatus() == NzbInfo::psNone &&
 			g_Options->GetParCheck() != Options::pcAlways &&
@@ -391,21 +385,21 @@ void PrePostProcessor::CheckRequestPar(DownloadQueue* downloadQueue)
 			}
 			postInfo->SetWorking(false);
 		}
-
 	}
 #endif
 }
 
 void PrePostProcessor::CleanupJobs(DownloadQueue* downloadQueue)
 {
-	size_t countBefore = m_activeJobs.size();
-
 	m_activeJobs.erase(std::remove_if(m_activeJobs.begin(), m_activeJobs.end(),
-		[processor = this](NzbInfo* postJob)
+		[processor = this, downloadQueue](NzbInfo* postJob)
 		{
 			PostInfo* postInfo = postJob->GetPostInfo();
 			if (!postInfo->GetWorking())
 			{
+				delete postInfo->GetPostThread();
+				postInfo->SetPostThread(nullptr);
+
 				postInfo->SetStageTime(0);
 				postInfo->SetStageProgress(0);
 				postInfo->SetFileProgress(0);
@@ -418,21 +412,19 @@ void PrePostProcessor::CleanupJobs(DownloadQueue* downloadQueue)
 					postInfo->SetStartTime(0);
 				}
 
-				if (postInfo->GetStage() != PostInfo::ptFinished)
+				if (postInfo->GetStage() == PostInfo::ptFinished || postInfo->GetDeleted())
+				{
+					processor->JobCompleted(downloadQueue, postInfo);
+				}
+				else
 				{
 					postInfo->SetStage(PostInfo::ptQueued);
 				}
-
-				processor->DeletePostThread(postInfo);
+				return true;
 			}
-			return !postInfo->GetWorking();
+			return false;
 		}),
 		m_activeJobs.end());
-
-	if (m_activeJobs.size() != countBefore)
-	{
-		downloadQueue->Save();
-	}
 }
 
 bool PrePostProcessor::CanRunMoreJobs(bool* allowPar)
@@ -469,6 +461,8 @@ bool PrePostProcessor::CanRunMoreJobs(bool* allowPar)
 			*allowPar = parJobs < 2;
 			return totalJobs < 6;
 	}
+
+	return false;
 }
 
 NzbInfo* PrePostProcessor::PickNextJob(DownloadQueue* downloadQueue, bool allowPar)
@@ -494,50 +488,39 @@ void PrePostProcessor::CheckPostQueue()
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	if (!m_jobCount)
-	{
-		return;
-	}
-
+	size_t countBefore = m_activeJobs.size();
 	CheckRequestPar(downloadQueue);
 	CleanupJobs(downloadQueue);
+	bool changed = m_activeJobs.size() != countBefore;
 
 	bool allowPar;
-	if (!CanRunMoreJobs(&allowPar))
+	while (CanRunMoreJobs(&allowPar))
 	{
-		return;
+		NzbInfo* postJob = PickNextJob(downloadQueue, allowPar);
+		if (!postJob)
+		{
+			break;
+		}
+
+		Util::SetStandByMode(false);
+
+		m_activeJobs.push_back(postJob);
+
+		PostInfo* postInfo = postJob->GetPostInfo();
+		if (postInfo->GetStage() == PostInfo::ptQueued &&
+			(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
+		{
+			StartJob(downloadQueue, postInfo, allowPar);
+			CheckRequestPar(downloadQueue);
+			CleanupJobs(downloadQueue);
+			changed = true;
+		}
 	}
 
-	NzbInfo* postJob = PickNextJob(downloadQueue, allowPar);
-	if (!postJob)
+	if (changed)
 	{
-		return;
-	}
-
-	Util::SetStandByMode(false);
-
-	m_activeJobs.push_back(postJob);
-	PostInfo* postInfo = postJob->GetPostInfo();
-
-	if (postInfo->GetDeleted())
-	{
-		postInfo->SetStage(PostInfo::ptFinished);
-	}
-
-	if (postInfo->GetStage() == PostInfo::ptQueued &&
-		(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
-	{
-		StartJob(downloadQueue, postInfo, allowPar);
-	}
-	else if (postInfo->GetStage() == PostInfo::ptFinished)
-	{
-		UpdatePauseState(false, nullptr);
-		JobCompleted(downloadQueue, postInfo);
-	}
-	else if (!g_Options->GetPausePostProcess())
-	{
-		error("Internal error: invalid state in post-processor");
-		// TODO: cancel (delete) current job
+		downloadQueue->Save();
+		UpdatePauseState();
 	}
 }
 
@@ -556,7 +539,6 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
 		g_Options->GetParRename())
 	{
-		UpdatePauseState(g_Options->GetParPauseQueue(), "par-rename");
 		EnterStage(downloadQueue, postInfo, PostInfo::ptRenaming);
 		RenameController::StartJob(postInfo, RenameController::jkPar);
 		return;
@@ -574,7 +556,6 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 				return;
 			}
 
-			UpdatePauseState(g_Options->GetParPauseQueue(), "par-check");
 			EnterStage(downloadQueue, postInfo, PostInfo::ptLoadingPars);
 			postInfo->SetNeedParCheck(false);
 			RepairController::StartJob(postInfo);
@@ -627,7 +608,6 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
 		g_Options->GetRarRename())
 	{
-		UpdatePauseState(g_Options->GetUnpackPauseQueue(), "rar-rename");
 		EnterStage(downloadQueue, postInfo, PostInfo::ptRenaming);
 		RenameController::StartJob(postInfo, RenameController::jkRar);
 		return;
@@ -680,25 +660,21 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 
 	if (unpack)
 	{
-		UpdatePauseState(g_Options->GetUnpackPauseQueue(), "unpack");
 		EnterStage(downloadQueue, postInfo, PostInfo::ptUnpacking);
 		UnpackController::StartJob(postInfo);
 	}
 	else if (cleanup)
 	{
-		UpdatePauseState(g_Options->GetUnpackPauseQueue() || g_Options->GetScriptPauseQueue(), "cleanup");
 		EnterStage(downloadQueue, postInfo, PostInfo::ptMoving);
 		CleanupController::StartJob(postInfo);
 	}
 	else if (moveInter)
 	{
-		UpdatePauseState(g_Options->GetUnpackPauseQueue() || g_Options->GetScriptPauseQueue(), "move");
 		EnterStage(downloadQueue, postInfo, PostInfo::ptMoving);
 		MoveController::StartJob(postInfo);
 	}
 	else
 	{
-		UpdatePauseState(g_Options->GetScriptPauseQueue(), "post-process-script");
 		EnterStage(downloadQueue, postInfo, PostInfo::ptExecutingScript);
 		PostScriptController::StartJob(postInfo);
 	}
@@ -708,14 +684,12 @@ void PrePostProcessor::EnterStage(DownloadQueue* downloadQueue, PostInfo* postIn
 {
 	postInfo->SetWorking(true);
 	postInfo->SetStage(stage);
-	downloadQueue->Save();
 }
 
 void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* postInfo)
 {
 	NzbInfo* nzbInfo = postInfo->GetNzbInfo();
 
-	DeletePostThread(postInfo);
 	nzbInfo->LeavePostProcess();
 
 	if (IsNzbFileCompleted(nzbInfo, true))
@@ -723,13 +697,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 		NzbCompleted(downloadQueue, nzbInfo, false);
 	}
 
-	m_activeJobs.erase(std::remove_if(m_activeJobs.begin(), m_activeJobs.end(),
-		[nzbInfo](NzbInfo* postJob) { return postJob == nzbInfo; }),
-		m_activeJobs.end());
-
-	m_jobCount--;
-
-	downloadQueue->Save();
+	m_queuedJobs--;
 }
 
 bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars)
@@ -751,18 +719,49 @@ bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPar
 	return true;
 }
 
-void PrePostProcessor::UpdatePauseState(bool needPause, const char* reason)
+void PrePostProcessor::UpdatePauseState()
 {
+	bool needPause = false;
+	for (NzbInfo* postJob : m_activeJobs)
+	{
+		switch (postJob->GetPostInfo()->GetStage())
+		{
+			case PostInfo::ptLoadingPars:
+			case PostInfo::ptVerifyingSources:
+			case PostInfo::ptRepairing:
+			case PostInfo::ptVerifyingRepaired:
+				needPause |= g_Options->GetParPauseQueue();
+				break;
+
+			case PostInfo::ptRenaming:
+				needPause |= g_Options->GetParPauseQueue() || g_Options->GetUnpackPauseQueue();
+				break;
+
+			case PostInfo::ptUnpacking:
+			case PostInfo::ptMoving:
+				needPause |= g_Options->GetUnpackPauseQueue();
+				break;
+
+			case PostInfo::ptExecutingScript:
+				needPause |= g_Options->GetScriptPauseQueue();
+				break;
+
+			case PostInfo::ptQueued:
+			case PostInfo::ptFinished:
+				break;
+		}
+	}
+
 	if (needPause && !g_Options->GetTempPauseDownload())
 	{
-		info("Pausing download before %s", reason);
+		info("Pausing download before post-processing");
 	}
 	else if (!needPause && g_Options->GetTempPauseDownload())
 	{
-		info("Unpausing download after %s", m_pauseReason);
+		info("Unpausing download after post-processing");
 	}
+
 	g_Options->SetTempPauseDownload(needPause);
-	m_pauseReason = reason;
 }
 
 bool PrePostProcessor::EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text)

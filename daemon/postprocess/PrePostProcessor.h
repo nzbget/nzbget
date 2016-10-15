@@ -31,8 +31,8 @@ public:
 	PrePostProcessor();
 	virtual void Run();
 	virtual void Stop();
-	bool HasMoreJobs() { return m_jobCount > 0; }
-	int GetJobCount() { return m_jobCount; }
+	bool HasMoreJobs() { return m_queuedJobs > 0; }
+	int GetJobCount() { return m_queuedJobs; }
 	bool EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action,
 		int offset, const char* text);
 	void NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
@@ -42,11 +42,9 @@ protected:
 	virtual void Update(Subject* caller, void* aspect) { DownloadQueueUpdate(aspect); }
 
 private:
-	int m_jobCount = 0;
+	int m_queuedJobs = 0;
 	RawNzbList m_activeJobs;
-	const char* m_pauseReason = nullptr;
 
-	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars);
 	void CheckPostQueue();
 	void CheckRequestPar(DownloadQueue* downloadQueue);
 	void CleanupJobs(DownloadQueue* downloadQueue);
@@ -55,15 +53,15 @@ private:
 	void StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo, bool allowPar);
 	void EnterStage(DownloadQueue* downloadQueue, PostInfo* postInfo, PostInfo::EStage stage);
 	void SanitisePostQueue();
-	void UpdatePauseState(bool needPause, const char* reason);
+	void UpdatePauseState();
 	void NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool saveQueue);
 	void JobCompleted(DownloadQueue* downloadQueue, PostInfo* postInfo);
 	bool PostQueueDelete(DownloadQueue* downloadQueue, IdList* idList);
-	void DeletePostThread(PostInfo* postInfo);
 	void DownloadQueueUpdate(void* aspect);
 	void DeleteCleanup(NzbInfo* nzbInfo);
+	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars);
 };
 
 extern PrePostProcessor* g_PrePostProcessor;
