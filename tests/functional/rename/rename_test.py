@@ -1,4 +1,4 @@
-nzbget_options = ['ParRename=yes', 'RarRename=yes']
+nzbget_options = ['ParRename=yes', 'RarRename=yes', 'UnpackIgnoreExt=.cbr']
 
 def test_parrename(nserv, nzbget):
 	hist = nzbget.download_nzb('parrename.nzb', unpack=True)
@@ -49,3 +49,7 @@ def test_rarrename_rar3encnam(nserv, nzbget):
 def test_rarrename_rar5encnam(nserv, nzbget):
 	hist = nzbget.download_nzb('rarrename5encnam.nzb', unpack=True, params=[('*unpack:password', '123')])
 	assert hist['Status'] == 'SUCCESS/UNPACK'
+
+def test_rarrename_rar3ignoreext(nserv, nzbget):
+	hist = nzbget.download_nzb('rar3ignoreext.nzb', unpack=True)
+	assert hist['Status'] == 'SUCCESS/HEALTH'

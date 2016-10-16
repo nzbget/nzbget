@@ -135,6 +135,7 @@ void RenameController::ExecRename(const char* destDir, const char* finalDir, con
 	{
 		m_rarRenamer.SetDestDir(destDir);
 		m_rarRenamer.SetInfoName(nzbName);
+		m_rarRenamer.SetIgnoreExt(g_Options->GetUnpackIgnoreExt());
 
 		NzbParameter* parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:Password", false);
 		if (parameter)

@@ -71,7 +71,7 @@ private:
 	bool m_noFilesMessageReceived;
 	bool m_hasParFiles;
 	bool m_hasRarFiles;
-	bool m_hasNonStdRarFiles;
+	bool m_hasRenamedArchiveFiles;
 	bool m_hasSevenZipFiles;
 	bool m_hasSevenZipMultiFiles;
 	bool m_hasSplittedFiles;
@@ -96,7 +96,7 @@ private:
 	void Completed();
 	void CreateUnpackDir();
 	bool Cleanup();
-	void CheckArchiveFiles(bool scanNonStdFiles);
+	void CheckArchiveFiles();
 	void SetProgressLabel(const char* progressLabel);
 #ifndef DISABLE_PARCHECK
 	void RequestParCheck(bool forceRepair);

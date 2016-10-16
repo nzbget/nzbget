@@ -124,6 +124,7 @@ static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_POSTSCRIPT			= "PostScript";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 static const char* OPTION_PARIGNOREEXT			= "ParIgnoreExt";
+static const char* OPTION_UNPACKIGNOREEXT		= "UnpackIgnoreExt";
 static const char* OPTION_FEEDHISTORY			= "FeedHistory";
 static const char* OPTION_URLFORCE				= "UrlForce";
 static const char* OPTION_TIMECORRECTION		= "TimeCorrection";
@@ -489,6 +490,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
 	SetOption(OPTION_PARIGNOREEXT, "");
+	SetOption(OPTION_UNPACKIGNOREEXT, "");
 	SetOption(OPTION_FEEDHISTORY, "7");
 	SetOption(OPTION_URLFORCE, "yes");
 	SetOption(OPTION_TIMECORRECTION, "0");
@@ -667,6 +669,7 @@ void Options::InitOptions()
 	m_unpackPassFile		= GetOption(OPTION_UNPACKPASSFILE);
 	m_extCleanupDisk		= GetOption(OPTION_EXTCLEANUPDISK);
 	m_parIgnoreExt			= GetOption(OPTION_PARIGNOREEXT);
+	m_unpackIgnoreExt		= GetOption(OPTION_UNPACKIGNOREEXT);
 	m_shellOverride			= GetOption(OPTION_SHELLOVERRIDE);
 
 	m_downloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10) * 1024;

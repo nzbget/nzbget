@@ -34,6 +34,7 @@ public:
 	const char* GetInfoName() { return m_infoName; }
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
 	void SetPassword(const char* password) { m_password = password; }
+	void SetIgnoreExt(const char* ignoreExt) { m_ignoreExt = ignoreExt; }
 	int GetRenamedCount() { return m_renamedCount; }
 
 protected:
@@ -62,10 +63,11 @@ private:
 	RarVolumeList m_volumes;
 	RarSets m_sets;
 	CString m_password;
+	CString m_ignoreExt;
 
 	void BuildDirList(const char* destDir);
 	void CheckFiles(const char* destDir);
-	void CheckRegularFile(const char* destDir, const char* filename);
+	void CheckOneFile(const char* filename);
 	void RenameFile(const char* srcFilename, const char* destFileName);
 	void RenameFiles(const char* destDir);
 	CString GenNewVolumeFilename(const char* destDir, const char* newBasename, RarVolume* volume);

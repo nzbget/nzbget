@@ -80,6 +80,12 @@ def prepare_testdata(request):
 		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part02.rar', nserv_datadir + '/rarrename5badext/testfile3.part0002.rar')
 		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part03.rar', nserv_datadir + '/rarrename5badext/testfile3.part03.rar')
 
+	if not os.path.exists(nserv_datadir + '/rar3ignoreext'):
+		os.makedirs(nserv_datadir + '/rar3ignoreext')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part01.rar', nserv_datadir + '/rar3ignoreext/testfile3-1.cbr')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part02.rar', nserv_datadir + '/rar3ignoreext/testfile3-2.cbr')
+		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part03.rar', nserv_datadir + '/rar3ignoreext/testfile3-3.cbr')
+
 	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '3000', '-q']):
 		pytest.exit('Test file generation failed')
 

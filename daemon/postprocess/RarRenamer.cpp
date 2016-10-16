@@ -22,7 +22,6 @@
 
 #include "RarRenamer.h"
 #include "Log.h"
-#include "Options.h"
 #include "Util.h"
 #include "FileSystem.h"
 
@@ -80,7 +79,7 @@ void RarRenamer::CheckFiles(const char* destDir)
 				UpdateProgress();
 				m_curFile++;
 
-				CheckRegularFile(destDir, fullFilename);
+				CheckOneFile(fullFilename);
 			}
 		}
 	}
@@ -91,8 +90,13 @@ void RarRenamer::CheckFiles(const char* destDir)
 	}
 }
 
-void RarRenamer::CheckRegularFile(const char* destDir, const char* filename)
+void RarRenamer::CheckOneFile(const char* filename)
 {
+	if (m_ignoreExt && Util::MatchFileExt(FileSystem::BaseFileName(filename), m_ignoreExt, ",;"))
+	{
+		return;
+	}
+	
 	RarVolume volume(filename);
 	volume.SetPassword(m_password);
 	if (volume.Read())

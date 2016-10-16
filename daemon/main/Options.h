@@ -276,6 +276,7 @@ public:
 	bool GetUnpackPauseQueue() { return m_unpackPauseQueue; }
 	const char* GetExtCleanupDisk() { return m_extCleanupDisk; }
 	const char* GetParIgnoreExt() { return m_parIgnoreExt; }
+	const char* GetUnpackIgnoreExt() { return m_unpackIgnoreExt; }
 	int GetFeedHistory() { return m_feedHistory; }
 	bool GetUrlForce() { return m_urlForce; }
 	int GetTimeCorrection() { return m_timeCorrection; }
@@ -421,6 +422,7 @@ private:
 	bool m_unpackPauseQueue;
 	CString m_extCleanupDisk;
 	CString m_parIgnoreExt;
+	CString m_unpackIgnoreExt;
 	int m_feedHistory = 0;
 	bool m_urlForce = false;
 	int m_timeCorrection = 0;

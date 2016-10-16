@@ -87,16 +87,13 @@ void UnpackController::Run()
 
 	if (unpack)
 	{
-		bool scanNonStdFiles = m_postInfo->GetNzbInfo()->GetParRenameStatus() > NzbInfo::rsSkipped ||
-			m_postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSuccess ||
-			!m_hasParFiles;
-		CheckArchiveFiles(scanNonStdFiles);
+		CheckArchiveFiles();
 	}
 
 	SetInfoName(m_infoName);
 	SetWorkingDir(m_destDir);
 
-	bool hasFiles = m_hasRarFiles || m_hasNonStdRarFiles || m_hasSevenZipFiles || m_hasSevenZipMultiFiles || m_hasSplittedFiles;
+	bool hasFiles = m_hasRarFiles || m_hasSevenZipFiles || m_hasSevenZipMultiFiles || m_hasSplittedFiles;
 
 	if (m_postInfo->GetUnpackTried() && !m_postInfo->GetParRepaired() &&
 		(!m_password.Empty() || Util::EmptyStr(g_Options->GetUnpackPassFile()) || m_postInfo->GetPassListTried()))
@@ -114,7 +111,7 @@ void UnpackController::Run()
 
 		CreateUnpackDir();
 
-		if (m_hasRarFiles || m_hasNonStdRarFiles)
+		if (m_hasRarFiles)
 		{
 			UnpackArchives(upUnrar, false);
 		}
@@ -138,22 +135,35 @@ void UnpackController::Run()
 
 		m_joinedFiles.clear();
 	}
-	else
+	else if (unpack)
 	{
-		PrintMessage(Message::mkInfo, (unpack ? "Nothing to unpack for %s" : "Unpack for %s skipped"), *m_name);
-
 #ifndef DISABLE_PARCHECK
-		if (unpack && m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
-			m_postInfo->GetNzbInfo()->GetParRenameStatus() <= NzbInfo::rsSkipped && m_hasParFiles)
+		if (m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped &&
+			m_postInfo->GetNzbInfo()->GetParRenameStatus() <= NzbInfo::rsSkipped &&
+			m_hasParFiles)
 		{
+			PrintMessage(Message::mkInfo, "Nothing to unpack for %s", *m_name);
 			RequestParCheck(false);
 		}
 		else
 #endif
+		if (m_hasRenamedArchiveFiles)
 		{
+			PrintMessage(Message::mkError, "Could not unpack %s due to renamed archive files", *m_name);
+			m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usFailure);
+		}
+		else
+		{
+			PrintMessage(Message::mkInfo, "Nothing to unpack for %s", *m_name);
 			m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSkipped);
 		}
 	}
+	else
+	{
+		PrintMessage(Message::mkInfo, "Unpack for %s skipped", *m_name);
+		m_postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSkipped);
+	}
+
 
 	int unpackSec = (int)(Util::CurrentTime() - start);
 	m_postInfo->GetNzbInfo()->SetUnpackSec(m_postInfo->GetNzbInfo()->GetUnpackSec() + unpackSec);
@@ -266,7 +276,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 		params.emplace_back("-o+");
 	}
 
-	params.emplace_back(m_hasNonStdRarFiles ? "*.*" : "*.rar");
+	params.emplace_back("*.rar");
 	params.push_back(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR), true));
 	SetArgs(std::move(params));
 	SetLogPrefix("Unrar");
@@ -604,19 +614,18 @@ void UnpackController::CreateUnpackDir()
 	}
 }
 
-void UnpackController::CheckArchiveFiles(bool scanNonStdFiles)
+void UnpackController::CheckArchiveFiles()
 {
 	m_hasRarFiles = false;
-	m_hasNonStdRarFiles = false;
+	m_hasRenamedArchiveFiles = false;
 	m_hasSevenZipFiles = false;
 	m_hasSevenZipMultiFiles = false;
 	m_hasSplittedFiles = false;
 
 	RegEx regExRar(".*\\.rar$");
-	RegEx regExRarMultiSeq(".*\\.(r|s)[0-9][0-9]$");
+	RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
 	RegEx regExSevenZip(".*\\.7z$");
 	RegEx regExSevenZipMulti(".*\\.7z\\.[0-9]+$");
-	RegEx regExNumExt(".*\\.[0-9]+$");
 	RegEx regExSplitExt(".*\\.[a-z,0-9]{3}\\.[0-9]{3}$");
 
 	DirBrowser dir(m_destDir);
@@ -641,15 +650,15 @@ void UnpackController::CheckArchiveFiles(bool scanNonStdFiles)
 			{
 				m_hasSevenZipMultiFiles = true;
 			}
-			else if (scanNonStdFiles && !m_hasNonStdRarFiles && extNum > 1 &&
-				!regExRarMultiSeq.Match(filename) && regExNumExt.Match(filename) &&
-				FileHasRarSignature(fullFilename))
-			{
-				m_hasNonStdRarFiles = true;
-			}
 			else if (regExSplitExt.Match(filename) && (extNum == 0 || extNum == 1))
 			{
 				m_hasSplittedFiles = true;
+			}
+			else if (!m_hasRenamedArchiveFiles && !regExRarMultiSeq.Match(filename) &&
+				!Util::MatchFileExt(filename, g_Options->GetUnpackIgnoreExt(), ",;") &&
+				FileHasRarSignature(fullFilename))
+			{
+				m_hasRenamedArchiveFiles = true;
 			}
 		}
 	}
@@ -732,7 +741,6 @@ bool UnpackController::Cleanup()
 		RegEx regExRar(".*\\.rar$");
 		RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
 		RegEx regExSevenZip(".*\\.7z$|.*\\.7z\\.[0-9]+$");
-		RegEx regExNumExt(".*\\.[0-9]+$");
 		RegEx regExSplitExt(".*\\.[a-z,0-9]{3}\\.[0-9]{3}$");
 
 		DirBrowser dir(m_destDir);
@@ -744,7 +752,6 @@ bool UnpackController::Cleanup()
 				(m_interDir || !extractedFiles.Exists(filename)) &&
 				(regExRar.Match(filename) || regExSevenZip.Match(filename) ||
 				 (regExRarMultiSeq.Match(filename) && FileHasRarSignature(fullFilename)) ||
-				 (m_hasNonStdRarFiles && regExNumExt.Match(filename) && FileHasRarSignature(fullFilename)) ||
 				 (m_hasSplittedFiles && regExSplitExt.Match(filename) && m_joinedFiles.Exists(filename))))
 			{
 				PrintMessage(Message::mkInfo, "Deleting file %s", filename);
