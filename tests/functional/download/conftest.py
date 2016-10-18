@@ -59,5 +59,6 @@ def create_test_file(bigdir, sevenzip_bin, sizemb):
 	f.close()
 
 	if 0 != subprocess.call([sevenzip_bin, 'a', bigdir + '/' + str(sizemb) + 'mb.7z', '-mx=0', '-v50m', bigdir + '/' + str(sizemb) + 'mb.dat']):
-		os.remove(bigdir + '/' + str(sizemb) + 'mb.dat')
 		pytest.exit('Test file generation failed')
+
+	os.remove(bigdir + '/' + str(sizemb) + 'mb.dat')

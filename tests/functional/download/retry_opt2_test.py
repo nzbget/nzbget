@@ -16,7 +16,7 @@ def test_retry_small_retryfailed(nserv, nzbget):
 
 def test_retry_medium_retryfailed(nserv, nzbget):
 	nzb_content = nzbget.load_nzb('medium.nzb')
-	nzb_content = nzb_content.replace('000000:500000', '000000:500000!2')
+	nzb_content = nzb_content.replace('0000000:500000', '0000000:500000!2')
 	hist = nzbget.download_nzb('medium.bad3.nzb', nzb_content)
 	assert hist['Status'] == 'FAILURE/HEALTH'
 	nzbget.api.editqueue('HistoryRetryFailed', 0, '', [hist['NZBID']])
