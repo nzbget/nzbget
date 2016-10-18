@@ -256,23 +256,31 @@ void QueueCoordinator::Run()
 		}
 	}
 
+	WaitJobs();
+	SavePartialState();
+
+	debug("Exiting QueueCoordinator-loop");
+}
+
+void QueueCoordinator::WaitJobs()
+{
 	// waiting for downloads
 	debug("QueueCoordinator: waiting for Downloads to complete");
-	bool completed = false;
-	while (!completed)
+
+	while (true)
 	{
 		{
 			GuardedDownloadQueue guard = DownloadQueue::Guard();
-			completed = m_activeDownloads.size() == 0;
+			if (m_activeDownloads.empty())
+			{
+				break;
+			}
 		}
 		usleep(100 * 1000);
 		ResetHangingDownloads();
 	}
+
 	debug("QueueCoordinator: Downloads are completed");
-
-	SavePartialState();
-
-	debug("Exiting QueueCoordinator-loop");
 }
 
 /*

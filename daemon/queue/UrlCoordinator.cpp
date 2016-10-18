@@ -117,21 +117,30 @@ void UrlCoordinator::Run()
 		}
 	}
 
+	WaitJobs();
+
+	debug("Exiting UrlCoordinator-loop");
+}
+
+void UrlCoordinator::WaitJobs()
+{
 	// waiting for downloads
 	debug("UrlCoordinator: waiting for Downloads to complete");
-	bool completed = false;
-	while (!completed)
+
+	while (true)
 	{
 		{
 			GuardedDownloadQueue guard = DownloadQueue::Guard();
-			completed = m_activeDownloads.size() == 0;
+			if (m_activeDownloads.empty())
+			{
+				break;
+			}
 		}
 		usleep(100 * 1000);
 		ResetHangingDownloads();
 	}
-	debug("UrlCoordinator: Downloads are completed");
 
-	debug("Exiting UrlCoordinator-loop");
+	debug("UrlCoordinator: Downloads are completed");
 }
 
 void UrlCoordinator::Stop()

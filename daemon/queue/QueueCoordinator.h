@@ -90,6 +90,7 @@ private:
 	void Load();
 	void SavePartialState();
 	void LoadPartialState(FileInfo* fileInfo);
+	void WaitJobs();
 };
 
 extern QueueCoordinator* g_QueueCoordinator;
