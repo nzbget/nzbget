@@ -62,6 +62,7 @@ private:
 	void DownloadQueueUpdate(void* aspect);
 	void DeleteCleanup(NzbInfo* nzbInfo);
 	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars);
+	void WaitJobs();
 };
 
 extern PrePostProcessor* g_PrePostProcessor;

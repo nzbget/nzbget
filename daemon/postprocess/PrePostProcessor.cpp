@@ -67,7 +67,47 @@ void PrePostProcessor::Run()
 		usleep(200 * 1000);
 	}
 
+	WaitJobs();
+
 	debug("Exiting PrePostProcessor-loop");
+}
+
+void PrePostProcessor::WaitJobs()
+{
+	debug("PrePostProcessor: waiting for jobs to complete");
+
+	// wait 5 seconds until all jobs gracefully finish
+	time_t waitStart = Util::CurrentTime();
+	while (Util::CurrentTime() < waitStart + 5)
+	{
+		{
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+			if (m_activeJobs.empty())
+			{
+				break;
+			}
+		}
+		CheckPostQueue();
+		usleep(200 * 1000);
+	}
+
+	// kill remaining jobs; not safe but we can't wait any longer
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		for (NzbInfo* postJob : m_activeJobs)
+		{
+			if (postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread())
+			{
+				Thread* thread = postJob->GetPostInfo()->GetPostThread();
+				postJob->GetPostInfo()->SetPostThread(nullptr);
+				warn("Terminating active post-process job for %s", postJob->GetName());
+				thread->Kill();
+				delete thread;
+			}
+		}
+	}
+
+	debug("PrePostProcessor: Jobs are completed");
 }
 
 void PrePostProcessor::Stop()
@@ -77,12 +117,9 @@ void PrePostProcessor::Stop()
 
 	for (NzbInfo* postJob : m_activeJobs)
 	{
-		if (postJob && postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread())
+		if (postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread())
 		{
-			Thread* postThread = postJob->GetPostInfo()->GetPostThread();
-			postJob->GetPostInfo()->SetPostThread(nullptr);
-			postThread->SetAutoDestroy(true);
-			postThread->Stop();
+			postJob->GetPostInfo()->GetPostThread()->Stop();
 		}
 	}
 }
@@ -110,6 +147,7 @@ void PrePostProcessor::SanitisePostQueue()
 			{
 				postInfo->SetStage(PostInfo::ptQueued);
 			}
+			postInfo->SetWorking(false);
 		}
 	}
 }
@@ -494,7 +532,7 @@ void PrePostProcessor::CheckPostQueue()
 	bool changed = m_activeJobs.size() != countBefore;
 
 	bool allowPar;
-	while (CanRunMoreJobs(&allowPar))
+	while (CanRunMoreJobs(&allowPar) && !IsStopped())
 	{
 		NzbInfo* postJob = PickNextJob(downloadQueue, allowPar);
 		if (!postJob)
