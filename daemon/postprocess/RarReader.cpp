@@ -224,6 +224,12 @@ bool RarVolume::ReadRar3Volume(DiskFile& file)
 			break;
 		}
 
+		else if (block.type < 0x72 || block.type > 0x7b)
+		{
+			// inlvaid block type
+			return false;
+		}
+
 		uint64 skip = block.trailsize;
 		if (m_encrypted)
 		{
@@ -378,6 +384,12 @@ bool RarVolume::ReadRar5Volume(DiskFile& file)
 			if (!ReadV(file, &block, &endflags)) return false;
 			m_hasNextVolume = (endflags & RAR5_ENDARC_NEXTVOL) != 0;
 			break;
+		}
+
+		else if (block.type < 1 || block.type > 5)
+		{
+			// inlvaid block type
+			return false;
 		}
 
 		uint64 skip = block.trailsize;
