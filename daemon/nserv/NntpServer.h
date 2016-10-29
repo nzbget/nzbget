@@ -28,9 +28,9 @@ class NntpServer : public Thread
 {
 public:
 	NntpServer(int id, const char* host, int port, const char* secureCert,
-		const char* secureKey, const char* datapath) :
+		const char* secureKey, const char* dataDir, const char* cacheDir) :
 		m_id(id), m_host(host), m_port(port), m_secureCert(secureCert),
-		m_secureKey(secureKey), m_datapath(datapath) {}
+		m_secureKey(secureKey), m_dataDir(dataDir), m_cacheDir(cacheDir) {}
 	virtual void Run();
 	virtual void Stop();
 
@@ -38,7 +38,8 @@ private:
 	int m_id;
 	CString m_host;
 	int m_port;
-	CString m_datapath;
+	CString m_dataDir;
+	CString m_cacheDir;
 	CString m_secureCert;
 	CString m_secureKey;
 	std::unique_ptr<Connection> m_connection;

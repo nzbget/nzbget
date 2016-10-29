@@ -27,8 +27,10 @@
 class NntpProcessor : public Thread
 {
 public:
-	NntpProcessor(int id, int serverId, const char* datapath, const char* secureCert, const char* secureKey) :
-		m_id(id), m_serverId(serverId), m_datapath(datapath), m_secureCert(secureCert), m_secureKey(secureKey) {}
+	NntpProcessor(int id, int serverId, const char* dataDir, const char* cacheDir,
+		const char* secureCert, const char* secureKey) :
+		m_id(id), m_serverId(serverId), m_dataDir(dataDir), m_cacheDir(cacheDir),
+		m_secureCert(secureCert), m_secureKey(secureKey) {}
 	~NntpProcessor() { m_connection->Disconnect(); }
 	virtual void Run();
 	void SetConnection(std::unique_ptr<Connection>&& connection) { m_connection = std::move(connection); }
@@ -37,7 +39,8 @@ private:
 	int m_id;
 	int m_serverId;
 	std::unique_ptr<Connection> m_connection;
-	const char* m_datapath;
+	const char* m_dataDir;
+	const char* m_cacheDir;
 	const char* m_secureCert;
 	const char* m_secureKey;
 	const char* m_messageid;
@@ -90,7 +93,8 @@ void NntpServer::Run()
 			continue;
 		}
 		
-		NntpProcessor* commandThread = new NntpProcessor(num++, m_id, m_datapath, m_secureCert, m_secureKey);
+		NntpProcessor* commandThread = new NntpProcessor(num++, m_id,
+			m_dataDir, m_cacheDir, m_secureCert, m_secureKey);
 		commandThread->SetAutoDestroy(true);
 		commandThread->SetConnection(std::move(acceptedConnection));
 		commandThread->Start();
@@ -178,7 +182,7 @@ void NntpProcessor::Run()
 
 /* 
  Message-id format:
-   <file-path-relative-to-datapath?xxx=yyy:zzz!1,2,3>
+   <file-path-relative-to-dataDir?xxx=yyy:zzz!1,2,3>
 where:
    xxx   - part number (integer)
    xxx   - offset from which to read the files (integer)
@@ -246,19 +250,43 @@ void NntpProcessor::SendSegment()
 {
 	detail("[%i] Sending segment %s (%i=%lli:%i)", m_id, *m_filename, m_part, (long long)m_offset, m_size);
 
-	BString<1024> fullFilename("%s/%s", m_datapath, *m_filename);
+	BString<1024> fullFilename("%s/%s", m_dataDir, *m_filename);
+	BString<1024> cacheFileDir("%s/%s", m_cacheDir, *m_filename);
+	BString<1024> cacheFileName("%i=%lli-%i", m_part, (long long)m_offset, m_size);
+	BString<1024> cacheFullFilename("%s/%s", *cacheFileDir, *cacheFileName);
 
-	if (!FileSystem::FileExists(fullFilename))
+	DiskFile cacheFile;
+	bool readCache = m_cacheDir && cacheFile.Open(cacheFullFilename, DiskFile::omRead);
+	bool writeCache = m_cacheDir && !readCache;
+
+	CString errmsg;
+	if (writeCache && !FileSystem::ForceDirectories(cacheFileDir, errmsg))
+	{
+		error("Could not create directory %s: %s", *cacheFileDir, *errmsg);
+	}
+
+	if (writeCache && !cacheFile.Open(cacheFullFilename, DiskFile::omWrite))
+	{
+		error("Could not create file %s: %s", *cacheFullFilename, *FileSystem::GetLastErrorMessage());
+	}
+
+	if (!readCache && !FileSystem::FileExists(fullFilename))
 	{
 		m_connection->WriteLine(CString::FormatStr("430 Article not found\r\n"));
 		return;
 	}
 
 	YEncoder encoder(fullFilename, m_part, m_offset, m_size, 
-		[con = m_connection.get()](const char* buf, int size){ con->Send(buf, size); });
+		[con = m_connection.get(), writeCache, &cacheFile](const char* buf, int size)
+		{
+			if (writeCache)
+			{
+				cacheFile.Write(buf, size);
+			}
+			con->Send(buf, size);
+		});
 
-	CString errmsg;
-	if (!encoder.OpenFile(errmsg))
+	if (!readCache && !encoder.OpenFile(errmsg))
 	{
 		m_connection->WriteLine(CString::FormatStr("403 %s\r\n", *errmsg));
 		return;
@@ -272,7 +300,22 @@ void NntpProcessor::SendSegment()
 		m_connection->WriteLine("\r\n");
 	}
 
-	encoder.WriteSegment();
+	if (readCache)
+	{
+		cacheFile.Seek(0, DiskFile::soEnd);
+		int size = (int)cacheFile.Position();
+		CharBuffer buf(size);
+		cacheFile.Seek(0);
+		if (cacheFile.Read((char*)buf, size) != size)
+		{
+			error("Could not read file %s: %s", *cacheFullFilename, *FileSystem::GetLastErrorMessage());
+		}
+		m_connection->Send(buf, size);
+	}
+	else
+	{
+		encoder.WriteSegment();
+	}
 
 	m_connection->WriteLine(".\r\n");
 }

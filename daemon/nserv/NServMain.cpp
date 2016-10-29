@@ -33,6 +33,7 @@
 struct NServOpts
 {
 	CString dataDir;
+	CString cacheDir;
 	int firstPort;
 	int instances;
 	CString logFile;
@@ -85,12 +86,18 @@ int NServMain(int argc, char* argv[])
 		}
 	}
 
+	CString errmsg;
+	if (opts.cacheDir && !FileSystem::ForceDirectories(opts.cacheDir, errmsg))
+	{
+		error("Could not create directory %s: %s", *opts.cacheDir, *errmsg);
+	}
+
 	std::vector<std::unique_ptr<NntpServer>> instances;
 
 	for (int i = 0; i < opts.instances; i++)
 	{
 		instances.emplace_back(std::make_unique<NntpServer>(i + 1, "0.0.0.0",
-			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir));
+			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir));
 		instances.back()->Start();
 	}
 
@@ -123,6 +130,7 @@ void NServPrintUsage(const char* com)
 		" %s --nserv -d <data-dir> [optional switches] \n"
 		"    -d <data-dir>   - directory whose files will be served\n"
 		"  Optional switches:\n"
+		"    -c <cache-dir>  - directory to store encoded articles\n"
 		"    -l <log-file>   - write into log-file (disabled by default)\n"
 		"    -i <instances>  - number of server instances (default is 1)\n"
 		"    -p <port>       - port number for the first instance (default is 6791)\n"
@@ -142,7 +150,7 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 	quit = false;
 	int verbosity = 2;
 
-	char short_options[] = "d:l:p:i:s:v:z:q";
+	char short_options[] = "c:d:l:p:i:s:v:z:q";
 
 	optind = 2;
 	while (true)
@@ -153,6 +161,10 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 		{
 			case 'd':
 				dataDir = optind > argc ? nullptr : argv[optind - 1];
+				break;
+
+			case 'c':
+				cacheDir = optind > argc ? nullptr : argv[optind - 1];
 				break;
 
 			case 'l':
