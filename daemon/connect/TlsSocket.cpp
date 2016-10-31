@@ -89,6 +89,12 @@ static struct gcry_thread_cbs gcry_threads_Mutex =
 
 #ifdef HAVE_OPENSSL
 
+#ifndef CRYPTO_set_locking_callback
+#define NEED_CRYPTO_LOCKING
+#endif
+
+#ifdef NEED_CRYPTO_LOCKING
+
 /**
  * Mutexes for OpenSSL
  */
@@ -107,17 +113,6 @@ static void openssl_locking(int mode, int n, const char* file, int line)
 		mutex->Unlock();
 	}
 }
-
-/*
-static uint32 openssl_thread_id(void)
-{
-#ifdef WIN32
-	return (uint32)GetCurrentThreadId();
-#else
-	return (uint32)pthread_self();
-#endif
-}
-*/
 
 static struct CRYPTO_dynlock_value* openssl_dynlock_create(const char *file, int line)
 {
@@ -143,6 +138,7 @@ static void openssl_dynlock_lock(int mode, struct CRYPTO_dynlock_value *l, const
 	}
 }
 
+#endif /* NEED_CRYPTO_LOCKING */
 #endif /* HAVE_OPENSSL */
 
 
@@ -172,20 +168,22 @@ void TlsSocket::Init()
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
+
+#ifdef NEED_CRYPTO_LOCKING
 	for (int i = 0, num = CRYPTO_num_locks(); i < num; i++)
 	{
 		g_OpenSSLMutexes.emplace_back(std::make_unique<Mutex>());
 	}
 
-	SSL_load_error_strings();
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
-
 	CRYPTO_set_locking_callback(openssl_locking);
-	//CRYPTO_set_id_callback(openssl_thread_id);
 	CRYPTO_set_dynlock_create_callback(openssl_dynlock_create);
 	CRYPTO_set_dynlock_destroy_callback(openssl_dynlock_destroy);
 	CRYPTO_set_dynlock_lock_callback(openssl_dynlock_lock);
+#endif /* NEED_CRYPTO_LOCKING */
+
+	SSL_load_error_strings();
+	SSL_library_init();
+	OpenSSL_add_all_algorithms();
 
 #endif /* HAVE_OPENSSL */
 

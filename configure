@@ -9808,9 +9808,9 @@ echo "$as_me: error: Couldn't find OpenSSL headers (ssl.h)" >&2;}
    { (exit 1); exit 1; }; }
 		fi
 		if test "$FOUND" = "yes"; then
-			{ echo "$as_me:$LINENO: checking for library containing CRYPTO_set_locking_callback" >&5
-echo $ECHO_N "checking for library containing CRYPTO_set_locking_callback... $ECHO_C" >&6; }
-if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+			{ echo "$as_me:$LINENO: checking for library containing ASN1_OBJECT_free" >&5
+echo $ECHO_N "checking for library containing ASN1_OBJECT_free... $ECHO_C" >&6; }
+if test "${ac_cv_search_ASN1_OBJECT_free+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -9827,11 +9827,11 @@ cat >>conftest.$ac_ext <<_ACEOF
 #ifdef __cplusplus
 extern "C"
 #endif
-char CRYPTO_set_locking_callback ();
+char ASN1_OBJECT_free ();
 int
 main ()
 {
-return CRYPTO_set_locking_callback ();
+return ASN1_OBJECT_free ();
   ;
   return 0;
 }
@@ -9861,7 +9861,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_search_CRYPTO_set_locking_callback=$ac_res
+  ac_cv_search_ASN1_OBJECT_free=$ac_res
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -9871,26 +9871,26 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext
-  if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+  if test "${ac_cv_search_ASN1_OBJECT_free+set}" = set; then
   break
 fi
 done
-if test "${ac_cv_search_CRYPTO_set_locking_callback+set}" = set; then
+if test "${ac_cv_search_ASN1_OBJECT_free+set}" = set; then
   :
 else
-  ac_cv_search_CRYPTO_set_locking_callback=no
+  ac_cv_search_ASN1_OBJECT_free=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_CRYPTO_set_locking_callback" >&5
-echo "${ECHO_T}$ac_cv_search_CRYPTO_set_locking_callback" >&6; }
-ac_res=$ac_cv_search_CRYPTO_set_locking_callback
+{ echo "$as_me:$LINENO: result: $ac_cv_search_ASN1_OBJECT_free" >&5
+echo "${ECHO_T}$ac_cv_search_ASN1_OBJECT_free" >&6; }
+ac_res=$ac_cv_search_ASN1_OBJECT_free
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  { echo "$as_me:$LINENO: checking for library containing SSL_library_init" >&5
-echo $ECHO_N "checking for library containing SSL_library_init... $ECHO_C" >&6; }
-if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  { echo "$as_me:$LINENO: checking for library containing SSL_CTX_new" >&5
+echo $ECHO_N "checking for library containing SSL_CTX_new... $ECHO_C" >&6; }
+if test "${ac_cv_search_SSL_CTX_new+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -9907,11 +9907,11 @@ cat >>conftest.$ac_ext <<_ACEOF
 #ifdef __cplusplus
 extern "C"
 #endif
-char SSL_library_init ();
+char SSL_CTX_new ();
 int
 main ()
 {
-return SSL_library_init ();
+return SSL_CTX_new ();
   ;
   return 0;
 }
@@ -9941,7 +9941,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_search_SSL_library_init=$ac_res
+  ac_cv_search_SSL_CTX_new=$ac_res
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -9951,21 +9951,21 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext
-  if test "${ac_cv_search_SSL_library_init+set}" = set; then
+  if test "${ac_cv_search_SSL_CTX_new+set}" = set; then
   break
 fi
 done
-if test "${ac_cv_search_SSL_library_init+set}" = set; then
+if test "${ac_cv_search_SSL_CTX_new+set}" = set; then
   :
 else
-  ac_cv_search_SSL_library_init=no
+  ac_cv_search_SSL_CTX_new=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_SSL_library_init" >&5
-echo "${ECHO_T}$ac_cv_search_SSL_library_init" >&6; }
-ac_res=$ac_cv_search_SSL_library_init
+{ echo "$as_me:$LINENO: result: $ac_cv_search_SSL_CTX_new" >&5
+echo "${ECHO_T}$ac_cv_search_SSL_CTX_new" >&6; }
+ac_res=$ac_cv_search_SSL_CTX_new
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
   FOUND=yes

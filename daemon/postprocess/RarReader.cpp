@@ -564,12 +564,11 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 	debug("seed: %s", *Util::FormatBuffer((const char*)seed, seed.Size()));
 
 #ifdef HAVE_OPENSSL
-	EVP_MD_CTX context;
-	EVP_MD_CTX_init(&context);
+	EVP_MD_CTX* context = EVP_MD_CTX_create();
 
-	if (!EVP_DigestInit(&context, EVP_sha1()))
+	if (!EVP_DigestInit(context, EVP_sha1()))
 	{
-		EVP_MD_CTX_cleanup(&context);
+		EVP_MD_CTX_destroy(context);
 		return false;
 	}
 #elif defined(HAVE_NETTLE)
@@ -585,7 +584,7 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 	for (int i = 0; i < rounds; i++)
 	{
 #ifdef HAVE_OPENSSL
-		EVP_DigestUpdate(&context, *seed, seed.Size());
+		EVP_DigestUpdate(context, *seed, seed.Size());
 #elif defined(HAVE_NETTLE)
 		sha1_update(&context, seed.Size(), (const uint8_t*)*seed);
 #endif
@@ -596,7 +595,7 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 		buf[2] = (uint8)(i >> 16);
 
 #ifdef HAVE_OPENSSL
-		EVP_DigestUpdate(&context, buf, sizeof(buf));
+		EVP_DigestUpdate(context, buf, sizeof(buf));
 #elif defined(HAVE_NETTLE)
 		sha1_update(&context, sizeof(buf), buf);
 #endif
@@ -604,9 +603,10 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 		if (i % (rounds / 16) == 0)
 		{
 #ifdef HAVE_OPENSSL
-			EVP_MD_CTX ivContext;
-			EVP_MD_CTX_copy(&ivContext, &context);
-			EVP_DigestFinal(&ivContext, digest, nullptr);
+			EVP_MD_CTX* ivContext = EVP_MD_CTX_create();
+			EVP_MD_CTX_copy(ivContext, context);
+			EVP_DigestFinal(ivContext, digest, nullptr);
+			EVP_MD_CTX_destroy(ivContext);
 #elif defined(HAVE_NETTLE)
 			sha1_ctx ivContext = context;
 			sha1_digest(&ivContext, sizeof(digest), digest);
@@ -616,7 +616,8 @@ bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])
 	}
 
 #ifdef HAVE_OPENSSL
-	EVP_DigestFinal(&context, digest, nullptr);
+	EVP_DigestFinal(context, digest, nullptr);
+	EVP_MD_CTX_destroy(context);
 #elif defined(HAVE_NETTLE)
 	sha1_digest(&context, sizeof(digest), digest);
 #endif

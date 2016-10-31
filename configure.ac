@@ -385,8 +385,8 @@ if test "$USETLS" = "yes"; then
 			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h)])
 		fi
 		if test "$FOUND" = "yes"; then
-			AC_SEARCH_LIBS([CRYPTO_set_locking_callback], [crypto],
-				AC_SEARCH_LIBS([SSL_library_init], [ssl],
+			AC_SEARCH_LIBS([ASN1_OBJECT_free], [crypto],
+				AC_SEARCH_LIBS([SSL_CTX_new], [ssl],
 					FOUND=yes,
 					FOUND=no),
 				FOUND=no)
