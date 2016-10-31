@@ -126,7 +126,7 @@ bool GroupSorter::Execute(const char* sort)
 		m_sortOrder = soDescending;
 	}
 
-	std::sort(m_nzbList->begin(), m_nzbList->end(), *this);
+	std::stable_sort(m_nzbList->begin(), m_nzbList->end(), *this);
 
 	if (origSortOrder == soAuto &&
 		std::equal(tempList.begin(), tempList.end(), m_nzbList->begin(),
@@ -136,7 +136,7 @@ bool GroupSorter::Execute(const char* sort)
 		}))
 	{
 		m_sortOrder = m_sortOrder == soDescending ? soAscending : soDescending;
-		std::sort(m_nzbList->begin(), m_nzbList->end(), *this);
+		std::stable_sort(m_nzbList->begin(), m_nzbList->end(), *this);
 	} 
 
 	return true;
