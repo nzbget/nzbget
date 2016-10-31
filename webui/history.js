@@ -351,7 +351,7 @@ var History = (new function($)
 			ids.push(parseInt(id));
 		}		
 		
-		RPC.call('editqueue', [command, 0, '', ids], function()
+		RPC.call('editqueue', [command, '', ids], function()
 		{
 			editCompleted();
 		});

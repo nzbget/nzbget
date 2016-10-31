@@ -60,9 +60,9 @@ private:
 	class CoordinatorDownloadQueue : public DownloadQueue
 	{
 	public:
-		virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text);
+		virtual bool EditEntry(int ID, EEditAction action, const char* args);
 		virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode,
-			EEditAction action, int offset, const char* text);
+			EEditAction action, const char* args);
 		virtual void HistoryChanged() { m_historyChanged = true; }
 		virtual void Save();
 	private:

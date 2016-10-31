@@ -2057,6 +2057,10 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ 0, nullptr }
 };
 
+// v18:
+//    bool editqueue(string Command, string Args, int[] IDs)
+// v17:
+//    bool editqueue(string Command, int Offset, string Args, int[] IDs)
 void EditQueueXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
@@ -2089,30 +2093,34 @@ void EditQueueXmlCommand::Execute()
 	}
 
 	int offset = 0;
-	if (!NextParamAsInt(&offset))
+	bool hasOffset = NextParamAsInt(&offset);
+
+	char* args;
+	if (!NextParamAsStr(&args))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
+	debug("Args=%s", args);
 
-	char* editText;
-	if (!NextParamAsStr(&editText))
+	DecodeStr(args);
+
+	BString<100> offsetStr("%i", offset);
+	if (hasOffset && (action == DownloadQueue::eaFileMoveOffset ||
+		action == DownloadQueue::eaGroupMoveOffset))
 	{
-		BuildErrorResponse(2, "Invalid parameter");
-		return;
+		args = *offsetStr;
 	}
-	debug("EditText=%s", editText);
 
-	DecodeStr(editText);
-
-	IdList cIdList;
+	IdList idList;
 	int id = 0;
 	while (NextParamAsInt(&id))
 	{
-		cIdList.push_back(id);
+		idList.push_back(id);
 	}
 
-	bool ok = DownloadQueue::Guard()->EditList(&cIdList, nullptr, DownloadQueue::mmId, (DownloadQueue::EEditAction)action, offset, editText);
+	bool ok = DownloadQueue::Guard()->EditList(&idList, nullptr, DownloadQueue::mmId,
+		(DownloadQueue::EEditAction)action, args);
 
 	BuildBoolResponse(ok);
 }

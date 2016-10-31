@@ -112,7 +112,7 @@ void QueueScriptController::Run()
 		{
 			nzbInfo->PrintMessage(Message::mkWarning, "Cancelling download and deleting %s", *m_nzbName);
 			nzbInfo->SetDeleteStatus(NzbInfo::dsBad);
-			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, 0, nullptr);
+			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, nullptr);
 		}
 	}
 

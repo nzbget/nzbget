@@ -287,7 +287,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 					info("Moving collection %s with lower duplicate score to history", queuedNzbInfo->GetName());
 					queuedNzbInfo->SetDeleteStatus(NzbInfo::dsDupe);
 					downloadQueue->EditEntry(queuedNzbInfo->GetId(),
-						DownloadQueue::eaGroupDelete, 0, nullptr);
+						DownloadQueue::eaGroupDelete, nullptr);
 					it = downloadQueue->GetQueue()->begin() + index;
 				}
 			}

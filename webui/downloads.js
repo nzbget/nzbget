@@ -447,7 +447,7 @@ var Downloads = (new function($)
 			return;
 		}
 		notification = '#Notif_Downloads_Paused';
-		RPC.call('editqueue', ['GroupPause', 0, '', checkedEditIDs], editCompleted);
+		RPC.call('editqueue', ['GroupPause', '', checkedEditIDs], editCompleted);
 	}
 
 	this.resumeClick = function()
@@ -458,7 +458,7 @@ var Downloads = (new function($)
 			return;
 		}
 		notification = '#Notif_Downloads_Resumed';
-		RPC.call('editqueue', ['GroupResume', 0, '', checkedEditIDs], function()
+		RPC.call('editqueue', ['GroupResume', '', checkedEditIDs], function()
 		{
 			if (Options.option('ParCheck') === 'force')
 			{
@@ -466,7 +466,7 @@ var Downloads = (new function($)
 			}
 			else
 			{
-				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', checkedEditIDs], editCompleted);
+				RPC.call('editqueue', ['GroupPauseExtraPars', '', checkedEditIDs], editCompleted);
 			}
 		});
 	}
@@ -505,7 +505,7 @@ var Downloads = (new function($)
 		{
 			if (postprocessIDs.length > 0)
 			{
-				RPC.call('editqueue', ['PostDelete', 0, '', postprocessIDs], editCompleted);
+				RPC.call('editqueue', ['PostDelete', '', postprocessIDs], editCompleted);
 			}
 			else
 			{
@@ -517,7 +517,7 @@ var Downloads = (new function($)
 		{
 			if (downloadIDs.length > 0)
 			{
-				RPC.call('editqueue', [command, 0, '', downloadIDs], deletePosts);
+				RPC.call('editqueue', [command, '', downloadIDs], deletePosts);
 			}
 			else
 			{
@@ -559,14 +559,14 @@ var Downloads = (new function($)
 		}
 
 		notification = '';
-		RPC.call('editqueue', [EditAction, EditOffset, '', checkedEditIDs], editCompleted);
+		RPC.call('editqueue', [EditAction, '' + EditOffset, checkedEditIDs], editCompleted);
 	}
 
 	this.sort = function(order)
 	{
 		var checkedEditIDs = checkBuildEditIDList(true, true, true);
 		notification = '#Notif_Downloads_Sorted';
-		RPC.call('editqueue', ['GroupSort', 0, order, checkedEditIDs], editCompleted);
+		RPC.call('editqueue', ['GroupSort', order, checkedEditIDs], editCompleted);
 	}
 }(jQuery));
 

@@ -34,7 +34,7 @@ public:
 	bool HasMoreJobs() { return m_queuedJobs > 0; }
 	int GetJobCount() { return m_queuedJobs; }
 	bool EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action,
-		int offset, const char* text);
+		const char* args);
 	void NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 

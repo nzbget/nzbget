@@ -133,7 +133,7 @@ bool Frontend::ServerEditQueue(DownloadQueue::EEditAction action, int offset, in
 	}
 	else
 	{
-		return DownloadQueue::Guard()->EditEntry(id, action, offset, nullptr);
+		return DownloadQueue::Guard()->EditEntry(id, action, CString::FormatStr("%i", offset));
 	}
 }
 

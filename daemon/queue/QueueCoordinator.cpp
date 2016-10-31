@@ -32,16 +32,16 @@
 #include "StatMeter.h"
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
-	int ID, EEditAction action, int offset, const char* text)
+	int ID, EEditAction action, const char* args)
 {
-	return m_owner->m_queueEditor.EditEntry(&m_owner->m_downloadQueue, ID, action, offset, text);
+	return m_owner->m_queueEditor.EditEntry(&m_owner->m_downloadQueue, ID, action, args);
 }
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditList(
-	IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text)
+	IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, const char* args)
 {
 	m_massEdit = true;
-	bool ret = m_owner->m_queueEditor.EditList(&m_owner->m_downloadQueue, idList, nameList, matchMode, action, offset, text);
+	bool ret = m_owner->m_queueEditor.EditList(&m_owner->m_downloadQueue, idList, nameList, matchMode, action, args);
 	m_massEdit = false;
 	if (m_wantSave)
 	{
@@ -819,7 +819,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 		warn("Pausing %s due to health %.1f%% below critical %.1f%%", fileInfo->GetNzbInfo()->GetName(),
 			fileInfo->GetNzbInfo()->CalcHealth() / 10.0, fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
 		fileInfo->GetNzbInfo()->SetHealthPaused(true);
-		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, 0, nullptr);
+		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, nullptr);
 	}
 	else if (g_Options->GetHealthCheck() == Options::hcDelete ||
 		g_Options->GetHealthCheck() == Options::hcPark)
@@ -831,7 +831,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 		fileInfo->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsHealth);
 		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(),
 			g_Options->GetHealthCheck() == Options::hcPark ? DownloadQueue::eaGroupParkDelete : DownloadQueue::eaGroupDelete,
-			0, nullptr);
+			nullptr);
 	}
 }
 

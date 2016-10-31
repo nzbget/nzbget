@@ -239,7 +239,7 @@ void PrePostProcessor::NzbAdded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	if (g_Options->GetParCheck() != Options::pcForce)
 	{
 		downloadQueue->EditEntry(nzbInfo->GetId(),
-			DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
+			DownloadQueue::eaGroupPauseExtraPars, nullptr);
 	}
 
 	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsDupe ||
@@ -413,7 +413,7 @@ void PrePostProcessor::CheckRequestPar(DownloadQueue* downloadQueue)
 			{
 				postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 					"Downloading all remaining files for manual par-check for %s", postInfo->GetNzbInfo()->GetName());
-				downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, 0, nullptr);
+				downloadQueue->EditEntry(postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, nullptr);
 				postInfo->SetStage(PostInfo::ptFinished);
 			}
 			else
@@ -801,7 +801,8 @@ void PrePostProcessor::UpdatePauseState()
 	g_Options->SetTempPauseDownload(needPause);
 }
 
-bool PrePostProcessor::EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text)
+bool PrePostProcessor::EditList(DownloadQueue* downloadQueue, IdList* idList,
+	DownloadQueue::EEditAction action, const char* args)
 {
 	debug("Edit-command for post-processor received");
 	switch (action)

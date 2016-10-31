@@ -344,24 +344,24 @@ void QueueEditor::MoveGroup(NzbInfo* nzbInfo, int offset)
 	}
 }
 
-bool QueueEditor::EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text)
+bool QueueEditor::EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, const char* args)
 {
 	m_downloadQueue = downloadQueue;
 	IdList cIdList;
 	cIdList.push_back(ID);
-	return InternEditList(nullptr, &cIdList, action, offset, text);
+	return InternEditList(nullptr, &cIdList, action, args);
 }
 
 bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode,
-	DownloadQueue::EEditAction action, int offset, const char* text)
+	DownloadQueue::EEditAction action, const char* args)
 {
 	if (action == DownloadQueue::eaPostDelete)
 	{
-		return g_PrePostProcessor->EditList(downloadQueue, idList, action, offset, text);
+		return g_PrePostProcessor->EditList(downloadQueue, idList, action, args);
 	}
 	else if (DownloadQueue::eaHistoryDelete <= action && action <= DownloadQueue::eaHistorySetName)
 	{
-		return g_HistoryCoordinator->EditList(downloadQueue, idList, action, offset, text);
+		return g_HistoryCoordinator->EditList(downloadQueue, idList, action, args);
 	}
 
 	m_downloadQueue = downloadQueue;
@@ -376,7 +376,7 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameLis
 		ok = BuildIdListFromNameList(idList, nameList, matchMode, action);
 	}
 
-	ok = ok && (InternEditList(nullptr, idList, action, offset, text) || matchMode == DownloadQueue::mmRegEx);
+	ok = ok && (InternEditList(nullptr, idList, action, args) || matchMode == DownloadQueue::mmRegEx);
 
 	m_downloadQueue->Save();
 
@@ -384,12 +384,14 @@ bool QueueEditor::EditList(DownloadQueue* downloadQueue, IdList* idList, NameLis
 }
 
 bool QueueEditor::InternEditList(ItemList* itemList,
-	IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text)
+	IdList* idList, DownloadQueue::EEditAction action, const char* args)
 {
 	ItemList workItems;
 	if (!itemList)
 	{
 		itemList = &workItems;
+		int offset = args && (action == DownloadQueue::eaFileMoveOffset ||
+			action == DownloadQueue::eaGroupMoveOffset) ? atoi(args) : 0;
 		PrepareList(itemList, idList, action, offset);
 	}
 
@@ -404,10 +406,10 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 			return MergeGroups(itemList);
 
 		case DownloadQueue::eaGroupSort:
-			return SortGroups(itemList, text);
+			return SortGroups(itemList, args);
 
 		case DownloadQueue::eaFileSplit:
-			return SplitGroup(itemList, text);
+			return SplitGroup(itemList, args);
 
 		case DownloadQueue::eaFileReorder:
 			ReorderFiles(itemList);
@@ -437,26 +439,26 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 						break;
 
 					case DownloadQueue::eaGroupSetPriority:
-						SetNzbPriority(item.m_nzbInfo, text);
+						SetNzbPriority(item.m_nzbInfo, args);
 						break;
 
 					case DownloadQueue::eaGroupSetCategory:
 					case DownloadQueue::eaGroupApplyCategory:
-						SetNzbCategory(item.m_nzbInfo, text, action == DownloadQueue::eaGroupApplyCategory);
+						SetNzbCategory(item.m_nzbInfo, args, action == DownloadQueue::eaGroupApplyCategory);
 						break;
 
 					case DownloadQueue::eaGroupSetName:
-						SetNzbName(item.m_nzbInfo, text);
+						SetNzbName(item.m_nzbInfo, args);
 						break;
 
 					case DownloadQueue::eaGroupSetDupeKey:
 					case DownloadQueue::eaGroupSetDupeScore:
 					case DownloadQueue::eaGroupSetDupeMode:
-						SetNzbDupeParam(item.m_nzbInfo, action, text);
+						SetNzbDupeParam(item.m_nzbInfo, action, args);
 						break;
 
 					case DownloadQueue::eaGroupSetParameter:
-						SetNzbParameter(item.m_nzbInfo, text);
+						SetNzbParameter(item.m_nzbInfo, args);
 						break;
 
 					case DownloadQueue::eaGroupMoveTop:
@@ -469,7 +471,7 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 					case DownloadQueue::eaGroupResume:
 					case DownloadQueue::eaGroupPauseAllPars:
 					case DownloadQueue::eaGroupPauseExtraPars:
-						EditGroup(item.m_nzbInfo, action, offset, text);
+						EditGroup(item.m_nzbInfo, action, args);
 						break;
 
 					case DownloadQueue::eaGroupDelete:
@@ -482,7 +484,7 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 						}
 						else
 						{
-							EditGroup(item.m_nzbInfo, action, offset, text);
+							EditGroup(item.m_nzbInfo, action, args);
 						}
 
 
@@ -756,7 +758,7 @@ bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, Do
 	return true;
 }
 
-bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, int offset, const char* text)
+bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, const char* args)
 {
 	ItemList itemList;
 	bool allPaused = true;
@@ -816,7 +818,7 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 		(DownloadQueue::EEditAction)0,
 		(DownloadQueue::EEditAction)0 };
 
-	bool ok = InternEditList(&itemList, nullptr, GroupToFileMap[action], offset, text);
+	bool ok = InternEditList(&itemList, nullptr, GroupToFileMap[action], args);
 
 	if ((action == DownloadQueue::eaGroupDelete || action == DownloadQueue::eaGroupDupeDelete || action == DownloadQueue::eaGroupFinalDelete) &&
 		// NZBInfo could have been destroyed already
