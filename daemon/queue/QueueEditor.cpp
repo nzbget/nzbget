@@ -62,8 +62,6 @@ private:
 	QueueEditor::ItemList* m_sortItemList;
 	ESortCriteria m_sortCriteria;
 	ESortOrder m_sortOrder;
-
-	void AlignSelectedGroups();
 };
 
 bool GroupSorter::Execute(const char* sort)
@@ -111,8 +109,6 @@ bool GroupSorter::Execute(const char* sort)
 	{
 		m_sortOrder = soAuto;
 	}
-
-	AlignSelectedGroups();
 
 	RawNzbList tempList;
 	for (NzbInfo* nzbInfo : m_nzbList)
@@ -200,44 +196,6 @@ bool GroupSorter::operator()(const std::unique_ptr<NzbInfo>& refNzbInfo1, const 
 	return ret;
 }
 
-void GroupSorter::AlignSelectedGroups()
-{
-	NzbInfo* lastNzbInfo = nullptr;
-	uint32 lastNum = 0;
-	uint32 num = 0;
-	while (num < m_nzbList->size())
-	{
-		std::unique_ptr<NzbInfo>& nzbInfo = m_nzbList->at(num);
-
-		bool selected = false;
-		for (QueueEditor::EditItem& item : m_sortItemList)
-		{
-			if (item.m_nzbInfo == nzbInfo.get())
-			{
-				selected = true;
-				break;
-			}
-		}
-
-		if (selected)
-		{
-			if (lastNzbInfo && num - lastNum > 1)
-			{
-				std::unique_ptr<NzbInfo> movedNzbInfo = std::move(*(m_nzbList->begin() + num));
-				m_nzbList->erase(m_nzbList->begin() + num);
-				m_nzbList->insert(m_nzbList->begin() + lastNum + 1, std::move(movedNzbInfo));
-				lastNum++;
-			}
-			else
-			{
-				lastNum = num;
-			}
-			lastNzbInfo = nzbInfo.get();
-		}
-		num++;
-	}
-}
-
 
 FileInfo* QueueEditor::FindFileInfo(int id)
 {
@@ -252,17 +210,11 @@ FileInfo* QueueEditor::FindFileInfo(int id)
 	return nullptr;
 }
 
-/*
- * Set the pause flag of the specific entry in the queue
- */
 void QueueEditor::PauseUnpauseEntry(FileInfo* fileInfo, bool pause)
 {
 	fileInfo->SetPaused(pause);
 }
 
-/*
- * Removes entry
- */
 void QueueEditor::DeleteEntry(FileInfo* fileInfo)
 {
 	if (!fileInfo->GetDeleted())
@@ -274,9 +226,6 @@ void QueueEditor::DeleteEntry(FileInfo* fileInfo)
 	}
 }
 
-/*
- * Moves entry in the queue
- */
 void QueueEditor::MoveEntry(FileInfo* fileInfo, int offset)
 {
 	int entry = 0;
@@ -309,9 +258,6 @@ void QueueEditor::MoveEntry(FileInfo* fileInfo, int offset)
 	}
 }
 
-/*
- * Moves group in the queue
- */
 void QueueEditor::MoveGroup(NzbInfo* nzbInfo, int offset)
 {
 	int entry = 0;
@@ -407,6 +353,10 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 
 		case DownloadQueue::eaGroupSort:
 			return SortGroups(itemList, args);
+
+		case DownloadQueue::eaGroupMoveAfter:
+		case DownloadQueue::eaGroupMoveBefore:
+			return MoveGroupsTo(itemList, idList, action == DownloadQueue::eaGroupMoveBefore, args);
 
 		case DownloadQueue::eaFileSplit:
 			return SplitGroup(itemList, args);
@@ -805,6 +755,8 @@ bool QueueEditor::EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action,
 		DownloadQueue::eaFileMoveOffset,
 		DownloadQueue::eaFileMoveTop,
 		DownloadQueue::eaFileMoveBottom,
+		(DownloadQueue::EEditAction)0,
+		(DownloadQueue::EEditAction)0,
 		DownloadQueue::eaFilePause,
 		DownloadQueue::eaFileResume,
 		DownloadQueue::eaFileDelete,
@@ -1086,8 +1038,135 @@ bool QueueEditor::SplitGroup(ItemList* itemList, const char* name)
 
 bool QueueEditor::SortGroups(ItemList* itemList, const char* sort)
 {
+	AlignGroups(itemList);
 	GroupSorter sorter(m_downloadQueue->GetQueue(), itemList);
 	return sorter.Execute(sort);
+}
+
+void QueueEditor::AlignGroups(ItemList* itemList)
+{
+	NzbList* nzbList = m_downloadQueue->GetQueue();
+	NzbInfo* lastNzbInfo = nullptr;
+	uint32 lastNum = 0;
+	uint32 num = 0;
+	while (num < nzbList->size())
+	{
+		std::unique_ptr<NzbInfo>& nzbInfo = nzbList->at(num);
+
+		bool selected = false;
+		for (QueueEditor::EditItem& item : itemList)
+		{
+			if (item.m_nzbInfo == nzbInfo.get())
+			{
+				selected = true;
+				break;
+			}
+		}
+
+		if (selected)
+		{
+			if (lastNzbInfo && num - lastNum > 1)
+			{
+				std::unique_ptr<NzbInfo> movedNzbInfo = std::move(*(nzbList->begin() + num));
+				nzbList->erase(nzbList->begin() + num);
+				nzbList->insert(nzbList->begin() + lastNum + 1, std::move(movedNzbInfo));
+				lastNum++;
+			}
+			else
+			{
+				lastNum = num;
+			}
+			lastNzbInfo = nzbInfo.get();
+		}
+		num++;
+	}
+}
+
+bool QueueEditor::ItemListContainsItem(ItemList* itemList, int id)
+{
+	return std::find_if(itemList->begin(), itemList->end(),
+		[id](const EditItem& item)
+		{
+			return item.m_nzbInfo->GetId() == id;
+		}) != itemList->end();
+};
+
+bool QueueEditor::MoveGroupsTo(ItemList* itemList, IdList* idList, bool before, const char* args)
+{
+	if (itemList->size() == 0 || Util::EmptyStr(args))
+	{
+		return false;
+	}
+
+	int targetId = atoi(args);
+	int offset = 0;
+
+	// check if target is in list of moved items
+	if (ItemListContainsItem(itemList, targetId))
+	{
+		// find the next item to use as target-before
+		bool found = false;
+		bool targetSet = false;
+
+		for (NzbInfo* nzbInfo : m_downloadQueue->GetQueue())
+		{
+			if (found)
+			{
+				if (!ItemListContainsItem(itemList, nzbInfo->GetId()))
+				{
+					targetId = nzbInfo->GetId();
+					before = true;
+					targetSet = true;
+					break;
+				}
+			}
+			else if (targetId == nzbInfo->GetId())
+			{
+				found = true;
+			}
+		}
+
+		if (!targetSet)
+		{
+			// there are no next item; move to the bottom then
+			offset = MAX_ID;
+		}
+	}
+
+	AlignGroups(itemList);
+
+	if (offset == 0)
+	{
+		// calculate offset between first moving item and target
+		int moveId = idList->at(0);
+		bool progress = false;
+		int step = 0;
+		for (NzbInfo* nzbInfo : m_downloadQueue->GetQueue())
+		{
+			int id = nzbInfo->GetId();
+			if (id == targetId || id == moveId)
+			{
+				if (!progress)
+				{
+					step = id == targetId ? -1 : 1;
+					offset = (before ? 0 : 1) - (step > 0 ? itemList->size() : 0);
+					progress = true;
+				}
+				else
+				{
+					break;
+				}
+			}		
+
+			if (progress)
+			{
+				offset += step;
+			}
+		}
+	}
+
+	return InternEditList(nullptr, idList, DownloadQueue::eaGroupMoveOffset,
+		CString::FormatStr("%i", offset));
 }
 
 void QueueEditor::ReorderFiles(ItemList* itemList)

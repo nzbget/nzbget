@@ -1095,7 +1095,15 @@ var DragDrop = (new function($)
 			return false;
 		}
 		
-		alert('Move ' + moveIds + (dropAfter ? ' after ' : ' before ') + dropId);
+		RPC.call('editqueue', [dropAfter ? 'GroupMoveAfter' : 'GroupMoveBefore', '' + dropId, moveIds],
+			function()
+			{
+				blinkIds = moveIds;
+				moveIds = [];
+				blinkState = 3;
+				wantBlink = true;
+				Refresher.update();
+			});
 
 		return true;
 	}

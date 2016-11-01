@@ -57,6 +57,8 @@ private:
 	void SetNzbName(NzbInfo* nzbInfo, const char* name);
 	bool MergeGroups(ItemList* itemList);
 	bool SortGroups(ItemList* itemList, const char* sort);
+	void AlignGroups(ItemList* itemList);
+	bool MoveGroupsTo(ItemList* itemList, IdList* idList, bool before, const char* args);
 	bool SplitGroup(ItemList* itemList, const char* name);
 	bool DeleteUrl(NzbInfo* nzbInfo, DownloadQueue::EEditAction action);
 	void ReorderFiles(ItemList* itemList);
@@ -66,6 +68,7 @@ private:
 	void DeleteEntry(FileInfo* fileInfo);
 	void MoveEntry(FileInfo* fileInfo, int offset);
 	void MoveGroup(NzbInfo* nzbInfo, int offset);
+	bool ItemListContainsItem(ItemList* itemList, int id);
 
 	friend class GroupSorter;
 };

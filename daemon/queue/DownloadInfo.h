@@ -875,9 +875,11 @@ public:
 		eaFilePauseExtraPars, // pause only (almost all) pars, except main par-file (does not affect other files)
 		eaFileReorder, // set file order
 		eaFileSplit, // split - create new group from selected files
-		eaGroupMoveOffset, // move group to m_iOffset relative to the current position in download-queue
+		eaGroupMoveOffset, // move group to offset relative to the current position in download-queue
 		eaGroupMoveTop, // move group to the top of download-queue
 		eaGroupMoveBottom, // move group to the bottom of download-queue
+		eaGroupMoveBefore, // move group to a certain position
+		eaGroupMoveAfter, // move group to a certain position
 		eaGroupPause, // pause group
 		eaGroupResume, // resume (unpause) group
 		eaGroupDelete, // delete group and put to history, delete already downloaded files

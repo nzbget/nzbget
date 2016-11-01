@@ -2019,6 +2019,8 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaGroupMoveOffset, "GroupMoveOffset" },
 	{ DownloadQueue::eaGroupMoveTop, "GroupMoveTop" },
 	{ DownloadQueue::eaGroupMoveBottom, "GroupMoveBottom" },
+	{ DownloadQueue::eaGroupMoveBefore, "GroupMoveBefore" },
+	{ DownloadQueue::eaGroupMoveAfter, "GroupMoveAfter" },
 	{ DownloadQueue::eaGroupPause, "GroupPause" },
 	{ DownloadQueue::eaGroupResume, "GroupResume" },
 	{ DownloadQueue::eaGroupDelete, "GroupDelete" },
