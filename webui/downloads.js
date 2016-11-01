@@ -193,6 +193,8 @@ var Downloads = (new function($)
 		}
 
 		$DownloadsTable.fasttable('update', data);
+
+		DragDrop.updateMovingRecords();
 	}
 
 	function fillFieldsCallback(item)
@@ -400,6 +402,11 @@ var Downloads = (new function($)
 		}
 
 		return checkedEditIDs;
+	}
+
+	this.buildEditIDList = function()
+	{
+		return checkBuildEditIDList(true, true, true);
 	}
 
 	/*** TOOLBAR: SELECTED ITEMS ******************************************************/
@@ -758,20 +765,36 @@ var DownloadsUI = (new function($)
 	{
 		var text;
 
-		if (priority >= 900) text = ' <div class="icon-circle-red" title="Force priority"></div>';
-		else if (priority > 50) text = ' <div class="icon-ring-fill-red" title="Very high priority"></div>';
-		else if (priority > 0) text = ' <div class="icon-ring-red" title="High priority"></div>';
-		else if (priority == 0) text = ' <div class="icon-ring-ltgrey" title="Normal priority"></div>';
-		else if (priority >= -50) text = ' <div class="icon-ring-blue" title="Low priority"></div>';
-		else text = ' <div class="icon-ring-fill-blue" title="Very low priority"></div>';
+		if (priority >= 900) text = ' <div class="icon-circle-red row-drag" title="Force priority"></div>';
+		else if (priority > 50) text = ' <div class="icon-ring-fill-red row-drag" title="Very high priority"></div>';
+		else if (priority > 0) text = ' <div class="icon-ring-red row-drag" title="High priority"></div>';
+		else if (priority == 0) text = ' <div class="icon-ring-ltgrey row-drag" title="Normal priority"></div>';
+		else if (priority >= -50) text = ' <div class="icon-ring-blue row-drag" title="Low priority"></div>';
+		else text = ' <div class="icon-ring-fill-blue row-drag" title="Very low priority"></div>';
 
 		if ([900, 100, 50, 0, -50, -100].indexOf(priority) == -1)
 		{
 			text = text.replace('priority', 'priority (' + priority + ')');
 		}
+
 		return text;
 	}
 
+	this.suppressTitles = function($DownloadsTable)
+	{
+		$('div.row-drag', $DownloadsTable).attr('title', '');
+	}
+
+	this.restoreTitles = function($DownloadsTable)
+	{
+		$('div.icon-circle-red', $DownloadsTable).attr('title', 'Force priority');
+		$('div.icon-ring-fill-red', $DownloadsTable).attr('title', 'Very high priority');
+		$('div.icon-ring-red', $DownloadsTable).attr('title', 'High priority');
+		$('div.icon-ring-ltgrey', $DownloadsTable).attr('title', 'Normal priority');
+		$('div.icon-ring-blue', $DownloadsTable).attr('title', 'Low priority');
+		$('div.icon-ring-fill-blue', $DownloadsTable).attr('title', 'Very low priority');
+	}
+	
 	this.buildEncryptedLabel = function(parameters)
 	{
 		var encryptedPassword = '';
@@ -911,4 +934,226 @@ var DownloadsUI = (new function($)
 
 		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init, selCount);
 	}
+}(jQuery));
+
+
+/*** DRAG-N-DROP HANDLING ****************************************************/
+
+var DragDrop = (new function($)
+{
+	'use strict';
+
+	// Controls
+	var $DownloadsTable;
+	var $DragDropTip;
+	var $DragDropTarget;
+	
+	// State
+	var moveIds = [];
+	var dropAfter = false;
+	var dropId = 0;
+	var waitTimer;
+	var checkmark;
+	var dragTitle;
+	var cancelDrag;
+	var downPos;
+	var blinkIds = [];
+	var blinkState = null;
+	var wantBlink;
+
+	this.init = function(options)
+	{
+		$DownloadsTable = $('#DownloadsTable');
+		$DragDropTip = $('#DragDropTip');
+		$DragDropTarget = $('#DragDropTarget');
+		$DownloadsTable.on("mousedown", mouseDown);
+	}
+
+	function mouseDown(e)
+	{
+		checkmark = $(e.target).hasClass('check');
+		var priobox = $(e.target).hasClass('row-drag');
+		if (!(checkmark || priobox || UISettings.rowSelect))
+		{
+			return;
+		}
+
+		dropId = null;
+		downPos = { x: e.clientX, y: e.clientY };
+		
+		$(document).on("mousemove", mouseMove);
+		$(document).on("mouseup", mouseUp);
+		e.preventDefault();
+		
+		if (priobox)
+		{
+			startDrag(e);
+		}
+	}
+
+	function startDrag(e)
+	{
+		if (checkmark)
+		{
+			$DownloadsTable.fasttable('checkRow', e.target.parentNode.parentNode.fasttableID, true);
+			$DownloadsTable.fasttable('update');
+			checkmark = false;
+		}
+
+		var checkedRows = $DownloadsTable.fasttable('checkedRows');
+		var checkedIds = Downloads.buildEditIDList();
+		
+		var row = $(e.target).closest('tr', $DownloadsTable)[0];
+		var id = row.fasttableID;
+		
+		moveIds = checkedRows[id] ? checkedIds : [id];
+		dragTitle = moveIds.length > 1 ? 'Move ' + moveIds.length + ' records' : 'Move 1 record';
+
+		cancelDrag = false;
+		downPos = null;
+
+		$DragDropTip.text(dragTitle);
+		$DragDropTip.show();
+		$('html').addClass('drag-progress');
+		updateMovingRecords();
+
+		mouseMove(e);
+	}
+
+	function mouseMove(e)
+	{
+		if (downPos)
+		{
+			if (Math.abs(downPos.x - e.clientX) < 5 &&
+				Math.abs(downPos.y - e.clientY) < 5)
+			{
+				return;
+			}
+			startDrag(e);
+		}
+
+		var offsetX = $(document).scrollLeft();
+		var offsetY = $(document).scrollTop();
+		var posX = e.clientX + offsetX;
+		var posY = e.clientY + offsetY;
+		var el = document.elementFromPoint(e.clientX, e.clientY);
+		cancelDrag = !($.contains($DownloadsTable.get(0), el) || el === $DragDropTarget.get(0));
+		var row = $(el).closest('tr', $DownloadsTable)[0];
+
+		if ($(row).parent().is('thead'))
+		{
+			row = null;
+		}
+		
+		if (row)
+		{
+			var r = row.getBoundingClientRect();
+			var r = { top: r.top + offsetY,
+				bottom: r.bottom + offsetY,
+				left: r.left + offsetX,
+				right: r.right + offsetX };
+
+			dropId = row.fasttableID;
+			dropAfter = posY > r.top + (r.bottom - r.top) / 2;
+			var pos = {top: dropAfter ? r.bottom - 1 : r.top - 1, left: r.left, width: r.right - r.left};
+			$DragDropTarget.css(pos);
+			//row.scrollIntoView();
+		}
+		
+		$DragDropTarget.show(!cancelDrag);
+		$DragDropTip.text(cancelDrag ? 'Cancel move' : dragTitle);
+		$DragDropTip.css({left: posX + 10, top: posY - 5});
+	}
+
+	function mouseUp(e)
+	{
+		$(document).off("mousemove", mouseMove);
+		$(document).off("mouseup", mouseUp);
+		$('html').removeClass('drag-progress');
+		$DragDropTip.hide();
+		$DragDropTarget.hide();
+		DownloadsUI.restoreTitles($DownloadsTable);
+		
+		var cleanup = true;
+		
+		if (dropId && !cancelDrag)
+		{
+			cleanup = !moveRecords();
+		}
+		
+		if (cleanup)
+		{
+			$('tr', $DownloadsTable).removeClass('drag-source');
+			moveIds = [];
+		}
+	}
+	
+	function moveRecords()
+	{
+		if (moveIds.length == 1 && dropId == moveIds[0])
+		{
+			return false;
+		}
+		
+		alert('Move ' + moveIds + (dropAfter ? ' after ' : ' before ') + dropId);
+
+		return true;
+	}
+
+	function updateMovingRecords()
+	{
+		if (moveIds.length > 0)
+		{
+			var rows = $('tr', $DownloadsTable);
+			rows.removeClass('drag-source');
+			rows.each(function(ind, el)
+				{
+					var id = el.fasttableID;
+					if (moveIds.indexOf(id) > -1)
+					{
+						$(el).addClass('drag-source');
+					}
+				});
+
+			DownloadsUI.suppressTitles($DownloadsTable);
+		}
+
+		if (blinkIds.length > 0)
+		{
+			blinkMovedRecords(wantBlink);
+			wantBlink = false;
+		}
+	}
+	this.updateMovingRecords = updateMovingRecords;
+	
+	function blinkMovedRecords(recur)
+	{
+		var rows = $('tr', $DownloadsTable);
+		rows.removeClass('drag-finish');
+		rows.each(function(ind, el)
+			{
+				var id = el.fasttableID;
+				if (blinkIds.indexOf(id) > -1 &&
+					(blinkState === 1 || blinkState === 3 || blinkState === 5))
+				{
+					$(el).addClass('drag-finish');
+				}
+			});
+
+		if (recur && blinkState > 0)
+		{
+			setTimeout(function()
+				{
+					blinkState -= 1;
+					blinkMovedRecords(true);
+				},
+				300);
+		}
+
+		if (blinkState === 0)
+		{
+			blinkIds = [];
+		}
+	}
+	
 }(jQuery));

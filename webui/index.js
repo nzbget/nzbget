@@ -199,6 +199,7 @@ var Frontend = (new function($)
 		Messages.init({ updateTabInfo: updateTabInfo });
 		History.init({ updateTabInfo: updateTabInfo });
 		Upload.init();
+		DragDrop.init();
 		Feeds.init();
 		FeedDialog.init();
 		FeedFilterDialog.init();

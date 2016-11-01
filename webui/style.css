@@ -1964,6 +1964,72 @@ div.multiset-toolbar button {
 	cursor: pointer;
 }
 
+/* DRAG-N-DROP */
+
+#DragDropTip {
+	position: absolute;
+	left: 100px;
+	top: 100px;
+	text-align: center;
+	border: 1px solid #ccc;
+	border-radius: 2px;
+	background-color: #f8f8f8;
+	font-size: 11px;
+	padding: 2px 7px 2px 7px;
+	display: none;
+	font-weight: bold;
+	cursor: grab;
+}
+
+#DragDropTarget {
+	position: absolute;
+	left: 100px;
+	top: 100px;
+	height: 3px;
+	width: 500px;
+	background-color: #37D233;
+	display: none;
+}
+
+.row-drag {
+	cursor: grab;
+	cursor: -webkit-grab;
+}
+
+html.drag-progress,
+html.drag-progress * {
+	cursor: grabbing !important;
+	cursor: -webkit-grabbing !important;
+}
+
+.drag-progress .table-striped tbody tr:hover td {
+    background-color: #ffffff;
+}
+
+.drag-progress .table-striped tbody tr:nth-child(odd):hover td {
+    background-color: #f9f9f9;
+}
+
+.drag-progress .table-striped tr.checked:hover td {
+	background-color: #FFFFE8;
+}
+
+.drag-progress .table-striped tbody tr.checked:nth-child(odd):hover td {
+	background-color: #FFFFD8;
+}
+
+.table-striped tbody tr.drag-source td,
+.table-striped tbody tr.drag-source .progress,
+.table-striped tbody tr.drag-source td a {
+	background-color: #E6FAE4 !important;
+	color: #808080 !important;
+}
+
+.table-striped tbody tr.drag-finish td,
+.table-striped tbody tr.drag-finish .progress,
+.table-striped tbody tr.drag-finish td a {
+	background-color: #E6FAE4 !important;
+}
 
 /****************************************************************************/
 /* SMARTPHONE THEME */
