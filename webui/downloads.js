@@ -24,7 +24,7 @@
  */
 
 /*** DOWNLOADS TAB ***********************************************************/
- 
+
 var Downloads = (new function($)
 {
 	'use strict';
@@ -98,7 +98,7 @@ var Downloads = (new function($)
 
 		$DownloadsTable.on('click', 'a', itemClick);
 		$DownloadsTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { $DownloadsTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
+			function(event) { if (DragDrop.dragging()) return; $DownloadsTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$DownloadsTable.on('click', 'thead div.check',
 			function() { $DownloadsTable.fasttable('titleCheckClick') });
 		$DownloadsTable.on('mousedown', Util.disableShiftMouseDown);
@@ -116,7 +116,7 @@ var Downloads = (new function($)
 		{
 			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
-		
+
 		RPC.call('listgroups', [], groups_loaded);
 	}
 
@@ -150,11 +150,11 @@ var Downloads = (new function($)
 	{
 		calcProgressLabels();
 	}
-	
+
 	/*** TABLE *************************************************************************/
 
 	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'estimated', 'age', 'size', 'remaining'];
-	
+
 	function redraw_table()
 	{
 		var data = [];
@@ -206,7 +206,7 @@ var Downloads = (new function($)
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.left, item.data.estimated);
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
-		
+
 		var age = new Date().getTime() / 1000 - (group.MinPostTime + UISettings.timeZoneCorrection*60*60);
 		var propagation = '';
 		if (group.ActiveDownloads == 0 && age < parseInt(Options.option('PropagationDelay')) * 60)
@@ -222,12 +222,12 @@ var Downloads = (new function($)
 		{
 			url = '<span class="label label-info">URL</span> ';
 		}
-		
+
 		var health = '';
 		if (group.Health < 1000 && (!group.postprocess ||
 			(group.Status === 'PP_QUEUED' && group.PostTotalTimeSec === 0)))
 		{
-			health = ' <span class="label ' + 
+			health = ' <span class="label ' +
 				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
 				'">health: ' + Math.floor(group.Health / 10) + '%</span> ';
 		}
@@ -236,10 +236,10 @@ var Downloads = (new function($)
 		var backupPercent = calcBackupPercent(group);
 		if (backupPercent > 0)
 		{
-			backup = ' <a href="#" data-nzbid="' + group.NZBID + '" data-area="backup" class="badge-link"><span class="label label-warning" title="using backup news servers">backup: ' + 
+			backup = ' <a href="#" data-nzbid="' + group.NZBID + '" data-area="backup" class="badge-link"><span class="label label-warning" title="using backup news servers">backup: ' +
 				(backupPercent < 10 ? Util.round1(backupPercent) : Util.round0(backupPercent)) + '%</span> ';
 		}
-		
+
 		var category = Util.textToHtml(group.Category);
 
 		if (!UISettings.miniTheme)
@@ -249,8 +249,9 @@ var Downloads = (new function($)
 		}
 		else
 		{
-			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + url +
-				' ' + (group.Status === 'QUEUED' ? '' : status) + ' ' + (group.MaxPriority == 0 ? '' : priority) + dupe + health + backup + propagation;
+			var info = '<div class="check img-check"></div><span class="row-title">' +
+				name + '</span>' + url + ' ' + (group.MaxPriority == 0 ? '' : priority) +
+				' ' + (group.Status === 'QUEUED' ? '' : status) + dupe + health + backup + propagation;
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
@@ -275,7 +276,7 @@ var Downloads = (new function($)
 			cell.className = 'text-right';
 		}
 	}
-	
+
 	function calcBackupPercent(group)
 	{
 		var downloadedArticles = group.SuccessArticles + group.FailedArticles;
@@ -283,7 +284,7 @@ var Downloads = (new function($)
 		{
 			return 0;
 		}
-		
+
 		if (minLevel === null)
 		{
 			for (var i=0; i < Status.status.NewsServers.length; i++)
@@ -294,9 +295,9 @@ var Downloads = (new function($)
 				{
 					minLevel = level;
 				}
-			}	
+			}
 		}
-		
+
 		var backupArticles = 0;
 		for (var j=0; j < group.ServerStats.length; j++)
 		{
@@ -344,7 +345,7 @@ var Downloads = (new function($)
 		progressLabels.css('max-width', nameColumnWidth);
 		progressLabels.show();
 	}
-	
+
 	/*** EDIT ******************************************************/
 
 	function itemClick(e)
@@ -583,11 +584,11 @@ var Downloads = (new function($)
 var DownloadsUI = (new function($)
 {
 	'use strict';
-	
+
 	// State
 	var categoryColumnWidth = null;
 	var dupeCheck = null;
-	
+
 	this.fillPriorityCombo = function(combo)
 	{
 		combo.empty();
@@ -619,12 +620,12 @@ var DownloadsUI = (new function($)
 		}
 		return statusText;
 	}
-		
+
 	this.buildStatus = function(group)
 	{
 		var statusText = Downloads.statusData[group.Status].Text;
 		var badgeClass = '';
-		
+
 		if (group.postprocess && group.Status !== 'PP_QUEUED' && group.Status !== 'QS_QUEUED')
 		{
 			badgeClass = Status.status.PostPaused && group.MinPriority < 900 ? 'label-warning' : 'label-success';
@@ -642,7 +643,7 @@ var DownloadsUI = (new function($)
 			statusText = 'INTERNAL_ERROR (' + group.Status + ')';
 			badgeClass = 'label-important';
 		}
-		
+
 		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
@@ -674,7 +675,7 @@ var DownloadsUI = (new function($)
 			remaining = '';
 			percent = Math.round(group.PostStageProgress / 10);
 		}
-		
+
 		if (group.Kind === 'URL')
 		{
 			totalsize = '';
@@ -765,12 +766,12 @@ var DownloadsUI = (new function($)
 	{
 		var text;
 
-		if (priority >= 900) text = ' <div class="icon-circle-red row-drag" title="Force priority"></div>';
-		else if (priority > 50) text = ' <div class="icon-ring-fill-red row-drag" title="Very high priority"></div>';
-		else if (priority > 0) text = ' <div class="icon-ring-red row-drag" title="High priority"></div>';
-		else if (priority == 0) text = ' <div class="icon-ring-ltgrey row-drag" title="Normal priority"></div>';
-		else if (priority >= -50) text = ' <div class="icon-ring-blue row-drag" title="Low priority"></div>';
-		else text = ' <div class="icon-ring-fill-blue row-drag" title="Very low priority"></div>';
+		if (priority >= 900) text = ' <div class="icon-circle-red col-prio" title="Force priority"></div>';
+		else if (priority > 50) text = ' <div class="icon-ring-fill-red col-prio" title="Very high priority"></div>';
+		else if (priority > 0) text = ' <div class="icon-ring-red col-prio" title="High priority"></div>';
+		else if (priority == 0) text = ' <div class="icon-ring-ltgrey col-prio" title="Normal priority"></div>';
+		else if (priority >= -50) text = ' <div class="icon-ring-blue col-prio" title="Low priority"></div>';
+		else text = ' <div class="icon-ring-fill-blue col-prio" title="Very low priority"></div>';
 
 		if ([900, 100, 50, 0, -50, -100].indexOf(priority) == -1)
 		{
@@ -782,7 +783,7 @@ var DownloadsUI = (new function($)
 
 	this.suppressTitles = function($DownloadsTable)
 	{
-		$('div.row-drag', $DownloadsTable).attr('title', '');
+		$('div.col-prio', $DownloadsTable).attr('title', '');
 	}
 
 	this.restoreTitles = function($DownloadsTable)
@@ -794,7 +795,7 @@ var DownloadsUI = (new function($)
 		$('div.icon-ring-blue', $DownloadsTable).attr('title', 'Low priority');
 		$('div.icon-ring-fill-blue', $DownloadsTable).attr('title', 'Very low priority');
 	}
-	
+
 	this.buildEncryptedLabel = function(parameters)
 	{
 		var encryptedPassword = '';
@@ -886,9 +887,9 @@ var DownloadsUI = (new function($)
 				var catWidth = widthHelper.width();
 				categoryColumnWidth = Math.max(categoryColumnWidth, catWidth);
 			}
-						
+
 			widthHelper.remove();
-			
+
 			categoryColumnWidth += 'px';
 		}
 
@@ -947,14 +948,13 @@ var DragDrop = (new function($)
 	var $DownloadsTable;
 	var $DragDropTip;
 	var $DragDropTarget;
-	
+
 	// State
 	var moveIds = [];
 	var dropAfter = false;
 	var dropId = 0;
-	var waitTimer;
-	var checkmark;
 	var dragTitle;
+	var dragging = false;
 	var cancelDrag;
 	var downPos;
 	var blinkIds = [];
@@ -966,63 +966,56 @@ var DragDrop = (new function($)
 		$DownloadsTable = $('#DownloadsTable');
 		$DragDropTip = $('#DragDropTip');
 		$DragDropTarget = $('#DragDropTarget');
-		$DownloadsTable.on("mousedown", mouseDown);
+		$DownloadsTable.get(0).addEventListener('mousedown', mouseDown, true);
+		$DownloadsTable.get(0).addEventListener('touchstart', mouseDown, true);
+	}
+
+	this.dragging = function()
+	{
+		return dragging;
+	}
+
+	function touchToMouse(e)
+	{
+		if (e.type === 'touchstart' || e.type === 'touchmove' || e.type === 'touchend')
+		{
+			e.clientX = e.changedTouches[0].clientX;
+			e.clientY = e.changedTouches[0].clientY;
+		}
+		console.log(e.type + ' at ' + e.clientX + ', ' + e.clientY);
 	}
 
 	function mouseDown(e)
 	{
-		checkmark = $(e.target).hasClass('check');
-		var priobox = $(e.target).hasClass('row-drag');
-		if (!(checkmark || priobox || UISettings.rowSelect))
+		var checkmark = $(e.target).hasClass('check');
+		var head = $(e.target).closest('tr', $DownloadsTable).parent().is('thead');
+		if (head || !(checkmark || (UISettings.rowSelect && !UISettings.MiniTheme)))
 		{
 			return;
 		}
 
+		touchToMouse(e);
+		if (e.type === 'mousedown')
+		{
+			e.preventDefault();
+		}
+
+		dragging = false;
 		dropId = null;
 		downPos = { x: e.clientX, y: e.clientY };
-		
-		$(document).on("mousemove", mouseMove);
-		$(document).on("mouseup", mouseUp);
-		e.preventDefault();
-		
-		if (priobox)
-		{
-			startDrag(e);
-		}
-	}
 
-	function startDrag(e)
-	{
-		if (checkmark)
-		{
-			$DownloadsTable.fasttable('checkRow', e.target.parentNode.parentNode.fasttableID, true);
-			$DownloadsTable.fasttable('update');
-			checkmark = false;
-		}
-
-		var checkedRows = $DownloadsTable.fasttable('checkedRows');
-		var checkedIds = Downloads.buildEditIDList();
-		
-		var row = $(e.target).closest('tr', $DownloadsTable)[0];
-		var id = row.fasttableID;
-		
-		moveIds = checkedRows[id] ? checkedIds : [id];
-		dragTitle = moveIds.length > 1 ? 'Move ' + moveIds.length + ' records' : 'Move 1 record';
-
-		cancelDrag = false;
-		downPos = null;
-
-		$DragDropTip.text(dragTitle);
-		$DragDropTip.show();
-		$('html').addClass('drag-progress');
-		updateMovingRecords();
-
-		mouseMove(e);
+		document.addEventListener('mousemove', mouseMove, true);
+		document.addEventListener('mouseup', mouseUp, true);
+		document.addEventListener('touchmove', mouseMove, true);
+		document.addEventListener('touchend', mouseUp, true);
 	}
 
 	function mouseMove(e)
 	{
-		if (downPos)
+		touchToMouse(e);
+		e.preventDefault();
+
+		if (!dragging)
 		{
 			if (Math.abs(downPos.x - e.clientX) < 5 &&
 				Math.abs(downPos.y - e.clientY) < 5)
@@ -1044,7 +1037,7 @@ var DragDrop = (new function($)
 		{
 			row = null;
 		}
-		
+
 		if (row)
 		{
 			var r = row.getBoundingClientRect();
@@ -1055,46 +1048,71 @@ var DragDrop = (new function($)
 
 			dropId = row.fasttableID;
 			dropAfter = posY > r.top + (r.bottom - r.top) / 2;
-			var pos = {top: dropAfter ? r.bottom - 1 : r.top - 1, left: r.left, width: r.right - r.left};
+			var pos = { top: dropAfter ? r.bottom - 1 : r.top - 1,
+				left: r.left,
+				width: r.right - r.left};
 			$DragDropTarget.css(pos);
 			//row.scrollIntoView();
 		}
-		
+
 		$DragDropTarget.show(!cancelDrag);
 		$DragDropTip.text(cancelDrag ? 'Cancel move' : dragTitle);
 		$DragDropTip.css({left: posX + 10, top: posY - 5});
 	}
 
+	function startDrag(e)
+	{
+		var checkedRows = $DownloadsTable.fasttable('checkedRows');
+		var checkedIds = Downloads.buildEditIDList();
+
+		var row = $(e.target).closest('tr', $DownloadsTable)[0];
+		var id = row.fasttableID;
+
+		moveIds = checkedRows[id] ? checkedIds : [id];
+		dragTitle = moveIds.length > 1 ? 'Move ' + moveIds.length + ' records' : 'Move 1 record';
+
+		dragging = true;
+		cancelDrag = false;
+
+		$DragDropTip.text(dragTitle);
+		$DragDropTip.show();
+		$('html').addClass('drag-progress');
+		updateMovingRecords();
+	}
+
 	function mouseUp(e)
 	{
-		$(document).off("mousemove", mouseMove);
-		$(document).off("mouseup", mouseUp);
+		document.removeEventListener('mousemove', mouseMove, true);
+		document.removeEventListener('mouseup', mouseMove, true);
+		document.removeEventListener('touchmove', mouseMove, true);
+		document.removeEventListener('touchend', mouseUp, true);
+
 		$('html').removeClass('drag-progress');
 		$DragDropTip.hide();
 		$DragDropTarget.hide();
 		DownloadsUI.restoreTitles($DownloadsTable);
-		
+
 		var cleanup = true;
-		
+
 		if (dropId && !cancelDrag)
 		{
 			cleanup = !moveRecords();
 		}
-		
+
 		if (cleanup)
 		{
 			$('tr', $DownloadsTable).removeClass('drag-source');
 			moveIds = [];
 		}
 	}
-	
+
 	function moveRecords()
 	{
 		if (moveIds.length == 1 && dropId == moveIds[0])
 		{
 			return false;
 		}
-		
+
 		RPC.call('editqueue', [dropAfter ? 'GroupMoveAfter' : 'GroupMoveBefore', '' + dropId, moveIds],
 			function()
 			{
@@ -1133,7 +1151,7 @@ var DragDrop = (new function($)
 		}
 	}
 	this.updateMovingRecords = updateMovingRecords;
-	
+
 	function blinkMovedRecords(recur)
 	{
 		var rows = $('tr', $DownloadsTable);
@@ -1163,5 +1181,5 @@ var DragDrop = (new function($)
 			blinkIds = [];
 		}
 	}
-	
+
 }(jQuery));

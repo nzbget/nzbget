@@ -1029,7 +1029,7 @@ table th.text-center {
 .table-nonbordered td {
 	border: none;
 }
- 
+
 /* END: Tables */
 
 
@@ -1991,11 +1991,6 @@ div.multiset-toolbar button {
 	display: none;
 }
 
-.row-drag {
-	cursor: grab;
-	cursor: -webkit-grab;
-}
-
 html.drag-progress,
 html.drag-progress * {
 	cursor: grabbing !important;
@@ -2569,6 +2564,10 @@ body.phone,
 }
 
 .phone .config-settitle {
+	font-size: 18px;
+}
+
+.phone #DragDropTip {
 	font-size: 18px;
 }
 
