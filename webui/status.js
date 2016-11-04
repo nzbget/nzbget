@@ -200,7 +200,7 @@ var Status = (new function($)
 		$StatusTime.toggleClass('orange', statWarning);
 		$StatusTimeIcon.toggleClass('icon-time', !statWarning);
 		$StatusTimeIcon.toggleClass('icon-time-orange', statWarning);
-		
+
 		updateTitle();
 	}
 
@@ -471,10 +471,10 @@ var Status = (new function($)
 				case '%[VAR]%': return '[' + value + ']';
 				case '%[VAR-]%': return '[' + value + '] - ';
 			}
-			
+
 			return Downloads.groups.length > 0 ? '' + Downloads.groups.length + ' - ' : '';
 		};
-		
+
 		function fill(varname, paramFunc)
 		{
 			titleGen['%' + varname + '%'] = function() { return format('%VAR%', paramFunc); };
@@ -1109,11 +1109,11 @@ var StatDialog = (new function($)
 	function chartMouseExit(env, serie, index, mouseAreaData)
 	{
 		mouseOverIndex = -1;
-		var title = curRange === 'MIN' ? '60 seconds' : 
-			curRange === 'HOUR' ? '60 minutes' : 
-			curRange === 'DAY' ? '24 hours' : 
+		var title = curRange === 'MIN' ? '60 seconds' :
+			curRange === 'HOUR' ? '60 minutes' :
+			curRange === 'DAY' ? '24 hours' :
 			curRange === 'MONTH' ? $('#StatDialog_Volume_MONTH').text() : 'Sum';
-		
+
 		$StatDialog_Tooltip.html(title + ': <span class="stat-size">' + Util.formatSizeMB(chartData.sumMB, chartData.sumLo) + '</span>');
 	}
 
@@ -1186,7 +1186,7 @@ var StatDialog = (new function($)
 		var epochDay = Math.ceil((date.getTime() - date.getTimezoneOffset() * 60*1000) / (1000*24*60*60));
 		return epochDay;
 	}
-	
+
 	function updateMonthList()
 	{
 		monthListInitialized = true;
@@ -1419,17 +1419,11 @@ var LimitDialog = (new function($)
 
 		$ServerTable.fasttable(
 			{
-				pagerContainer: $('#LimitDialog_ServerTable_pager'),
-				headerCheck: $('#LimitDialog_ServerTable > thead > tr:first-child'),
+				pagerContainer: '#LimitDialog_ServerTable_pager',
 				hasHeader: false,
+				rowSelect: UISettings.rowSelect,
 				pageSize: 100
 			});
-
-		$ServerTable.on('click', 'tbody div.check',
-			function(event) { $ServerTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
-		$ServerTable.on('click', 'thead div.check',
-			function() { $ServerTable.fasttable('titleCheckClick') });
-		$ServerTable.on('mousedown', Util.disableShiftMouseDown);
 
 		if (UISettings.setFocus)
 		{
@@ -1606,7 +1600,7 @@ var FilterMenu = (new function($)
 	var $Table_filter;
 	var tabName;
 	var items;
-	
+
 	this.init = function()
 	{
 		$SaveFilterDialog = $('#SaveFilterDialog');
@@ -1650,9 +1644,9 @@ var FilterMenu = (new function($)
 			im.attr('data-id', i);
 			insertPos.before(item);
 		}
-		
+
 		Util.show('#FilterMenu_Empty', items.length === 0);
-		
+
 		if (UISettings.miniTheme)
 		{
 			Frontend.alignPopupMenu('#FilterMenu');
@@ -1703,7 +1697,7 @@ var FilterMenu = (new function($)
 		$SaveFilterInput.val(name);
 		$SaveFilterDialog.modal();
 	}
-	
+
 	this.saveClick = function()
 	{
 		$SaveFilterDialog.modal('hide');
@@ -1721,7 +1715,7 @@ var FilterMenu = (new function($)
 				return;
 			}
 		}
-		
+
 		// doesn't exist - add new
 		items.push({name: name, filter: filter});
 		save();

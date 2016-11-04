@@ -294,12 +294,12 @@
 				<thead>
 					<tr>
 						<th><div class="check img-check"></div></th>
-						<th width="18px" class="text-center"><a href="#" onclick="Downloads.sort('priority')" title="Priority">P</a></th>
+						<th width="18px" class="text-center"><a href="#" onclick="Downloads.sort('priority', event)" title="Priority">P</a></th>
 						<th width="95px">Status</th>
-						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name')">Name</a></th>
-						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category')">Category</a></th>
-						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age')">Age</a></th>
-						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size')">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left')">Left</a></div></th>
+						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name', event)">Name</a></th>
+						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category', event)">Category</a></th>
+						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age', event)">Age</a></th>
+						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size', event)">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left', event)">Left</a></div></th>
 						<th width="58px" class="text-right">Est. Time</th>
 					</tr>
 				</thead>
@@ -337,7 +337,7 @@
 						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-minus"></i> Mark as Bad</a></li>
 					</ul>
 				</div>
-				
+
 				<!-- STATUS FILTER BUTTONS -->
 				<div class="btn-group phone-hide">
 					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
@@ -351,7 +351,7 @@
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">F &nbsp;<span class="badge" id="History_Badge_FAILURE2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">D &nbsp;<span class="badge" id="History_Badge_DELETED2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">U &nbsp;<span class="badge" id="History_Badge_DUPE2">?</span></button></div>
-				
+
 				<div class="btn-group">
 					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
 				</div>
@@ -547,7 +547,7 @@
 
 									<h4>Extension scripts settings</h4>
 									<p>
-									When NZBGet finishes download of a nzb-file it can execute post-processing scripts for further processing (e-mail notification, etc.). 
+									When NZBGet finishes download of a nzb-file it can execute post-processing scripts for further processing (e-mail notification, etc.).
 									To configure scripts use options in section <em><strong>EXTENSION SCRIPTS</strong></em>.
 									</p>
 									<p>
@@ -769,7 +769,7 @@
 							<li class="volume-menu-template hide"><a href="#"></a></li>
 						</ul>
 					</div>
-					
+
 					<div class="btn-group phone-only inline"><button class="btn volume-range btn-inverse" id="StatDialog_Volume_MIN2" onclick="StatDialog.chooseRange('MIN')" title="Show last 60 seconds">60 s</button></div>
 					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_HOUR2" onclick="StatDialog.chooseRange('HOUR')" title="Show last 60 minutes">60 m</button></div>
 					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_DAY2" onclick="StatDialog.chooseRange('DAY')" title="Show last 24 hours">24 h</button></div>
@@ -778,7 +778,7 @@
 					<div class="btn-group phone-only inline" id="StatDialog_MonthBlockPhone">
 					<button class="btn volume-range dropdown-toggle" id="StatDialog_Volume_MONTH4" data-toggle="dropdown"><span class="caret"></span></button>
 					</div>
-					
+
 					<div class="btn-group">
 						<button class="btn dropdown-toggle" id="StatDialog_Server" data-toggle="dropdown" title="News server"> <span id="StatDialog_ServerCap">All news servers</span>&nbsp;<span class="caret"></span></button>
 						<ul class="dropdown-menu menu-check" id="StatDialog_ServerMenu">
@@ -789,10 +789,10 @@
 						</ul>
 					</div>
 				</div>
-				
+
 				<div id="StatDialog_Tooltip">Total</div>
 				<div id="StatDialog_ChartBlock"></div>
-				
+
 				<hr>
 				<div id="StatDialog_CountersBlock">
 				<div class="row-fluid" id="StatDialog_Counters">
@@ -2114,7 +2114,7 @@
 		</p>
 
 		<p id="HistoryDeleteConfirmDialog_DeleteWillCleanup" class="confirm-help-block">
-			Selected records will be deleted from history. For failed downloads 
+			Selected records will be deleted from history. For failed downloads
 			all downloaded files will be deleted.
 		</p>
 
@@ -2550,13 +2550,13 @@
 	<h3>Update NZBGet</h3>
 	</div>
 	<div class="modal-body">
-	
+
 	<p id="UpdateDialog_InstalledInfo" style="margin-top:0px; margin-bottom:5px;">Currently installed: <span id="UpdateDialog_VerInstalled"></span></p>
 	<p id="UpdateDialog_CheckProgress" class="hide">Checking for updates <img style="margin-left:5px;vertical-align:top;margin-top:1px;" src="img/transmit.gif" width="16px" height="16px"></p>
 	<p id="UpdateDialog_CheckFailed" class="hide failure-message"><strong>Check failed. Please try again later.</strong></p>
 	<p id="UpdateDialog_UpdateAvail"><strong>An update is available for your platform!</strong></p>
 	<p id="UpdateDialog_UpdateNotAvail" class="hide"><strong>No updates are available for your platform.</strong></p>
-	
+
 	<div id="UpdateDialog_UpdateNoInfo" class="hide">
 	<p><strong>Automatic updates are not configured for your platform.</strong></p>
 	<p class="alert alert-info">
@@ -2565,7 +2565,7 @@
 	If you create a public package please read <a href="http://nzbget.net/Packaging" target="_blank">"About Packaging"</a>.
 	</p>
 	</div>
-	
+
 	<table id="UpdateDialog_Versions" class="table" style="margin-top:10px;">
 	<thead>
 		<tr>
@@ -2614,7 +2614,7 @@
 	</div>
 	<div class="modal-body">
 		<pre id="UpdateProgressDialog_Log">
-		</pre>	
+		</pre>
 	</div>
 </div>
 
@@ -2687,8 +2687,8 @@
 
 <!-- ***  DRAG-N-DROP ************************************************************ -->
 
-<div id="DragDropTarget"></div>
-<div id="DragDropTip">Move one record</div>
+<div id="TableDragTarget"></div>
+<div id="TableDragTip">Move one record</div>
 
 <!-- ***  NOTIFICATIONS ************************************************************ -->
 

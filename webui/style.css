@@ -1966,7 +1966,7 @@ div.multiset-toolbar button {
 
 /* DRAG-N-DROP */
 
-#DragDropTip {
+#TableDragTip {
 	position: absolute;
 	left: 100px;
 	top: 100px;
@@ -1979,9 +1979,10 @@ div.multiset-toolbar button {
 	display: none;
 	font-weight: bold;
 	cursor: grab;
+	z-index: 5000;
 }
 
-#DragDropTarget {
+#TableDragTarget {
 	position: absolute;
 	left: 100px;
 	top: 100px;
@@ -1989,11 +1990,13 @@ div.multiset-toolbar button {
 	width: 500px;
 	background-color: #37D233;
 	display: none;
+	z-index: 5000;
 }
 
 html.drag-progress,
 html.drag-progress * {
-	cursor: grabbing !important;
+	cursor: move !important;
+	cursor: -moz-grabbing !important;
 	cursor: -webkit-grabbing !important;
 }
 
@@ -2567,7 +2570,7 @@ body.phone,
 	font-size: 18px;
 }
 
-.phone #DragDropTip {
+.phone #TableDragTip {
 	font-size: 18px;
 }
 

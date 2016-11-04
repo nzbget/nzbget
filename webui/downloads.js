@@ -82,26 +82,24 @@ var Downloads = (new function($)
 
 		$DownloadsTable.fasttable(
 			{
-				filterInput: $('#DownloadsTable_filter'),
-				filterClearButton: $("#DownloadsTable_clearfilter"),
-				pagerContainer: $('#DownloadsTable_pager'),
-				infoContainer: $('#DownloadsTable_info'),
-				headerCheck: $('#DownloadsTable > thead > tr:first-child'),
+				filterInput: '#DownloadsTable_filter',
+				filterClearButton: '#DownloadsTable_clearfilter',
+				pagerContainer: '#DownloadsTable_pager',
+				infoContainer: '#DownloadsTable_info',
 				infoEmpty: '&nbsp;', // this is to disable default message "No records"
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
+				rowSelect: UISettings.rowSelect && !UISettings.miniTheme,
 				fillFieldsCallback: fillFieldsCallback,
 				renderCellCallback: renderCellCallback,
-				updateInfoCallback: updateInfo
+				updateInfoCallback: updateInfo,
+				moveRowsCallback: moveRowsCallback,
+				suppressTitlesCallback: DownloadsUI.suppressTitles,
+				restoreTitlesCallback: DownloadsUI.restoreTitles
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
-		$DownloadsTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { if (DragDrop.dragging()) return; $DownloadsTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
-		$DownloadsTable.on('click', 'thead div.check',
-			function() { $DownloadsTable.fasttable('titleCheckClick') });
-		$DownloadsTable.on('mousedown', Util.disableShiftMouseDown);
 	}
 
 	this.applyTheme = function()
@@ -193,8 +191,6 @@ var Downloads = (new function($)
 		}
 
 		$DownloadsTable.fasttable('update', data);
-
-		DragDrop.updateMovingRecords();
 	}
 
 	function fillFieldsCallback(item)
@@ -570,12 +566,26 @@ var Downloads = (new function($)
 		RPC.call('editqueue', [EditAction, '' + EditOffset, checkedEditIDs], editCompleted);
 	}
 
-	this.sort = function(order)
+	this.sort = function(order, e)
 	{
+		e.preventDefault();
+		e.stopPropagation();
 		var checkedEditIDs = checkBuildEditIDList(true, true, true);
 		notification = '#Notif_Downloads_Sorted';
 		RPC.call('editqueue', ['GroupSort', order, checkedEditIDs], editCompleted);
 	}
+
+	function moveRowsCallback(moveIds, dropId, dropAfter, completedCallback)
+	{
+		RPC.call('editqueue', [dropAfter ? 'GroupMoveAfter' : 'GroupMoveBefore', '' + dropId, moveIds],
+			function()
+			{
+				completedCallback();
+				Refresher.update();
+			});
+		return true;
+	}
+
 }(jQuery));
 
 
@@ -935,251 +945,4 @@ var DownloadsUI = (new function($)
 
 		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init, selCount);
 	}
-}(jQuery));
-
-
-/*** DRAG-N-DROP HANDLING ****************************************************/
-
-var DragDrop = (new function($)
-{
-	'use strict';
-
-	// Controls
-	var $DownloadsTable;
-	var $DragDropTip;
-	var $DragDropTarget;
-
-	// State
-	var moveIds = [];
-	var dropAfter = false;
-	var dropId = 0;
-	var dragTitle;
-	var dragging = false;
-	var cancelDrag;
-	var downPos;
-	var blinkIds = [];
-	var blinkState = null;
-	var wantBlink;
-
-	this.init = function(options)
-	{
-		$DownloadsTable = $('#DownloadsTable');
-		$DragDropTip = $('#DragDropTip');
-		$DragDropTarget = $('#DragDropTarget');
-		$DownloadsTable.get(0).addEventListener('mousedown', mouseDown, true);
-		$DownloadsTable.get(0).addEventListener('touchstart', mouseDown, true);
-	}
-
-	this.dragging = function()
-	{
-		return dragging;
-	}
-
-	function touchToMouse(e)
-	{
-		if (e.type === 'touchstart' || e.type === 'touchmove' || e.type === 'touchend')
-		{
-			e.clientX = e.changedTouches[0].clientX;
-			e.clientY = e.changedTouches[0].clientY;
-		}
-		console.log(e.type + ' at ' + e.clientX + ', ' + e.clientY);
-	}
-
-	function mouseDown(e)
-	{
-		var checkmark = $(e.target).hasClass('check');
-		var head = $(e.target).closest('tr', $DownloadsTable).parent().is('thead');
-		if (head || !(checkmark || (UISettings.rowSelect && !UISettings.MiniTheme)))
-		{
-			return;
-		}
-
-		touchToMouse(e);
-		if (e.type === 'mousedown')
-		{
-			e.preventDefault();
-		}
-
-		dragging = false;
-		dropId = null;
-		downPos = { x: e.clientX, y: e.clientY };
-
-		document.addEventListener('mousemove', mouseMove, true);
-		document.addEventListener('mouseup', mouseUp, true);
-		document.addEventListener('touchmove', mouseMove, true);
-		document.addEventListener('touchend', mouseUp, true);
-	}
-
-	function mouseMove(e)
-	{
-		touchToMouse(e);
-		e.preventDefault();
-
-		if (!dragging)
-		{
-			if (Math.abs(downPos.x - e.clientX) < 5 &&
-				Math.abs(downPos.y - e.clientY) < 5)
-			{
-				return;
-			}
-			startDrag(e);
-		}
-
-		var offsetX = $(document).scrollLeft();
-		var offsetY = $(document).scrollTop();
-		var posX = e.clientX + offsetX;
-		var posY = e.clientY + offsetY;
-		var el = document.elementFromPoint(e.clientX, e.clientY);
-		cancelDrag = !($.contains($DownloadsTable.get(0), el) || el === $DragDropTarget.get(0));
-		var row = $(el).closest('tr', $DownloadsTable)[0];
-
-		if ($(row).parent().is('thead'))
-		{
-			row = null;
-		}
-
-		if (row)
-		{
-			var r = row.getBoundingClientRect();
-			var r = { top: r.top + offsetY,
-				bottom: r.bottom + offsetY,
-				left: r.left + offsetX,
-				right: r.right + offsetX };
-
-			dropId = row.fasttableID;
-			dropAfter = posY > r.top + (r.bottom - r.top) / 2;
-			var pos = { top: dropAfter ? r.bottom - 1 : r.top - 1,
-				left: r.left,
-				width: r.right - r.left};
-			$DragDropTarget.css(pos);
-			//row.scrollIntoView();
-		}
-
-		$DragDropTarget.show(!cancelDrag);
-		$DragDropTip.text(cancelDrag ? 'Cancel move' : dragTitle);
-		$DragDropTip.css({left: posX + 10, top: posY - 5});
-	}
-
-	function startDrag(e)
-	{
-		var checkedRows = $DownloadsTable.fasttable('checkedRows');
-		var checkedIds = Downloads.buildEditIDList();
-
-		var row = $(e.target).closest('tr', $DownloadsTable)[0];
-		var id = row.fasttableID;
-
-		moveIds = checkedRows[id] ? checkedIds : [id];
-		dragTitle = moveIds.length > 1 ? 'Move ' + moveIds.length + ' records' : 'Move 1 record';
-
-		dragging = true;
-		cancelDrag = false;
-
-		$DragDropTip.text(dragTitle);
-		$DragDropTip.show();
-		$('html').addClass('drag-progress');
-		updateMovingRecords();
-	}
-
-	function mouseUp(e)
-	{
-		document.removeEventListener('mousemove', mouseMove, true);
-		document.removeEventListener('mouseup', mouseMove, true);
-		document.removeEventListener('touchmove', mouseMove, true);
-		document.removeEventListener('touchend', mouseUp, true);
-
-		$('html').removeClass('drag-progress');
-		$DragDropTip.hide();
-		$DragDropTarget.hide();
-		DownloadsUI.restoreTitles($DownloadsTable);
-
-		var cleanup = true;
-
-		if (dropId && !cancelDrag)
-		{
-			cleanup = !moveRecords();
-		}
-
-		if (cleanup)
-		{
-			$('tr', $DownloadsTable).removeClass('drag-source');
-			moveIds = [];
-		}
-	}
-
-	function moveRecords()
-	{
-		if (moveIds.length == 1 && dropId == moveIds[0])
-		{
-			return false;
-		}
-
-		RPC.call('editqueue', [dropAfter ? 'GroupMoveAfter' : 'GroupMoveBefore', '' + dropId, moveIds],
-			function()
-			{
-				blinkIds = moveIds;
-				moveIds = [];
-				blinkState = 3;
-				wantBlink = true;
-				Refresher.update();
-			});
-
-		return true;
-	}
-
-	function updateMovingRecords()
-	{
-		if (moveIds.length > 0)
-		{
-			var rows = $('tr', $DownloadsTable);
-			rows.removeClass('drag-source');
-			rows.each(function(ind, el)
-				{
-					var id = el.fasttableID;
-					if (moveIds.indexOf(id) > -1)
-					{
-						$(el).addClass('drag-source');
-					}
-				});
-
-			DownloadsUI.suppressTitles($DownloadsTable);
-		}
-
-		if (blinkIds.length > 0)
-		{
-			blinkMovedRecords(wantBlink);
-			wantBlink = false;
-		}
-	}
-	this.updateMovingRecords = updateMovingRecords;
-
-	function blinkMovedRecords(recur)
-	{
-		var rows = $('tr', $DownloadsTable);
-		rows.removeClass('drag-finish');
-		rows.each(function(ind, el)
-			{
-				var id = el.fasttableID;
-				if (blinkIds.indexOf(id) > -1 &&
-					(blinkState === 1 || blinkState === 3 || blinkState === 5))
-				{
-					$(el).addClass('drag-finish');
-				}
-			});
-
-		if (recur && blinkState > 0)
-		{
-			setTimeout(function()
-				{
-					blinkState -= 1;
-					blinkMovedRecords(true);
-				},
-				300);
-		}
-
-		if (blinkState === 0)
-		{
-			blinkIds = [];
-		}
-	}
-
 }(jQuery));

@@ -71,7 +71,7 @@ var DownloadsEditDialog = (new function($)
 			{
 				filterInput: '#DownloadsEdit_FileTable_filter',
 				pagerContainer: '#DownloadsEdit_FileTable_pager',
-				headerCheck: '#DownloadsEdit_FileTable > thead > tr:first-child',
+				rowSelect: UISettings.rowSelect,
 				pageSize: 10000,
 				hasHeader: true,
 				renderCellCallback: fileTableRenderCellCallback
@@ -87,12 +87,6 @@ var DownloadsEditDialog = (new function($)
 				hasHeader: true,
 				renderCellCallback: EditUI.servStatsTableRenderCellCallback
 			});
-
-		$DownloadsFileTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { $DownloadsFileTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
-		$DownloadsFileTable.on('click', 'thead div.check',
-			function() { $DownloadsFileTable.fasttable('titleCheckClick') });
-		$DownloadsFileTable.on('mousedown', Util.disableShiftMouseDown);
 
 		$DownloadsEditDialog.on('hidden', function()
 		{
@@ -490,7 +484,7 @@ var DownloadsEditDialog = (new function($)
 		ParamTab.reassignParams(postParams, oldCategory, category);
 		oldCategory = category;
 	}
-	
+
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
 	function saveParam()
@@ -1047,7 +1041,7 @@ var ParamTab = (new function($)
 				return scriptList;
 			}
 		}
-		
+
 		// empty category or category not found
 		scriptList = Util.parseCommaList(Options.option('PostScript'));
 		if (Options.option('Unpack') === 'yes')
@@ -1056,7 +1050,7 @@ var ParamTab = (new function($)
 		}
 		return scriptList;
 	}
-	
+
 	this.reassignParams = function(postParams, oldCategory, newCategory)
 	{
 		var oldScriptList = buildCategoryScriptList(oldCategory);
@@ -1113,7 +1107,7 @@ var LogTab = (new function($)
 				renderCellCallback: logTableRenderCellCallback
 			});
 	}
-	
+
 	this.reset = function(name)
 	{
 		var $LogTable = $('#' + name + 'Edit_LogTable');
@@ -1176,10 +1170,10 @@ var LogTab = (new function($)
 
 			$LogTable.fasttable('update', data);
 		}
-		
+
 		var recordsPerPage = UISettings.read('ItemLogRecordsPerPage', 10);
 		$('#' + name + 'LogRecordsPerPage').val(recordsPerPage);
-		
+
 		$('#' + name + 'EditDialog .loading-block').show();
 		RPC.call('loadlog', [item.NZBID, 0, 10000], logLoaded);
 	}
@@ -1630,9 +1624,9 @@ var HistoryEditDialog = (new function()
 
 			else if (hist.DeleteStatus === 'NONE')
 			{
-				var exParStatus = hist.ExParStatus === 'RECIPIENT' ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' + 
+				var exParStatus = hist.ExParStatus === 'RECIPIENT' ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' +
 						(hist.ExtraParBlocks > 1 ? 's' : '') + ' from other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' :
-					hist.ExParStatus === 'DONOR' ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' + 
+					hist.ExParStatus === 'DONOR' ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' +
 						(-hist.ExtraParBlocks > 1 ? 's' : '') + ' to repair other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' : '';
 				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') + exParStatus +
 					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
@@ -1684,7 +1678,7 @@ var HistoryEditDialog = (new function()
 		}
 
 		$('#HistoryEdit_NZBName').val(hist.Name);
-		
+
 		if (hist.Kind !== 'DUP')
 		{
 			// Category
@@ -1708,7 +1702,7 @@ var HistoryEditDialog = (new function()
 				completion = '99.9%';
 			}
 			var time = Util.formatTimeHMS(hist.DownloadTimeSec + hist.PostTotalTimeSec);
-			
+
 			var table = '';
 			table += '<tr><td><a href="#" id="HistoryEdit_TimeStats" data-tab="HistoryEdit_TimeStatsTab" title="Size and time statistics">Total '+
 				'<i class="icon-forward" style="opacity:0.6;"></i></a>' +
@@ -1766,7 +1760,7 @@ var HistoryEditDialog = (new function()
 
 		var postLog = hist.MessageCount > 0;
 		Util.show('#HistoryEdit_Log', postLog);
-		
+
 		EditUI.buildDNZBLinks(curHist.Parameters ? curHist.Parameters : [], 'HistoryEdit_DNZB');
 
 		enableAllButtons();
@@ -1828,7 +1822,7 @@ var HistoryEditDialog = (new function()
 				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
 	}
-	
+
 	function fillTimeStats()
 	{
 		var hist = curHist;
@@ -1847,7 +1841,7 @@ var HistoryEditDialog = (new function()
 
 		$('#HistoryEdit_TimeStatsTable tbody').html(table);
 	}
-	
+
 	function tabClick(e)
 	{
 		e.preventDefault();
@@ -1962,13 +1956,13 @@ var HistoryEditDialog = (new function()
 		saveCompleted = retryFailed;
 		saveDupeKey();
 	}
-	
+
 	function retryFailed()
 	{
 		notification = '#Notif_History_RetryFailed';
 		RPC.call('editqueue', ['HistoryRetryFailed', '', [curHist.ID]], completed);
 	}
-	
+
 	function completed()
 	{
 		$HistoryEditDialog.modal('hide');

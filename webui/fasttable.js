@@ -30,7 +30,8 @@
  *   HTML tables with:
  *     1) very fast content updates;
  *     2) automatic pagination;
- *     3) search/filtering.
+ *     3) search/filtering;
+ *     4) drag and drop.
  *
  * What makes it unique and fast?
  * The tables are designed to be updated very often (up to 10 times per second). This has two challenges:
@@ -51,7 +52,7 @@
 (function($) {
 
 	'use strict';
-	
+
 	$.fn.fasttable = function(method)
 	{
 		if (methods[method])
@@ -74,7 +75,7 @@
 		{
 			return defaults;
 		},
-		
+
 		init : function(options)
 		{
 			return this.each(function()
@@ -91,15 +92,16 @@
 
 					var config = {};
 					config = $.extend(config, defaults, options);
-					
+
 					config.filterInput = $(config.filterInput);
 					config.filterClearButton = $(config.filterClearButton);
 					config.pagerContainer = $(config.pagerContainer);
 					config.infoContainer = $(config.infoContainer);
-					config.headerCheck = $(config.headerCheck);
-					
+					config.dragTip = $(config.dragTip);
+					config.dragTarget = $(config.dragTarget);
+
 					var searcher = new FastSearcher();
-					
+
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
 					// Do not perform the filter is the query has not changed.
@@ -143,7 +145,7 @@
 						data.config.filterInput.val('');
 						applyFilter(data, '');
 					});
-						
+
 					config.pagerContainer.on('click', 'li', function (e)
 					{
 						e.preventDefault();
@@ -167,19 +169,26 @@
 						}
 						refresh(data);
 					});
-					
-					$this.data('fasttable', {
-							target : $this,
-							config : config,
-							pageSize : parseInt(config.pageSize),
-							maxPages : parseInt(config.maxPages),
-							pageDots : Util.parseBool(config.pageDots),
-							curPage : 1,
-							checkedRows: {},
-							checkedCount: 0,
-							lastClickedRowID: null,
-							searcher: searcher
-						});
+
+					var data = {
+						target: $this,
+						config: config,
+						pageSize: parseInt(config.pageSize),
+						maxPages: parseInt(config.maxPages),
+						pageDots: Util.parseBool(config.pageDots),
+						curPage: 1,
+						checkedRows: {},
+						checkedCount: 0,
+						lastClickedRowID: null,
+						searcher: searcher
+					};
+
+					initDragDrop(data);
+
+					$this.on('click', 'thead > tr', function(e) { titleCheckClick(data, e); });
+					$this.on('click', 'tbody > tr', function(e) { itemCheckClick(data, e); });
+
+					$this.data('fasttable', data);
 				}
 			});
 		},
@@ -202,7 +211,7 @@
 		setPageSize : setPageSize,
 
 		setCurPage : setCurPage,
-		
+
 		applyFilter : function(filter)
 		{
 			applyFilter($(this).data('fasttable'), filter);
@@ -222,7 +231,7 @@
 		{
 			return $(this).data('fasttable').checkedRows;
 		},
-		
+
 		checkedCount : function()
 		{
 			return $(this).data('fasttable').checkedCount;
@@ -231,11 +240,7 @@
 		checkRow : function(id, checked)
 		{
 			checkRow($(this).data('fasttable'), id, checked);
-		},
-		
-		itemCheckClick : itemCheckClick,
-		
-		titleCheckClick : titleCheckClick
+		}
 	};
 
 	function updateContent(content)
@@ -246,6 +251,7 @@
 			data.content = content;
 		}
 		refresh(data);
+		updateMovingRecords(data);
 	}
 
 	function applyFilter(data, filter)
@@ -261,11 +267,11 @@
 		if (filter !== '' && data.config.filterInputCallback)
 		{
 			data.config.filterInputCallback(filter);
-		}								
+		}
 		if (filter === '' && data.config.filterClearCallback)
 		{
 			data.config.filterClearCallback();
-		}								
+		}
 	}
 
 	function refresh(data)
@@ -337,7 +343,7 @@
 					item.fields = [];
 				}
 			}
-			
+
 			for (var j=0; j < item.fields.length; j++)
 			{
 				var cell = row.insertCell(row.cells.length);
@@ -348,14 +354,14 @@
 				}
 			}
 		}
-		
+
 		titleCheckRedraw(data);
-		
+
 		if (data.config.renderTableCallback)
 		{
 			data.config.renderTableCallback(table);
-		}		
-		
+		}
+
 		return table;
 	}
 
@@ -377,7 +383,7 @@
 				var oldTR = oldTRs[i + (data.config.hasHeader ? 1 : 0)]; // evlt. skip header row
 				var oldTDs = oldTR.cells;
 				var newTDs = newTR.cells;
-				
+
 				oldTR.className = newTR.className;
 				oldTR.fasttableID = newTR.fasttableID;
 
@@ -426,10 +432,10 @@
 
 		var pagerObj = data.config.pagerContainer;
 		var pagerHtml = buildPagerHtml(data);
-		
+
 		var oldPager = pagerObj[0];
 		var newPager = $(pagerHtml)[0];
-		
+
 		updatePagerContent(data, oldPager, newPager);
 	}
 
@@ -487,10 +493,10 @@
 
 		pager += '<li' + (data.curPage === data.pageCount || data.pageCount === 0 ? ' class="disabled"' : '') + '><a href="#">Next &rarr;</a></li>';
 		pager += '</ul>';
-		
+
 		return pager;
 	}
-	
+
 	function updatePagerContent(data, oldPager, newPager)
 	{
 		var oldLIs = oldPager.getElementsByTagName('li');
@@ -529,7 +535,7 @@
 			oldPager.removeChild(oldPager.lastChild);
 		}
 	}
-	
+
 	function updateInfo(data)
 	{
 		if (data.content.length === 0)
@@ -559,7 +565,7 @@
 				available: data.availableContent.length,
 				filtered: data.filteredContent.length,
 				firstRecord: firstRecord,
-				lastRecord: lastRecord				
+				lastRecord: lastRecord
 			});
 		}
 	}
@@ -586,7 +592,22 @@
 		data.curPage = parseInt(page);
 		refresh(data);
 	}
-	
+
+	function checkedIds(data)
+	{
+		var checkedRows = data.checkedRows;
+		var checkedIds = [];
+		for (var i = 0; i < data.content.length; i++)
+		{
+			var id = data.content[i].id;
+			if (checkedRows[id])
+			{
+				checkedIds.push(id);
+			}
+		}
+		return checkedIds;
+	}
+
 	function titleCheckRedraw(data)
 	{
 		var filteredContent = data.filteredContent;
@@ -605,28 +626,34 @@
 				hasUnselectedItems = true;
 			}
 		}
-		
+
+		var headerRow = $('thead > tr', data.target);
 		if (hasSelectedItems && hasUnselectedItems)
 		{
-			data.config.headerCheck.removeClass('checked').addClass('checkremove');
+			headerRow.removeClass('checked').addClass('checkremove');
 		}
 		else if (hasSelectedItems)
 		{
-			data.config.headerCheck.removeClass('checkremove').addClass('checked');
+			headerRow.removeClass('checkremove').addClass('checked');
 		}
 		else
 		{
-			data.config.headerCheck.removeClass('checked').removeClass('checkremove');
+			headerRow.removeClass('checked').removeClass('checkremove');
 		}
 	}
 
-	function itemCheckClick(row, event)
+	function itemCheckClick(data, event)
 	{
-		var data = $(this).data('fasttable');
-		var checkedRows = data.checkedRows;
+		var checkmark = $(event.target).hasClass('check');
+		if (data.dragging || (!checkmark && !data.config.rowSelect))
+		{
+			return;
+		}
 
+		var row = $(event.target).closest('tr', data.target).get(0);
 		var id = row.fasttableID;
 		var doToggle = true;
+		var checkedRows = data.checkedRows;
 
 		if (event.shiftKey && data.lastClickedRowID != null)
 		{
@@ -640,13 +667,18 @@
 		}
 
 		data.lastClickedRowID = id;
-		
+
 		refresh(data);
 	}
 
-	function titleCheckClick()
+	function titleCheckClick(data, event)
 	{
-		var data = $(this).data('fasttable');
+		var checkmark = $(event.target).hasClass('check');
+		if (data.dragging || (!checkmark && !data.config.rowSelect))
+		{
+			return;
+		}
+
 		var filteredContent = data.filteredContent;
 		var checkedRows = data.checkedRows;
 
@@ -679,7 +711,7 @@
 			data.checkedCount++;
 		}
 	}
-	
+
 	function checkAll(data, checked)
 	{
 		var filteredContent = data.filteredContent;
@@ -691,7 +723,7 @@
 
 		refresh(data);
 	}
-	
+
 	function checkRange(data, from, to, checked)
 	{
 		var filteredContent = data.filteredContent;
@@ -701,19 +733,19 @@
 		{
 			return false;
 		}
-		
+
 		if (indexTo < indexFrom)
 		{
-			var tmp = indexTo; indexTo = indexFrom; indexFrom = tmp;			
+			var tmp = indexTo; indexTo = indexFrom; indexFrom = tmp;
 		}
-		
+
 		for (var i = indexFrom; i <= indexTo; i++)
 		{
 			checkRow(data, filteredContent[i].id, checked);
 		}
 
 		return true;
-	}	
+	}
 
 	function checkRow(data, id, checked)
 	{
@@ -734,7 +766,7 @@
 			data.checkedRows[id] = undefined;
 		}
 	}
-	
+
 	function indexOfID(content, id)
 	{
 		for (var i = 0; i < content.length; i++)
@@ -762,17 +794,256 @@
 			}
 		}
 	}
-	
+
+	//*************** DRAG-N-DROP
+
+	function initDragDrop(data)
+	{
+		data.target.get(0).addEventListener('mousedown', function(e) { mouseDown(data, e); }, true);
+		data.target.get(0).addEventListener('touchstart', function(e) { mouseDown(data, e); }, true);
+
+		data.moveIds = [];
+		data.dropAfter = false;
+		data.dropId = 0;
+		data.dragTitle = '';
+		data.dragging = false;
+		data.cancelDrag = false;
+		data.downPos = null;
+		data.blinkIds = [];
+		data.blinkState = null;
+		data.wantBlink = false;
+	}
+
+	function touchToMouse(e)
+	{
+		if (e.type === 'touchstart' || e.type === 'touchmove' || e.type === 'touchend')
+		{
+			e.clientX = e.changedTouches[0].clientX;
+			e.clientY = e.changedTouches[0].clientY;
+		}
+		console.log(e.type + ' at ' + e.clientX + ',' + e.clientY);
+	}
+
+	function mouseDown(data, e)
+	{
+		var checkmark = $(e.target).hasClass('check');
+		var head = $(e.target).closest('tr', data.target).parent().is('thead');
+		if (head || !(checkmark || data.config.rowSelect))
+		{
+			return;
+		}
+
+		touchToMouse(e);
+		if (e.type === 'mousedown')
+		{
+			e.preventDefault();
+		}
+
+		if (!data.config.moveRowsCallback)
+		{
+			return;
+		}
+
+		data.dragging = false;
+		data.dropId = null;
+		data.downPos = { x: e.clientX, y: e.clientY };
+
+		data.mouseMove = function(e) { mouseMove(data, e); };
+		data.mouseUp = function(e) { mouseUp(data, e); };
+		document.addEventListener('mousemove', data.mouseMove, true);
+		document.addEventListener('touchmove', data.mouseMove, true);
+		document.addEventListener('mouseup', data.mouseUp, true);
+		document.addEventListener('touchend', data.mouseUp, true);
+	}
+
+	function mouseMove(data, e)
+	{
+		touchToMouse(e);
+		e.preventDefault();
+
+		if (!data.dragging)
+		{
+			if (Math.abs(data.downPos.x - e.clientX) < 5 &&
+				Math.abs(data.downPos.y - e.clientY) < 5)
+			{
+				return;
+			}
+			startDrag(data, e);
+		}
+
+		var offsetX = $(document).scrollLeft();
+		var offsetY = $(document).scrollTop();
+		var posX = e.clientX + offsetX;
+		var posY = e.clientY + offsetY;
+		var el = document.elementFromPoint(e.clientX, e.clientY);
+		data.cancelDrag = !($.contains(data.target.get(0), el) || el === data.config.dragTarget.get(0));
+		var row = $(el).closest('tr', data.target)[0];
+
+		if ($(row).parent().is('thead'))
+		{
+			row = null;
+		}
+
+		if (row)
+		{
+			var r = row.getBoundingClientRect();
+			var r = { top: r.top + offsetY,
+				bottom: r.bottom + offsetY,
+				left: r.left + offsetX,
+				right: r.right + offsetX };
+
+			data.dropId = row.fasttableID;
+			data.dropAfter = posY > r.top + (r.bottom - r.top) / 2;
+			var pos = { top: data.dropAfter ? r.bottom - 1 : r.top - 1,
+				left: r.left,
+				width: r.right - r.left};
+			data.config.dragTarget.css(pos);
+			//row.scrollIntoView();
+		}
+
+		data.config.dragTarget.css({display: data.cancelDrag ? 'none' : 'block'});
+		data.config.dragTip.text(data.cancelDrag ? 'Cancel move' : data.dragTitle);
+		data.config.dragTip.css({left: posX + 10, top: posY - 5});
+	}
+
+	function startDrag(data, e)
+	{
+		var checkedRows = data.checkedRows;
+		var chkIds = checkedIds(data);
+
+		var row = $(e.target).closest('tr', data.target)[0];
+		var id = row.fasttableID;
+
+		data.moveIds = checkedRows[id] ? chkIds : [id];
+		data.dragTitle = data.moveIds.length > 1 ? 'Move ' + data.moveIds.length + ' records' : 'Move 1 record';
+
+		data.dragging = true;
+		data.cancelDrag = false;
+
+		data.config.dragTip.text(data.dragTitle);
+		data.config.dragTip.show();
+		$('html').addClass(data.config.dragProgress);
+		updateMovingRecords(data);
+	}
+
+	function mouseUp(data, e)
+	{
+		document.removeEventListener('mousemove', data.mouseMove, true);
+		document.removeEventListener('touchmove', data.mouseMove, true);
+		document.removeEventListener('mouseup', data.mouseUp, true);
+		document.removeEventListener('touchend', data.mouseUp, true);
+
+		$('html').removeClass(data.config.dragProgress);
+		data.config.dragTip.hide();
+		data.config.dragTarget.hide();
+
+		if (data.config.restoreTitlesCallback)
+		{
+			data.config.restoreTitlesCallback(data.target);
+		}
+
+		var cleanup = true;
+
+		if (data.dropId && !data.cancelDrag)
+		{
+			cleanup = !moveRecords(data);
+		}
+
+		if (cleanup)
+		{
+			$('tr', data.target).removeClass(data.config.dragSource);
+			data.moveIds = [];
+		}
+	}
+
+	function moveRecords(data)
+	{
+		if (data.moveIds.length == 1 && data.dropId == data.moveIds[0])
+		{
+			return false;
+		}
+
+		return data.config.moveRowsCallback(data.moveIds, data.dropId, data.dropAfter,
+			function()
+			{
+				data.blinkIds = data.moveIds;
+				data.moveIds = [];
+				data.blinkState = 3;
+				data.wantBlink = true;
+			});
+	}
+
+	function updateMovingRecords(data)
+	{
+		if (data.moveIds.length > 0)
+		{
+			var rows = $('tr', data.target);
+			rows.removeClass(data.config.dragSource);
+			rows.each(function(ind, el)
+				{
+					var id = el.fasttableID;
+					if (data.moveIds.indexOf(id) > -1)
+					{
+						$(el).addClass(data.config.dragSource);
+					}
+				});
+
+			if (data.config.suppressTitlesCallback)
+			{
+				data.config.suppressTitlesCallback(data.target);
+			}
+		}
+
+		if (data.blinkIds.length > 0)
+		{
+			blinkMovedRecords(data, data.wantBlink);
+			data.wantBlink = false;
+		}
+	}
+
+	function blinkMovedRecords(data, recur)
+	{
+		var rows = $('tr', data.target);
+		rows.removeClass(data.config.dragFinish);
+		rows.each(function(ind, el)
+			{
+				var id = el.fasttableID;
+				if (data.blinkIds.indexOf(id) > -1 &&
+					(data.blinkState === 1 || data.blinkState === 3 || data.blinkState === 5))
+				{
+					$(el).addClass(data.config.dragFinish);
+				}
+			});
+
+		if (recur && data.blinkState > 0)
+		{
+			setTimeout(function()
+				{
+					data.blinkState -= 1;
+					blinkMovedRecords(data, true);
+				},
+				300);
+		}
+
+		if (data.blinkState === 0)
+		{
+			data.blinkIds = [];
+		}
+	}
+
+	//*************** DRAG-N-DROP (END)
+
 	var defaults =
 	{
-		filterInput: '#table-filter',
-		filterClearButton: '#table-clear',
-		pagerContainer: '#table-pager',
-		infoContainer: '#table-info',
+		filterInput: '#TableFilter',
+		filterClearButton: '#TableClear',
+		pagerContainer: '#TablePager',
+		infoContainer: '#TableInfo',
 		pageSize: 10,
 		maxPages: 5,
 		pageDots: true,
 		hasHeader: true,
+		rowSelect: false,
 		infoEmpty: 'No records',
 		renderRowCallback: undefined,
 		renderCellCallback: undefined,
@@ -783,7 +1054,14 @@
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
-		headerCheck: '#table-header-check'
+		moveRowsCallback: undefined,
+		suppressTitlesCallback: undefined,
+		restoreTitlesCallback: undefined,
+		dragTip: '#TableDragTip',
+		dragTarget: '#TableDragTarget',
+		dragProgress: 'drag-progress',
+		dragSource: 'drag-source',
+		dragFinish: 'drag-finish'
 	};
 
 })(jQuery);
@@ -802,7 +1080,7 @@ function FastSearcher()
 		this.len = source.length;
 		this.p = 0;
 	}
-	
+
 	this.nextToken = function()
 	{
 		while (this.p < this.len)
@@ -948,7 +1226,7 @@ function FastSearcher()
 		var _this = this;
 		var text = term.toLowerCase();
 		var field;
-		
+
 		var command;
 		var commandIndex;
 		for (var i = 0; i < COMMANDS.length; i++)
@@ -961,7 +1239,7 @@ function FastSearcher()
 				command = cmd;
 			}
 		}
-		
+
 		if (command !== undefined)
 		{
 			field = term.substring(0, commandIndex);
@@ -975,7 +1253,7 @@ function FastSearcher()
 			eval: function() { return _this.evalTerm(this); }
 		};
 	}
-	
+
 	this.evalTerm = function(term) {
 		var text = term.text;
 		var field = term.field;

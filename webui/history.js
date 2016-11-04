@@ -58,11 +58,11 @@ var History = (new function($)
 
 		$HistoryTable.fasttable(
 			{
-				filterInput: $('#HistoryTable_filter'),
-				filterClearButton: $("#HistoryTable_clearfilter"),
-				pagerContainer: $('#HistoryTable_pager'),
-				infoContainer: $('#HistoryTable_info'),
-				headerCheck: $('#HistoryTable > thead > tr:first-child'),
+				filterInput: '#HistoryTable_filter',
+				filterClearButton: '#HistoryTable_clearfilter',
+				pagerContainer: '#HistoryTable_pager',
+				infoContainer: '#HistoryTable_info',
+				rowSelect: UISettings.rowSelect && !UISettings.miniTheme,
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
@@ -73,11 +73,6 @@ var History = (new function($)
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
-		$HistoryTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { $HistoryTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
-		$HistoryTable.on('click', 'thead div.check',
-			function() { $HistoryTable.fasttable('titleCheckClick') });
-		$HistoryTable.on('mousedown', Util.disableShiftMouseDown);
 	}
 
 	this.applyTheme = function()
@@ -323,7 +318,7 @@ var History = (new function($)
 				}
 				notification = '#Notif_History_Marked';
 
-				ConfirmDialog.showModal(action === 'MARKSUCCESS' ? 'HistoryEditSuccessConfirmDialog' : 
+				ConfirmDialog.showModal(action === 'MARKSUCCESS' ? 'HistoryEditSuccessConfirmDialog' :
 					action === 'MARKGOOD' ? 'HistoryEditGoodConfirmDialog' : 'HistoryEditBadConfirmDialog',
 					function () // action
 					{
@@ -349,8 +344,8 @@ var History = (new function($)
 		for (var id in checkedRows)
 		{
 			ids.push(parseInt(id));
-		}		
-		
+		}
+
 		RPC.call('editqueue', [command, '', ids], function()
 		{
 			editCompleted();
@@ -496,7 +491,7 @@ var HistoryUI = (new function($)
 		}
 		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
-	
+
 	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
@@ -524,7 +519,7 @@ var HistoryUI = (new function($)
 
 		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init, selCount);
 	}
-	
+
 	this.confirmMulti = function(multi)
 	{
 		if (multi === undefined || !multi)
