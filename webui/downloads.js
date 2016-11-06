@@ -90,7 +90,7 @@ var Downloads = (new function($)
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
-				rowSelect: UISettings.rowSelect && !UISettings.miniTheme,
+				rowSelect: UISettings.rowSelect,
 				fillFieldsCallback: fillFieldsCallback,
 				renderCellCallback: renderCellCallback,
 				updateInfoCallback: updateInfo,

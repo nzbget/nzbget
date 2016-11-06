@@ -62,7 +62,7 @@ var History = (new function($)
 				filterClearButton: '#HistoryTable_clearfilter',
 				pagerContainer: '#HistoryTable_pager',
 				infoContainer: '#HistoryTable_info',
-				rowSelect: UISettings.rowSelect && !UISettings.miniTheme,
+				rowSelect: UISettings.rowSelect,
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,

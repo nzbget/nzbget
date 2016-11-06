@@ -821,14 +821,13 @@
 			e.clientX = e.changedTouches[0].clientX;
 			e.clientY = e.changedTouches[0].clientY;
 		}
-		console.log(e.type + ' at ' + e.clientX + ',' + e.clientY);
 	}
 
 	function mouseDown(data, e)
 	{
 		var checkmark = $(e.target).hasClass('check');
 		var head = $(e.target).closest('tr', data.target).parent().is('thead');
-		if (head || !(checkmark || data.config.rowSelect))
+		if (head || !(checkmark || (data.config.rowSelect && e.type === 'mousedown')))
 		{
 			return;
 		}
@@ -860,7 +859,6 @@
 	{
 		touchToMouse(e);
 		e.preventDefault();
-
 		if (!data.dragging)
 		{
 			if (Math.abs(data.downPos.x - e.clientX) < 5 &&
@@ -870,40 +868,8 @@
 			}
 			startDrag(data, e);
 		}
-
-		var offsetX = $(document).scrollLeft();
-		var offsetY = $(document).scrollTop();
-		var posX = e.clientX + offsetX;
-		var posY = e.clientY + offsetY;
-		var el = document.elementFromPoint(e.clientX, e.clientY);
-		data.cancelDrag = !($.contains(data.target.get(0), el) || el === data.config.dragTarget.get(0));
-		var row = $(el).closest('tr', data.target)[0];
-
-		if ($(row).parent().is('thead'))
-		{
-			row = null;
-		}
-
-		if (row)
-		{
-			var r = row.getBoundingClientRect();
-			var r = { top: r.top + offsetY,
-				bottom: r.bottom + offsetY,
-				left: r.left + offsetX,
-				right: r.right + offsetX };
-
-			data.dropId = row.fasttableID;
-			data.dropAfter = posY > r.top + (r.bottom - r.top) / 2;
-			var pos = { top: data.dropAfter ? r.bottom - 1 : r.top - 1,
-				left: r.left,
-				width: r.right - r.left};
-			data.config.dragTarget.css(pos);
-			//row.scrollIntoView();
-		}
-
-		data.config.dragTarget.css({display: data.cancelDrag ? 'none' : 'block'});
-		data.config.dragTip.text(data.cancelDrag ? 'Cancel move' : data.dragTitle);
-		data.config.dragTip.css({left: posX + 10, top: posY - 5});
+		updateDrag(data, e.clientX, e.clientY);
+		autoScroll(data, e.clientX, e.clientY);
 	}
 
 	function startDrag(data, e)
@@ -926,6 +892,69 @@
 		updateMovingRecords(data);
 	}
 
+	function updateDrag(data, x, y)
+	{
+		var offsetX = $(document).scrollLeft();
+		var offsetY = $(document).scrollTop();
+		var posX = x + offsetX;
+		var posY = y + offsetY;
+
+		var el = document.elementFromPoint(x, y);
+		data.cancelDrag = !($.contains(data.target.get(0), el) || el === data.config.dragTarget.get(0));
+
+		var row = $(el).closest('tr', data.target)[0];
+		if (row && !$(row).parent().is('thead'))
+		{
+			var r = row.getBoundingClientRect();
+			r = { top: r.top + offsetY,
+				bottom: r.bottom + offsetY,
+				left: r.left + offsetX,
+				right: r.right + offsetX };
+
+			data.dropId = row.fasttableID;
+			data.dropAfter = posY > r.top + (r.bottom - r.top) / 2;
+			var pos = { top: data.dropAfter ? r.bottom - 1 : r.top - 1,
+				left: r.left,
+				width: r.right - r.left};
+
+			// check overlapping
+			data.config.dragTarget.css('display', 'none');
+			if (!$.contains(data.target.get(0), document.elementFromPoint(pos.left - offsetX + 5, pos.top - offsetY)) &&
+				!$.contains(data.target.get(0), document.elementFromPoint(pos.left - offsetX + 5, pos.top - offsetY + 1)))
+			{
+				pos.width = 0;
+			}
+			data.config.dragTarget.css(pos);
+		}
+
+		data.config.dragTarget.css('display', data.cancelDrag ? 'none' : 'block');
+		data.config.dragTip.text(data.cancelDrag ? 'Cancel move' : data.dragTitle);
+
+		// calculating perfect position for drag tip
+		data.config.dragTip.css({left: 0, top: 0});
+		var tr = data.config.dragTip.get(0).getBoundingClientRect();
+		var tipX = Math.max(Math.min(posX + 10, $(window).width() - tr.width - 2), 2);
+		data.config.dragTip.css({left: tipX, top: Math.max(Math.min(posY + (tipX == posX + 10 ? -5 : 3),
+			offsetY + $(window).height() - tr.height - 2), offsetY + 2)});
+	}
+
+	function autoScroll(data, x, y)
+	{
+		// works properly only if the table lays directly on the page (not in another scrollable div)
+
+		data.scrollStep = y > $(window).height() - 20 ? 1 : y < 20 ? -1 : 0;
+		if (data.scrollStep !== 0 && !data.scrollTimer)
+		{
+			var scroll = function()
+			{
+				$(document).scrollTop($(document).scrollTop() + data.scrollStep);
+				updateDrag(data, x, y + data.scrollStep);
+				data.scrollTimer = data.scrollStep == 0 ? null : setTimeout(scroll, 10);
+			}
+			data.scrollTimer = setTimeout(scroll, 500);
+		}
+	}
+
 	function mouseUp(data, e)
 	{
 		document.removeEventListener('mousemove', data.mouseMove, true);
@@ -936,6 +965,9 @@
 		$('html').removeClass(data.config.dragProgress);
 		data.config.dragTip.hide();
 		data.config.dragTarget.hide();
+		data.scrollStep = 0;
+		clearTimeout(data.scrollTimer);
+		data.scrollTimer = null;
 
 		if (data.config.restoreTitlesCallback)
 		{
