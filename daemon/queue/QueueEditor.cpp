@@ -518,15 +518,15 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 			}
 		}
 	}
-	else if ((offset != 0) &&
-		(action == DownloadQueue::eaGroupMoveOffset || action == DownloadQueue::eaGroupMoveTop || action == DownloadQueue::eaGroupMoveBottom))
+	else if (((offset != 0) &&
+		(action == DownloadQueue::eaGroupMoveOffset || action == DownloadQueue::eaGroupMoveTop || action == DownloadQueue::eaGroupMoveBottom)) ||
+		action == DownloadQueue::eaGroupMoveBefore || action == DownloadQueue::eaGroupMoveAfter)
 	{
 		// add IDs to list in order they currently have in download queue
-		// per group only one FileInfo is added to the list
 		int nrEntries = (int)m_downloadQueue->GetQueue()->size();
 		int lastDestPos = -1;
 		int start, end, step;
-		if (offset < 0)
+		if (offset <= 0)
 		{
 			start = 0;
 			end = nrEntries;
@@ -1138,7 +1138,7 @@ bool QueueEditor::MoveGroupsTo(ItemList* itemList, IdList* idList, bool before, 
 	if (offset == 0)
 	{
 		// calculate offset between first moving item and target
-		int moveId = idList->at(0);
+		int moveId = itemList->at(0).m_nzbInfo->GetId();
 		bool progress = false;
 		int step = 0;
 		for (NzbInfo* nzbInfo : m_downloadQueue->GetQueue())
