@@ -94,9 +94,9 @@ var Downloads = (new function($)
 				fillFieldsCallback: fillFieldsCallback,
 				renderCellCallback: renderCellCallback,
 				updateInfoCallback: updateInfo,
-				moveRowsCallback: moveRowsCallback,
-				suppressTitlesCallback: DownloadsUI.suppressTitles,
-				restoreTitlesCallback: DownloadsUI.restoreTitles
+				dragStartCallback: Refresher.pause,
+				dragEndCallback: dragEndCallback,
+				dragBlink: 'update'
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
@@ -120,9 +120,12 @@ var Downloads = (new function($)
 
 	function groups_loaded(_groups)
 	{
-		groups = _groups;
-		Downloads.groups = groups;
-		prepare();
+		if (!Refresher.isPaused())
+		{
+			groups = _groups;
+			Downloads.groups = groups;
+			prepare();
+		}
 		RPC.next();
 	}
 
@@ -137,7 +140,10 @@ var Downloads = (new function($)
 
 	this.redraw = function()
 	{
-		redraw_table();
+		if (!Refresher.isPaused())
+		{
+			redraw_table();
+		}
 
 		Util.show($DownloadsTabBadge, groups.length > 0);
 		Util.show($DownloadsTabBadgeEmpty, groups.length === 0 && UISettings.miniTheme);
@@ -575,15 +581,17 @@ var Downloads = (new function($)
 		RPC.call('editqueue', ['GroupSort', order, checkedEditIDs], editCompleted);
 	}
 
-	function moveRowsCallback(moveIds, dropId, dropAfter, completedCallback)
+	function dragEndCallback(info)
 	{
-		RPC.call('editqueue', [dropAfter ? 'GroupMoveAfter' : 'GroupMoveBefore', '' + dropId, moveIds],
-			function()
-			{
-				completedCallback();
-				Refresher.update();
-			});
-		return true;
+		if (info)
+		{
+			RPC.call('editqueue', [info.direction === 'after' ? 'GroupMoveAfter' : 'GroupMoveBefore',
+				'' + info.position, info.ids], function(){ Refresher.resume(true); });
+		}
+		else
+		{
+			Refresher.resume();
+		}
 	}
 
 }(jQuery));
@@ -776,12 +784,12 @@ var DownloadsUI = (new function($)
 	{
 		var text;
 
-		if (priority >= 900) text = ' <div class="icon-circle-red col-prio" title="Force priority"></div>';
-		else if (priority > 50) text = ' <div class="icon-ring-fill-red col-prio" title="Very high priority"></div>';
-		else if (priority > 0) text = ' <div class="icon-ring-red col-prio" title="High priority"></div>';
-		else if (priority == 0) text = ' <div class="icon-ring-ltgrey col-prio" title="Normal priority"></div>';
-		else if (priority >= -50) text = ' <div class="icon-ring-blue col-prio" title="Low priority"></div>';
-		else text = ' <div class="icon-ring-fill-blue col-prio" title="Very low priority"></div>';
+		if (priority >= 900) text = ' <div class="icon-circle-red" title="Force priority"></div>';
+		else if (priority > 50) text = ' <div class="icon-ring-fill-red" title="Very high priority"></div>';
+		else if (priority > 0) text = ' <div class="icon-ring-red" title="High priority"></div>';
+		else if (priority == 0) text = ' <div class="icon-ring-ltgrey" title="Normal priority"></div>';
+		else if (priority >= -50) text = ' <div class="icon-ring-blue" title="Low priority"></div>';
+		else text = ' <div class="icon-ring-fill-blue" title="Very low priority"></div>';
 
 		if ([900, 100, 50, 0, -50, -100].indexOf(priority) == -1)
 		{
@@ -789,21 +797,6 @@ var DownloadsUI = (new function($)
 		}
 
 		return text;
-	}
-
-	this.suppressTitles = function($DownloadsTable)
-	{
-		$('div.col-prio', $DownloadsTable).attr('title', '');
-	}
-
-	this.restoreTitles = function($DownloadsTable)
-	{
-		$('div.icon-circle-red', $DownloadsTable).attr('title', 'Force priority');
-		$('div.icon-ring-fill-red', $DownloadsTable).attr('title', 'Very high priority');
-		$('div.icon-ring-red', $DownloadsTable).attr('title', 'High priority');
-		$('div.icon-ring-ltgrey', $DownloadsTable).attr('title', 'Normal priority');
-		$('div.icon-ring-blue', $DownloadsTable).attr('title', 'Low priority');
-		$('div.icon-ring-fill-blue', $DownloadsTable).attr('title', 'Very low priority');
 	}
 
 	this.buildEncryptedLabel = function(parameters)

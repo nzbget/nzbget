@@ -97,8 +97,9 @@
 					config.filterClearButton = $(config.filterClearButton);
 					config.pagerContainer = $(config.pagerContainer);
 					config.infoContainer = $(config.infoContainer);
-					config.dragTip = $(config.dragTip);
-					config.dragTarget = $(config.dragTarget);
+					config.dragBox = $(config.dragBox);
+					config.dragContent = $(config.dragContent);
+					config.dragBadge = $(config.dragBadge);
 
 					var searcher = new FastSearcher();
 
@@ -251,7 +252,7 @@
 			data.content = content;
 		}
 		refresh(data);
-		updateMovingRecords(data);
+		blinkMovedRecords(data);
 	}
 
 	function applyFilter(data, filter)
@@ -650,7 +651,7 @@
 			return;
 		}
 
-		var row = $(event.target).closest('tr', data.target).get(0);
+		var row = $(event.target).closest('tr', data.target)[0];
 		var id = row.fasttableID;
 		var doToggle = true;
 		var checkedRows = data.checkedRows;
@@ -799,14 +800,14 @@
 
 	function initDragDrop(data)
 	{
-		data.target.get(0).addEventListener('mousedown', function(e) { mouseDown(data, e); }, true);
-		data.target.get(0).addEventListener('touchstart', function(e) { mouseDown(data, e); }, true);
+		data.target[0].addEventListener('mousedown', function(e) { mouseDown(data, e); }, true);
+		data.target[0].addEventListener('touchstart', function(e) { mouseDown(data, e); }, true);
 
 		data.moveIds = [];
 		data.dropAfter = false;
-		data.dropId = 0;
-		data.dragTitle = '';
+		data.dropId = null;
 		data.dragging = false;
+		data.dragRow = $('');
 		data.cancelDrag = false;
 		data.downPos = null;
 		data.blinkIds = [];
@@ -825,9 +826,13 @@
 
 	function mouseDown(data, e)
 	{
+		data.dragging = false;
+		data.dropId = null;
+
 		var checkmark = $(e.target).hasClass('check');
 		var head = $(e.target).closest('tr', data.target).parent().is('thead');
-		if (head || !(checkmark || (data.config.rowSelect && e.type === 'mousedown')))
+		if (head || !(checkmark || (data.config.rowSelect && e.type === 'mousedown')) ||
+			e.ctrlKey || e.altKey || e.metaKey)
 		{
 			return;
 		}
@@ -838,27 +843,38 @@
 			e.preventDefault();
 		}
 
-		if (!data.config.moveRowsCallback)
+		if (!data.config.dragEndCallback)
 		{
 			return;
 		}
 
-		data.dragging = false;
-		data.dropId = null;
 		data.downPos = { x: e.clientX, y: e.clientY };
 
 		data.mouseMove = function(e) { mouseMove(data, e); };
 		data.mouseUp = function(e) { mouseUp(data, e); };
+		data.keyDown = function(e) { keyDown(data, e); };
 		document.addEventListener('mousemove', data.mouseMove, true);
 		document.addEventListener('touchmove', data.mouseMove, true);
 		document.addEventListener('mouseup', data.mouseUp, true);
 		document.addEventListener('touchend', data.mouseUp, true);
+		document.addEventListener('touchcancel', data.mouseUp, true);
+		document.addEventListener('keydown', data.keyDown, true);
 	}
 
 	function mouseMove(data, e)
 	{
+		console.log('move at ' + e.clientX + 'x' + e.clientY);
+
 		touchToMouse(e);
 		e.preventDefault();
+
+		if (e.touches && e.touches.length > 1)
+		{
+			data.cancelDrag = true;
+			mouseUp(data, e);
+			return;
+		}
+
 		if (!data.dragging)
 		{
 			if (Math.abs(data.downPos.x - e.clientX) < 5 &&
@@ -867,29 +883,61 @@
 				return;
 			}
 			startDrag(data, e);
+			if (data.dragCancel)
+			{
+				mouseUp(data, e);
+				return;
+			}
 		}
+
 		updateDrag(data, e.clientX, e.clientY);
 		autoScroll(data, e.clientX, e.clientY);
 	}
 
 	function startDrag(data, e)
 	{
+		if (data.config.dragStartCallback)
+		{
+			data.config.dragStartCallback();
+		}
+
+		var offsetX = $(document).scrollLeft();
+		var offsetY = $(document).scrollTop();
+
 		var checkedRows = data.checkedRows;
 		var chkIds = checkedIds(data);
 
-		var row = $(e.target).closest('tr', data.target)[0];
-		var id = row.fasttableID;
+		data.dragRow = $(e.target).closest('tr', data.target);
+		var rf = data.dragRow.offset();
+		data.dragOffset = { x: data.downPos.x - rf.left + offsetX, y: data.downPos.y - rf.top + offsetY };
+		var id = data.dragRow[0].fasttableID;
 
 		data.moveIds = checkedRows[id] ? chkIds : [id];
-		data.dragTitle = data.moveIds.length > 1 ? 'Move ' + data.moveIds.length + ' records' : 'Move 1 record';
-
 		data.dragging = true;
 		data.cancelDrag = false;
 
-		data.config.dragTip.text(data.dragTitle);
-		data.config.dragTip.show();
-		$('html').addClass(data.config.dragProgress);
-		updateMovingRecords(data);
+		buildDragBox(data);
+		data.config.dragBox.css('display', 'block');
+		data.dragRow.addClass('drag-source');
+		$('html').addClass('drag-progress');
+		data.oldOverflowX = $('body').css('overflow-x');
+		$('body').css('overflow-x', 'hidden');
+	}
+
+	function buildDragBox(data)
+	{
+		var tr = data.dragRow.clone();
+		var table = data.target.clone();
+		$('tr', table).remove();
+		$('thead', table).remove();
+		$('tbody', table).append(tr);
+		table.css('margin', 0);
+		data.config.dragContent.html(table);
+		data.config.dragBadge.text(data.moveIds.length);
+		data.config.dragBadge.css('display', data.moveIds.length > 1 ? 'block' : 'none');
+		data.config.dragBox.css({left: data.target.offset().left, width: data.dragRow.width()});
+		var tds = $('td', tr);
+		$('td', data.dragRow).each(function(ind, el) { $(tds[ind]).css('width', $(el).width()); });
 	}
 
 	function updateDrag(data, x, y)
@@ -899,50 +947,52 @@
 		var posX = x + offsetX;
 		var posY = y + offsetY;
 
-		var el = document.elementFromPoint(x, y);
-		data.cancelDrag = !($.contains(data.target.get(0), el) || el === data.config.dragTarget.get(0));
+		data.config.dragBox.css({
+			left: posX - data.dragOffset.x,
+			top: Math.max(Math.min(posY - data.dragOffset.y, offsetY + $(window).height() - data.config.dragBox.height() - 2), offsetY + 2)});
 
-		var row = $(el).closest('tr', data.target)[0];
-		if (row && !$(row).parent().is('thead'))
+		var dt = data.config.dragBox.offset().top;
+		var dh = data.config.dragBox.height();
+
+		var rows = $('tbody > tr', data.target);
+		for (var i = 0; i < rows.length; i++)
 		{
-			var r = row.getBoundingClientRect();
-			r = { top: r.top + offsetY,
-				bottom: r.bottom + offsetY,
-				left: r.left + offsetX,
-				right: r.right + offsetX };
-
-			data.dropId = row.fasttableID;
-			data.dropAfter = posY > r.top + (r.bottom - r.top) / 2;
-			var pos = { top: data.dropAfter ? r.bottom - 1 : r.top - 1,
-				left: r.left,
-				width: r.right - r.left};
-
-			// check overlapping
-			data.config.dragTarget.css('display', 'none');
-			if (!$.contains(data.target.get(0), document.elementFromPoint(pos.left - offsetX + 5, pos.top - offsetY)) &&
-				!$.contains(data.target.get(0), document.elementFromPoint(pos.left - offsetX + 5, pos.top - offsetY + 1)))
+			var row = $(rows[i]);
+			var rt = row.offset().top;
+			var rh = row.height();
+			if (row[0] !== data.dragRow[0])
 			{
-				pos.width = 0;
+				if ((dt >= rt && dt <= rt + rh / 2) ||
+					(dt < rt && i == 0))
+				{
+					data.dropAfter = false;
+					row.before(data.dragRow);
+					data.dropId = row[0].fasttableID;
+					break;
+				}
+				if ((dt + dh >= rt + rh / 2 && dt + dh <= rt + rh) ||
+					(dt + dh > rt + rh && i === rows.length - 1))
+				{
+					data.dropAfter = true;
+					row.after(data.dragRow);
+					data.dropId = row[0].fasttableID;
+					break;
+				}
 			}
-			data.config.dragTarget.css(pos);
 		}
 
-		data.config.dragTarget.css('display', data.cancelDrag ? 'none' : 'block');
-		data.config.dragTip.text(data.cancelDrag ? 'Cancel move' : data.dragTitle);
-
-		// calculating perfect position for drag tip
-		data.config.dragTip.css({left: 0, top: 0});
-		var tr = data.config.dragTip.get(0).getBoundingClientRect();
-		var tipX = Math.max(Math.min(posX + 10, $(window).width() - tr.width - 2), 2);
-		data.config.dragTip.css({left: tipX, top: Math.max(Math.min(posY + (tipX == posX + 10 ? -5 : 3),
-			offsetY + $(window).height() - tr.height - 2), offsetY + 2)});
+		if (data.dropId === null)
+		{
+			data.dropId = data.dragRow[0].fasttableID;
+			data.dropAfter = true;
+		}
 	}
 
 	function autoScroll(data, x, y)
 	{
 		// works properly only if the table lays directly on the page (not in another scrollable div)
 
-		data.scrollStep = y > $(window).height() - 20 ? 1 : y < 20 ? -1 : 0;
+		data.scrollStep = (y > $(window).height() - 20 ? 1 : y < 20 ? -1 : 0) * 5;
 		if (data.scrollStep !== 0 && !data.scrollTimer)
 		{
 			var scroll = function()
@@ -961,89 +1011,148 @@
 		document.removeEventListener('touchmove', data.mouseMove, true);
 		document.removeEventListener('mouseup', data.mouseUp, true);
 		document.removeEventListener('touchend', data.mouseUp, true);
+		document.removeEventListener('touchcancel', data.mouseUp, true);
+		document.removeEventListener('keydown', data.keyDown, true);
 
-		$('html').removeClass(data.config.dragProgress);
-		data.config.dragTip.hide();
-		data.config.dragTarget.hide();
+		if (!data.dragging)
+		{
+			return;
+		}
+
+		data.cancelDrag = data.cancelDrag || e.type === 'touchcancel';
+		data.dragRow.removeClass('drag-source');
+		$('html').removeClass('drag-progress');
+		$('body').css('overflow-x', data.oldOverflowX);
+		data.config.dragBox.hide();
 		data.scrollStep = 0;
 		clearTimeout(data.scrollTimer);
 		data.scrollTimer = null;
+		moveRecords(data);
+	}
 
-		if (data.config.restoreTitlesCallback)
+	function keyDown(data, e)
+	{
+		if (e.keyCode == 27) // ESC-key
 		{
-			data.config.restoreTitlesCallback(data.target);
-		}
-
-		var cleanup = true;
-
-		if (data.dropId && !data.cancelDrag)
-		{
-			cleanup = !moveRecords(data);
-		}
-
-		if (cleanup)
-		{
-			$('tr', data.target).removeClass(data.config.dragSource);
-			data.moveIds = [];
+			data.cancelDrag = true;
+			e.preventDefault();
+			mouseUp(data, e);
 		}
 	}
 
 	function moveRecords(data)
 	{
-		if (data.moveIds.length == 1 && data.dropId == data.moveIds[0])
+		if (data.dropId !== null && !data.cancelDrag &&
+			!(data.moveIds.length == 1 && data.dropId == data.moveIds[0]))
 		{
-			return false;
+			data.blinkIds = data.moveIds;
+			data.moveIds = [];
+			data.blinkState = data.config.dragBlink === 'none' ? 0 : 3;
+			data.wantBlink = data.blinkState > 0;
+			moveRows(data);
+		}
+		else
+		{
+			data.dropId = null;
 		}
 
-		return data.config.moveRowsCallback(data.moveIds, data.dropId, data.dropAfter,
-			function()
+		if (data.dropId === null)
+		{
+			data.moveIds = [];
+		}
+
+		refresh(data);
+
+		data.config.dragEndCallback(data.dropId !== null ?
 			{
-				data.blinkIds = data.moveIds;
-				data.moveIds = [];
-				data.blinkState = 3;
-				data.wantBlink = true;
-			});
+				ids: data.blinkIds,
+				position: data.dropId,
+				direction: data.dropAfter ? 'after' : 'before'
+			} : null);
+
+		if (data.config.dragBlink === 'direct')
+		{
+			data.target.fasttable('update');
+		}
 	}
 
-	function updateMovingRecords(data)
+	function moveRows(data)
 	{
-		if (data.moveIds.length > 0)
-		{
-			var rows = $('tr', data.target);
-			rows.removeClass(data.config.dragSource);
-			rows.each(function(ind, el)
-				{
-					var id = el.fasttableID;
-					if (data.moveIds.indexOf(id) > -1)
-					{
-						$(el).addClass(data.config.dragSource);
-					}
-				});
+		var movedIds = data.blinkIds;
+		var movedRecords = [];
 
-			if (data.config.suppressTitlesCallback)
+		for (var i = 0; i < data.content.length; i++)
+		{
+			var item = data.content[i];
+			if (movedIds.indexOf(item.id) > -1)
 			{
-				data.config.suppressTitlesCallback(data.target);
+				movedRecords.push(item);
+				data.content.splice(i, 1);
+				i--;
+
+				if (item.id === data.dropId)
+				{
+					if (i >= 0)
+					{
+						data.dropId = data.content[i].id;
+						data.dropAfter = true;
+					}
+					else if (i + 1 < data.content.length)
+					{
+						data.dropId = data.content[i + 1].id;
+						data.dropAfter = false;
+					}
+					else
+					{
+						data.dropId = null;
+					}
+				}
 			}
 		}
 
+		if (data.dropId === null)
+		{
+			// restore content
+			for (var j = 0; j < movedRecords.length; j++)
+			{
+				data.content.push(movedRecords[j]);
+			}
+			return;
+		}
+
+		for (var i = 0; i < data.content.length; i++)
+		{
+			if (data.content[i].id === data.dropId)
+			{
+				for (var j = movedRecords.length - 1; j >= 0; j--)
+				{
+					data.content.splice(data.dropAfter ? i + 1 : i, 0, movedRecords[j]);
+				}
+				break;
+			}
+		}
+	}
+
+	function blinkMovedRecords(data)
+	{
 		if (data.blinkIds.length > 0)
 		{
-			blinkMovedRecords(data, data.wantBlink);
+			blinkProgress(data, data.wantBlink);
 			data.wantBlink = false;
 		}
 	}
 
-	function blinkMovedRecords(data, recur)
+	function blinkProgress(data, recur)
 	{
 		var rows = $('tr', data.target);
-		rows.removeClass(data.config.dragFinish);
+		rows.removeClass('drag-finish');
 		rows.each(function(ind, el)
 			{
 				var id = el.fasttableID;
 				if (data.blinkIds.indexOf(id) > -1 &&
 					(data.blinkState === 1 || data.blinkState === 3 || data.blinkState === 5))
 				{
-					$(el).addClass(data.config.dragFinish);
+					$(el).addClass('drag-finish');
 				}
 			});
 
@@ -1052,9 +1161,9 @@
 			setTimeout(function()
 				{
 					data.blinkState -= 1;
-					blinkMovedRecords(data, true);
+					blinkProgress(data, true);
 				},
-				300);
+				150);
 		}
 
 		if (data.blinkState === 0)
@@ -1071,6 +1180,10 @@
 		filterClearButton: '#TableClear',
 		pagerContainer: '#TablePager',
 		infoContainer: '#TableInfo',
+		dragBox: '#TableDragBox',
+		dragContent: '#TableDragContent',
+		dragBadge: '#TableDragBadge',
+		dragBlink: 'none', // none, direct, update
 		pageSize: 10,
 		maxPages: 5,
 		pageDots: true,
@@ -1086,14 +1199,8 @@
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
-		moveRowsCallback: undefined,
-		suppressTitlesCallback: undefined,
-		restoreTitlesCallback: undefined,
-		dragTip: '#TableDragTip',
-		dragTarget: '#TableDragTarget',
-		dragProgress: 'drag-progress',
-		dragSource: 'drag-source',
-		dragFinish: 'drag-finish'
+		dragStartCallback: undefined,
+		dragEndCallback: undefined
 	};
 
 })(jQuery);

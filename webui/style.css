@@ -1966,61 +1966,49 @@ div.multiset-toolbar button {
 
 /* DRAG-N-DROP */
 
-#TableDragTip {
+#TableDragBox {
 	position: absolute;
 	left: 100px;
 	top: 100px;
 	text-align: center;
 	border: 1px solid #ccc;
-	border-radius: 2px;
 	background-color: #f8f8f8;
-	font-size: 11px;
-	padding: 2px 7px 2px 7px;
 	display: none;
-	font-weight: bold;
-	cursor: grab;
+	cursor: grabbing;
+	cursor: -webkit-grabbing;
 	z-index: 5000;
 }
 
-#TableDragTarget {
+#TableDragBox .badge {
 	position: absolute;
-	left: 100px;
-	top: 100px;
-	height: 3px;
-	width: 500px;
-	background-color: #37D233;
-	display: none;
-	z-index: 5000;
+	left: 0px;
+	top: -12px;
+	text-align: center;
+	padding: 1px 6px;
+	color: #fff;
+	background-color: #D70015;
 }
 
-html.drag-progress,
-html.drag-progress * {
-	cursor: move !important;
-	cursor: -moz-grabbing !important;
-	cursor: -webkit-grabbing !important;
+.phone #TableDragBox .badge {
+	font-size: 22px;
+	top: -20px;
+	padding: 6px 10px;
+	border-radius: 12px;
+	margin
 }
 
-.drag-progress .table-striped tbody tr:hover td {
-    background-color: #ffffff;
+#TableDragBox .table-bordered {
+	border: none;
 }
 
-.drag-progress .table-striped tbody tr:nth-child(odd):hover td {
-    background-color: #f9f9f9;
+tr.drag-source > td {
+	background-color: #fff !important;
+	color: #fff !important;
+	visibility: visible;
 }
 
-.drag-progress .table-striped tr.checked:hover td {
-	background-color: #FFFFE8;
-}
-
-.drag-progress .table-striped tbody tr.checked:nth-child(odd):hover td {
-	background-color: #FFFFD8;
-}
-
-.table-striped tbody tr.drag-source td,
-.table-striped tbody tr.drag-source .progress,
-.table-striped tbody tr.drag-source td a {
-	background-color: #E6FAE4 !important;
-	color: #808080 !important;
+tr.drag-source > td > * {
+	visibility: hidden !important;
 }
 
 .table-striped tbody tr.drag-finish td,
@@ -2028,6 +2016,7 @@ html.drag-progress * {
 .table-striped tbody tr.drag-finish td a {
 	background-color: #E6FAE4 !important;
 }
+
 
 /****************************************************************************/
 /* SMARTPHONE THEME */
