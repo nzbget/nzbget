@@ -188,6 +188,8 @@ TEST_CASE("Rar-renamer: rename duplicate", "[Rar][RarRenamer][Slow][TestData]")
 	REQUIRE(rarRenamer.GetRenamedCount() == 3);
 }
 
+#ifndef DISABLE_TLS
+
 TEST_CASE("Rar-renamer: rename rar5 encrypted", "[Rar][RarRenamer][Slow][TestData]")
 {
 	RarRenamerMock rarRenamer;
@@ -215,3 +217,5 @@ TEST_CASE("Rar-renamer: rename rar3 encrypted", "[Rar][RarRenamer][Slow][TestDat
 
 	REQUIRE(rarRenamer.GetRenamedCount() == 3);
 }
+
+#endif

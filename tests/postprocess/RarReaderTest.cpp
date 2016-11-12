@@ -110,6 +110,8 @@ TEST_CASE("Rar-reader: rar3 old naming", "[Rar][RarReader][Slow][TestData]")
 	}
 }
 
+#ifndef DISABLE_TLS
+
 TEST_CASE("Rar-reader: rar3 encrypted data", "[Rar][RarReader][Slow][TestData]")
 {
 	{
@@ -241,3 +243,5 @@ TEST_CASE("Rar-reader: rar5 encrypted names", "[Rar][RarReader][Slow][TestData]"
 		REQUIRE(volume.GetEncrypted() == true);
 	}
 }
+
+#endif
