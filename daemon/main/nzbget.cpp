@@ -407,7 +407,7 @@ void NZBGet::BootConfig()
 	}
 
 	m_serverPool->SetTimeout(m_options->GetArticleTimeout());
-	m_serverPool->SetRetryInterval(m_options->GetRetryInterval());
+	m_serverPool->SetRetryInterval(m_options->GetArticleInterval());
 
 	m_scriptConfig->InitOptions();
 }

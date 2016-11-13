@@ -207,8 +207,10 @@ public:
 	bool GetDecode() { return m_decode; };
 	bool GetAppendCategoryDir() { return m_appendCategoryDir; }
 	bool GetContinuePartial() { return m_continuePartial; }
-	int GetRetries() { return m_retries; }
-	int GetRetryInterval() { return m_retryInterval; }
+	int GetArticleRetries() { return m_articleRetries; }
+	int GetArticleInterval() { return m_articleInterval; }
+	int GetUrlRetries() { return m_urlRetries; }
+	int GetUrlInterval() { return m_urlInterval; }
 	bool GetSaveQueue() { return m_saveQueue; }
 	bool GetFlushQueue() { return m_flushQueue; }
 	bool GetDupeCheck() { return m_dupeCheck; }
@@ -353,8 +355,10 @@ private:
 	int m_terminateTimeout = 0;
 	bool m_appendCategoryDir = false;
 	bool m_continuePartial = false;
-	int m_retries = 0;
-	int m_retryInterval = 0;
+	int m_articleRetries = 0;
+	int m_articleInterval = 0;
+	int m_urlRetries = 0;
+	int m_urlInterval = 0;
 	bool m_saveQueue = false;
 	bool m_flushQueue = false;
 	bool m_dupeCheck = false;

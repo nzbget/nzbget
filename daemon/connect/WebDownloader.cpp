@@ -54,7 +54,7 @@ void WebDownloader::Run()
 
 	SetStatus(adRunning);
 
-	int remainedDownloadRetries = g_Options->GetRetries() > 0 ? g_Options->GetRetries() : 1;
+	int remainedDownloadRetries = g_Options->GetUrlRetries() > 0 ? g_Options->GetUrlRetries() : 1;
 	int remainedConnectRetries = remainedDownloadRetries > 10 ? remainedDownloadRetries : 10;
 	if (!m_retry)
 	{
@@ -74,9 +74,9 @@ void WebDownloader::Run()
 			((Status == adConnectError) && (remainedConnectRetries > 1)))
 			&& !IsStopped() && !(!m_force && g_Options->GetPauseDownload()))
 		{
-			detail("Waiting %i sec to retry", g_Options->GetRetryInterval());
+			detail("Waiting %i sec to retry", g_Options->GetUrlInterval());
 			int msec = 0;
-			while (!IsStopped() && (msec < g_Options->GetRetryInterval() * 1000) &&
+			while (!IsStopped() && (msec < g_Options->GetUrlInterval() * 1000) &&
 				!(!m_force && g_Options->GetPauseDownload()))
 			{
 				usleep(100 * 1000);

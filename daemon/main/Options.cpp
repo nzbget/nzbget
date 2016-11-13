@@ -72,8 +72,10 @@ static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
 static const char* OPTION_DECODE				= "Decode";
-static const char* OPTION_RETRIES				= "Retries";
-static const char* OPTION_RETRYINTERVAL			= "RetryInterval";
+static const char* OPTION_ARTICLERETRIES		= "ArticleRetries";
+static const char* OPTION_ARTICLEINTERVAL		= "ArticleInterval";
+static const char* OPTION_URLRETRIES			= "UrlRetries";
+static const char* OPTION_URLINTERVAL			= "UrlInterval";
 static const char* OPTION_TERMINATETIMEOUT		= "TerminateTimeout";
 static const char* OPTION_CONTINUEPARTIAL		= "ContinuePartial";
 static const char* OPTION_URLCONNECTIONS		= "UrlConnections";
@@ -432,8 +434,10 @@ void Options::InitDefaults()
 	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
 	SetOption(OPTION_DECODE, "yes");
-	SetOption(OPTION_RETRIES, "3");
-	SetOption(OPTION_RETRYINTERVAL, "10");
+	SetOption(OPTION_ARTICLERETRIES, "3");
+	SetOption(OPTION_ARTICLEINTERVAL, "10");
+	SetOption(OPTION_URLRETRIES, "3");
+	SetOption(OPTION_URLINTERVAL, "10");
 	SetOption(OPTION_TERMINATETIMEOUT, "600");
 	SetOption(OPTION_CONTINUEPARTIAL, "no");
 	SetOption(OPTION_URLCONNECTIONS, "4");
@@ -676,8 +680,10 @@ void Options::InitOptions()
 	m_articleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
 	m_urlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
 	m_terminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
-	m_retries				= ParseIntValue(OPTION_RETRIES, 10);
-	m_retryInterval			= ParseIntValue(OPTION_RETRYINTERVAL, 10);
+	m_articleRetries		= ParseIntValue(OPTION_ARTICLERETRIES, 10);
+	m_articleInterval		= ParseIntValue(OPTION_ARTICLEINTERVAL, 10);
+	m_urlRetries			= ParseIntValue(OPTION_URLRETRIES, 10);
+	m_urlInterval			= ParseIntValue(OPTION_URLINTERVAL, 10);
 	m_controlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
 	m_securePort			= ParseIntValue(OPTION_SECUREPORT, 10);
 	m_urlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
@@ -1636,6 +1642,16 @@ void Options::ConvertOldOption(CString& option, CString& value)
 	if (!strcasecmp(option, "ConnectionTimeout"))
 	{
 		option = "ArticleTimeout";
+	}
+
+	if (!strcasecmp(option, "Retries"))
+	{
+		option = "ArticleRetries";
+	}
+
+	if (!strcasecmp(option, "RetryInterval"))
+	{
+		option = "ArticleInterval";
 	}
 
 	if (!strcasecmp(option, "CreateBrokenLog"))
