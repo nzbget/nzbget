@@ -1238,7 +1238,7 @@ void Options::InitScheduler()
 
 			if (m_extender)
 			{
-				if (hours == -1)
+				if (hours == -2)
 				{
 					for (int everyHour = 0; everyHour < 24; everyHour++)
 					{
@@ -1256,6 +1256,12 @@ void Options::InitScheduler()
 
 bool Options::ParseTime(const char* time, int* hours, int* minutes)
 {
+	if (!strcmp(time, "*"))
+	{
+		*hours = -1;
+		return true;
+	}
+
 	int colons = 0;
 	const char* p = time;
 	while (*p)
@@ -1284,7 +1290,7 @@ bool Options::ParseTime(const char* time, int* hours, int* minutes)
 
 	if (time[0] == '*')
 	{
-		*hours = -1;
+		*hours = -2;
 	}
 	else
 	{

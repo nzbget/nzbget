@@ -52,7 +52,7 @@ public:
 			m_id(id), m_hours(hours), m_minutes(minutes),
 			m_weekDaysBits(weekDaysBits), m_command(command), m_param(param) {}
 		friend class Scheduler;
-
+		static const int STARTUP_TASK = -1;
 	private:
 		int m_id;
 		int m_hours;
