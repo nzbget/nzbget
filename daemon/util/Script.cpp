@@ -304,6 +304,7 @@ int ScriptController::Execute()
 	PrepareEnvOptions(nullptr);
 	PrepareArgs();
 
+	m_completed = false;
 	int exitCode = 0;
 
 #ifdef CHILD_WATCHDOG
@@ -315,6 +316,7 @@ int ScriptController::Execute()
 	int pipein = StartProcess();
 	if (pipein == -1)
 	{
+		m_completed = true;
 		return -1;
 	}
 
@@ -324,6 +326,7 @@ int ScriptController::Execute()
 	{
 		PrintMessage(Message::mkError, "Could not open pipe to %s", m_infoName);
 		close(pipein);
+		m_completed = true;
 		return -1;
 	}
 
@@ -404,7 +407,7 @@ int ScriptController::Execute()
 #endif
 
 	debug("Exit code %i", exitCode);
-
+	m_completed = true;
 	return exitCode;
 }
 
@@ -474,7 +477,7 @@ int ScriptController::StartProcess()
 	std::unique_ptr<wchar_t[]> environmentStrings = m_environmentStrings.GetStrings();
 
 	BOOL ok = CreateProcessW(nullptr, WString(cmdLine), nullptr, nullptr, TRUE,
-		NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+		NORMAL_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT,
 		environmentStrings.get(), wideWorkingDir, &startupInfo, &processInfo);
 	if (!ok)
 	{
@@ -505,6 +508,7 @@ int ScriptController::StartProcess()
 	debug("Child Process-ID: %i", (int)processInfo.dwProcessId);
 
 	m_processId = processInfo.hProcess;
+	m_dwProcessId = processInfo.dwProcessId;
 
 	// close unused "write" end
 	CloseHandle(writePipe);
@@ -636,7 +640,7 @@ void ScriptController::Terminate()
 	m_terminated = true;
 
 #ifdef WIN32
-	BOOL ok = TerminateProcess(m_processId, -1);
+	BOOL ok = TerminateProcess(m_processId, -1) || m_completed;
 	if (ok)
 	{
 		// wait 60 seconds for process to terminate
@@ -655,7 +659,7 @@ void ScriptController::Terminate()
 		// if the child process has its own group (setsid() was successful), kill the whole group
 		killId = -killId;
 	}
-	bool ok = killId && kill(killId, SIGKILL) == 0;
+	bool ok = (killId && kill(killId, SIGKILL) == 0) || m_completed;
 #endif
 
 	if (ok)
@@ -677,9 +681,40 @@ void ScriptController::TerminateAll()
 	{
 		if (script->m_processId && !script->m_detached)
 		{
+			// send break signal and wait up to 5 seconds for graceful termination
+			if (script->Break())
+			{
+				time_t curtime = Util::CurrentTime();
+				while (!script->m_completed && std::abs(curtime - Util::CurrentTime()) <= 10)
+				{
+					usleep(100 * 1000);
+				}
+			}
 			script->Terminate();
 		}
 	}
+}
+
+bool ScriptController::Break()
+{
+	debug("Sending break signal to %s", m_infoName);
+
+#ifdef WIN32
+	BOOL ok = GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, m_dwProcessId);
+#else
+	bool ok = kill(m_processId, SIGINT) == 0;
+#endif
+
+	if (ok)
+	{
+		debug("Sent break signal to %s", m_infoName);
+	}
+	else
+	{
+		warn("Could not send break signal to %s", m_infoName);
+	}
+
+	return ok;
 }
 
 void ScriptController::Detach()

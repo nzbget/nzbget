@@ -54,6 +54,7 @@ public:
 	virtual ~ScriptController();
 	int Execute();
 	void Terminate();
+	bool Break();
 	void Resume();
 	void Detach();
 	static void TerminateAll();
@@ -91,10 +92,12 @@ private:
 	const char* m_logPrefix = nullptr;
 	EnvironmentStrings m_environmentStrings;
 	bool m_terminated = false;
+	bool m_completed = false;
 	bool m_detached = false;
 	FILE* m_readpipe;
 #ifdef WIN32
 	HANDLE m_processId = 0;
+	DWORD m_dwProcessId = 0;
 	char m_cmdLine[2048];
 #else
 	pid_t m_processId = 0;

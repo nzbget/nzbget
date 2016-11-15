@@ -151,6 +151,7 @@ int main(int argc, char *argv[], char *argp[])
 	{
 		if (!strcmp(argv[i], "-D"))
 		{
+			AllocConsole(); // needed for sending CTRL+BREAK signal to child processes
 			StartService(RunMain);
 			return 0;
 		}
