@@ -285,7 +285,8 @@ bool TlsSocket::Start()
 
 	m_initialized = true;
 
-	const char* priority = !m_cipher.Empty() ? m_cipher.Str() : "NORMAL";
+	const char* priority = !m_cipher.Empty() ? m_cipher.Str() :
+		(m_certFile && m_keyFile ? "NORMAL:!VERS-SSL3.0" : "NORMAL");
 
 	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, nullptr);
 	if (m_retCode != 0)
@@ -349,6 +350,12 @@ bool TlsSocket::Start()
 		if (SSL_CTX_use_PrivateKey_file((SSL_CTX*)m_context, m_keyFile, SSL_FILETYPE_PEM) != 1)
 		{
 			ReportError("Could not load key file");
+			Close();
+			return false;
+		}
+		if (!SSL_CTX_set_options((SSL_CTX*)m_context, SSL_OP_NO_SSLv3))
+		{
+			ReportError("Could not select minimum protocol version for TLS");
 			Close();
 			return false;
 		}
