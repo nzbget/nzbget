@@ -460,12 +460,6 @@ bool RarVolume::ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile
 	uint64 fileflags;
 	if (!ReadV(file, &block, &fileflags)) return false;
 
-	if (fileflags & 1)
-	{
-		if (!ReadV(file, &block, &val)) return false;
-		m_volumeNo = (uint32)val;
-	}
-
 	if (!ReadV(file, &block, &val)) return false; // skip
 	innerFile.m_size = (int64)val;
 
