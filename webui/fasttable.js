@@ -828,11 +828,13 @@
 	{
 		data.dragging = false;
 		data.dropId = null;
+		data.dragRow = $(e.target).closest('tr', data.target);
 
-		var checkmark = $(e.target).hasClass('check');
+		var checkmark = $(e.target).hasClass('check') ||
+			($(e.target).find('.check').length > 0 && !$('body').hasClass('phone'));
 		var head = $(e.target).closest('tr', data.target).parent().is('thead');
 		if (head || !(checkmark || (data.config.rowSelect && e.type === 'mousedown')) ||
-			e.ctrlKey || e.altKey || e.metaKey)
+			data.dragRow.length != 1 || e.ctrlKey || e.altKey || e.metaKey)
 		{
 			return;
 		}
@@ -863,8 +865,6 @@
 
 	function mouseMove(data, e)
 	{
-		console.log('move at ' + e.clientX + 'x' + e.clientY);
-
 		touchToMouse(e);
 		e.preventDefault();
 
@@ -903,15 +903,13 @@
 
 		var offsetX = $(document).scrollLeft();
 		var offsetY = $(document).scrollTop();
+		var rf = data.dragRow.offset();
+		data.dragOffset = { x: data.downPos.x - rf.left + offsetX,
+			y: Math.min(Math.max(data.downPos.y - rf.top + offsetY, 0), data.dragRow.height()) };
 
 		var checkedRows = data.checkedRows;
 		var chkIds = checkedIds(data);
-
-		data.dragRow = $(e.target).closest('tr', data.target);
-		var rf = data.dragRow.offset();
-		data.dragOffset = { x: data.downPos.x - rf.left + offsetX, y: data.downPos.y - rf.top + offsetY };
 		var id = data.dragRow[0].fasttableID;
-
 		data.moveIds = checkedRows[id] ? chkIds : [id];
 		data.dragging = true;
 		data.cancelDrag = false;
@@ -1019,6 +1017,7 @@
 			return;
 		}
 
+		data.dragging = false;
 		data.cancelDrag = data.cancelDrag || e.type === 'touchcancel';
 		data.dragRow.removeClass('drag-source');
 		$('html').removeClass('drag-progress');

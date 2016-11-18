@@ -1038,6 +1038,7 @@ table.table-check > thead > tr > th:first-child,
 table.table-check > tbody > tr > td:first-child {
 	width: 14px;
 	height: 14px;
+	padding-left: 6px;
 }
 
 div.check {
@@ -2001,6 +2002,37 @@ div.multiset-toolbar button {
 	border: none;
 }
 
+/* drag grip */
+table.table-drag > tbody > tr:hover > td:first-child,
+#TableDragBox table.table-drag > tbody > tr > td:first-child {
+	background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAECAYAAACk7+45AAAAFUlEQVQI12O8e/fufwYGBgYmBpwAAHhsA5rVjhOVAAAAAElFTkSuQmCC);
+	background-position: 1px 1px;
+	background-repeat: repeat-y;
+}
+
+.phone table.table-drag > tbody > tr:hover > td:first-child,
+.phone #TableDragBox table.table-drag > tbody > tr > td:first-child {
+	background: none;
+	cursor: default;
+}
+
+table.table-drag > tbody > tr > td:first-child {
+	cursor: move;
+	cursor: -moz-grab;
+	cursor: -webkit-grab;
+}
+
+table.table-drag > tbody > tr > td:first-child > div.check {
+	cursor: default;
+}
+
+#TableDragBox table.table-drag > tbody > tr > td:first-child,
+#TableDragBox table.table-drag > tbody > tr > td:first-child > div.check {
+	cursor: move;
+	cursor: -moz-grabbing;
+	cursor: -webkit-grabbing;
+}
+
 tr.drag-source > td {
 	background-color: #fff !important;
 	color: #fff !important;
@@ -2255,7 +2287,7 @@ body.phone,
     padding-bottom: 10px;
 }
 
-.phone table.table-check tbody td {
+.phone table.table-check > tbody > tr > td {
 	padding-left: 60px;
 }
 
