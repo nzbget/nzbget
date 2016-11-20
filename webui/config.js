@@ -667,6 +667,15 @@ var Config = (new function($)
 		return null;
 	}
 
+	this.processShortcut = function(key)
+	{
+		switch (key)
+		{
+			case 'Shift+F': $('#ConfigTable_filter').focus(); return true;
+			case 'Shift+C': $('#ConfigTable_clearfilter').click(); return true;
+		}
+	}
+
 	/*** GENERATE HTML PAGE *****************************************************************/
 
 	function buildOptionsContent(section, extensionsec)

@@ -80,12 +80,12 @@
 			<div id="PlayBlock">
 				<div id="PlayPauseBg"><div class="img-download-bg"></div></div>
 				<div id="PlayButton" class="img-download-orange" style="display:none;">
-					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download paused (click to resume)">
+					<div id="PlayPauseButton" class="PlayBlockInner" onclick="Status.playClick()" title="Download paused (click to resume) [Shift+P]">
 						<div class="img-download-btn"></div>
 					</div>
 				</div>
 				<div id="PauseButton" class="img-download-green">
-					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download active (click to pause)">
+					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download active (click to pause) [Shift+P]">
 						<div class="img-download-btn"></div>
 					</div>
 				</div>
@@ -101,7 +101,7 @@
 						<li class="menu-header">Pause for</li>
 						<li><a href="#" onclick="Status.scheduledPauseClick(30*60)"><table><tr><td></td><td>30 Minutes</td></tr></table></a></li>
 						<li><a href="#" onclick="Status.scheduledPauseClick(3*60*60)"><table><tr><td></td><td>3 Hours</td></tr></table></a></li>
-						<li><a href="#" onclick="Status.scheduledPauseDialogClick()"><table><tr><td></td><td>Custom...</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.scheduledPauseDialogClick()" id="ScheduledPauseButton" title="Temporary pause for... [Shift+T]"><table><tr><td></td><td>Custom...</td></tr></table></a></li>
 						<li class="divider"></li>
 						<li><a data-toggle="modal" href="#PauseHelp"><table><tr><td></td><td>Quick Help</td></tr></table></a></li>
 					</ul>
@@ -110,15 +110,15 @@
 
 			<!-- SPEED/TIME -->
 			<div id="InfoBlock">
-				<div href="#" onclick="LimitDialog.clicked(event)" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
-				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
+				<div href="#" onclick="LimitDialog.clicked(event)" title="Current speed (click to set speed limit) [Shift+L]"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
+				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics) [Shift+A]"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
 			</div>
 
 			<!-- REFRESH MENU -->
 			<div id="RefreshBlockDesktop" class="pull-right phone-hide">
 				<div class="btn-toolbar" id="RefreshBlock">
 					<div class="btn-group">
-						<button class="btn btn-inverse" id="RefreshButton"><i class="icon-refresh" id="RefreshAnimation"></i></button>
+						<button class="btn btn-inverse" id="RefreshButton" title="Refresh [Shift+R]"><i class="icon-refresh" id="RefreshAnimation"></i></button>
 						<button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
 						<ul class="dropdown-menu menu-refresh" id="RefreshMenu">
 							<li class="menu-header">Automatic refresh</li>
@@ -153,27 +153,27 @@
 						</ul>
 					</div>
 
-					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
-					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads" title="Search downloads [Shift+F]">
+					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 
-					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history">
-					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history" title="Search history [Shift+F]">
+					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 
-					<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages">
-					<i id="MessagesTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages" title="Search messages [Shift+F]">
+					<i id="MessagesTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 
-					<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings">
-					<i id="ConfigTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings" title="Search settings [Shift+F]">
+					<i id="ConfigTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 				</div>
 			</div>
 
 			<!-- TABS -->
 			<div class="nav" id="NavLinks">
 				<ul class="nav">
-					<li class="active"><a data-toggle="tab" href="#DownloadsTab" id="DownloadsTabLink"><span class="phone-hide">Downloads </span><i class="icon-downloads-white phone-only inline"></i><br class="phone-only"><span class="badge" id="DownloadsTabBadge" style="display: none;"></span><span class="badge badge-empty" id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#HistoryTab" id="HistoryTabLink"><span class="phone-hide">History </span><i class="icon-history-white phone-only inline"></i><br class="phone-only"><span class="badge" id="HistoryTabBadge" style="display: none;"></span><span class="badge badge-empty" id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#MessagesTab" id="MessagesTabLink"><span class="phone-hide">Messages </span><i class="icon-messages-white phone-only inline"></i><br class="phone-only"><span class="badge" id="MessagesTabBadge" style="display: none;"></span><span class="badge badge-empty" id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#ConfigTab" id="ConfigTabLink"><span class="phone-hide">Settings </span><i class="icon-settings-white phone-only inline"></i><br class="phone-only"><span class="badge" id="ConfigTabBadge" style="display: none;"></span><span class="phone-only"><span class="badge badge-empty" id="ConfigTabBadgeEmpty">&nbsp;</span></span></a></li>
+					<li class="active"><a data-toggle="tab" href="#DownloadsTab" id="DownloadsTabLink"><span class="phone-hide" title="Downloads [Shift+D]">Downloads </span><i class="icon-downloads-white phone-only inline"></i><br class="phone-only"><span class="badge" id="DownloadsTabBadge" style="display: none;"></span><span class="badge badge-empty" id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#HistoryTab" id="HistoryTabLink"><span class="phone-hide" title="History [Shift+H]">History </span><i class="icon-history-white phone-only inline"></i><br class="phone-only"><span class="badge" id="HistoryTabBadge" style="display: none;"></span><span class="badge badge-empty" id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#MessagesTab" id="MessagesTabLink"><span class="phone-hide" title="Messages [Shift+M]">Messages </span><i class="icon-messages-white phone-only inline"></i><br class="phone-only"><span class="badge" id="MessagesTabBadge" style="display: none;"></span><span class="badge badge-empty" id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#ConfigTab" id="ConfigTabLink"><span class="phone-hide" title="Settings [Shift+S]">Settings </span><i class="icon-settings-white phone-only inline"></i><br class="phone-only"><span class="badge" id="ConfigTabBadge" style="display: none;"></span><span class="phone-only"><span class="badge badge-empty" id="ConfigTabBadgeEmpty">&nbsp;</span></span></a></li>
 				</ul>
 			</div>
 
@@ -228,16 +228,16 @@
 
 				<!-- ADD BUTTON -->
 				<div class="btn-group" id="TBAddButton">
-					<button class="btn" onclick="Upload.addClick()" title="Add nzb-files"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
+					<button class="btn" onclick="Upload.addClick()" title="Add nzb-files [A]"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
 				</div>
 
 				<!-- NZB-ACTIONS BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
-					<button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
-					<button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
-					<button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
-					<button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files [Enter]"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
+					<button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files [M]"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
+					<button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files [P]"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
+					<button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files [R]"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
+					<button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files [D]"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button></div>
@@ -247,10 +247,10 @@
 
 				<!-- MOVE BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button>
-					<button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button>
-					<button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button>
-					<button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top [T]"><i class="icon-top"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up [U]"><i class="icon-up"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down [N]"><i class="icon-down"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom [B]"><i class="icon-bottom"></i></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button></div>
@@ -326,25 +326,25 @@
 
 			<div class="btn-toolbar form-inline section-toolbar" id ="HistoryTab_Toolbar">
 				<div class="btn-group">
-					<button class="btn" onclick="History.actionClick('DELETE')" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn" onclick="History.actionClick('DELETE')" title="Delete selected records [D]"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 					<button class="btn dropdown-toggle" data-toggle="dropdown" title="More actions"><span class="btn-caption"> More </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
 					<ul class="dropdown-menu">
 						<li class="menu-header">Actions</li>
-						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')"><i class="icon-process"></i> Post-Process Again</a></li>
-						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')"><i class="icon-downloads"></i> Download Again</a></li>
-						<li><a href="#" id="HistoryTab_MarkSuccess" onclick="History.actionClick('MARKSUCCESS')"><i class="icon-ok"></i> Mark as Success</a></li>
-						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')"><i class="icon-plus"></i> Mark as Good</a></li>
-						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-minus"></i> Mark as Bad</a></li>
+						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')" title="Post-process selected records again [P]"><i class="icon-process"></i> Post-Process Again</a></li>
+						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')" title="Download selected records again [N]"><i class="icon-downloads"></i> Download Again</a></li>
+						<li><a href="#" id="HistoryTab_MarkSuccess" onclick="History.actionClick('MARKSUCCESS')" title="Mark selected records as success [M]"><i class="icon-ok"></i> Mark as Success</a></li>
+						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')" title=" Mark selected records as good [G]"><i class="icon-plus"></i> Mark as Good</a></li>
+						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')" title="Mark selected records as bad [B]"><i class="icon-minus"></i> Mark as Bad</a></li>
 					</ul>
 				</div>
 
 				<!-- STATUS FILTER BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">Success &nbsp;<span class="badge" id="History_Badge_SUCCESS">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">Failure &nbsp;<span class="badge" id="History_Badge_FAILURE">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">Deleted &nbsp;<span class="badge" id="History_Badge_DELETED">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">Dupe &nbsp;<span class="badge" id="History_Badge_DUPE">?</span></button>
+					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All [A]">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success [S]">Success &nbsp;<span class="badge" id="History_Badge_SUCCESS">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure [F]">Failure &nbsp;<span class="badge" id="History_Badge_FAILURE">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Deleted [L]">Deleted &nbsp;<span class="badge" id="History_Badge_DELETED">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe [U]">Dupe &nbsp;<span class="badge" id="History_Badge_DUPE">?</span></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">A &nbsp;<span class="badge badge-active" id="History_Badge_ALL2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">S &nbsp;<span class="badge" id="History_Badge_SUCCESS2">?</span></button></div>
@@ -353,7 +353,7 @@
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">U &nbsp;<span class="badge" id="History_Badge_DUPE2">?</span></button></div>
 
 				<div class="btn-group">
-					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
+					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check [H]"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
 				</div>
 
 				<div class="btn-group phone-only inline" id="HistoryRecordsPerPageBlockPhone">
@@ -409,16 +409,16 @@
 
 				<!-- EDIT BUTTONS -->
 				<div class="btn-group">
-					<button class="btn" onclick="Messages.clearClick()" title="Delete all messages"><i class="icon-trash"></i> <span class="btn-caption">Clear</span></button>
+					<button class="btn" onclick="Messages.clearClick()" title="Delete all messages [D]"><i class="icon-trash"></i> <span class="btn-caption">Clear</span></button>
 				</div>
 
 				<!-- KIND FILTER BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL">?</span></button>
-					<button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail">Detail &nbsp;<span class="badge" id="Messages_Badge_DETAIL">?</span></button>
-					<button class="btn" onclick="Messages.filter('INFO')" title="Show only Info">Info &nbsp;<span class="badge" id="Messages_Badge_INFO">?</span></button>
-					<button class="btn" onclick="Messages.filter('WARNING')" title="Show only Warning">Warning &nbsp;<span class="badge" id="Messages_Badge_WARNING">?</span></button>
-					<button class="btn" onclick="Messages.filter('ERROR')" title="Show only Error">Error &nbsp;<span class="badge" id="Messages_Badge_ERROR">?</span></button>
+					<button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All [A]">All &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL">?</span></button>
+					<button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail [T]">Detail &nbsp;<span class="badge" id="Messages_Badge_DETAIL">?</span></button>
+					<button class="btn" onclick="Messages.filter('INFO')" title="Show only Info [I]">Info &nbsp;<span class="badge" id="Messages_Badge_INFO">?</span></button>
+					<button class="btn" onclick="Messages.filter('WARNING')" title="Show only Warning [W]">Warning &nbsp;<span class="badge" id="Messages_Badge_WARNING">?</span></button>
+					<button class="btn" onclick="Messages.filter('ERROR')" title="Show only Error [E]">Error &nbsp;<span class="badge" id="Messages_Badge_ERROR">?</span></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All">A &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail">D &nbsp;<span class="badge" id="Messages_Badge_DETAIL2">?</span></button></div>

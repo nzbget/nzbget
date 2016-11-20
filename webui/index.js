@@ -240,15 +240,7 @@ var Frontend = (new function($)
 		setupSearch();
 
 		$('li > a:has(table)').addClass('has-table');
-
-		$(document).on("keypress", "form", function(event)
-		{
-			// since we use form-tags for a workaround for fieldset-tag,
-			// and we don't have a proper processing of ENTER-key inside forms,
-			// we disable ENTER-key to prevent automatic form submitting.
-			return event.keyCode != 13;
-		});
-
+		$(document).on('keydown', keyDown);
 		$(window).scroll(windowScrolled);
 	}
 
@@ -265,7 +257,7 @@ var Frontend = (new function($)
 
 	function error(message, source, lineno)
 	{
-		if (source == "")
+		if (source == '')
 		{
 			// ignore false errors without source information (sometimes happen in Safari)
 			return false;
@@ -360,6 +352,56 @@ var Frontend = (new function($)
 
 		$('.navbar-search').show();
 		beforeTabShow({target: $('#DownloadsTabLink')});
+	}
+
+	function keyDown(e)
+	{
+		var key = Util.keyName(e);
+
+		var modals = $('.modal:visible');
+		if (modals.length > 0)
+		{
+			if (key === 'Enter')
+			{
+				var primaryButton = $('.btn-primary:visible', modals.last());
+				if (primaryButton.length === 1)
+				{
+					primaryButton.click();
+				}
+				return false;
+			}
+			return;
+		}
+
+		var filterBox = $('#DownloadsTable_filter, #HistoryTable_filter, #MessagesTable_filter, #ConfigTable_filter');
+		if (filterBox.is(':focus') && (key === 'Escape' || key === 'Enter'))
+		{
+			filterBox.blur();
+			return false;
+		}
+
+		if (!(Util.isInputControl(e.target) && $(e.target).is(':visible')))
+		{
+			switch (activeTab)
+			{
+				case 'Downloads': if (Downloads.processShortcut(key)) return false;
+				case 'History': if (History.processShortcut(key)) return false;
+				case 'Messages': if (Messages.processShortcut(key)) return false;
+				case 'Config': if (Config.processShortcut(key)) return false;
+			}
+			switch (key)
+			{
+				case 'Shift+D': $('#DownloadsTabLink').click(); return false;
+				case 'Shift+H': $('#HistoryTabLink').click(); return false;
+				case 'Shift+M': $('#MessagesTabLink').click(); return false;
+				case 'Shift+S': $('#ConfigTabLink').click(); return false;
+				case 'Shift+L': $('#StatusSpeed').click(); return false;
+				case 'Shift+A': $('#StatusTime').click(); return false;
+				case 'Shift+R': $('#RefreshButton').click(); return false;
+				case 'Shift+P': $('#PlayPauseButton').click(); return false;
+				case 'Shift+T': $('#ScheduledPauseButton').click(); return false;
+			}
+		}
 	}
 
 	function windowScrolled()

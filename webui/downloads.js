@@ -91,6 +91,7 @@ var Downloads = (new function($)
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
 				rowSelect: UISettings.rowSelect,
+				shortcuts: true,
 				fillFieldsCallback: fillFieldsCallback,
 				renderCellCallback: renderCellCallback,
 				updateInfoCallback: updateInfo,
@@ -346,6 +347,24 @@ var Downloads = (new function($)
 		nameColumnWidth = Math.max($DownloadsTable_Name.width(), 50) - 4*2;  // 4 - padding of span
 		progressLabels.css('max-width', nameColumnWidth);
 		progressLabels.show();
+	}
+
+	this.processShortcut = function(key)
+	{
+		switch (key)
+		{
+			case 'A': Upload.addClick(); return true;
+			case 'D': case 'Delete': case 'Meta+Backspace': Downloads.deleteClick(); return true;
+			case 'E': case 'Enter': Downloads.editClick(); return true;
+			case 'U': Downloads.moveClick('up'); return true;
+			case 'N': Downloads.moveClick('down'); return true;
+			case 'T': Downloads.moveClick('top'); return true;
+			case 'B': Downloads.moveClick('bottom'); return true;
+			case 'P': Downloads.pauseClick(); return true;
+			case 'R': Downloads.resumeClick(); return true;
+			case 'M': Downloads.mergeClick(); return true;
+		}
+		return $DownloadsTable.fasttable('processShortcut', key);
 	}
 
 	/*** EDIT ******************************************************/

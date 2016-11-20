@@ -241,7 +241,12 @@
 		checkRow : function(id, checked)
 		{
 			checkRow($(this).data('fasttable'), id, checked);
-		}
+		},
+
+		processShortcut : function(key)
+		{
+			return processShortcut($(this).data('fasttable'), key);
+		},
 	};
 
 	function updateContent(content)
@@ -467,11 +472,12 @@
 		}
 
 		var pager = '<ul>';
-		pager += '<li' + (data.curPage === 1 || data.curPage === 0 ? ' class="disabled"' : '') + '><a href="#">&larr; Prev</a></li>';
+		pager += '<li' + (data.curPage === 1 || data.curPage === 0 ? ' class="disabled"' : '') +
+			'><a href="#" title="Previous page' + (data.config.shortcuts ? ' [Left]' : '') + '">&larr; Prev</a></li>';
 
 		if (iStart > 1)
 		{
-			pager += '<li><a href="#">1</a></li>';
+			pager += '<li><a href="#"' + (data.config.shortcuts ? ' title="First page [Shift+Left]"' : '') + '>1</a></li>';
 			if (iStart > 2 && data.pageDots)
 			{
 				pager += '<li class="disabled"><a href="#">&#133;</a></li>';
@@ -480,7 +486,11 @@
 
 		for (var j=iStart; j<=iEnd; j++)
 		{
-			pager += '<li' + ((j===data.curPage) ? ' class="active"' : '') + '><a href="#">' + j + '</a></li>';
+			pager += '<li' + ((j===data.curPage) ? ' class="active"' : '') +
+				'><a href="#"' +
+				(data.config.shortcuts && j === 1 ? ' title="First page [Shift+Left]"' :
+				 data.config.shortcuts && j === data.pageCount ? ' title="Last page [Shift+Right]"' : '') +
+				'>' + j + '</a></li>';
 		}
 
 		if (iEnd != data.pageCount)
@@ -489,10 +499,11 @@
 			{
 				pager += '<li class="disabled"><a href="#">&#133;</a></li>';
 			}
-			pager += '<li><a href="#">' + data.pageCount + '</a></li>';
+			pager += '<li><a href="#"' + (data.config.shortcuts ? ' title="Last page [Shift+Right]"' : '') + '>' + data.pageCount + '</a></li>';
 		}
 
-		pager += '<li' + (data.curPage === data.pageCount || data.pageCount === 0 ? ' class="disabled"' : '') + '><a href="#">Next &rarr;</a></li>';
+		pager += '<li' + (data.curPage === data.pageCount || data.pageCount === 0 ? ' class="disabled"' : '') +
+			'><a href="#" title="Next page' + (data.config.shortcuts ? ' [Right]' : '') + '">Next &rarr;</a></li>';
 		pager += '</ul>';
 
 		return pager;
@@ -1171,7 +1182,22 @@
 		}
 	}
 
-	//*************** DRAG-N-DROP (END)
+	//*************** KEYBOARD
+
+	function processShortcut(data, key)
+	{
+		switch (key)
+		{
+			case 'Left': data.curPage = Math.max(data.curPage - 1, 1); refresh(data); return true;
+			case 'Shift+Left': data.curPage = 1; refresh(data); return true;
+			case 'Right': data.curPage = Math.min(data.curPage + 1, data.pageCount); refresh(data); return true;
+			case 'Shift+Right': data.curPage = data.pageCount; refresh(data); return true;
+			case 'Shift+F': data.config.filterInput.focus(); return true;
+			case 'Shift+C': data.config.filterClearButton.click(); return true;
+		}
+	}
+
+	//*************** CONFIG
 
 	var defaults =
 	{
@@ -1188,6 +1214,7 @@
 		pageDots: true,
 		hasHeader: true,
 		rowSelect: false,
+		shortcuts: false,
 		infoEmpty: 'No records',
 		renderRowCallback: undefined,
 		renderCellCallback: undefined,

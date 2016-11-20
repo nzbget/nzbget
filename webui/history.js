@@ -66,6 +66,7 @@ var History = (new function($)
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
+				shortcuts: true,
 				fillFieldsCallback: fillFieldsCallback,
 				filterCallback: filterCallback,
 				renderCellCallback: renderCellCallback,
@@ -444,6 +445,26 @@ var History = (new function($)
 		$('#History_Dup').toggleClass('btn-inverse', showDup);
 		$('#History_DupIcon').toggleClass('icon-mask', !showDup).toggleClass('icon-mask-white', showDup);
 		Refresher.update();
+	}
+
+	this.processShortcut = function(key)
+	{
+		switch (key)
+		{
+			case 'D': case 'Delete': case 'Meta+Backspace': History.actionClick('DELETE'); return true;
+			case 'P': History.actionClick('REPROCESS'); return true;
+			case 'N': History.actionClick('REDOWNLOAD'); return true;
+			case 'M': History.actionClick('MARKSUCCESS'); return true;
+			case 'G': History.actionClick('MARKGOOD'); return true;
+			case 'B': History.actionClick('MARKBAD'); return true;
+			case 'A': History.filter('ALL'); return true;
+			case 'S': History.filter('SUCCESS'); return true;
+			case 'F': History.filter('FAILURE'); return true;
+			case 'L': History.filter('DELETED'); return true;
+			case 'U': History.filter('DUPE'); return true;
+			case 'H': History.dupClick(); return true;
+		}
+		return $HistoryTable.fasttable('processShortcut', key);
 	}
 
 }(jQuery));

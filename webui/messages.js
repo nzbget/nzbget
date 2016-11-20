@@ -21,13 +21,13 @@
  * In this module:
  *   1) Messages tab.
  */
- 
+
 /*** MESSAGES TAB *********************************************************************/
- 
+
 var Messages = (new function($)
 {
 	'use strict';
-	
+
 	// Controls
 	var $MessagesTable;
 	var $MessagesTabBadge;
@@ -46,7 +46,7 @@ var Messages = (new function($)
 	this.init = function(options)
 	{
 		updateTabInfo = options.updateTabInfo;
-		
+
 		$MessagesTable = $('#MessagesTable');
 		$MessagesTabBadge = $('#MessagesTabBadge');
 		$MessagesTabBadgeEmpty = $('#MessagesTabBadgeEmpty');
@@ -66,6 +66,7 @@ var Messages = (new function($)
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
+				shortcuts: true,
 				fillFieldsCallback: fillFieldsCallback,
 				fillSearchCallback: fillSearchCallback,
 				filterCallback: filterCallback,
@@ -76,7 +77,7 @@ var Messages = (new function($)
 
 	this.applyTheme = function()
 	{
-		$MessagesTable.fasttable('setPageSize', UISettings.read('MessagesRecordsPerPage', 10), 
+		$MessagesTable.fasttable('setPageSize', UISettings.read('MessagesRecordsPerPage', 10),
 			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
 	}
 
@@ -85,12 +86,12 @@ var Messages = (new function($)
 		activeTab = true;
 		this.redraw();
 	}
-	
+
 	this.hide = function()
 	{
 		activeTab = false;
 	}
-	
+
 	this.update = function()
 	{
 		if (maxMessages === null)
@@ -98,7 +99,7 @@ var Messages = (new function($)
 			maxMessages = parseInt(Options.option('LogBufferSize'));
 			initFilterButtons();
 		}
-		
+
 		if (lastID === 0)
 		{
 			RPC.call('log', [0, maxMessages], loaded);
@@ -114,7 +115,7 @@ var Messages = (new function($)
 		merge(newMessages);
 		RPC.next();
 	}
-	
+
 	function merge(newMessages)
 	{
 		if (lastID === 0)
@@ -140,7 +141,7 @@ var Messages = (new function($)
 		for (var i=0; i < messages.length; i++)
 		{
 			var message = messages[i];
-			
+
 			var item =
 			{
 				id: message.ID,
@@ -204,7 +205,7 @@ var Messages = (new function($)
 			cell.className = 'text-center';
 		}
 	}
-	
+
 	function updateInfo(stat)
 	{
 		updateTabInfo($MessagesTabBadge, stat);
@@ -238,7 +239,7 @@ var Messages = (new function($)
 		Util.show($('#Messages_Badge_ERROR, #Messages_Badge_ERROR2').closest('.btn'), error);
 		Util.show($('#Messages_Badge_ALL, #Messages_Badge_ALL2').closest('.btn'), detail || info || warning || error);
 	}
-	
+
 	function updateFilterButtons()
 	{
 		var countDebug = 0;
@@ -308,5 +309,19 @@ var Messages = (new function($)
 			notification = null;
 		}
 	}
-	
+
+	this.processShortcut = function(key)
+	{
+		switch (key)
+		{
+			case 'A': Messages.filter('ALL'); return true;
+			case 'T': Messages.filter('DETAIL'); return true;
+			case 'I': Messages.filter('INFO'); return true;
+			case 'W': Messages.filter('WARNING'); return true;
+			case 'E': Messages.filter('ERROR'); return true;
+			case 'D': case 'Delete': case 'Meta+Backspace': Messages.clearClick(); return true;
+		}
+		return $MessagesTable.fasttable('processShortcut', key);
+	}
+
 }(jQuery));
