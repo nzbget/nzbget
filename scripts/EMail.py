@@ -8,12 +8,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,10 +34,12 @@
 # When to send the message (Always, OnFailure).
 #SendMail=Always
 
-# Email address you want this email to be sent from. 
+# Email address you want this email to be sent from.
 #From="NZBGet" <myaccount@gmail.com>
 
-# Email address you want this email to be sent to. 
+# Email address you want this email to be sent to.
+#
+# Multiple addresses can be separated with comma.
 #To=myaccount@gmail.com
 
 # SMTP server host.
@@ -123,7 +125,7 @@ total_status = os.environ['NZBPP_TOTALSTATUS']
 if total_status == 'SUCCESS' and os.environ['NZBPP_SCRIPTSTATUS'] == 'FAILURE':
 	total_status = 'WARNING'
 	status = 'WARNING/SCRIPT'
-		
+
 success = total_status == 'SUCCESS'
 
 if success and os.environ.get('NZBPO_SENDMAIL') == 'OnFailure':
@@ -151,17 +153,17 @@ if os.environ.get('NZBPO_STATISTICS') == 'yes' or \
 	port = os.environ['NZBOP_CONTROLPORT'];
 	username = os.environ['NZBOP_CONTROLUSERNAME'];
 	password = os.environ['NZBOP_CONTROLPASSWORD'];
-	
+
 	if host == '0.0.0.0': host = '127.0.0.1'
-	
+
 	# Build an URL for XML-RPC requests
 	rpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port);
-	
+
 	# Create remote server object
 	server = ServerProxy(rpcUrl)
 
 if os.environ.get('NZBPO_STATISTICS') == 'yes':
-	# Find correct nzb in method listgroups 
+	# Find correct nzb in method listgroups
 	groups = server.listgroups(0)
 	nzbID = int(os.environ['NZBPP_NZBID'])
 	for nzbGroup in groups:
@@ -226,11 +228,11 @@ if os.environ.get('NZBPO_NZBLOG') == 'Always' or \
 	# To get the item log we connect to NZBGet via XML-RPC and call
 	# method "loadlog", which returns the log for a given nzb item.
 	# For more info visit http://nzbget.net/RPC_API_reference
-	
+
 	# Call remote method 'loadlog'
 	nzbid = int(os.environ['NZBPP_NZBID'])
 	log = server.loadlog(nzbid, 0, 10000)
-	
+
 	# Now iterate through entries and save them to message text
 	if len(log) > 0:
 		text += '\n\nNzb-log:';
@@ -256,12 +258,12 @@ try:
 
 	if os.environ['NZBPO_ENCRYPTION'] == 'yes':
 		smtp.starttls()
-	
+
 	if os.environ['NZBPO_USERNAME'] != '' and os.environ['NZBPO_PASSWORD'] != '':
 		smtp.login(os.environ['NZBPO_USERNAME'], os.environ['NZBPO_PASSWORD'])
-	
-	smtp.sendmail(os.environ['NZBPO_FROM'], os.environ['NZBPO_TO'], msg.as_string())
-	
+
+	smtp.sendmail(os.environ['NZBPO_FROM'], os.environ['NZBPO_TO'].split(','), msg.as_string())
+
 	smtp.quit()
 except Exception as err:
 	print('[ERROR] %s' % err)
