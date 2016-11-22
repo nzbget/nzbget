@@ -73,7 +73,6 @@ var DownloadsEditDialog = (new function($)
 				pagerContainer: '#DownloadsEdit_FileTable_pager',
 				rowSelect: UISettings.rowSelect,
 				pageSize: 10000,
-				hasHeader: true,
 				renderCellCallback: fileTableRenderCellCallback
 			});
 
@@ -84,7 +83,6 @@ var DownloadsEditDialog = (new function($)
 				pagerContainer: '#DownloadsEdit_ServStatsTable_pager',
 				pageSize: 100,
 				maxPages: 3,
-				hasHeader: true,
 				renderCellCallback: EditUI.servStatsTableRenderCellCallback
 			});
 
@@ -1103,7 +1101,6 @@ var LogTab = (new function($)
 				pagerContainer: '#' + name + 'Edit_LogTable_pager',
 				pageSize: recordsPerPage,
 				maxPages: 3,
-				hasHeader: true,
 				renderCellCallback: logTableRenderCellCallback
 			});
 	}
@@ -1586,7 +1583,6 @@ var HistoryEditDialog = (new function()
 				pagerContainer: '#HistoryEdit_ServStatsTable_pager',
 				pageSize: 100,
 				maxPages: 3,
-				hasHeader: true,
 				renderCellCallback: EditUI.servStatsTableRenderCellCallback
 			});
 

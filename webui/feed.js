@@ -122,7 +122,6 @@ var FeedDialog = (new function($)
 				pagerContainer: '#FeedDialog_ItemTable_pager',
 				rowSelect: UISettings.rowSelect,
 				pageSize: pageSize,
-				hasHeader: true,
 				renderCellCallback: itemsTableRenderCellCallback
 			});
 
@@ -459,7 +458,6 @@ var FeedFilterDialog = (new function($)
 				pagerContainer: '#FeedFilterDialog_ItemTable_pager',
 				headerCheck: '',
 				pageSize: pageSize,
-				hasHeader: true,
 				renderCellCallback: itemsTableRenderCellCallback
 			});
 

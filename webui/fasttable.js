@@ -100,6 +100,7 @@
 					config.dragBox = $(config.dragBox);
 					config.dragContent = $(config.dragContent);
 					config.dragBadge = $(config.dragBadge);
+					config.selector = $('th.table-selector', $this);
 
 					var searcher = new FastSearcher();
 
@@ -286,6 +287,7 @@
 		validateChecks(data);
 		updatePager(data);
 		updateInfo(data);
+		updateSelector(data);
 		updateTable(data);
 	}
 
@@ -373,10 +375,11 @@
 
 	function updateTBody(data, oldTable, newTable)
 	{
+		var headerRows = $('thead > tr', oldTable).length;
 		var oldTRs = oldTable.rows;
 		var newTRs = newTable.rows;
 		var oldTBody = $('tbody', oldTable)[0];
-		var oldTRsLength = oldTRs.length - (data.config.hasHeader ? 1 : 0); // evlt. skip header row
+		var oldTRsLength = oldTRs.length - headerRows; // evlt. skip header row
 		var newTRsLength = newTRs.length;
 
 		for (var i=0; i < newTRs.length; )
@@ -386,7 +389,7 @@
 			if (i < oldTRsLength)
 			{
 				// update existing row
-				var oldTR = oldTRs[i + (data.config.hasHeader ? 1 : 0)]; // evlt. skip header row
+				var oldTR = oldTRs[i + headerRows]; // evlt. skip header row
 				var oldTDs = oldTR.cells;
 				var newTDs = newTR.cells;
 
@@ -414,7 +417,7 @@
 			}
 		}
 
-		var maxTRs = newTRsLength + (data.config.hasHeader ? 1 : 0); // evlt. skip header row;
+		var maxTRs = newTRsLength + headerRows; // evlt. skip header row;
 		while (oldTRs.length > maxTRs)
 		{
 			oldTable.deleteRow(oldTRs.length - 1);
@@ -579,6 +582,25 @@
 				firstRecord: firstRecord,
 				lastRecord: lastRecord
 			});
+		}
+	}
+
+	function updateSelector(data)
+	{
+		var curPageCheckedRows = 0;
+		if (data.checkedCount > 0 && data.filteredContent.length > 0)
+		{
+			for (var i = (data.curPage - 1) * data.pageSize; i < Math.min(data.curPage * data.pageSize, data.filteredContent.length); i++)
+			{
+				curPageCheckedRows += data.checkedRows[data.filteredContent[i].id] ? 1 : 0;
+			}
+		}
+		data.config.selector.css('display', curPageCheckedRows === data.checkedCount ? 'none' : '');
+		if (data.checkedCount !== curPageCheckedRows)
+		{
+			data.config.selector.text('' + (data.checkedCount - curPageCheckedRows) +
+				(data.checkedCount - curPageCheckedRows > 1 ? ' records' : ' record') +
+				' selected on other pages');
 		}
 	}
 
@@ -1212,7 +1234,6 @@
 		pageSize: 10,
 		maxPages: 5,
 		pageDots: true,
-		hasHeader: true,
 		rowSelect: false,
 		shortcuts: false,
 		infoEmpty: 'No records',

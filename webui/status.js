@@ -1420,7 +1420,6 @@ var LimitDialog = (new function($)
 		$ServerTable.fasttable(
 			{
 				pagerContainer: '#LimitDialog_ServerTable_pager',
-				hasHeader: false,
 				rowSelect: UISettings.rowSelect,
 				pageSize: 100
 			});
