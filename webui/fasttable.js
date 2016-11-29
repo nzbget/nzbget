@@ -239,6 +239,11 @@
 			return $(this).data('fasttable').checkedCount;
 		},
 
+		pageCheckedCount : function()
+		{
+			return $(this).data('fasttable').pageCheckedCount;
+		},
+
 		checkRow : function(id, checked)
 		{
 			checkRow($(this).data('fasttable'), id, checked);
@@ -587,19 +592,19 @@
 
 	function updateSelector(data)
 	{
-		var curPageCheckedRows = 0;
+		data.pageCheckedCount = 0;
 		if (data.checkedCount > 0 && data.filteredContent.length > 0)
 		{
 			for (var i = (data.curPage - 1) * data.pageSize; i < Math.min(data.curPage * data.pageSize, data.filteredContent.length); i++)
 			{
-				curPageCheckedRows += data.checkedRows[data.filteredContent[i].id] ? 1 : 0;
+				data.pageCheckedCount += data.checkedRows[data.filteredContent[i].id] ? 1 : 0;
 			}
 		}
-		data.config.selector.css('display', curPageCheckedRows === data.checkedCount ? 'none' : '');
-		if (data.checkedCount !== curPageCheckedRows)
+		data.config.selector.css('display', data.pageCheckedCount === data.checkedCount ? 'none' : '');
+		if (data.checkedCount !== data.pageCheckedCount)
 		{
-			data.config.selector.text('' + (data.checkedCount - curPageCheckedRows) +
-				(data.checkedCount - curPageCheckedRows > 1 ? ' records' : ' record') +
+			data.config.selector.text('' + (data.checkedCount - data.pageCheckedCount) +
+				(data.checkedCount - data.pageCheckedCount > 1 ? ' records' : ' record') +
 				' selected on other pages');
 		}
 	}

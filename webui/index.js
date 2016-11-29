@@ -216,6 +216,7 @@ var Frontend = (new function($)
 		DownloadsMergeDialog.init();
 		DownloadsSplitDialog.init();
 		HistoryEditDialog.init();
+		PurgeHistoryDialog.init();
 
 		$(window).resize(windowResized);
 
@@ -930,8 +931,8 @@ var ConfirmDialog = (new function($)
 	function click(event)
 	{
 		event.preventDefault(); // avoid scrolling
-		actionCallback($ConfirmDialog);
 		$ConfirmDialog.modal('hide');
+		actionCallback($ConfirmDialog);
 	}
 }(jQuery));
 

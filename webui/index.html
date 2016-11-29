@@ -2258,6 +2258,32 @@
 	<div id="StatDialogResetConfirmDialog_OK">Reset</div>
 </div>
 
+<!-- *** PURGE HISTORY DIALOG ************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="PurgeHistoryDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Purging history</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+		<p>
+		You are going to delete <span id="PurgeHistoryDialog_count">250</span> history records
+		which represent <span id="PurgeHistoryDialog_percentage">250</span>% of the history.
+		</p>
+		<p>
+		Really sure about that?
+		</p>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn btn-danger pull-left" onclick="PurgeHistoryDialog.delete(event)">Delete <span id="PurgeHistoryDialog_count2">250</span> records</a>
+		<a href="#" class="btn btn-primary" data-dismiss="modal">Cancel</a>
+	</div>
+</div>
+
 <!-- *** ADD FILES DIALOG ************************************************************ -->
 
 <div class="modal hide" id="AddDialog">

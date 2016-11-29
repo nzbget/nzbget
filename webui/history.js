@@ -262,6 +262,9 @@ var History = (new function($)
 			return;
 		}
 
+		var pageCheckedCount = $HistoryTable.fasttable('pageCheckedCount');
+		var checkedPercentage = Util.round0(checkedCount / history.length * 100);
+		
 		var hasNzb = false;
 		var hasUrl = false;
 		var hasDup = false;
@@ -283,7 +286,7 @@ var History = (new function($)
 		{
 			case 'DELETE':
 				notification = '#Notif_History_Deleted';
-				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true, checkedCount);
+				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true, checkedCount, pageCheckedCount, checkedPercentage);
 				break;
 
 			case 'REPROCESS':
@@ -513,7 +516,7 @@ var HistoryUI = (new function($)
 		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
-	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount)
+	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount, pageSelCount, selPercentage)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		var dialog = null;
@@ -535,7 +538,14 @@ var HistoryUI = (new function($)
 		{
 			var hide = $('#HistoryDeleteConfirmDialog_Hide', dialog).is(':checked');
 			var command = hasNzb && hide ? 'HistoryDelete' : 'HistoryFinalDelete';
-			actionCallback(command);
+			if (selCount - pageSelCount > 0 && selCount >= 50)
+			{
+				PurgeHistoryDialog.showModal(function(){actionCallback(command);}, selCount, selPercentage);
+			}
+			else
+			{
+				actionCallback(command);
+			}
 		}
 
 		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init, selCount);
@@ -550,5 +560,39 @@ var HistoryUI = (new function($)
 			html = html.replace(/nzbs/g, 'nzb');
 			$('#ConfirmDialog_Text').html(html);
 		}
+	}
+}(jQuery));
+
+/*** PURGE HISTORY DIALOG *****************************************************/
+
+var PurgeHistoryDialog = (new function($)
+{
+	'use strict';
+
+	// Controls
+	var $PurgeHistoryDialog;
+
+	// State
+	var actionCallback;
+
+	this.init = function()
+	{
+		$PurgeHistoryDialog = $('#PurgeHistoryDialog');
+	}
+
+	this.showModal = function(_actionCallback, count, percentage)
+	{
+		actionCallback = _actionCallback;
+		$('#PurgeHistoryDialog_count,#PurgeHistoryDialog_count2').text(count);
+		$('#PurgeHistoryDialog_percentage').text(percentage);
+		Util.centerDialog($PurgeHistoryDialog, true);
+		$PurgeHistoryDialog.modal({backdrop: 'static'});
+	}
+
+	this.delete = function(event)
+	{
+		event.preventDefault(); // avoid scrolling
+		$PurgeHistoryDialog.modal('hide');
+		actionCallback();
 	}
 }(jQuery));
