@@ -135,8 +135,20 @@ void ParRenamer::LoadParFile(const char* parFilename)
 			continue;
 		}
 		std::string filename = Par2::DiskFile::TranslateFilename(sourceFile->GetDescriptionPacket()->FileName());
-		m_fileHashList.emplace_back(filename.c_str(), sourceFile->GetDescriptionPacket()->Hash16k().print().c_str());
-		RegisterParredFile(filename.c_str());
+		std::string hash = sourceFile->GetDescriptionPacket()->Hash16k().print();
+
+		bool exists = std::find_if(m_fileHashList.begin(), m_fileHashList.end(),
+			[&hash](FileHash& fileHash)
+			{
+				return !strcmp(fileHash.GetHash(), hash.c_str());
+			})
+			!= m_fileHashList.end();
+
+		if (!exists)
+		{
+			m_fileHashList.emplace_back(filename.c_str(), hash.c_str());
+			RegisterParredFile(filename.c_str());
+		}
 	}
 }
 

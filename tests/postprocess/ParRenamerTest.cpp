@@ -88,3 +88,19 @@ TEST_CASE("Par-renamer: detecting missing", "[Par][ParRenamer][Slow][TestData]")
 	REQUIRE(parRenamer.GetRenamedCount() == 1);
 	REQUIRE(parRenamer.HasMissedFiles());
 }
+
+TEST_CASE("Par-renamer: rename dupe par", "[Par][ParRenamer][Slow][TestData]")
+{
+	Options::CmdOptList cmdOpts;
+	cmdOpts.push_back("ParRename=yes");
+	Options options(&cmdOpts, nullptr);
+
+	ParRenamerMock parRenamer;
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.vol00+1.par2").c_str(), (TestUtil::WorkingDir() + "/testfile2.par2").c_str());
+	parRenamer.SetDetectMissing(true);
+	parRenamer.Execute();
+
+	REQUIRE(parRenamer.GetRenamedCount() == 1);
+	REQUIRE_FALSE(parRenamer.HasMissedFiles());
+}
