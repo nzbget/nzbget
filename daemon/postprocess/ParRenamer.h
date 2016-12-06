@@ -62,7 +62,20 @@ private:
 		bool m_fileExists = false;
 	};
 
+	class ParInfo
+	{
+	public:
+		ParInfo(const char* filename, const char* setId) :
+			m_filename(filename), m_setId(setId) {}
+		const char* GetFilename() { return m_filename; }
+		const char* GetSetId() { return m_setId; }
+	private:
+		CString m_filename;
+		CString m_setId;
+	};
+
 	typedef std::deque<FileHash> FileHashList;
+	typedef std::deque<ParInfo> ParInfoList;
 	typedef std::deque<CString> DirList;
 
 	CString m_infoName;
@@ -71,6 +84,7 @@ private:
 	int m_stageProgress = 0;
 	DirList m_dirList;
 	FileHashList m_fileHashList;
+	ParInfoList m_parInfoList;
 	int m_fileCount = 0;
 	int m_curFile = 0;
 	int m_renamedCount = 0;
@@ -80,11 +94,14 @@ private:
 	void BuildDirList(const char* destDir);
 	void LoadParFiles(const char* destDir);
 	void LoadParFile(const char* parFilename);
-	void CheckFiles(const char* destDir, bool renamePars);
+	void CheckFiles(const char* destDir, bool checkPars);
 	void CheckRegularFile(const char* destDir, const char* filename);
 	void CheckParFile(const char* destDir, const char* filename);
 	bool IsSplittedFragment(const char* filename, const char* correctName);
 	void CheckMissing();
+	void RenameParFiles(const char* destDir);
+	void RenameParFile(const char* destDir, const char* filename, const char* setId);
+	bool NeedRenameParFiles();
 	void RenameFile(const char* srcFilename, const char* destFileName);
 };
 

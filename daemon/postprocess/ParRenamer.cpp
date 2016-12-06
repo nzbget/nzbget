@@ -57,16 +57,11 @@ void ParRenamer::Execute()
 	{
 		debug("Checking %s", *destDir);
 		m_fileHashList.clear();
+		m_parInfoList.clear();
+
+		CheckFiles(destDir, true);
+		RenameParFiles(destDir);
 		LoadParFiles(destDir);
-
-		if (m_fileHashList.empty())
-		{
-			int savedCurFile = m_curFile;
-			CheckFiles(destDir, true);
-			m_curFile = savedCurFile; // restore progress indicator
-			LoadParFiles(destDir);
-		}
-
 		CheckFiles(destDir, false);
 
 		if (m_detectMissing)
@@ -152,7 +147,7 @@ void ParRenamer::LoadParFile(const char* parFilename)
 	}
 }
 
-void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
+void ParRenamer::CheckFiles(const char* destDir, bool checkPars)
 {
 	DirBrowser dir(destDir);
 	while (const char* filename = dir.Next())
@@ -164,11 +159,11 @@ void ParRenamer::CheckFiles(const char* destDir, bool renamePars)
 			if (!FileSystem::DirectoryExists(fullFilename))
 			{
 				m_progressLabel.Format("Checking file %s", filename);
-				m_stageProgress = m_fileCount > 0 ? m_curFile * 1000 / m_fileCount : 1000;
+				m_stageProgress = m_fileCount > 0 ? m_curFile * 1000 / m_fileCount / 2 : 1000;
 				UpdateProgress();
 				m_curFile++;
 
-				if (renamePars)
+				if (checkPars)
 				{
 					CheckParFile(destDir, fullFilename);
 				}
@@ -270,21 +265,9 @@ void ParRenamer::CheckRegularFile(const char* destDir, const char* filename)
 	}
 }
 
-/*
-* For files not having par2-extensions: checks if the file is a par2-file and renames
-* it according to its set-id.
-*/
 void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 {
 	debug("Checking par2-header for %s", filename);
-
-	const char* basename = FileSystem::BaseFileName(filename);
-	const char* extension = strrchr(basename, '.');
-	if (extension && !strcasecmp(extension, ".par2"))
-	{
-		// do not process files already having par2-extension
-		return;
-	}
 
 	DiskFile file;
 	if (!file.Open(filename, DiskFile::omRead))
@@ -318,13 +301,70 @@ void ParRenamer::CheckParFile(const char* destDir, const char* filename)
 	BString<100> setId = header.setid.print().c_str();
 	for (char* p = setId; *p; p++) *p = tolower(*p); // convert string to lowercase
 
-	debug("Renaming: %s; setid: %s", FileSystem::BaseFileName(filename), *setId);
+	debug("Storing: %s; setid: %s", FileSystem::BaseFileName(filename), *setId);
+
+	m_parInfoList.emplace_back(filename, setId);
+}
+
+void ParRenamer::RenameParFiles(const char* destDir)
+{
+	if (NeedRenameParFiles())
+	{
+		for (ParInfo& parInfo : m_parInfoList)
+		{
+			RenameParFile(destDir, parInfo.GetFilename(), parInfo.GetSetId());
+		}
+	}
+}
+
+bool ParRenamer::NeedRenameParFiles()
+{
+	for (ParInfoList::iterator it1 = m_parInfoList.begin(); it1 != m_parInfoList.end(); it1++)
+	{
+		ParInfo& parInfo1 = *it1;
+
+		const char* baseName1 = FileSystem::BaseFileName(parInfo1.GetFilename());
+
+		const char* extension = strrchr(baseName1, '.');
+		if (!extension || strcasecmp(extension, ".par2"))
+		{
+			// file doesn't have "par2" extension
+			return true;
+		}
+
+		int baseLen1;
+		ParParser::ParseParFilename(baseName1, &baseLen1, nullptr);
+
+		for (ParInfoList::iterator it2 = it1 + 1; it2 != m_parInfoList.end(); it2++)
+		{
+			ParInfo& parInfo2 = *it2;
+
+			if (!strcmp(parInfo1.GetSetId(), parInfo2.GetSetId()))
+			{
+				const char* baseName2 = FileSystem::BaseFileName(parInfo2.GetFilename());
+				int baseLen2;
+				ParParser::ParseParFilename(baseName2, &baseLen2, nullptr);
+				if (baseLen1 != baseLen2 || strncasecmp(baseName1, baseName2, baseLen1))
+				{
+					// same setid but different base file names
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+void ParRenamer::RenameParFile(const char* destDir, const char* filename, const char* setId)
+{
+	debug("Renaming: %s; setid: %s", FileSystem::BaseFileName(filename), setId);
 
 	BString<1024> destFileName;
 	int num = 1;
 	while (num == 1 || FileSystem::FileExists(destFileName))
 	{
-		destFileName.Format("%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, *setId, num);
+		destFileName.Format("%s%c%s.vol%03i+01.PAR2", destDir, PATH_SEPARATOR, setId, num);
 		num++;
 	}
 
