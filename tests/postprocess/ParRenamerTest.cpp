@@ -97,7 +97,7 @@ TEST_CASE("Par-renamer: rename dupe par", "[Par][ParRenamer][Slow][TestData]")
 
 	ParRenamerMock parRenamer;
 	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.dat").c_str(), (TestUtil::WorkingDir() + "/123456").c_str());
-	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.vol00+1.par2").c_str(), (TestUtil::WorkingDir() + "/testfil2.par2").c_str());
+	FileSystem::MoveFile((TestUtil::WorkingDir() + "/testfile.vol00+1.PAR2").c_str(), (TestUtil::WorkingDir() + "/testfil2.par2").c_str());
 	parRenamer.SetDetectMissing(true);
 	parRenamer.Execute();
 
