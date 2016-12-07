@@ -878,6 +878,7 @@ var ConfirmDialog = (new function($)
 
 	// State
 	var actionCallback;
+	var confirmed = false;
 
 	this.init = function()
 	{
@@ -909,6 +910,7 @@ var ConfirmDialog = (new function($)
 		}
 
 		Util.centerDialog($ConfirmDialog, true);
+		confirmed = false;
 		$ConfirmDialog.modal({backdrop: 'static'});
 
 		// avoid showing multiple backdrops when the modal is shown from other modal
@@ -921,6 +923,11 @@ var ConfirmDialog = (new function($)
 
 	function hidden()
 	{
+		if (confirmed)
+		{
+			actionCallback($ConfirmDialog);
+		}
+
 		// confirm dialog copies data from other nodes
 		// the copied DOM nodes must be destroyed
 		$('#ConfirmDialog_Title').empty();
@@ -931,8 +938,8 @@ var ConfirmDialog = (new function($)
 	function click(event)
 	{
 		event.preventDefault(); // avoid scrolling
+		confirmed = true;
 		$ConfirmDialog.modal('hide');
-		actionCallback($ConfirmDialog);
 	}
 }(jQuery));
 
