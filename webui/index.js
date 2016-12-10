@@ -362,7 +362,7 @@ var Frontend = (new function($)
 		var modals = $('.modal:visible');
 		if (modals.length > 0)
 		{
-			if (key === 'Enter')
+			if (key === 'Enter' && !Util.wantsReturn(e.target))
 			{
 				var primaryButton = $('.btn-primary:visible', modals.last());
 				if (primaryButton.length === 1)

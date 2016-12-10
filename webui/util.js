@@ -332,6 +332,11 @@ var Util = (new function($)
 			target.tagName == 'TEXTAREA' || target.isContentEditable;
 	}
 
+	this.wantsReturn = function(target)
+	{
+		return target.tagName == 'TEXTAREA';
+	}
+
 }(jQuery));
 
 
