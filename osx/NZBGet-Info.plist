@@ -28,6 +28,11 @@
 	<string>Copyright © 2007-2016 Andrey Prygunkov</string>
 	<key>NSMainNibFile</key>
 	<string>MainApp</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>
