@@ -642,19 +642,18 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	}
 #endif
 
+	NzbParameter* unpackParameter = postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
+	bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
+	bool unpack = wantUnpack && postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone &&
+		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone;
+
 	if (postInfo->GetNzbInfo()->GetRarRenameStatus() == NzbInfo::rsNone &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
-		g_Options->GetRarRename())
+		unpack && g_Options->GetRarRename())
 	{
 		EnterStage(downloadQueue, postInfo, PostInfo::ptRarRenaming);
 		RenameController::StartJob(postInfo, RenameController::jkRar);
 		return;
 	}
-
-	NzbParameter* unpackParameter = postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
-	bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
-	bool unpack = wantUnpack && postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone;
 
 	bool parFailed = postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psFailure ||
 		postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psRepairPossible ||
