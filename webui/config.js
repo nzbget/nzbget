@@ -445,7 +445,7 @@ var Options = (new function($)
 
 		for (var i=1; i < data.length; i++)
 		{
-			if (data[i].PostScript)
+			if (data[i].PostScript || data[i].QueueScript)
 			{
 				var scriptName = data[i].Name;
 				var sectionId = (scriptName + ':').replace(/ |\/|[\.|$|\:|\*]/g, '_');
@@ -455,7 +455,7 @@ var Options = (new function($)
 				option.caption = option.caption.replace(/\\/, ' \\ ').replace(/\//, ' / ');
 
 				option.defvalue = 'no';
-				option.description = (data[i].Template.trim().split('\n')[0].substr(1, 1000).trim() || 'Post-processing script ' + scriptName + '.');
+				option.description = (data[i].Template.trim().split('\n')[0].substr(1, 1000).trim() || 'Extension script ' + scriptName + '.');
 				option.value = null;
 				option.sectionId = sectionId;
 				option.select = ['yes', 'no'];
@@ -1068,25 +1068,18 @@ var Config = (new function($)
 			{
 				var option = section.options[k];
 				var optname = option.name.toLowerCase();
-				if (optname.indexOf('scriptorder') > -1)
+				if (optname === 'scriptorder')
 				{
 					option.editor = { caption: 'Reorder', click: 'Config.editScriptOrder' };
 				}
-				if (optname.indexOf('postscript') > -1)
+				if (optname === 'extensions' ||
+					(optname.indexOf('category') > -1 && optname.indexOf('.extensions') > -1))
 				{
-					option.editor = { caption: 'Choose', click: 'Config.editPostScript' };
+					option.editor = { caption: 'Choose', click: 'Config.editExtensions' };
 				}
-				if (optname.indexOf('scanscript') > -1)
+				if (optname.indexOf('feed') > -1 && optname.indexOf('.extensions') > -1)
 				{
-					option.editor = { caption: 'Choose', click: 'Config.editScanScript' };
-				}
-				if (optname.indexOf('queuescript') > -1)
-				{
-					option.editor = { caption: 'Choose', click: 'Config.editQueueScript' };
-				}
-				if (optname.indexOf('feedscript') > -1)
-				{
-					option.editor = { caption: 'Choose', click: 'Config.editFeedScript' };
+					option.editor = { caption: 'Choose', click: 'Config.editFeedExtensions' };
 				}
 				if (optname.indexOf('task') > -1 && optname.indexOf('.param') > -1)
 				{
@@ -1450,28 +1443,16 @@ var Config = (new function($)
 		ScriptListDialog.showModal(option, config, null);
 	}
 
-	this.editPostScript = function(optFormId)
+	this.editExtensions = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
-		ScriptListDialog.showModal(option, config, 'post');
+		ScriptListDialog.showModal(option, config, ['post', 'scan', 'queue']);
 	}
 
-	this.editScanScript = function(optFormId)
+	this.editFeedExtensions = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
-		ScriptListDialog.showModal(option, config, 'scan');
-	}
-
-	this.editQueueScript = function(optFormId)
-	{
-		var option = findOptionById(optFormId);
-		ScriptListDialog.showModal(option, config, 'queue');
-	}
-
-	this.editFeedScript = function(optFormId)
-	{
-		var option = findOptionById(optFormId);
-		ScriptListDialog.showModal(option, config, 'feed');
+		ScriptListDialog.showModal(option, config, ['feed']);
 	}
 
 	this.editSchedulerScript = function(optFormId)
@@ -1483,7 +1464,7 @@ var Config = (new function($)
 			alert('This button is to choose scheduler scripts when option TaskX.Command is set to "Script".');
 			return;
 		}
-		ScriptListDialog.showModal(option, config, 'scheduler');
+		ScriptListDialog.showModal(option, config, ['scheduler']);
 	}
 
 	this.schedulerCommandChanged = function(option)
@@ -1508,7 +1489,7 @@ var Config = (new function($)
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Priority')),
 			getOptionValue(findOptionByName('Feed' + option.multiid + '.Interval')),
-			getOptionValue(findOptionByName('Feed' + option.multiid + '.FeedScript')),
+			getOptionValue(findOptionByName('Feed' + option.multiid + '.Extensions')),
 			function(filter)
 				{
 					var control = $('#' + option.formId);
@@ -1528,7 +1509,7 @@ var Config = (new function($)
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Interval')),
-			getOptionValue(findOptionByName('Feed' + multiid + '.FeedScript')));
+			getOptionValue(findOptionByName('Feed' + multiid + '.Extensions')));
 	}
 
 	/*** TEST SERVER ********************************************************************/
@@ -2062,13 +2043,13 @@ var ScriptListDialog = (new function($)
 
 		if (orderMode)
 		{
-			$('#ScriptListDialog_Title').text('Reorder scripts');
+			$('#ScriptListDialog_Title').text('Reorder extensions');
 			$('#ScriptListDialog_Instruction').text('Hover mouse over table elements for reorder buttons to appear.');
 		}
 		else
 		{
-			$('#ScriptListDialog_Title').text('Choose scripts');
-			$('#ScriptListDialog_Instruction').html('Select scripts for option <strong>' + option.name + '</strong>.');
+			$('#ScriptListDialog_Title').text('Choose extensions');
+			$('#ScriptListDialog_Instruction').html('Select extension scripts for option <strong>' + option.name + '</strong>.');
 		}
 
 		$ScriptTable.toggleClass('table-hidecheck', orderMode);
@@ -2117,7 +2098,15 @@ var ScriptListDialog = (new function($)
 		for (var i=1; i < config.length; i++)
 		{
 			availableAllScripts.push(config[i].scriptName);
-			if (!kind || config[i][kind])
+			var accept = !kind;
+			if (!accept)
+			{
+				for (var j=0; j < kind.length; j++)
+				{
+					accept = accept || config[i][kind[j]];
+				}
+			}
+			if (accept)
 			{
 				availableScripts.push(config[i].scriptName);
 			}

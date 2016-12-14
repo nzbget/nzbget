@@ -23,7 +23,7 @@
 #include "Util.h"
 
 FeedInfo::FeedInfo(int id, const char* name, const char* url, bool backlog, int interval,
-		const char* filter, bool pauseNzb, const char* category, int priority, const char* feedScript) :
+		const char* filter, bool pauseNzb, const char* category, int priority, const char* extensions) :
 	m_backlog(backlog), m_interval(interval), m_pauseNzb(pauseNzb), m_priority(priority)
 {
 	m_id = id;
@@ -36,7 +36,7 @@ FeedInfo::FeedInfo(int id, const char* name, const char* url, bool backlog, int 
 	m_filter = filter ? filter : "";
 	m_filterHash = Util::HashBJ96(m_filter, strlen(m_filter), 0);
 	m_category = category ? category : "";
-	m_feedScript = feedScript ? feedScript : "";
+	m_extensions = extensions ? extensions : "";
 }
 
 

@@ -95,9 +95,6 @@ static const char* OPTION_PARBUFFER				= "ParBuffer";
 static const char* OPTION_PARTHREADS			= "ParThreads";
 static const char* OPTION_RARRENAME				= "RarRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
-static const char* OPTION_SCANSCRIPT			= "ScanScript";
-static const char* OPTION_QUEUESCRIPT			= "QueueScript";
-static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
@@ -123,7 +120,7 @@ static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
 static const char* OPTION_UNPACKPASSFILE		= "UnpackPassFile";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
-static const char* OPTION_POSTSCRIPT			= "PostScript";
+static const char* OPTION_EXTENSIONS			= "Extensions";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 static const char* OPTION_PARIGNOREEXT			= "ParIgnoreExt";
 static const char* OPTION_UNPACKIGNOREEXT		= "UnpackIgnoreExt";
@@ -160,6 +157,9 @@ static const char* OPTION_RESETLOG				= "ResetLog";
 static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
 static const char* OPTION_DELETECLEANUPDISK		= "DeleteCleanupDisk";
 static const char* OPTION_HISTORYCLEANUPDISK	= "HistoryCleanupDisk";
+static const char* OPTION_SCANSCRIPT			= "ScanScript";
+static const char* OPTION_QUEUESCRIPT			= "QueueScript";
+static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -458,10 +458,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_RARRENAME, "yes");
 	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
-	SetOption(OPTION_POSTSCRIPT, "");
-	SetOption(OPTION_SCANSCRIPT, "");
-	SetOption(OPTION_QUEUESCRIPT, "");
-	SetOption(OPTION_FEEDSCRIPT, "");
+	SetOption(OPTION_EXTENSIONS, "");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
 	SetOption(OPTION_UPDATEINTERVAL, "200");
@@ -651,10 +648,7 @@ void Options::InitOptions()
 
 	m_configTemplate		= GetOption(OPTION_CONFIGTEMPLATE);
 	m_scriptOrder			= GetOption(OPTION_SCRIPTORDER);
-	m_postScript			= GetOption(OPTION_POSTSCRIPT);
-	m_scanScript			= GetOption(OPTION_SCANSCRIPT);
-	m_queueScript			= GetOption(OPTION_QUEUESCRIPT);
-	m_feedScript			= GetOption(OPTION_FEEDSCRIPT);
+	m_extensions			= GetOption(OPTION_EXTENSIONS);
 	m_controlIp				= GetOption(OPTION_CONTROLIP);
 	m_controlUsername		= GetOption(OPTION_CONTROLUSERNAME);
 	m_controlPassword		= GetOption(OPTION_CONTROLPASSWORD);
@@ -1037,10 +1031,10 @@ void Options::InitCategories()
 			unpack = (bool)ParseEnumValue(BString<100>("Category%i.Unpack", n), BoolCount, BoolNames, BoolValues);
 		}
 
-		const char* npostscript = GetOption(BString<100>("Category%i.PostScript", n));
+		const char* nextensions = GetOption(BString<100>("Category%i.Extensions", n));
 		const char* naliases = GetOption(BString<100>("Category%i.Aliases", n));
 
-		bool definition = nname || ndestdir || nunpack || npostscript || naliases;
+		bool definition = nname || ndestdir || nunpack || nextensions || naliases;
 		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
@@ -1056,7 +1050,7 @@ void Options::InitCategories()
 				CheckDir(destDir, BString<100>("Category%i.DestDir", n), m_destDir, false, false);
 			}
 
-			m_categories.emplace_back(nname, destDir, unpack, npostscript);
+			m_categories.emplace_back(nname, destDir, unpack, nextensions);
 			Category& category = m_categories.back();
 
 			// split Aliases into tokens and create items for each token
@@ -1087,7 +1081,7 @@ void Options::InitFeeds()
 		const char* nurl = GetOption(BString<100>("Feed%i.URL", n));
 		const char* nfilter = GetOption(BString<100>("Feed%i.Filter", n));
 		const char* ncategory = GetOption(BString<100>("Feed%i.Category", n));
-		const char* nfeedscript = GetOption(BString<100>("Feed%i.FeedScript", n));
+		const char* nextensions = GetOption(BString<100>("Feed%i.Extensions", n));
 
 		const char* nbacklog = GetOption(BString<100>("Feed%i.Backlog", n));
 		bool backlog = true;
@@ -1107,7 +1101,7 @@ void Options::InitFeeds()
 		const char* npriority = GetOption(BString<100>("Feed%i.Priority", n));
 
 		bool definition = nname || nurl || nfilter || ncategory || nbacklog || npausenzb ||
-			ninterval || npriority || nfeedscript;
+			ninterval || npriority || nextensions;
 		bool completed = nurl;
 
 		if (!definition)
@@ -1120,7 +1114,7 @@ void Options::InitFeeds()
 			if (m_extender)
 			{
 				m_extender->AddFeed(n, nname, nurl, ninterval ? atoi(ninterval) : 0, nfilter,
-					backlog, pauseNzb, ncategory, npriority ? atoi(npriority) : 0, nfeedscript);
+					backlog, pauseNzb, ncategory, npriority ? atoi(npriority) : 0, nextensions);
 			}
 		}
 		else
@@ -1511,7 +1505,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".postscript") ||
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".extensions") ||
 			!strcasecmp(p, ".unpack") || !strcasecmp(p, ".aliases")))
 		{
 			return true;
@@ -1524,7 +1518,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		while (*p >= '0' && *p <= '9') p++;
 		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".url") || !strcasecmp(p, ".interval") ||
 			 !strcasecmp(p, ".filter") || !strcasecmp(p, ".backlog") || !strcasecmp(p, ".pausenzb") ||
-			 !strcasecmp(p, ".category") || !strcasecmp(p, ".priority") || !strcasecmp(p, ".feedscript")))
+			 !strcasecmp(p, ".category") || !strcasecmp(p, ".priority") || !strcasecmp(p, ".extensions")))
 		{
 			return true;
 		}
@@ -1557,17 +1551,26 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
 	}
+
 	if (!strcasecmp(optname, OPTION_POSTPROCESS) ||
 		!strcasecmp(optname, OPTION_NZBPROCESS) ||
 		!strcasecmp(optname, OPTION_NZBADDEDPROCESS))
 	{
 		if (optvalue && strlen(optvalue) > 0)
 		{
-			ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead", optname, OPTION_SCRIPTDIR,
-				!strcasecmp(optname, OPTION_POSTPROCESS) ? OPTION_POSTSCRIPT :
-				!strcasecmp(optname, OPTION_NZBPROCESS) ? OPTION_SCANSCRIPT :
-				!strcasecmp(optname, OPTION_NZBADDEDPROCESS) ? OPTION_QUEUESCRIPT :
-				"ERROR");
+			ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead",
+				optname, OPTION_SCRIPTDIR, OPTION_EXTENSIONS);
+		}
+		return true;
+	}
+
+	if (!strcasecmp(optname, OPTION_SCANSCRIPT) ||
+		!strcasecmp(optname, OPTION_QUEUESCRIPT) ||
+		!strcasecmp(optname, OPTION_FEEDSCRIPT))
+	{
+		if (optvalue && strlen(optvalue) > 0)
+		{
+			ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" instead", optname, OPTION_EXTENSIONS);
 		}
 		return true;
 	}
@@ -1625,16 +1628,22 @@ void Options::ConvertOldOption(CString& option, CString& value)
 		value = "extended";
 	}
 
-	if (!strcasecmp(option, "DefScript"))
+	if (!strcasecmp(option, "DefScript") || !strcasecmp(option, "PostScript"))
 	{
-		option = "PostScript";
+		option = "Extensions";
 	}
 
 	int nameLen = strlen(option);
-	if (!strncasecmp(option, "Category", 8) && nameLen > 10 &&
-		!strcasecmp(option + nameLen - 10, ".DefScript"))
+	if (!strncasecmp(option, "Category", 8) &&
+		((nameLen > 10 && !strcasecmp(option + nameLen - 10, ".DefScript")) ||
+		 (nameLen > 11 && !strcasecmp(option + nameLen - 11, ".PostScript"))))
 	{
-		option.Replace(".DefScript", ".PostScript");
+		option.Replace(".DefScript", ".Extensions");
+		option.Replace(".PostScript", ".Extensions");
+	}
+	if (!strncasecmp(option, "Feed", 4) && nameLen > 11 && !strcasecmp(option + nameLen - 11, ".FeedScript"))
+	{
+		option.Replace(".FeedScript", ".Extensions");
 	}
 
 	if (!strcasecmp(option, "WriteBufferSize"))
@@ -1731,7 +1740,7 @@ void Options::CheckOptions()
 	if (sizeof(void*) == 4 && m_parBuffer + m_articleCache > 1900)
 	{
 		ConfigError("Options \"ArticleCache\" and \"ParBuffer\" in total cannot use more than 1900MB of memory in 32-Bit mode. Changed to 1500 and 400");
-		m_articleCache = 1900;
+		m_articleCache = 1500;
 		m_parBuffer = 400;
 	}
 

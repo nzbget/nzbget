@@ -25,6 +25,22 @@
 #include "Log.h"
 #include "FileSystem.h"
 
+class ScanScriptCheck : public NzbScriptController
+{
+protected:
+	virtual void ExecuteScript(ScriptConfig::Script* script) { has |= script->GetScanScript(); }
+	bool has = false;
+	friend class ScanScriptController;
+};
+
+
+bool ScanScriptController::HasScripts()
+{
+	ScanScriptCheck check;
+	check.ExecuteScriptList(g_Options->GetExtensions());
+	return check.has;
+}
+
 void ScanScriptController::ExecuteScripts(const char* nzbFilename,
 	const char* url, const char* directory, CString* nzbName, CString* category,
 	int* priority, NzbParameterList* parameters, bool* addTop, bool* addPaused,
@@ -45,7 +61,18 @@ void ScanScriptController::ExecuteScripts(const char* nzbFilename,
 	scriptController.m_dupeMode = dupeMode;
 	scriptController.m_prefixLen = 0;
 
-	scriptController.ExecuteScriptList(g_Options->GetScanScript());
+	const char* extensions = g_Options->GetExtensions();
+
+	if (!Util::EmptyStr(*category))
+	{
+		Options::Category* categoryObj = g_Options->FindCategory(*category, false);
+		if (categoryObj && !Util::EmptyStr(categoryObj->GetExtensions()))
+		{
+			extensions = categoryObj->GetExtensions();
+		}
+	}
+
+	scriptController.ExecuteScriptList(extensions);
 }
 
 void ScanScriptController::ExecuteScript(ScriptConfig::Script* script)

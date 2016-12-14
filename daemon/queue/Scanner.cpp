@@ -72,8 +72,7 @@ void Scanner::QueueData::SetNzbId(int nzbId)
 void Scanner::InitOptions()
 {
 	m_nzbDirInterval = g_Options->GetNzbDirInterval() * 1000;
-	const char* scanScript = g_Options->GetScanScript();
-	m_scanScript = scanScript && strlen(scanScript) > 0;
+	m_scanScript = ScanScriptController::HasScripts();
 }
 
 void Scanner::ServiceWork()
@@ -96,7 +95,7 @@ void Scanner::ServiceWork()
 		CheckIncomingNzbs(g_Options->GetNzbDir(), "", checkStat);
 		if (!checkStat && m_scanScript)
 		{
-			// if immediate scan requested, we need second scan to process files extracted by NzbProcess-script
+			// if immediate scan requested, we need second scan to process files extracted by scan-scripts
 			CheckIncomingNzbs(g_Options->GetNzbDir(), "", checkStat);
 		}
 		m_scanning = false;
@@ -105,7 +104,7 @@ void Scanner::ServiceWork()
 		// if NzbDirFileAge is less than NzbDirInterval (that can happen if NzbDirInterval
 		// is set for rare scans like once per hour) we make 4 scans:
 		//   - one additional scan is neccessary to check sizes of detected files;
-		//   - another scan is required to check files which were extracted by NzbProcess-script;
+		//   - another scan is required to check files which were extracted by scan-scripts;
 		//   - third scan is needed to check sizes of extracted files.
 		if (g_Options->GetNzbDirInterval() > 0 && g_Options->GetNzbDirFileAge() < g_Options->GetNzbDirInterval())
 		{
@@ -347,7 +346,7 @@ void Scanner::ProcessIncomingFile(const char* directory, const char* baseFilenam
 void Scanner::InitPPParameters(const char* category, NzbParameterList* parameters, bool reset)
 {
 	bool unpack = g_Options->GetUnpack();
-	const char* postScript = g_Options->GetPostScript();
+	const char* extensions = g_Options->GetExtensions();
 
 	if (!Util::EmptyStr(category))
 	{
@@ -355,9 +354,9 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 		if (categoryObj)
 		{
 			unpack = categoryObj->GetUnpack();
-			if (!Util::EmptyStr(categoryObj->GetPostScript()))
+			if (!Util::EmptyStr(categoryObj->GetExtensions()))
 			{
-				postScript = categoryObj->GetPostScript();
+				extensions = categoryObj->GetExtensions();
 			}
 		}
 	}
@@ -372,13 +371,20 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 
 	parameters->SetParameter("*Unpack:", unpack ? "yes" : "no");
 
-	if (!Util::EmptyStr(postScript))
+	if (!Util::EmptyStr(extensions))
 	{
-		// split szPostScript into tokens and create pp-parameter for each token
-		Tokenizer tok(postScript, ",;");
+		// create pp-parameter for each post-processing or queue- script
+		Tokenizer tok(extensions, ",;");
 		while (const char* scriptName = tok.Next())
 		{
-			parameters->SetParameter(BString<1024>("%s:", scriptName), "yes");
+			for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
+			{
+				if ((script.GetPostScript() || script.GetQueueScript()) &&
+					FileSystem::SameFilename(scriptName, script.GetName()))
+				{
+					parameters->SetParameter(BString<1024>("%s:", scriptName), "yes");
+				}
+			}
 		}
 	}
 }

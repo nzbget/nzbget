@@ -133,19 +133,19 @@ public:
 	class Category
 	{
 	public:
-		Category(const char* name, const char* destDir, bool unpack, const char* postScript) :
-			m_name(name), m_destDir(destDir), m_unpack(unpack), m_postScript(postScript) {}
+		Category(const char* name, const char* destDir, bool unpack, const char* extensions) :
+			m_name(name), m_destDir(destDir), m_unpack(unpack), m_extensions(extensions) {}
 		const char* GetName() { return m_name; }
 		const char* GetDestDir() { return m_destDir; }
 		bool GetUnpack() { return m_unpack; }
-		const char* GetPostScript() { return m_postScript; }
+		const char* GetExtensions() { return m_extensions; }
 		NameList* GetAliases() { return &m_aliases; }
 
 	private:
 		CString m_name;
 		CString m_destDir;
 		bool m_unpack;
-		CString m_postScript;
+		CString m_extensions;
 		NameList m_aliases;
 	};
 
@@ -166,7 +166,7 @@ public:
 			int level, int group, bool optional) = 0;
 		virtual void AddFeed(int id, const char* name, const char* url, int interval,
 			const char* filter, bool backlog, bool pauseNzb, const char* category,
-			int priority, const char* feedScript) {}
+			int priority, const char* extensions) {}
 		virtual void AddTask(int id, int hours, int minutes, int weekDaysBits, ESchedulerCommand command,
 			const char* param) {}
 		virtual void SetupFirstStart() {}
@@ -247,10 +247,7 @@ public:
 	bool GetRarRename() { return m_rarRename; }
 	EHealthCheck GetHealthCheck() { return m_healthCheck; }
 	const char* GetScriptOrder() { return m_scriptOrder; }
-	const char* GetPostScript() { return m_postScript; }
-	const char* GetScanScript() { return m_scanScript; }
-	const char* GetQueueScript() { return m_queueScript; }
-	const char* GetFeedScript() { return m_feedScript; }
+	const char* GetExtensions() { return m_extensions; }
 	int GetUMask() { return m_umask; }
 	int GetUpdateInterval() {return m_updateInterval; }
 	bool GetCursesNzbName() { return m_cursesNzbName; }
@@ -394,11 +391,8 @@ private:
 	int m_parThreads = 0;
 	bool m_rarRename = false;
 	EHealthCheck m_healthCheck = hcNone;
-	CString m_postScript;
+	CString m_extensions;
 	CString m_scriptOrder;
-	CString m_scanScript;
-	CString m_queueScript;
-	CString m_feedScript;
 	int m_umask = 0;
 	int m_updateInterval = 0;
 	bool m_cursesNzbName = false;

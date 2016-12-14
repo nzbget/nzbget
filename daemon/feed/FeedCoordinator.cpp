@@ -297,7 +297,7 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 		{
 			bool scriptSuccess = true;
 			FeedScriptController::ExecuteScripts(
-				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
+				!Util::EmptyStr(feedInfo->GetExtensions()) ? feedInfo->GetExtensions(): g_Options->GetExtensions(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId(), &scriptSuccess);
 			if (!scriptSuccess)
 			{
@@ -460,7 +460,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::ViewFeed(int id)
 
 	return PreviewFeed(feedInfo->GetId(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(),
 		feedInfo->GetBacklog(), feedInfo->GetPauseNzb(), feedInfo->GetCategory(),
-		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetFeedScript(), 0, nullptr);
+		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetExtensions(), 0, nullptr);
 }
 
 std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
@@ -526,7 +526,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 		}
 
 		FeedScriptController::ExecuteScripts(
-			!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
+			!Util::EmptyStr(feedInfo->GetExtensions()) ? feedInfo->GetExtensions(): g_Options->GetExtensions(),
 			feedInfo->GetOutputFilename(), feedInfo->GetId(), nullptr);
 
 		std::unique_ptr<FeedFile> feedFile = parseFeed(feedInfo.get());

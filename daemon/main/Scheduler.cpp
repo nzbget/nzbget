@@ -191,7 +191,7 @@ void Scheduler::ExecuteTask(Task* task)
 			m_pauseScanChanged = true;
 			break;
 
-		case scScript:
+		case scExtensions:
 		case scProcess:
 			if (executeProcess)
 			{

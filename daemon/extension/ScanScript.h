@@ -30,6 +30,7 @@ public:
 		const char* directory, CString* nzbName, CString* category, int* priority,
 		NzbParameterList* parameters, bool* addTop, bool* addPaused,
 		CString* dupeKey, int* dupeScore, EDupeMode* dupeMode);
+	static bool HasScripts();
 
 protected:
 	virtual void ExecuteScript(ScriptConfig::Script* script);

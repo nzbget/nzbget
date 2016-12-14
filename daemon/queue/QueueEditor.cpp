@@ -904,16 +904,16 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 	debug("QueueEditor: setting category '%s' for '%s'", category, nzbInfo->GetName());
 
 	bool oldUnpack = g_Options->GetUnpack();
-	const char* oldPostScript = g_Options->GetPostScript();
+	const char* oldExtensions = g_Options->GetExtensions();
 	if (applyParams && !Util::EmptyStr(nzbInfo->GetCategory()))
 	{
 		Options::Category* categoryObj = g_Options->FindCategory(nzbInfo->GetCategory(), false);
 		if (categoryObj)
 		{
 			oldUnpack = categoryObj->GetUnpack();
-			if (!Util::EmptyStr(categoryObj->GetPostScript()))
+			if (!Util::EmptyStr(categoryObj->GetExtensions()))
 			{
-				oldPostScript = categoryObj->GetPostScript();
+				oldExtensions = categoryObj->GetExtensions();
 			}
 		}
 	}
@@ -926,16 +926,16 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 	}
 
 	bool newUnpack = g_Options->GetUnpack();
-	const char* newPostScript = g_Options->GetPostScript();
+	const char* newExtensions = g_Options->GetExtensions();
 	if (!Util::EmptyStr(nzbInfo->GetCategory()))
 	{
 		Options::Category* categoryObj = g_Options->FindCategory(nzbInfo->GetCategory(), false);
 		if (categoryObj)
 		{
 			newUnpack = categoryObj->GetUnpack();
-			if (!Util::EmptyStr(categoryObj->GetPostScript()))
+			if (!Util::EmptyStr(categoryObj->GetExtensions()))
 			{
-				newPostScript = categoryObj->GetPostScript();
+				newExtensions = categoryObj->GetExtensions();
 			}
 		}
 	}
@@ -945,15 +945,15 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 		nzbInfo->GetParameters()->SetParameter("*Unpack:", newUnpack ? "yes" : "no");
 	}
 
-	if (strcasecmp(oldPostScript, newPostScript))
+	if (strcasecmp(oldExtensions, newExtensions))
 	{
 		// add new params not existed in old category
-		Tokenizer tokNew(newPostScript, ",;");
+		Tokenizer tokNew(newExtensions, ",;");
 		while (const char* newScriptName = tokNew.Next())
 		{
 			bool found = false;
 			const char* oldScriptName;
-			Tokenizer tokOld(oldPostScript, ",;");
+			Tokenizer tokOld(oldExtensions, ",;");
 			while ((oldScriptName = tokOld.Next()) && !found)
 			{
 				found = !strcasecmp(newScriptName, oldScriptName);
@@ -965,12 +965,12 @@ void QueueEditor::SetNzbCategory(NzbInfo* nzbInfo, const char* category, bool ap
 		}
 
 		// remove old params not existed in new category
-		Tokenizer tokOld(oldPostScript, ",;");
+		Tokenizer tokOld(oldExtensions, ",;");
 		while (const char* oldScriptName = tokOld.Next())
 		{
 			bool found = false;
 			const char* newScriptName;
-			Tokenizer tokNew(newPostScript, ",;");
+			Tokenizer tokNew(newExtensions, ",;");
 			while ((newScriptName = tokNew.Next()) && !found)
 			{
 				found = !strcasecmp(newScriptName, oldScriptName);
