@@ -177,7 +177,8 @@ public:
 	Options(CmdOptList* commandLineOptions, Extender* extender);
 	~Options();
 
-	bool SplitOptionString(const char* option, CString& optName, CString& optValue);
+	static bool SplitOptionString(const char* option, CString& optName, CString& optValue);
+	static void ConvertOldOptions(OptEntries* optEntries);
 	bool GetFatalError() { return m_fatalError; }
 	GuardedOptEntries GuardOptEntries() { return GuardedOptEntries(&m_optEntries, &m_optEntriesMutex); }
 
@@ -472,7 +473,9 @@ private:
 	void ConfigError(const char* msg, ...);
 	void ConfigWarn(const char* msg, ...);
 	void LocateOptionSrcPos(const char *optionName);
-	void ConvertOldOption(CString& option, CString& value);
+	static void ConvertOldOption(CString& option, CString& value);
+	static void MergeOldScriptOption(OptEntries* optEntries, const char* optname, bool mergeCategories);
+	static bool HasScript(const char* scriptList, const char* scriptName);
 };
 
 extern Options* g_Options;

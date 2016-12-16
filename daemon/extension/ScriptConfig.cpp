@@ -81,13 +81,15 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 
 		CString optname;
 		CString optvalue;
-		if (g_Options->SplitOptionString(buf, optname, optvalue))
+		if (Options::SplitOptionString(buf, optname, optvalue))
 		{
 			optEntries->emplace_back(optname, optvalue);
 		}
 	}
 
 	infile.Close();
+
+	Options::ConvertOldOptions(optEntries);
 
 	return true;
 }

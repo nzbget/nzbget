@@ -330,6 +330,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 		return;
 	}
 
+	ConvertOldOptions(&m_optEntries);
 	InitOptions();
 	CheckOptions();
 
@@ -1568,10 +1569,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		!strcasecmp(optname, OPTION_QUEUESCRIPT) ||
 		!strcasecmp(optname, OPTION_FEEDSCRIPT))
 	{
-		if (optvalue && strlen(optvalue) > 0)
-		{
-			ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" instead", optname, OPTION_EXTENSIONS);
-		}
+		// will be automatically converted into "Extensions"
 		return true;
 	}
 
@@ -1749,3 +1747,77 @@ void Options::CheckOptions()
 		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", *m_unpackPassFile);
 	}
 }
+
+void Options::ConvertOldOptions(OptEntries* optEntries)
+{
+	MergeOldScriptOption(optEntries, OPTION_SCANSCRIPT, true);
+	MergeOldScriptOption(optEntries, OPTION_QUEUESCRIPT, true);
+	MergeOldScriptOption(optEntries, OPTION_FEEDSCRIPT, false);
+}
+
+void Options::MergeOldScriptOption(OptEntries* optEntries, const char* optname, bool mergeCategories)
+{
+	OptEntry* optEntry = optEntries->FindOption(optname);
+	if (!optEntry || Util::EmptyStr(optEntry->GetValue()))
+	{
+		return;
+	}
+
+	OptEntry* extensionsOpt = optEntries->FindOption(OPTION_EXTENSIONS);
+	if (!extensionsOpt)
+	{
+		optEntries->emplace_back(OPTION_EXTENSIONS, "");
+		extensionsOpt = optEntries->FindOption(OPTION_EXTENSIONS);
+	}
+
+	const char* scriptList = optEntry->GetValue();
+
+	Tokenizer tok(scriptList, ",;");
+	while (const char* scriptName = tok.Next())
+	{
+		// merge into global "Extensions"
+		if (!HasScript(extensionsOpt->m_value, scriptName))
+		{
+			if (!extensionsOpt->m_value.Empty())
+			{
+				extensionsOpt->m_value.Append(",");
+			}
+			extensionsOpt->m_value.Append(scriptName);
+		}
+
+		// merge into categories' "Extensions" (if not empty)
+		if (mergeCategories)
+		{
+			for (OptEntry& opt : optEntries)
+			{
+				const char* optname = opt.GetName();
+				if (!strncasecmp(optname, "category", 8))
+				{
+					char* p = (char*)optname + 8;
+					while (*p >= '0' && *p <= '9') p++;
+					if (p && (!strcasecmp(p, ".extensions")))
+					{
+						if (!opt.m_value.Empty() && !HasScript(opt.m_value, scriptName))
+						{
+							opt.m_value.Append(",");
+							opt.m_value.Append(scriptName);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+bool Options::HasScript(const char* scriptList, const char* scriptName)
+{
+	Tokenizer tok(scriptList, ",;");
+	while (const char* scriptName2 = tok.Next())
+	{
+		if (!strcasecmp(scriptName2, scriptName))
+		{
+			return true;
+		}
+	}
+	return false;
+};
