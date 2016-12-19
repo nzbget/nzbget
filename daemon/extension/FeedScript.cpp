@@ -62,7 +62,7 @@ void FeedScriptController::ExecuteScript(ScriptConfig::Script* script)
 	if (exitCode != FEED_SUCCESS)
 	{
 		infoName[0] = 'F'; // uppercase
-		PrintMessage(Message::mkError, "%s failed", GetInfoName());
+		PrintMessage(Message::mkError, "%s failed", *infoName);
 		m_success = false;
 	}
 

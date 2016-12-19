@@ -324,7 +324,7 @@ int ScriptController::Execute()
 	m_readpipe = fdopen(pipein, "r");
 	if (!m_readpipe)
 	{
-		PrintMessage(Message::mkError, "Could not open pipe to %s", m_infoName);
+		PrintMessage(Message::mkError, "Could not open pipe to %s", *m_infoName);
 		close(pipein);
 		m_completed = true;
 		return -1;
@@ -386,7 +386,7 @@ int ScriptController::Execute()
 
 	if (m_terminated && m_infoName)
 	{
-		warn("Interrupted %s", m_infoName);
+		warn("Interrupted %s", *m_infoName);
 	}
 
 	exitCode = 0;
@@ -486,11 +486,11 @@ int ScriptController::StartProcess()
 		errMsg[255 - 1] = '\0';
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, errCode, 0, errMsg, 255, nullptr))
 		{
-			PrintMessage(Message::mkError, "Could not start %s: %s", m_infoName, errMsg);
+			PrintMessage(Message::mkError, "Could not start %s: %s", *m_infoName, errMsg);
 		}
 		else
 		{
-			PrintMessage(Message::mkError, "Could not start %s: error %i", m_infoName, errCode);
+			PrintMessage(Message::mkError, "Could not start %s: error %i", *m_infoName, errCode);
 		}
 		if (!FileSystem::FileExists(script))
 		{
@@ -545,7 +545,7 @@ int ScriptController::StartProcess()
 
 	if (pid == -1)
 	{
-		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_infoName, errno);
+		PrintMessage(Message::mkError, "Could not start %s: errno %i", *m_infoName, errno);
 		close(pipein);
 		close(pipeout);
 		return -1;
@@ -636,7 +636,7 @@ int ScriptController::WaitProcess()
 
 void ScriptController::Terminate()
 {
-	debug("Stopping %s", m_infoName);
+	debug("Stopping %s", *m_infoName);
 	m_terminated = true;
 
 #ifdef WIN32
@@ -664,14 +664,14 @@ void ScriptController::Terminate()
 
 	if (ok)
 	{
-		debug("Terminated %s", m_infoName);
+		debug("Terminated %s", *m_infoName);
 	}
 	else
 	{
-		error("Could not terminate %s", m_infoName);
+		error("Could not terminate %s", *m_infoName);
 	}
 
-	debug("Stopped %s", m_infoName);
+	debug("Stopped %s", *m_infoName);
 }
 
 void ScriptController::TerminateAll()
@@ -697,7 +697,7 @@ void ScriptController::TerminateAll()
 
 bool ScriptController::Break()
 {
-	debug("Sending break signal to %s", m_infoName);
+	debug("Sending break signal to %s", *m_infoName);
 
 #ifdef WIN32
 	BOOL ok = GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, m_dwProcessId);
@@ -707,11 +707,11 @@ bool ScriptController::Break()
 
 	if (ok)
 	{
-		debug("Sent break signal to %s", m_infoName);
+		debug("Sent break signal to %s", *m_infoName);
 	}
 	else
 	{
-		warn("Could not send break signal to %s", m_infoName);
+		warn("Could not send break signal to %s", *m_infoName);
 	}
 
 	return ok;
@@ -719,7 +719,7 @@ bool ScriptController::Break()
 
 void ScriptController::Detach()
 {
-	debug("Detaching %s", m_infoName);
+	debug("Detaching %s", *m_infoName);
 	m_detached = true;
 	FILE* readpipe = m_readpipe;
 	m_readpipe = nullptr;

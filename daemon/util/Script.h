@@ -88,7 +88,7 @@ protected:
 private:
 	ArgList m_args;
 	const char* m_workingDir = nullptr;
-	const char* m_infoName = nullptr;
+	CString m_infoName;
 	const char* m_logPrefix = nullptr;
 	EnvironmentStrings m_environmentStrings;
 	bool m_terminated = false;
