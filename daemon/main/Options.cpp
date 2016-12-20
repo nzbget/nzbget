@@ -1184,13 +1184,6 @@ void Options::InitScheduler()
 			continue;
 		}
 
-		int weekDaysVal = 0;
-		if (weekDays && !ParseWeekDays(weekDays, &weekDaysVal))
-		{
-			ConfigError("Invalid value for option \"Task%i.WeekDays\": \"%s\"", n, weekDays);
-			continue;
-		}
-
 		if (taskCommand == scDownloadRate)
 		{
 			if (param)
@@ -1221,29 +1214,47 @@ void Options::InitScheduler()
 			continue;
 		}
 
-		int hours, minutes;
-		Tokenizer tok(time, ";,");
-		while (const char* oneTime = tok.Next())
-		{
-			if (!ParseTime(oneTime, &hours, &minutes))
-			{
-				ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", n, oneTime);
-				break;
-			}
+		CreateSchedulerTask(n, time, weekDays, taskCommand, param);
+	}
+}
 
-			if (m_extender)
+void Options::CreateSchedulerTask(int id, const char* time, const char* weekDays,
+	ESchedulerCommand command, const char* param)
+{
+	if (!id)
+	{
+		m_configLine = 0;
+	}
+
+	int weekDaysVal = 0;
+	if (weekDays && !ParseWeekDays(weekDays, &weekDaysVal))
+	{
+		ConfigError("Invalid value for option \"Task%i.WeekDays\": \"%s\"", id, weekDays);
+		return;
+	}
+
+	int hours, minutes;
+	Tokenizer tok(time, ";,");
+	while (const char* oneTime = tok.Next())
+	{
+		if (!ParseTime(oneTime, &hours, &minutes))
+		{
+			ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", id, oneTime);
+			return;
+		}
+
+		if (m_extender)
+		{
+			if (hours == -2)
 			{
-				if (hours == -2)
+				for (int everyHour = 0; everyHour < 24; everyHour++)
 				{
-					for (int everyHour = 0; everyHour < 24; everyHour++)
-					{
-						m_extender->AddTask(n, everyHour, minutes, weekDaysVal, taskCommand, param);
-					}
+					m_extender->AddTask(id, everyHour, minutes, weekDaysVal, command, param);
 				}
-				else
-				{
-					m_extender->AddTask(n, hours, minutes, weekDaysVal, taskCommand, param);
-				}
+			}
+			else
+			{
+				m_extender->AddTask(id, hours, minutes, weekDaysVal, command, param);
 			}
 		}
 	}

@@ -156,6 +156,7 @@ var Options = (new function($)
 			scriptConfig.scan = serverTemplateData[i].ScanScript;
 			scriptConfig.queue = serverTemplateData[i].QueueScript;
 			scriptConfig.scheduler = serverTemplateData[i].SchedulerScript;
+			scriptConfig.defscheduler = serverTemplateData[i].TaskTime !== '';
 			scriptConfig.feed = serverTemplateData[i].FeedScript;
 			mergeValues(scriptConfig.sections, serverValues);
 			config.push(scriptConfig);
@@ -1072,10 +1073,13 @@ var Config = (new function($)
 				{
 					option.editor = { caption: 'Reorder', click: 'Config.editScriptOrder' };
 				}
-				if (optname === 'extensions' ||
-					(optname.indexOf('category') > -1 && optname.indexOf('.extensions') > -1))
+				if (optname === 'extensions')
 				{
 					option.editor = { caption: 'Choose', click: 'Config.editExtensions' };
+				}
+				if (optname.indexOf('category') > -1 && optname.indexOf('.extensions') > -1)
+				{
+					option.editor = { caption: 'Choose', click: 'Config.editCategoryExtensions' };
 				}
 				if (optname.indexOf('feed') > -1 && optname.indexOf('.extensions') > -1)
 				{
@@ -1444,6 +1448,12 @@ var Config = (new function($)
 	}
 
 	this.editExtensions = function(optFormId)
+	{
+		var option = findOptionById(optFormId);
+		ScriptListDialog.showModal(option, config, ['post', 'scan', 'queue', 'defscheduler']);
+	}
+
+	this.editCategoryExtensions = function(optFormId)
 	{
 		var option = findOptionById(optFormId);
 		ScriptListDialog.showModal(option, config, ['post', 'scan', 'queue']);

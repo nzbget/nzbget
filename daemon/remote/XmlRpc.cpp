@@ -2716,6 +2716,8 @@ void ConfigTemplatesXmlCommand::Execute()
 		"<member><name>QueueScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>SchedulerScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>FeedScript</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>QueueEvents</name><value><string>%s</string></value></member>\n"
+		"<member><name>TaskTime</name><value><string>%s</string></value></member>\n"
 		"<member><name>Template</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2728,6 +2730,8 @@ void ConfigTemplatesXmlCommand::Execute()
 		"\"QueueScript\" : %s,\n"
 		"\"SchedulerScript\" : %s,\n"
 		"\"FeedScript\" : %s,\n"
+		"\"QueueEvents\" : \"%s\",\n"
+		"\"TaskTime\" : \"%s\",\n"
 		"\"Template\" : \"%s\"\n"
 		"}";
 
@@ -2762,6 +2766,8 @@ void ConfigTemplatesXmlCommand::Execute()
 			BoolToStr(configTemplate.GetScript()->GetQueueScript()),
 			BoolToStr(configTemplate.GetScript()->GetSchedulerScript()),
 			BoolToStr(configTemplate.GetScript()->GetFeedScript()),
+			*EncodeStr(configTemplate.GetScript()->GetQueueEvents()),
+			*EncodeStr(configTemplate.GetScript()->GetTaskTime()),
 			*EncodeStr(configTemplate.GetTemplate()));
 	}
 

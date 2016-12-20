@@ -69,11 +69,17 @@ void SchedulerScriptController::ExecuteScript(ScriptConfig::Script* script)
 		return;
 	}
 
-	PrintMessage(Message::mkInfo, "Executing scheduler-script %s for Task%i", script->GetName(), m_taskId);
+	BString<1024> taskName(" for Task%i", m_taskId);
+	if (m_taskId == 0)
+	{
+		taskName = "";
+	}
+
+	PrintMessage(Message::mkInfo, "Executing scheduler-script %s%s", script->GetName(), *taskName);
 
 	SetArgs({script->GetLocation()});
 
-	BString<1024> infoName("scheduler-script %s for Task%i", script->GetName(), m_taskId);
+	BString<1024> infoName("scheduler-script %s%s", script->GetName(), *taskName);
 	SetInfoName(infoName);
 
 	SetLogPrefix(script->GetDisplayName());

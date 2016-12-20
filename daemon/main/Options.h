@@ -181,6 +181,8 @@ public:
 	static void ConvertOldOptions(OptEntries* optEntries);
 	bool GetFatalError() { return m_fatalError; }
 	GuardedOptEntries GuardOptEntries() { return GuardedOptEntries(&m_optEntries, &m_optEntriesMutex); }
+	void CreateSchedulerTask(int id, const char* time, const char* weekDays,
+		ESchedulerCommand command, const char* param);
 
 	// Options
 	const char* GetConfigFilename() { return m_configFilename; }
