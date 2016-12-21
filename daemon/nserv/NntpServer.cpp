@@ -161,12 +161,12 @@ void NntpProcessor::Run()
 		}
 		else if (!strncasecmp(line, "AUTHINFO ", 9))
 		{
-			m_connection->WriteLine("281 Authentication accepted");
+			m_connection->WriteLine("281 Authentication accepted\r\n");
 		}
 		else if (!strcasecmp(line, "QUIT"))
 		{
 			detail("[%i] Closing connection", m_id);
-			m_connection->WriteLine("205 Connection closing");
+			m_connection->WriteLine("205 Connection closing\r\n");
 			break;
 		}
 		else
