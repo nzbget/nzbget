@@ -148,13 +148,14 @@ var FeedDialog = (new function($)
 	{
 		Refresher.pause();
 
-		$ItemTable.fasttable('update', []);
-
 		enableAllButtons();
 		$FeedDialog.restoreTab();
 
 		$('#FeedDialog_ItemTable_filter').val('');
 		$('#FeedDialog_ItemTable_pagerBlock').hide();
+
+		$ItemTable.fasttable('update', []);
+		$ItemTable.fasttable('applyFilter', '');
 
 		items = null;
 
