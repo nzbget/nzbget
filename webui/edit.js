@@ -1027,10 +1027,10 @@ var ParamTab = (new function($)
 		{
 			if (category === Options.categories[i])
 			{
-				scriptList = Util.parseCommaList(Options.option('Category' + (i + 1) + '.PostScript'));
+				scriptList = Util.parseCommaList(Options.option('Category' + (i + 1) + '.Extensions'));
 				if (scriptList.length === 0)
 				{
-					scriptList = Util.parseCommaList(Options.option('PostScript'));
+					scriptList = Util.parseCommaList(Options.option('Extensions'));
 				}
 				if (Options.option('Category' + (i + 1) + '.Unpack') === 'yes')
 				{
@@ -1041,7 +1041,7 @@ var ParamTab = (new function($)
 		}
 
 		// empty category or category not found
-		scriptList = Util.parseCommaList(Options.option('PostScript'));
+		scriptList = Util.parseCommaList(Options.option('Extensions'));
 		if (Options.option('Unpack') === 'yes')
 		{
 			scriptList.push('*Unpack');
