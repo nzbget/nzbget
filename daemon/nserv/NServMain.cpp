@@ -64,6 +64,17 @@ int NServMain(int argc, char* argv[])
 		return 1;
 	}
 
+	if (!FileSystem::DirectoryExists(opts.dataDir))
+	{
+		// dataDir does not exist. Let's find out a bit more, and report:
+		if (FileSystem::FileExists(opts.dataDir))
+		{
+			error("Specified data-dir %s is not a directory, but a file", *opts.dataDir );
+		} else {
+			error("Specified data-dir %s does not exist", *opts.dataDir );
+		}
+	}
+
 	Options options(&cmdOpts, nullptr);
 
 	log.InitOptions();
