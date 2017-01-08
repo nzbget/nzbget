@@ -34,6 +34,7 @@ struct NServOpts
 {
 	CString dataDir;
 	CString cacheDir;
+	CString bindAddress;
 	int firstPort;
 	int instances;
 	CString logFile;
@@ -107,7 +108,7 @@ int NServMain(int argc, char* argv[])
 
 	for (int i = 0; i < opts.instances; i++)
 	{
-		instances.emplace_back(std::make_unique<NntpServer>(i + 1, "0.0.0.0",
+		instances.emplace_back(std::make_unique<NntpServer>(i + 1, opts.bindAddress,
 			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir));
 		instances.back()->Start();
 	}
@@ -144,6 +145,7 @@ void NServPrintUsage(const char* com)
 		"    -c <cache-dir>  - directory to store encoded articles\n"
 		"    -l <log-file>   - write into log-file (disabled by default)\n"
 		"    -i <instances>  - number of server instances (default is 1)\n"
+		"    -b <address>    - ip address to bind to (default is 0.0.0.0)\n"
 		"    -p <port>       - port number for the first instance (default is 6791)\n"
 		"    -s <cert> <key> - paths to SSL certificate and key files\n"
 		"    -v <verbose>    - verbosity level 0..3 (default is 2)\n"
@@ -155,13 +157,14 @@ void NServPrintUsage(const char* com)
 NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 {
 	instances = 1;
+	bindAddress = "0.0.0.0";
 	firstPort = 6791;
 	generateNzb = false;
 	segmentSize = 500000;
 	quit = false;
 	int verbosity = 2;
 
-	char short_options[] = "c:d:l:p:i:s:v:z:q";
+	char short_options[] = "b:c:d:l:p:i:s:v:z:q";
 
 	optind = 2;
 	while (true)
@@ -180,6 +183,10 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 
 			case 'l':
 				logFile = optind > argc ? nullptr : argv[optind - 1];
+				break;
+
+			case 'b':
+				bindAddress= optind > argc ? "0.0.0.0" : argv[optind - 1];
 				break;
 
 			case 'p':
