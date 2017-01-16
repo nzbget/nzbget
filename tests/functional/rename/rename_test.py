@@ -4,6 +4,20 @@ def test_parrename(nserv, nzbget):
 	hist = nzbget.download_nzb('parrename.nzb', unpack=True)
 	assert hist['Status'] == 'SUCCESS/UNPACK'
 
+def test_parrename_backup(nserv, nzbget):
+	nzb_content = nzbget.load_nzb('parrename.nzb')
+	nzb_content = nzb_content.replace('parrename/parrename.par2?', 'parrename/parrename.par2.damaged?')
+	hist = nzbget.download_nzb('parrename.backup.nzb', nzb_content, unpack=True)
+	assert hist['Status'] == 'SUCCESS/UNPACK'
+	log = nzbget.api.loadlog(int(hist['ID']), 0, 1000)
+	renamed = False
+	for entry in log:
+		print(entry['Text'])
+		if entry['Text'].find('Successfully renamed') > -1 and entry['Text'].find('archive') == -1:
+			renamed = True
+	assert renamed == True
+
+
 def test_rarrename_rar3(nserv, nzbget):
 	hist = nzbget.download_nzb('rarrename3.nzb', unpack=True)
 	assert hist['Status'] == 'SUCCESS/UNPACK'

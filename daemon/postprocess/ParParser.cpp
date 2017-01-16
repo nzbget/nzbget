@@ -79,11 +79,6 @@ bool ParParser::ParseParFilename(const char* parFilename, int* baseNameLen, int*
 		return false;
 	}
 
-	// find last occurence of ".par2" and trim filename after it
-	char* end = filename;
-	while (char* p = strstr(end, ".par2")) end = p + 5;
-	*end = '\0';
-
 	len = strlen(filename);
 	if (len < 6)
 	{

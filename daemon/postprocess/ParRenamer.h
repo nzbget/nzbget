@@ -35,6 +35,7 @@ public:
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
 	int GetRenamedCount() { return m_renamedCount; }
 	bool HasMissedFiles() { return m_hasMissedFiles; }
+	bool HasDamagedParFiles() { return m_hasDamagedParFiles; }
 	void SetDetectMissing(bool detectMissing) { m_detectMissing = detectMissing; }
 
 protected:
@@ -76,23 +77,27 @@ private:
 
 	typedef std::deque<FileHash> FileHashList;
 	typedef std::deque<ParInfo> ParInfoList;
-	typedef std::deque<CString> DirList;
+	typedef std::deque<CString> NameList;
 
 	CString m_infoName;
 	CString m_destDir;
 	CString m_progressLabel;
 	int m_stageProgress = 0;
-	DirList m_dirList;
+	NameList m_dirList;
 	FileHashList m_fileHashList;
 	ParInfoList m_parInfoList;
+	NameList m_badParList;
+	NameList m_loadedParList;
 	int m_fileCount = 0;
 	int m_curFile = 0;
 	int m_renamedCount = 0;
 	bool m_hasMissedFiles = false;
 	bool m_detectMissing = false;
+	bool m_hasDamagedParFiles = false;
 
 	void BuildDirList(const char* destDir);
-	void LoadParFiles(const char* destDir);
+	void LoadMainParFiles(const char* destDir);
+	void LoadExtraParFiles(const char* destDir);
 	void LoadParFile(const char* parFilename);
 	void CheckFiles(const char* destDir, bool checkPars);
 	void CheckRegularFile(const char* destDir, const char* filename);
@@ -103,6 +108,7 @@ private:
 	void RenameParFile(const char* destDir, const char* filename, const char* setId);
 	bool NeedRenameParFiles();
 	void RenameFile(const char* srcFilename, const char* destFileName);
+	void RenameBadParFiles();
 };
 
 #endif

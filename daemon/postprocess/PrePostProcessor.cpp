@@ -513,7 +513,8 @@ NzbInfo* PrePostProcessor::PickNextJob(DownloadQueue* downloadQueue, bool allowP
 			!g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
 			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
 			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()) &&
-			(allowPar || !nzbInfo1->GetPostInfo()->GetNeedParCheck()))
+			(allowPar || !nzbInfo1->GetPostInfo()->GetNeedParCheck()) &&
+			IsNzbFileCompleted(nzbInfo1, true))
 		{
 			nzbInfo = nzbInfo1;
 		}

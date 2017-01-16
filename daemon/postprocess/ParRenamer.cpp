@@ -58,15 +58,28 @@ void ParRenamer::Execute()
 		debug("Checking %s", *destDir);
 		m_fileHashList.clear();
 		m_parInfoList.clear();
+		m_badParList.clear();
+		m_loadedParList.clear();
 
 		CheckFiles(destDir, true);
 		RenameParFiles(destDir);
-		LoadParFiles(destDir);
+
+		LoadMainParFiles(destDir);
+		if (m_hasDamagedParFiles)
+		{
+			LoadExtraParFiles(destDir);
+		}
+
 		CheckFiles(destDir, false);
 
 		if (m_detectMissing)
 		{
 			CheckMissing();
+		}
+
+		if (m_renamedCount > 0 && !m_badParList.empty())
+		{
+			RenameBadParFiles();
 		}
 	}
 }
@@ -94,7 +107,7 @@ void ParRenamer::BuildDirList(const char* destDir)
 	}
 }
 
-void ParRenamer::LoadParFiles(const char* destDir)
+void ParRenamer::LoadMainParFiles(const char* destDir)
 {
 	ParParser::ParFileList parFileList;
 	ParParser::FindMainPars(destDir, &parFileList);
@@ -106,15 +119,48 @@ void ParRenamer::LoadParFiles(const char* destDir)
 	}
 }
 
+void ParRenamer::LoadExtraParFiles(const char* destDir)
+{
+	DirBrowser dir(destDir);
+	while (const char* filename = dir.Next())
+	{
+		BString<1024> fullParFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
+		if (ParParser::ParseParFilename(fullParFilename, nullptr, nullptr))
+		{
+			bool knownBadParFile = std::find_if(m_badParList.begin(), m_badParList.end(),
+				[&fullParFilename](CString& filename)
+				{
+					return !strcmp(filename, fullParFilename);
+				}) != m_badParList.end();
+
+			bool loadedParFile = std::find_if(m_loadedParList.begin(), m_loadedParList.end(),
+				[&fullParFilename](CString& filename)
+				{
+					return !strcmp(filename, fullParFilename);
+				}) != m_loadedParList.end();
+
+			if (!knownBadParFile && !loadedParFile)
+			{
+				LoadParFile(fullParFilename);
+			}
+		}
+	}
+}
+
 void ParRenamer::LoadParFile(const char* parFilename)
 {
 	ParRenamerRepairer repairer;
 
-	if (!repairer.LoadPacketsFromFile(parFilename))
+	if (!repairer.LoadPacketsFromFile(parFilename) || FileSystem::FileSize(parFilename) == 0)
 	{
 		PrintMessage(Message::mkWarning, "Could not load par2-file %s", parFilename);
+		m_hasDamagedParFiles = true;
+		m_badParList.emplace_back(parFilename);
 		return;
 	}
+
+	m_loadedParList.emplace_back(parFilename);
+	PrintMessage(Message::mkInfo, "Loaded par2-file %s for par-rename", parFilename);
 
 	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer.sourcefilemap)
 	{
@@ -127,6 +173,8 @@ void ParRenamer::LoadParFile(const char* parFilename)
 		if (!sourceFile || !sourceFile->GetDescriptionPacket())
 		{
 			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", parFilename);
+			m_badParList.emplace_back(parFilename);
+			m_hasDamagedParFiles = true;
 			continue;
 		}
 		std::string filename = Par2::DiskFile::TranslateFilename(sourceFile->GetDescriptionPacket()->FileName());
@@ -385,6 +433,15 @@ void ParRenamer::RenameFile(const char* srcFilename, const char* destFileName)
 
 	// notify about new file name
 	RegisterRenamedFile(FileSystem::BaseFileName(srcFilename), FileSystem::BaseFileName(destFileName));
+}
+
+void ParRenamer::RenameBadParFiles()
+{
+	for (CString& parFilename : m_badParList)
+	{
+		BString<1024> destFileName("%s.bad", *parFilename);
+		RenameFile(parFilename, destFileName);
+	}
 }
 
 #endif

@@ -154,6 +154,21 @@ void RenameController::RenameCompleted()
 	if (m_kind == jkPar)
 	{
 		m_postInfo->GetNzbInfo()->SetParRenameStatus(m_renamedCount > 0 ? NzbInfo::rsSuccess : NzbInfo::rsNothing);
+#ifndef DISABLE_PARCHECK
+		// request another par2-file if the renaming has failed due to damaged par2-files
+		if (m_renamedCount == 0 && m_parRenamer.HasDamagedParFiles() &&
+			m_postInfo->GetNzbInfo()->GetRemainingParCount() > 0)
+		{
+			m_parRenamer.PrintMessage(Message::mkInfo, "Requesting extra par2-files for %s to perform par-rename", m_parRenamer.GetInfoName());
+			downloadQueue->EditEntry(m_postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupResume, nullptr);
+			downloadQueue->EditEntry(m_postInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPauseExtraPars, nullptr);
+			if (m_postInfo->GetNzbInfo()->GetRemainingSize() > 0)
+			{
+				// reset rename status to execute renamer again, after the new par2-file is downloaded
+				m_postInfo->GetNzbInfo()->SetParRenameStatus(NzbInfo::rsNone);
+			}
+		}
+#endif
 	}
 	else if (m_kind == jkRar)
 	{
