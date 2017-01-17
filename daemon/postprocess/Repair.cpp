@@ -402,7 +402,7 @@ void RepairController::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, 
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
 	char* baseParFilename = FileSystem::BaseFileName(parFilename);
 	int mainBaseLen = 0;
-	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, nullptr))
+	if (!ParParser::ParseParFilename(baseParFilename, true, &mainBaseLen, nullptr))
 	{
 		// should not happen
 		nzbInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", baseParFilename);
@@ -415,7 +415,7 @@ void RepairController::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, 
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		int blockCount = 0;
-		if (ParParser::ParseParFilename(fileInfo->GetFilename(), nullptr, &blockCount) &&
+		if (ParParser::ParseParFilename(fileInfo->GetFilename(), fileInfo->GetFilenameConfirmed(), nullptr, &blockCount) &&
 			blockCount > 0)
 		{
 			bool useFile = true;

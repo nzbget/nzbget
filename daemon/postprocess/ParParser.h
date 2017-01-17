@@ -30,7 +30,7 @@ public:
 	typedef std::vector<CString> ParFileList;
 
 	static bool FindMainPars(const char* path, ParFileList* fileList);
-	static bool ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks);
+	static bool ParseParFilename(const char* parFilename, bool confirmedFilename, int* baseNameLen, int* blocks);
 	static bool SameParCollection(const char* filename1, const char* filename2);
 };
 

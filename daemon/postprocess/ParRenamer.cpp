@@ -125,7 +125,7 @@ void ParRenamer::LoadExtraParFiles(const char* destDir)
 	while (const char* filename = dir.Next())
 	{
 		BString<1024> fullParFilename("%s%c%s", destDir, PATH_SEPARATOR, filename);
-		if (ParParser::ParseParFilename(fullParFilename, nullptr, nullptr))
+		if (ParParser::ParseParFilename(fullParFilename, true, nullptr, nullptr))
 		{
 			bool knownBadParFile = std::find_if(m_badParList.begin(), m_badParList.end(),
 				[&fullParFilename](CString& filename)
@@ -381,7 +381,7 @@ bool ParRenamer::NeedRenameParFiles()
 		}
 
 		int baseLen1;
-		ParParser::ParseParFilename(baseName1, &baseLen1, nullptr);
+		ParParser::ParseParFilename(baseName1, true, &baseLen1, nullptr);
 
 		for (ParInfoList::iterator it2 = it1 + 1; it2 != m_parInfoList.end(); it2++)
 		{
@@ -391,7 +391,7 @@ bool ParRenamer::NeedRenameParFiles()
 			{
 				const char* baseName2 = FileSystem::BaseFileName(parInfo2.GetFilename());
 				int baseLen2;
-				ParParser::ParseParFilename(baseName2, &baseLen2, nullptr);
+				ParParser::ParseParFilename(baseName2, true, &baseLen2, nullptr);
 				if (baseLen1 != baseLen2 || strncasecmp(baseName1, baseName2, baseLen1))
 				{
 					// same setid but different base file names

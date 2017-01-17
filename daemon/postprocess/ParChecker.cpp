@@ -411,7 +411,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 			BString<1024> fullParFilename( "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, *parFilename);
 
 			int baseLen = 0;
-			ParParser::ParseParFilename(parFilename, &baseLen, nullptr);
+			ParParser::ParseParFilename(parFilename, true, &baseLen, nullptr);
 			BString<1024> infoName;
 			infoName.Set(parFilename, baseLen);
 
