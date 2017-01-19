@@ -301,76 +301,64 @@ bool RepairController::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	Blocks blocks;
-	blocks.clear();
+	Blocks availableBlocks;
+	Blocks selectedBlocks;
 	int blockFound = 0;
 	int curBlockFound = 0;
 
-	FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, true, &curBlockFound);
+	FindPars(downloadQueue, nzbInfo, parFilename, availableBlocks, true, true, &curBlockFound);
 	blockFound += curBlockFound;
 	if (blockFound < blockNeeded)
 	{
-		FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, false, &curBlockFound);
+		FindPars(downloadQueue, nzbInfo, parFilename, availableBlocks, true, false, &curBlockFound);
 		blockFound += curBlockFound;
 	}
 	if (blockFound < blockNeeded)
 	{
-		FindPars(downloadQueue, nzbInfo, parFilename, blocks, false, false, &curBlockFound);
+		FindPars(downloadQueue, nzbInfo, parFilename, availableBlocks, false, false, &curBlockFound);
 		blockFound += curBlockFound;
 	}
 
+	std::sort(availableBlocks.begin(), availableBlocks.end(),
+		[](BlockInfo& block1, BlockInfo& block2)
+		{
+			return block1.m_blockCount < block2.m_blockCount;
+		});
+
 	if (blockFound >= blockNeeded)
 	{
-		// 1. first unpause all files with par-blocks less or equal iBlockNeeded
-		// starting from the file with max block count.
-		// if par-collection was built exponentially and all par-files present,
-		// this step selects par-files with exact number of blocks we need.
-		while (blockNeeded > 0)
+		// collect as much blocks as needed
+		for (Blocks::iterator it = availableBlocks.begin(); blockNeeded > 0 && it != availableBlocks.end(); it++)
 		{
-			BlockInfo* bestBlockInfo = nullptr;
-			Blocks::iterator bestBlockIter;
-			for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
+			BlockInfo& blockInfo = *it;
+			selectedBlocks.push_front(blockInfo);
+			blockNeeded -= blockInfo.m_blockCount;
+		}
+
+		// discarding superfluous blocks
+		for (Blocks::iterator it = selectedBlocks.begin(); it != selectedBlocks.end(); )
+		{
+			BlockInfo& blockInfo = *it;
+			if (blockNeeded + blockInfo.m_blockCount <= 0)
 			{
-				BlockInfo& blockInfo = *it;
-				if (blockInfo.m_blockCount <= blockNeeded &&
-				   (!bestBlockInfo || bestBlockInfo->m_blockCount < blockInfo.m_blockCount))
-				{
-					bestBlockInfo = &blockInfo;
-					bestBlockIter = it;
-				}
-			}
-			if (bestBlockInfo)
-			{
-				if (bestBlockInfo->m_fileInfo->GetPaused())
-				{
-					m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, bestBlockInfo->m_fileInfo->GetFilename());
-					bestBlockInfo->m_fileInfo->SetPaused(false);
-					bestBlockInfo->m_fileInfo->SetExtraPriority(true);
-				}
-				blockNeeded -= bestBlockInfo->m_blockCount;
-				blocks.erase(bestBlockIter);
+				blockNeeded += blockInfo.m_blockCount;
+				it = selectedBlocks.erase(it);
 			}
 			else
 			{
-				break;
+				it++;
 			}
 		}
 
-		// 2. then unpause other files
-		// this step only needed if the par-collection was built not exponentially
-		// or not all par-files present (or some of them were corrupted)
-		// this step is not optimal, but we hope, that the first step will work good
-		// in most cases and we will not need the second step often
-		while (blockNeeded > 0)
+		// unpause files with blocks
+		for (BlockInfo& blockInfo : selectedBlocks)
 		{
-			BlockInfo& blockInfo = blocks.front();
 			if (blockInfo.m_fileInfo->GetPaused())
 			{
 				m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, blockInfo.m_fileInfo->GetFilename());
 				blockInfo.m_fileInfo->SetPaused(false);
 				blockInfo.m_fileInfo->SetExtraPriority(true);
 			}
-			blockNeeded -= blockInfo.m_blockCount;
 		}
 	}
 
