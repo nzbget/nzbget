@@ -291,8 +291,29 @@ var Frontend = (new function($)
 			$('#Navbar').show();
 			$('#MainTabContent').show();
 			$('#version').text(Options.option('Version'));
+			selectInitialTab();
 			windowResized();
 			firstLoad = false;
+		}
+	}
+
+	function selectInitialTab()
+	{
+		var location = window.location.toString();
+		var link = null;
+		if (location.indexOf('#downloads') > -1)
+			link = 'DownloadsTabLink';
+		else if (location.indexOf('#history') > -1)
+			link = 'HistoryTabLink';
+		else if (location.indexOf('#messages') > -1)
+			link = 'MessagesTabLink';
+		else if (location.indexOf('#settings') > -1)
+			link = 'ConfigTabLink';
+		if (link)
+		{
+			$('#DownloadsTab').removeClass('fade');
+			$('#' + link).click();
+			$('#DownloadsTab').addClass('fade');
 		}
 	}
 
