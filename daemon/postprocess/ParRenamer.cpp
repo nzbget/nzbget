@@ -160,7 +160,7 @@ void ParRenamer::LoadParFile(const char* parFilename)
 	}
 
 	m_loadedParList.emplace_back(parFilename);
-	PrintMessage(Message::mkInfo, "Loaded par2-file %s for par-rename", parFilename);
+	PrintMessage(Message::mkInfo, "Loaded par2-file %s for par-rename", FileSystem::BaseFileName(parFilename));
 
 	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer.sourcefilemap)
 	{
@@ -172,7 +172,7 @@ void ParRenamer::LoadParFile(const char* parFilename)
 		Par2::Par2RepairerSourceFile* sourceFile = entry.second;
 		if (!sourceFile || !sourceFile->GetDescriptionPacket())
 		{
-			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", parFilename);
+			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", FileSystem::BaseFileName(parFilename));
 			m_badParList.emplace_back(parFilename);
 			m_hasDamagedParFiles = true;
 			continue;
