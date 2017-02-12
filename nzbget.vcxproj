@@ -52,7 +52,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nserv;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="18.0-testing";_DEBUG;_CONSOLE;DEBUG;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="18.0";_DEBUG;_CONSOLE;DEBUG;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -72,7 +72,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nserv;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="18.0-testing";NDEBUG;_CONSOLE;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="18.0";NDEBUG;_CONSOLE;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
