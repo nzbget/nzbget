@@ -22,7 +22,7 @@
 #ifndef MESSAGEBASE_H
 #define MESSAGEBASE_H
 
-static const int32 NZBMESSAGE_SIGNATURE = 0x6E7A6228; // = "nzb-XX" (protocol version)
+static const int32 NZBMESSAGE_SIGNATURE = 0x6E7A6230; // = "nzb-XX" (protocol version)
 static const int NZBREQUESTFILENAMESIZE = 512;
 static const int NZBREQUESTPASSWORDSIZE = 32;
 

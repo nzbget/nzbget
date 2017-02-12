@@ -31,10 +31,6 @@ static char THIS_FILE[]=__FILE__;
 namespace Par2
 {
 
-NullStreamBuf nullStreamBuf;
-std::ostream cout(&nullStreamBuf);
-std::ostream cerr(&nullStreamBuf);
-
 CommandLine::ExtraFile::ExtraFile(void)
 : filename()
 , filesize(0)
@@ -62,7 +58,7 @@ CommandLine::ExtraFile::ExtraFile(const string &name, u64 size)
 }
 
 
-CommandLine::CommandLine(void)
+CommandLine::CommandLine(std::ostream& cout, std::ostream& cerr)
 : operation(opNone)
 , version(verUnknown)
 , noiselevel(nlUnknown)
@@ -80,12 +76,14 @@ CommandLine::CommandLine(void)
 , totalsourcesize(0)
 , largestsourcesize(0)
 , memorylimit(0)
+, cout(cout)
+, cerr(cerr)
 {
 }
 
 void CommandLine::usage(void)
 {
-  cout << 
+  std::cout <<
     "\n"
     "Usage:\n"
     "\n"

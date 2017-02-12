@@ -90,14 +90,20 @@ nzbget_SOURCES = \
 	daemon/postprocess/DupeMatcher.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
-	daemon/postprocess/ParCoordinator.cpp \
-	daemon/postprocess/ParCoordinator.h \
 	daemon/postprocess/ParParser.cpp \
 	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
+	daemon/postprocess/RarRenamer.cpp \
+	daemon/postprocess/RarRenamer.h \
+	daemon/postprocess/RarReader.cpp \
+	daemon/postprocess/RarReader.h \
+	daemon/postprocess/Rename.cpp \
+	daemon/postprocess/Rename.h \
+	daemon/postprocess/Repair.cpp \
+	daemon/postprocess/Repair.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
 	daemon/queue/DiskState.cpp \
@@ -146,6 +152,16 @@ nzbget_SOURCES = \
 	daemon/util/FileSystem.h \
 	daemon/util/Util.cpp \
 	daemon/util/Util.h \
+	daemon/nserv/NServMain.h \
+	daemon/nserv/NServMain.cpp \
+	daemon/nserv/NServFrontend.h \
+	daemon/nserv/NServFrontend.cpp \
+	daemon/nserv/NntpServer.h \
+	daemon/nserv/NntpServer.cpp \
+	daemon/nserv/NzbGenerator.h \
+	daemon/nserv/NzbGenerator.cpp \
+	daemon/nserv/YEncoder.h \
+	daemon/nserv/YEncoder.cpp \
 	code_revision.cpp
 
 if WITH_PAR2
@@ -174,8 +190,6 @@ nzbget_SOURCES += \
 	lib/par2/md5.cpp \
 	lib/par2/md5.h \
 	lib/par2/par2cmdline.h \
-	lib/par2/par2creatorsourcefile.cpp \
-	lib/par2/par2creatorsourcefile.h \
 	lib/par2/par2fileformat.cpp \
 	lib/par2/par2fileformat.h \
 	lib/par2/par2repairer.cpp \
@@ -205,6 +219,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/queue \
 	-I$(srcdir)/daemon/remote \
 	-I$(srcdir)/daemon/util \
+	-I$(srcdir)/daemon/nserv \
 	-I$(srcdir)/lib/par2
 
 if WITH_TESTS
@@ -218,6 +233,8 @@ nzbget_SOURCES += \
 	tests/main/OptionsTest.cpp \
 	tests/feed/FeedFilterTest.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
+	tests/postprocess/RarRenamerTest.cpp \
+	tests/postprocess/RarReaderTest.cpp \
 	tests/queue/NzbFileTest.cpp \
 	tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp \
@@ -366,7 +383,28 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.par2 \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
-	tests/testdata/parchecker/testfile.vol03+3.PAR2
+	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
+	tests/testdata/rarrenamer/testfile3.part01.rar \
+	tests/testdata/rarrenamer/testfile3.part02.rar \
+	tests/testdata/rarrenamer/testfile3.part03.rar \
+	tests/testdata/rarrenamer/testfile5.part01.rar \
+	tests/testdata/rarrenamer/testfile5.part02.rar \
+	tests/testdata/rarrenamer/testfile5.part03.rar \
+	tests/testdata/rarrenamer/testfile3oldnam.rar \
+	tests/testdata/rarrenamer/testfile3oldnam.r00 \
+	tests/testdata/rarrenamer/testfile3oldnam.r01 \
+	tests/testdata/rarrenamer/testfile3encdata.part01.rar \
+	tests/testdata/rarrenamer/testfile3encdata.part02.rar \
+	tests/testdata/rarrenamer/testfile3encdata.part03.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part01.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part02.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part03.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part01.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part02.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part03.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part01.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part02.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part03.rar
 
 # Install
 dist_doc_DATA = $(doc_FILES)

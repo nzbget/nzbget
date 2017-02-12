@@ -33,25 +33,14 @@ static const char* SCHEDULER_SCRIPT_SIGNATURE = "SCHEDULER";
 static const char* FEED_SCRIPT_SIGNATURE = "FEED";
 static const char* END_SCRIPT_SIGNATURE = " SCRIPT";
 static const char* QUEUE_EVENTS_SIGNATURE = "### QUEUE EVENTS:";
-
-
-ScriptConfig::Script::Script(const char* name, const char* location)
-{
-	m_name = name;
-	m_location = location;
-	m_displayName = name;
-	m_postScript = false;
-	m_scanScript = false;
-	m_queueScript = false;
-	m_schedulerScript = false;
-	m_feedScript = false;
-}
-
+static const char* TASK_TIME_SIGNATURE = "### TASK TIME:";
+static const char* DEFINITION_SIGNATURE = "###";
 
 void ScriptConfig::InitOptions()
 {
 	InitScripts();
 	InitConfigTemplates();
+	CreateTasks();
 }
 
 bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
@@ -81,13 +70,15 @@ bool ScriptConfig::LoadConfig(Options::OptEntries* optEntries)
 
 		CString optname;
 		CString optvalue;
-		if (g_Options->SplitOptionString(buf, optname, optvalue))
+		if (Options::SplitOptionString(buf, optname, optvalue))
 		{
 			optEntries->emplace_back(optname, optvalue);
 		}
 	}
 
 	infile.Close();
+
+	Options::ConvertOldOptions(optEntries);
 
 	return true;
 }
@@ -180,7 +171,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 	LoadScripts(&scriptList);
 
 	const int beginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
-	const int queueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
+	const int definitionSignatureLen = strlen(DEFINITION_SIGNATURE);
 
 	for (Script& script : scriptList)
 	{
@@ -194,6 +185,7 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 		StringBuilder templ;
 		char buf[1024];
 		bool inConfig = false;
+		bool inHeader = false;
 
 		while (infile.ReadLine(buf, sizeof(buf) - 1))
 		{
@@ -210,12 +202,13 @@ bool ScriptConfig::LoadConfigTemplates(ConfigTemplates* configTemplates)
 					break;
 				}
 				inConfig = true;
+				inHeader = true;
 				continue;
 			}
 
-			bool skip = !strncmp(buf, QUEUE_EVENTS_SIGNATURE, queueEventsSignatureLen);
+			inHeader &= !strncmp(buf, DEFINITION_SIGNATURE, definitionSignatureLen);
 
-			if (inConfig && !skip)
+			if (inConfig && !inHeader)
 			{
 				templ.Append(buf);
 			}
@@ -287,11 +280,6 @@ void ScriptConfig::LoadScripts(Scripts* scripts)
 
 void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir)
 {
-	CharBuffer buffer(1024*10 + 1);
-
-	const int beginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
-	const int queueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
-
 	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
@@ -307,54 +295,10 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 					continue;
 				}
 
-				// check if the file contains pp-script-signature
-				DiskFile infile;
-				if (infile.Open(fullFilename, DiskFile::omRead))
+				Script script(scriptName, fullFilename);
+				if (LoadScriptFile(&script))
 				{
-					// read first 10KB of the file and look for signature
-					int readBytes = (int)infile.Read(buffer, buffer.Size() - 1);
-					infile.Close();
-					buffer[readBytes] = '\0';
-
-					// split buffer into lines
-					Tokenizer tok(buffer, "\n\r", true);
-					while (char* line = tok.Next())
-					{
-						if (!strncmp(line, BEGIN_SCRIPT_SIGNATURE, beginSignatureLen) &&
-							strstr(line, END_SCRIPT_SIGNATURE))
-						{
-							bool postScript = strstr(line, POST_SCRIPT_SIGNATURE);
-							bool scanScript = strstr(line, SCAN_SCRIPT_SIGNATURE);
-							bool queueScript = strstr(line, QUEUE_SCRIPT_SIGNATURE);
-							bool schedulerScript = strstr(line, SCHEDULER_SCRIPT_SIGNATURE);
-							bool feedScript = strstr(line, FEED_SCRIPT_SIGNATURE);
-							if (postScript || scanScript || queueScript || schedulerScript || feedScript)
-							{
-								char* queueEvents = nullptr;
-								if (queueScript)
-								{
-									while (char* line = tok.Next())
-									{
-										if (!strncmp(line, QUEUE_EVENTS_SIGNATURE, queueEventsSignatureLen))
-										{
-											queueEvents = line + queueEventsSignatureLen;
-											break;
-										}
-									}
-								}
-
-								scripts->emplace_back(scriptName, fullFilename);
-								Script& script = scripts->back();
-								script.SetPostScript(postScript);
-								script.SetScanScript(scanScript);
-								script.SetQueueScript(queueScript);
-								script.SetSchedulerScript(schedulerScript);
-								script.SetFeedScript(feedScript);
-								script.SetQueueEvents(queueEvents);
-								break;
-							}
-						}
-					}
+					scripts->push_back(std::move(script));
 				}
 			}
 			else if (!isSubDir)
@@ -365,6 +309,109 @@ void ScriptConfig::LoadScriptDir(Scripts* scripts, const char* directory, bool i
 	}
 }
 
+bool ScriptConfig::LoadScriptFile(Script* script)
+{
+	DiskFile infile;
+	if (!infile.Open(script->GetLocation(), DiskFile::omRead))
+	{
+		return false;
+	}
+
+	CharBuffer buffer(1024 * 10 + 1);
+
+	const int beginSignatureLen = strlen(BEGIN_SCRIPT_SIGNATURE);
+	const int queueEventsSignatureLen = strlen(QUEUE_EVENTS_SIGNATURE);
+	const int taskTimeSignatureLen = strlen(TASK_TIME_SIGNATURE);
+	const int definitionSignatureLen = strlen(DEFINITION_SIGNATURE);
+
+	// check if the file contains pp-script-signature
+	// read first 10KB of the file and look for signature
+	int readBytes = (int)infile.Read(buffer, buffer.Size() - 1);
+	infile.Close();
+	buffer[readBytes] = '\0';
+
+	bool postScript = false;
+	bool scanScript = false;
+	bool queueScript = false;
+	bool schedulerScript = false;
+	bool feedScript = false;
+	char* queueEvents = nullptr;
+	char* taskTime = nullptr;
+
+	bool inConfig = false;
+	bool afterConfig = false;
+
+	// Declarations "QUEUE EVENT:" and "TASK TIME:" can be placed:
+	// - in script definition body (between opening and closing script signatures);
+	// - immediately before script definition (before opening script signature);
+	// - immediately after script definition (after closing script signature).
+	// The last two pissibilities are provided to increase compatibility of scripts with older
+	// nzbget versions which do not expect the extra declarations in the script defintion body.
+
+	Tokenizer tok(buffer, "\n\r", true);
+	while (char* line = tok.Next())
+	{
+		if (!strncmp(line, QUEUE_EVENTS_SIGNATURE, queueEventsSignatureLen))
+		{
+			queueEvents = line + queueEventsSignatureLen;
+		}
+		else if (!strncmp(line, TASK_TIME_SIGNATURE, taskTimeSignatureLen))
+		{
+			taskTime = line + taskTimeSignatureLen;
+		}
+
+		bool header = !strncmp(line, DEFINITION_SIGNATURE, definitionSignatureLen);
+		if (!header && !inConfig)
+		{
+			queueEvents = nullptr;
+			taskTime = nullptr;
+		}
+
+		if (!header && afterConfig)
+		{
+			break;
+		}
+
+		if (!strncmp(line, BEGIN_SCRIPT_SIGNATURE, beginSignatureLen) && strstr(line, END_SCRIPT_SIGNATURE))
+		{
+			if (!inConfig)
+			{
+				inConfig = true;
+				postScript = strstr(line, POST_SCRIPT_SIGNATURE);
+				scanScript = strstr(line, SCAN_SCRIPT_SIGNATURE);
+				queueScript = strstr(line, QUEUE_SCRIPT_SIGNATURE);
+				schedulerScript = strstr(line, SCHEDULER_SCRIPT_SIGNATURE);
+				feedScript = strstr(line, FEED_SCRIPT_SIGNATURE);
+			}
+			else
+			{
+				afterConfig = true;
+			}
+		}
+	}
+
+	if (!(postScript || scanScript || queueScript || schedulerScript || feedScript))
+	{
+		return false;
+	}
+
+	// trim decorations
+	char* p;
+	while (queueEvents && *queueEvents && *(p = queueEvents + strlen(queueEvents) - 1) == '#') *p = '\0';
+	if (queueEvents) queueEvents = Util::Trim(queueEvents);
+	while (taskTime && *taskTime && *(p = taskTime + strlen(taskTime) - 1) == '#') *p = '\0';
+	if (taskTime) taskTime = Util::Trim(taskTime);
+
+	script->SetPostScript(postScript);
+	script->SetScanScript(scanScript);
+	script->SetQueueScript(queueScript);
+	script->SetSchedulerScript(schedulerScript);
+	script->SetFeedScript(feedScript);
+	script->SetQueueEvents(queueEvents);
+	script->SetTaskTime(taskTime);
+
+	return true;
+}
 
 BString<1024> ScriptConfig::BuildScriptName(const char* directory, const char* filename, bool isSubDir)
 {
@@ -429,5 +476,25 @@ void ScriptConfig::BuildScriptDisplayNames(Scripts* scripts)
 		}
 
 		script.SetDisplayName(displayName);
+	}
+}
+
+void ScriptConfig::CreateTasks()
+{
+	for (Script& script : m_scripts)
+	{
+		if (script.GetSchedulerScript() && !Util::EmptyStr(script.GetTaskTime()))
+		{
+			Tokenizer tok(g_Options->GetExtensions(), ",;");
+			while (const char* scriptName = tok.Next())
+			{
+				if (FileSystem::SameFilename(scriptName, script.GetName()))
+				{
+					g_Options->CreateSchedulerTask(0, script.GetTaskTime(), 
+						nullptr, Options::scScript, script.GetName());
+					break;
+				}
+			}
+		}
 	}
 }

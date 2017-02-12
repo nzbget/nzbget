@@ -244,6 +244,7 @@ void CString::Reserve(int capacity)
 	if (capacity > curLen || curLen == 0)
 	{
 		m_data = (char*)realloc(m_data, capacity + 1);
+		m_data[curLen] = '\0';
 	}
 }
 
@@ -275,14 +276,39 @@ void CString::TrimRight()
 }
 
 
-#ifdef WIN32
 WString::WString(const char* utfstr)
 {
-	int len = MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, nullptr, 0);
-	m_data = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
-	MultiByteToWideChar(CP_UTF8, 0, utfstr, -1, m_data, len);
+	m_data = (wchar_t*)malloc((strlen(utfstr) * 2 + 1) * sizeof(wchar_t));
+
+	wchar_t* out = m_data;
+	unsigned int codepoint;
+	while (*utfstr != 0)
+	{
+		unsigned char ch = (unsigned char)*utfstr;
+		if (ch <= 0x7f)
+			codepoint = ch;
+		else if (ch <= 0xbf)
+			codepoint = (codepoint << 6) | (ch & 0x3f);
+		else if (ch <= 0xdf)
+			codepoint = ch & 0x1f;
+		else if (ch <= 0xef)
+			codepoint = ch & 0x0f;
+		else
+			codepoint = ch & 0x07;
+		++utfstr;
+		if (((*utfstr & 0xc0) != 0x80) && (codepoint <= 0x10ffff))
+		{
+			if (codepoint > 0xffff)
+			{
+				*out++ = (wchar_t)(0xd800 + (codepoint >> 10));
+				*out++ = (wchar_t)(0xdc00 + (codepoint & 0x03ff));
+			}
+			else if (codepoint < 0xd800 || codepoint >= 0xe000)
+				*out++ = (wchar_t)(codepoint);
+		}
+	}
+	*out = '\0';
 }
-#endif
 
 
 void StringBuilder::Clear()

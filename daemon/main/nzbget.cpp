@@ -60,6 +60,9 @@
 #ifdef ENABLE_TESTS
 #include "TestMain.h"
 #endif
+#ifndef DISABLE_NSERV
+#include "NServMain.h"
+#endif
 
 // Prototypes
 void RunMain();
@@ -127,6 +130,16 @@ int main(int argc, char *argv[], char *argp[])
 	TestCleanup();
 #endif
 
+	if (argc > 1 && (!strcmp(argv[1], "--nserv")))
+	{
+#ifndef DISABLE_NSERV
+		return NServMain(argc, argv);
+#else
+		printf("ERROR: Could not start NServ, the program was compiled without NServ\n");
+		return 1;
+#endif
+	}
+
 #ifdef WIN32
 	InstallUninstallServiceCheck(argc, argv);
 #endif
@@ -138,6 +151,7 @@ int main(int argc, char *argv[], char *argp[])
 	{
 		if (!strcmp(argv[i], "-D"))
 		{
+			AllocConsole(); // needed for sending CTRL+BREAK signal to child processes
 			StartService(RunMain);
 			return 0;
 		}
@@ -394,7 +408,7 @@ void NZBGet::BootConfig()
 	}
 
 	m_serverPool->SetTimeout(m_options->GetArticleTimeout());
-	m_serverPool->SetRetryInterval(m_options->GetRetryInterval());
+	m_serverPool->SetRetryInterval(m_options->GetArticleInterval());
 
 	m_scriptConfig->InitOptions();
 }
@@ -865,16 +879,12 @@ void NZBGet::Daemonize()
 	// obtain a new process group
 	setsid();
 
-	// close all descriptors
-	for (int i = getdtablesize(); i >= 0; --i)
-	{
-		close(i);
-	}
-
 	// handle standart I/O
 	int d = open("/dev/null", O_RDWR);
-	dup(d);
-	dup(d);
+	dup2(d, 0);
+	dup2(d, 1);
+	dup2(d, 2);
+	close(d);
 
 	// set up lock-file
 	int lfp = -1;

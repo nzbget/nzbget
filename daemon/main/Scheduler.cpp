@@ -133,9 +133,8 @@ void Scheduler::CheckTasks()
 						}
 
 						bool weekDayOK = task->m_weekDaysBits == 0 || (task->m_weekDaysBits & (1 << (weekDay - 1)));
-						bool doTask = weekDayOK && localLastCheck < appoint && appoint <= localCurrent;
-
-						//debug("TEMP: 1) m_tLastCheck=%i, tLocalCurrent=%i, tLoop=%i, tAppoint=%i, bWeekDayOK=%i, bDoTask=%i", m_tLastCheck, tLocalCurrent, tLoop, tAppoint, (int)bWeekDayOK, (int)bDoTask);
+						bool doTask = (task->m_hours >= 0 && weekDayOK && localLastCheck < appoint && appoint <= localCurrent) ||
+							(task->m_hours == Task::STARTUP_TASK && task->m_lastExecuted == 0);
 
 						if (doTask)
 						{
@@ -161,6 +160,8 @@ void Scheduler::ExecuteTask(Task* task)
 		"Set download rate", "Execute process", "Execute script",
 		"Pause Scan", "Unpause Scan", "Enable Server", "Disable Server", "Fetch Feed" };
 	debug("Executing scheduled command: %s", commandName[task->m_command]);
+
+	bool executeProcess = m_executeProcess || task->m_hours == Task::STARTUP_TASK;
 
 	switch (task->m_command)
 	{
@@ -190,9 +191,9 @@ void Scheduler::ExecuteTask(Task* task)
 			m_pauseScanChanged = true;
 			break;
 
-		case scScript:
+		case scExtensions:
 		case scProcess:
-			if (m_executeProcess)
+			if (executeProcess)
 			{
 				SchedulerScriptController::StartScript(task->m_param, task->m_command == scProcess, task->m_id);
 			}
@@ -204,7 +205,7 @@ void Scheduler::ExecuteTask(Task* task)
 			break;
 
 		case scFetchFeed:
-			if (m_executeProcess)
+			if (executeProcess)
 			{
 				FetchFeed(task->m_param);
 				break;

@@ -1746,8 +1746,8 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 			*EncodeStr(nzbInfo->GetDupeKey()), nzbInfo->GetDupeScore(), dupeModeName[nzbInfo->GetDupeMode()],
 			BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
 			downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(),
-			nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ?
-				Util::CurrentTime() - nzbInfo->GetPostInfo()->GetStartTime() : nzbInfo->GetPostTotalSec(),
+			nzbInfo->GetPostTotalSec() + (nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ?
+				Util::CurrentTime() - nzbInfo->GetPostInfo()->GetStartTime() : 0),
 			nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
 	// Post-processing parameters
@@ -1966,7 +1966,7 @@ void ListGroupsXmlCommand::Execute()
 const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 {
 	const char* postStageName[] = { "PP_QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING",
-		"VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
+		"VERIFYING_REPAIRED", "RENAMING", "RENAMING", "UNPACKING", "MOVING", "MOVING", "EXECUTING_SCRIPT", "PP_FINISHED" };
 
 	const char* status = nullptr;
 
@@ -2019,6 +2019,8 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ DownloadQueue::eaGroupMoveOffset, "GroupMoveOffset" },
 	{ DownloadQueue::eaGroupMoveTop, "GroupMoveTop" },
 	{ DownloadQueue::eaGroupMoveBottom, "GroupMoveBottom" },
+	{ DownloadQueue::eaGroupMoveBefore, "GroupMoveBefore" },
+	{ DownloadQueue::eaGroupMoveAfter, "GroupMoveAfter" },
 	{ DownloadQueue::eaGroupPause, "GroupPause" },
 	{ DownloadQueue::eaGroupResume, "GroupResume" },
 	{ DownloadQueue::eaGroupDelete, "GroupDelete" },
@@ -2057,6 +2059,10 @@ EditCommandEntry EditCommandNameMap[] = {
 	{ 0, nullptr }
 };
 
+// v18:
+//    bool editqueue(string Command, string Args, int[] IDs)
+// v17:
+//    bool editqueue(string Command, int Offset, string Args, int[] IDs)
 void EditQueueXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
@@ -2089,30 +2095,34 @@ void EditQueueXmlCommand::Execute()
 	}
 
 	int offset = 0;
-	if (!NextParamAsInt(&offset))
+	bool hasOffset = NextParamAsInt(&offset);
+
+	char* args;
+	if (!NextParamAsStr(&args))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
 	}
+	debug("Args=%s", args);
 
-	char* editText;
-	if (!NextParamAsStr(&editText))
+	DecodeStr(args);
+
+	BString<100> offsetStr("%i", offset);
+	if (hasOffset && (action == DownloadQueue::eaFileMoveOffset ||
+		action == DownloadQueue::eaGroupMoveOffset))
 	{
-		BuildErrorResponse(2, "Invalid parameter");
-		return;
+		args = *offsetStr;
 	}
-	debug("EditText=%s", editText);
 
-	DecodeStr(editText);
-
-	IdList cIdList;
+	IdList idList;
 	int id = 0;
 	while (NextParamAsInt(&id))
 	{
-		cIdList.push_back(id);
+		idList.push_back(id);
 	}
 
-	bool ok = DownloadQueue::Guard()->EditList(&cIdList, nullptr, DownloadQueue::mmId, (DownloadQueue::EEditAction)action, offset, editText);
+	bool ok = DownloadQueue::Guard()->EditList(&idList, nullptr, DownloadQueue::mmId,
+		(DownloadQueue::EEditAction)action, args);
 
 	BuildBoolResponse(ok);
 }
@@ -2312,7 +2322,7 @@ void PostQueueXmlCommand::Execute()
 		"}";
 
 	const char* postStageName[] = { "QUEUED", "LOADING_PARS", "VERIFYING_SOURCES", "REPAIRING",
-		"VERIFYING_REPAIRED", "RENAMING", "UNPACKING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
+		"VERIFYING_REPAIRED", "RENAMING", "RENAMING", "UNPACKING", "MOVING", "MOVING", "EXECUTING_SCRIPT", "FINISHED" };
 
 	int index = 0;
 
@@ -2706,6 +2716,8 @@ void ConfigTemplatesXmlCommand::Execute()
 		"<member><name>QueueScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>SchedulerScript</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>FeedScript</name><value><boolean>%s</boolean></value></member>\n"
+		"<member><name>QueueEvents</name><value><string>%s</string></value></member>\n"
+		"<member><name>TaskTime</name><value><string>%s</string></value></member>\n"
 		"<member><name>Template</name><value><string>%s</string></value></member>\n"
 		"</struct></value>\n";
 
@@ -2718,6 +2730,8 @@ void ConfigTemplatesXmlCommand::Execute()
 		"\"QueueScript\" : %s,\n"
 		"\"SchedulerScript\" : %s,\n"
 		"\"FeedScript\" : %s,\n"
+		"\"QueueEvents\" : \"%s\",\n"
+		"\"TaskTime\" : \"%s\",\n"
 		"\"Template\" : \"%s\"\n"
 		"}";
 
@@ -2752,6 +2766,8 @@ void ConfigTemplatesXmlCommand::Execute()
 			BoolToStr(configTemplate.GetScript()->GetQueueScript()),
 			BoolToStr(configTemplate.GetScript()->GetSchedulerScript()),
 			BoolToStr(configTemplate.GetScript()->GetFeedScript()),
+			*EncodeStr(configTemplate.GetScript()->GetQueueEvents()),
+			*EncodeStr(configTemplate.GetScript()->GetTaskTime()),
 			*EncodeStr(configTemplate.GetTemplate()));
 	}
 

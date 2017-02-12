@@ -58,14 +58,15 @@ var History = (new function($)
 
 		$HistoryTable.fasttable(
 			{
-				filterInput: $('#HistoryTable_filter'),
-				filterClearButton: $("#HistoryTable_clearfilter"),
-				pagerContainer: $('#HistoryTable_pager'),
-				infoContainer: $('#HistoryTable_info'),
-				headerCheck: $('#HistoryTable > thead > tr:first-child'),
+				filterInput: '#HistoryTable_filter',
+				filterClearButton: '#HistoryTable_clearfilter',
+				pagerContainer: '#HistoryTable_pager',
+				infoContainer: '#HistoryTable_info',
+				rowSelect: UISettings.rowSelect,
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
+				shortcuts: true,
 				fillFieldsCallback: fillFieldsCallback,
 				filterCallback: filterCallback,
 				renderCellCallback: renderCellCallback,
@@ -73,11 +74,6 @@ var History = (new function($)
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
-		$HistoryTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { $HistoryTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
-		$HistoryTable.on('click', 'thead div.check',
-			function() { $HistoryTable.fasttable('titleCheckClick') });
-		$HistoryTable.on('mousedown', Util.disableShiftMouseDown);
 	}
 
 	this.applyTheme = function()
@@ -189,6 +185,8 @@ var History = (new function($)
 		var status = HistoryUI.buildStatus(hist);
 
 		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
+		name += DownloadsUI.buildEncryptedLabel(hist.Kind === 'NZB' ? hist.Parameters : []);
+
 		var dupe = DownloadsUI.buildDupe(hist.DupeKey, hist.DupeScore, hist.DupeMode);
 		var category = '';
 
@@ -264,6 +262,9 @@ var History = (new function($)
 			return;
 		}
 
+		var pageCheckedCount = $HistoryTable.fasttable('pageCheckedCount');
+		var checkedPercentage = Util.round0(checkedCount / history.length * 100);
+		
 		var hasNzb = false;
 		var hasUrl = false;
 		var hasDup = false;
@@ -285,7 +286,7 @@ var History = (new function($)
 		{
 			case 'DELETE':
 				notification = '#Notif_History_Deleted';
-				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true, checkedCount);
+				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true, checkedCount, pageCheckedCount, checkedPercentage);
 				break;
 
 			case 'REPROCESS':
@@ -321,7 +322,7 @@ var History = (new function($)
 				}
 				notification = '#Notif_History_Marked';
 
-				ConfirmDialog.showModal(action === 'MARKSUCCESS' ? 'HistoryEditSuccessConfirmDialog' : 
+				ConfirmDialog.showModal(action === 'MARKSUCCESS' ? 'HistoryEditSuccessConfirmDialog' :
 					action === 'MARKGOOD' ? 'HistoryEditGoodConfirmDialog' : 'HistoryEditBadConfirmDialog',
 					function () // action
 					{
@@ -347,9 +348,9 @@ var History = (new function($)
 		for (var id in checkedRows)
 		{
 			ids.push(parseInt(id));
-		}		
-		
-		RPC.call('editqueue', [command, 0, '', ids], function()
+		}
+
+		RPC.call('editqueue', [command, '', ids], function()
 		{
 			editCompleted();
 		});
@@ -449,6 +450,26 @@ var History = (new function($)
 		Refresher.update();
 	}
 
+	this.processShortcut = function(key)
+	{
+		switch (key)
+		{
+			case 'D': case 'Delete': case 'Meta+Backspace': History.actionClick('DELETE'); return true;
+			case 'P': History.actionClick('REPROCESS'); return true;
+			case 'N': History.actionClick('REDOWNLOAD'); return true;
+			case 'M': History.actionClick('MARKSUCCESS'); return true;
+			case 'G': History.actionClick('MARKGOOD'); return true;
+			case 'B': History.actionClick('MARKBAD'); return true;
+			case 'A': History.filter('ALL'); return true;
+			case 'S': History.filter('SUCCESS'); return true;
+			case 'F': History.filter('FAILURE'); return true;
+			case 'L': History.filter('DELETED'); return true;
+			case 'U': History.filter('DUPE'); return true;
+			case 'H': History.dupClick(); return true;
+		}
+		return $HistoryTable.fasttable('processShortcut', key);
+	}
+
 }(jQuery));
 
 
@@ -494,8 +515,8 @@ var HistoryUI = (new function($)
 		}
 		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
-	
-	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount)
+
+	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount, pageSelCount, selPercentage)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
 		var dialog = null;
@@ -517,12 +538,19 @@ var HistoryUI = (new function($)
 		{
 			var hide = $('#HistoryDeleteConfirmDialog_Hide', dialog).is(':checked');
 			var command = hasNzb && hide ? 'HistoryDelete' : 'HistoryFinalDelete';
-			actionCallback(command);
+			if (selCount - pageSelCount > 0 && selCount >= 50)
+			{
+				PurgeHistoryDialog.showModal(function(){actionCallback(command);}, selCount, selPercentage);
+			}
+			else
+			{
+				actionCallback(command);
+			}
 		}
 
 		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init, selCount);
 	}
-	
+
 	this.confirmMulti = function(multi)
 	{
 		if (multi === undefined || !multi)
@@ -532,5 +560,39 @@ var HistoryUI = (new function($)
 			html = html.replace(/nzbs/g, 'nzb');
 			$('#ConfirmDialog_Text').html(html);
 		}
+	}
+}(jQuery));
+
+/*** PURGE HISTORY DIALOG *****************************************************/
+
+var PurgeHistoryDialog = (new function($)
+{
+	'use strict';
+
+	// Controls
+	var $PurgeHistoryDialog;
+
+	// State
+	var actionCallback;
+
+	this.init = function()
+	{
+		$PurgeHistoryDialog = $('#PurgeHistoryDialog');
+	}
+
+	this.showModal = function(_actionCallback, count, percentage)
+	{
+		actionCallback = _actionCallback;
+		$('#PurgeHistoryDialog_count,#PurgeHistoryDialog_count2').text(count);
+		$('#PurgeHistoryDialog_percentage').text(percentage);
+		Util.centerDialog($PurgeHistoryDialog, true);
+		$PurgeHistoryDialog.modal({backdrop: 'static'});
+	}
+
+	this.delete = function(event)
+	{
+		event.preventDefault(); // avoid scrolling
+		$PurgeHistoryDialog.modal('hide');
+		actionCallback();
 	}
 }(jQuery));

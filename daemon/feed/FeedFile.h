@@ -27,7 +27,7 @@
 class FeedFile
 {
 public:
-	FeedFile(const char* fileName);
+	FeedFile(const char* fileName, const char* infoName);
 	bool Parse();
 	std::unique_ptr<FeedItemList> DetachFeedItems() { return std::move(m_feedItems); }
 
@@ -36,6 +36,7 @@ public:
 private:
 	std::unique_ptr<FeedItemList> m_feedItems;
 	CString m_fileName;
+	CString m_infoName;
 
 	void ParseSubject(FeedItemInfo& feedItemInfo);
 #ifdef WIN32

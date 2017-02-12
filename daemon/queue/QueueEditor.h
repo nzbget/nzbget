@@ -26,8 +26,8 @@
 class QueueEditor
 {
 public:
-	bool EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, int offset, const char* text);
-	bool EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action, int offset, const char* text);
+	bool EditEntry(DownloadQueue* downloadQueue, int ID, DownloadQueue::EEditAction action, const char* args);
+	bool EditList(DownloadQueue* downloadQueue, IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action, const char* args);
 
 private:
 	class EditItem
@@ -46,10 +46,10 @@ private:
 	DownloadQueue* m_downloadQueue;
 
 	FileInfo* FindFileInfo(int id);
-	bool InternEditList(ItemList* itemList, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text);
+	bool InternEditList(ItemList* itemList, IdList* idList, DownloadQueue::EEditAction action, const char* args);
 	void PrepareList(ItemList* itemList, IdList* idList, DownloadQueue::EEditAction action, int offset);
 	bool BuildIdListFromNameList(IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action);
-	bool EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, int offset, const char* text);
+	bool EditGroup(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, const char* args);
 	void PauseParsInGroups(ItemList* itemList, bool extraParsOnly);
 	void PausePars(RawFileList* fileList, bool extraParsOnly);
 	void SetNzbPriority(NzbInfo* nzbInfo, const char* priority);
@@ -57,15 +57,18 @@ private:
 	void SetNzbName(NzbInfo* nzbInfo, const char* name);
 	bool MergeGroups(ItemList* itemList);
 	bool SortGroups(ItemList* itemList, const char* sort);
+	void AlignGroups(ItemList* itemList);
+	bool MoveGroupsTo(ItemList* itemList, IdList* idList, bool before, const char* args);
 	bool SplitGroup(ItemList* itemList, const char* name);
 	bool DeleteUrl(NzbInfo* nzbInfo, DownloadQueue::EEditAction action);
 	void ReorderFiles(ItemList* itemList);
 	void SetNzbParameter(NzbInfo* nzbInfo, const char* paramString);
-	void SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, const char* text);
+	void SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction action, const char* args);
 	void PauseUnpauseEntry(FileInfo* fileInfo, bool pause);
 	void DeleteEntry(FileInfo* fileInfo);
 	void MoveEntry(FileInfo* fileInfo, int offset);
 	void MoveGroup(NzbInfo* nzbInfo, int offset);
+	bool ItemListContainsItem(ItemList* itemList, int id);
 
 	friend class GroupSorter;
 };

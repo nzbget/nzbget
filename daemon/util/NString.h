@@ -94,14 +94,13 @@ protected:
 	char* m_data = nullptr;
 };
 
-#ifdef WIN32
 /*
-Wide-character string, Windows specific.
+Wide-character string.
  */
 class WString
 {
 public:
-	WString(wchar_t* wstr) : m_data(_wcsdup(wstr)) {}
+	WString(wchar_t* wstr) : m_data(wcsdup(wstr)) {}
 	WString(const char* utfstr);
 	~WString() { free(m_data); }
 	WString(WString&& other) noexcept { m_data = other.m_data; other.m_data = nullptr; }
@@ -113,7 +112,6 @@ public:
 protected:
 	wchar_t* m_data = nullptr;
 };
-#endif
 
 /*
 StringBuilder preallocates storage space and is best suitable for often "Append"s.
@@ -126,6 +124,7 @@ public:
 	explicit operator char*() { return m_data; }
 	const char* operator*() const { return m_data; }
 	int Length() const { return m_length; }
+	void SetLength(int length) { m_length = length; }
 	int Capacity() const { return m_capacity; }
 	void Reserve(int capacity, bool exact = false);
 	bool Empty() const { return m_length == 0; }

@@ -100,7 +100,7 @@ void PostScriptController::ExecuteScript(ScriptConfig::Script* script)
 	infoName[0] = 'P'; // uppercase
 
 	SetLogPrefix(nullptr);
-	ScriptStatus::EStatus status = AnalyseExitCode(exitCode);
+	ScriptStatus::EStatus status = AnalyseExitCode(exitCode, infoName);
 
 	{
 		GuardedDownloadQueue guard = DownloadQueue::Guard();
@@ -176,7 +176,7 @@ void PostScriptController::PrepareParams(const char* scriptName)
 	PrepareEnvScript(m_postInfo->GetNzbInfo()->GetParameters(), scriptName);
 }
 
-ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int exitCode)
+ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int exitCode, const char* upInfoName)
 {
 	// The ScriptStatus is accumulated for all scripts:
 	// If any script has failed the status is "failure", etc.
@@ -184,28 +184,28 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int exitCode)
 	switch (exitCode)
 	{
 		case POSTPROCESS_SUCCESS:
-			PrintMessage(Message::mkInfo, "%s successful", GetInfoName());
+			PrintMessage(Message::mkInfo, "%s successful", upInfoName);
 			return ScriptStatus::srSuccess;
 
 		case POSTPROCESS_ERROR:
 		case -1: // Execute() returns -1 if the process could not be started (file not found or other problem)
-			PrintMessage(Message::mkError, "%s failed", GetInfoName());
+			PrintMessage(Message::mkError, "%s failed", upInfoName);
 			return ScriptStatus::srFailure;
 
 		case POSTPROCESS_NONE:
-			PrintMessage(Message::mkInfo, "%s skipped", GetInfoName());
+			PrintMessage(Message::mkInfo, "%s skipped", upInfoName);
 			return ScriptStatus::srNone;
 
 #ifndef DISABLE_PARCHECK
 		case POSTPROCESS_PARCHECK:
 			if (m_postInfo->GetNzbInfo()->GetParStatus() > NzbInfo::psSkipped)
 			{
-				PrintMessage(Message::mkError, "%s requested par-check/repair, but the collection was already checked", GetInfoName());
+				PrintMessage(Message::mkError, "%s requested par-check/repair, but the collection was already checked", upInfoName);
 				return ScriptStatus::srFailure;
 			}
 			else
 			{
-				PrintMessage(Message::mkInfo, "%s requested par-check/repair", GetInfoName());
+				PrintMessage(Message::mkInfo, "%s requested par-check/repair", upInfoName);
 				m_postInfo->SetRequestParCheck(true);
 				m_postInfo->SetForceRepair(true);
 				return ScriptStatus::srSuccess;
@@ -214,7 +214,7 @@ ScriptStatus::EStatus PostScriptController::AnalyseExitCode(int exitCode)
 #endif
 
 		default:
-			PrintMessage(Message::mkError, "%s failed (terminated with unknown status)", GetInfoName());
+			PrintMessage(Message::mkError, "%s failed (terminated with unknown status)", upInfoName);
 			return ScriptStatus::srFailure;
 	}
 }

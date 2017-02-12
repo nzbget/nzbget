@@ -1,3 +1,86 @@
+nzbget-18.0:
+  - automatic deobfuscation of rar-archives without par-files:
+        - obfuscated downloads not having par-files can now be successfully
+          unpacked;
+        - also helps with downloads where rar-files were obfuscated before
+          creating par-files;
+        - new options "RarRename" and "UnpackIgnoreExt";
+  - multi post-processing:
+        - in addition to classic post-processing strategy where items are
+          processed one after another it is now possible to post-process
+          multiple items at the same time;
+        - new option "PostStrategy" to choose from four: sequential, balanced,
+          aggressive, rocket;
+        - in "balanced" strategy downloads needing repair do not block other
+          items which are processed sequentially but simultaneously with
+          repairing item;
+        - in "aggressive" mode up to three items are post-processed at the same
+          time and in "rocket" mode up to six items (including up to two repair
+          tasks);
+  - unified extension scripts settings:
+        - options "PostScript", "QueueScript", "ScanScript" and "FeedScript"
+          were replaced with one option "Extensions";
+        - users don't need to know the technical details os extension scripts as
+          all scripts are now can be selected at one place;
+        - easier activation of complex extension scripts which previously needed
+          to be selected in multiple options for their proper work;
+  - reordering download queue with drag and drop in web-interface:
+        - new actions "GroupMoveBefore" and "GroupMoveAfter" in API-method
+          "editqueue";
+  - priorities are now displayed as a column instead of badge; that makes it
+    possible to manually sort on priority;
+  - removed vertical lines in tables; looks better in combination with new
+    priority column;
+  - keyboard shortcuts in web-interface;
+  - improved UI to prevent accidental deletion of many items:
+        - visual indication of records selected on other pages;
+        - extra warning when deleting many records from history;
+  - additional options in "custom pause dialog";
+  - better handing of damaged par2-files in par-renamer:
+        - if par-renamer can't load a (damaged) par2-file then another par2-file
+          is downloaded and par-renamer tries again;
+        - reverted non-strict par2-filename matching to handle article subjects
+          with non-parseable filenames;
+  - better handling of obfuscated par-files;
+  - splitted option "Retries" into "ArticleRetries" and "UrlRetries"; option
+    "RetryInterval" into "ArticleInterval" and "UrlInterval";
+  - scheduler tasks can be started at program launch:
+        - use asterisk as TaskX.Time;
+  - graceful termination of scheduler scripts:
+        - scripts receive signal SIGINT (CTRL+BREAK on Windows) before
+          termination;
+  - added support for nZEDb attributes in rss feeds;
+  - better cleanup handling: if parameter "unpack" is disabled for an nzb-file
+    the cleanup isn't performed for it;
+  - fields containing passwords are now displayed as protected fields;
+  - showing password-badge for nzbs with passwords;
+  - allow control of what tab is shown when opening web-interface:
+    add "#downloads", "#history", "#messages" or "#settings" to the URL,
+    for example "http://localhost:6789/#history" or
+    "http://localhost:6789/index.html#history";
+  - functional testing to ensure program quality:
+        - implemented built-in simple nntp server to be used for functional
+          testing;
+        - created a number of tests;
+        - new features come with additional tests;
+  - improved API-method "append" in combination with duplicate check; method
+    returns nzb-id also for items added straight to history;
+  - removed parameter "offset" from api-method "editqueue":
+        - when needed the "offset" is now passed within parameter "Args" as
+          string;
+        - old method signature is supported for compatibility;
+  - improved error reporting on feed parse errors;
+  - highlighting selected rows with alternative colors;
+  - improved selecting of par2-file for repair;
+  - splitted config section "Download Queue" and moved many options into new
+    section "Connection";
+  - disabled SSLv3 in built-in web-server;
+  - multiple recipients in the example pp-script "EMail.py";
+  - added compatibility with openssl 1.1.0;
+  - fixed TLS handshake error when using GnuTLS;
+  - fixed: sorting of selected items may give wrong results;
+  - fixed: search box filter in feed view were not reset.
+
 nzbget-17.1:
   - adjustments and fixes for "Retry failed articles" function, better handling
     of certain corner cases;

@@ -53,6 +53,7 @@ var Status = (new function($)
 	var $StatDialog;
 	var $ScheduledPauseDialog;
 	var $PauseForInput;
+	var $PauseForPreview;
 
 	// State
 	var status;
@@ -61,6 +62,13 @@ var Status = (new function($)
 	var playInitialized = false;
 	var modalShown = false;
 	var titleGen = [];
+
+	var validTimePatterns = [
+		/^=\d{1,2}(:[0-5][0-9])?$/, // 24h exact
+		/^=\d{1,2}(:[0-5][0-9])?(AM|PM)$/i, // 12h exact
+		/^\d+(:[0-5][0-9])?$/, // 24h relative
+		/^\d+(h|m)?$/i, // relative minutes or hours
+	];
 
 	this.init = function()
 	{
@@ -81,6 +89,7 @@ var Status = (new function($)
 		$StatusURLs = $('#StatusURLs');
 		$ScheduledPauseDialog = $('#ScheduledPauseDialog')
 		$PauseForInput = $('#PauseForInput');
+		$PauseForPreview = $('#PauseForPreview');
 
 		if (UISettings.setFocus)
 		{
@@ -91,6 +100,12 @@ var Status = (new function($)
 		}
 
 		$PlayAnimation.hover(function() { $PlayBlock.addClass('hover'); }, function() { $PlayBlock.removeClass('hover'); });
+		$PauseForInput.keyup(function(e)
+		{
+			if (e.which == 13) return;
+
+			calculateSeconds($(this).val());
+		});
 
 		// temporary pause the play animation if any modal is shown (to avoid artifacts in safari)
 		$('body >.modal').on('show', modalShow);
@@ -185,7 +200,7 @@ var Status = (new function($)
 		$StatusTime.toggleClass('orange', statWarning);
 		$StatusTimeIcon.toggleClass('icon-time', !statWarning);
 		$StatusTimeIcon.toggleClass('icon-time-orange', statWarning);
-		
+
 		updateTitle();
 	}
 
@@ -309,21 +324,91 @@ var Status = (new function($)
 	this.scheduledPauseDialogClick = function()
 	{
 		$PauseForInput.val('');
+		$PauseForPreview.addClass('invisible');
 		$ScheduledPauseDialog.modal();
 	}
 
 	this.pauseForClick = function()
 	{
 		var val = $PauseForInput.val();
-		var minutes = parseInt(val);
+		var seconds = calculateSeconds(val);
 
-		if (isNaN(minutes) || minutes <= 0)
+		if (isNaN(seconds) || seconds <= 0)
 		{
 			return;
 		}
 
 		$ScheduledPauseDialog.modal('hide');
-		this.scheduledPauseClick(minutes * 60);
+		this.scheduledPauseClick(seconds);
+	}
+
+	function isTimeInputValid(str)
+	{
+		for (var i = 0; i < validTimePatterns.length; i++)
+		{
+			if (validTimePatterns[i].test(str)) return true;
+		}
+	}
+
+	function calculateSeconds(parsable) {
+		parsable = parsable.toLowerCase();
+
+		if (!isTimeInputValid(parsable))
+		{
+			$PauseForPreview.addClass('invisible');
+			return;
+		}
+
+		var now = new Date(), future = new Date();
+		var hours = 0, minutes = 0;
+
+		var mode = /^=/.test(parsable) ? 'exact' : 'relative';
+		var indicator = (parsable.match(/h|m|am|pm$/i) || [])[0];
+		var parsedTime = parsable.match(/(\d+):?(\d+)?/) || [];
+		var primaryValue = parsedTime[1];
+		var secondaryValue = parsedTime[2];
+		var is12H = (indicator === 'am' || indicator === 'pm')
+
+		if (indicator === undefined && secondaryValue === undefined)
+		{
+			if (mode === 'exact') hours = parseInt(primaryValue);
+			else minutes = parseInt(primaryValue);
+		}
+		else if (indicator === 'm')
+		{
+			minutes = parseInt(primaryValue);
+		}
+		else
+		{
+			hours = parseInt(primaryValue);
+			if (secondaryValue) minutes = parseInt(secondaryValue);
+			if (indicator === 'pm' && hours < 12) hours += 12;
+		}
+
+		if ((mode !== 'exact' && (is12H || (hours > 0 && minutes > 59))) ||
+			(mode === 'exact' && (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)))
+		{
+			$PauseForPreview.addClass('invisible');
+			return;
+		}
+
+		if (mode === 'exact')
+		{
+			future.setHours(hours, minutes, 0, 0);
+
+			if (future < now) future.setDate(now.getDate() + 1);
+		}
+		else
+		{
+			future.setHours(now.getHours() + hours, now.getMinutes() + minutes);
+		}
+
+		$PauseForPreview.find('strong')
+			.text((future.getDay() !== now.getDay()) ? future.toLocaleString() : future.toLocaleTimeString())
+			.end()
+			.removeClass('invisible');
+
+		return (future - now)/1000;
 	}
 
 	function modalShow()
@@ -386,10 +471,10 @@ var Status = (new function($)
 				case '%[VAR]%': return '[' + value + ']';
 				case '%[VAR-]%': return '[' + value + '] - ';
 			}
-			
+
 			return Downloads.groups.length > 0 ? '' + Downloads.groups.length + ' - ' : '';
 		};
-		
+
 		function fill(varname, paramFunc)
 		{
 			titleGen['%' + varname + '%'] = function() { return format('%VAR%', paramFunc); };
@@ -1024,11 +1109,11 @@ var StatDialog = (new function($)
 	function chartMouseExit(env, serie, index, mouseAreaData)
 	{
 		mouseOverIndex = -1;
-		var title = curRange === 'MIN' ? '60 seconds' : 
-			curRange === 'HOUR' ? '60 minutes' : 
-			curRange === 'DAY' ? '24 hours' : 
+		var title = curRange === 'MIN' ? '60 seconds' :
+			curRange === 'HOUR' ? '60 minutes' :
+			curRange === 'DAY' ? '24 hours' :
 			curRange === 'MONTH' ? $('#StatDialog_Volume_MONTH').text() : 'Sum';
-		
+
 		$StatDialog_Tooltip.html(title + ': <span class="stat-size">' + Util.formatSizeMB(chartData.sumMB, chartData.sumLo) + '</span>');
 	}
 
@@ -1101,7 +1186,7 @@ var StatDialog = (new function($)
 		var epochDay = Math.ceil((date.getTime() - date.getTimezoneOffset() * 60*1000) / (1000*24*60*60));
 		return epochDay;
 	}
-	
+
 	function updateMonthList()
 	{
 		monthListInitialized = true;
@@ -1334,17 +1419,10 @@ var LimitDialog = (new function($)
 
 		$ServerTable.fasttable(
 			{
-				pagerContainer: $('#LimitDialog_ServerTable_pager'),
-				headerCheck: $('#LimitDialog_ServerTable > thead > tr:first-child'),
-				hasHeader: false,
+				pagerContainer: '#LimitDialog_ServerTable_pager',
+				rowSelect: UISettings.rowSelect,
 				pageSize: 100
 			});
-
-		$ServerTable.on('click', 'tbody div.check',
-			function(event) { $ServerTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
-		$ServerTable.on('click', 'thead div.check',
-			function() { $ServerTable.fasttable('titleCheckClick') });
-		$ServerTable.on('mousedown', Util.disableShiftMouseDown);
 
 		if (UISettings.setFocus)
 		{
@@ -1521,7 +1599,7 @@ var FilterMenu = (new function($)
 	var $Table_filter;
 	var tabName;
 	var items;
-	
+
 	this.init = function()
 	{
 		$SaveFilterDialog = $('#SaveFilterDialog');
@@ -1565,9 +1643,9 @@ var FilterMenu = (new function($)
 			im.attr('data-id', i);
 			insertPos.before(item);
 		}
-		
+
 		Util.show('#FilterMenu_Empty', items.length === 0);
-		
+
 		if (UISettings.miniTheme)
 		{
 			Frontend.alignPopupMenu('#FilterMenu');
@@ -1618,7 +1696,7 @@ var FilterMenu = (new function($)
 		$SaveFilterInput.val(name);
 		$SaveFilterDialog.modal();
 	}
-	
+
 	this.saveClick = function()
 	{
 		$SaveFilterDialog.modal('hide');
@@ -1636,7 +1714,7 @@ var FilterMenu = (new function($)
 				return;
 			}
 		}
-		
+
 		// doesn't exist - add new
 		items.push({name: name, filter: filter});
 		save();

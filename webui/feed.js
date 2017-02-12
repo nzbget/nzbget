@@ -120,17 +120,10 @@ var FeedDialog = (new function($)
 			{
 				filterInput: '#FeedDialog_ItemTable_filter',
 				pagerContainer: '#FeedDialog_ItemTable_pager',
-				headerCheck: '#FeedDialog_ItemTable > thead > tr:first-child',
+				rowSelect: UISettings.rowSelect,
 				pageSize: pageSize,
-				hasHeader: true,
 				renderCellCallback: itemsTableRenderCellCallback
 			});
-
-		$ItemTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { $ItemTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
-		$ItemTable.on('click', 'thead div.check',
-			function() { $ItemTable.fasttable('titleCheckClick') });
-		$ItemTable.on('mousedown', Util.disableShiftMouseDown);
 
 		$FeedDialog.on('hidden', function()
 		{
@@ -155,13 +148,14 @@ var FeedDialog = (new function($)
 	{
 		Refresher.pause();
 
-		$ItemTable.fasttable('update', []);
-
 		enableAllButtons();
 		$FeedDialog.restoreTab();
 
 		$('#FeedDialog_ItemTable_filter').val('');
 		$('#FeedDialog_ItemTable_pagerBlock').hide();
+
+		$ItemTable.fasttable('update', []);
+		$ItemTable.fasttable('applyFilter', '');
 
 		items = null;
 
@@ -465,7 +459,6 @@ var FeedFilterDialog = (new function($)
 				pagerContainer: '#FeedFilterDialog_ItemTable_pager',
 				headerCheck: '',
 				pageSize: pageSize,
-				hasHeader: true,
 				renderCellCallback: itemsTableRenderCellCallback
 			});
 
@@ -615,7 +608,7 @@ var FeedFilterDialog = (new function($)
 		var differentFilenames = false;
 
 		var filter = $FilterInput.val().split('\n');
-		
+
 		var data = [];
 
 		for (var i=0; i < items.length; i++)
@@ -796,7 +789,7 @@ var FeedFilterDialog = (new function($)
 		$RematchIcon.toggleClass('icon-process', !autoUpdate);
 		$RematchIcon.toggleClass('icon-process-auto', autoUpdate);
 	}
-	
+
 	function filterKeyPress(event)
 	{
 		if (event.which == 37)
@@ -805,7 +798,7 @@ var FeedFilterDialog = (new function($)
 			alert('Percent character (%) cannot be part of a filter because it is used\nas line separator when saving filter into configuration file.');
 		}
 	}
-	
+
 	/*** SPLITTER ***/
 
 	function splitterMouseDown(e)
@@ -861,7 +854,7 @@ var FeedFilterDialog = (new function($)
 			windowResized();
 		}
 	}
-	
+
 	function windowResized()
 	{
 		if (!UISettings.miniTheme)
@@ -875,7 +868,7 @@ var FeedFilterDialog = (new function($)
 			splitterMove(newWidth - oldWidth);
 		}
 	}
-	
+
 	/*** LINE SELECTION ***/
 
 	this.selectRule = function(rule)
@@ -913,7 +906,7 @@ var FeedFilterDialog = (new function($)
 
 	// Idea and portions of code from LinedTextArea plugin by Alan Williamson
 	// http://files.aw20.net/jquery-linedtextarea/jquery-linedtextarea.html
-	
+
 	function initLines()
 	{
 		showLines = !UISettings.miniTheme;
@@ -923,7 +916,7 @@ var FeedFilterDialog = (new function($)
 			$FilterInput.scroll(updateLines);
 		}
 	}
-	
+
 	function updateLines()
 	{
 		if (!UISettings.miniTheme && showLines)

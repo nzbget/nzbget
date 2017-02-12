@@ -32,16 +32,16 @@
 #include "StatMeter.h"
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
-	int ID, EEditAction action, int offset, const char* text)
+	int ID, EEditAction action, const char* args)
 {
-	return m_owner->m_queueEditor.EditEntry(&m_owner->m_downloadQueue, ID, action, offset, text);
+	return m_owner->m_queueEditor.EditEntry(&m_owner->m_downloadQueue, ID, action, args);
 }
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditList(
-	IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text)
+	IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, const char* args)
 {
 	m_massEdit = true;
-	bool ret = m_owner->m_queueEditor.EditList(&m_owner->m_downloadQueue, idList, nameList, matchMode, action, offset, text);
+	bool ret = m_owner->m_queueEditor.EditList(&m_owner->m_downloadQueue, idList, nameList, matchMode, action, args);
 	m_massEdit = false;
 	if (m_wantSave)
 	{
@@ -256,23 +256,31 @@ void QueueCoordinator::Run()
 		}
 	}
 
+	WaitJobs();
+	SavePartialState();
+
+	debug("Exiting QueueCoordinator-loop");
+}
+
+void QueueCoordinator::WaitJobs()
+{
 	// waiting for downloads
 	debug("QueueCoordinator: waiting for Downloads to complete");
-	bool completed = false;
-	while (!completed)
+
+	while (true)
 	{
 		{
 			GuardedDownloadQueue guard = DownloadQueue::Guard();
-			completed = m_activeDownloads.size() == 0;
+			if (m_activeDownloads.empty())
+			{
+				break;
+			}
 		}
 		usleep(100 * 1000);
 		ResetHangingDownloads();
 	}
+
 	debug("QueueCoordinator: Downloads are completed");
-
-	SavePartialState();
-
-	debug("Exiting QueueCoordinator-loop");
 }
 
 /*
@@ -371,7 +379,10 @@ NzbInfo* QueueCoordinator::AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, N
 	{
 		// in a case if none of listeners did already delete the temporary object - we do it ourselves
 		downloadQueue->GetQueue()->Remove(addedNzb);
-		addedNzb = nullptr;
+		if (!downloadQueue->GetHistory()->Find(addedNzb->GetId()))
+		{
+			addedNzb = nullptr;
+		}
 	}
 
 	downloadQueue->Save();
@@ -808,7 +819,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 		warn("Pausing %s due to health %.1f%% below critical %.1f%%", fileInfo->GetNzbInfo()->GetName(),
 			fileInfo->GetNzbInfo()->CalcHealth() / 10.0, fileInfo->GetNzbInfo()->CalcCriticalHealth(true) / 10.0);
 		fileInfo->GetNzbInfo()->SetHealthPaused(true);
-		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, 0, nullptr);
+		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(), DownloadQueue::eaGroupPause, nullptr);
 	}
 	else if (g_Options->GetHealthCheck() == Options::hcDelete ||
 		g_Options->GetHealthCheck() == Options::hcPark)
@@ -820,7 +831,7 @@ void QueueCoordinator::CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileI
 		fileInfo->GetNzbInfo()->SetDeleteStatus(NzbInfo::dsHealth);
 		downloadQueue->EditEntry(fileInfo->GetNzbInfo()->GetId(),
 			g_Options->GetHealthCheck() == Options::hcPark ? DownloadQueue::eaGroupParkDelete : DownloadQueue::eaGroupDelete,
-			0, nullptr);
+			nullptr);
 	}
 }
 

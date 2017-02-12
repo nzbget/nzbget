@@ -23,10 +23,6 @@
 
 #include "NString.h"
 
-#ifdef WIN32
-class WString;
-#endif
-
 class FileSystem
 {
 public:
@@ -139,7 +135,7 @@ public:
 	int64 Read(void* buffer, int64 size);
 	int64 Write(const void* buffer, int64 size);
 	int64 Position();
-	int64 Seek(int64 position, ESeekOrigin origin = soSet);
+	bool Seek(int64 position, ESeekOrigin origin = soSet);
 	bool Eof();
 	bool Error();
 	int64 Print(const char* format, ...) PRINTF_SYNTAX(2);

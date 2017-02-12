@@ -232,7 +232,8 @@ void HistoryCoordinator::PrepareEdit(DownloadQueue* downloadQueue, IdList* idLis
 	}
 }
 
-bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, DownloadQueue::EEditAction action, int offset, const char* text)
+bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList,
+	DownloadQueue::EEditAction action, const char* args)
 {
 	bool ok = false;
 	PrepareEdit(downloadQueue, idList, action);
@@ -270,22 +271,22 @@ bool HistoryCoordinator::EditList(DownloadQueue* downloadQueue, IdList* idList, 
 						break;
 
 					case DownloadQueue::eaHistorySetParameter:
-						ok = HistorySetParameter(historyInfo, text);
+						ok = HistorySetParameter(historyInfo, args);
 						break;
 
  					case DownloadQueue::eaHistorySetCategory:
-						ok = HistorySetCategory(historyInfo, text);
+						ok = HistorySetCategory(historyInfo, args);
 						break;
 
  					case DownloadQueue::eaHistorySetName:
-						ok = HistorySetName(historyInfo, text);
+						ok = HistorySetName(historyInfo, args);
 						break;
 
 					case DownloadQueue::eaHistorySetDupeKey:
 					case DownloadQueue::eaHistorySetDupeScore:
 					case DownloadQueue::eaHistorySetDupeMode:
 					case DownloadQueue::eaHistorySetDupeBackup:
-						HistorySetDupeParam(historyInfo, action, text);
+						HistorySetDupeParam(historyInfo, action, args);
 						break;
 
 					case DownloadQueue::eaHistoryMarkBad:
@@ -379,7 +380,8 @@ void HistoryCoordinator::MoveToQueue(DownloadQueue* downloadQueue, HistoryList::
 	{
 		nzbInfo->SetUnpackStatus(NzbInfo::usNone);
 		nzbInfo->SetCleanupStatus(NzbInfo::csNone);
-		nzbInfo->SetRenameStatus(NzbInfo::rsNone);
+		nzbInfo->SetParRenameStatus(NzbInfo::rsNone);
+		nzbInfo->SetRarRenameStatus(NzbInfo::rsNone);
 		nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() - nzbInfo->GetUnpackSec());
 		nzbInfo->SetUnpackSec(0);
 
@@ -489,7 +491,8 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->SetMoveStatus(NzbInfo::msNone);
 	nzbInfo->SetUnpackCleanedUpDisk(false);
 	nzbInfo->SetParStatus(NzbInfo::psNone);
-	nzbInfo->SetRenameStatus(NzbInfo::rsNone);
+	nzbInfo->SetParRenameStatus(NzbInfo::rsNone);
+	nzbInfo->SetRarRenameStatus(NzbInfo::rsNone);
 	nzbInfo->SetDownloadedSize(0);
 	nzbInfo->SetDownloadSec(0);
 	nzbInfo->SetPostTotalSec(0);
@@ -631,7 +634,7 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 
 	if (g_Options->GetParCheck() != Options::pcForce)
 	{
-		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupPauseExtraPars, nullptr);
 	}
 }
 

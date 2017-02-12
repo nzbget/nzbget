@@ -30,7 +30,8 @@
  *   HTML tables with:
  *     1) very fast content updates;
  *     2) automatic pagination;
- *     3) search/filtering.
+ *     3) search/filtering;
+ *     4) drag and drop.
  *
  * What makes it unique and fast?
  * The tables are designed to be updated very often (up to 10 times per second). This has two challenges:
@@ -51,7 +52,7 @@
 (function($) {
 
 	'use strict';
-	
+
 	$.fn.fasttable = function(method)
 	{
 		if (methods[method])
@@ -74,7 +75,7 @@
 		{
 			return defaults;
 		},
-		
+
 		init : function(options)
 		{
 			return this.each(function()
@@ -91,15 +92,18 @@
 
 					var config = {};
 					config = $.extend(config, defaults, options);
-					
+
 					config.filterInput = $(config.filterInput);
 					config.filterClearButton = $(config.filterClearButton);
 					config.pagerContainer = $(config.pagerContainer);
 					config.infoContainer = $(config.infoContainer);
-					config.headerCheck = $(config.headerCheck);
-					
+					config.dragBox = $(config.dragBox);
+					config.dragContent = $(config.dragContent);
+					config.dragBadge = $(config.dragBadge);
+					config.selector = $('th.table-selector', $this);
+
 					var searcher = new FastSearcher();
-					
+
 					// Create a timer which gets reset upon every keyup event.
 					// Perform filter only when the timer's wait is reached (user finished typing or paused long enough to elapse the timer).
 					// Do not perform the filter is the query has not changed.
@@ -143,7 +147,7 @@
 						data.config.filterInput.val('');
 						applyFilter(data, '');
 					});
-						
+
 					config.pagerContainer.on('click', 'li', function (e)
 					{
 						e.preventDefault();
@@ -167,19 +171,26 @@
 						}
 						refresh(data);
 					});
-					
-					$this.data('fasttable', {
-							target : $this,
-							config : config,
-							pageSize : parseInt(config.pageSize),
-							maxPages : parseInt(config.maxPages),
-							pageDots : Util.parseBool(config.pageDots),
-							curPage : 1,
-							checkedRows: {},
-							checkedCount: 0,
-							lastClickedRowID: null,
-							searcher: searcher
-						});
+
+					var data = {
+						target: $this,
+						config: config,
+						pageSize: parseInt(config.pageSize),
+						maxPages: parseInt(config.maxPages),
+						pageDots: Util.parseBool(config.pageDots),
+						curPage: 1,
+						checkedRows: {},
+						checkedCount: 0,
+						lastClickedRowID: null,
+						searcher: searcher
+					};
+
+					initDragDrop(data);
+
+					$this.on('click', 'thead > tr', function(e) { titleCheckClick(data, e); });
+					$this.on('click', 'tbody > tr', function(e) { itemCheckClick(data, e); });
+
+					$this.data('fasttable', data);
 				}
 			});
 		},
@@ -202,7 +213,7 @@
 		setPageSize : setPageSize,
 
 		setCurPage : setCurPage,
-		
+
 		applyFilter : function(filter)
 		{
 			applyFilter($(this).data('fasttable'), filter);
@@ -222,20 +233,26 @@
 		{
 			return $(this).data('fasttable').checkedRows;
 		},
-		
+
 		checkedCount : function()
 		{
 			return $(this).data('fasttable').checkedCount;
+		},
+
+		pageCheckedCount : function()
+		{
+			return $(this).data('fasttable').pageCheckedCount;
 		},
 
 		checkRow : function(id, checked)
 		{
 			checkRow($(this).data('fasttable'), id, checked);
 		},
-		
-		itemCheckClick : itemCheckClick,
-		
-		titleCheckClick : titleCheckClick
+
+		processShortcut : function(key)
+		{
+			return processShortcut($(this).data('fasttable'), key);
+		},
 	};
 
 	function updateContent(content)
@@ -246,6 +263,7 @@
 			data.content = content;
 		}
 		refresh(data);
+		blinkMovedRecords(data);
 	}
 
 	function applyFilter(data, filter)
@@ -261,11 +279,11 @@
 		if (filter !== '' && data.config.filterInputCallback)
 		{
 			data.config.filterInputCallback(filter);
-		}								
+		}
 		if (filter === '' && data.config.filterClearCallback)
 		{
 			data.config.filterClearCallback();
-		}								
+		}
 	}
 
 	function refresh(data)
@@ -274,6 +292,7 @@
 		validateChecks(data);
 		updatePager(data);
 		updateInfo(data);
+		updateSelector(data);
 		updateTable(data);
 	}
 
@@ -337,7 +356,7 @@
 					item.fields = [];
 				}
 			}
-			
+
 			for (var j=0; j < item.fields.length; j++)
 			{
 				var cell = row.insertCell(row.cells.length);
@@ -348,23 +367,24 @@
 				}
 			}
 		}
-		
+
 		titleCheckRedraw(data);
-		
+
 		if (data.config.renderTableCallback)
 		{
 			data.config.renderTableCallback(table);
-		}		
-		
+		}
+
 		return table;
 	}
 
 	function updateTBody(data, oldTable, newTable)
 	{
+		var headerRows = $('thead > tr', oldTable).length;
 		var oldTRs = oldTable.rows;
 		var newTRs = newTable.rows;
 		var oldTBody = $('tbody', oldTable)[0];
-		var oldTRsLength = oldTRs.length - (data.config.hasHeader ? 1 : 0); // evlt. skip header row
+		var oldTRsLength = oldTRs.length - headerRows; // evlt. skip header row
 		var newTRsLength = newTRs.length;
 
 		for (var i=0; i < newTRs.length; )
@@ -374,10 +394,10 @@
 			if (i < oldTRsLength)
 			{
 				// update existing row
-				var oldTR = oldTRs[i + (data.config.hasHeader ? 1 : 0)]; // evlt. skip header row
+				var oldTR = oldTRs[i + headerRows]; // evlt. skip header row
 				var oldTDs = oldTR.cells;
 				var newTDs = newTR.cells;
-				
+
 				oldTR.className = newTR.className;
 				oldTR.fasttableID = newTR.fasttableID;
 
@@ -402,7 +422,7 @@
 			}
 		}
 
-		var maxTRs = newTRsLength + (data.config.hasHeader ? 1 : 0); // evlt. skip header row;
+		var maxTRs = newTRsLength + headerRows; // evlt. skip header row;
 		while (oldTRs.length > maxTRs)
 		{
 			oldTable.deleteRow(oldTRs.length - 1);
@@ -426,10 +446,10 @@
 
 		var pagerObj = data.config.pagerContainer;
 		var pagerHtml = buildPagerHtml(data);
-		
+
 		var oldPager = pagerObj[0];
 		var newPager = $(pagerHtml)[0];
-		
+
 		updatePagerContent(data, oldPager, newPager);
 	}
 
@@ -460,11 +480,12 @@
 		}
 
 		var pager = '<ul>';
-		pager += '<li' + (data.curPage === 1 || data.curPage === 0 ? ' class="disabled"' : '') + '><a href="#">&larr; Prev</a></li>';
+		pager += '<li' + (data.curPage === 1 || data.curPage === 0 ? ' class="disabled"' : '') +
+			'><a href="#" title="Previous page' + (data.config.shortcuts ? ' [Left]' : '') + '">&larr; Prev</a></li>';
 
 		if (iStart > 1)
 		{
-			pager += '<li><a href="#">1</a></li>';
+			pager += '<li><a href="#"' + (data.config.shortcuts ? ' title="First page [Shift+Left]"' : '') + '>1</a></li>';
 			if (iStart > 2 && data.pageDots)
 			{
 				pager += '<li class="disabled"><a href="#">&#133;</a></li>';
@@ -473,7 +494,11 @@
 
 		for (var j=iStart; j<=iEnd; j++)
 		{
-			pager += '<li' + ((j===data.curPage) ? ' class="active"' : '') + '><a href="#">' + j + '</a></li>';
+			pager += '<li' + ((j===data.curPage) ? ' class="active"' : '') +
+				'><a href="#"' +
+				(data.config.shortcuts && j === 1 ? ' title="First page [Shift+Left]"' :
+				 data.config.shortcuts && j === data.pageCount ? ' title="Last page [Shift+Right]"' : '') +
+				'>' + j + '</a></li>';
 		}
 
 		if (iEnd != data.pageCount)
@@ -482,15 +507,16 @@
 			{
 				pager += '<li class="disabled"><a href="#">&#133;</a></li>';
 			}
-			pager += '<li><a href="#">' + data.pageCount + '</a></li>';
+			pager += '<li><a href="#"' + (data.config.shortcuts ? ' title="Last page [Shift+Right]"' : '') + '>' + data.pageCount + '</a></li>';
 		}
 
-		pager += '<li' + (data.curPage === data.pageCount || data.pageCount === 0 ? ' class="disabled"' : '') + '><a href="#">Next &rarr;</a></li>';
+		pager += '<li' + (data.curPage === data.pageCount || data.pageCount === 0 ? ' class="disabled"' : '') +
+			'><a href="#" title="Next page' + (data.config.shortcuts ? ' [Right]' : '') + '">Next &rarr;</a></li>';
 		pager += '</ul>';
-		
+
 		return pager;
 	}
-	
+
 	function updatePagerContent(data, oldPager, newPager)
 	{
 		var oldLIs = oldPager.getElementsByTagName('li');
@@ -529,7 +555,7 @@
 			oldPager.removeChild(oldPager.lastChild);
 		}
 	}
-	
+
 	function updateInfo(data)
 	{
 		if (data.content.length === 0)
@@ -559,8 +585,27 @@
 				available: data.availableContent.length,
 				filtered: data.filteredContent.length,
 				firstRecord: firstRecord,
-				lastRecord: lastRecord				
+				lastRecord: lastRecord
 			});
+		}
+	}
+
+	function updateSelector(data)
+	{
+		data.pageCheckedCount = 0;
+		if (data.checkedCount > 0 && data.filteredContent.length > 0)
+		{
+			for (var i = (data.curPage - 1) * data.pageSize; i < Math.min(data.curPage * data.pageSize, data.filteredContent.length); i++)
+			{
+				data.pageCheckedCount += data.checkedRows[data.filteredContent[i].id] ? 1 : 0;
+			}
+		}
+		data.config.selector.css('display', data.pageCheckedCount === data.checkedCount ? 'none' : '');
+		if (data.checkedCount !== data.pageCheckedCount)
+		{
+			data.config.selector.text('' + (data.checkedCount - data.pageCheckedCount) +
+				(data.checkedCount - data.pageCheckedCount > 1 ? ' records' : ' record') +
+				' selected on other pages');
 		}
 	}
 
@@ -586,7 +631,22 @@
 		data.curPage = parseInt(page);
 		refresh(data);
 	}
-	
+
+	function checkedIds(data)
+	{
+		var checkedRows = data.checkedRows;
+		var checkedIds = [];
+		for (var i = 0; i < data.content.length; i++)
+		{
+			var id = data.content[i].id;
+			if (checkedRows[id])
+			{
+				checkedIds.push(id);
+			}
+		}
+		return checkedIds;
+	}
+
 	function titleCheckRedraw(data)
 	{
 		var filteredContent = data.filteredContent;
@@ -605,28 +665,34 @@
 				hasUnselectedItems = true;
 			}
 		}
-		
+
+		var headerRow = $('thead > tr', data.target);
 		if (hasSelectedItems && hasUnselectedItems)
 		{
-			data.config.headerCheck.removeClass('checked').addClass('checkremove');
+			headerRow.removeClass('checked').addClass('checkremove');
 		}
 		else if (hasSelectedItems)
 		{
-			data.config.headerCheck.removeClass('checkremove').addClass('checked');
+			headerRow.removeClass('checkremove').addClass('checked');
 		}
 		else
 		{
-			data.config.headerCheck.removeClass('checked').removeClass('checkremove');
+			headerRow.removeClass('checked').removeClass('checkremove');
 		}
 	}
 
-	function itemCheckClick(row, event)
+	function itemCheckClick(data, event)
 	{
-		var data = $(this).data('fasttable');
-		var checkedRows = data.checkedRows;
+		var checkmark = $(event.target).hasClass('check');
+		if (data.dragging || (!checkmark && !data.config.rowSelect))
+		{
+			return;
+		}
 
+		var row = $(event.target).closest('tr', data.target)[0];
 		var id = row.fasttableID;
 		var doToggle = true;
+		var checkedRows = data.checkedRows;
 
 		if (event.shiftKey && data.lastClickedRowID != null)
 		{
@@ -640,13 +706,18 @@
 		}
 
 		data.lastClickedRowID = id;
-		
+
 		refresh(data);
 	}
 
-	function titleCheckClick()
+	function titleCheckClick(data, event)
 	{
-		var data = $(this).data('fasttable');
+		var checkmark = $(event.target).hasClass('check');
+		if (data.dragging || (!checkmark && !data.config.rowSelect))
+		{
+			return;
+		}
+
 		var filteredContent = data.filteredContent;
 		var checkedRows = data.checkedRows;
 
@@ -679,7 +750,7 @@
 			data.checkedCount++;
 		}
 	}
-	
+
 	function checkAll(data, checked)
 	{
 		var filteredContent = data.filteredContent;
@@ -691,7 +762,7 @@
 
 		refresh(data);
 	}
-	
+
 	function checkRange(data, from, to, checked)
 	{
 		var filteredContent = data.filteredContent;
@@ -701,19 +772,19 @@
 		{
 			return false;
 		}
-		
+
 		if (indexTo < indexFrom)
 		{
-			var tmp = indexTo; indexTo = indexFrom; indexFrom = tmp;			
+			var tmp = indexTo; indexTo = indexFrom; indexFrom = tmp;
 		}
-		
+
 		for (var i = indexFrom; i <= indexTo; i++)
 		{
 			checkRow(data, filteredContent[i].id, checked);
 		}
 
 		return true;
-	}	
+	}
 
 	function checkRow(data, id, checked)
 	{
@@ -734,7 +805,7 @@
 			data.checkedRows[id] = undefined;
 		}
 	}
-	
+
 	function indexOfID(content, id)
 	{
 		for (var i = 0; i < content.length; i++)
@@ -762,17 +833,414 @@
 			}
 		}
 	}
-	
+
+	//*************** DRAG-N-DROP
+
+	function initDragDrop(data)
+	{
+		data.target[0].addEventListener('mousedown', function(e) { mouseDown(data, e); }, true);
+		data.target[0].addEventListener('touchstart', function(e) { mouseDown(data, e); }, true);
+
+		data.moveIds = [];
+		data.dropAfter = false;
+		data.dropId = null;
+		data.dragging = false;
+		data.dragRow = $('');
+		data.cancelDrag = false;
+		data.downPos = null;
+		data.blinkIds = [];
+		data.blinkState = null;
+		data.wantBlink = false;
+	}
+
+	function touchToMouse(e)
+	{
+		if (e.type === 'touchstart' || e.type === 'touchmove' || e.type === 'touchend')
+		{
+			e.clientX = e.changedTouches[0].clientX;
+			e.clientY = e.changedTouches[0].clientY;
+		}
+	}
+
+	function mouseDown(data, e)
+	{
+		data.dragging = false;
+		data.dropId = null;
+		data.dragRow = $(e.target).closest('tr', data.target);
+
+		var checkmark = $(e.target).hasClass('check') ||
+			($(e.target).find('.check').length > 0 && !$('body').hasClass('phone'));
+		var head = $(e.target).closest('tr', data.target).parent().is('thead');
+		if (head || !(checkmark || (data.config.rowSelect && e.type === 'mousedown')) ||
+			data.dragRow.length != 1 || e.ctrlKey || e.altKey || e.metaKey)
+		{
+			return;
+		}
+
+		touchToMouse(e);
+		if (e.type === 'mousedown')
+		{
+			e.preventDefault();
+		}
+
+		if (!data.config.dragEndCallback)
+		{
+			return;
+		}
+
+		data.downPos = { x: e.clientX, y: e.clientY };
+
+		data.mouseMove = function(e) { mouseMove(data, e); };
+		data.mouseUp = function(e) { mouseUp(data, e); };
+		data.keyDown = function(e) { keyDown(data, e); };
+		document.addEventListener('mousemove', data.mouseMove, true);
+		document.addEventListener('touchmove', data.mouseMove, true);
+		document.addEventListener('mouseup', data.mouseUp, true);
+		document.addEventListener('touchend', data.mouseUp, true);
+		document.addEventListener('touchcancel', data.mouseUp, true);
+		document.addEventListener('keydown', data.keyDown, true);
+	}
+
+	function mouseMove(data, e)
+	{
+		touchToMouse(e);
+		e.preventDefault();
+
+		if (e.touches && e.touches.length > 1)
+		{
+			data.cancelDrag = true;
+			mouseUp(data, e);
+			return;
+		}
+
+		if (!data.dragging)
+		{
+			if (Math.abs(data.downPos.x - e.clientX) < 5 &&
+				Math.abs(data.downPos.y - e.clientY) < 5)
+			{
+				return;
+			}
+			startDrag(data, e);
+			if (data.dragCancel)
+			{
+				mouseUp(data, e);
+				return;
+			}
+		}
+
+		updateDrag(data, e.clientX, e.clientY);
+		autoScroll(data, e.clientX, e.clientY);
+	}
+
+	function startDrag(data, e)
+	{
+		if (data.config.dragStartCallback)
+		{
+			data.config.dragStartCallback();
+		}
+
+		var offsetX = $(document).scrollLeft();
+		var offsetY = $(document).scrollTop();
+		var rf = data.dragRow.offset();
+		data.dragOffset = { x: data.downPos.x - rf.left + offsetX,
+			y: Math.min(Math.max(data.downPos.y - rf.top + offsetY, 0), data.dragRow.height()) };
+
+		var checkedRows = data.checkedRows;
+		var chkIds = checkedIds(data);
+		var id = data.dragRow[0].fasttableID;
+		data.moveIds = checkedRows[id] ? chkIds : [id];
+		data.dragging = true;
+		data.cancelDrag = false;
+
+		buildDragBox(data);
+		data.config.dragBox.css('display', 'block');
+		data.dragRow.addClass('drag-source');
+		$('html').addClass('drag-progress');
+		data.oldOverflowX = $('body').css('overflow-x');
+		$('body').css('overflow-x', 'hidden');
+	}
+
+	function buildDragBox(data)
+	{
+		var tr = data.dragRow.clone();
+		var table = data.target.clone();
+		$('tr', table).remove();
+		$('thead', table).remove();
+		$('tbody', table).append(tr);
+		table.css('margin', 0);
+		data.config.dragContent.html(table);
+		data.config.dragBadge.text(data.moveIds.length);
+		data.config.dragBadge.css('display', data.moveIds.length > 1 ? 'block' : 'none');
+		data.config.dragBox.css({left: data.target.offset().left, width: data.dragRow.width()});
+		var tds = $('td', tr);
+		$('td', data.dragRow).each(function(ind, el) { $(tds[ind]).css('width', $(el).width()); });
+	}
+
+	function updateDrag(data, x, y)
+	{
+		var offsetX = $(document).scrollLeft();
+		var offsetY = $(document).scrollTop();
+		var posX = x + offsetX;
+		var posY = y + offsetY;
+
+		data.config.dragBox.css({
+			left: posX - data.dragOffset.x,
+			top: Math.max(Math.min(posY - data.dragOffset.y, offsetY + $(window).height() - data.config.dragBox.height() - 2), offsetY + 2)});
+
+		var dt = data.config.dragBox.offset().top;
+		var dh = data.config.dragBox.height();
+
+		var rows = $('tbody > tr', data.target);
+		for (var i = 0; i < rows.length; i++)
+		{
+			var row = $(rows[i]);
+			var rt = row.offset().top;
+			var rh = row.height();
+			if (row[0] !== data.dragRow[0])
+			{
+				if ((dt >= rt && dt <= rt + rh / 2) ||
+					(dt < rt && i == 0))
+				{
+					data.dropAfter = false;
+					row.before(data.dragRow);
+					data.dropId = row[0].fasttableID;
+					break;
+				}
+				if ((dt + dh >= rt + rh / 2 && dt + dh <= rt + rh) ||
+					(dt + dh > rt + rh && i === rows.length - 1))
+				{
+					data.dropAfter = true;
+					row.after(data.dragRow);
+					data.dropId = row[0].fasttableID;
+					break;
+				}
+			}
+		}
+
+		if (data.dropId === null)
+		{
+			data.dropId = data.dragRow[0].fasttableID;
+			data.dropAfter = true;
+		}
+	}
+
+	function autoScroll(data, x, y)
+	{
+		// works properly only if the table lays directly on the page (not in another scrollable div)
+
+		data.scrollStep = (y > $(window).height() - 20 ? 1 : y < 20 ? -1 : 0) * 5;
+		if (data.scrollStep !== 0 && !data.scrollTimer)
+		{
+			var scroll = function()
+			{
+				$(document).scrollTop($(document).scrollTop() + data.scrollStep);
+				updateDrag(data, x, y + data.scrollStep);
+				data.scrollTimer = data.scrollStep == 0 ? null : setTimeout(scroll, 10);
+			}
+			data.scrollTimer = setTimeout(scroll, 500);
+		}
+	}
+
+	function mouseUp(data, e)
+	{
+		document.removeEventListener('mousemove', data.mouseMove, true);
+		document.removeEventListener('touchmove', data.mouseMove, true);
+		document.removeEventListener('mouseup', data.mouseUp, true);
+		document.removeEventListener('touchend', data.mouseUp, true);
+		document.removeEventListener('touchcancel', data.mouseUp, true);
+		document.removeEventListener('keydown', data.keyDown, true);
+
+		if (!data.dragging)
+		{
+			return;
+		}
+
+		data.dragging = false;
+		data.cancelDrag = data.cancelDrag || e.type === 'touchcancel';
+		data.dragRow.removeClass('drag-source');
+		$('html').removeClass('drag-progress');
+		$('body').css('overflow-x', data.oldOverflowX);
+		data.config.dragBox.hide();
+		data.scrollStep = 0;
+		clearTimeout(data.scrollTimer);
+		data.scrollTimer = null;
+		moveRecords(data);
+	}
+
+	function keyDown(data, e)
+	{
+		if (e.keyCode == 27) // ESC-key
+		{
+			data.cancelDrag = true;
+			e.preventDefault();
+			mouseUp(data, e);
+		}
+	}
+
+	function moveRecords(data)
+	{
+		if (data.dropId !== null && !data.cancelDrag &&
+			!(data.moveIds.length == 1 && data.dropId == data.moveIds[0]))
+		{
+			data.blinkIds = data.moveIds;
+			data.moveIds = [];
+			data.blinkState = data.config.dragBlink === 'none' ? 0 : 3;
+			data.wantBlink = data.blinkState > 0;
+			moveRows(data);
+		}
+		else
+		{
+			data.dropId = null;
+		}
+
+		if (data.dropId === null)
+		{
+			data.moveIds = [];
+		}
+
+		refresh(data);
+
+		data.config.dragEndCallback(data.dropId !== null ?
+			{
+				ids: data.blinkIds,
+				position: data.dropId,
+				direction: data.dropAfter ? 'after' : 'before'
+			} : null);
+
+		if (data.config.dragBlink === 'direct')
+		{
+			data.target.fasttable('update');
+		}
+	}
+
+	function moveRows(data)
+	{
+		var movedIds = data.blinkIds;
+		var movedRecords = [];
+
+		for (var i = 0; i < data.content.length; i++)
+		{
+			var item = data.content[i];
+			if (movedIds.indexOf(item.id) > -1)
+			{
+				movedRecords.push(item);
+				data.content.splice(i, 1);
+				i--;
+
+				if (item.id === data.dropId)
+				{
+					if (i >= 0)
+					{
+						data.dropId = data.content[i].id;
+						data.dropAfter = true;
+					}
+					else if (i + 1 < data.content.length)
+					{
+						data.dropId = data.content[i + 1].id;
+						data.dropAfter = false;
+					}
+					else
+					{
+						data.dropId = null;
+					}
+				}
+			}
+		}
+
+		if (data.dropId === null)
+		{
+			// restore content
+			for (var j = 0; j < movedRecords.length; j++)
+			{
+				data.content.push(movedRecords[j]);
+			}
+			return;
+		}
+
+		for (var i = 0; i < data.content.length; i++)
+		{
+			if (data.content[i].id === data.dropId)
+			{
+				for (var j = movedRecords.length - 1; j >= 0; j--)
+				{
+					data.content.splice(data.dropAfter ? i + 1 : i, 0, movedRecords[j]);
+				}
+				break;
+			}
+		}
+	}
+
+	function blinkMovedRecords(data)
+	{
+		if (data.blinkIds.length > 0)
+		{
+			blinkProgress(data, data.wantBlink);
+			data.wantBlink = false;
+		}
+	}
+
+	function blinkProgress(data, recur)
+	{
+		var rows = $('tr', data.target);
+		rows.removeClass('drag-finish');
+		rows.each(function(ind, el)
+			{
+				var id = el.fasttableID;
+				if (data.blinkIds.indexOf(id) > -1 &&
+					(data.blinkState === 1 || data.blinkState === 3 || data.blinkState === 5))
+				{
+					$(el).addClass('drag-finish');
+				}
+			});
+
+		if (recur && data.blinkState > 0)
+		{
+			setTimeout(function()
+				{
+					data.blinkState -= 1;
+					blinkProgress(data, true);
+				},
+				150);
+		}
+
+		if (data.blinkState === 0)
+		{
+			data.blinkIds = [];
+		}
+	}
+
+	//*************** KEYBOARD
+
+	function processShortcut(data, key)
+	{
+		switch (key)
+		{
+			case 'Left': data.curPage = Math.max(data.curPage - 1, 1); refresh(data); return true;
+			case 'Shift+Left': data.curPage = 1; refresh(data); return true;
+			case 'Right': data.curPage = Math.min(data.curPage + 1, data.pageCount); refresh(data); return true;
+			case 'Shift+Right': data.curPage = data.pageCount; refresh(data); return true;
+			case 'Shift+F': data.config.filterInput.focus(); return true;
+			case 'Shift+C': data.config.filterClearButton.click(); return true;
+		}
+	}
+
+	//*************** CONFIG
+
 	var defaults =
 	{
-		filterInput: '#table-filter',
-		filterClearButton: '#table-clear',
-		pagerContainer: '#table-pager',
-		infoContainer: '#table-info',
+		filterInput: '#TableFilter',
+		filterClearButton: '#TableClear',
+		pagerContainer: '#TablePager',
+		infoContainer: '#TableInfo',
+		dragBox: '#TableDragBox',
+		dragContent: '#TableDragContent',
+		dragBadge: '#TableDragBadge',
+		dragBlink: 'none', // none, direct, update
 		pageSize: 10,
 		maxPages: 5,
 		pageDots: true,
-		hasHeader: true,
+		rowSelect: false,
+		shortcuts: false,
 		infoEmpty: 'No records',
 		renderRowCallback: undefined,
 		renderCellCallback: undefined,
@@ -783,7 +1251,8 @@
 		filterClearCallback: undefined,
 		fillSearchCallback: undefined,
 		filterCallback: undefined,
-		headerCheck: '#table-header-check'
+		dragStartCallback: undefined,
+		dragEndCallback: undefined
 	};
 
 })(jQuery);
@@ -802,7 +1271,7 @@ function FastSearcher()
 		this.len = source.length;
 		this.p = 0;
 	}
-	
+
 	this.nextToken = function()
 	{
 		while (this.p < this.len)
@@ -948,7 +1417,7 @@ function FastSearcher()
 		var _this = this;
 		var text = term.toLowerCase();
 		var field;
-		
+
 		var command;
 		var commandIndex;
 		for (var i = 0; i < COMMANDS.length; i++)
@@ -961,7 +1430,7 @@ function FastSearcher()
 				command = cmd;
 			}
 		}
-		
+
 		if (command !== undefined)
 		{
 			field = term.substring(0, commandIndex);
@@ -975,7 +1444,7 @@ function FastSearcher()
 			eval: function() { return _this.evalTerm(this); }
 		};
 	}
-	
+
 	this.evalTerm = function(term) {
 		var text = term.text;
 		var field = term.field;

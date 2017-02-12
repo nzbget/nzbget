@@ -25,13 +25,12 @@
 
 #include "NString.h"
 #include "Container.h"
-#include "Thread.h"
 #include "FileSystem.h"
 #include "Log.h"
 
 class Repairer;
 
-class ParChecker : public Thread
+class ParChecker
 {
 public:
 	enum EStatus
@@ -57,8 +56,7 @@ public:
 		virtual Repairer* GetRepairer() = 0;
 	};
 
-	virtual ~ParChecker();
-	virtual void Run();
+	void Execute();
 	void SetDestDir(const char* destDir) { m_destDir = destDir; }
 	const char* GetParFilename() { return m_parFilename; }
 	const char* GetInfoName() { return m_infoName; }
@@ -74,7 +72,6 @@ public:
 	void AddParFile(const char* parFilename);
 	void QueueChanged();
 	void Cancel();
-	bool GetCancelled() { return m_cancelled; }
 
 protected:
 	class Segment
@@ -129,6 +126,7 @@ protected:
 	*/
 	virtual bool RequestMorePars(int blockNeeded, int* blockFound) = 0;
 	virtual void UpdateProgress() {}
+	virtual bool IsStopped() { return false; };
 	virtual void Completed() {}
 	virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3) {}
 	virtual void RegisterParredFile(const char* filename) {}
@@ -186,6 +184,8 @@ private:
 	DupeSourceList m_dupeSources;
 	StreamBuf m_parOutStream{this, Message::mkDetail};
 	StreamBuf m_parErrStream{this, Message::mkError};
+	std::ostream m_parCout{&m_parOutStream};
+	std::ostream m_parCerr{&m_parErrStream};
 
 	// "m_repairer" should be of type "Par2::Par2Repairer", however to prevent the
 	// including of libpar2-headers into this header-file we use an empty abstract class.

@@ -84,8 +84,6 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_PAR2_TRUE@	lib/par2/md5.cpp \
 @WITH_PAR2_TRUE@	lib/par2/md5.h \
 @WITH_PAR2_TRUE@	lib/par2/par2cmdline.h \
-@WITH_PAR2_TRUE@	lib/par2/par2creatorsourcefile.cpp \
-@WITH_PAR2_TRUE@	lib/par2/par2creatorsourcefile.h \
 @WITH_PAR2_TRUE@	lib/par2/par2fileformat.cpp \
 @WITH_PAR2_TRUE@	lib/par2/par2fileformat.h \
 @WITH_PAR2_TRUE@	lib/par2/par2repairer.cpp \
@@ -112,16 +110,20 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	tests/main/CommandLineParserTest.cpp \
 @WITH_TESTS_TRUE@	tests/main/OptionsTest.cpp \
 @WITH_TESTS_TRUE@	tests/feed/FeedFilterTest.cpp \
-@WITH_TESTS_TRUE@	tests/postprocess/ParCheckerTest.cpp \
-@WITH_TESTS_TRUE@	tests/postprocess/ParRenamerTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/DupeMatcherTest.cpp \
+@WITH_TESTS_TRUE@	tests/postprocess/RarRenamerTest.cpp \
+@WITH_TESTS_TRUE@	tests/postprocess/RarReaderTest.cpp \
 @WITH_TESTS_TRUE@	tests/queue/NzbFileTest.cpp \
 @WITH_TESTS_TRUE@	tests/nntp/ServerPoolTest.cpp \
 @WITH_TESTS_TRUE@	tests/util/FileSystemTest.cpp \
 @WITH_TESTS_TRUE@	tests/util/NStringTest.cpp \
 @WITH_TESTS_TRUE@	tests/util/UtilTest.cpp
 
-@WITH_TESTS_TRUE@am__append_3 = \
+@WITH_PAR2_TRUE@@WITH_TESTS_TRUE@am__append_3 = \
+@WITH_PAR2_TRUE@@WITH_TESTS_TRUE@	tests/postprocess/ParCheckerTest.cpp \
+@WITH_PAR2_TRUE@@WITH_TESTS_TRUE@	tests/postprocess/ParRenamerTest.cpp
+
+@WITH_TESTS_TRUE@am__append_4 = \
 @WITH_TESTS_TRUE@	-I$(srcdir)/lib/catch \
 @WITH_TESTS_TRUE@	-I$(srcdir)/tests/suite
 
@@ -191,18 +193,21 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/postprocess/DupeMatcher.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
-	daemon/postprocess/ParCoordinator.cpp \
-	daemon/postprocess/ParCoordinator.h \
 	daemon/postprocess/ParParser.cpp \
 	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
-	daemon/postprocess/Unpack.cpp daemon/postprocess/Unpack.h \
-	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
-	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
-	daemon/queue/DupeCoordinator.cpp \
+	daemon/postprocess/RarRenamer.cpp \
+	daemon/postprocess/RarRenamer.h \
+	daemon/postprocess/RarReader.cpp \
+	daemon/postprocess/RarReader.h daemon/postprocess/Rename.cpp \
+	daemon/postprocess/Rename.h daemon/postprocess/Repair.cpp \
+	daemon/postprocess/Repair.h daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/Unpack.h daemon/queue/DiskState.cpp \
+	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
+	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
@@ -223,21 +228,26 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/util/Thread.cpp daemon/util/Thread.h \
 	daemon/util/Service.cpp daemon/util/Service.h \
 	daemon/util/FileSystem.cpp daemon/util/FileSystem.h \
-	daemon/util/Util.cpp daemon/util/Util.h code_revision.cpp \
-	lib/par2/commandline.cpp lib/par2/commandline.h \
-	lib/par2/crc.cpp lib/par2/crc.h lib/par2/creatorpacket.cpp \
-	lib/par2/creatorpacket.h lib/par2/criticalpacket.cpp \
-	lib/par2/criticalpacket.h lib/par2/datablock.cpp \
-	lib/par2/datablock.h lib/par2/descriptionpacket.cpp \
-	lib/par2/descriptionpacket.h lib/par2/diskfile.cpp \
-	lib/par2/diskfile.h lib/par2/filechecksummer.cpp \
-	lib/par2/filechecksummer.h lib/par2/galois.cpp \
-	lib/par2/galois.h lib/par2/letype.h lib/par2/mainpacket.cpp \
-	lib/par2/mainpacket.h lib/par2/md5.cpp lib/par2/md5.h \
-	lib/par2/par2cmdline.h lib/par2/par2creatorsourcefile.cpp \
-	lib/par2/par2creatorsourcefile.h lib/par2/par2fileformat.cpp \
-	lib/par2/par2fileformat.h lib/par2/par2repairer.cpp \
-	lib/par2/par2repairer.h lib/par2/par2repairersourcefile.cpp \
+	daemon/util/Util.cpp daemon/util/Util.h \
+	daemon/nserv/NServMain.h daemon/nserv/NServMain.cpp \
+	daemon/nserv/NServFrontend.h daemon/nserv/NServFrontend.cpp \
+	daemon/nserv/NntpServer.h daemon/nserv/NntpServer.cpp \
+	daemon/nserv/NzbGenerator.h daemon/nserv/NzbGenerator.cpp \
+	daemon/nserv/YEncoder.h daemon/nserv/YEncoder.cpp \
+	code_revision.cpp lib/par2/commandline.cpp \
+	lib/par2/commandline.h lib/par2/crc.cpp lib/par2/crc.h \
+	lib/par2/creatorpacket.cpp lib/par2/creatorpacket.h \
+	lib/par2/criticalpacket.cpp lib/par2/criticalpacket.h \
+	lib/par2/datablock.cpp lib/par2/datablock.h \
+	lib/par2/descriptionpacket.cpp lib/par2/descriptionpacket.h \
+	lib/par2/diskfile.cpp lib/par2/diskfile.h \
+	lib/par2/filechecksummer.cpp lib/par2/filechecksummer.h \
+	lib/par2/galois.cpp lib/par2/galois.h lib/par2/letype.h \
+	lib/par2/mainpacket.cpp lib/par2/mainpacket.h lib/par2/md5.cpp \
+	lib/par2/md5.h lib/par2/par2cmdline.h \
+	lib/par2/par2fileformat.cpp lib/par2/par2fileformat.h \
+	lib/par2/par2repairer.cpp lib/par2/par2repairer.h \
+	lib/par2/par2repairersourcefile.cpp \
 	lib/par2/par2repairersourcefile.h lib/par2/parheaders.cpp \
 	lib/par2/parheaders.h lib/par2/recoverypacket.cpp \
 	lib/par2/recoverypacket.h lib/par2/reedsolomon.cpp \
@@ -248,19 +258,19 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	tests/suite/TestMain.h tests/suite/TestUtil.cpp \
 	tests/suite/TestUtil.h tests/main/CommandLineParserTest.cpp \
 	tests/main/OptionsTest.cpp tests/feed/FeedFilterTest.cpp \
-	tests/postprocess/ParCheckerTest.cpp \
-	tests/postprocess/ParRenamerTest.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
+	tests/postprocess/RarRenamerTest.cpp \
+	tests/postprocess/RarReaderTest.cpp \
 	tests/queue/NzbFileTest.cpp tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp tests/util/NStringTest.cpp \
-	tests/util/UtilTest.cpp
+	tests/util/UtilTest.cpp tests/postprocess/ParCheckerTest.cpp \
+	tests/postprocess/ParRenamerTest.cpp
 @WITH_PAR2_TRUE@am__objects_1 = commandline.$(OBJEXT) crc.$(OBJEXT) \
 @WITH_PAR2_TRUE@	creatorpacket.$(OBJEXT) \
 @WITH_PAR2_TRUE@	criticalpacket.$(OBJEXT) datablock.$(OBJEXT) \
 @WITH_PAR2_TRUE@	descriptionpacket.$(OBJEXT) diskfile.$(OBJEXT) \
 @WITH_PAR2_TRUE@	filechecksummer.$(OBJEXT) galois.$(OBJEXT) \
 @WITH_PAR2_TRUE@	mainpacket.$(OBJEXT) md5.$(OBJEXT) \
-@WITH_PAR2_TRUE@	par2creatorsourcefile.$(OBJEXT) \
 @WITH_PAR2_TRUE@	par2fileformat.$(OBJEXT) \
 @WITH_PAR2_TRUE@	par2repairer.$(OBJEXT) \
 @WITH_PAR2_TRUE@	par2repairersourcefile.$(OBJEXT) \
@@ -272,13 +282,15 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_TESTS_TRUE@	CommandLineParserTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	OptionsTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	FeedFilterTest.$(OBJEXT) \
-@WITH_TESTS_TRUE@	ParCheckerTest.$(OBJEXT) \
-@WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	DupeMatcherTest.$(OBJEXT) \
-@WITH_TESTS_TRUE@	NzbFileTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	RarRenamerTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	RarReaderTest.$(OBJEXT) NzbFileTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ServerPoolTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	FileSystemTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	NStringTest.$(OBJEXT) UtilTest.$(OBJEXT)
+@WITH_PAR2_TRUE@@WITH_TESTS_TRUE@am__objects_3 =  \
+@WITH_PAR2_TRUE@@WITH_TESTS_TRUE@	ParCheckerTest.$(OBJEXT) \
+@WITH_PAR2_TRUE@@WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT)
 am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	WebDownloader.$(OBJEXT) FeedScript.$(OBJEXT) \
 	NzbScript.$(OBJEXT) PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
@@ -294,10 +306,10 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	Decoder.$(OBJEXT) NewsServer.$(OBJEXT) \
 	NntpConnection.$(OBJEXT) ServerPool.$(OBJEXT) \
 	StatMeter.$(OBJEXT) Cleanup.$(OBJEXT) DupeMatcher.$(OBJEXT) \
-	ParChecker.$(OBJEXT) ParCoordinator.$(OBJEXT) \
-	ParParser.$(OBJEXT) ParRenamer.$(OBJEXT) \
-	PrePostProcessor.$(OBJEXT) Unpack.$(OBJEXT) \
-	DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
+	ParChecker.$(OBJEXT) ParParser.$(OBJEXT) ParRenamer.$(OBJEXT) \
+	PrePostProcessor.$(OBJEXT) RarRenamer.$(OBJEXT) \
+	RarReader.$(OBJEXT) Rename.$(OBJEXT) Repair.$(OBJEXT) \
+	Unpack.$(OBJEXT) DiskState.$(OBJEXT) DownloadInfo.$(OBJEXT) \
 	DupeCoordinator.$(OBJEXT) HistoryCoordinator.$(OBJEXT) \
 	NzbFile.$(OBJEXT) QueueCoordinator.$(OBJEXT) \
 	QueueEditor.$(OBJEXT) Scanner.$(OBJEXT) \
@@ -306,8 +318,10 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	WebServer.$(OBJEXT) XmlRpc.$(OBJEXT) Log.$(OBJEXT) \
 	NString.$(OBJEXT) Observer.$(OBJEXT) Script.$(OBJEXT) \
 	Thread.$(OBJEXT) Service.$(OBJEXT) FileSystem.$(OBJEXT) \
-	Util.$(OBJEXT) code_revision.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
+	Util.$(OBJEXT) NServMain.$(OBJEXT) NServFrontend.$(OBJEXT) \
+	NntpServer.$(OBJEXT) NzbGenerator.$(OBJEXT) YEncoder.$(OBJEXT) \
+	code_revision.$(OBJEXT) $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -443,6 +457,8 @@ mandir = @mandir@
 mkdir_p = @mkdir_p@
 ncurses_CFLAGS = @ncurses_CFLAGS@
 ncurses_LIBS = @ncurses_LIBS@
+nettle_CFLAGS = @nettle_CFLAGS@
+nettle_LIBS = @nettle_LIBS@
 oldincludedir = @oldincludedir@
 openssl_CFLAGS = @openssl_CFLAGS@
 openssl_LIBS = @openssl_LIBS@
@@ -504,18 +520,21 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/postprocess/DupeMatcher.h \
 	daemon/postprocess/ParChecker.cpp \
 	daemon/postprocess/ParChecker.h \
-	daemon/postprocess/ParCoordinator.cpp \
-	daemon/postprocess/ParCoordinator.h \
 	daemon/postprocess/ParParser.cpp \
 	daemon/postprocess/ParParser.h \
 	daemon/postprocess/ParRenamer.cpp \
 	daemon/postprocess/ParRenamer.h \
 	daemon/postprocess/PrePostProcessor.cpp \
 	daemon/postprocess/PrePostProcessor.h \
-	daemon/postprocess/Unpack.cpp daemon/postprocess/Unpack.h \
-	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
-	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
-	daemon/queue/DupeCoordinator.cpp \
+	daemon/postprocess/RarRenamer.cpp \
+	daemon/postprocess/RarRenamer.h \
+	daemon/postprocess/RarReader.cpp \
+	daemon/postprocess/RarReader.h daemon/postprocess/Rename.cpp \
+	daemon/postprocess/Rename.h daemon/postprocess/Repair.cpp \
+	daemon/postprocess/Repair.h daemon/postprocess/Unpack.cpp \
+	daemon/postprocess/Unpack.h daemon/queue/DiskState.cpp \
+	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
+	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
@@ -536,14 +555,20 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/util/Thread.cpp daemon/util/Thread.h \
 	daemon/util/Service.cpp daemon/util/Service.h \
 	daemon/util/FileSystem.cpp daemon/util/FileSystem.h \
-	daemon/util/Util.cpp daemon/util/Util.h code_revision.cpp \
-	$(am__append_1) $(am__append_2)
+	daemon/util/Util.cpp daemon/util/Util.h \
+	daemon/nserv/NServMain.h daemon/nserv/NServMain.cpp \
+	daemon/nserv/NServFrontend.h daemon/nserv/NServFrontend.cpp \
+	daemon/nserv/NntpServer.h daemon/nserv/NntpServer.cpp \
+	daemon/nserv/NzbGenerator.h daemon/nserv/NzbGenerator.cpp \
+	daemon/nserv/YEncoder.h daemon/nserv/YEncoder.cpp \
+	code_revision.cpp $(am__append_1) $(am__append_2) \
+	$(am__append_3)
 AM_CPPFLAGS = -I$(srcdir)/daemon/connect -I$(srcdir)/daemon/extension \
 	-I$(srcdir)/daemon/feed -I$(srcdir)/daemon/frontend \
 	-I$(srcdir)/daemon/main -I$(srcdir)/daemon/nntp \
 	-I$(srcdir)/daemon/postprocess -I$(srcdir)/daemon/queue \
 	-I$(srcdir)/daemon/remote -I$(srcdir)/daemon/util \
-	-I$(srcdir)/lib/par2 $(am__append_3)
+	-I$(srcdir)/daemon/nserv -I$(srcdir)/lib/par2 $(am__append_4)
 EXTRA_DIST = \
 	$(windows_FILES) \
 	$(osx_FILES) \
@@ -675,7 +700,28 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.par2 \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
-	tests/testdata/parchecker/testfile.vol03+3.PAR2
+	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
+	tests/testdata/rarrenamer/testfile3.part01.rar \
+	tests/testdata/rarrenamer/testfile3.part02.rar \
+	tests/testdata/rarrenamer/testfile3.part03.rar \
+	tests/testdata/rarrenamer/testfile5.part01.rar \
+	tests/testdata/rarrenamer/testfile5.part02.rar \
+	tests/testdata/rarrenamer/testfile5.part03.rar \
+	tests/testdata/rarrenamer/testfile3oldnam.rar \
+	tests/testdata/rarrenamer/testfile3oldnam.r00 \
+	tests/testdata/rarrenamer/testfile3oldnam.r01 \
+	tests/testdata/rarrenamer/testfile3encdata.part01.rar \
+	tests/testdata/rarrenamer/testfile3encdata.part02.rar \
+	tests/testdata/rarrenamer/testfile3encdata.part03.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part01.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part02.rar \
+	tests/testdata/rarrenamer/testfile3encnam.part03.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part01.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part02.rar \
+	tests/testdata/rarrenamer/testfile5encdata.part03.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part01.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part02.rar \
+	tests/testdata/rarrenamer/testfile5encnam.part03.rar
 
 
 # Install
@@ -834,19 +880,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoggableFrontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Maintenance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NCursesFrontend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NServFrontend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NServMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NString.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NStringTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewsServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NntpConnection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NntpServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbFileTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbGenerator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NzbScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Observer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OptionsTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParChecker.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCheckerTest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParRenamerTest.Po@am__quote@
@@ -855,8 +904,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueCoordinator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueEditor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueueScript.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarReaderTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarRenamer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RarRenamerTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RemoteClient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RemoteServer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rename.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Repair.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ScanScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scheduler.Po@am__quote@
@@ -879,6 +934,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebDownloader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WebServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XmlRpc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YEncoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/code_revision.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crc.Po@am__quote@
@@ -892,7 +948,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mainpacket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nzbget.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2creatorsourcefile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2fileformat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2repairer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par2repairersourcefile.Po@am__quote@
@@ -1406,20 +1461,6 @@ ParChecker.obj: daemon/postprocess/ParChecker.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParChecker.obj `if test -f 'daemon/postprocess/ParChecker.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParChecker.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParChecker.cpp'; fi`
 
-ParCoordinator.o: daemon/postprocess/ParCoordinator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCoordinator.o -MD -MP -MF "$(DEPDIR)/ParCoordinator.Tpo" -c -o ParCoordinator.o `test -f 'daemon/postprocess/ParCoordinator.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParCoordinator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCoordinator.Tpo" "$(DEPDIR)/ParCoordinator.Po"; else rm -f "$(DEPDIR)/ParCoordinator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParCoordinator.cpp' object='ParCoordinator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCoordinator.o `test -f 'daemon/postprocess/ParCoordinator.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParCoordinator.cpp
-
-ParCoordinator.obj: daemon/postprocess/ParCoordinator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCoordinator.obj -MD -MP -MF "$(DEPDIR)/ParCoordinator.Tpo" -c -o ParCoordinator.obj `if test -f 'daemon/postprocess/ParCoordinator.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParCoordinator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCoordinator.Tpo" "$(DEPDIR)/ParCoordinator.Po"; else rm -f "$(DEPDIR)/ParCoordinator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/ParCoordinator.cpp' object='ParCoordinator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCoordinator.obj `if test -f 'daemon/postprocess/ParCoordinator.cpp'; then $(CYGPATH_W) 'daemon/postprocess/ParCoordinator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/ParCoordinator.cpp'; fi`
-
 ParParser.o: daemon/postprocess/ParParser.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParParser.o -MD -MP -MF "$(DEPDIR)/ParParser.Tpo" -c -o ParParser.o `test -f 'daemon/postprocess/ParParser.cpp' || echo '$(srcdir)/'`daemon/postprocess/ParParser.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParParser.Tpo" "$(DEPDIR)/ParParser.Po"; else rm -f "$(DEPDIR)/ParParser.Tpo"; exit 1; fi
@@ -1461,6 +1502,62 @@ PrePostProcessor.obj: daemon/postprocess/PrePostProcessor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/PrePostProcessor.cpp' object='PrePostProcessor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PrePostProcessor.obj `if test -f 'daemon/postprocess/PrePostProcessor.cpp'; then $(CYGPATH_W) 'daemon/postprocess/PrePostProcessor.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/PrePostProcessor.cpp'; fi`
+
+RarRenamer.o: daemon/postprocess/RarRenamer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamer.o -MD -MP -MF "$(DEPDIR)/RarRenamer.Tpo" -c -o RarRenamer.o `test -f 'daemon/postprocess/RarRenamer.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarRenamer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamer.Tpo" "$(DEPDIR)/RarRenamer.Po"; else rm -f "$(DEPDIR)/RarRenamer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarRenamer.cpp' object='RarRenamer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamer.o `test -f 'daemon/postprocess/RarRenamer.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarRenamer.cpp
+
+RarRenamer.obj: daemon/postprocess/RarRenamer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamer.obj -MD -MP -MF "$(DEPDIR)/RarRenamer.Tpo" -c -o RarRenamer.obj `if test -f 'daemon/postprocess/RarRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarRenamer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamer.Tpo" "$(DEPDIR)/RarRenamer.Po"; else rm -f "$(DEPDIR)/RarRenamer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarRenamer.cpp' object='RarRenamer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamer.obj `if test -f 'daemon/postprocess/RarRenamer.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarRenamer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarRenamer.cpp'; fi`
+
+RarReader.o: daemon/postprocess/RarReader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReader.o -MD -MP -MF "$(DEPDIR)/RarReader.Tpo" -c -o RarReader.o `test -f 'daemon/postprocess/RarReader.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarReader.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReader.Tpo" "$(DEPDIR)/RarReader.Po"; else rm -f "$(DEPDIR)/RarReader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarReader.cpp' object='RarReader.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReader.o `test -f 'daemon/postprocess/RarReader.cpp' || echo '$(srcdir)/'`daemon/postprocess/RarReader.cpp
+
+RarReader.obj: daemon/postprocess/RarReader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReader.obj -MD -MP -MF "$(DEPDIR)/RarReader.Tpo" -c -o RarReader.obj `if test -f 'daemon/postprocess/RarReader.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarReader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarReader.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReader.Tpo" "$(DEPDIR)/RarReader.Po"; else rm -f "$(DEPDIR)/RarReader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/RarReader.cpp' object='RarReader.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReader.obj `if test -f 'daemon/postprocess/RarReader.cpp'; then $(CYGPATH_W) 'daemon/postprocess/RarReader.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/RarReader.cpp'; fi`
+
+Rename.o: daemon/postprocess/Rename.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rename.o -MD -MP -MF "$(DEPDIR)/Rename.Tpo" -c -o Rename.o `test -f 'daemon/postprocess/Rename.cpp' || echo '$(srcdir)/'`daemon/postprocess/Rename.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Rename.Tpo" "$(DEPDIR)/Rename.Po"; else rm -f "$(DEPDIR)/Rename.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Rename.cpp' object='Rename.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rename.o `test -f 'daemon/postprocess/Rename.cpp' || echo '$(srcdir)/'`daemon/postprocess/Rename.cpp
+
+Rename.obj: daemon/postprocess/Rename.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rename.obj -MD -MP -MF "$(DEPDIR)/Rename.Tpo" -c -o Rename.obj `if test -f 'daemon/postprocess/Rename.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Rename.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Rename.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Rename.Tpo" "$(DEPDIR)/Rename.Po"; else rm -f "$(DEPDIR)/Rename.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Rename.cpp' object='Rename.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rename.obj `if test -f 'daemon/postprocess/Rename.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Rename.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Rename.cpp'; fi`
+
+Repair.o: daemon/postprocess/Repair.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Repair.o -MD -MP -MF "$(DEPDIR)/Repair.Tpo" -c -o Repair.o `test -f 'daemon/postprocess/Repair.cpp' || echo '$(srcdir)/'`daemon/postprocess/Repair.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Repair.Tpo" "$(DEPDIR)/Repair.Po"; else rm -f "$(DEPDIR)/Repair.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Repair.cpp' object='Repair.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Repair.o `test -f 'daemon/postprocess/Repair.cpp' || echo '$(srcdir)/'`daemon/postprocess/Repair.cpp
+
+Repair.obj: daemon/postprocess/Repair.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Repair.obj -MD -MP -MF "$(DEPDIR)/Repair.Tpo" -c -o Repair.obj `if test -f 'daemon/postprocess/Repair.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Repair.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Repair.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Repair.Tpo" "$(DEPDIR)/Repair.Po"; else rm -f "$(DEPDIR)/Repair.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Repair.cpp' object='Repair.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Repair.obj `if test -f 'daemon/postprocess/Repair.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Repair.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Repair.cpp'; fi`
 
 Unpack.o: daemon/postprocess/Unpack.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Unpack.o -MD -MP -MF "$(DEPDIR)/Unpack.Tpo" -c -o Unpack.o `test -f 'daemon/postprocess/Unpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/Unpack.cpp; \
@@ -1784,6 +1881,76 @@ Util.obj: daemon/util/Util.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Util.obj `if test -f 'daemon/util/Util.cpp'; then $(CYGPATH_W) 'daemon/util/Util.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/util/Util.cpp'; fi`
 
+NServMain.o: daemon/nserv/NServMain.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NServMain.o -MD -MP -MF "$(DEPDIR)/NServMain.Tpo" -c -o NServMain.o `test -f 'daemon/nserv/NServMain.cpp' || echo '$(srcdir)/'`daemon/nserv/NServMain.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NServMain.Tpo" "$(DEPDIR)/NServMain.Po"; else rm -f "$(DEPDIR)/NServMain.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NServMain.cpp' object='NServMain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NServMain.o `test -f 'daemon/nserv/NServMain.cpp' || echo '$(srcdir)/'`daemon/nserv/NServMain.cpp
+
+NServMain.obj: daemon/nserv/NServMain.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NServMain.obj -MD -MP -MF "$(DEPDIR)/NServMain.Tpo" -c -o NServMain.obj `if test -f 'daemon/nserv/NServMain.cpp'; then $(CYGPATH_W) 'daemon/nserv/NServMain.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NServMain.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NServMain.Tpo" "$(DEPDIR)/NServMain.Po"; else rm -f "$(DEPDIR)/NServMain.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NServMain.cpp' object='NServMain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NServMain.obj `if test -f 'daemon/nserv/NServMain.cpp'; then $(CYGPATH_W) 'daemon/nserv/NServMain.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NServMain.cpp'; fi`
+
+NServFrontend.o: daemon/nserv/NServFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NServFrontend.o -MD -MP -MF "$(DEPDIR)/NServFrontend.Tpo" -c -o NServFrontend.o `test -f 'daemon/nserv/NServFrontend.cpp' || echo '$(srcdir)/'`daemon/nserv/NServFrontend.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NServFrontend.Tpo" "$(DEPDIR)/NServFrontend.Po"; else rm -f "$(DEPDIR)/NServFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NServFrontend.cpp' object='NServFrontend.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NServFrontend.o `test -f 'daemon/nserv/NServFrontend.cpp' || echo '$(srcdir)/'`daemon/nserv/NServFrontend.cpp
+
+NServFrontend.obj: daemon/nserv/NServFrontend.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NServFrontend.obj -MD -MP -MF "$(DEPDIR)/NServFrontend.Tpo" -c -o NServFrontend.obj `if test -f 'daemon/nserv/NServFrontend.cpp'; then $(CYGPATH_W) 'daemon/nserv/NServFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NServFrontend.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NServFrontend.Tpo" "$(DEPDIR)/NServFrontend.Po"; else rm -f "$(DEPDIR)/NServFrontend.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NServFrontend.cpp' object='NServFrontend.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NServFrontend.obj `if test -f 'daemon/nserv/NServFrontend.cpp'; then $(CYGPATH_W) 'daemon/nserv/NServFrontend.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NServFrontend.cpp'; fi`
+
+NntpServer.o: daemon/nserv/NntpServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NntpServer.o -MD -MP -MF "$(DEPDIR)/NntpServer.Tpo" -c -o NntpServer.o `test -f 'daemon/nserv/NntpServer.cpp' || echo '$(srcdir)/'`daemon/nserv/NntpServer.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NntpServer.Tpo" "$(DEPDIR)/NntpServer.Po"; else rm -f "$(DEPDIR)/NntpServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NntpServer.cpp' object='NntpServer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NntpServer.o `test -f 'daemon/nserv/NntpServer.cpp' || echo '$(srcdir)/'`daemon/nserv/NntpServer.cpp
+
+NntpServer.obj: daemon/nserv/NntpServer.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NntpServer.obj -MD -MP -MF "$(DEPDIR)/NntpServer.Tpo" -c -o NntpServer.obj `if test -f 'daemon/nserv/NntpServer.cpp'; then $(CYGPATH_W) 'daemon/nserv/NntpServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NntpServer.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NntpServer.Tpo" "$(DEPDIR)/NntpServer.Po"; else rm -f "$(DEPDIR)/NntpServer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NntpServer.cpp' object='NntpServer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NntpServer.obj `if test -f 'daemon/nserv/NntpServer.cpp'; then $(CYGPATH_W) 'daemon/nserv/NntpServer.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NntpServer.cpp'; fi`
+
+NzbGenerator.o: daemon/nserv/NzbGenerator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbGenerator.o -MD -MP -MF "$(DEPDIR)/NzbGenerator.Tpo" -c -o NzbGenerator.o `test -f 'daemon/nserv/NzbGenerator.cpp' || echo '$(srcdir)/'`daemon/nserv/NzbGenerator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbGenerator.Tpo" "$(DEPDIR)/NzbGenerator.Po"; else rm -f "$(DEPDIR)/NzbGenerator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NzbGenerator.cpp' object='NzbGenerator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NzbGenerator.o `test -f 'daemon/nserv/NzbGenerator.cpp' || echo '$(srcdir)/'`daemon/nserv/NzbGenerator.cpp
+
+NzbGenerator.obj: daemon/nserv/NzbGenerator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbGenerator.obj -MD -MP -MF "$(DEPDIR)/NzbGenerator.Tpo" -c -o NzbGenerator.obj `if test -f 'daemon/nserv/NzbGenerator.cpp'; then $(CYGPATH_W) 'daemon/nserv/NzbGenerator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NzbGenerator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NzbGenerator.Tpo" "$(DEPDIR)/NzbGenerator.Po"; else rm -f "$(DEPDIR)/NzbGenerator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/NzbGenerator.cpp' object='NzbGenerator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NzbGenerator.obj `if test -f 'daemon/nserv/NzbGenerator.cpp'; then $(CYGPATH_W) 'daemon/nserv/NzbGenerator.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/NzbGenerator.cpp'; fi`
+
+YEncoder.o: daemon/nserv/YEncoder.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT YEncoder.o -MD -MP -MF "$(DEPDIR)/YEncoder.Tpo" -c -o YEncoder.o `test -f 'daemon/nserv/YEncoder.cpp' || echo '$(srcdir)/'`daemon/nserv/YEncoder.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/YEncoder.Tpo" "$(DEPDIR)/YEncoder.Po"; else rm -f "$(DEPDIR)/YEncoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/YEncoder.cpp' object='YEncoder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o YEncoder.o `test -f 'daemon/nserv/YEncoder.cpp' || echo '$(srcdir)/'`daemon/nserv/YEncoder.cpp
+
+YEncoder.obj: daemon/nserv/YEncoder.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT YEncoder.obj -MD -MP -MF "$(DEPDIR)/YEncoder.Tpo" -c -o YEncoder.obj `if test -f 'daemon/nserv/YEncoder.cpp'; then $(CYGPATH_W) 'daemon/nserv/YEncoder.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/YEncoder.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/YEncoder.Tpo" "$(DEPDIR)/YEncoder.Po"; else rm -f "$(DEPDIR)/YEncoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/nserv/YEncoder.cpp' object='YEncoder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o YEncoder.obj `if test -f 'daemon/nserv/YEncoder.cpp'; then $(CYGPATH_W) 'daemon/nserv/YEncoder.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/nserv/YEncoder.cpp'; fi`
+
 commandline.o: lib/par2/commandline.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT commandline.o -MD -MP -MF "$(DEPDIR)/commandline.Tpo" -c -o commandline.o `test -f 'lib/par2/commandline.cpp' || echo '$(srcdir)/'`lib/par2/commandline.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/commandline.Tpo" "$(DEPDIR)/commandline.Po"; else rm -f "$(DEPDIR)/commandline.Tpo"; exit 1; fi
@@ -1937,20 +2104,6 @@ md5.obj: lib/par2/md5.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/md5.cpp' object='md5.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md5.obj `if test -f 'lib/par2/md5.cpp'; then $(CYGPATH_W) 'lib/par2/md5.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/md5.cpp'; fi`
-
-par2creatorsourcefile.o: lib/par2/par2creatorsourcefile.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2creatorsourcefile.o -MD -MP -MF "$(DEPDIR)/par2creatorsourcefile.Tpo" -c -o par2creatorsourcefile.o `test -f 'lib/par2/par2creatorsourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2creatorsourcefile.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2creatorsourcefile.Tpo" "$(DEPDIR)/par2creatorsourcefile.Po"; else rm -f "$(DEPDIR)/par2creatorsourcefile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2creatorsourcefile.cpp' object='par2creatorsourcefile.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2creatorsourcefile.o `test -f 'lib/par2/par2creatorsourcefile.cpp' || echo '$(srcdir)/'`lib/par2/par2creatorsourcefile.cpp
-
-par2creatorsourcefile.obj: lib/par2/par2creatorsourcefile.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2creatorsourcefile.obj -MD -MP -MF "$(DEPDIR)/par2creatorsourcefile.Tpo" -c -o par2creatorsourcefile.obj `if test -f 'lib/par2/par2creatorsourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2creatorsourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2creatorsourcefile.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/par2creatorsourcefile.Tpo" "$(DEPDIR)/par2creatorsourcefile.Po"; else rm -f "$(DEPDIR)/par2creatorsourcefile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lib/par2/par2creatorsourcefile.cpp' object='par2creatorsourcefile.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o par2creatorsourcefile.obj `if test -f 'lib/par2/par2creatorsourcefile.cpp'; then $(CYGPATH_W) 'lib/par2/par2creatorsourcefile.cpp'; else $(CYGPATH_W) '$(srcdir)/lib/par2/par2creatorsourcefile.cpp'; fi`
 
 par2fileformat.o: lib/par2/par2fileformat.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT par2fileformat.o -MD -MP -MF "$(DEPDIR)/par2fileformat.Tpo" -c -o par2fileformat.o `test -f 'lib/par2/par2fileformat.cpp' || echo '$(srcdir)/'`lib/par2/par2fileformat.cpp; \
@@ -2134,34 +2287,6 @@ FeedFilterTest.obj: tests/feed/FeedFilterTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedFilterTest.obj `if test -f 'tests/feed/FeedFilterTest.cpp'; then $(CYGPATH_W) 'tests/feed/FeedFilterTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/feed/FeedFilterTest.cpp'; fi`
 
-ParCheckerTest.o: tests/postprocess/ParCheckerTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCheckerTest.o -MD -MP -MF "$(DEPDIR)/ParCheckerTest.Tpo" -c -o ParCheckerTest.o `test -f 'tests/postprocess/ParCheckerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParCheckerTest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCheckerTest.Tpo" "$(DEPDIR)/ParCheckerTest.Po"; else rm -f "$(DEPDIR)/ParCheckerTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParCheckerTest.cpp' object='ParCheckerTest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCheckerTest.o `test -f 'tests/postprocess/ParCheckerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParCheckerTest.cpp
-
-ParCheckerTest.obj: tests/postprocess/ParCheckerTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCheckerTest.obj -MD -MP -MF "$(DEPDIR)/ParCheckerTest.Tpo" -c -o ParCheckerTest.obj `if test -f 'tests/postprocess/ParCheckerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParCheckerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParCheckerTest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCheckerTest.Tpo" "$(DEPDIR)/ParCheckerTest.Po"; else rm -f "$(DEPDIR)/ParCheckerTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParCheckerTest.cpp' object='ParCheckerTest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCheckerTest.obj `if test -f 'tests/postprocess/ParCheckerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParCheckerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParCheckerTest.cpp'; fi`
-
-ParRenamerTest.o: tests/postprocess/ParRenamerTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamerTest.o -MD -MP -MF "$(DEPDIR)/ParRenamerTest.Tpo" -c -o ParRenamerTest.o `test -f 'tests/postprocess/ParRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParRenamerTest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamerTest.Tpo" "$(DEPDIR)/ParRenamerTest.Po"; else rm -f "$(DEPDIR)/ParRenamerTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParRenamerTest.cpp' object='ParRenamerTest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.o `test -f 'tests/postprocess/ParRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParRenamerTest.cpp
-
-ParRenamerTest.obj: tests/postprocess/ParRenamerTest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamerTest.obj -MD -MP -MF "$(DEPDIR)/ParRenamerTest.Tpo" -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamerTest.Tpo" "$(DEPDIR)/ParRenamerTest.Po"; else rm -f "$(DEPDIR)/ParRenamerTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParRenamerTest.cpp' object='ParRenamerTest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`
-
 DupeMatcherTest.o: tests/postprocess/DupeMatcherTest.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DupeMatcherTest.o -MD -MP -MF "$(DEPDIR)/DupeMatcherTest.Tpo" -c -o DupeMatcherTest.o `test -f 'tests/postprocess/DupeMatcherTest.cpp' || echo '$(srcdir)/'`tests/postprocess/DupeMatcherTest.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DupeMatcherTest.Tpo" "$(DEPDIR)/DupeMatcherTest.Po"; else rm -f "$(DEPDIR)/DupeMatcherTest.Tpo"; exit 1; fi
@@ -2175,6 +2300,34 @@ DupeMatcherTest.obj: tests/postprocess/DupeMatcherTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/DupeMatcherTest.cpp' object='DupeMatcherTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DupeMatcherTest.obj `if test -f 'tests/postprocess/DupeMatcherTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/DupeMatcherTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/DupeMatcherTest.cpp'; fi`
+
+RarRenamerTest.o: tests/postprocess/RarRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamerTest.o -MD -MP -MF "$(DEPDIR)/RarRenamerTest.Tpo" -c -o RarRenamerTest.o `test -f 'tests/postprocess/RarRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarRenamerTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamerTest.Tpo" "$(DEPDIR)/RarRenamerTest.Po"; else rm -f "$(DEPDIR)/RarRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarRenamerTest.cpp' object='RarRenamerTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamerTest.o `test -f 'tests/postprocess/RarRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarRenamerTest.cpp
+
+RarRenamerTest.obj: tests/postprocess/RarRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarRenamerTest.obj -MD -MP -MF "$(DEPDIR)/RarRenamerTest.Tpo" -c -o RarRenamerTest.obj `if test -f 'tests/postprocess/RarRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarRenamerTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarRenamerTest.Tpo" "$(DEPDIR)/RarRenamerTest.Po"; else rm -f "$(DEPDIR)/RarRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarRenamerTest.cpp' object='RarRenamerTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarRenamerTest.obj `if test -f 'tests/postprocess/RarRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarRenamerTest.cpp'; fi`
+
+RarReaderTest.o: tests/postprocess/RarReaderTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReaderTest.o -MD -MP -MF "$(DEPDIR)/RarReaderTest.Tpo" -c -o RarReaderTest.o `test -f 'tests/postprocess/RarReaderTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarReaderTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReaderTest.Tpo" "$(DEPDIR)/RarReaderTest.Po"; else rm -f "$(DEPDIR)/RarReaderTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarReaderTest.cpp' object='RarReaderTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReaderTest.o `test -f 'tests/postprocess/RarReaderTest.cpp' || echo '$(srcdir)/'`tests/postprocess/RarReaderTest.cpp
+
+RarReaderTest.obj: tests/postprocess/RarReaderTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RarReaderTest.obj -MD -MP -MF "$(DEPDIR)/RarReaderTest.Tpo" -c -o RarReaderTest.obj `if test -f 'tests/postprocess/RarReaderTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarReaderTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarReaderTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/RarReaderTest.Tpo" "$(DEPDIR)/RarReaderTest.Po"; else rm -f "$(DEPDIR)/RarReaderTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarReaderTest.cpp' object='RarReaderTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReaderTest.obj `if test -f 'tests/postprocess/RarReaderTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarReaderTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarReaderTest.cpp'; fi`
 
 NzbFileTest.o: tests/queue/NzbFileTest.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFileTest.o -MD -MP -MF "$(DEPDIR)/NzbFileTest.Tpo" -c -o NzbFileTest.o `test -f 'tests/queue/NzbFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NzbFileTest.cpp; \
@@ -2245,6 +2398,34 @@ UtilTest.obj: tests/util/UtilTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/util/UtilTest.cpp' object='UtilTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o UtilTest.obj `if test -f 'tests/util/UtilTest.cpp'; then $(CYGPATH_W) 'tests/util/UtilTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/util/UtilTest.cpp'; fi`
+
+ParCheckerTest.o: tests/postprocess/ParCheckerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCheckerTest.o -MD -MP -MF "$(DEPDIR)/ParCheckerTest.Tpo" -c -o ParCheckerTest.o `test -f 'tests/postprocess/ParCheckerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParCheckerTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCheckerTest.Tpo" "$(DEPDIR)/ParCheckerTest.Po"; else rm -f "$(DEPDIR)/ParCheckerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParCheckerTest.cpp' object='ParCheckerTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCheckerTest.o `test -f 'tests/postprocess/ParCheckerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParCheckerTest.cpp
+
+ParCheckerTest.obj: tests/postprocess/ParCheckerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParCheckerTest.obj -MD -MP -MF "$(DEPDIR)/ParCheckerTest.Tpo" -c -o ParCheckerTest.obj `if test -f 'tests/postprocess/ParCheckerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParCheckerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParCheckerTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParCheckerTest.Tpo" "$(DEPDIR)/ParCheckerTest.Po"; else rm -f "$(DEPDIR)/ParCheckerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParCheckerTest.cpp' object='ParCheckerTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParCheckerTest.obj `if test -f 'tests/postprocess/ParCheckerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParCheckerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParCheckerTest.cpp'; fi`
+
+ParRenamerTest.o: tests/postprocess/ParRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamerTest.o -MD -MP -MF "$(DEPDIR)/ParRenamerTest.Tpo" -c -o ParRenamerTest.o `test -f 'tests/postprocess/ParRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParRenamerTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamerTest.Tpo" "$(DEPDIR)/ParRenamerTest.Po"; else rm -f "$(DEPDIR)/ParRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParRenamerTest.cpp' object='ParRenamerTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.o `test -f 'tests/postprocess/ParRenamerTest.cpp' || echo '$(srcdir)/'`tests/postprocess/ParRenamerTest.cpp
+
+ParRenamerTest.obj: tests/postprocess/ParRenamerTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ParRenamerTest.obj -MD -MP -MF "$(DEPDIR)/ParRenamerTest.Tpo" -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ParRenamerTest.Tpo" "$(DEPDIR)/ParRenamerTest.Po"; else rm -f "$(DEPDIR)/ParRenamerTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/ParRenamerTest.cpp' object='ParRenamerTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParRenamerTest.obj `if test -f 'tests/postprocess/ParRenamerTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/ParRenamerTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/ParRenamerTest.cpp'; fi`
 uninstall-info-am:
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
@@ -2351,7 +2532,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/linux $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/posix $(distdir)/scripts $(distdir)/tests/testdata/dupematcher1 $(distdir)/tests/testdata/dupematcher2 $(distdir)/tests/testdata/nzbfile $(distdir)/tests/testdata/parchecker $(distdir)/tests/testdata/rarrenamer $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

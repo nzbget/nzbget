@@ -19,7 +19,7 @@
 
 
 #include "nzbget.h"
-#include "ParCoordinator.h"
+#include "Repair.h"
 #include "DupeCoordinator.h"
 #include "ParParser.h"
 #include "Options.h"
@@ -28,17 +28,17 @@
 #include "FileSystem.h"
 
 #ifndef DISABLE_PARCHECK
-bool ParCoordinator::PostParChecker::RequestMorePars(int blockNeeded, int* blockFound)
+bool RepairController::PostParChecker::RequestMorePars(int blockNeeded, int* blockFound)
 {
 	return m_owner->RequestMorePars(m_postInfo->GetNzbInfo(), GetParFilename(), blockNeeded, blockFound);
 }
 
-void ParCoordinator::PostParChecker::UpdateProgress()
+void RepairController::PostParChecker::UpdateProgress()
 {
 	m_owner->UpdateParCheckProgress();
 }
 
-void ParCoordinator::PostParChecker::PrintMessage(Message::EKind kind, const char* format, ...)
+void RepairController::PostParChecker::PrintMessage(Message::EKind kind, const char* format, ...)
 {
 	char text[1024];
 	va_list args;
@@ -50,12 +50,12 @@ void ParCoordinator::PostParChecker::PrintMessage(Message::EKind kind, const cha
 	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
 }
 
-void ParCoordinator::PostParChecker::RegisterParredFile(const char* filename)
+void RepairController::PostParChecker::RegisterParredFile(const char* filename)
 {
 	m_postInfo->GetParredFiles()->push_back(filename);
 }
 
-bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
+bool RepairController::PostParChecker::IsParredFile(const char* filename)
 {
 	for (CString& parredFile : m_postInfo->GetParredFiles())
 	{
@@ -67,7 +67,7 @@ bool ParCoordinator::PostParChecker::IsParredFile(const char* filename)
 	return false;
 }
 
-ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* filename,
+ParChecker::EFileStatus RepairController::PostParChecker::FindFileCrc(const char* filename,
 	uint32* crc, SegmentList* segments)
 {
 	CompletedFile* completedFile = nullptr;
@@ -114,7 +114,7 @@ ParChecker::EFileStatus ParCoordinator::PostParChecker::FindFileCrc(const char* 
 		ParChecker::fsUnknown;
 }
 
-void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSourceList)
+void RepairController::PostParChecker::RequestDupeSources(DupeSourceList* dupeSourceList)
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
@@ -145,7 +145,7 @@ void ParCoordinator::PostParChecker::RequestDupeSources(DupeSourceList* dupeSour
 	}
 }
 
-void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceList)
+void RepairController::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceList)
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
@@ -169,44 +169,8 @@ void ParCoordinator::PostParChecker::StatDupeSources(DupeSourceList* dupeSourceL
 	m_postInfo->GetNzbInfo()->SetExtraParBlocks(m_postInfo->GetNzbInfo()->GetExtraParBlocks() + totalExtraParBlocks);
 }
 
-void ParCoordinator::PostParRenamer::UpdateProgress()
-{
-	m_owner->UpdateParRenameProgress();
-}
 
-void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind kind, const char* format, ...)
-{
-	char text[1024];
-	va_list args;
-	va_start(args, format);
-	vsnprintf(text, 1024, format, args);
-	va_end(args);
-	text[1024-1] = '\0';
-
-	m_postInfo->GetNzbInfo()->AddMessage(kind, text);
-}
-
-void ParCoordinator::PostParRenamer::RegisterParredFile(const char* filename)
-{
-	m_postInfo->GetParredFiles()->push_back(filename);
-}
-
-/**
- *  Update file name in the CompletedFiles-list of NZBInfo
- */
-void ParCoordinator::PostParRenamer::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
-{
-	for (CompletedFile& completedFile : m_postInfo->GetNzbInfo()->GetCompletedFiles())
-	{
-		if (!strcasecmp(completedFile.GetFileName(), oldFilename))
-		{
-			completedFile.SetFileName(newFileName);
-			break;
-		}
-	}
-}
-
-void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind kind, const char* format, ...)
+void RepairController::PostDupeMatcher::PrintMessage(Message::EKind kind, const char* format, ...)
 {
 	char text[1024];
 	va_list args;
@@ -220,127 +184,66 @@ void ParCoordinator::PostDupeMatcher::PrintMessage(Message::EKind kind, const ch
 
 #endif
 
-ParCoordinator::ParCoordinator()
+RepairController::RepairController()
 {
-	debug("Creating ParCoordinator");
+	debug("Creating RepairController");
 
 #ifndef DISABLE_PARCHECK
 	m_parChecker.m_owner = this;
-	m_parRenamer.m_owner = this;
 #endif
 }
 
-ParCoordinator::~ParCoordinator()
+void RepairController::Stop()
 {
-	debug("Destroying ParCoordinator");
+	debug("Stopping RepairController");
+	Thread::Stop();
+#ifndef DISABLE_PARCHECK
+	m_parChecker.Cancel();
+#endif
 }
 
 #ifndef DISABLE_PARCHECK
-void ParCoordinator::Stop()
+
+void RepairController::StartJob(PostInfo* postInfo)
 {
-	debug("Stopping ParCoordinator");
+	RepairController* repairController = new RepairController();
+	repairController->m_postInfo = postInfo;
+	repairController->SetAutoDestroy(false);
 
-	m_stopped = true;
+	postInfo->SetPostThread(repairController);
 
-	if (m_parChecker.IsRunning())
+	repairController->Start();
+}
+
+void RepairController::Run()
+{
+	BString<1024> nzbName;
+	CString destDir;
 	{
-		m_parChecker.Stop();
-		int mSecWait = 5000;
-		while (m_parChecker.IsRunning() && mSecWait > 0)
-		{
-			usleep(50 * 1000);
-			mSecWait -= 50;
-		}
-		if (m_parChecker.IsRunning())
-		{
-			warn("Terminating par-check for %s", m_parChecker.GetInfoName());
-			m_parChecker.Kill();
-		}
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		nzbName = m_postInfo->GetNzbInfo()->GetName();
+		destDir = m_postInfo->GetNzbInfo()->GetDestDir();
 	}
-}
-#endif
 
-void ParCoordinator::PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
-{
-	debug("ParCoordinator: Pausing pars");
-
-	downloadQueue->EditEntry(nzbInfo->GetId(),
-		DownloadQueue::eaGroupPauseExtraPars, 0, nullptr);
-}
-
-#ifndef DISABLE_PARCHECK
-
-/**
- * DownloadQueue must be locked prior to call of this function.
- */
-void ParCoordinator::StartParCheckJob(PostInfo* postInfo)
-{
-	m_currentJob = jkParCheck;
-	m_parChecker.SetPostInfo(postInfo);
-	m_parChecker.SetDestDir(postInfo->GetNzbInfo()->GetDestDir());
-	m_parChecker.SetNzbName(postInfo->GetNzbInfo()->GetName());
+	m_parChecker.SetPostInfo(m_postInfo);
+	m_parChecker.SetDestDir(destDir);
+	m_parChecker.SetNzbName(nzbName);
 	m_parChecker.SetParTime(Util::CurrentTime());
-	m_parChecker.SetDownloadSec(postInfo->GetNzbInfo()->GetDownloadSec());
-	m_parChecker.SetParQuick(g_Options->GetParQuick() && !postInfo->GetForceParFull());
-	m_parChecker.SetForceRepair(postInfo->GetForceRepair());
-	m_parChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", postInfo->GetNzbInfo()->GetName());
-	postInfo->SetWorking(true);
-	m_parChecker.Start();
+	m_parChecker.SetDownloadSec(m_postInfo->GetNzbInfo()->GetDownloadSec());
+	m_parChecker.SetParQuick(g_Options->GetParQuick() && !m_postInfo->GetForceParFull());
+	m_parChecker.SetForceRepair(m_postInfo->GetForceRepair());
+
+	m_parChecker.PrintMessage(Message::mkInfo, "Checking pars for %s", *nzbName);
+
+	m_parChecker.Execute();
 }
 
 /**
  * DownloadQueue must be locked prior to call of this function.
  */
-void ParCoordinator::StartParRenameJob(PostInfo* postInfo)
+bool RepairController::AddPar(FileInfo* fileInfo, bool deleted)
 {
-	const char* destDir = postInfo->GetNzbInfo()->GetDestDir();
-
-	if (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
-		!Util::EmptyStr(postInfo->GetNzbInfo()->GetFinalDir()))
-	{
-		destDir = postInfo->GetNzbInfo()->GetFinalDir();
-	}
-
-	m_currentJob = jkParRename;
-	m_parRenamer.SetPostInfo(postInfo);
-	m_parRenamer.SetDestDir(destDir);
-	m_parRenamer.SetInfoName(postInfo->GetNzbInfo()->GetName());
-	m_parRenamer.SetDetectMissing(postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone);
-	m_parRenamer.PrintMessage(Message::mkInfo, "Checking renamed files for %s", postInfo->GetNzbInfo()->GetName());
-	postInfo->SetWorking(true);
-	m_parRenamer.Start();
-}
-
-bool ParCoordinator::Cancel()
-{
-	if (m_currentJob == jkParCheck)
-	{
-		if (!m_parChecker.GetCancelled())
-		{
-			debug("Cancelling par-repair for %s", m_parChecker.GetInfoName());
-			m_parChecker.Cancel();
-			return true;
-		}
-	}
-	else if (m_currentJob == jkParRename)
-	{
-		if (!m_parRenamer.GetCancelled())
-		{
-			debug("Cancelling par-rename for %s", m_parRenamer.GetInfoName());
-			m_parRenamer.Cancel();
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
- * DownloadQueue must be locked prior to call of this function.
- */
-bool ParCoordinator::AddPar(FileInfo* fileInfo, bool deleted)
-{
-	bool sameCollection = m_parChecker.IsRunning() &&
-		fileInfo->GetNzbInfo() == m_parChecker.GetPostInfo()->GetNzbInfo();
+	bool sameCollection = fileInfo->GetNzbInfo() == m_parChecker.GetPostInfo()->GetNzbInfo();
 	if (sameCollection && !deleted)
 	{
 		BString<1024> fullFilename("%s%c%s", fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename());
@@ -353,7 +256,7 @@ bool ParCoordinator::AddPar(FileInfo* fileInfo, bool deleted)
 	return sameCollection;
 }
 
-void ParCoordinator::ParCheckCompleted()
+void RepairController::ParCheckCompleted()
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
@@ -385,9 +288,6 @@ void ParCoordinator::ParCheckCompleted()
 	postInfo->GetNzbInfo()->SetParFull(m_parChecker.GetParFull());
 
 	postInfo->SetWorking(false);
-	postInfo->SetStage(PostInfo::ptQueued);
-
-	downloadQueue->Save();
 }
 
 /**
@@ -397,80 +297,68 @@ void ParCoordinator::ParCheckCompleted()
 * special case: returns true if there are any unpaused par2-files in the queue regardless
 * of the amount of blocks; this is to keep par-checker wait for download completion.
 */
-bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFoundOut)
+bool RepairController::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFoundOut)
 {
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	Blocks blocks;
-	blocks.clear();
+	Blocks availableBlocks;
+	Blocks selectedBlocks;
 	int blockFound = 0;
 	int curBlockFound = 0;
 
-	FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, true, &curBlockFound);
+	FindPars(downloadQueue, nzbInfo, parFilename, availableBlocks, true, true, &curBlockFound);
 	blockFound += curBlockFound;
 	if (blockFound < blockNeeded)
 	{
-		FindPars(downloadQueue, nzbInfo, parFilename, blocks, true, false, &curBlockFound);
+		FindPars(downloadQueue, nzbInfo, parFilename, availableBlocks, true, false, &curBlockFound);
 		blockFound += curBlockFound;
 	}
 	if (blockFound < blockNeeded)
 	{
-		FindPars(downloadQueue, nzbInfo, parFilename, blocks, false, false, &curBlockFound);
+		FindPars(downloadQueue, nzbInfo, parFilename, availableBlocks, false, false, &curBlockFound);
 		blockFound += curBlockFound;
 	}
 
+	std::sort(availableBlocks.begin(), availableBlocks.end(),
+		[](BlockInfo& block1, BlockInfo& block2)
+		{
+			return block1.m_blockCount < block2.m_blockCount;
+		});
+
 	if (blockFound >= blockNeeded)
 	{
-		// 1. first unpause all files with par-blocks less or equal iBlockNeeded
-		// starting from the file with max block count.
-		// if par-collection was built exponentially and all par-files present,
-		// this step selects par-files with exact number of blocks we need.
-		while (blockNeeded > 0)
+		// collect as much blocks as needed
+		for (Blocks::iterator it = availableBlocks.begin(); blockNeeded > 0 && it != availableBlocks.end(); it++)
 		{
-			BlockInfo* bestBlockInfo = nullptr;
-			Blocks::iterator bestBlockIter;
-			for (Blocks::iterator it = blocks.begin(); it != blocks.end(); it++)
+			BlockInfo& blockInfo = *it;
+			selectedBlocks.push_front(blockInfo);
+			blockNeeded -= blockInfo.m_blockCount;
+		}
+
+		// discarding superfluous blocks
+		for (Blocks::iterator it = selectedBlocks.begin(); it != selectedBlocks.end(); )
+		{
+			BlockInfo& blockInfo = *it;
+			if (blockNeeded + blockInfo.m_blockCount <= 0)
 			{
-				BlockInfo& blockInfo = *it;
-				if (blockInfo.m_blockCount <= blockNeeded &&
-				   (!bestBlockInfo || bestBlockInfo->m_blockCount < blockInfo.m_blockCount))
-				{
-					bestBlockInfo = &blockInfo;
-					bestBlockIter = it;
-				}
-			}
-			if (bestBlockInfo)
-			{
-				if (bestBlockInfo->m_fileInfo->GetPaused())
-				{
-					m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, bestBlockInfo->m_fileInfo->GetFilename());
-					bestBlockInfo->m_fileInfo->SetPaused(false);
-					bestBlockInfo->m_fileInfo->SetExtraPriority(true);
-				}
-				blockNeeded -= bestBlockInfo->m_blockCount;
-				blocks.erase(bestBlockIter);
+				blockNeeded += blockInfo.m_blockCount;
+				it = selectedBlocks.erase(it);
 			}
 			else
 			{
-				break;
+				it++;
 			}
 		}
 
-		// 2. then unpause other files
-		// this step only needed if the par-collection was built not exponentially
-		// or not all par-files present (or some of them were corrupted)
-		// this step is not optimal, but we hope, that the first step will work good
-		// in most cases and we will not need the second step often
-		while (blockNeeded > 0)
+		// unpause files with blocks
+		for (BlockInfo& blockInfo : selectedBlocks)
 		{
-			BlockInfo& blockInfo = blocks.front();
 			if (blockInfo.m_fileInfo->GetPaused())
 			{
 				m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, blockInfo.m_fileInfo->GetFilename());
 				blockInfo.m_fileInfo->SetPaused(false);
 				blockInfo.m_fileInfo->SetExtraPriority(true);
 			}
-			blockNeeded -= blockInfo.m_blockCount;
 		}
 	}
 
@@ -494,7 +382,7 @@ bool ParCoordinator::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, 
 	return ok;
 }
 
-void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
+void RepairController::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
 	Blocks& blocks, bool strictParName, bool exactParName, int* blockFound)
 {
 	*blockFound = 0;
@@ -502,7 +390,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	// extract base name from m_szParFilename (trim .par2-extension and possible .vol-part)
 	char* baseParFilename = FileSystem::BaseFileName(parFilename);
 	int mainBaseLen = 0;
-	if (!ParParser::ParseParFilename(baseParFilename, &mainBaseLen, nullptr))
+	if (!ParParser::ParseParFilename(baseParFilename, true, &mainBaseLen, nullptr))
 	{
 		// should not happen
 		nzbInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", baseParFilename);
@@ -515,7 +403,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		int blockCount = 0;
-		if (ParParser::ParseParFilename(fileInfo->GetFilename(), nullptr, &blockCount) &&
+		if (ParParser::ParseParFilename(fileInfo->GetFilename(), fileInfo->GetFilenameConfirmed(), nullptr, &blockCount) &&
 			blockCount > 0)
 		{
 			bool useFile = true;
@@ -566,7 +454,7 @@ void ParCoordinator::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, co
 	}
 }
 
-void ParCoordinator::UpdateParCheckProgress()
+void RepairController::UpdateParCheckProgress()
 {
 	PostInfo* postInfo;
 
@@ -600,7 +488,7 @@ void ParCoordinator::UpdateParCheckProgress()
 		}
 
 		bool parCancel = false;
-		if (!m_parChecker.GetCancelled())
+		if (!IsStopped())
 		{
 			if ((g_Options->GetParTimeLimit() > 0) &&
 				m_parChecker.GetStage() == PostParChecker::ptRepairing &&
@@ -621,14 +509,14 @@ void ParCoordinator::UpdateParCheckProgress()
 
 		if (parCancel)
 		{
-			m_parChecker.Cancel();
+			Stop();
 		}
 	}
 
 	CheckPauseState(postInfo);
 }
 
-void ParCoordinator::CheckPauseState(PostInfo* postInfo)
+void RepairController::CheckPauseState(PostInfo* postInfo)
 {
 	if (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority())
 	{
@@ -639,7 +527,7 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 		time_t waitTime = Util::CurrentTime();
 
 		// wait until Post-processor is unpaused
-		while (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !m_stopped)
+		while (g_Options->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
 		{
 			usleep(50 * 1000);
 
@@ -665,46 +553,6 @@ void ParCoordinator::CheckPauseState(PostInfo* postInfo)
 			}
 		}
 	}
-}
-
-void ParCoordinator::ParRenameCompleted()
-{
-	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
-
-	PostInfo* postInfo = m_parRenamer.GetPostInfo();
-	postInfo->GetNzbInfo()->SetRenameStatus(m_parRenamer.GetStatus() == ParRenamer::psSuccess ? NzbInfo::rsSuccess : NzbInfo::rsFailure);
-
-	if (m_parRenamer.HasMissedFiles() && postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
-	{
-		m_parRenamer.PrintMessage(Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_parRenamer.GetInfoName());
-		postInfo->SetRequestParCheck(true);
-	}
-
-	postInfo->SetWorking(false);
-	postInfo->SetStage(PostInfo::ptQueued);
-
-	downloadQueue->Save();
-}
-
-void ParCoordinator::UpdateParRenameProgress()
-{
-	PostInfo* postInfo;
-	{
-		GuardedDownloadQueue guard = DownloadQueue::Guard();
-
-		postInfo = m_parRenamer.GetPostInfo();
-		postInfo->SetProgressLabel(m_parRenamer.GetProgressLabel());
-		postInfo->SetStageProgress(m_parRenamer.GetStageProgress());
-		time_t current = Util::CurrentTime();
-
-		if (postInfo->GetStage() != PostInfo::ptRenaming)
-		{
-			postInfo->SetStage(PostInfo::ptRenaming);
-			postInfo->SetStageTime(current);
-		}
-	}
-
-	CheckPauseState(postInfo);
 }
 
 #endif

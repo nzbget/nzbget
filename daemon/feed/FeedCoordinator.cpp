@@ -239,14 +239,7 @@ void FeedCoordinator::StartFeedDownload(FeedInfo* feedInfo, bool force)
 	feedDownloader->Attach(this);
 	feedDownloader->SetFeedInfo(feedInfo);
 	feedDownloader->SetUrl(feedInfo->GetUrl());
-	if (strlen(feedInfo->GetName()) > 0)
-	{
-		feedDownloader->SetInfoName(feedInfo->GetName());
-	}
-	else
-	{
-		feedDownloader->SetInfoName(NzbInfo::MakeNiceUrlName(feedInfo->GetUrl(), ""));
-	}
+	feedDownloader->SetInfoName(feedInfo->GetName());
 	feedDownloader->SetForce(force || g_Options->GetUrlForce());
 
 	BString<1024> outFilename;
@@ -304,7 +297,7 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 		{
 			bool scriptSuccess = true;
 			FeedScriptController::ExecuteScripts(
-				!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
+				!Util::EmptyStr(feedInfo->GetExtensions()) ? feedInfo->GetExtensions(): g_Options->GetExtensions(),
 				feedInfo->GetOutputFilename(), feedInfo->GetId(), &scriptSuccess);
 			if (!scriptSuccess)
 			{
@@ -312,15 +305,13 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 				return;
 			}
 
-			std::unique_ptr<FeedFile> feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
-			bool parsed = feedFile->Parse();
-			FileSystem::DeleteFile(feedInfo->GetOutputFilename());
+			std::unique_ptr<FeedFile> feedFile = parseFeed(feedInfo);
 
 			std::vector<std::unique_ptr<NzbInfo>> addedNzbs;
 
 			{
 				Guard guard(m_downloadsMutex);
-				if (parsed)
+				if (feedFile)
 				{
 					std::unique_ptr<FeedItemList> feedItems = feedFile->DetachFeedItems();
 					addedNzbs = ProcessFeed(feedInfo, feedItems.get());
@@ -469,7 +460,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::ViewFeed(int id)
 
 	return PreviewFeed(feedInfo->GetId(), feedInfo->GetName(), feedInfo->GetUrl(), feedInfo->GetFilter(),
 		feedInfo->GetBacklog(), feedInfo->GetPauseNzb(), feedInfo->GetCategory(),
-		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetFeedScript(), 0, nullptr);
+		feedInfo->GetPriority(), feedInfo->GetInterval(), feedInfo->GetExtensions(), 0, nullptr);
 }
 
 std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
@@ -535,14 +526,11 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 		}
 
 		FeedScriptController::ExecuteScripts(
-			!Util::EmptyStr(feedInfo->GetFeedScript()) ? feedInfo->GetFeedScript(): g_Options->GetFeedScript(),
+			!Util::EmptyStr(feedInfo->GetExtensions()) ? feedInfo->GetExtensions(): g_Options->GetExtensions(),
 			feedInfo->GetOutputFilename(), feedInfo->GetId(), nullptr);
 
-		std::unique_ptr<FeedFile> feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename());
-		bool parsed = feedFile->Parse();
-		FileSystem::DeleteFile(feedInfo->GetOutputFilename());
-
-		if (!parsed)
+		std::unique_ptr<FeedFile> feedFile = parseFeed(feedInfo.get());
+		if (!feedFile)
 		{
 			return nullptr;
 		}
@@ -586,6 +574,21 @@ void FeedCoordinator::FetchFeed(int id)
 			m_force = true;
 		}
 	}
+}
+
+std::unique_ptr<FeedFile> FeedCoordinator::parseFeed(FeedInfo* feedInfo)
+{
+	std::unique_ptr<FeedFile> feedFile = std::make_unique<FeedFile>(feedInfo->GetOutputFilename(), feedInfo->GetName());
+	if (feedFile->Parse())
+	{
+		FileSystem::DeleteFile(feedInfo->GetOutputFilename());
+	}
+	else
+	{
+		error("Feed file %s kept for troubleshooting (will be deleted on next successful feed fetch)", feedInfo->GetOutputFilename());
+		feedFile.reset();
+	}
+	return std::move(feedFile);
 }
 
 void FeedCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)

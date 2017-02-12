@@ -56,6 +56,7 @@ private:
 	void StartUrlDownload(NzbInfo* nzbInfo);
 	void UrlCompleted(UrlDownloader* urlDownloader);
 	void ResetHangingDownloads();
+	void WaitJobs();
 };
 
 extern UrlCoordinator* g_UrlCoordinator;

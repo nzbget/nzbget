@@ -31,7 +31,8 @@ public:
 	class Script
 	{
 	public:
-		Script(const char* name, const char* location);
+		Script(const char* name, const char* location) :
+			m_name(name), m_location(location), m_displayName(name) {};
 		Script(Script&&) = default;
 		const char* GetName() { return m_name; }
 		const char* GetLocation() { return m_location; }
@@ -49,17 +50,20 @@ public:
 		void SetFeedScript(bool feedScript) { m_feedScript = feedScript; }
 		void SetQueueEvents(const char* queueEvents) { m_queueEvents = queueEvents; }
 		const char* GetQueueEvents() { return m_queueEvents; }
+		void SetTaskTime(const char* taskTime) { m_taskTime = taskTime; }
+		const char* GetTaskTime() { return m_taskTime; }
 
 	private:
 		CString m_name;
 		CString m_location;
 		CString m_displayName;
-		bool m_postScript;
-		bool m_scanScript;
-		bool m_queueScript;
-		bool m_schedulerScript;
-		bool m_feedScript;
+		bool m_postScript = false;
+		bool m_scanScript = false;
+		bool m_queueScript = false;
+		bool m_schedulerScript = false;
+		bool m_feedScript = false;
 		CString m_queueEvents;
+		CString m_taskTime;
 	};
 
 	typedef std::list<Script> Scripts;
@@ -75,8 +79,6 @@ public:
 	private:
 		Script m_script;
 		CString m_template;
-
-		friend class Options;
 	};
 
 	typedef std::deque<ConfigTemplate> ConfigTemplates;
@@ -94,9 +96,11 @@ private:
 
 	void InitScripts();
 	void InitConfigTemplates();
+	void CreateTasks();
 	void LoadScriptDir(Scripts* scripts, const char* directory, bool isSubDir);
 	void BuildScriptDisplayNames(Scripts* scripts);
 	void LoadScripts(Scripts* scripts);
+	bool LoadScriptFile(Script* script);
 	BString<1024>BuildScriptName(const char* directory, const char* filename, bool isSubDir);
 	bool ScriptExists(Scripts* scripts, const char* scriptName);
 };

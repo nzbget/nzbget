@@ -80,12 +80,12 @@
 			<div id="PlayBlock">
 				<div id="PlayPauseBg"><div class="img-download-bg"></div></div>
 				<div id="PlayButton" class="img-download-orange" style="display:none;">
-					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download paused (click to resume)">
+					<div id="PlayPauseButton" class="PlayBlockInner" onclick="Status.playClick()" title="Download paused (click to resume) [Shift+P]">
 						<div class="img-download-btn"></div>
 					</div>
 				</div>
 				<div id="PauseButton" class="img-download-green">
-					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download active (click to pause)">
+					<div class="PlayBlockInner" onclick="Status.playClick()" title="Download active (click to pause) [Shift+P]">
 						<div class="img-download-btn"></div>
 					</div>
 				</div>
@@ -101,7 +101,7 @@
 						<li class="menu-header">Pause for</li>
 						<li><a href="#" onclick="Status.scheduledPauseClick(30*60)"><table><tr><td></td><td>30 Minutes</td></tr></table></a></li>
 						<li><a href="#" onclick="Status.scheduledPauseClick(3*60*60)"><table><tr><td></td><td>3 Hours</td></tr></table></a></li>
-						<li><a href="#" onclick="Status.scheduledPauseDialogClick()"><table><tr><td></td><td>Custom...</td></tr></table></a></li>
+						<li><a href="#" onclick="Status.scheduledPauseDialogClick()" id="ScheduledPauseButton" title="Temporary pause for... [Shift+T]"><table><tr><td></td><td>Custom...</td></tr></table></a></li>
 						<li class="divider"></li>
 						<li><a data-toggle="modal" href="#PauseHelp"><table><tr><td></td><td>Quick Help</td></tr></table></a></li>
 					</ul>
@@ -110,15 +110,15 @@
 
 			<!-- SPEED/TIME -->
 			<div id="InfoBlock">
-				<div href="#" onclick="LimitDialog.clicked(event)" title="Current speed (click to set speed limit)"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
-				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics)"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
+				<div href="#" onclick="LimitDialog.clicked(event)" title="Current speed (click to set speed limit) [Shift+L]"><i class="icon-plane" id="StatusSpeedIcon"></i> <span id="StatusSpeed">--- KB/s</span></div>
+				<div href="#" onclick="Status.statDialogClick()" title="Remaining time (click for more statistics) [Shift+A]"><i class="icon-time" id="StatusTimeIcon"></i> <span id="StatusTime">--h --m</span></div>
 			</div>
 
 			<!-- REFRESH MENU -->
 			<div id="RefreshBlockDesktop" class="pull-right phone-hide">
 				<div class="btn-toolbar" id="RefreshBlock">
 					<div class="btn-group">
-						<button class="btn btn-inverse" id="RefreshButton"><i class="icon-refresh" id="RefreshAnimation"></i></button>
+						<button class="btn btn-inverse" id="RefreshButton" title="Refresh [Shift+R]"><i class="icon-refresh" id="RefreshAnimation"></i></button>
 						<button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
 						<ul class="dropdown-menu menu-refresh" id="RefreshMenu">
 							<li class="menu-header">Automatic refresh</li>
@@ -153,27 +153,27 @@
 						</ul>
 					</div>
 
-					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads">
-					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="DownloadsTable_filter" class="search-query" type="text" placeholder="Search downloads" title="Search downloads [Shift+F]">
+					<i id="DownloadsTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 
-					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history">
-					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="HistoryTable_filter" class="search-query" type="text" placeholder="Search history" title="Search history [Shift+F]">
+					<i id="HistoryTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 
-					<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages">
-					<i id="MessagesTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="MessagesTable_filter" class="search-query" type="text" placeholder="Search messages" title="Search messages [Shift+F]">
+					<i id="MessagesTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 
-					<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings">
-					<i id="ConfigTable_clearfilter" class="icon-remove-white search-clear" title="Clear"></i>
+					<input id="ConfigTable_filter" class="search-query" type="text" placeholder="Search settings" title="Search settings [Shift+F]">
+					<i id="ConfigTable_clearfilter" class="icon-remove-white search-clear" title="Clear [Shift+C]"></i>
 				</div>
 			</div>
 
 			<!-- TABS -->
 			<div class="nav" id="NavLinks">
 				<ul class="nav">
-					<li class="active"><a data-toggle="tab" href="#DownloadsTab" id="DownloadsTabLink"><span class="phone-hide">Downloads </span><i class="icon-downloads-white phone-only inline"></i><br class="phone-only"><span class="badge" id="DownloadsTabBadge" style="display: none;"></span><span class="badge badge-empty" id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#HistoryTab" id="HistoryTabLink"><span class="phone-hide">History </span><i class="icon-history-white phone-only inline"></i><br class="phone-only"><span class="badge" id="HistoryTabBadge" style="display: none;"></span><span class="badge badge-empty" id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#MessagesTab" id="MessagesTabLink"><span class="phone-hide">Messages </span><i class="icon-messages-white phone-only inline"></i><br class="phone-only"><span class="badge" id="MessagesTabBadge" style="display: none;"></span><span class="badge badge-empty" id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
-					<li><a data-toggle="tab" href="#ConfigTab" id="ConfigTabLink"><span class="phone-hide">Settings </span><i class="icon-settings-white phone-only inline"></i><br class="phone-only"><span class="badge" id="ConfigTabBadge" style="display: none;"></span><span class="phone-only"><span class="badge badge-empty" id="ConfigTabBadgeEmpty">&nbsp;</span></span></a></li>
+					<li class="active"><a data-toggle="tab" href="#DownloadsTab" id="DownloadsTabLink"><span class="phone-hide" title="Downloads [Shift+D]">Downloads </span><i class="icon-downloads-white phone-only inline"></i><br class="phone-only"><span class="badge" id="DownloadsTabBadge" style="display: none;"></span><span class="badge badge-empty" id="DownloadsTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#HistoryTab" id="HistoryTabLink"><span class="phone-hide" title="History [Shift+H]">History </span><i class="icon-history-white phone-only inline"></i><br class="phone-only"><span class="badge" id="HistoryTabBadge" style="display: none;"></span><span class="badge badge-empty" id="HistoryTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#MessagesTab" id="MessagesTabLink"><span class="phone-hide" title="Messages [Shift+M]">Messages </span><i class="icon-messages-white phone-only inline"></i><br class="phone-only"><span class="badge" id="MessagesTabBadge" style="display: none;"></span><span class="badge badge-empty" id="MessagesTabBadgeEmpty">&nbsp;</span></a></li>
+					<li><a data-toggle="tab" href="#ConfigTab" id="ConfigTabLink"><span class="phone-hide" title="Settings [Shift+S]">Settings </span><i class="icon-settings-white phone-only inline"></i><br class="phone-only"><span class="badge" id="ConfigTabBadge" style="display: none;"></span><span class="phone-only"><span class="badge badge-empty" id="ConfigTabBadgeEmpty">&nbsp;</span></span></a></li>
 				</ul>
 			</div>
 
@@ -228,16 +228,16 @@
 
 				<!-- ADD BUTTON -->
 				<div class="btn-group" id="TBAddButton">
-					<button class="btn" onclick="Upload.addClick()" title="Add nzb-files"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
+					<button class="btn" onclick="Upload.addClick()" title="Add nzb-files [A]"><i class="icon-plus"></i><span class="btn-caption"> Add</span></button>
 				</div>
 
 				<!-- NZB-ACTIONS BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
-					<button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
-					<button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
-					<button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
-					<button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files [Enter]"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button>
+					<button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files [M]"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button>
+					<button class="btn" onclick="Downloads.pauseClick()" title="Pause selected nzb-files [P]"><i class="icon-pause"></i><span class="btn-caption"> Pause</span></button>
+					<button class="btn" onclick="Downloads.resumeClick()" title="Resume selected nzb-files [R]"><i class="icon-play"></i><span class="btn-caption"> Resume</span></button>
+					<button class="btn" onclick="Downloads.deleteClick()" title="Delete selected nzb-files [D]"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.editClick()" title="Edit selected nzb-files"><i class="icon-edit"></i><span class="btn-caption"> Edit</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.mergeClick()" title="Merge selected nzb-files"><i class="icon-merge"></i><span class="btn-caption"> Merge</span></button></div>
@@ -247,10 +247,10 @@
 
 				<!-- MOVE BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button>
-					<button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button>
-					<button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down"><i class="icon-down"></i></button>
-					<button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom"><i class="icon-bottom"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top [T]"><i class="icon-top"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up [U]"><i class="icon-up"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('down')" title="Move selected nzb-files down [N]"><i class="icon-down"></i></button>
+					<button class="btn" onclick="Downloads.moveClick('bottom')" title="Move selected nzb-files to the bottom [B]"><i class="icon-bottom"></i></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('top')" title="Move selected nzb-files to the top"><i class="icon-top"></i></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Downloads.moveClick('up')" title="Move selected nzb-files up"><i class="icon-up"></i></button></div>
@@ -290,16 +290,20 @@
 				<div class="pagination pull-right"><ul id="DownloadsTable_pager"></ul></div>
 			</div>
 
-			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="DownloadsTable">
+			<table class="table table-striped table-bordered table-check table-cancheck table-drag datatable" id="DownloadsTable">
 				<thead>
 					<tr>
 						<th><div class="check img-check"></div></th>
+						<th width="14px" class="text-center"><a href="#" onclick="Downloads.sort('priority', event)" title="Priority">P</a></th>
 						<th width="95px">Status</th>
-						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name')">Name</a></th>
-						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category')">Category</a></th>
-						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age')">Age</a></th>
-						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size')">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left')">Left</a></div></th>
-						<th width="58px" class="text-right">Est. Time</th>
+						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name', event)">Name</a></th>
+						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category', event)">Category</a></th>
+						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age', event)">Age</a></th>
+						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size', event)">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left', event)">Left</a></div></th>
+						<th width="60px" class="text-right">Est. Time</th>
+					</tr>
+					<tr>
+						<th colspan="8" class="table-selector">10 records selected on other pages</th>
 					</tr>
 				</thead>
 				<tbody></tbody>
@@ -325,34 +329,34 @@
 
 			<div class="btn-toolbar form-inline section-toolbar" id ="HistoryTab_Toolbar">
 				<div class="btn-group">
-					<button class="btn" onclick="History.actionClick('DELETE')" title="Delete selected records"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
+					<button class="btn" onclick="History.actionClick('DELETE')" title="Delete selected records [D]"><i class="icon-trash"></i><span class="btn-caption"> Delete</span></button>
 					<button class="btn dropdown-toggle" data-toggle="dropdown" title="More actions"><span class="btn-caption"> More </span><span class="phone-only inline">&nbsp;</span><span class="caret"></span></button>
 					<ul class="dropdown-menu">
 						<li class="menu-header">Actions</li>
-						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')"><i class="icon-process"></i> Post-Process Again</a></li>
-						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')"><i class="icon-downloads"></i> Download Again</a></li>
-						<li><a href="#" id="HistoryTab_MarkSuccess" onclick="History.actionClick('MARKSUCCESS')"><i class="icon-ok"></i> Mark as Success</a></li>
-						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')"><i class="icon-plus"></i> Mark as Good</a></li>
-						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')"><i class="icon-minus"></i> Mark as Bad</a></li>
+						<li><a href="#" id="HistoryTab_Reprocess" onclick="History.actionClick('REPROCESS')" title="Post-process selected records again [P]"><i class="icon-process"></i> Post-Process Again</a></li>
+						<li><a href="#" id="HistoryTab_Redownload" onclick="History.actionClick('REDOWNLOAD')" title="Download selected records again [N]"><i class="icon-downloads"></i> Download Again</a></li>
+						<li><a href="#" id="HistoryTab_MarkSuccess" onclick="History.actionClick('MARKSUCCESS')" title="Mark selected records as success [M]"><i class="icon-ok"></i> Mark as Success</a></li>
+						<li><a href="#" id="HistoryTab_MarkGood" onclick="History.actionClick('MARKGOOD')" title=" Mark selected records as good [G]"><i class="icon-plus"></i> Mark as Good</a></li>
+						<li><a href="#" id="HistoryTab_MarkBad" onclick="History.actionClick('MARKBAD')" title="Mark selected records as bad [B]"><i class="icon-minus"></i> Mark as Bad</a></li>
 					</ul>
 				</div>
-				
+
 				<!-- STATUS FILTER BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">Success &nbsp;<span class="badge" id="History_Badge_SUCCESS">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">Failure &nbsp;<span class="badge" id="History_Badge_FAILURE">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">Deleted &nbsp;<span class="badge" id="History_Badge_DELETED">?</span></button>
-					<button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">Dupe &nbsp;<span class="badge" id="History_Badge_DUPE">?</span></button>
+					<button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All [A]">All &nbsp;<span class="badge badge-active" id="History_Badge_ALL">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success [S]">Success &nbsp;<span class="badge" id="History_Badge_SUCCESS">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure [F]">Failure &nbsp;<span class="badge" id="History_Badge_FAILURE">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Deleted [L]">Deleted &nbsp;<span class="badge" id="History_Badge_DELETED">?</span></button>
+					<button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe [U]">Dupe &nbsp;<span class="badge" id="History_Badge_DUPE">?</span></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter btn-inverse" onclick="History.filter('ALL')" title="Show All">A &nbsp;<span class="badge badge-active" id="History_Badge_ALL2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('SUCCESS')" title="Show only Success">S &nbsp;<span class="badge" id="History_Badge_SUCCESS2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('FAILURE')" title="Show only Failure">F &nbsp;<span class="badge" id="History_Badge_FAILURE2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DELETED')" title="Show only Warning">D &nbsp;<span class="badge" id="History_Badge_DELETED2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn history-filter" onclick="History.filter('DUPE')" title="Show only Dupe">U &nbsp;<span class="badge" id="History_Badge_DUPE2">?</span></button></div>
-				
+
 				<div class="btn-group">
-					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
+					<button class="btn" id="History_Dup" onclick="History.dupClick()" title="Show hidden records kept for duplicate check [H]"><i class="icon-mask" id="History_DupIcon"></i><span class="btn-caption"> Hidden</span></button>
 				</div>
 
 				<div class="btn-group phone-only inline" id="HistoryRecordsPerPageBlockPhone">
@@ -379,15 +383,20 @@
 			</div>
 
 			<table class="table table-striped table-bordered table-check table-cancheck datatable" id="HistoryTable">
-				<thead><tr>
-					<th><div class="check img-check"></div></th>
-					<th width="75px">Status</th>
-					<th width="170px" class="text-center">Time</th>
-					<th>Name</th>
-					<th id="HistoryTable_Category">Category</th>
-					<th width="30px" class="text-right">Age</th>
-					<th width="70px" class="text-right">Size</th>
-				</tr></thead>
+				<thead>
+				    <tr>
+                        <th><div class="check img-check"></div></th>
+                        <th width="75px">Status</th>
+                        <th width="170px" class="text-center">Time</th>
+                        <th>Name</th>
+                        <th id="HistoryTable_Category">Category</th>
+                        <th width="30px" class="text-right">Age</th>
+                        <th width="70px" class="text-right">Size</th>
+    				</tr>
+					<tr>
+						<th colspan="7" class="table-selector">10 records selected on other pages</th>
+					</tr>
+				</thead>
 				<tbody></tbody>
 			</table>
 
@@ -408,16 +417,16 @@
 
 				<!-- EDIT BUTTONS -->
 				<div class="btn-group">
-					<button class="btn" onclick="Messages.clearClick()" title="Delete all messages"><i class="icon-trash"></i> <span class="btn-caption">Clear</span></button>
+					<button class="btn" onclick="Messages.clearClick()" title="Delete all messages [D]"><i class="icon-trash"></i> <span class="btn-caption">Clear</span></button>
 				</div>
 
 				<!-- KIND FILTER BUTTONS -->
 				<div class="btn-group phone-hide">
-					<button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All">All &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL">?</span></button>
-					<button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail">Detail &nbsp;<span class="badge" id="Messages_Badge_DETAIL">?</span></button>
-					<button class="btn" onclick="Messages.filter('INFO')" title="Show only Info">Info &nbsp;<span class="badge" id="Messages_Badge_INFO">?</span></button>
-					<button class="btn" onclick="Messages.filter('WARNING')" title="Show only Warning">Warning &nbsp;<span class="badge" id="Messages_Badge_WARNING">?</span></button>
-					<button class="btn" onclick="Messages.filter('ERROR')" title="Show only Error">Error &nbsp;<span class="badge" id="Messages_Badge_ERROR">?</span></button>
+					<button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All [A]">All &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL">?</span></button>
+					<button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail [T]">Detail &nbsp;<span class="badge" id="Messages_Badge_DETAIL">?</span></button>
+					<button class="btn" onclick="Messages.filter('INFO')" title="Show only Info [I]">Info &nbsp;<span class="badge" id="Messages_Badge_INFO">?</span></button>
+					<button class="btn" onclick="Messages.filter('WARNING')" title="Show only Warning [W]">Warning &nbsp;<span class="badge" id="Messages_Badge_WARNING">?</span></button>
+					<button class="btn" onclick="Messages.filter('ERROR')" title="Show only Error [E]">Error &nbsp;<span class="badge" id="Messages_Badge_ERROR">?</span></button>
 				</div>
 				<div class="btn-group phone-only inline"><button class="btn btn-inverse" onclick="Messages.filter('ALL')" title="Show All">A &nbsp;<span class="badge badge-active" id="Messages_Badge_ALL2">?</span></button></div>
 				<div class="btn-group phone-only inline"><button class="btn" onclick="Messages.filter('DETAIL')" title="Show only Detail">D &nbsp;<span class="badge" id="Messages_Badge_DETAIL2">?</span></button></div>
@@ -546,7 +555,7 @@
 
 									<h4>Extension scripts settings</h4>
 									<p>
-									When NZBGet finishes download of a nzb-file it can execute post-processing scripts for further processing (e-mail notification, etc.). 
+									When NZBGet finishes download of a nzb-file it can execute post-processing scripts for further processing (e-mail notification, etc.).
 									To configure scripts use options in section <em><strong>EXTENSION SCRIPTS</strong></em>.
 									</p>
 									<p>
@@ -768,7 +777,7 @@
 							<li class="volume-menu-template hide"><a href="#"></a></li>
 						</ul>
 					</div>
-					
+
 					<div class="btn-group phone-only inline"><button class="btn volume-range btn-inverse" id="StatDialog_Volume_MIN2" onclick="StatDialog.chooseRange('MIN')" title="Show last 60 seconds">60 s</button></div>
 					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_HOUR2" onclick="StatDialog.chooseRange('HOUR')" title="Show last 60 minutes">60 m</button></div>
 					<div class="btn-group phone-only inline"><button class="btn volume-range" id="StatDialog_Volume_DAY2" onclick="StatDialog.chooseRange('DAY')" title="Show last 24 hours">24 h</button></div>
@@ -777,7 +786,7 @@
 					<div class="btn-group phone-only inline" id="StatDialog_MonthBlockPhone">
 					<button class="btn volume-range dropdown-toggle" id="StatDialog_Volume_MONTH4" data-toggle="dropdown"><span class="caret"></span></button>
 					</div>
-					
+
 					<div class="btn-group">
 						<button class="btn dropdown-toggle" id="StatDialog_Server" data-toggle="dropdown" title="News server"> <span id="StatDialog_ServerCap">All news servers</span>&nbsp;<span class="caret"></span></button>
 						<ul class="dropdown-menu menu-check" id="StatDialog_ServerMenu">
@@ -788,10 +797,10 @@
 						</ul>
 					</div>
 				</div>
-				
+
 				<div id="StatDialog_Tooltip">Total</div>
 				<div id="StatDialog_ChartBlock"></div>
-				
+
 				<hr>
 				<div id="StatDialog_CountersBlock">
 				<div class="row-fluid" id="StatDialog_Counters">
@@ -892,18 +901,26 @@
 			<form>
 			<fieldset>
 				<div class="control-group">
-					<label class="control-label" for="PauseForInputGroup">Pause for</label>
+					<label class="control-label" for="PauseForInputGroup">Pause</label>
 					<div class="controls" id="PauseForInputGroup">
-						<div class="input-append">
-							<input class="input-mini" id="PauseForInput" size="16" type="text"><span class="add-on">Minutes</span>
-						</div>
+						<input class="input-mini" id="PauseForInput" size="16" type="text">
 					</div>
 				</div>
+				<p id="PauseForPreview" class="text-center invisible">
+					Will remain paused until <strong></strong>
+				</p>
+				<p class="alert alert-info">
+					For example "30m", "2h" or "=18:00". See "Quick Help" for details.
+				</p>
 			</fieldset>
 			</form>
 		</div>
 	</div>
 	<div class="modal-footer">
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#ScheduledPauseDialogHelp" class="btn pull-left">Quick Help</a>
+		</div>
+
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="ScheduledPause_Transmit"><img src="img/transmit.gif"></div>
 		<a href="#" class="btn" data-dismiss="modal">Cancel</a>
 		<a href="#" class="btn btn-primary" onclick="Status.pauseForClick()">Pause</a>
@@ -950,6 +967,67 @@
 	<p>With command <strong>Pause download</strong> you can manually pause the download queue.</p>
 	<p>The pausing of <strong>post-processing</strong> depends on how the post-processing-script handles screen output and may not always work.</p>
 	<p>The <strong>Pause/Resume Button</strong> (the round one) pauses or resumes all three activities: download, post-processing and nzb directory scan.</p>
+	</div>
+</div>
+
+<!-- *** QUICK HELP: EXPLAINING SCHEDULED PAUSE FORMATS ************************************************************ -->
+
+<div class="modal no-footer hide" id="ScheduledPauseDialogHelp">
+	<div class="modal-header">
+		<a class="close" href="#" data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Help: Explaining temporary pause time formats</h3>
+	</div>
+	<div class="modal-body">
+		<p>Below you'll find the accepted formats</p>
+		<table class="table table table-condensed table-striped">
+			<thead>
+				<tr>
+					<th>Format</th>
+					<th>Example</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>##(m)</td>
+					<td>30m</td>
+					<td>
+						Pause for 30 minutes <br />
+						<em>"m" is optional</em>
+					</td>
+				</tr>
+				<tr>
+					<td>##h</td>
+					<td>3h</td>
+					<td>Pause for 3 hours</td>
+				</tr>
+				<tr>
+					<td>##:##</td>
+					<td>1:30</td>
+					<td>Pause for 1 hour and 30 min</td>
+				</tr>
+				<tr>
+					<td>=##:##</td>
+					<td>=16:30</td>
+					<td>Pause until 16:30 (4:30PM)</td>
+				</tr>
+				<tr>
+					<td>=##</td>
+					<td>=16</td>
+					<td>Pause until 16:00 (4:00PM)</td>
+				</tr>
+				<tr>
+					<td>=##:##AM|PM</td>
+					<td>=4:30PM</td>
+					<td>Pause until 4:30PM (16:30)</td>
+				</tr>
+				<tr>
+					<td>=##AM|PM</td>
+					<td>=4PM</td>
+					<td>Pause until 4:00PM (16:00)</td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 </div>
 
@@ -2044,7 +2122,7 @@
 		</p>
 
 		<p id="HistoryDeleteConfirmDialog_DeleteWillCleanup" class="confirm-help-block">
-			Selected records will be deleted from history. For failed downloads 
+			Selected records will be deleted from history. For failed downloads
 			all downloaded files will be deleted.
 		</p>
 
@@ -2178,6 +2256,32 @@
 		</p>
 	</div>
 	<div id="StatDialogResetConfirmDialog_OK">Reset</div>
+</div>
+
+<!-- *** PURGE HISTORY DIALOG ************************************** -->
+
+<div class="modal modal-mini modal-padded modal-center hide" id="PurgeHistoryDialog">
+	<div class="modal-header">
+		<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+		<h3>Purging history</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+		<p>
+		You are going to delete <span id="PurgeHistoryDialog_count">250</span> history records
+		which represent <span id="PurgeHistoryDialog_percentage">250</span>% of the history.
+		</p>
+		<p>
+		Really sure about that?
+		</p>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<a href="#" class="btn btn-danger pull-left" onclick="PurgeHistoryDialog.delete(event)">Delete <span id="PurgeHistoryDialog_count2">250</span> records</a>
+		<a href="#" class="btn btn-primary" data-dismiss="modal">Cancel</a>
+	</div>
 </div>
 
 <!-- *** ADD FILES DIALOG ************************************************************ -->
@@ -2480,13 +2584,13 @@
 	<h3>Update NZBGet</h3>
 	</div>
 	<div class="modal-body">
-	
+
 	<p id="UpdateDialog_InstalledInfo" style="margin-top:0px; margin-bottom:5px;">Currently installed: <span id="UpdateDialog_VerInstalled"></span></p>
 	<p id="UpdateDialog_CheckProgress" class="hide">Checking for updates <img style="margin-left:5px;vertical-align:top;margin-top:1px;" src="img/transmit.gif" width="16px" height="16px"></p>
 	<p id="UpdateDialog_CheckFailed" class="hide failure-message"><strong>Check failed. Please try again later.</strong></p>
 	<p id="UpdateDialog_UpdateAvail"><strong>An update is available for your platform!</strong></p>
 	<p id="UpdateDialog_UpdateNotAvail" class="hide"><strong>No updates are available for your platform.</strong></p>
-	
+
 	<div id="UpdateDialog_UpdateNoInfo" class="hide">
 	<p><strong>Automatic updates are not configured for your platform.</strong></p>
 	<p class="alert alert-info">
@@ -2495,7 +2599,7 @@
 	If you create a public package please read <a href="http://nzbget.net/Packaging" target="_blank">"About Packaging"</a>.
 	</p>
 	</div>
-	
+
 	<table id="UpdateDialog_Versions" class="table" style="margin-top:10px;">
 	<thead>
 		<tr>
@@ -2544,7 +2648,7 @@
 	</div>
 	<div class="modal-body">
 		<pre id="UpdateProgressDialog_Log">
-		</pre>	
+		</pre>
 	</div>
 </div>
 
@@ -2614,6 +2718,10 @@
 	</div>
 	<div id="ShutdownConfirmDialog_OK">Shutdown</div>
 </div>
+
+<!-- ***  DRAG-N-DROP ************************************************************ -->
+
+<div id="TableDragBox"><span id="TableDragBadge" class="badge"></span><div id="TableDragContent"></div></div>
 
 <!-- ***  NOTIFICATIONS ************************************************************ -->
 

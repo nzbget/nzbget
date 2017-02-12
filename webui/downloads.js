@@ -24,7 +24,7 @@
  */
 
 /*** DOWNLOADS TAB ***********************************************************/
- 
+
 var Downloads = (new function($)
 {
 	'use strict';
@@ -82,26 +82,25 @@ var Downloads = (new function($)
 
 		$DownloadsTable.fasttable(
 			{
-				filterInput: $('#DownloadsTable_filter'),
-				filterClearButton: $("#DownloadsTable_clearfilter"),
-				pagerContainer: $('#DownloadsTable_pager'),
-				infoContainer: $('#DownloadsTable_info'),
-				headerCheck: $('#DownloadsTable > thead > tr:first-child'),
+				filterInput: '#DownloadsTable_filter',
+				filterClearButton: '#DownloadsTable_clearfilter',
+				pagerContainer: '#DownloadsTable_pager',
+				infoContainer: '#DownloadsTable_info',
 				infoEmpty: '&nbsp;', // this is to disable default message "No records"
 				pageSize: recordsPerPage,
 				maxPages: UISettings.miniTheme ? 1 : 5,
 				pageDots: !UISettings.miniTheme,
+				rowSelect: UISettings.rowSelect,
+				shortcuts: true,
 				fillFieldsCallback: fillFieldsCallback,
 				renderCellCallback: renderCellCallback,
-				updateInfoCallback: updateInfo
+				updateInfoCallback: updateInfo,
+				dragStartCallback: Refresher.pause,
+				dragEndCallback: dragEndCallback,
+				dragBlink: 'update'
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
-		$DownloadsTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { $DownloadsTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
-		$DownloadsTable.on('click', 'thead div.check',
-			function() { $DownloadsTable.fasttable('titleCheckClick') });
-		$DownloadsTable.on('mousedown', Util.disableShiftMouseDown);
 	}
 
 	this.applyTheme = function()
@@ -116,15 +115,18 @@ var Downloads = (new function($)
 		{
 			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
-		
+
 		RPC.call('listgroups', [], groups_loaded);
 	}
 
 	function groups_loaded(_groups)
 	{
-		groups = _groups;
-		Downloads.groups = groups;
-		prepare();
+		if (!Refresher.isPaused())
+		{
+			groups = _groups;
+			Downloads.groups = groups;
+			prepare();
+		}
 		RPC.next();
 	}
 
@@ -139,7 +141,10 @@ var Downloads = (new function($)
 
 	this.redraw = function()
 	{
-		redraw_table();
+		if (!Refresher.isPaused())
+		{
+			redraw_table();
+		}
 
 		Util.show($DownloadsTabBadge, groups.length > 0);
 		Util.show($DownloadsTabBadgeEmpty, groups.length === 0 && UISettings.miniTheme);
@@ -150,11 +155,11 @@ var Downloads = (new function($)
 	{
 		calcProgressLabels();
 	}
-	
+
 	/*** TABLE *************************************************************************/
 
 	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'estimated', 'age', 'size', 'remaining'];
-	
+
 	function redraw_table()
 	{
 		var data = [];
@@ -204,7 +209,7 @@ var Downloads = (new function($)
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.left, item.data.estimated);
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
-		
+
 		var age = new Date().getTime() / 1000 - (group.MinPostTime + UISettings.timeZoneCorrection*60*60);
 		var propagation = '';
 		if (group.ActiveDownloads == 0 && age < parseInt(Options.option('PropagationDelay')) * 60)
@@ -213,18 +218,19 @@ var Downloads = (new function($)
 		}
 
 		var name = '<a href="#" data-nzbid="' + group.NZBID + '">' + Util.textToHtml(Util.formatNZBName(group.NZBName)) + '</a>';
+		name += DownloadsUI.buildEncryptedLabel(group.Parameters);
 
 		var url = '';
 		if (group.Kind === 'URL')
 		{
 			url = '<span class="label label-info">URL</span> ';
 		}
-		
+
 		var health = '';
 		if (group.Health < 1000 && (!group.postprocess ||
 			(group.Status === 'PP_QUEUED' && group.PostTotalTimeSec === 0)))
 		{
-			health = ' <span class="label ' + 
+			health = ' <span class="label ' +
 				(group.Health >= group.CriticalHealth ? 'label-warning' : 'label-important') +
 				'">health: ' + Math.floor(group.Health / 10) + '%</span> ';
 		}
@@ -233,21 +239,22 @@ var Downloads = (new function($)
 		var backupPercent = calcBackupPercent(group);
 		if (backupPercent > 0)
 		{
-			backup = ' <a href="#" data-nzbid="' + group.NZBID + '" data-area="backup" class="badge-link"><span class="label label-warning" title="using backup news servers">backup: ' + 
+			backup = ' <a href="#" data-nzbid="' + group.NZBID + '" data-area="backup" class="badge-link"><span class="label label-warning" title="using backup news servers">backup: ' +
 				(backupPercent < 10 ? Util.round1(backupPercent) : Util.round0(backupPercent)) + '%</span> ';
 		}
-		
+
 		var category = Util.textToHtml(group.Category);
 
 		if (!UISettings.miniTheme)
 		{
-			var info = name + ' ' + url + priority + dupe + health + backup + propagation + progresslabel;
-			item.fields = ['<div class="check img-check"></div>', status, info, category, item.data.age, progress, item.data.estimated];
+			var info = name + ' ' + url + dupe + health + backup + propagation + progresslabel;
+			item.fields = ['<div class="check img-check"></div>', priority, status, info, category, item.data.age, progress, item.data.estimated];
 		}
 		else
 		{
-			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + url +
-				' ' + (group.Status === 'QUEUED' ? '' : status) + ' ' + priority + dupe + health + backup + propagation;
+			var info = '<div class="check img-check"></div><span class="row-title">' +
+				name + '</span>' + url + ' ' + (group.MaxPriority == 0 ? '' : priority) +
+				' ' + (group.Status === 'QUEUED' ? '' : status) + dupe + health + backup + propagation;
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
@@ -263,12 +270,16 @@ var Downloads = (new function($)
 
 	function renderCellCallback(cell, index, item)
 	{
-		if (4 <= index && index <= 7)
+		if (index == 1)
+		{
+			cell.className = 'text-center';
+		}
+		else if (5 <= index && index <= 8)
 		{
 			cell.className = 'text-right';
 		}
 	}
-	
+
 	function calcBackupPercent(group)
 	{
 		var downloadedArticles = group.SuccessArticles + group.FailedArticles;
@@ -276,7 +287,7 @@ var Downloads = (new function($)
 		{
 			return 0;
 		}
-		
+
 		if (minLevel === null)
 		{
 			for (var i=0; i < Status.status.NewsServers.length; i++)
@@ -287,9 +298,9 @@ var Downloads = (new function($)
 				{
 					minLevel = level;
 				}
-			}	
+			}
 		}
-		
+
 		var backupArticles = 0;
 		for (var j=0; j < group.ServerStats.length; j++)
 		{
@@ -337,7 +348,25 @@ var Downloads = (new function($)
 		progressLabels.css('max-width', nameColumnWidth);
 		progressLabels.show();
 	}
-	
+
+	this.processShortcut = function(key)
+	{
+		switch (key)
+		{
+			case 'A': Upload.addClick(); return true;
+			case 'D': case 'Delete': case 'Meta+Backspace': Downloads.deleteClick(); return true;
+			case 'E': case 'Enter': Downloads.editClick(); return true;
+			case 'U': Downloads.moveClick('up'); return true;
+			case 'N': Downloads.moveClick('down'); return true;
+			case 'T': Downloads.moveClick('top'); return true;
+			case 'B': Downloads.moveClick('bottom'); return true;
+			case 'P': Downloads.pauseClick(); return true;
+			case 'R': Downloads.resumeClick(); return true;
+			case 'M': Downloads.mergeClick(); return true;
+		}
+		return $DownloadsTable.fasttable('processShortcut', key);
+	}
+
 	/*** EDIT ******************************************************/
 
 	function itemClick(e)
@@ -397,6 +426,11 @@ var Downloads = (new function($)
 		return checkedEditIDs;
 	}
 
+	this.buildEditIDList = function()
+	{
+		return checkBuildEditIDList(true, true, true);
+	}
+
 	/*** TOOLBAR: SELECTED ITEMS ******************************************************/
 
 	this.editClick = function()
@@ -442,7 +476,7 @@ var Downloads = (new function($)
 			return;
 		}
 		notification = '#Notif_Downloads_Paused';
-		RPC.call('editqueue', ['GroupPause', 0, '', checkedEditIDs], editCompleted);
+		RPC.call('editqueue', ['GroupPause', '', checkedEditIDs], editCompleted);
 	}
 
 	this.resumeClick = function()
@@ -453,7 +487,7 @@ var Downloads = (new function($)
 			return;
 		}
 		notification = '#Notif_Downloads_Resumed';
-		RPC.call('editqueue', ['GroupResume', 0, '', checkedEditIDs], function()
+		RPC.call('editqueue', ['GroupResume', '', checkedEditIDs], function()
 		{
 			if (Options.option('ParCheck') === 'force')
 			{
@@ -461,7 +495,7 @@ var Downloads = (new function($)
 			}
 			else
 			{
-				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', checkedEditIDs], editCompleted);
+				RPC.call('editqueue', ['GroupPauseExtraPars', '', checkedEditIDs], editCompleted);
 			}
 		});
 	}
@@ -500,7 +534,7 @@ var Downloads = (new function($)
 		{
 			if (postprocessIDs.length > 0)
 			{
-				RPC.call('editqueue', ['PostDelete', 0, '', postprocessIDs], editCompleted);
+				RPC.call('editqueue', ['PostDelete', '', postprocessIDs], editCompleted);
 			}
 			else
 			{
@@ -512,7 +546,7 @@ var Downloads = (new function($)
 		{
 			if (downloadIDs.length > 0)
 			{
-				RPC.call('editqueue', [command, 0, '', downloadIDs], deletePosts);
+				RPC.call('editqueue', [command, '', downloadIDs], deletePosts);
 			}
 			else
 			{
@@ -554,15 +588,31 @@ var Downloads = (new function($)
 		}
 
 		notification = '';
-		RPC.call('editqueue', [EditAction, EditOffset, '', checkedEditIDs], editCompleted);
+		RPC.call('editqueue', [EditAction, '' + EditOffset, checkedEditIDs], editCompleted);
 	}
 
-	this.sort = function(order)
+	this.sort = function(order, e)
 	{
+		e.preventDefault();
+		e.stopPropagation();
 		var checkedEditIDs = checkBuildEditIDList(true, true, true);
 		notification = '#Notif_Downloads_Sorted';
-		RPC.call('editqueue', ['GroupSort', 0, order, checkedEditIDs], editCompleted);
+		RPC.call('editqueue', ['GroupSort', order, checkedEditIDs], editCompleted);
 	}
+
+	function dragEndCallback(info)
+	{
+		if (info)
+		{
+			RPC.call('editqueue', [info.direction === 'after' ? 'GroupMoveAfter' : 'GroupMoveBefore',
+				'' + info.position, info.ids], function(){ Refresher.resume(true); });
+		}
+		else
+		{
+			Refresher.resume();
+		}
+	}
+
 }(jQuery));
 
 
@@ -571,11 +621,11 @@ var Downloads = (new function($)
 var DownloadsUI = (new function($)
 {
 	'use strict';
-	
+
 	// State
 	var categoryColumnWidth = null;
 	var dupeCheck = null;
-	
+
 	this.fillPriorityCombo = function(combo)
 	{
 		combo.empty();
@@ -607,12 +657,12 @@ var DownloadsUI = (new function($)
 		}
 		return statusText;
 	}
-		
+
 	this.buildStatus = function(group)
 	{
 		var statusText = Downloads.statusData[group.Status].Text;
 		var badgeClass = '';
-		
+
 		if (group.postprocess && group.Status !== 'PP_QUEUED' && group.Status !== 'QS_QUEUED')
 		{
 			badgeClass = Status.status.PostPaused && group.MinPriority < 900 ? 'label-warning' : 'label-success';
@@ -630,7 +680,7 @@ var DownloadsUI = (new function($)
 			statusText = 'INTERNAL_ERROR (' + group.Status + ')';
 			badgeClass = 'label-important';
 		}
-		
+
 		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
@@ -662,7 +712,7 @@ var DownloadsUI = (new function($)
 			remaining = '';
 			percent = Math.round(group.PostStageProgress / 10);
 		}
-		
+
 		if (group.Kind === 'URL')
 		{
 			totalsize = '';
@@ -751,25 +801,39 @@ var DownloadsUI = (new function($)
 
 	this.buildPriority = function(priority)
 	{
-		switch (priority)
+		var text;
+
+		if (priority >= 900) text = ' <div class="icon-circle-red" title="Force priority"></div>';
+		else if (priority > 50) text = ' <div class="icon-ring-fill-red" title="Very high priority"></div>';
+		else if (priority > 0) text = ' <div class="icon-ring-red" title="High priority"></div>';
+		else if (priority == 0) text = ' <div class="icon-ring-ltgrey" title="Normal priority"></div>';
+		else if (priority >= -50) text = ' <div class="icon-ring-blue" title="Low priority"></div>';
+		else text = ' <div class="icon-ring-fill-blue" title="Very low priority"></div>';
+
+		if ([900, 100, 50, 0, -50, -100].indexOf(priority) == -1)
 		{
-			case 0: return '';
-			case 900: return ' <span class="label label-priority label-important">force priority</span>';
-			case 100: return ' <span class="label label-priority label-important">very high priority</span>';
-			case 50: return ' <span class="label label-priority label-important">high priority</span>';
-			case -50: return ' <span class="label label-priority label-info">low priority</span>';
-			case -100: return ' <span class="label label-priority label-info">very low priority</span>';
+			text = text.replace('priority', 'priority (' + priority + ')');
 		}
-		if (priority > 0)
-		{
-			return ' <span class="label label-priority label-important">priority: ' + priority + '</span>';
-		}
-		else if (priority < 0)
-		{
-			return ' <span class="label label-priority label-info">priority: ' + priority + '</span>';
-		}
+
+		return text;
 	}
-	
+
+	this.buildEncryptedLabel = function(parameters)
+	{
+		var encryptedPassword = '';
+
+		for (var i = 0; i < parameters.length; i++)
+		{
+			if (parameters[i]['Name'].toLowerCase() === '*unpack:password')
+			{
+				encryptedPassword = parameters[i]['Value'];
+				break;
+			}
+		}
+		return encryptedPassword != '' ?
+			' <span class="label label-info" title="'+ Util.textToAttr(encryptedPassword) +'">encrypted</span>' : '';
+	}
+
 	function formatDupeText(dupeKey, dupeScore, dupeMode)
 	{
 		dupeKey = dupeKey.replace('rageid=', '');
@@ -845,9 +909,9 @@ var DownloadsUI = (new function($)
 				var catWidth = widthHelper.width();
 				categoryColumnWidth = Math.max(categoryColumnWidth, catWidth);
 			}
-						
+
 			widthHelper.remove();
-			
+
 			categoryColumnWidth += 'px';
 		}
 

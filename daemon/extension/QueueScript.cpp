@@ -112,7 +112,7 @@ void QueueScriptController::Run()
 		{
 			nzbInfo->PrintMessage(Message::mkWarning, "Cancelling download and deleting %s", *m_nzbName);
 			nzbInfo->SetDeleteStatus(NzbInfo::dsBad);
-			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, 0, nullptr);
+			downloadQueue->EditEntry(m_id, DownloadQueue::eaGroupDelete, nullptr);
 		}
 	}
 
@@ -336,21 +336,7 @@ bool QueueScriptCoordinator::UsableScript(ScriptConfig::Script& script, NzbInfo*
 		return false;
 	}
 
-	// check queue-scripts
-	const char* queueScript = g_Options->GetQueueScript();
-	if (!Util::EmptyStr(queueScript))
-	{
-		Tokenizer tok(queueScript, ",;");
-		while (const char* scriptName = tok.Next())
-		{
-			if (FileSystem::SameFilename(scriptName, script.GetName()))
-			{
-				return true;
-			}
-		}
-	}
-
-	// check post-processing-scripts assigned for that nzb
+	// check extension scripts assigned for that nzb
 	for (NzbParameter& parameter : nzbInfo->GetParameters())
 	{
 		const char* varname = parameter.GetName();
@@ -368,17 +354,17 @@ bool QueueScriptCoordinator::UsableScript(ScriptConfig::Script& script, NzbInfo*
 		}
 	}
 
-	// for URL-events the post-processing scripts are not assigned yet;
-	// instead we take the default post-processing scripts for the category (or global)
+	// for URL-events the extension scripts are not assigned yet;
+	// instead we take the default extension scripts for the category (or global)
 	if (event == qeUrlCompleted)
 	{
-		const char* postScript = g_Options->GetPostScript();
+		const char* postScript = g_Options->GetExtensions();
 		if (!Util::EmptyStr(nzbInfo->GetCategory()))
 		{
 			Options::Category* categoryObj = g_Options->FindCategory(nzbInfo->GetCategory(), false);
-			if (categoryObj && !Util::EmptyStr(categoryObj->GetPostScript()))
+			if (categoryObj && !Util::EmptyStr(categoryObj->GetExtensions()))
 			{
-				postScript = categoryObj->GetPostScript();
+				postScript = categoryObj->GetExtensions();
 			}
 		}
 

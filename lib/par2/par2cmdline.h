@@ -141,11 +141,6 @@ typedef enum Result
 
 } Result;
 
-class NullStreamBuf : public std::streambuf {};
-extern NullStreamBuf nullStreamBuf;
-extern std::ostream cout;
-extern std::ostream cerr;
-
 } // end namespace Par2
 
 #define LONGMULTIPLY
@@ -171,7 +166,7 @@ using namespace std;
 #include "datablock.h"
 
 #include "criticalpacket.h"
-#include "par2creatorsourcefile.h"
+//#include "par2creatorsourcefile.h"
 
 #include "mainpacket.h"
 #include "creatorpacket.h"

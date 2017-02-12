@@ -23,7 +23,7 @@
  *   2) Slideable tab dialog extension;
  *   3) Communication via JSON-RPC.
  */
- 
+
 /*** UTILITY FUNCTIONS *********************************************************/
 
 var Util = (new function($)
@@ -156,7 +156,7 @@ var Util = (new function($)
 			return Util.round0(bytesPerSec / 1024.0) + '&nbsp;KB/s';
 		}
 	}
-	
+
 	this.formatAge = function(time)
 	{
 		if (time == 0)
@@ -240,7 +240,7 @@ var Util = (new function($)
 	{
 		return ''+value == 'true';
 	}
-	
+
 	this.disableShiftMouseDown = function(event)
 	{
 		// disable default shift+click behaviour, which is to select a text
@@ -250,7 +250,7 @@ var Util = (new function($)
 			event.preventDefault();
 		}
 	}
-	
+
 	this.centerDialog = function(dialog, center)
 	{
 		var $elem = $(dialog);
@@ -287,7 +287,7 @@ var Util = (new function($)
 		{
 			return false;
 		}
-		
+
 		var blob = new Blob([content], {type: type});
 
 		if (navigator.msSaveBlob)
@@ -311,6 +311,32 @@ var Util = (new function($)
 		return true;
 	}
 
+	var keyMap = {
+		8:'Backspace', 9:'Tab', 13:'Enter', 27:'Escape', 33:'PgUp', 34:'PgDn',
+		35:'End', 36:'Home', 37:'Left', 38:'Up', 39:'Right', 40:'Down', 45:'Insert', 46:'Delete',
+		48:'0', 49:'1', 50:'2', 51:'3', 52:'4', 53:'5', 54:'6', 55:'7', 56:'8', 59:'9',
+		65:'A', 66:'B', 67:'C', 68:'D', 69:'E', 70:'F', 71:'G', 72:'H', 73:'I', 74:'J', 75:'K',
+		76:'L', 77:'M', 78:'N', 79:'O', 80:'P', 81:'Q', 82:'R', 83:'S', 84:'T', 85:'U', 86:'V',
+		87:'W', 88:'X', 89:'Y', 90:'Z'};
+
+	this.keyName = function(keyEvent)
+	{
+		return (keyEvent.metaKey ? 'Meta+' : '') + (keyEvent.ctrlKey ? 'Ctrl+' : '') +
+			(keyEvent.altKey ? 'Alt+' : '') + (keyEvent.shiftKey ? 'Shift+' : '') +
+			keyMap[keyEvent.keyCode];
+	}
+
+	this.isInputControl = function(target)
+	{
+		return target.tagName == 'INPUT' || target.tagName == 'SELECT' ||
+			target.tagName == 'TEXTAREA' || target.isContentEditable;
+	}
+
+	this.wantsReturn = function(target)
+	{
+		return target.tagName == 'TEXTAREA';
+	}
+
 }(jQuery));
 
 
@@ -319,14 +345,14 @@ var Util = (new function($)
 var TabDialog = (new function($)
 {
 	'use strict';
-	
+
 	this.extend = function(dialog)
 	{
 		dialog.restoreTab = restoreTab;
 		dialog.switchTab = switchTab;
 		dialog.maximize = maximize;
 	}
-	
+
 	function maximize(options)
 	{
 		var bodyPadding = 15;
@@ -414,7 +440,7 @@ var TabDialog = (new function($)
 		body.css({position: '', height: oldBodyHeight});
 		dialog.css('overflow', 'hidden');
 		fromTab.css({position: 'absolute', left: leftPos, width: oldTabWidth, height: oldBodyHeight});
-		toTab.css({position: 'absolute', width: newTabWidth, height: oldBodyHeight, 
+		toTab.css({position: 'absolute', width: newTabWidth, height: oldBodyHeight,
 			left: sign * ((options.back ? newTabWidth : oldTabWidth) + bodyPadding*2)});
 		fromTab.show();
 		dialog.toggleClass(toggleClass);
@@ -458,7 +484,7 @@ var TabDialog = (new function($)
 			dialog.animate({width: newDialogWidth, 'margin-left': newDialogMarginLeft}, duration);
 		}
 
-		fromTab.animate({left: sign * -((options.back ? newTabWidth : oldTabWidth) + bodyPadding*2), 
+		fromTab.animate({left: sign * -((options.back ? newTabWidth : oldTabWidth) + bodyPadding*2),
 			height: newBodyHeight + bodyPadding}, duration);
 		toTab.animate({left: leftPos, height: newBodyHeight + bodyPadding}, duration, function()
 			{
@@ -469,7 +495,7 @@ var TabDialog = (new function($)
 				dialog.toggleClass(toggleClass);
 				if (fullscreen)
 				{
-					body.css({position: 'absolute', height: '', left: 0, right: 0, 
+					body.css({position: 'absolute', height: '', left: 0, right: 0,
 						top: header.outerHeight(),
 						bottom: footer.outerHeight(),
 						'max-height': 'inherit'});
@@ -497,7 +523,7 @@ var TabDialog = (new function($)
 var RPC = (new function($)
 {
 	'use strict';
-	
+
 	// Properties
 	this.rpcUrl;
 	this.defaultFailureCallback;
@@ -507,17 +533,17 @@ var RPC = (new function($)
 	this.call = function(method, params, completed_callback, failure_callback, timeout)
 	{
 		var _this = this;
-		
+
 		var request = JSON.stringify({nocache: new Date().getTime(), method: method, params: params});
 		var xhr = new XMLHttpRequest();
 
 		xhr.open('post', this.rpcUrl);
-		
+
 		if (XAuthToken !== undefined)
 		{
 			xhr.setRequestHeader('X-Auth-Token', XAuthToken);
 		}
-		
+
 		if (timeout)
 		{
 			xhr.timeout = timeout;

@@ -25,8 +25,8 @@
 #include "Options.h"
 #include "Util.h"
 
-FeedFile::FeedFile(const char* fileName) :
-	m_fileName(fileName)
+FeedFile::FeedFile(const char* fileName, const char* infoName) :
+	m_fileName(fileName), m_infoName(infoName)
 {
 	debug("Creating FeedFile");
 
@@ -113,7 +113,7 @@ bool FeedFile::Parse()
 	{
 		_bstr_t r(doc->GetparseError()->reason);
 		const char* errMsg = r;
-		error("Error parsing rss feed: %s", errMsg);
+		error("Error parsing rss feed %s: %s", *m_infoName, errMsg);
 		return false;
 	}
 
@@ -248,7 +248,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		//<newznab:attr name="size" value="5423523453534" />
 		if (feedItemInfo.GetSize() == 0)
 		{
-			tag = node->selectSingleNode("newznab:attr[@name='size']");
+			tag = node->selectSingleNode("newznab:attr[@name='size'] | nZEDb:attr[@name='size']");
 			if (tag)
 			{
 				attr = tag->Getattributes()->getNamedItem("value");
@@ -262,7 +262,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		}
 
 		//<newznab:attr name="imdb" value="1588173"/>
-		tag = node->selectSingleNode("newznab:attr[@name='imdb']");
+		tag = node->selectSingleNode("newznab:attr[@name='imdb'] | nZEDb:attr[@name='imdb']");
 		if (tag)
 		{
 			attr = tag->Getattributes()->getNamedItem("value");
@@ -275,7 +275,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		}
 
 		//<newznab:attr name="rageid" value="33877"/>
-		tag = node->selectSingleNode("newznab:attr[@name='rageid']");
+		tag = node->selectSingleNode("newznab:attr[@name='rageid'] | nZEDb:attr[@name='rageid']");
 		if (tag)
 		{
 			attr = tag->Getattributes()->getNamedItem("value");
@@ -288,7 +288,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		}
 
 		//<newznab:attr name="tdvdbid" value="33877"/>
-		tag = node->selectSingleNode("newznab:attr[@name='tvdbid']");
+		tag = node->selectSingleNode("newznab:attr[@name='tvdbid'] | nZEDb:attr[@name='tvdbid']");
 		if (tag)
 		{
 			attr = tag->Getattributes()->getNamedItem("value");
@@ -301,7 +301,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 		}
 
 		//<newznab:attr name="tvmazeid" value="33877"/>
-		tag = node->selectSingleNode("newznab:attr[@name='tvmazeid']");
+		tag = node->selectSingleNode("newznab:attr[@name='tvmazeid'] | nZEDb:attr[@name='tvmazeid']");
 		if (tag)
 		{
 			attr = tag->Getattributes()->getNamedItem("value");
@@ -315,7 +315,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 
 		//<newznab:attr name="episode" value="E09"/>
 		//<newznab:attr name="episode" value="9"/>
-		tag = node->selectSingleNode("newznab:attr[@name='episode']");
+		tag = node->selectSingleNode("newznab:attr[@name='episode'] | nZEDb:attr[@name='episode']");
 		if (tag)
 		{
 			attr = tag->Getattributes()->getNamedItem("value");
@@ -328,7 +328,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 
 		//<newznab:attr name="season" value="S03"/>
 		//<newznab:attr name="season" value="3"/>
-		tag = node->selectSingleNode("newznab:attr[@name='season']");
+		tag = node->selectSingleNode("newznab:attr[@name='season'] | nZEDb:attr[@name='season']");
 		if (tag)
 		{
 			attr = tag->Getattributes()->getNamedItem("value");
@@ -339,7 +339,7 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 			}
 		}
 
-		MSXML::IXMLDOMNodeListPtr itemList = node->selectNodes("newznab:attr");
+		MSXML::IXMLDOMNodeListPtr itemList = node->selectNodes("newznab:attr | nZEDb:attr");
 		for (int i = 0; i < itemList->Getlength(); i++)
 		{
 			MSXML::IXMLDOMNodePtr node = itemList->Getitem(i);
@@ -373,7 +373,7 @@ bool FeedFile::Parse()
 
 	if (ret != 0)
 	{
-		error("Failed to parse rss feed");
+		error("Failed to parse rss feed %s", *m_infoName);
 		return false;
 	}
 
@@ -407,7 +407,8 @@ void FeedFile::Parse_StartElement(const char *name, const char **atts)
 			}
 		}
 	}
-	else if (m_feedItemInfo && !strcmp("newznab:attr", name) &&
+	else if (m_feedItemInfo && 
+		(!strcmp("newznab:attr", name) || !strcmp("nZEDb:attr", name)) &&
 		atts[0] && atts[1] && atts[2] && atts[3] &&
 		!strcmp("name", atts[0]) && !strcmp("value", atts[2]))
 	{
@@ -592,6 +593,6 @@ void FeedFile::SAX_error(FeedFile* file, const char *msg, ...)
 
 	// remove trailing CRLF
 	for (char* pend = errMsg + strlen(errMsg) - 1; pend >= errMsg && (*pend == '\n' || *pend == '\r' || *pend == ' '); pend--) *pend = '\0';
-	error("Error parsing rss feed: %s", errMsg);
+	error("Error parsing rss feed %s: %s", *file->m_infoName, errMsg);
 }
 #endif

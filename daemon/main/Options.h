@@ -85,6 +85,13 @@ public:
 		scDeactivateServer,
 		scFetchFeed
 	};
+	enum EPostStrategy
+	{
+		ppSequential,
+		ppBalanced,
+		ppAggressive,
+		ppRocket
+	};
 
 	class OptEntry
 	{
@@ -126,19 +133,19 @@ public:
 	class Category
 	{
 	public:
-		Category(const char* name, const char* destDir, bool unpack, const char* postScript) :
-			m_name(name), m_destDir(destDir), m_unpack(unpack), m_postScript(postScript) {}
+		Category(const char* name, const char* destDir, bool unpack, const char* extensions) :
+			m_name(name), m_destDir(destDir), m_unpack(unpack), m_extensions(extensions) {}
 		const char* GetName() { return m_name; }
 		const char* GetDestDir() { return m_destDir; }
 		bool GetUnpack() { return m_unpack; }
-		const char* GetPostScript() { return m_postScript; }
+		const char* GetExtensions() { return m_extensions; }
 		NameList* GetAliases() { return &m_aliases; }
 
 	private:
 		CString m_name;
 		CString m_destDir;
 		bool m_unpack;
-		CString m_postScript;
+		CString m_extensions;
 		NameList m_aliases;
 	};
 
@@ -159,7 +166,7 @@ public:
 			int level, int group, bool optional) = 0;
 		virtual void AddFeed(int id, const char* name, const char* url, int interval,
 			const char* filter, bool backlog, bool pauseNzb, const char* category,
-			int priority, const char* feedScript) {}
+			int priority, const char* extensions) {}
 		virtual void AddTask(int id, int hours, int minutes, int weekDaysBits, ESchedulerCommand command,
 			const char* param) {}
 		virtual void SetupFirstStart() {}
@@ -170,9 +177,12 @@ public:
 	Options(CmdOptList* commandLineOptions, Extender* extender);
 	~Options();
 
-	bool SplitOptionString(const char* option, CString& optName, CString& optValue);
+	static bool SplitOptionString(const char* option, CString& optName, CString& optValue);
+	static void ConvertOldOptions(OptEntries* optEntries);
 	bool GetFatalError() { return m_fatalError; }
 	GuardedOptEntries GuardOptEntries() { return GuardedOptEntries(&m_optEntries, &m_optEntriesMutex); }
+	void CreateSchedulerTask(int id, const char* time, const char* weekDays,
+		ESchedulerCommand command, const char* param);
 
 	// Options
 	const char* GetConfigFilename() { return m_configFilename; }
@@ -200,8 +210,10 @@ public:
 	bool GetDecode() { return m_decode; };
 	bool GetAppendCategoryDir() { return m_appendCategoryDir; }
 	bool GetContinuePartial() { return m_continuePartial; }
-	int GetRetries() { return m_retries; }
-	int GetRetryInterval() { return m_retryInterval; }
+	int GetArticleRetries() { return m_articleRetries; }
+	int GetArticleInterval() { return m_articleInterval; }
+	int GetUrlRetries() { return m_urlRetries; }
+	int GetUrlInterval() { return m_urlInterval; }
 	bool GetSaveQueue() { return m_saveQueue; }
 	bool GetFlushQueue() { return m_flushQueue; }
 	bool GetDupeCheck() { return m_dupeCheck; }
@@ -231,15 +243,14 @@ public:
 	bool GetParRepair() { return m_parRepair; }
 	EParScan GetParScan() { return m_parScan; }
 	bool GetParQuick() { return m_parQuick; }
+	EPostStrategy GetPostStrategy() { return m_postStrategy; }
 	bool GetParRename() { return m_parRename; }
 	int GetParBuffer() { return m_parBuffer; }
 	int GetParThreads() { return m_parThreads; }
+	bool GetRarRename() { return m_rarRename; }
 	EHealthCheck GetHealthCheck() { return m_healthCheck; }
 	const char* GetScriptOrder() { return m_scriptOrder; }
-	const char* GetPostScript() { return m_postScript; }
-	const char* GetScanScript() { return m_scanScript; }
-	const char* GetQueueScript() { return m_queueScript; }
-	const char* GetFeedScript() { return m_feedScript; }
+	const char* GetExtensions() { return m_extensions; }
 	int GetUMask() { return m_umask; }
 	int GetUpdateInterval() {return m_updateInterval; }
 	bool GetCursesNzbName() { return m_cursesNzbName; }
@@ -267,6 +278,7 @@ public:
 	bool GetUnpackPauseQueue() { return m_unpackPauseQueue; }
 	const char* GetExtCleanupDisk() { return m_extCleanupDisk; }
 	const char* GetParIgnoreExt() { return m_parIgnoreExt; }
+	const char* GetUnpackIgnoreExt() { return m_unpackIgnoreExt; }
 	int GetFeedHistory() { return m_feedHistory; }
 	bool GetUrlForce() { return m_urlForce; }
 	int GetTimeCorrection() { return m_timeCorrection; }
@@ -343,8 +355,10 @@ private:
 	int m_terminateTimeout = 0;
 	bool m_appendCategoryDir = false;
 	bool m_continuePartial = false;
-	int m_retries = 0;
-	int m_retryInterval = 0;
+	int m_articleRetries = 0;
+	int m_articleInterval = 0;
+	int m_urlRetries = 0;
+	int m_urlInterval = 0;
 	bool m_saveQueue = false;
 	bool m_flushQueue = false;
 	bool m_dupeCheck = false;
@@ -374,15 +388,14 @@ private:
 	bool m_parRepair = false;
 	EParScan m_parScan = psLimited;
 	bool m_parQuick = true;
+	EPostStrategy m_postStrategy = ppSequential;
 	bool m_parRename = false;
 	int m_parBuffer = 0;
 	int m_parThreads = 0;
+	bool m_rarRename = false;
 	EHealthCheck m_healthCheck = hcNone;
-	CString m_postScript;
+	CString m_extensions;
 	CString m_scriptOrder;
-	CString m_scanScript;
-	CString m_queueScript;
-	CString m_feedScript;
 	int m_umask = 0;
 	int m_updateInterval = 0;
 	bool m_cursesNzbName = false;
@@ -410,6 +423,7 @@ private:
 	bool m_unpackPauseQueue;
 	CString m_extCleanupDisk;
 	CString m_parIgnoreExt;
+	CString m_unpackIgnoreExt;
 	int m_feedHistory = 0;
 	bool m_urlForce = false;
 	int m_timeCorrection = 0;
@@ -461,7 +475,9 @@ private:
 	void ConfigError(const char* msg, ...);
 	void ConfigWarn(const char* msg, ...);
 	void LocateOptionSrcPos(const char *optionName);
-	void ConvertOldOption(CString& option, CString& value);
+	static void ConvertOldOption(CString& option, CString& value);
+	static void MergeOldScriptOption(OptEntries* optEntries, const char* optname, bool mergeCategories);
+	static bool HasScript(const char* scriptList, const char* scriptName);
 };
 
 extern Options* g_Options;

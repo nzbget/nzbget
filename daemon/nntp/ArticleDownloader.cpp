@@ -63,8 +63,8 @@ void ArticleDownloader::SetInfoName(const char* infoName)
 		- if download fails with error "Not-Found" (article or group not found) or with CRC error,
 		  add the server to failed server list;
 		- if download fails with general failure error (article incomplete, other unknown error
-		  codes), try the same server again as many times as defined by option <Retries>; if all attempts
-		  fail, add the server to failed server list;
+		  codes), try the same server again as many times as defined by option <ArticleRetries>;
+		  if all attempts fail, add the server to failed server list;
 		- if all servers from current level were tried, increase level;
 		- if all servers from all levels were tried, break the loop with failure status.
 	<end-loop>
@@ -80,7 +80,7 @@ void ArticleDownloader::Run()
 	m_articleWriter.Prepare();
 
 	EStatus status = adFailed;
-	int retries = g_Options->GetRetries() > 0 ? g_Options->GetRetries() : 1;
+	int retries = g_Options->GetArticleRetries() > 0 ? g_Options->GetArticleRetries() : 1;
 	int remainedRetries = retries;
 	ServerPool::RawServerList failedServers;
 	failedServers.reserve(g_ServerPool->GetServers()->size());

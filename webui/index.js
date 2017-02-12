@@ -36,9 +36,9 @@ var UISettings = (new function($)
 	/*** Web-interface configuration *************/
 
 	// Options having descriptions can be edited directly in web-interface on settings page.
-	
+
 	this.description = [];
-	
+
 	this.description['activityAnimation'] = 'Animation on play/pause button (yes, no).';
 	this.activityAnimation = true;
 
@@ -57,7 +57,7 @@ var UISettings = (new function($)
 
 	this.description['dupeBadges'] = 'Show badges with duplicate info in downloads and history (yes, no).';
 	this.dupeBadges = false;
-	
+
 	this.description['rowSelect'] = 'Select records by clicking on any part of the row, not just on the check mark (yes, no).';
 	this.rowSelect = false;
 
@@ -75,7 +75,7 @@ var UISettings = (new function($)
 		'%(VARNAME-)% - show variable value with hyphen inside parenthesis;\n' +
 		'%[VARNAME-]% - show variable value with hyphen inside square brackets.\n\n' +
 		'Examples:\n' +
-		' "%(COUNT-)% NZBGet" - show number of downloads in parenthesis followed by a hyphen; don\'t show "(0) - " if queue is empty;\n' + 
+		' "%(COUNT-)% NZBGet" - show number of downloads in parenthesis followed by a hyphen; don\'t show "(0) - " if queue is empty;\n' +
 		' "%PAUSE% %(COUNT-)% NZBGet" - as above but also show pause-indicator if paused;\n' +
 		' "%[COUNT]% %SPEED-% NZBGet" - show number of downloads and speed if not null (default setting).';
 	this.windowTitle = '%[COUNT]% %SPEED-% NZBGet';
@@ -83,7 +83,7 @@ var UISettings = (new function($)
 	this.description['refreshRetries'] = 'Number of refresh attempts if a communication error occurs (0-99).\n\n' +
 	  'If all attempts fail, an error is displayed and the automatic refresh stops.'
 	this.refreshRetries = 4;
-	
+
 	// Time zone correction in hours.
 	// You shouldn't require this unless you can't set the time zone on your computer/device properly.
 	this.timeZoneCorrection = 0;
@@ -92,7 +92,7 @@ var UISettings = (new function($)
 	// The choosen interval is saved in web-browser and then restored.
 	// The default value sets the interval on first use only.
 	this.refreshInterval = 1;
-	
+
 	// URL for communication with NZBGet via JSON-RPC
 	this.rpcUrl = './jsonrpc';
 
@@ -103,7 +103,7 @@ var UISettings = (new function($)
 	this.miniTheme = false;
 	this.showEditButtons = true;
 	this.connectionError = false;
-	
+
 	this.load = function()
 	{
 		this.refreshInterval = parseFloat(this.read('RefreshInterval', this.refreshInterval));
@@ -131,7 +131,7 @@ var UISettings = (new function($)
 		this.write('WindowTitle', this.windowTitle);
 		this.write('RefreshRetries', this.refreshRetries);
 	}
-	
+
 	this.read = function(key, def)
 	{
 		var v = localStorage.getItem(key);
@@ -156,7 +156,7 @@ var UISettings = (new function($)
 
 $(document).ready(function()
 {
-	Frontend.init(); 
+	Frontend.init();
 });
 
 
@@ -174,11 +174,11 @@ var Frontend = (new function($)
 	var switchingTheme = false;
 	var activeTab = 'Downloads';
 	var lastTab = '';
-	
+
 	this.init = function()
 	{
 		window.onerror = error;
-		
+
 		if (!checkBrowser())
 		{
 			return;
@@ -188,7 +188,7 @@ var Frontend = (new function($)
 
 		UISettings.load();
 		Refresher.init();
-		
+
 		initControls();
 		switchTheme();
 		windowResized();
@@ -216,14 +216,15 @@ var Frontend = (new function($)
 		DownloadsMergeDialog.init();
 		DownloadsSplitDialog.init();
 		HistoryEditDialog.init();
-		
+		PurgeHistoryDialog.init();
+
 		$(window).resize(windowResized);
 
 		initialized = true;
 
 		Refresher.update();
 	}
-	
+
 	function initControls()
 	{
 		mobileSafari = $.browser.safari && navigator.userAgent.toLowerCase().match(/(iphone|ipod|ipad)/) != null;
@@ -238,20 +239,12 @@ var Frontend = (new function($)
 		$('#Navbar a[data-toggle="tab"]').on('show', beforeTabShow);
 		$('#Navbar a[data-toggle="tab"]').on('shown', afterTabShow);
 		setupSearch();
-		
+
 		$('li > a:has(table)').addClass('has-table');
-
-		$(document).on("keypress", "form", function(event)
-		{
-			// since we use form-tags for a workaround for fieldset-tag,
-			// and we don't have a proper processing of ENTER-key inside forms,
-			// we disable ENTER-key to prevent automatic form submitting.
-			return event.keyCode != 13;
-		});
-
+		$(document).on('keydown', keyDown);
 		$(window).scroll(windowScrolled);
 	}
-	
+
 	function checkBrowser()
 	{
 		if ($.browser.msie && parseInt($.browser.version, 10) < 9)
@@ -263,14 +256,14 @@ var Frontend = (new function($)
 		return true;
 	}
 
-	function error(message, source, lineno) 
+	function error(message, source, lineno)
 	{
-		if (source == "")
+		if (source == '')
 		{
 			// ignore false errors without source information (sometimes happen in Safari)
 			return false;
 		}
-		
+
 		$('#FirstUpdateInfo').hide();
 		$('#ErrorAlert-title').text('Error in ' + source + ' (line ' + lineno + ')');
 		$('#ErrorAlert-text').text(message);
@@ -280,10 +273,10 @@ var Frontend = (new function($)
 		{
 			Refresher.pause();
 		}
-		
+
 		return false;
 	}
-	
+
 	this.loadCompleted = function()
 	{
 		Downloads.redraw();
@@ -298,11 +291,32 @@ var Frontend = (new function($)
 			$('#Navbar').show();
 			$('#MainTabContent').show();
 			$('#version').text(Options.option('Version'));
+			selectInitialTab();
 			windowResized();
 			firstLoad = false;
 		}
 	}
-	
+
+	function selectInitialTab()
+	{
+		var location = window.location.toString();
+		var link = null;
+		if (location.indexOf('#downloads') > -1)
+			link = 'DownloadsTabLink';
+		else if (location.indexOf('#history') > -1)
+			link = 'HistoryTabLink';
+		else if (location.indexOf('#messages') > -1)
+			link = 'MessagesTabLink';
+		else if (location.indexOf('#settings') > -1)
+			link = 'ConfigTabLink';
+		if (link)
+		{
+			$('#DownloadsTab').removeClass('fade');
+			$('#' + link).click();
+			$('#DownloadsTab').addClass('fade');
+		}
+	}
+
 	function beforeTabShow(e)
 	{
 		var tabname = $(e.target).attr('href');
@@ -316,7 +330,7 @@ var Frontend = (new function($)
 
 		lastTab = activeTab;
 		activeTab = tabname;
-		
+
 		$('#SearchBlock .search-query, #SearchBlock .search-clear').hide();
 		$('#' + activeTab + 'Table_filter, #' + activeTab + 'Table_clearfilter').show();
 
@@ -326,7 +340,7 @@ var Frontend = (new function($)
 			case 'Messages': Messages.show(); break;
 			case 'History': History.show(); break;
 		}
-		
+
 		FilterMenu.setTab(activeTab);
 	}
 
@@ -360,6 +374,56 @@ var Frontend = (new function($)
 
 		$('.navbar-search').show();
 		beforeTabShow({target: $('#DownloadsTabLink')});
+	}
+
+	function keyDown(e)
+	{
+		var key = Util.keyName(e);
+
+		var modals = $('.modal:visible');
+		if (modals.length > 0)
+		{
+			if (key === 'Enter' && !Util.wantsReturn(e.target))
+			{
+				var primaryButton = $('.btn-primary:visible', modals.last());
+				if (primaryButton.length === 1)
+				{
+					primaryButton.click();
+				}
+				return false;
+			}
+			return;
+		}
+
+		var filterBox = $('#DownloadsTable_filter, #HistoryTable_filter, #MessagesTable_filter, #ConfigTable_filter');
+		if (filterBox.is(':focus') && (key === 'Escape' || key === 'Enter'))
+		{
+			filterBox.blur();
+			return false;
+		}
+
+		if (!(Util.isInputControl(e.target) && $(e.target).is(':visible')))
+		{
+			switch (activeTab)
+			{
+				case 'Downloads': if (Downloads.processShortcut(key)) return false;
+				case 'History': if (History.processShortcut(key)) return false;
+				case 'Messages': if (Messages.processShortcut(key)) return false;
+				case 'Config': if (Config.processShortcut(key)) return false;
+			}
+			switch (key)
+			{
+				case 'Shift+D': $('#DownloadsTabLink').click(); return false;
+				case 'Shift+H': $('#HistoryTabLink').click(); return false;
+				case 'Shift+M': $('#MessagesTabLink').click(); return false;
+				case 'Shift+S': $('#ConfigTabLink').click(); return false;
+				case 'Shift+L': $('#StatusSpeed').click(); return false;
+				case 'Shift+A': $('#StatusTime').click(); return false;
+				case 'Shift+R': $('#RefreshButton').click(); return false;
+				case 'Shift+P': $('#PlayPauseButton').click(); return false;
+				case 'Shift+T': $('#ScheduledPauseButton').click(); return false;
+			}
+		}
 	}
 
 	function windowScrolled()
@@ -396,7 +460,7 @@ var Frontend = (new function($)
 		alignPopupMenu('#StatDialog_MonthMenu', true);
 
 		alignCenterDialogs();
-		
+
 		if (initialized)
 		{
 			Downloads.resize();
@@ -442,7 +506,7 @@ var Frontend = (new function($)
 		}
 	}
 	this.alignPopupMenu = alignPopupMenu;
-	
+
 	function alignCenterDialogs()
 	{
 		$.each($('.modal-center'), function(index, element) {
@@ -507,7 +571,7 @@ var Frontend = (new function($)
 			control.lastOuterWidth = control.outerWidth();
 		}
 	}
-	
+
 	function switchTheme()
 	{
 		switchingTheme = true;
@@ -577,7 +641,7 @@ var Refresher = (new function($)
 	var refreshing = false;
 	var refreshNeeded = false;
 	var refreshErrors = 0;
-	
+
 	this.init = function()
 	{
 		RPC.rpcUrl = UISettings.rpcUrl;
@@ -647,7 +711,7 @@ var Refresher = (new function($)
 				return;
 			}
 		}
-		
+
 		Refresher.pause();
 		UISettings.connectionError = true;
 		$('#FirstUpdateInfo').hide();
@@ -659,7 +723,7 @@ var Refresher = (new function($)
 			// stop animations
 			Status.redraw();
 		}
-		
+
 		$('html, body').animate({scrollTop: 0 }, 400);
 	};
 
@@ -680,17 +744,25 @@ var Refresher = (new function($)
 		scheduleNextRefresh();
 	}
 
+	this.isPaused = function()
+	{
+		return refreshPaused > 0;
+	}
+
 	this.pause = function()
 	{
 		clearTimeout(refreshTimer);
 		refreshPaused++;
 	}
 
-	this.resume = function()
+	this.resume = function(wantUpdate)
 	{
 		refreshPaused--;
-
-		if (refreshPaused === 0 && UISettings.refreshInterval > 0)
+		if (refreshPaused === 0 && wantUpdate)
+		{
+			this.update();
+		}
+		else if (refreshPaused === 0 && UISettings.refreshInterval > 0)
 		{
 			countSeconds();
 		}
@@ -705,7 +777,7 @@ var Refresher = (new function($)
 			scheduleNextRefresh();
 		}
 	}
-	
+
 	function refreshClick()
 	{
 		if (indicatorFrame > 10)
@@ -824,10 +896,11 @@ var ConfirmDialog = (new function($)
 
 	// Controls
 	var $ConfirmDialog;
-	
+
 	// State
 	var actionCallback;
-	
+	var confirmed = false;
+
 	this.init = function()
 	{
 		$ConfirmDialog = $('#ConfirmDialog');
@@ -856,10 +929,11 @@ var ConfirmDialog = (new function($)
 		{
 			initCallback($ConfirmDialog);
 		}
-		
+
 		Util.centerDialog($ConfirmDialog, true);
+		confirmed = false;
 		$ConfirmDialog.modal({backdrop: 'static'});
-		
+
 		// avoid showing multiple backdrops when the modal is shown from other modal
 		var backdrops = $('.modal-backdrop');
 		if (backdrops.length > 1)
@@ -870,6 +944,11 @@ var ConfirmDialog = (new function($)
 
 	function hidden()
 	{
+		if (confirmed)
+		{
+			actionCallback($ConfirmDialog);
+		}
+
 		// confirm dialog copies data from other nodes
 		// the copied DOM nodes must be destroyed
 		$('#ConfirmDialog_Title').empty();
@@ -880,7 +959,7 @@ var ConfirmDialog = (new function($)
 	function click(event)
 	{
 		event.preventDefault(); // avoid scrolling
-		actionCallback($ConfirmDialog);
+		confirmed = true;
 		$ConfirmDialog.modal('hide');
 	}
 }(jQuery));
@@ -894,7 +973,7 @@ var AlertDialog = (new function($)
 
 	// Controls
 	var $AlertDialog;
-	
+
 	this.init = function()
 	{
 		$AlertDialog = $('#AlertDialog');
@@ -915,7 +994,7 @@ var AlertDialog = (new function($)
 var PopupNotification = (new function($)
 {
 	'use strict';
-	
+
 	this.show = function(alert, completeFunc)
 	{
 		if (UISettings.showNotifications || $(alert).hasClass('alert-error'))

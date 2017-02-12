@@ -33,7 +33,7 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 	while (const char* filename = dir.Next())
 	{
 		int baseLen = 0;
-		if (ParseParFilename(filename, &baseLen, nullptr))
+		if (ParseParFilename(filename, true, &baseLen, nullptr))
 		{
 			if (!fileList)
 			{
@@ -62,13 +62,13 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 bool ParParser::SameParCollection(const char* filename1, const char* filename2)
 {
 	int baseLen1 = 0, baseLen2 = 0;
-	return ParseParFilename(filename1, &baseLen1, nullptr) &&
-		ParseParFilename(filename2, &baseLen2, nullptr) &&
+	return ParseParFilename(filename1, false, &baseLen1, nullptr) &&
+		ParseParFilename(filename2, false, &baseLen2, nullptr) &&
 		baseLen1 == baseLen2 &&
 		!strncasecmp(filename1, filename2, baseLen1);
 }
 
-bool ParParser::ParseParFilename(const char* parFilename, int* baseNameLen, int* blocks)
+bool ParParser::ParseParFilename(const char* parFilename, bool confirmedFilename, int* baseNameLen, int* blocks)
 {
 	BString<1024> filename = parFilename;
 	for (char* p = filename; *p; p++) *p = tolower(*p); // convert string to lowercase
@@ -79,10 +79,13 @@ bool ParParser::ParseParFilename(const char* parFilename, int* baseNameLen, int*
 		return false;
 	}
 
-	// find last occurence of ".par2" and trim filename after it
-	char* end = filename;
-	while (char* p = strstr(end, ".par2")) end = p + 5;
-	*end = '\0';
+	if (!confirmedFilename)
+	{
+		// find last occurence of ".par2" and trim filename after it
+		char* end = filename;
+		while (char* p = strstr(end, ".par2")) end = p + 5;
+		*end = '\0';
+	}
 
 	len = strlen(filename);
 	if (len < 6)

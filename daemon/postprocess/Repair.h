@@ -18,36 +18,32 @@
  */
 
 
-#ifndef PARCOORDINATOR_H
-#define PARCOORDINATOR_H
+#ifndef REPAIR_H
+#define REPAIR_H
 
 #include "DownloadInfo.h"
+#include "Thread.h"
+#include "Script.h"
 
 #ifndef DISABLE_PARCHECK
 #include "ParChecker.h"
-#include "ParRenamer.h"
 #include "DupeMatcher.h"
 #endif
 
-class ParCoordinator
+class RepairController : public Thread, public ScriptController
 {
 public:
-	ParCoordinator();
-	virtual ~ParCoordinator();
-	void PausePars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	RepairController();
+	virtual void Stop();
 
 #ifndef DISABLE_PARCHECK
+	virtual void Run();
+	static void StartJob(PostInfo* postInfo);
 	bool AddPar(FileInfo* fileInfo, bool deleted);
-	void StartParCheckJob(PostInfo* postInfo);
-	void StartParRenameJob(PostInfo* postInfo);
-	void Stop();
-	bool Cancel();
 
 protected:
 	void UpdateParCheckProgress();
-	void UpdateParRenameProgress();
 	void ParCheckCompleted();
-	void ParRenameCompleted();
 	void CheckPauseState(PostInfo* postInfo);
 	bool RequestMorePars(NzbInfo* nzbInfo, const char* parFilename, int blockNeeded, int* blockFound);
 
@@ -66,6 +62,7 @@ private:
 	protected:
 		virtual bool RequestMorePars(int blockNeeded, int* blockFound);
 		virtual void UpdateProgress();
+		virtual bool IsStopped() { return m_owner->IsStopped(); };
 		virtual void Completed() { m_owner->ParCheckCompleted(); }
 		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 		virtual void RegisterParredFile(const char* filename);
@@ -74,31 +71,13 @@ private:
 		virtual void RequestDupeSources(DupeSourceList* dupeSourceList);
 		virtual void StatDupeSources(DupeSourceList* dupeSourceList);
 	private:
-		ParCoordinator* m_owner;
+		RepairController* m_owner;
 		PostInfo* m_postInfo;
 		time_t m_parTime;
 		time_t m_repairTime;
 		int m_downloadSec;
 
-		friend class ParCoordinator;
-	};
-
-	class PostParRenamer: public ParRenamer
-	{
-	public:
-		PostInfo* GetPostInfo() { return m_postInfo; }
-		void SetPostInfo(PostInfo* postInfo) { m_postInfo = postInfo; }
-	protected:
-		virtual void UpdateProgress();
-		virtual void Completed() { m_owner->ParRenameCompleted(); }
-		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
-		virtual void RegisterParredFile(const char* filename);
-		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName);
-	private:
-		ParCoordinator* m_owner;
-		PostInfo* m_postInfo;
-
-		friend class ParCoordinator;
+		friend class RepairController;
 	};
 
 	class PostDupeMatcher: public DupeMatcher
@@ -124,16 +103,8 @@ private:
 
 	typedef std::deque<BlockInfo> Blocks;
 
-	enum EJobKind
-	{
-		jkParCheck,
-		jkParRename
-	};
-
+	PostInfo* m_postInfo;
 	PostParChecker m_parChecker;
-	bool m_stopped = false;
-	PostParRenamer m_parRenamer;
-	EJobKind m_currentJob;
 
 	void FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, const char* parFilename,
 		Blocks& blocks, bool strictParName, bool exactParName, int* blockFound);

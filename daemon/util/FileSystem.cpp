@@ -1168,7 +1168,7 @@ int64 DiskFile::Position()
 	return ftell(m_file);
 }
 
-int64 DiskFile::Seek(int64 position, ESeekOrigin origin)
+bool DiskFile::Seek(int64 position, ESeekOrigin origin)
 {
 	return fseek(m_file, position,
 		origin == soCur ? SEEK_CUR :

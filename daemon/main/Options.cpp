@@ -72,8 +72,10 @@ static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
 static const char* OPTION_DECODE				= "Decode";
-static const char* OPTION_RETRIES				= "Retries";
-static const char* OPTION_RETRYINTERVAL			= "RetryInterval";
+static const char* OPTION_ARTICLERETRIES		= "ArticleRetries";
+static const char* OPTION_ARTICLEINTERVAL		= "ArticleInterval";
+static const char* OPTION_URLRETRIES			= "UrlRetries";
+static const char* OPTION_URLINTERVAL			= "UrlInterval";
 static const char* OPTION_TERMINATETIMEOUT		= "TerminateTimeout";
 static const char* OPTION_CONTINUEPARTIAL		= "ContinuePartial";
 static const char* OPTION_URLCONNECTIONS		= "UrlConnections";
@@ -87,13 +89,12 @@ static const char* OPTION_PARCHECK				= "ParCheck";
 static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
 static const char* OPTION_PARQUICK				= "ParQuick";
+static const char* OPTION_POSTSTRATEGY			= "PostStrategy";
 static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_PARBUFFER				= "ParBuffer";
 static const char* OPTION_PARTHREADS			= "ParThreads";
+static const char* OPTION_RARRENAME				= "RarRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
-static const char* OPTION_SCANSCRIPT			= "ScanScript";
-static const char* OPTION_QUEUESCRIPT			= "QueueScript";
-static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
@@ -119,9 +120,10 @@ static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
 static const char* OPTION_UNPACKPASSFILE		= "UnpackPassFile";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
-static const char* OPTION_POSTSCRIPT			= "PostScript";
+static const char* OPTION_EXTENSIONS			= "Extensions";
 static const char* OPTION_EXTCLEANUPDISK		= "ExtCleanupDisk";
 static const char* OPTION_PARIGNOREEXT			= "ParIgnoreExt";
+static const char* OPTION_UNPACKIGNOREEXT		= "UnpackIgnoreExt";
 static const char* OPTION_FEEDHISTORY			= "FeedHistory";
 static const char* OPTION_URLFORCE				= "UrlForce";
 static const char* OPTION_TIMECORRECTION		= "TimeCorrection";
@@ -155,6 +157,9 @@ static const char* OPTION_RESETLOG				= "ResetLog";
 static const char* OPTION_PARCLEANUPQUEUE		= "ParCleanupQueue";
 static const char* OPTION_DELETECLEANUPDISK		= "DeleteCleanupDisk";
 static const char* OPTION_HISTORYCLEANUPDISK	= "HistoryCleanupDisk";
+static const char* OPTION_SCANSCRIPT			= "ScanScript";
+static const char* OPTION_QUEUESCRIPT			= "QueueScript";
+static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -325,6 +330,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 		return;
 	}
 
+	ConvertOldOptions(&m_optEntries);
 	InitOptions();
 	CheckOptions();
 
@@ -429,8 +435,10 @@ void Options::InitDefaults()
 	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
 	SetOption(OPTION_DECODE, "yes");
-	SetOption(OPTION_RETRIES, "3");
-	SetOption(OPTION_RETRYINTERVAL, "10");
+	SetOption(OPTION_ARTICLERETRIES, "3");
+	SetOption(OPTION_ARTICLEINTERVAL, "10");
+	SetOption(OPTION_URLRETRIES, "3");
+	SetOption(OPTION_URLINTERVAL, "10");
 	SetOption(OPTION_TERMINATETIMEOUT, "600");
 	SetOption(OPTION_CONTINUEPARTIAL, "no");
 	SetOption(OPTION_URLCONNECTIONS, "4");
@@ -444,15 +452,14 @@ void Options::InitDefaults()
 	SetOption(OPTION_PARREPAIR, "yes");
 	SetOption(OPTION_PARSCAN, "extended");
 	SetOption(OPTION_PARQUICK, "yes");
+	SetOption(OPTION_POSTSTRATEGY, "sequential");
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_PARBUFFER, "16");
 	SetOption(OPTION_PARTHREADS, "1");
+	SetOption(OPTION_RARRENAME, "yes");
 	SetOption(OPTION_HEALTHCHECK, "none");
 	SetOption(OPTION_SCRIPTORDER, "");
-	SetOption(OPTION_POSTSCRIPT, "");
-	SetOption(OPTION_SCANSCRIPT, "");
-	SetOption(OPTION_QUEUESCRIPT, "");
-	SetOption(OPTION_FEEDSCRIPT, "");
+	SetOption(OPTION_EXTENSIONS, "");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
 	SetOption(OPTION_UMASK, "1000");
 	SetOption(OPTION_UPDATEINTERVAL, "200");
@@ -485,6 +492,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
 	SetOption(OPTION_PARIGNOREEXT, "");
+	SetOption(OPTION_UNPACKIGNOREEXT, "");
 	SetOption(OPTION_FEEDHISTORY, "7");
 	SetOption(OPTION_URLFORCE, "yes");
 	SetOption(OPTION_TIMECORRECTION, "0");
@@ -641,10 +649,7 @@ void Options::InitOptions()
 
 	m_configTemplate		= GetOption(OPTION_CONFIGTEMPLATE);
 	m_scriptOrder			= GetOption(OPTION_SCRIPTORDER);
-	m_postScript			= GetOption(OPTION_POSTSCRIPT);
-	m_scanScript			= GetOption(OPTION_SCANSCRIPT);
-	m_queueScript			= GetOption(OPTION_QUEUESCRIPT);
-	m_feedScript			= GetOption(OPTION_FEEDSCRIPT);
+	m_extensions			= GetOption(OPTION_EXTENSIONS);
 	m_controlIp				= GetOption(OPTION_CONTROLIP);
 	m_controlUsername		= GetOption(OPTION_CONTROLUSERNAME);
 	m_controlPassword		= GetOption(OPTION_CONTROLPASSWORD);
@@ -663,14 +668,17 @@ void Options::InitOptions()
 	m_unpackPassFile		= GetOption(OPTION_UNPACKPASSFILE);
 	m_extCleanupDisk		= GetOption(OPTION_EXTCLEANUPDISK);
 	m_parIgnoreExt			= GetOption(OPTION_PARIGNOREEXT);
+	m_unpackIgnoreExt		= GetOption(OPTION_UNPACKIGNOREEXT);
 	m_shellOverride			= GetOption(OPTION_SHELLOVERRIDE);
 
 	m_downloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10) * 1024;
 	m_articleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
 	m_urlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
 	m_terminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
-	m_retries				= ParseIntValue(OPTION_RETRIES, 10);
-	m_retryInterval			= ParseIntValue(OPTION_RETRYINTERVAL, 10);
+	m_articleRetries		= ParseIntValue(OPTION_ARTICLERETRIES, 10);
+	m_articleInterval		= ParseIntValue(OPTION_ARTICLEINTERVAL, 10);
+	m_urlRetries			= ParseIntValue(OPTION_URLRETRIES, 10);
+	m_urlInterval			= ParseIntValue(OPTION_URLINTERVAL, 10);
 	m_controlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
 	m_securePort			= ParseIntValue(OPTION_SECUREPORT, 10);
 	m_urlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
@@ -710,6 +718,7 @@ void Options::InitOptions()
 	m_parRepair				= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
 	m_parQuick				= (bool)ParseEnumValue(OPTION_PARQUICK, BoolCount, BoolNames, BoolValues);
 	m_parRename				= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
+	m_rarRename				= (bool)ParseEnumValue(OPTION_RARRENAME, BoolCount, BoolNames, BoolValues);
 	m_reloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
 	m_cursesNzbName			= (bool)ParseEnumValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_cursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
@@ -742,6 +751,11 @@ void Options::InitOptions()
 	const int ParScanValues[] = { psLimited, psExtended, psFull, psDupe };
 	const int ParScanCount = 4;
 	m_parScan = (EParScan)ParseEnumValue(OPTION_PARSCAN, ParScanCount, ParScanNames, ParScanValues);
+
+	const char* PostStrategyNames[] = { "sequential", "balanced", "aggressive", "rocket" };
+	const int PostStrategyValues[] = { ppSequential, ppBalanced, ppAggressive, ppRocket };
+	const int PostStrategyCount = 4;
+	m_postStrategy = (EPostStrategy)ParseEnumValue(OPTION_POSTSTRATEGY, PostStrategyCount, PostStrategyNames, PostStrategyValues);
 
 	const char* HealthCheckNames[] = { "pause", "delete", "park", "none" };
 	const int HealthCheckValues[] = { hcPause, hcDelete, hcPark, hcNone };
@@ -1018,10 +1032,10 @@ void Options::InitCategories()
 			unpack = (bool)ParseEnumValue(BString<100>("Category%i.Unpack", n), BoolCount, BoolNames, BoolValues);
 		}
 
-		const char* npostscript = GetOption(BString<100>("Category%i.PostScript", n));
+		const char* nextensions = GetOption(BString<100>("Category%i.Extensions", n));
 		const char* naliases = GetOption(BString<100>("Category%i.Aliases", n));
 
-		bool definition = nname || ndestdir || nunpack || npostscript || naliases;
+		bool definition = nname || ndestdir || nunpack || nextensions || naliases;
 		bool completed = nname && strlen(nname) > 0;
 
 		if (!definition)
@@ -1037,7 +1051,7 @@ void Options::InitCategories()
 				CheckDir(destDir, BString<100>("Category%i.DestDir", n), m_destDir, false, false);
 			}
 
-			m_categories.emplace_back(nname, destDir, unpack, npostscript);
+			m_categories.emplace_back(nname, destDir, unpack, nextensions);
 			Category& category = m_categories.back();
 
 			// split Aliases into tokens and create items for each token
@@ -1068,7 +1082,7 @@ void Options::InitFeeds()
 		const char* nurl = GetOption(BString<100>("Feed%i.URL", n));
 		const char* nfilter = GetOption(BString<100>("Feed%i.Filter", n));
 		const char* ncategory = GetOption(BString<100>("Feed%i.Category", n));
-		const char* nfeedscript = GetOption(BString<100>("Feed%i.FeedScript", n));
+		const char* nextensions = GetOption(BString<100>("Feed%i.Extensions", n));
 
 		const char* nbacklog = GetOption(BString<100>("Feed%i.Backlog", n));
 		bool backlog = true;
@@ -1088,7 +1102,7 @@ void Options::InitFeeds()
 		const char* npriority = GetOption(BString<100>("Feed%i.Priority", n));
 
 		bool definition = nname || nurl || nfilter || ncategory || nbacklog || npausenzb ||
-			ninterval || npriority || nfeedscript;
+			ninterval || npriority || nextensions;
 		bool completed = nurl;
 
 		if (!definition)
@@ -1101,7 +1115,7 @@ void Options::InitFeeds()
 			if (m_extender)
 			{
 				m_extender->AddFeed(n, nname, nurl, ninterval ? atoi(ninterval) : 0, nfilter,
-					backlog, pauseNzb, ncategory, npriority ? atoi(npriority) : 0, nfeedscript);
+					backlog, pauseNzb, ncategory, npriority ? atoi(npriority) : 0, nextensions);
 			}
 		}
 		else
@@ -1170,13 +1184,6 @@ void Options::InitScheduler()
 			continue;
 		}
 
-		int weekDaysVal = 0;
-		if (weekDays && !ParseWeekDays(weekDays, &weekDaysVal))
-		{
-			ConfigError("Invalid value for option \"Task%i.WeekDays\": \"%s\"", n, weekDays);
-			continue;
-		}
-
 		if (taskCommand == scDownloadRate)
 		{
 			if (param)
@@ -1207,29 +1214,47 @@ void Options::InitScheduler()
 			continue;
 		}
 
-		int hours, minutes;
-		Tokenizer tok(time, ";,");
-		while (const char* oneTime = tok.Next())
-		{
-			if (!ParseTime(oneTime, &hours, &minutes))
-			{
-				ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", n, oneTime);
-				break;
-			}
+		CreateSchedulerTask(n, time, weekDays, taskCommand, param);
+	}
+}
 
-			if (m_extender)
+void Options::CreateSchedulerTask(int id, const char* time, const char* weekDays,
+	ESchedulerCommand command, const char* param)
+{
+	if (!id)
+	{
+		m_configLine = 0;
+	}
+
+	int weekDaysVal = 0;
+	if (weekDays && !ParseWeekDays(weekDays, &weekDaysVal))
+	{
+		ConfigError("Invalid value for option \"Task%i.WeekDays\": \"%s\"", id, weekDays);
+		return;
+	}
+
+	int hours, minutes;
+	Tokenizer tok(time, ";,");
+	while (const char* oneTime = tok.Next())
+	{
+		if (!ParseTime(oneTime, &hours, &minutes))
+		{
+			ConfigError("Invalid value for option \"Task%i.Time\": \"%s\"", id, oneTime);
+			return;
+		}
+
+		if (m_extender)
+		{
+			if (hours == -2)
 			{
-				if (hours == -1)
+				for (int everyHour = 0; everyHour < 24; everyHour++)
 				{
-					for (int everyHour = 0; everyHour < 24; everyHour++)
-					{
-						m_extender->AddTask(n, everyHour, minutes, weekDaysVal, taskCommand, param);
-					}
+					m_extender->AddTask(id, everyHour, minutes, weekDaysVal, command, param);
 				}
-				else
-				{
-					m_extender->AddTask(n, hours, minutes, weekDaysVal, taskCommand, param);
-				}
+			}
+			else
+			{
+				m_extender->AddTask(id, hours, minutes, weekDaysVal, command, param);
 			}
 		}
 	}
@@ -1237,6 +1262,12 @@ void Options::InitScheduler()
 
 bool Options::ParseTime(const char* time, int* hours, int* minutes)
 {
+	if (!strcmp(time, "*"))
+	{
+		*hours = -1;
+		return true;
+	}
+
 	int colons = 0;
 	const char* p = time;
 	while (*p)
@@ -1265,7 +1296,7 @@ bool Options::ParseTime(const char* time, int* hours, int* minutes)
 
 	if (time[0] == '*')
 	{
-		*hours = -1;
+		*hours = -2;
 	}
 	else
 	{
@@ -1486,7 +1517,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 	{
 		char* p = (char*)optname + 8;
 		while (*p >= '0' && *p <= '9') p++;
-		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".postscript") ||
+		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".destdir") || !strcasecmp(p, ".extensions") ||
 			!strcasecmp(p, ".unpack") || !strcasecmp(p, ".aliases")))
 		{
 			return true;
@@ -1499,7 +1530,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		while (*p >= '0' && *p <= '9') p++;
 		if (p && (!strcasecmp(p, ".name") || !strcasecmp(p, ".url") || !strcasecmp(p, ".interval") ||
 			 !strcasecmp(p, ".filter") || !strcasecmp(p, ".backlog") || !strcasecmp(p, ".pausenzb") ||
-			 !strcasecmp(p, ".category") || !strcasecmp(p, ".priority") || !strcasecmp(p, ".feedscript")))
+			 !strcasecmp(p, ".category") || !strcasecmp(p, ".priority") || !strcasecmp(p, ".extensions")))
 		{
 			return true;
 		}
@@ -1532,18 +1563,24 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
 	}
+
 	if (!strcasecmp(optname, OPTION_POSTPROCESS) ||
 		!strcasecmp(optname, OPTION_NZBPROCESS) ||
 		!strcasecmp(optname, OPTION_NZBADDEDPROCESS))
 	{
 		if (optvalue && strlen(optvalue) > 0)
 		{
-			ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead", optname, OPTION_SCRIPTDIR,
-				!strcasecmp(optname, OPTION_POSTPROCESS) ? OPTION_POSTSCRIPT :
-				!strcasecmp(optname, OPTION_NZBPROCESS) ? OPTION_SCANSCRIPT :
-				!strcasecmp(optname, OPTION_NZBADDEDPROCESS) ? OPTION_QUEUESCRIPT :
-				"ERROR");
+			ConfigError("Option \"%s\" is obsolete, ignored, use \"%s\" and \"%s\" instead",
+				optname, OPTION_SCRIPTDIR, OPTION_EXTENSIONS);
 		}
+		return true;
+	}
+
+	if (!strcasecmp(optname, OPTION_SCANSCRIPT) ||
+		!strcasecmp(optname, OPTION_QUEUESCRIPT) ||
+		!strcasecmp(optname, OPTION_FEEDSCRIPT))
+	{
+		// will be automatically converted into "Extensions"
 		return true;
 	}
 
@@ -1600,16 +1637,22 @@ void Options::ConvertOldOption(CString& option, CString& value)
 		value = "extended";
 	}
 
-	if (!strcasecmp(option, "DefScript"))
+	if (!strcasecmp(option, "DefScript") || !strcasecmp(option, "PostScript"))
 	{
-		option = "PostScript";
+		option = "Extensions";
 	}
 
 	int nameLen = strlen(option);
-	if (!strncasecmp(option, "Category", 8) && nameLen > 10 &&
-		!strcasecmp(option + nameLen - 10, ".DefScript"))
+	if (!strncasecmp(option, "Category", 8) &&
+		((nameLen > 10 && !strcasecmp(option + nameLen - 10, ".DefScript")) ||
+		 (nameLen > 11 && !strcasecmp(option + nameLen - 11, ".PostScript"))))
 	{
-		option.Replace(".DefScript", ".PostScript");
+		option.Replace(".DefScript", ".Extensions");
+		option.Replace(".PostScript", ".Extensions");
+	}
+	if (!strncasecmp(option, "Feed", 4) && nameLen > 11 && !strcasecmp(option + nameLen - 11, ".FeedScript"))
+	{
+		option.Replace(".FeedScript", ".Extensions");
 	}
 
 	if (!strcasecmp(option, "WriteBufferSize"))
@@ -1623,6 +1666,16 @@ void Options::ConvertOldOption(CString& option, CString& value)
 	if (!strcasecmp(option, "ConnectionTimeout"))
 	{
 		option = "ArticleTimeout";
+	}
+
+	if (!strcasecmp(option, "Retries"))
+	{
+		option = "ArticleRetries";
+	}
+
+	if (!strcasecmp(option, "RetryInterval"))
+	{
+		option = "ArticleInterval";
 	}
 
 	if (!strcasecmp(option, "CreateBrokenLog"))
@@ -1696,7 +1749,7 @@ void Options::CheckOptions()
 	if (sizeof(void*) == 4 && m_parBuffer + m_articleCache > 1900)
 	{
 		ConfigError("Options \"ArticleCache\" and \"ParBuffer\" in total cannot use more than 1900MB of memory in 32-Bit mode. Changed to 1500 and 400");
-		m_articleCache = 1900;
+		m_articleCache = 1500;
 		m_parBuffer = 400;
 	}
 
@@ -1705,3 +1758,77 @@ void Options::CheckOptions()
 		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", *m_unpackPassFile);
 	}
 }
+
+void Options::ConvertOldOptions(OptEntries* optEntries)
+{
+	MergeOldScriptOption(optEntries, OPTION_SCANSCRIPT, true);
+	MergeOldScriptOption(optEntries, OPTION_QUEUESCRIPT, true);
+	MergeOldScriptOption(optEntries, OPTION_FEEDSCRIPT, false);
+}
+
+void Options::MergeOldScriptOption(OptEntries* optEntries, const char* optname, bool mergeCategories)
+{
+	OptEntry* optEntry = optEntries->FindOption(optname);
+	if (!optEntry || Util::EmptyStr(optEntry->GetValue()))
+	{
+		return;
+	}
+
+	OptEntry* extensionsOpt = optEntries->FindOption(OPTION_EXTENSIONS);
+	if (!extensionsOpt)
+	{
+		optEntries->emplace_back(OPTION_EXTENSIONS, "");
+		extensionsOpt = optEntries->FindOption(OPTION_EXTENSIONS);
+	}
+
+	const char* scriptList = optEntry->GetValue();
+
+	Tokenizer tok(scriptList, ",;");
+	while (const char* scriptName = tok.Next())
+	{
+		// merge into global "Extensions"
+		if (!HasScript(extensionsOpt->m_value, scriptName))
+		{
+			if (!extensionsOpt->m_value.Empty())
+			{
+				extensionsOpt->m_value.Append(",");
+			}
+			extensionsOpt->m_value.Append(scriptName);
+		}
+
+		// merge into categories' "Extensions" (if not empty)
+		if (mergeCategories)
+		{
+			for (OptEntry& opt : optEntries)
+			{
+				const char* optname = opt.GetName();
+				if (!strncasecmp(optname, "category", 8))
+				{
+					char* p = (char*)optname + 8;
+					while (*p >= '0' && *p <= '9') p++;
+					if (p && (!strcasecmp(p, ".extensions")))
+					{
+						if (!opt.m_value.Empty() && !HasScript(opt.m_value, scriptName))
+						{
+							opt.m_value.Append(",");
+							opt.m_value.Append(scriptName);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+bool Options::HasScript(const char* scriptList, const char* scriptName)
+{
+	Tokenizer tok(scriptList, ",;");
+	while (const char* scriptName2 = tok.Next())
+	{
+		if (!strcasecmp(scriptName2, scriptName))
+		{
+			return true;
+		}
+	}
+	return false;
+};

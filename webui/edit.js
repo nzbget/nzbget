@@ -71,9 +71,8 @@ var DownloadsEditDialog = (new function($)
 			{
 				filterInput: '#DownloadsEdit_FileTable_filter',
 				pagerContainer: '#DownloadsEdit_FileTable_pager',
-				headerCheck: '#DownloadsEdit_FileTable > thead > tr:first-child',
+				rowSelect: UISettings.rowSelect,
 				pageSize: 10000,
-				hasHeader: true,
 				renderCellCallback: fileTableRenderCellCallback
 			});
 
@@ -84,15 +83,8 @@ var DownloadsEditDialog = (new function($)
 				pagerContainer: '#DownloadsEdit_ServStatsTable_pager',
 				pageSize: 100,
 				maxPages: 3,
-				hasHeader: true,
 				renderCellCallback: EditUI.servStatsTableRenderCellCallback
 			});
-
-		$DownloadsFileTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
-			function(event) { $DownloadsFileTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
-		$DownloadsFileTable.on('click', 'thead div.check',
-			function() { $DownloadsFileTable.fasttable('titleCheckClick') });
-		$DownloadsFileTable.on('mousedown', Util.disableShiftMouseDown);
 
 		$DownloadsEditDialog.on('hidden', function()
 		{
@@ -405,7 +397,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var name = $('#DownloadsEdit_NZBName').val();
 		name !== curGroup.NZBName && !curGroup.postprocess ?
-			RPC.call('editqueue', ['GroupSetName', 0, name, [curGroup.NZBID]], function()
+			RPC.call('editqueue', ['GroupSetName', name, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				savePriority();
@@ -417,7 +409,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var priority = parseInt($('#DownloadsEdit_Priority').val());
 		priority !== curGroup.MaxPriority ?
-			RPC.call('editqueue', ['GroupSetPriority', 0, ''+priority, [curGroup.NZBID]], function()
+			RPC.call('editqueue', ['GroupSetPriority', '' + priority, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveCategory();
@@ -429,7 +421,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var category = $('#DownloadsEdit_Category').val();
 		category !== curGroup.Category ?
-			RPC.call('editqueue', ['GroupSetCategory', 0, category, [curGroup.NZBID]], function()
+			RPC.call('editqueue', ['GroupSetCategory', category, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveDupeKey();
@@ -442,7 +434,7 @@ var DownloadsEditDialog = (new function($)
 		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_Paused';
-		RPC.call('editqueue', ['GroupPause', 0, '', [curGroup.NZBID]], completed);
+		RPC.call('editqueue', ['GroupPause', '', [curGroup.NZBID]], completed);
 	}
 
 	function itemResume(e)
@@ -450,7 +442,7 @@ var DownloadsEditDialog = (new function($)
 		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_Resumed';
-		RPC.call('editqueue', ['GroupResume', 0, '', [curGroup.NZBID]], function()
+		RPC.call('editqueue', ['GroupResume', '', [curGroup.NZBID]], function()
 		{
 			if (Options.option('ParCheck') === 'force')
 			{
@@ -458,7 +450,7 @@ var DownloadsEditDialog = (new function($)
 			}
 			else
 			{
-				RPC.call('editqueue', ['GroupPauseExtraPars', 0, '', [curGroup.NZBID]], completed);
+				RPC.call('editqueue', ['GroupPauseExtraPars', '', [curGroup.NZBID]], completed);
 			}
 		});
 	}
@@ -473,7 +465,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		disableAllButtons();
 		notification = '#Notif_Downloads_Deleted';
-		RPC.call('editqueue', [command, 0, '', [curGroup.NZBID]], completed);
+		RPC.call('editqueue', [command, '', [curGroup.NZBID]], completed);
 	}
 
 	function itemCancelPP(e)
@@ -481,7 +473,7 @@ var DownloadsEditDialog = (new function($)
 		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_Downloads_PostCanceled';
-		RPC.call('editqueue', ['PostDelete', 0, '', [curGroup.NZBID]], completed);
+		RPC.call('editqueue', ['PostDelete', '', [curGroup.NZBID]], completed);
 	}
 
 	function categoryChange()
@@ -490,7 +482,7 @@ var DownloadsEditDialog = (new function($)
 		ParamTab.reassignParams(postParams, oldCategory, category);
 		oldCategory = category;
 	}
-	
+
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
 
 	function saveParam()
@@ -509,7 +501,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		if (paramList.length > 0)
 		{
-			RPC.call('editqueue', ['GroupSetParameter', 0, paramList[0], [curGroup.NZBID]], function()
+			RPC.call('editqueue', ['GroupSetParameter', paramList[0], [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				paramList.shift();
@@ -528,7 +520,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var value = $('#DownloadsEdit_DupeKey').val();
 		value !== curGroup.DupeKey ?
-			RPC.call('editqueue', ['GroupSetDupeKey', 0, value, [curGroup.NZBID]], function()
+			RPC.call('editqueue', ['GroupSetDupeKey', value, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveDupeScore();
@@ -540,7 +532,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var value = $('#DownloadsEdit_DupeScore').val();
 		value != curGroup.DupeScore ?
-			RPC.call('editqueue', ['GroupSetDupeScore', 0, value, [curGroup.NZBID]], function()
+			RPC.call('editqueue', ['GroupSetDupeScore', value, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveDupeMode();
@@ -552,7 +544,7 @@ var DownloadsEditDialog = (new function($)
 	{
 		var value = $('#DownloadsEdit_DupeMode').val();
 		value !== curGroup.DupeMode ?
-			RPC.call('editqueue', ['GroupSetDupeMode', 0, value, [curGroup.NZBID]], function()
+			RPC.call('editqueue', ['GroupSetDupeMode', value, [curGroup.NZBID]], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveParam();
@@ -782,7 +774,7 @@ var DownloadsEditDialog = (new function($)
 
 		if (IDs.length > 0)
 		{
-			RPC.call('editqueue', [command, 0, '', IDs], function()
+			RPC.call('editqueue', [command, '', IDs], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveFilesActions(actions, commands);
@@ -818,7 +810,7 @@ var DownloadsEditDialog = (new function($)
 
 		if (hasMovedFiles)
 		{
-			RPC.call('editqueue', ['FileReorder', 0, '', IDs], function()
+			RPC.call('editqueue', ['FileReorder', '', IDs], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				completed();
@@ -1035,10 +1027,10 @@ var ParamTab = (new function($)
 		{
 			if (category === Options.categories[i])
 			{
-				scriptList = Util.parseCommaList(Options.option('Category' + (i + 1) + '.PostScript'));
+				scriptList = Util.parseCommaList(Options.option('Category' + (i + 1) + '.Extensions'));
 				if (scriptList.length === 0)
 				{
-					scriptList = Util.parseCommaList(Options.option('PostScript'));
+					scriptList = Util.parseCommaList(Options.option('Extensions'));
 				}
 				if (Options.option('Category' + (i + 1) + '.Unpack') === 'yes')
 				{
@@ -1047,16 +1039,16 @@ var ParamTab = (new function($)
 				return scriptList;
 			}
 		}
-		
+
 		// empty category or category not found
-		scriptList = Util.parseCommaList(Options.option('PostScript'));
+		scriptList = Util.parseCommaList(Options.option('Extensions'));
 		if (Options.option('Unpack') === 'yes')
 		{
 			scriptList.push('*Unpack');
 		}
 		return scriptList;
 	}
-	
+
 	this.reassignParams = function(postParams, oldCategory, newCategory)
 	{
 		var oldScriptList = buildCategoryScriptList(oldCategory);
@@ -1109,11 +1101,10 @@ var LogTab = (new function($)
 				pagerContainer: '#' + name + 'Edit_LogTable_pager',
 				pageSize: recordsPerPage,
 				maxPages: 3,
-				hasHeader: true,
 				renderCellCallback: logTableRenderCellCallback
 			});
 	}
-	
+
 	this.reset = function(name)
 	{
 		var $LogTable = $('#' + name + 'Edit_LogTable');
@@ -1176,10 +1167,10 @@ var LogTab = (new function($)
 
 			$LogTable.fasttable('update', data);
 		}
-		
+
 		var recordsPerPage = UISettings.read('ItemLogRecordsPerPage', 10);
 		$('#' + name + 'LogRecordsPerPage').val(recordsPerPage);
-		
+
 		$('#' + name + 'EditDialog .loading-block').show();
 		RPC.call('loadlog', [item.NZBID, 0, 10000], logLoaded);
 	}
@@ -1390,7 +1381,7 @@ var DownloadsMultiDialog = (new function($)
 	{
 		var priority = $('#DownloadsMulti_Priority').val();
 		(priority !== oldPriority && priority !== '<multiple values>') ?
-			RPC.call('editqueue', ['GroupSetPriority', 0, priority, multiIDList], function()
+			RPC.call('editqueue', ['GroupSetPriority', priority, multiIDList], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				saveCategory();
@@ -1402,7 +1393,7 @@ var DownloadsMultiDialog = (new function($)
 	{
 		var category = $('#DownloadsMulti_Category').val();
 		(category !== oldCategory && category !== '<multiple values>') ?
-			RPC.call('editqueue', ['GroupApplyCategory', 0, category, multiIDList], function()
+			RPC.call('editqueue', ['GroupApplyCategory', category, multiIDList], function()
 			{
 				notification = '#Notif_Downloads_Saved';
 				completed();
@@ -1477,7 +1468,7 @@ var DownloadsMergeDialog = (new function($)
 
 	function merge()
 	{
-		RPC.call('editqueue', ['GroupMerge', 0, '', mergeEditIDList], completed);
+		RPC.call('editqueue', ['GroupMerge', '', mergeEditIDList], completed);
 	}
 
 	function completed()
@@ -1533,7 +1524,7 @@ var DownloadsSplitDialog = (new function($)
 	function split()
 	{
 		var groupName = $('#DownloadsSplit_NZBName').val();
-		RPC.call('editqueue', ['FileSplit', 0, groupName, splitEditIDList], completed);
+		RPC.call('editqueue', ['FileSplit', groupName, splitEditIDList], completed);
 	}
 
 	function completed(result)
@@ -1592,7 +1583,6 @@ var HistoryEditDialog = (new function()
 				pagerContainer: '#HistoryEdit_ServStatsTable_pager',
 				pageSize: 100,
 				maxPages: 3,
-				hasHeader: true,
 				renderCellCallback: EditUI.servStatsTableRenderCellCallback
 			});
 
@@ -1630,9 +1620,9 @@ var HistoryEditDialog = (new function()
 
 			else if (hist.DeleteStatus === 'NONE')
 			{
-				var exParStatus = hist.ExParStatus === 'RECIPIENT' ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' + 
+				var exParStatus = hist.ExParStatus === 'RECIPIENT' ? ' ' + '<span title="Repaired using ' + hist.ExtraParBlocks + ' par-block' +
 						(hist.ExtraParBlocks > 1 ? 's' : '') + ' from other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' :
-					hist.ExParStatus === 'DONOR' ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' + 
+					hist.ExParStatus === 'DONOR' ? ' ' + '<span title="Donated ' + -hist.ExtraParBlocks + ' par-block' +
 						(-hist.ExtraParBlocks > 1 ? 's' : '') + ' to repair other duplicate(s)">' + buildStatus(hist.ExParStatus, 'ExPar: ') + '</span>' : '';
 				status += ' ' + buildStatus(hist.ParStatus, 'Par: ') + exParStatus +
 					' ' + (Options.option('Unpack') == 'yes' || hist.UnpackStatus != 'NONE' ? buildStatus(hist.UnpackStatus, 'Unpack: ') : '')  +
@@ -1684,7 +1674,7 @@ var HistoryEditDialog = (new function()
 		}
 
 		$('#HistoryEdit_NZBName').val(hist.Name);
-		
+
 		if (hist.Kind !== 'DUP')
 		{
 			// Category
@@ -1708,7 +1698,7 @@ var HistoryEditDialog = (new function()
 				completion = '99.9%';
 			}
 			var time = Util.formatTimeHMS(hist.DownloadTimeSec + hist.PostTotalTimeSec);
-			
+
 			var table = '';
 			table += '<tr><td><a href="#" id="HistoryEdit_TimeStats" data-tab="HistoryEdit_TimeStatsTab" title="Size and time statistics">Total '+
 				'<i class="icon-forward" style="opacity:0.6;"></i></a>' +
@@ -1766,7 +1756,7 @@ var HistoryEditDialog = (new function()
 
 		var postLog = hist.MessageCount > 0;
 		Util.show('#HistoryEdit_Log', postLog);
-		
+
 		EditUI.buildDNZBLinks(curHist.Parameters ? curHist.Parameters : [], 'HistoryEdit_DNZB');
 
 		enableAllButtons();
@@ -1828,7 +1818,7 @@ var HistoryEditDialog = (new function()
 				return '<span class="label label-status">' + prefix + status + '</span>';
 		}
 	}
-	
+
 	function fillTimeStats()
 	{
 		var hist = curHist;
@@ -1847,7 +1837,7 @@ var HistoryEditDialog = (new function()
 
 		$('#HistoryEdit_TimeStatsTable tbody').html(table);
 	}
-	
+
 	function tabClick(e)
 	{
 		e.preventDefault();
@@ -1909,7 +1899,7 @@ var HistoryEditDialog = (new function()
 	{
 		disableAllButtons();
 		notification = '#Notif_History_Deleted';
-		RPC.call('editqueue', [command, 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', [command, '', [curHist.ID]], completed);
 	}
 
 	function itemReturn(e)
@@ -1917,7 +1907,7 @@ var HistoryEditDialog = (new function()
 		e.preventDefault();
 		disableAllButtons();
 		notification = '#Notif_History_Returned';
-		RPC.call('editqueue', ['HistoryReturn', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', ['HistoryReturn', '', [curHist.ID]], completed);
 	}
 
 	function itemRedownload(e)
@@ -1938,7 +1928,7 @@ var HistoryEditDialog = (new function()
 	{
 		disableAllButtons();
 		notification = '#Notif_History_Returned';
-		RPC.call('editqueue', ['HistoryRedownload', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', ['HistoryRedownload', '', [curHist.ID]], completed);
 	}
 
 	function itemReprocess(e)
@@ -1952,7 +1942,7 @@ var HistoryEditDialog = (new function()
 	function reprocess()
 	{
 		notification = '#Notif_History_Reprocess';
-		RPC.call('editqueue', ['HistoryProcess', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', ['HistoryProcess', '', [curHist.ID]], completed);
 	}
 
 	function itemRetryFailed(e)
@@ -1962,13 +1952,13 @@ var HistoryEditDialog = (new function()
 		saveCompleted = retryFailed;
 		saveDupeKey();
 	}
-	
+
 	function retryFailed()
 	{
 		notification = '#Notif_History_RetryFailed';
-		RPC.call('editqueue', ['HistoryRetryFailed', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', ['HistoryRetryFailed', '', [curHist.ID]], completed);
 	}
-	
+
 	function completed()
 	{
 		$HistoryEditDialog.modal('hide');
@@ -1993,7 +1983,7 @@ var HistoryEditDialog = (new function()
 	{
 		var name = $('#HistoryEdit_NZBName').val();
 		name !== curHist.Name && !curHist.postprocess ?
-			RPC.call('editqueue', ['HistorySetName', 0, name, [curHist.ID]], function()
+			RPC.call('editqueue', ['HistorySetName', name, [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
 				saveCategory();
@@ -2005,7 +1995,7 @@ var HistoryEditDialog = (new function()
 	{
 		var category = $('#HistoryEdit_Category').val();
 		category !== curHist.Category && curHist.Kind !== 'DUP' ?
-			RPC.call('editqueue', ['HistorySetCategory', 0, category, [curHist.ID]], function()
+			RPC.call('editqueue', ['HistorySetCategory', category, [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
 				saveDupeKey();
@@ -2023,7 +2013,7 @@ var HistoryEditDialog = (new function()
 	{
 		disableAllButtons();
 		notification = '#Notif_History_Marked';
-		RPC.call('editqueue', ['HistoryMarkSuccess', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', ['HistoryMarkSuccess', '', [curHist.ID]], completed);
 	}
 
 	function itemGood(e)
@@ -2036,7 +2026,7 @@ var HistoryEditDialog = (new function()
 	{
 		disableAllButtons();
 		notification = '#Notif_History_Marked';
-		RPC.call('editqueue', ['HistoryMarkGood', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', ['HistoryMarkGood', '', [curHist.ID]], completed);
 	}
 
 	function itemBad(e)
@@ -2049,7 +2039,7 @@ var HistoryEditDialog = (new function()
 	{
 		disableAllButtons();
 		notification = '#Notif_History_Marked';
-		RPC.call('editqueue', ['HistoryMarkBad', 0, '', [curHist.ID]], completed);
+		RPC.call('editqueue', ['HistoryMarkBad', '', [curHist.ID]], completed);
 	}
 
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/
@@ -2070,7 +2060,7 @@ var HistoryEditDialog = (new function()
 	{
 		if (paramList.length > 0)
 		{
-			RPC.call('editqueue', ['HistorySetParameter', 0, paramList[0], [curHist.ID]], function()
+			RPC.call('editqueue', ['HistorySetParameter', paramList[0], [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
 				paramList.shift();
@@ -2089,7 +2079,7 @@ var HistoryEditDialog = (new function()
 	{
 		var value = $('#HistoryEdit_DupeKey').val();
 		value !== curHist.DupeKey ?
-			RPC.call('editqueue', ['HistorySetDupeKey', 0, value, [curHist.ID]], function()
+			RPC.call('editqueue', ['HistorySetDupeKey', value, [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
 				saveDupeScore();
@@ -2101,7 +2091,7 @@ var HistoryEditDialog = (new function()
 	{
 		var value = $('#HistoryEdit_DupeScore').val();
 		value != curHist.DupeScore ?
-			RPC.call('editqueue', ['HistorySetDupeScore', 0, value, [curHist.ID]], function()
+			RPC.call('editqueue', ['HistorySetDupeScore', value, [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
 				saveDupeMode();
@@ -2113,7 +2103,7 @@ var HistoryEditDialog = (new function()
 	{
 		var value = $('#HistoryEdit_DupeMode').val();
 		value !== curHist.DupeMode ?
-			RPC.call('editqueue', ['HistorySetDupeMode', 0, value, [curHist.ID]], function()
+			RPC.call('editqueue', ['HistorySetDupeMode', value, [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
 				saveDupeBackup();
@@ -2127,7 +2117,7 @@ var HistoryEditDialog = (new function()
 		var oldValue = curHist.DeleteStatus === 'DUPE';
 		var value = $('#HistoryEdit_DupeBackup').is(':checked');
 		canChange && value !== oldValue ?
-			RPC.call('editqueue', ['HistorySetDupeBackup', 0, value ? "YES" : "NO", [curHist.ID]], function()
+			RPC.call('editqueue', ['HistorySetDupeBackup', value ? "YES" : "NO", [curHist.ID]], function()
 			{
 				notification = '#Notif_History_Saved';
 				saveParam();

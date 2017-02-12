@@ -38,7 +38,7 @@ public:
 
 	FeedInfo(int id, const char* name, const char* url, bool backlog, int interval,
 		const char* filter, bool pauseNzb, const char* category, int priority,
-		const char* feedScript);
+		const char* extensions);
 	int GetId() { return m_id; }
 	const char* GetName() { return m_name; }
 	const char* GetUrl() { return m_url; }
@@ -48,7 +48,7 @@ public:
 	bool GetPauseNzb() { return m_pauseNzb; }
 	const char* GetCategory() { return m_category; }
 	int GetPriority() { return m_priority; }
-	const char* GetFeedScript() { return m_feedScript; }
+	const char* GetExtensions() { return m_extensions; }
 	time_t GetLastUpdate() { return m_lastUpdate; }
 	void SetLastUpdate(time_t lastUpdate) { m_lastUpdate = lastUpdate; }
 	bool GetPreview() { return m_preview; }
@@ -73,7 +73,7 @@ private:
 	uint32 m_filterHash;
 	bool m_pauseNzb;
 	CString m_category;
-	CString m_feedScript;
+	CString m_extensions;
 	int m_priority;
 	time_t m_lastUpdate = 0;
 	bool m_preview = false;

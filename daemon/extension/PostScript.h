@@ -41,7 +41,7 @@ private:
 	ScriptConfig::Script* m_script;
 
 	void PrepareParams(const char* scriptName);
-	ScriptStatus::EStatus AnalyseExitCode(int exitCode);
+	ScriptStatus::EStatus AnalyseExitCode(int exitCode, const char* upInfoName);
 };
 
 #endif

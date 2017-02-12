@@ -51,8 +51,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="17.1";_DEBUG;_CONSOLE;DEBUG;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nserv;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="18.0";_DEBUG;_CONSOLE;DEBUG;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -71,8 +71,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="17.1";NDEBUG;_CONSOLE;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\daemon\connect;.\daemon\extension;.\daemon\feed;.\daemon\frontend;.\daemon\main;.\daemon\nserv;.\daemon\nntp;.\daemon\postprocess;.\daemon\queue;.\daemon\remote;.\daemon\util;.\daemon\windows;.\lib\par2;.\windows\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;PACKAGE="nzbget";VERSION="18.0";NDEBUG;_CONSOLE;_WIN32_WINNT=0x0403;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -124,13 +124,21 @@
     <ClCompile Include="daemon\nntp\NntpConnection.cpp" />
     <ClCompile Include="daemon\nntp\ServerPool.cpp" />
     <ClCompile Include="daemon\nntp\StatMeter.cpp" />
+    <ClCompile Include="daemon\nserv\NntpServer.cpp" />
+    <ClCompile Include="daemon\nserv\NServFrontend.cpp" />
+    <ClCompile Include="daemon\nserv\NServMain.cpp" />
+    <ClCompile Include="daemon\nserv\NzbGenerator.cpp" />
+    <ClCompile Include="daemon\nserv\YEncoder.cpp" />
     <ClCompile Include="daemon\postprocess\Cleanup.cpp" />
     <ClCompile Include="daemon\postprocess\DupeMatcher.cpp" />
     <ClCompile Include="daemon\postprocess\ParChecker.cpp" />
-    <ClCompile Include="daemon\postprocess\ParCoordinator.cpp" />
+    <ClCompile Include="daemon\postprocess\Repair.cpp" />
     <ClCompile Include="daemon\postprocess\ParParser.cpp" />
     <ClCompile Include="daemon\postprocess\ParRenamer.cpp" />
     <ClCompile Include="daemon\postprocess\PrePostProcessor.cpp" />
+    <ClCompile Include="daemon\postprocess\RarReader.cpp" />
+    <ClCompile Include="daemon\postprocess\RarRenamer.cpp" />
+    <ClCompile Include="daemon\postprocess\Rename.cpp" />
     <ClCompile Include="daemon\postprocess\Unpack.cpp" />
     <ClCompile Include="daemon\queue\DiskState.cpp" />
     <ClCompile Include="daemon\queue\DownloadInfo.cpp" />
@@ -171,7 +179,6 @@
     <ClCompile Include="lib\par2\galois.cpp" />
     <ClCompile Include="lib\par2\mainpacket.cpp" />
     <ClCompile Include="lib\par2\md5.cpp" />
-    <ClCompile Include="lib\par2\par2creatorsourcefile.cpp" />
     <ClCompile Include="lib\par2\par2fileformat.cpp" />
     <ClCompile Include="lib\par2\par2repairer.cpp" />
     <ClCompile Include="lib\par2\par2repairersourcefile.cpp" />
@@ -214,13 +221,21 @@
     <ClInclude Include="daemon\nntp\NntpConnection.h" />
     <ClInclude Include="daemon\nntp\ServerPool.h" />
     <ClInclude Include="daemon\nntp\StatMeter.h" />
+    <ClInclude Include="daemon\nserv\NntpServer.h" />
+    <ClInclude Include="daemon\nserv\NServFrontend.h" />
+    <ClInclude Include="daemon\nserv\NServMain.h" />
+    <ClInclude Include="daemon\nserv\NzbGenerator.h" />
+    <ClInclude Include="daemon\nserv\YEncoder.h" />
     <ClInclude Include="daemon\postprocess\Cleanup.h" />
     <ClInclude Include="daemon\postprocess\DupeMatcher.h" />
     <ClInclude Include="daemon\postprocess\ParChecker.h" />
-    <ClInclude Include="daemon\postprocess\ParCoordinator.h" />
+    <ClInclude Include="daemon\postprocess\Repair.h" />
     <ClInclude Include="daemon\postprocess\ParParser.h" />
     <ClInclude Include="daemon\postprocess\ParRenamer.h" />
     <ClInclude Include="daemon\postprocess\PrePostProcessor.h" />
+    <ClInclude Include="daemon\postprocess\RarReader.h" />
+    <ClInclude Include="daemon\postprocess\RarRenamer.h" />
+    <ClInclude Include="daemon\postprocess\Rename.h" />
     <ClInclude Include="daemon\postprocess\Unpack.h" />
     <ClInclude Include="daemon\queue\DiskState.h" />
     <ClInclude Include="daemon\queue\DownloadInfo.h" />
@@ -261,7 +276,6 @@
     <ClInclude Include="lib\par2\mainpacket.h" />
     <ClInclude Include="lib\par2\md5.h" />
     <ClInclude Include="lib\par2\par2cmdline.h" />
-    <ClInclude Include="lib\par2\par2creatorsourcefile.h" />
     <ClInclude Include="lib\par2\par2fileformat.h" />
     <ClInclude Include="lib\par2\par2repairer.h" />
     <ClInclude Include="lib\par2\par2repairersourcefile.h" />

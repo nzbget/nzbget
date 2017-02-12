@@ -196,6 +196,7 @@ using namespace MSXML;
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <functional>
 
 #ifdef HAVE_LIBGNUTLS
 #ifdef WIN32
@@ -210,6 +211,9 @@ typedef int pid_t;
 #ifdef NEED_GCRYPT_LOCKING
 #include <gcrypt.h>
 #endif /* NEED_GCRYPT_LOCKING */
+#include <nettle/sha.h>
+#include <nettle/pbkdf2.h>
+#include <nettle/aes.h>
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
@@ -318,12 +322,16 @@ typedef int pid_t;
 
 #ifdef HAVE_STDINT_H
 typedef uint8_t uint8;
+typedef int16_t int16;
+typedef uint16_t uint16;
 typedef uint32_t int32;
 typedef uint32_t uint32;
 typedef int64_t int64;
 typedef uint64_t uint64;
 #else
 typedef unsigned char uint8;
+typedef signed short int16;
+typedef unsigned short uint16;
 typedef signed int int32;
 typedef unsigned int uint32;
 typedef signed long long int64;

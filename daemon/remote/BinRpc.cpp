@@ -860,7 +860,9 @@ void EditQueueBinCommand::Execute()
 	bool ok = DownloadQueue::Guard()->EditList(
 		nrIdEntries > 0 ? &cIdList : nullptr,
 		nrNameEntries > 0 ? &cNameList : nullptr,
-		(DownloadQueue::EMatchMode)matchMode, (DownloadQueue::EEditAction)action, offset, text);
+		(DownloadQueue::EMatchMode)matchMode, (DownloadQueue::EEditAction)action,
+		action == DownloadQueue::eaFileMoveOffset || action == DownloadQueue::eaGroupMoveOffset ?
+		*CString::FormatStr("%i", offset) : text);
 
 	if (ok)
 	{

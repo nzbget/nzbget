@@ -265,7 +265,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 	bool ok = true;
 
 	{
-		StateFile stateFile("queue", 57, true);
+		StateFile stateFile("queue", 59, true);
 		if (!downloadQueue->GetQueue()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -288,7 +288,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 
 	if (saveHistory)
 	{
-		StateFile stateFile("history", 57, true);
+		StateFile stateFile("history", 59, true);
 		if (!downloadQueue->GetHistory()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -320,7 +320,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	int formatVersion = 0;
 
 	{
-		StateFile stateFile("queue", 57, true);
+		StateFile stateFile("queue", 59, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -349,7 +349,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 
 	if (formatVersion == 0 || formatVersion >= 57)
 	{
-		StateFile stateFile("history", 57, true);
+		StateFile stateFile("history", 59, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -428,9 +428,9 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile)
 	outfile.PrintLine("%i,%i,%i,%i,%i", (int)nzbInfo->GetPriority(),
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetStage() + 1 : 0,
 		(int)nzbInfo->GetDeletePaused(), (int)nzbInfo->GetManyDupeFiles(), nzbInfo->GetFeedId());
-	outfile.PrintLine("%i,%i,%i,%i,%i,%i,%i", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
-		(int)nzbInfo->GetMoveStatus(), (int)nzbInfo->GetRenameStatus(), (int)nzbInfo->GetDeleteStatus(),
-		(int)nzbInfo->GetMarkStatus(), (int)nzbInfo->GetUrlStatus());
+	outfile.PrintLine("%i,%i,%i,%i,%i,%i,%i,%i", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
+		(int)nzbInfo->GetMoveStatus(), (int)nzbInfo->GetParRenameStatus(), (int)nzbInfo->GetRarRenameStatus(), 
+		(int)nzbInfo->GetDeleteStatus(), (int)nzbInfo->GetMarkStatus(), (int)nzbInfo->GetUrlStatus());
 	outfile.PrintLine("%i,%i,%i", (int)nzbInfo->GetUnpackCleanedUpDisk(), (int)nzbInfo->GetHealthPaused(),
 		(int)nzbInfo->GetAddUrlPaused());
 	outfile.PrintLine("%i,%i,%i", nzbInfo->GetFileCount(), nzbInfo->GetParkedFileCount(),
@@ -556,17 +556,29 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 	if (postStage > 0)
 	{
 		nzbInfo->EnterPostProcess();
+		if (formatVersion < 59 && postStage == 6)
+		{
+			postStage++;
+		}
+		else if (formatVersion < 59 && postStage > 6)
+		{
+			postStage += 2;
+		}
 		nzbInfo->GetPostInfo()->SetStage((PostInfo::EStage)postStage);
 	}
 	nzbInfo->SetFeedId(feedId);
 
-	int parStatus, unpackStatus, moveStatus, renameStatus, deleteStatus, markStatus, urlStatus;
-	if (infile.ScanLine("%i,%i,%i,%i,%i,%i,%i", &parStatus, &unpackStatus, &moveStatus,
-		&renameStatus, &deleteStatus, &markStatus, &urlStatus) != 7) goto error;
+	int parStatus, unpackStatus, moveStatus, parRenameStatus, rarRenameStatus, deleteStatus, markStatus, urlStatus;
+	if (formatVersion < 58 && infile.ScanLine("%i,%i,%i,%i,%i,%i,%i", &parStatus, &unpackStatus, &moveStatus,
+		&parRenameStatus, &deleteStatus, &markStatus, &urlStatus) != 7) goto error;
+	rarRenameStatus = 0;
+	if (formatVersion >= 58 && infile.ScanLine("%i,%i,%i,%i,%i,%i,%i,%i", &parStatus, &unpackStatus, &moveStatus,
+		&parRenameStatus, &rarRenameStatus, &deleteStatus, &markStatus, &urlStatus) != 8) goto error;
 	nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
 	nzbInfo->SetUnpackStatus((NzbInfo::EUnpackStatus)unpackStatus);
 	nzbInfo->SetMoveStatus((NzbInfo::EMoveStatus)moveStatus);
-	nzbInfo->SetRenameStatus((NzbInfo::ERenameStatus)renameStatus);
+	nzbInfo->SetParRenameStatus((NzbInfo::ERenameStatus)parRenameStatus);
+	nzbInfo->SetRarRenameStatus((NzbInfo::ERenameStatus)rarRenameStatus);
 	nzbInfo->SetDeleteStatus((NzbInfo::EDeleteStatus)deleteStatus);
 	nzbInfo->SetMarkStatus((NzbInfo::EMarkStatus)markStatus);
 	if (nzbInfo->GetKind() == NzbInfo::nkNzb ||

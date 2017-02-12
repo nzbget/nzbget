@@ -336,7 +336,7 @@ public:
 	{
 		rsNone,
 		rsSkipped,
-		rsFailure,
+		rsNothing,
 		rsSuccess
 	};
 
@@ -485,8 +485,10 @@ public:
 	void BuildDestDirName();
 	CString BuildFinalDirName();
 	CompletedFileList* GetCompletedFiles() { return &m_completedFiles; }
-	ERenameStatus GetRenameStatus() { return m_renameStatus; }
-	void SetRenameStatus(ERenameStatus renameStatus) { m_renameStatus = renameStatus; }
+	ERenameStatus GetParRenameStatus() { return m_parRenameStatus; }
+	void SetParRenameStatus(ERenameStatus renameStatus) { m_parRenameStatus = renameStatus; }
+	ERenameStatus GetRarRenameStatus() { return m_rarRenameStatus; }
+	void SetRarRenameStatus(ERenameStatus renameStatus) { m_rarRenameStatus = renameStatus; }
 	EParStatus GetParStatus() { return m_parStatus; }
 	void SetParStatus(EParStatus parStatus) { m_parStatus = parStatus; }
 	EUnpackStatus GetUnpackStatus() { return m_unpackStatus; }
@@ -616,7 +618,8 @@ private:
 	time_t m_maxTime = 0;
 	int m_priority = 0;
 	CompletedFileList m_completedFiles;
-	ERenameStatus m_renameStatus = rsNone;
+	ERenameStatus m_parRenameStatus = rsNone;
+	ERenameStatus m_rarRenameStatus = rsNone;
 	EParStatus m_parStatus = psNone;
 	EUnpackStatus m_unpackStatus = usNone;
 	ECleanupStatus m_cleanupStatus = csNone;
@@ -685,8 +688,10 @@ public:
 		ptVerifyingSources,
 		ptRepairing,
 		ptVerifyingRepaired,
-		ptRenaming,
+		ptParRenaming,
+		ptRarRenaming,
 		ptUnpacking,
+		ptCleaningUp,
 		ptMoving,
 		ptExecutingScript,
 		ptFinished
@@ -726,6 +731,8 @@ public:
 	void SetPassListTried(bool passListTried) { m_passListTried = passListTried; }
 	int GetLastUnpackStatus() { return m_lastUnpackStatus; }
 	void SetLastUnpackStatus(int unpackStatus) { m_lastUnpackStatus = unpackStatus; }
+	bool GetNeedParCheck() { return m_needParCheck; }
+	void SetNeedParCheck(bool needParCheck) { m_needParCheck = needParCheck; }
 	Thread* GetPostThread() { return m_postThread; }
 	void SetPostThread(Thread* postThread) { m_postThread = postThread; }
 	ParredFiles* GetParredFiles() { return &m_parredFiles; }
@@ -741,6 +748,7 @@ private:
 	bool m_unpackTried = false;
 	bool m_passListTried = false;
 	int m_lastUnpackStatus = 0;
+	bool m_needParCheck = false;
 	EStage m_stage = ptQueued;
 	CString m_progressLabel = "";
 	int m_fileProgress = 0;
@@ -867,9 +875,11 @@ public:
 		eaFilePauseExtraPars, // pause only (almost all) pars, except main par-file (does not affect other files)
 		eaFileReorder, // set file order
 		eaFileSplit, // split - create new group from selected files
-		eaGroupMoveOffset, // move group to m_iOffset relative to the current position in download-queue
+		eaGroupMoveOffset, // move group to offset relative to the current position in download-queue
 		eaGroupMoveTop, // move group to the top of download-queue
 		eaGroupMoveBottom, // move group to the bottom of download-queue
+		eaGroupMoveBefore, // move group to a certain position
+		eaGroupMoveAfter, // move group to a certain position
 		eaGroupPause, // pause group
 		eaGroupResume, // resume (unpause) group
 		eaGroupDelete, // delete group and put to history, delete already downloaded files
@@ -918,8 +928,8 @@ public:
 	static GuardedDownloadQueue Guard() { return GuardedDownloadQueue(g_DownloadQueue, &g_DownloadQueue->m_lockMutex); }
 	NzbList* GetQueue() { return &m_queue; }
 	HistoryList* GetHistory() { return &m_history; }
-	virtual bool EditEntry(int ID, EEditAction action, int offset, const char* text) = 0;
-	virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, int offset, const char* text) = 0;
+	virtual bool EditEntry(int ID, EEditAction action, const char* args) = 0;
+	virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode, EEditAction action, const char* args) = 0;
 	virtual void HistoryChanged() = 0;
 	virtual void Save() = 0;
 	void CalcRemainingSize(int64* remaining, int64* remainingForced);

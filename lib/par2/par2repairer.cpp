@@ -31,7 +31,8 @@ static char THIS_FILE[]=__FILE__;
 namespace Par2
 {
 
-Par2Repairer::Par2Repairer(void)
+Par2Repairer::Par2Repairer(std::ostream& cout, std::ostream& cerr):
+  cout(cout), cerr(cerr), rs(cout, cerr)
 {
   firstpacket = true;
   mainpacket = 0;
@@ -360,7 +361,7 @@ bool Par2Repairer::LoadPacketsFromFile(string filename)
     return true;
   }
 
-  DiskFile *diskfile = new DiskFile;
+  DiskFile *diskfile = new DiskFile(cerr);
 
   // Open the file
   if (!diskfile->Open(filename))
@@ -1276,7 +1277,7 @@ bool Par2Repairer::VerifySourceFiles(void)
       return false;
     }
 
-    DiskFile *diskfile = new DiskFile;
+    DiskFile *diskfile = new DiskFile(cerr);
 
     // Does the target file exist
     if (diskfile->Open(filename))
@@ -1340,7 +1341,7 @@ bool Par2Repairer::VerifyExtraFiles(const list<CommandLine::ExtraFile> &extrafil
       // Has this file already been dealt with
       if (diskFileMap.Find(filename) == 0)
       {
-        DiskFile *diskfile = new DiskFile;
+        DiskFile *diskfile = new DiskFile(cerr);
 
         // Does the file exist
         if (!diskfile->Open(filename))
@@ -2099,7 +2100,7 @@ bool Par2Repairer::CreateTargetFiles(void)
     // If the file does not exist
     if (!sourcefile->GetTargetExists())
     {
-      DiskFile *targetfile = new DiskFile;
+      DiskFile *targetfile = new DiskFile(cerr);
       string filename = sourcefile->TargetFileName();
       u64 filesize = sourcefile->GetDescriptionPacket()->FileSize();
 

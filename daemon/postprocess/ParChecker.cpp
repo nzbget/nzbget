@@ -55,7 +55,9 @@ class RepairThread;
 class Repairer : public Par2::Par2Repairer, public ParChecker::AbstractRepairer
 {
 public:
-	Repairer(ParChecker* owner) { m_owner = owner; }
+	Repairer(ParChecker* owner):
+		Par2::Par2Repairer(owner->m_parCout, owner->m_parCerr),
+		m_owner(owner), commandLine(owner->m_parCout, owner->m_parCerr) {}
 	Par2::Result PreProcess(const char *parFilename);
 	Par2::Result Process(bool dorepair);
 	virtual Repairer* GetRepairer() { return this; }
@@ -364,13 +366,6 @@ int ParChecker::StreamBuf::overflow(int ch)
 }
 
 
-ParChecker::~ParChecker()
-{
-	debug("Destroying ParChecker");
-
-	Cleanup();
-}
-
 void ParChecker::Cleanup()
 {
 	m_repairer.reset();
@@ -381,14 +376,11 @@ void ParChecker::Cleanup()
 	m_errMsg = nullptr;
 }
 
-void ParChecker::Run()
+void ParChecker::Execute()
 {
-	Par2::cout.rdbuf(&m_parOutStream);
-	Par2::cerr.rdbuf(&m_parErrStream);
-
 	m_status = RunParCheckAll();
 
-	if (m_status == psRepairNotNeeded && m_parQuick && m_forceRepair && !m_cancelled)
+	if (m_status == psRepairNotNeeded && m_parQuick && m_forceRepair && !IsStopped())
 	{
 		PrintMessage(Message::mkInfo, "Performing full par-check for %s", *m_nzbName);
 		m_parQuick = false;
@@ -396,9 +388,6 @@ void ParChecker::Run()
 	}
 
 	Completed();
-
-	Par2::cout.rdbuf(&Par2::nullStreamBuf);
-	Par2::cerr.rdbuf(&Par2::nullStreamBuf);
 }
 
 ParChecker::EStatus ParChecker::RunParCheckAll()
@@ -411,19 +400,18 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 	}
 
 	EStatus allStatus = psRepairNotNeeded;
-	m_cancelled = false;
 	m_parFull = true;
 
 	for (CString& parFilename : fileList)
 	{
 		debug("Found par: %s", *parFilename);
 
-		if (!IsStopped() && !m_cancelled)
+		if (!IsStopped())
 		{
 			BString<1024> fullParFilename( "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, *parFilename);
 
 			int baseLen = 0;
-			ParParser::ParseParFilename(parFilename, &baseLen, nullptr);
+			ParParser::ParseParFilename(parFilename, true, &baseLen, nullptr);
 			BString<1024> infoName;
 			infoName.Set(parFilename, baseLen);
 
@@ -571,7 +559,7 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 		}
 	}
 
-	if (m_cancelled)
+	if (IsStopped())
 	{
 		if (m_stage >= ptRepairing)
 		{
@@ -688,7 +676,7 @@ bool ParChecker::LoadMainParBak()
 		{
 			// wait until new files are added by "AddParFile" or a change is signaled by "QueueChanged"
 			bool queuedParFilesChanged = false;
-			while (!queuedParFilesChanged && !IsStopped() && !m_cancelled)
+			while (!queuedParFilesChanged && !IsStopped())
 			{
 				{
 					Guard guard(m_queuedParFilesMutex);
@@ -754,7 +742,7 @@ int ParChecker::ProcessMorePars()
 			{
 				// wait until new files are added by "AddParFile" or a change is signaled by "QueueChanged"
 				bool queuedParFilesChanged = false;
-				while (!queuedParFilesChanged && !IsStopped() && !m_cancelled)
+				while (!queuedParFilesChanged && !IsStopped())
 				{
 					{
 						Guard guard(m_queuedParFilesMutex);
@@ -765,7 +753,7 @@ int ParChecker::ProcessMorePars()
 			}
 		}
 
-		if (IsStopped() || m_cancelled)
+		if (IsStopped())
 		{
 			break;
 		}
@@ -973,7 +961,7 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 
 		// adding files one by one until all missing files are found
 
-		while (!IsStopped() && !m_cancelled && extrafiles.size() > 0)
+		while (!IsStopped() && extrafiles.size() > 0)
 		{
 			std::list<Par2::CommandLine::ExtraFile> extrafiles1;
 			extrafiles1.splice(extrafiles1.end(), extrafiles, extrafiles.begin());
@@ -1199,7 +1187,6 @@ void ParChecker::CheckEmptyFiles()
 void ParChecker::Cancel()
 {
 	GetRepairer()->cancelled = true;
-	m_cancelled = true;
 	QueueChanged();
 }
 
@@ -1214,7 +1201,7 @@ void ParChecker::WriteBrokenLog(EStatus status)
 		{
 			if (status == psFailed)
 			{
-				if (m_cancelled)
+				if (IsStopped())
 				{
 					file.Print("Repair cancelled for %s\n", *m_infoName);
 				}
