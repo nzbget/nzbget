@@ -1729,6 +1729,17 @@ void Options::CheckOptions()
 	}
 #endif
 
+#ifdef HAVE_OPENSSL
+#ifndef HAVE_X509_CHECK_HOST
+	if (m_certCheck)
+	{
+		LocateOptionSrcPos(OPTION_CERTCHECK);
+		ConfigWarn("TLS certificate verification (option \"%s\") is limited because the program "
+			"was compiled with older OpenSSL version not supporting hostname validation", OPTION_CERTCHECK);
+	}
+#endif
+#endif
+
 	if (m_certCheck && m_certStore.Empty())
 	{
 		LocateOptionSrcPos(OPTION_CERTCHECK);

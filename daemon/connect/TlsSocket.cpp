@@ -478,6 +478,7 @@ bool TlsSocket::ValidateCert(void* data)
 		return false;
 	}
 
+#ifdef HAVE_X509_CHECK_HOST
 	// hostname verification
 	if (!m_host.Empty() && X509_check_host(cert, m_host, m_host.Length(), 0, nullptr) != 1)
 	{
@@ -503,6 +504,7 @@ bool TlsSocket::ValidateCert(void* data)
 		X509_free(cert);
 		return false;
 	}
+#endif
 
 	X509_free(cert);
 	return true;

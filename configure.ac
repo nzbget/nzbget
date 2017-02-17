@@ -396,6 +396,8 @@ if test "$USETLS" = "yes"; then
 			if test "$FOUND" = "yes"; then
 				TLSLIB="OpenSSL"
 				AC_DEFINE([HAVE_OPENSSL],1,[Define to 1 to use OpenSSL library for TLS/SSL-support and decryption.])
+				AC_SEARCH_LIBS([X509_check_host], [crypto],
+					AC_DEFINE([HAVE_X509_CHECK_HOST],1,[Define to 1 if OpenSSL supports function "X509_check_host".]))
 			fi
 		fi
 	fi

@@ -134,6 +134,9 @@
 /* Define to 1 if variadic macros are supported */
 #undef HAVE_VARIADIC_MACROS
 
+/* Define to 1 if OpenSSL supports function "X509_check_host". */
+#undef HAVE_X509_CHECK_HOST
+
 /* Define to 1 to exclude debug-code */
 #undef NDEBUG
 
