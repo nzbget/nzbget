@@ -42,7 +42,8 @@ public:
 
 protected:
 	virtual void PrintError(const char* errMsg);
-	
+	bool ValidateCert(void* data);
+
 private:
 	bool m_isClient;
 	CString m_host;
@@ -55,6 +56,7 @@ private:
 	bool m_connected = false;
 	int m_retCode;
 	static CString m_certStore;
+	bool m_certErrorReported = false;
 
 	// using "void*" to prevent the including of GnuTLS/OpenSSL header files into TlsSocket.h
 	void* m_context = nullptr;

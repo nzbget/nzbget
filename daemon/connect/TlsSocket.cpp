@@ -25,6 +25,7 @@
 #include "TlsSocket.h"
 #include "Thread.h"
 #include "Log.h"
+#include "Util.h"
 
 class TlsSocketFinalizer
 {
@@ -140,6 +141,24 @@ static void openssl_dynlock_lock(int mode, struct CRYPTO_dynlock_value *l, const
 }
 
 #endif /* NEED_CRYPTO_LOCKING */
+
+class TlsSocketFriend : public TlsSocket
+{
+	friend int openssl_verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
+};
+
+int openssl_data_index = 0;
+
+int openssl_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	// Retrieve the pointer to the SSL of the connection currently treated
+	// and the application specific data stored into the SSL object.
+	SSL* ssl = (SSL*)X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+	TlsSocketFriend* tlsSocket = (TlsSocketFriend*)SSL_get_ex_data(ssl, openssl_data_index);
+
+	return tlsSocket->ValidateCert(ctx);
+}
+
 #endif /* HAVE_OPENSSL */
 
 
@@ -186,6 +205,8 @@ void TlsSocket::Init()
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
 
+	openssl_data_index = SSL_get_ex_new_index(0, (void*)"tlssocket", NULL, NULL, NULL);
+
 #endif /* HAVE_OPENSSL */
 
 	m_tlsSocketFinalizer = std::make_unique<TlsSocketFinalizer>();
@@ -218,11 +239,9 @@ void TlsSocket::ReportError(const char* errMsg)
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	int errcode;
+	int errcode = ERR_get_error();
 	do
 	{
-		errcode = ERR_get_error();
-
 		char errstr[1024];
 		ERR_error_string_n(errcode, errstr, sizeof(errstr));
 		errstr[1024-1] = '\0';
@@ -239,6 +258,8 @@ void TlsSocket::ReportError(const char* errMsg)
 		{
 			PrintError(errMsg);
 		}
+
+		errcode = ERR_get_error();
 	} while (errcode);
 #endif /* HAVE_OPENSSL */
 }
@@ -302,7 +323,7 @@ bool TlsSocket::Start()
 		m_retCode = gnutls_server_name_set((gnutls_session_t)m_session, GNUTLS_NAME_DNS, m_host, m_host.Length());
 		if (m_retCode != 0)
 		{
-			ReportError("Could not set host name for TLS");
+			ReportError("Could not set hostname for TLS");
 			Close();
 			return false;
 		}
@@ -322,7 +343,7 @@ bool TlsSocket::Start()
 	m_retCode = gnutls_handshake((gnutls_session_t)m_session);
 	if (m_retCode != 0)
 	{
-		ReportError("TLS handshake failed");
+		ReportError(BString<1024>("TLS handshake failed for %s", m_host));
 		Close();
 		return false;
 	}
@@ -362,6 +383,19 @@ bool TlsSocket::Start()
 		}
 	}
 
+	if (m_isClient && !m_certStore.Empty())
+	{
+		// Enable certificate validation
+		if (SSL_CTX_load_verify_locations((SSL_CTX*)m_context, m_certStore, nullptr) != 1)
+		{
+			ReportError("Could not set certificate store location");
+			Close();
+			return false;
+		}
+
+		SSL_CTX_set_verify((SSL_CTX*)m_context, SSL_VERIFY_PEER, &openssl_verify_callback);
+	}
+
 	m_session = SSL_new((SSL_CTX*)m_context);
 	if (!m_session)
 	{
@@ -369,6 +403,8 @@ bool TlsSocket::Start()
 		Close();
 		return false;
 	}
+
+	SSL_set_ex_data((SSL*)m_session, openssl_data_index, this);
 
 	if (!m_cipher.Empty() && !SSL_set_cipher_list((SSL*)m_session, m_cipher))
 	{
@@ -391,10 +427,20 @@ bool TlsSocket::Start()
 		return false;
 	}
 
+	m_certErrorReported = false;
 	int error_code = m_isClient ? SSL_connect((SSL*)m_session) : SSL_accept((SSL*)m_session);
 	if (error_code < 1)
 	{
-		ReportError("TLS handshake failed");
+		if (!m_certErrorReported)
+		{
+			ReportError(BString<1024>("TLS handshake failed for %s", *m_host));
+		}
+		Close();
+		return false;
+	}
+
+	if (m_isClient && !m_certStore.Empty() && !ValidateCert(nullptr))
+	{
 		Close();
 		return false;
 	}
@@ -403,6 +449,66 @@ bool TlsSocket::Start()
 	return true;
 #endif /* HAVE_OPENSSL */
 }
+
+bool TlsSocket::ValidateCert(void* data)
+{
+#ifdef HAVE_LIBGNUTLS
+	// not yet implemented
+	return true;
+#endif /* HAVE_LIBGNUTLS */
+
+#ifdef HAVE_OPENSSL
+	if (data)
+	{
+		X509_STORE_CTX* ctx = (X509_STORE_CTX*)data;
+		int err = X509_STORE_CTX_get_error(ctx);
+		if (err != X509_V_OK)
+		{
+			PrintError(BString<1024>("TLS certificate verification failed for %s: %s", *m_host, X509_verify_cert_error_string(err)));
+			m_certErrorReported = true;
+		}
+		return err == X509_V_OK;
+	}
+
+	// verify a server certificate was presented during the negotiation
+	X509* cert = SSL_get_peer_certificate((SSL*)m_session);
+	if (!cert)
+	{
+		PrintError(BString<1024>("TLS certificate verification failed for %s: no certificate provided by server", *m_host));
+		return false;
+	}
+
+	// hostname verification
+	if (!m_host.Empty() && X509_check_host(cert, m_host, m_host.Length(), 0, nullptr) != 1)
+	{
+		char* certHost = nullptr;
+        // Find the position of the CN field in the Subject field of the certificate
+        int common_name_loc = X509_NAME_get_index_by_NID(X509_get_subject_name(cert), NID_commonName, -1);
+        if (common_name_loc >= 0)
+		{
+			// Extract the CN field
+			X509_NAME_ENTRY* common_name_entry = X509_NAME_get_entry(X509_get_subject_name(cert), common_name_loc);
+			if (common_name_entry != nullptr)
+			{
+				// Convert the CN field to a C string
+				ASN1_STRING* common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
+				if (common_name_asn1 != nullptr)
+				{
+					certHost = (char*)ASN1_STRING_data(common_name_asn1);
+				}
+			}
+        }
+
+		PrintError(BString<1024>("TLS certificate verification failed for %s: certificate hostname mismatch (%s)", *m_host, certHost));
+		X509_free(cert);
+		return false;
+	}
+
+	X509_free(cert);
+	return true;
+#endif /* HAVE_OPENSSL */
+}
+
 
 void TlsSocket::Close()
 {
