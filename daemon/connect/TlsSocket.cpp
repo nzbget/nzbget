@@ -141,24 +141,6 @@ static void openssl_dynlock_lock(int mode, struct CRYPTO_dynlock_value *l, const
 }
 
 #endif /* NEED_CRYPTO_LOCKING */
-
-class TlsSocketFriend : public TlsSocket
-{
-	friend int openssl_verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
-};
-
-int openssl_data_index = 0;
-
-int openssl_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
-{
-	// Retrieve the pointer to the SSL of the connection currently treated
-	// and the application specific data stored into the SSL object.
-	SSL* ssl = (SSL*)X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
-	TlsSocketFriend* tlsSocket = (TlsSocketFriend*)SSL_get_ex_data(ssl, openssl_data_index);
-
-	return tlsSocket->ValidateCert(ctx);
-}
-
 #endif /* HAVE_OPENSSL */
 
 
@@ -204,8 +186,6 @@ void TlsSocket::Init()
 	SSL_load_error_strings();
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
-
-	openssl_data_index = SSL_get_ex_new_index(0, (void*)"tlssocket", NULL, NULL, NULL);
 
 #endif /* HAVE_OPENSSL */
 
@@ -393,7 +373,7 @@ bool TlsSocket::Start()
 			return false;
 		}
 
-		SSL_CTX_set_verify((SSL_CTX*)m_context, SSL_VERIFY_PEER, &openssl_verify_callback);
+		SSL_CTX_set_verify((SSL_CTX*)m_context, SSL_VERIFY_PEER, nullptr);
 	}
 
 	m_session = SSL_new((SSL_CTX*)m_context);
@@ -403,8 +383,6 @@ bool TlsSocket::Start()
 		Close();
 		return false;
 	}
-
-	SSL_set_ex_data((SSL*)m_session, openssl_data_index, this);
 
 	if (!m_cipher.Empty() && !SSL_set_cipher_list((SSL*)m_session, m_cipher))
 	{
@@ -427,11 +405,16 @@ bool TlsSocket::Start()
 		return false;
 	}
 
-	m_certErrorReported = false;
 	int error_code = m_isClient ? SSL_connect((SSL*)m_session) : SSL_accept((SSL*)m_session);
 	if (error_code < 1)
 	{
-		if (!m_certErrorReported)
+		long verifyRes = SSL_get_verify_result((SSL*)m_session);
+		if (verifyRes != X509_V_OK)
+		{
+			PrintError(BString<1024>("TLS certificate verification failed for %s: %s",
+				*m_host, X509_verify_cert_error_string(verifyRes)));
+		}
+		else
 		{
 			ReportError(BString<1024>("TLS handshake failed for %s", *m_host));
 		}
@@ -458,18 +441,6 @@ bool TlsSocket::ValidateCert(void* data)
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
-	if (data)
-	{
-		X509_STORE_CTX* ctx = (X509_STORE_CTX*)data;
-		int err = X509_STORE_CTX_get_error(ctx);
-		if (err != X509_V_OK)
-		{
-			PrintError(BString<1024>("TLS certificate verification failed for %s: %s", *m_host, X509_verify_cert_error_string(err)));
-			m_certErrorReported = true;
-		}
-		return err == X509_V_OK;
-	}
-
 	// verify a server certificate was presented during the negotiation
 	X509* cert = SSL_get_peer_certificate((SSL*)m_session);
 	if (!cert)
