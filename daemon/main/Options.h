@@ -229,6 +229,8 @@ public:
 	int GetSecurePort() { return m_securePort; }
 	const char* GetSecureCert() { return m_secureCert; }
 	const char* GetSecureKey() { return m_secureKey; }
+	const char* GetCertStore() { return m_certStore; }
+	bool GetCertCheck() { return m_certCheck; }
 	const char* GetAuthorizedIp() { return m_authorizedIp; }
 	const char* GetLockFile() { return m_lockFile; }
 	const char* GetDaemonUsername() { return m_daemonUsername; }
@@ -374,6 +376,8 @@ private:
 	int m_securePort = 0;
 	CString m_secureCert;
 	CString m_secureKey;
+	CString m_certStore;
+	bool m_certCheck = false;
 	CString m_authorizedIp;
 	CString m_lockFile;
 	CString m_daemonUsername;

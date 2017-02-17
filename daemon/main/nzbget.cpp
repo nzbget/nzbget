@@ -280,6 +280,9 @@ void NZBGet::Init()
 
 	m_scanner->InitOptions();
 	m_queueScriptCoordinator->InitOptions();
+#ifndef DISABLE_TLS
+	TlsSocket::InitOptions(g_Options->GetCertCheck() ? g_Options->GetCertStore() : nullptr);
+#endif
 
 	if (m_commandLineParser->GetDaemonMode())
 	{

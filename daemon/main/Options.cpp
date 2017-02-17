@@ -63,6 +63,8 @@ static const char* OPTION_SECURECONTROL			= "SecureControl";
 static const char* OPTION_SECUREPORT			= "SecurePort";
 static const char* OPTION_SECURECERT			= "SecureCert";
 static const char* OPTION_SECUREKEY				= "SecureKey";
+static const char* OPTION_CERTSTORE				= "CertStore";
+static const char* OPTION_CERTCHECK				= "CertCheck";
 static const char* OPTION_AUTHORIZEDIP			= "AuthorizedIP";
 static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
@@ -197,6 +199,8 @@ bool Options::OptEntry::Restricted()
 		!strcasecmp(m_name, OPTION_SECUREPORT) ||
 		!strcasecmp(m_name, OPTION_SECURECERT) ||
 		!strcasecmp(m_name, OPTION_SECUREKEY) ||
+		!strcasecmp(m_name, OPTION_CERTSTORE) ||
+		!strcasecmp(m_name, OPTION_CERTCHECK) ||
 		!strcasecmp(m_name, OPTION_AUTHORIZEDIP) ||
 		!strcasecmp(m_name, OPTION_DAEMONUSERNAME) ||
 		!strcasecmp(m_name, OPTION_UMASK) ||
@@ -426,6 +430,8 @@ void Options::InitDefaults()
 	SetOption(OPTION_SECUREPORT, "6791");
 	SetOption(OPTION_SECURECERT, "");
 	SetOption(OPTION_SECUREKEY, "");
+	SetOption(OPTION_CERTSTORE, "");
+	SetOption(OPTION_CERTCHECK, "no");
 	SetOption(OPTION_AUTHORIZEDIP, "");
 	SetOption(OPTION_ARTICLETIMEOUT, "60");
 	SetOption(OPTION_URLTIMEOUT, "60");
@@ -659,6 +665,7 @@ void Options::InitOptions()
 	m_addPassword			= GetOption(OPTION_ADDPASSWORD);
 	m_secureCert			= GetOption(OPTION_SECURECERT);
 	m_secureKey				= GetOption(OPTION_SECUREKEY);
+	m_certStore				= GetOption(OPTION_CERTSTORE);
 	m_authorizedIp			= GetOption(OPTION_AUTHORIZEDIP);
 	m_lockFile				= GetOption(OPTION_LOCKFILE);
 	m_daemonUsername		= GetOption(OPTION_DAEMONUSERNAME);
@@ -736,6 +743,7 @@ void Options::InitOptions()
 	m_unpackCleanupDisk		= (bool)ParseEnumValue(OPTION_UNPACKCLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_unpackPauseQueue		= (bool)ParseEnumValue(OPTION_UNPACKPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_urlForce				= (bool)ParseEnumValue(OPTION_URLFORCE, BoolCount, BoolNames, BoolValues);
+	m_certCheck				= (bool)ParseEnumValue(OPTION_CERTCHECK, BoolCount, BoolNames, BoolValues);
 
 	const char* OutputModeNames[] = { "loggable", "logable", "log", "colored", "color", "ncurses", "curses" };
 	const int OutputModeValues[] = { omLoggable, omLoggable, omLoggable, omColored, omColored, omNCurses, omNCurses };
@@ -1713,7 +1721,20 @@ void Options::CheckOptions()
 		LocateOptionSrcPos(OPTION_SECURECONTROL);
 		ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support", OPTION_SECURECONTROL);
 	}
+
+	if (m_certCheck)
+	{
+		LocateOptionSrcPos(OPTION_CERTCHECK);
+		ConfigError("Invalid value for option \"%s\": program was compiled without TLS/SSL-support", OPTION_CERTCHECK);
+	}
 #endif
+
+	if (m_certCheck && m_certStore.Empty())
+	{
+		LocateOptionSrcPos(OPTION_CERTCHECK);
+		ConfigError("Option \"%s\" requires proper configuration of option \"%s\"", OPTION_CERTCHECK, OPTION_CERTSTORE);
+		m_certCheck = false;
+	}
 
 	if (!m_decode)
 	{

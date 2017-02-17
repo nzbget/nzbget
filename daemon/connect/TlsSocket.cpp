@@ -36,6 +36,7 @@ public:
 };
 
 std::unique_ptr<TlsSocketFinalizer> m_tlsSocketFinalizer;
+CString TlsSocket::m_certStore;
 
 #ifdef HAVE_LIBGNUTLS
 #ifdef NEED_GCRYPT_LOCKING
