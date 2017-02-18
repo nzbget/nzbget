@@ -324,7 +324,7 @@ bool TlsSocket::Start()
 	m_retCode = gnutls_handshake((gnutls_session_t)m_session);
 	if (m_retCode != 0)
 	{
-		ReportError(BString<1024>("TLS handshake failed for %s", m_host));
+		ReportError(BString<1024>("TLS handshake failed for %s", *m_host));
 		Close();
 		return false;
 	}
