@@ -205,6 +205,7 @@ typedef SSIZE_T ssize_t;
 typedef int pid_t;
 #endif
 #include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
 #if GNUTLS_VERSION_NUMBER <= 0x020b00
 #define NEED_GCRYPT_LOCKING
 #endif

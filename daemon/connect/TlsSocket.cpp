@@ -26,6 +26,7 @@
 #include "Thread.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 class TlsSocketFinalizer
 {
@@ -328,6 +329,12 @@ bool TlsSocket::Start()
 		return false;
 	}
 
+	if (m_isClient && !m_certStore.Empty() && !ValidateCert())
+	{
+		Close();
+		return false;
+	}
+
 	m_connected = true;
 	return true;
 #endif /* HAVE_LIBGNUTLS */
@@ -422,7 +429,7 @@ bool TlsSocket::Start()
 		return false;
 	}
 
-	if (m_isClient && !m_certStore.Empty() && !ValidateCert(nullptr))
+	if (m_isClient && !m_certStore.Empty() && !ValidateCert())
 	{
 		Close();
 		return false;
@@ -433,10 +440,74 @@ bool TlsSocket::Start()
 #endif /* HAVE_OPENSSL */
 }
 
-bool TlsSocket::ValidateCert(void* data)
+bool TlsSocket::ValidateCert()
 {
 #ifdef HAVE_LIBGNUTLS
-	// not yet implemented
+#if	GNUTLS_VERSION_NUMBER >= 0x030104
+#if	GNUTLS_VERSION_NUMBER >= 0x030306
+	if (FileSystem::DirectoryExists(m_certStore))
+	{
+		if (gnutls_certificate_set_x509_trust_dir((gnutls_certificate_credentials_t)m_context, m_certStore, GNUTLS_X509_FMT_PEM) < 0)
+		{
+			ReportError("Could not set certificate store location");
+			return false;
+		}
+	}
+	else
+#endif
+	{
+		if (gnutls_certificate_set_x509_trust_file((gnutls_certificate_credentials_t)m_context, m_certStore, GNUTLS_X509_FMT_PEM) < 0)
+		{
+			ReportError("Could not set certificate store location");
+			return false;
+		}
+	}
+
+	unsigned int status = 0;
+	if (gnutls_certificate_verify_peers3((gnutls_session_t)m_session, m_host, &status) != 0 ||
+		gnutls_certificate_type_get((gnutls_session_t)m_session) != GNUTLS_CRT_X509)
+	{
+		ReportError("Could not verify TLS certificate");
+		return false;
+	}
+
+	if (status != 0)
+	{
+		if (status & GNUTLS_CERT_UNEXPECTED_OWNER)
+		{
+			// Extracting hostname from the certificate
+			unsigned int cert_list_size = 0;
+			const gnutls_datum_t* cert_list = gnutls_certificate_get_peers((gnutls_session_t)m_session, &cert_list_size);
+			if (cert_list_size > 0)
+			{
+				gnutls_x509_crt_t cert;
+				gnutls_x509_crt_init(&cert);
+				gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER);
+				char dn[256];
+				size_t size = sizeof(dn);
+				if (gnutls_x509_crt_get_dn_by_oid(cert, GNUTLS_OID_X520_COMMON_NAME, 0, 0, dn, &size) == 0)
+				{
+					PrintError(BString<1024>("TLS certificate verification failed for %s: certificate hostname mismatch (%s)", *m_host, dn));
+					gnutls_x509_crt_deinit(cert);
+					return false;
+				}
+				gnutls_x509_crt_deinit(cert);
+			}
+		}
+
+		gnutls_datum_t msgdata;
+		if (gnutls_certificate_verification_status_print(status, GNUTLS_CRT_X509, &msgdata, 0) == 0)
+		{
+			PrintError(BString<1024>("TLS certificate verification failed for %s: %s", *m_host, msgdata.data));
+			gnutls_free(&msgdata);
+		}
+		else
+		{
+			ReportError(BString<1024>("TLS certificate verification failed for %s", *m_host));
+		}
+		return false;
+	}
+#endif
 	return true;
 #endif /* HAVE_LIBGNUTLS */
 
@@ -481,7 +552,6 @@ bool TlsSocket::ValidateCert(void* data)
 	return true;
 #endif /* HAVE_OPENSSL */
 }
-
 
 void TlsSocket::Close()
 {

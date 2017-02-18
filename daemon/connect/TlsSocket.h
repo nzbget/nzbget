@@ -61,7 +61,7 @@ private:
 	void* m_session = nullptr;
 
 	void ReportError(const char* errMsg);
-	bool ValidateCert(void* data);
+	bool ValidateCert();
 
 	static void Final();
 	friend class TlsSocketFinalizer;
