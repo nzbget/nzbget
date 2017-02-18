@@ -320,7 +320,7 @@ bool RepairController::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename
 	}
 
 	std::sort(availableBlocks.begin(), availableBlocks.end(),
-		[](BlockInfo& block1, BlockInfo& block2)
+		[](const BlockInfo& block1, const BlockInfo& block2)
 		{
 			return block1.m_blockCount < block2.m_blockCount;
 		});
