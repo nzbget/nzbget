@@ -40,6 +40,9 @@
 //#define HAVE_LIBGNUTLS
 #endif
 
+/* Define to 1 if OpenSSL supports function "X509_check_host". */
+#define HAVE_X509_CHECK_HOST 1
+
 /* Define to the name of macro which returns the name of function being
 compiled */
 #define FUNCTION_MACRO_NAME __FUNCTION__
