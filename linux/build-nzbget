@@ -2,7 +2,7 @@
 #
 #  This file is part of nzbget
 #
-#  Copyright (C) 2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#  Copyright (C) 2015-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -278,29 +278,34 @@ ConfigureTarget()
         STRIP="-s"
     fi
 
+    DEBUG=""
+    if [ $CONFIG != "release" ]; then
+        DEBUG="-g"
+    fi
+
     case "$TOOLKIND-$CONFIG" in
         buildroot-debug|buildroot-debug-strip)
-            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
+            LDFLAGS="-static $STRIP" \
                 CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
                 LIBS="-lcrypto -ldl -lz -lubacktrace" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
             ;;
         buildroot-release|buildroot-release-nostrip)
-            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-std=c++14 -O2" \
+            LDFLAGS="-static $STRIP" \
+                CXXFLAGS="-std=c++14 -O2 $DEBUG" \
                 LIBS="-lcrypto -ldl -lz" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
             ;;
         crossgcc-debug|crossgcc-debug-strip)
-            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
-                PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" \
+            LDFLAGS="-static $STRIP" \
+                CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables -I$STAGING/include" \
+                PKG_CONFIG_LIBDIR="$STAGING/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
                 ;;
         crossgcc-release|crossgcc-release-nostrip)
-            LIBPREF="$STAGING" LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-std=c++14 -O2" \
-                PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" \
+            LDFLAGS="-static $STRIP" \
+                CXXFLAGS="-std=c++14 -O2 $DEBUG -I$STAGING/include" \
+                PKG_CONFIG_LIBDIR="$STAGING/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
                 ;;
     esac
