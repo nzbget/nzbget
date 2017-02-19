@@ -177,6 +177,11 @@ UpdateFromRepository()
             git checkout $REVISION
         fi
         touch Makefile.in configure config.h.in
+
+        echo "Updating root certificates"
+		cd ../setup
+		curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem
+	    cd $BUILDDIR
     fi
 }
 
@@ -417,6 +422,8 @@ BuildInstaller()
     # adjusting nzbget.conf
     sed 's:^UnrarCmd=unrar:UnrarCmd=${AppDir}/unrar:' -i nzbget/webui/nzbget.conf.template
     sed 's:^SevenZipCmd=7z:SevenZipCmd=${AppDir}/7za:' -i nzbget/webui/nzbget.conf.template
+    sed 's:^CertStore=.*:CertStore=${AppDir}/cacert.pem:' -i nzbget/webui/nzbget.conf.template
+    sed 's:^CertCheck=.*:CertCheck=yes:' -i nzbget/webui/nzbget.conf.template
 
     INSTFILE=$BASENAME-bin-$PLATFORM$SUFFIX.run
 
@@ -427,6 +434,7 @@ BuildInstaller()
     cp $BUILDDIR/pubkey.pem nzbget
     cp ../setup/license-unrar.txt nzbget
     cp ../setup/license-7zip.txt nzbget
+    cp ../setup/cacert.pem nzbget
 
     # adjusting update config file
     sed "s:linux:$PLATFORM:" -i nzbget/webui/package-info.json
