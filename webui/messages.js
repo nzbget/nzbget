@@ -172,6 +172,11 @@ var Messages = (new function($)
 		}
 
 		var text = Util.textToHtml(message.Text);
+
+		// replace URLs
+		var exp = /(http:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+		text = text.replace(exp, "<a href='$1' target='_blank'>$1</a>");
+
 		if (!item.time)
 		{
 			item.time = Util.formatDateTime(message.Time + UISettings.timeZoneCorrection*60*60);
