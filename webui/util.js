@@ -530,7 +530,7 @@ var RPC = (new function($)
 	this.connectErrorMessage = 'Cannot establish connection';
 	var XAuthToken;
 
-	this.call = function(method, params, completed_callback, failure_callback, timeout)
+	this.call = function(method, params, completed_callback, failure_callback, timeout, custom_headers)
 	{
 		var _this = this;
 
@@ -539,7 +539,7 @@ var RPC = (new function($)
 
 		xhr.open('post', this.rpcUrl);
 
-		if (XAuthToken !== undefined)
+		if (XAuthToken !== undefined && XAuthToken !== "")
 		{
 			xhr.setRequestHeader('X-Auth-Token', XAuthToken);
 		}
@@ -549,10 +549,10 @@ var RPC = (new function($)
 			xhr.timeout = timeout;
 		}
 
-		// Example for cross-domain access:
-		//xhr.open('post', 'http://localhost:6789/jsonrpc');
-		//xhr.withCredentials = 'true';
-		//xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa('myusername:mypassword'));
+		for (var i = 0; i < (custom_headers ? custom_headers.length : 0); i++)
+		{
+			xhr.setRequestHeader(custom_headers[i].name, custom_headers[i].value);
+		}
 
 		xhr.onreadystatechange = function()
 		{

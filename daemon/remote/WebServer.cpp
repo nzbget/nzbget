@@ -90,7 +90,10 @@ void WebProcessor::Execute()
 
 	ParseUrl();
 
-	if (!CheckCredentials())
+	m_rpcRequest = XmlRpcProcessor::IsRpcRequest(m_url);
+	m_authorized = CheckCredentials();
+
+	if ((!g_Options->GetFormAuth() || m_rpcRequest) && !m_authorized)
 	{
 		SendAuthResponse();
 		return;
@@ -128,9 +131,19 @@ void WebProcessor::ParseHeaders()
 		{
 			m_contentLen = atoi(p + 16);
 		}
-		if (!strncasecmp(p, "Authorization: Basic ", 21))
+		if (!strncasecmp(p, "Authorization: Basic ", 21) && Util::EmptyStr(m_authInfo))
 		{
 			char* authInfo64 = p + 21;
+			if (strlen(authInfo64) > sizeof(m_authInfo))
+			{
+				error("Invalid-request: auth-info too big");
+				return;
+			}
+			m_authInfo[WebUtil::DecodeBase64(authInfo64, 0, m_authInfo)] = '\0';
+		}
+		if (!strncasecmp(p, "X-Authorization: Basic ", 23))
+		{
+			char* authInfo64 = p + 23;
 			if (strlen(authInfo64) > sizeof(m_authInfo))
 			{
 				error("Invalid-request: auth-info too big");
@@ -281,7 +294,7 @@ void WebProcessor::Dispatch()
 		return;
 	}
 
-	if (XmlRpcProcessor::IsRpcRequest(m_url))
+	if (m_rpcRequest)
 	{
 		XmlRpcProcessor processor;
 		processor.SetRequest(m_request);
@@ -333,12 +346,15 @@ void WebProcessor::SendAuthResponse()
 {
 	const char* AUTH_RESPONSE_HEADER =
 		"HTTP/1.0 401 Unauthorized\r\n"
-		"WWW-Authenticate: Basic realm=\"NZBGet\"\r\n"
+		"%s"
 		"Connection: close\r\n"
 		"Content-Type: text/plain\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
-	BString<1024> responseHeader(AUTH_RESPONSE_HEADER, Util::VersionRevision());
+
+	BString<1024> responseHeader(AUTH_RESPONSE_HEADER,
+		g_Options->GetFormAuth() ? "" : "WWW-Authenticate: Basic realm=\"NZBGet\"\r\n",
+		Util::VersionRevision());
 
 	// Send the response answer
 	debug("ResponseHeader=%s", *responseHeader);
@@ -417,6 +433,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"Access-Control-Allow-Credentials: true\r\n"
 		"Access-Control-Max-Age: 86400\r\n"
 		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+		"Set-Cookie: auth=%s\r\n"
 		"X-Auth-Token: %s\r\n"
 		"Content-Length: %i\r\n"
 		"%s"					// Content-Type: xxx
@@ -454,7 +471,9 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 
 	BString<1024> responseHeader(RESPONSE_HEADER,
 		m_origin.Str(),
-		m_serverAuthToken[m_userAccess], bodyLen, *contentTypeHeader,
+		g_Options->GetFormAuth() ? "form" : "http",
+		m_authorized ? m_serverAuthToken[m_userAccess] : "",
+		bodyLen, *contentTypeHeader,
 		gzip ? "Content-Encoding: gzip\r\n" : "",
 		Util::VersionRevision());
 

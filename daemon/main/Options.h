@@ -225,6 +225,7 @@ public:
 	const char* GetAddUsername() { return m_addUsername; }
 	const char* GetAddPassword() { return m_addPassword; }
 	int GetControlPort() { return m_controlPort; }
+	bool GetFormAuth() { return m_formAuth; }
 	bool GetSecureControl() { return m_secureControl; }
 	int GetSecurePort() { return m_securePort; }
 	const char* GetSecureCert() { return m_secureCert; }
@@ -371,6 +372,7 @@ private:
 	CString m_restrictedPassword;
 	CString m_addUsername;
 	CString m_addPassword;
+	bool m_formAuth = false;
 	int m_controlPort = 0;
 	bool m_secureControl = false;
 	int m_securePort = 0;

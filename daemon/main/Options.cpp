@@ -59,6 +59,7 @@ static const char* OPTION_RESTRICTEDUSERNAME	= "RestrictedUsername";
 static const char* OPTION_RESTRICTEDPASSWORD	= "RestrictedPassword";
 static const char* OPTION_ADDUSERNAME			= "AddUsername";
 static const char* OPTION_ADDPASSWORD			= "AddPassword";
+static const char* OPTION_FORMAUTH				= "FormAuth";
 static const char* OPTION_SECURECONTROL			= "SecureControl";
 static const char* OPTION_SECUREPORT			= "SecurePort";
 static const char* OPTION_SECURECERT			= "SecureCert";
@@ -195,6 +196,7 @@ bool Options::OptEntry::Restricted()
 
 	bool restricted = !strcasecmp(m_name, OPTION_CONTROLIP) ||
 		!strcasecmp(m_name, OPTION_CONTROLPORT) ||
+		!strcasecmp(m_name, OPTION_FORMAUTH) ||
 		!strcasecmp(m_name, OPTION_SECURECONTROL) ||
 		!strcasecmp(m_name, OPTION_SECUREPORT) ||
 		!strcasecmp(m_name, OPTION_SECURECERT) ||
@@ -426,6 +428,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_ADDUSERNAME, "");
 	SetOption(OPTION_ADDPASSWORD, "");
 	SetOption(OPTION_CONTROLPORT, "6789");
+	SetOption(OPTION_FORMAUTH, "no");
 	SetOption(OPTION_SECURECONTROL, "no");
 	SetOption(OPTION_SECUREPORT, "6791");
 	SetOption(OPTION_SECURECERT, "");
@@ -738,6 +741,7 @@ void Options::InitOptions()
 	m_scriptPauseQueue		= (bool)ParseEnumValue(OPTION_SCRIPTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_nzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
 	m_accurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
+	m_formAuth				= (bool)ParseEnumValue(OPTION_FORMAUTH, BoolCount, BoolNames, BoolValues);
 	m_secureControl			= (bool)ParseEnumValue(OPTION_SECURECONTROL, BoolCount, BoolNames, BoolValues);
 	m_unpack				= (bool)ParseEnumValue(OPTION_UNPACK, BoolCount, BoolNames, BoolValues);
 	m_unpackCleanupDisk		= (bool)ParseEnumValue(OPTION_UNPACKCLEANUPDISK, BoolCount, BoolNames, BoolValues);

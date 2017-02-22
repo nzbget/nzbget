@@ -53,6 +53,8 @@ private:
 	CString m_url;
 	EHttpMethod m_httpMethod;
 	EUserAccess m_userAccess;
+	bool m_rpcRequest;
+	bool m_authorized;
 	bool m_gzip;
 	CString m_origin;
 	int m_contentLen;

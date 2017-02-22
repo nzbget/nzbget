@@ -2719,6 +2719,44 @@
 	<div id="ShutdownConfirmDialog_OK">Shutdown</div>
 </div>
 
+<!-- *** WEB LOGIN DIALOG ************************************** -->
+
+<div class="modal modal-mini modal-center hide" id="LoginDialog">
+	<div class="modal-header">
+		<h3>NZBGet Login</h3>
+	</div>
+
+    <form>
+	<div class="modal-body">
+		<div class="form-horizontal">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="LoginDialog_UsernameGroup">Username</label>
+					<div class="controls" id="LoginDialog_UsernameGroup">
+						<input class="input-medium" id="LoginDialog_Username" type="text">
+					</div>
+				</div>
+
+				<div class="control-group last-group" id="LoginDialog_PasswordBlock">
+					<label class="control-label" for="LoginDialog_PasswordGroup">Password</label>
+					<div class="controls" id="LoginDialog_PasswordGroup">
+						<input class="input-medium" id="LoginDialog_Password" type="password">
+					</div>
+				</div>
+
+				<p class="alert alert-danger hide text-center" id="LoginDialog_Error">
+                    It didn't work. Try again.
+				</p>
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+	    <button type="submit" class="btn btn-primary" id="LoginDialog_Login">Login</button>
+	</div>
+	</form>
+</div>
+
 <!-- ***  DRAG-N-DROP ************************************************************ -->
 
 <div id="TableDragBox"><span id="TableDragBadge" class="badge"></span><div id="TableDragContent"></div></div>

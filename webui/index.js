@@ -222,7 +222,7 @@ var Frontend = (new function($)
 
 		initialized = true;
 
-		Refresher.update();
+		authorize();
 	}
 
 	function initControls()
@@ -620,6 +620,53 @@ var Frontend = (new function($)
 		}
 
 		switchingTheme = false;
+	}
+	
+	function authorize()
+	{
+		var formAuth = document.cookie.indexOf('auth=form') > -1;
+		if (!formAuth)
+		{
+			Refresher.update();
+			return;
+		}
+
+		var sendAuth = function()
+			{
+				var username = $('#LoginDialog_Username').val();
+				var password = $('#LoginDialog_Password').val();
+				var headers = [{name: 'X-Authorization', value: 'Basic ' + window.btoa(username + ':' + password)}];
+				RPC.call('version', [],
+					function(version)
+					{
+						$('#LoginDialog').modal('hide');
+						Refresher.update();
+					},
+					function(err, result)
+					{
+						$('#LoginDialog_PasswordBlock').removeClass('last-group');
+						$('#LoginDialog_Error').show();
+						$('#LoginDialog_Username').focus();
+					},
+					0, headers);
+			}
+
+		$('#LoginDialog_Login').click(function(e)
+			{
+				e.preventDefault();
+				if ($('#LoginDialog_Error').is(":visible"))
+				{
+					$('#LoginDialog_Error').hide();
+					$('#LoginDialog_PasswordBlock').addClass('last-group');
+					setTimeout(sendAuth, 500);
+				}
+				else
+				{
+					sendAuth();
+				}
+			});
+		$('#LoginDialog').modal({backdrop: 'static'});
+		$('#LoginDialog_Username').focus();
 	}
 }(jQuery));
 
