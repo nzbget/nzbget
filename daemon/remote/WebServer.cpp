@@ -159,10 +159,15 @@ void WebProcessor::ParseHeaders()
 		{
 			m_origin = p + 8;
 		}
-		if (!strncasecmp(p, "X-Auth-Token: ", 14))
+		if (!strncasecmp(p, "Cookie: ", 8))
 		{
-			strncpy(m_authToken, p + 14, sizeof(m_authToken)-1);
-			m_authToken[sizeof(m_authToken)-1] = '\0';
+			debug("%s", p);
+			const char* tok = strstr(p, "Auth-Token=");
+			if (tok && tok[11] != ';' && tok[11] != '\0')
+			{
+				strncpy(m_authToken, tok + 11, sizeof(m_authToken)-1);
+				m_authToken[sizeof(m_authToken)-1] = '\0';
+			}
 		}
 		if (*p == '\0')
 		{
@@ -172,7 +177,7 @@ void WebProcessor::ParseHeaders()
 
 	debug("URL=%s", *m_url);
 	debug("Authorization=%s", m_authInfo);
-	debug("X-Auth-Token=%s", m_authToken);
+	debug("Auth-Token=%s", m_authToken);
 }
 
 void WebProcessor::ParseUrl()
@@ -433,8 +438,8 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"Access-Control-Allow-Credentials: true\r\n"
 		"Access-Control-Max-Age: 86400\r\n"
 		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
-		"Set-Cookie: auth=%s\r\n"
-		"X-Auth-Token: %s\r\n"
+		"Set-Cookie: Auth-Type=%s\r\n"
+		"Set-Cookie: Auth-Token=%s\r\n"
 		"Content-Length: %i\r\n"
 		"%s"					// Content-Type: xxx
 		"%s"					// Content-Encoding: gzip

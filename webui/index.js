@@ -624,7 +624,7 @@ var Frontend = (new function($)
 	
 	function authorize()
 	{
-		var formAuth = document.cookie.indexOf('auth=form') > -1;
+		var formAuth = document.cookie.indexOf('Auth-Type=form') > -1;
 		if (!formAuth)
 		{
 			Refresher.update();
@@ -651,22 +651,28 @@ var Frontend = (new function($)
 					0, headers);
 			}
 
-		$('#LoginDialog_Login').click(function(e)
+		var doFormAuth = function()
 			{
-				e.preventDefault();
-				if ($('#LoginDialog_Error').is(":visible"))
-				{
-					$('#LoginDialog_Error').hide();
-					$('#LoginDialog_PasswordBlock').addClass('last-group');
-					setTimeout(sendAuth, 500);
-				}
-				else
-				{
-					sendAuth();
-				}
-			});
-		$('#LoginDialog').modal({backdrop: 'static'});
-		$('#LoginDialog_Username').focus();
+				$('#LoginDialog_Login').click(function(e)
+					{
+						e.preventDefault();
+						if ($('#LoginDialog_Error').is(":visible"))
+						{
+							$('#LoginDialog_Error').hide();
+							$('#LoginDialog_PasswordBlock').addClass('last-group');
+							setTimeout(sendAuth, 500);
+						}
+						else
+						{
+							sendAuth();
+						}
+					});
+				$('#LoginDialog').modal({backdrop: 'static'});
+				$('#LoginDialog_Username').focus();
+			}
+
+		// try RPC call, it may work without extra authorization
+		RPC.call('version', [], Refresher.update, doFormAuth);
 	}
 }(jQuery));
 

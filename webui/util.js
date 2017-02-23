@@ -528,7 +528,6 @@ var RPC = (new function($)
 	this.rpcUrl;
 	this.defaultFailureCallback;
 	this.connectErrorMessage = 'Cannot establish connection';
-	var XAuthToken;
 
 	this.call = function(method, params, completed_callback, failure_callback, timeout, custom_headers)
 	{
@@ -538,11 +537,6 @@ var RPC = (new function($)
 		var xhr = new XMLHttpRequest();
 
 		xhr.open('post', this.rpcUrl);
-
-		if (XAuthToken !== undefined && XAuthToken !== "")
-		{
-			xhr.setRequestHeader('X-Auth-Token', XAuthToken);
-		}
 
 		if (timeout)
 		{
@@ -576,7 +570,6 @@ var RPC = (new function($)
 							{
 								if (result.error == null)
 								{
-									XAuthToken = xhr.getResponseHeader('X-Auth-Token');
 									res = result.result;
 									completed_callback(res);
 									return;
