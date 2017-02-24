@@ -631,48 +631,52 @@ var Frontend = (new function($)
 			return;
 		}
 
-		var sendAuth = function()
-			{
-				var username = $('#LoginDialog_Username').val();
-				var password = $('#LoginDialog_Password').val();
-				var headers = [{name: 'X-Authorization', value: 'Basic ' + window.btoa(username + ':' + password)}];
-				RPC.call('version', [],
-					function(version)
+		function sendAuth()
+		{
+			var username = $('#LoginDialog_Username').val();
+			var password = $('#LoginDialog_Password').val();
+			var headers = [{name: 'X-Authorization', value: 'Basic ' + window.btoa(username + ':' + password)}];
+			RPC.call('version', [],
+				function(version)
+				{
+					$('#LoginDialog').modal('hide');
+					// reloading of page is needed for certain browsers to force save-password-dialog
+					document.location.reload();
+				},
+				function(err, result)
+				{
+					$('#LoginDialog_PasswordBlock').removeClass('last-group');
+					$('#LoginDialog_Error').show();
+					if (!$('#LoginDialog_Password').is(":focus"))
 					{
-						$('#LoginDialog').modal('hide');
-						Refresher.update();
-					},
-					function(err, result)
-					{
-						$('#LoginDialog_PasswordBlock').removeClass('last-group');
-						$('#LoginDialog_Error').show();
 						$('#LoginDialog_Username').focus();
-					},
-					0, headers);
-			}
+					}
+				},
+				0, headers);
+		}
 
-		var doFormAuth = function()
+		$('#LoginDialog_Form').submit(function(e)
 			{
-				$('#LoginDialog_Login').click(function(e)
-					{
-						e.preventDefault();
-						if ($('#LoginDialog_Error').is(":visible"))
-						{
-							$('#LoginDialog_Error').hide();
-							$('#LoginDialog_PasswordBlock').addClass('last-group');
-							setTimeout(sendAuth, 500);
-						}
-						else
-						{
-							sendAuth();
-						}
-					});
-				$('#LoginDialog').modal({backdrop: 'static'});
-				$('#LoginDialog_Username').focus();
-			}
+				if ($('#LoginDialog_Error').is(":visible"))
+				{
+					$('#LoginDialog_Error').hide();
+					$('#LoginDialog_PasswordBlock').addClass('last-group');
+					setTimeout(sendAuth, 500);
+				}
+				else
+				{
+					setTimeout(sendAuth, 0);
+				}
+
+				return false;
+			});
 
 		// try RPC call, it may work without extra authorization
-		RPC.call('version', [], Refresher.update, doFormAuth);
+		RPC.call('version', [], Refresher.update, function()
+			{
+				$('#LoginDialog').modal({backdrop: 'static'});
+				$('#LoginDialog_Username').focus();
+			}, 10000);
 	}
 }(jQuery));
 
