@@ -2105,7 +2105,7 @@ var ScriptListDialog = (new function($)
 
 		var availableScripts = [];
 		var availableAllScripts = [];
-		for (var i=1; i < config.length; i++)
+		for (var i=2; i < config.length; i++)
 		{
 			availableAllScripts.push(config[i].scriptName);
 			var accept = !kind;
