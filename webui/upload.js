@@ -42,6 +42,7 @@ var Upload = (new function($)
 	var needRefresh = false;
 	var failure_message = null;
 	var url = '';
+	var urlInfo;
 
 	this.init = function()
 	{
@@ -211,7 +212,7 @@ var Upload = (new function($)
 			var info = { name: name, ext: ext, password: '', dupekey: '', dupescore: 0 };
 			infos.push(info);
 		}
-		$('#AddDialog_Files').show();
+		$('#AddDialog_Files,#AddDialog_RenameTip').show();
 		$('#AddDialog_FilesHelp').hide();
 	}
 
@@ -227,6 +228,11 @@ var Upload = (new function($)
 		AddParamDialog.showModal(info, function() {
 			$('#AddDialog_File' + no).html(Util.formatNZBName(info.name + info.ext));
 		});
+	}
+
+	this.renameURLClick = function(no)
+	{
+		AddParamDialog.showModal(urlInfo, function(){});
 	}
 
 	function showModal(droppedFiles)
@@ -249,6 +255,7 @@ var Upload = (new function($)
 
 		files = [];
 		filesSuccess = [];
+		urlInfo = { name: '', password: '', dupekey: '', dupescore: 0 };
 
 		if (droppedFiles)
 		{
@@ -394,12 +401,19 @@ var Upload = (new function($)
 		$('#AddDialog_URLLabel img').show();
 		$('#AddDialog_URLLabel i').hide();
 
+		var name = urlInfo.name.toLowerCase();
+		if (name !== '' && !(Util.endsWith(name, '.nzb') || Util.endsWith(name, '.zip') ||
+			Util.endsWith(name, '.7z') || Util.endsWith(name, '.rar') || Util.endsWith(name, '.tar.gz')))
+		{
+			urlInfo.name += '.nzb';
+		}
+		
 		var category = $('#AddDialog_Category').val();
 		var priority = parseInt($('#AddDialog_Priority').val());
 		var addPaused = $('#AddDialog_Paused').is(':checked');
 		var dupeMode = $('#AddDialog_DupeForce').is(':checked') ? "FORCE" : "SCORE";
-
-		RPC.call('append', ['', url, category, priority, false, addPaused, '', 0, dupeMode], urlCompleted, urlFailure);
+		var params = urlInfo.password === '' ? [] : [{'*Unpack:password' : urlInfo.password}];
+		RPC.call('append', [urlInfo.name, url, category, priority, false, addPaused, urlInfo.dupekey, urlInfo.dupescore, dupeMode, params], urlCompleted, urlFailure);
 	}
 
 	function urlCompleted(result)

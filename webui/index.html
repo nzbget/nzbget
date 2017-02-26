@@ -2300,7 +2300,8 @@
 				<div class="control-group">
 					<label class="control-label" for="AddDialog_URL" id="AddDialog_URLLabel"><i class="icon-remove"></i><img class="hide" src="img/transmit-file.gif" width="16px" height="16px"> Add from URL</label>
 					<div class="controls">
-						<input type="text" class="input-xlarge" id="AddDialog_URL" />
+						<input type="text" class="input-xblarge" id="AddDialog_URL" />&nbsp;
+						<a href="#" id="AddDialog_URLProp" title="Set name or password" onclick="Upload.renameURLClick()"><i class="icon-edit"></i></a>
 					</div>
 				</div>
 
@@ -2310,6 +2311,7 @@
 						<div style="margin-top:6px; margin-bottom:10px;"><a href="#" class="btn" style="margin-top: -6px;" id="AddDialog_Select">Select files</a> or drop files here.</div>
 						<input multiple="multiple" type="file" id="AddDialog_Input" class="hidden-file-input">
 						<div class="dialog-add-files hide" id="AddDialog_Files"></div>
+						<div class="hide" style="margin-top:12px;" id="AddDialog_RenameTip">Tip: click on an item to rename or set password.</div>
 					</div>
 				</div>
 

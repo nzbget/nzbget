@@ -1257,6 +1257,10 @@ textarea[readonly],
 	width: 350px;
 }
 
+.modal .input-xblarge {
+	width: 335px;
+}
+
 .modal.modal-padded .input-xxlarge {
 	width: 470px;
 }

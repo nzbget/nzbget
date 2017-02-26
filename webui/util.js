@@ -337,6 +337,11 @@ var Util = (new function($)
 		return target.tagName == 'TEXTAREA';
 	}
 
+	this.endsWith = function(text, substr)
+	{
+	    return text.substring(text.length - substr.length, text.length) === substr;
+	}
+
 }(jQuery));
 
 
