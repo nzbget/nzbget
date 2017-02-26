@@ -385,7 +385,7 @@ void NZBGet::BootConfig()
 	if (m_commandLineParser->GetPrintUsage() || m_commandLineParser->GetErrors() || g_ArgumentCount <= 1)
 	{
 		m_commandLineParser->PrintUsage(((const char**)(*g_Arguments))[0]);
-		exit(0);
+		exit(m_commandLineParser->GetPrintUsage() ? 0 : 1);
 	}
 
 	debug("Reading options");
@@ -697,106 +697,109 @@ void NZBGet::Run(bool reload)
 void NZBGet::ProcessClientRequest()
 {
 	RemoteClient Client;
+	bool ok = false;
 
 	switch (m_commandLineParser->GetClientOperation())
 	{
 		case CommandLineParser::opClientRequestListFiles:
-			Client.RequestServerList(true, false, m_commandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? m_commandLineParser->GetEditQueueText() : nullptr);
+			ok = Client.RequestServerList(true, false, m_commandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? m_commandLineParser->GetEditQueueText() : nullptr);
 			break;
 
 		case CommandLineParser::opClientRequestListGroups:
-			Client.RequestServerList(false, true, m_commandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? m_commandLineParser->GetEditQueueText() : nullptr);
+			ok = Client.RequestServerList(false, true, m_commandLineParser->GetMatchMode() == CommandLineParser::mmRegEx ? m_commandLineParser->GetEditQueueText() : nullptr);
 			break;
 
 		case CommandLineParser::opClientRequestListStatus:
-			Client.RequestServerList(false, false, nullptr);
+			ok = Client.RequestServerList(false, false, nullptr);
 			break;
 
 		case CommandLineParser::opClientRequestDownloadPause:
-			Client.RequestServerPauseUnpause(true, rpDownload);
+			ok = Client.RequestServerPauseUnpause(true, rpDownload);
 			break;
 
 		case CommandLineParser::opClientRequestDownloadUnpause:
-			Client.RequestServerPauseUnpause(false, rpDownload);
+			ok = Client.RequestServerPauseUnpause(false, rpDownload);
 			break;
 
 		case CommandLineParser::opClientRequestSetRate:
-			Client.RequestServerSetDownloadRate(m_commandLineParser->GetSetRate());
+			ok = Client.RequestServerSetDownloadRate(m_commandLineParser->GetSetRate());
 			break;
 
 		case CommandLineParser::opClientRequestDumpDebug:
-			Client.RequestServerDumpDebug();
+			ok = Client.RequestServerDumpDebug();
 			break;
 
 		case CommandLineParser::opClientRequestEditQueue:
-			Client.RequestServerEditQueue((DownloadQueue::EEditAction)m_commandLineParser->GetEditQueueAction(),
+			ok = Client.RequestServerEditQueue((DownloadQueue::EEditAction)m_commandLineParser->GetEditQueueAction(),
 				m_commandLineParser->GetEditQueueOffset(), m_commandLineParser->GetEditQueueText(),
 				m_commandLineParser->GetEditQueueIdList(), m_commandLineParser->GetEditQueueNameList(),
 				(ERemoteMatchMode)m_commandLineParser->GetMatchMode());
 			break;
 
 		case CommandLineParser::opClientRequestLog:
-			Client.RequestServerLog(m_commandLineParser->GetLogLines());
+			ok = Client.RequestServerLog(m_commandLineParser->GetLogLines());
 			break;
 
 		case CommandLineParser::opClientRequestShutdown:
-			Client.RequestServerShutdown();
+			ok = Client.RequestServerShutdown();
 			break;
 
 		case CommandLineParser::opClientRequestReload:
-			Client.RequestServerReload();
+			ok = Client.RequestServerReload();
 			break;
 
 		case CommandLineParser::opClientRequestDownload:
-			Client.RequestServerDownload(m_commandLineParser->GetAddNzbFilename(), m_commandLineParser->GetArgFilename(),
+			ok = Client.RequestServerDownload(m_commandLineParser->GetAddNzbFilename(), m_commandLineParser->GetArgFilename(),
 				m_commandLineParser->GetAddCategory(), m_commandLineParser->GetAddTop(), m_commandLineParser->GetAddPaused(), m_commandLineParser->GetAddPriority(),
 				m_commandLineParser->GetAddDupeKey(), m_commandLineParser->GetAddDupeMode(), m_commandLineParser->GetAddDupeScore());
 			break;
 
 		case CommandLineParser::opClientRequestVersion:
-			Client.RequestServerVersion();
+			ok = Client.RequestServerVersion();
 			break;
 
 		case CommandLineParser::opClientRequestPostQueue:
-			Client.RequestPostQueue();
+			ok = Client.RequestPostQueue();
 			break;
 
 		case CommandLineParser::opClientRequestWriteLog:
-			Client.RequestWriteLog(m_commandLineParser->GetWriteLogKind(), m_commandLineParser->GetLastArg());
+			ok = Client.RequestWriteLog(m_commandLineParser->GetWriteLogKind(), m_commandLineParser->GetLastArg());
 			break;
 
 		case CommandLineParser::opClientRequestScanAsync:
-			Client.RequestScan(false);
+			ok = Client.RequestScan(false);
 			break;
 
 		case CommandLineParser::opClientRequestScanSync:
-			Client.RequestScan(true);
+			ok = Client.RequestScan(true);
 			break;
 
 		case CommandLineParser::opClientRequestPostPause:
-			Client.RequestServerPauseUnpause(true, rpPostProcess);
+			ok = Client.RequestServerPauseUnpause(true, rpPostProcess);
 			break;
 
 		case CommandLineParser::opClientRequestPostUnpause:
-			Client.RequestServerPauseUnpause(false, rpPostProcess);
+			ok = Client.RequestServerPauseUnpause(false, rpPostProcess);
 			break;
 
 		case CommandLineParser::opClientRequestScanPause:
-			Client.RequestServerPauseUnpause(true, rpScan);
+			ok = Client.RequestServerPauseUnpause(true, rpScan);
 			break;
 
 		case CommandLineParser::opClientRequestScanUnpause:
-			Client.RequestServerPauseUnpause(false, rpScan);
+			ok = Client.RequestServerPauseUnpause(false, rpScan);
 			break;
 
 		case CommandLineParser::opClientRequestHistory:
 		case CommandLineParser::opClientRequestHistoryAll:
-			Client.RequestHistory(m_commandLineParser->GetClientOperation() == CommandLineParser::opClientRequestHistoryAll);
+			ok = Client.RequestHistory(m_commandLineParser->GetClientOperation() == CommandLineParser::opClientRequestHistoryAll);
 			break;
 
 		case CommandLineParser::opClientNoOperation:
-			break;
+			return;
 	}
+
+	exit(ok ? 0 : 1);
 }
 
 void NZBGet::ProcessWebGet()
