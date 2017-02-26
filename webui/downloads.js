@@ -43,7 +43,6 @@ var Downloads = (new function($)
 	var groups;
 	var urls;
 	var nameColumnWidth = null;
-	var minLevel = null;
 
 	var statusData = {
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
@@ -235,15 +234,8 @@ var Downloads = (new function($)
 				'">health: ' + Math.floor(group.Health / 10) + '%</span> ';
 		}
 
-		var backup = '';
-		var backupPercent = calcBackupPercent(group);
-		if (backupPercent > 0)
-		{
-			backup = ' <a href="#" data-nzbid="' + group.NZBID + '" data-area="backup" class="badge-link"><span class="label label-warning" title="using backup news servers">backup: ' +
-				(backupPercent < 10 ? Util.round1(backupPercent) : Util.round0(backupPercent)) + '%</span> ';
-		}
-
 		var category = Util.textToHtml(group.Category);
+		var backup = DownloadsUI.buildBackupLabel(group);
 
 		if (!UISettings.miniTheme)
 		{
@@ -278,46 +270,6 @@ var Downloads = (new function($)
 		{
 			cell.className = 'text-right';
 		}
-	}
-
-	function calcBackupPercent(group)
-	{
-		var downloadedArticles = group.SuccessArticles + group.FailedArticles;
-		if (downloadedArticles === 0)
-		{
-			return 0;
-		}
-
-		if (minLevel === null)
-		{
-			for (var i=0; i < Status.status.NewsServers.length; i++)
-			{
-				var server = Status.status.NewsServers[i];
-				var level = parseInt(Options.option('Server' + server.ID + '.Level'));
-				if (minLevel === null || minLevel > level)
-				{
-					minLevel = level;
-				}
-			}
-		}
-
-		var backupArticles = 0;
-		for (var j=0; j < group.ServerStats.length; j++)
-		{
-			var stat = group.ServerStats[j];
-			var level = parseInt(Options.option('Server' + stat.ServerID + '.Level'));
-			if (level > minLevel && stat.SuccessArticles > 0)
-			{
-				backupArticles += stat.SuccessArticles;
-			}
-		}
-
-		var backupPercent = 0;
-		if (backupArticles > 0)
-		{
-			backupPercent = backupArticles * 100.0 / downloadedArticles;
-		}
-		return backupPercent;
 	}
 
 	this.recordsPerPageChange = function()
@@ -625,6 +577,7 @@ var DownloadsUI = (new function($)
 	// State
 	var categoryColumnWidth = null;
 	var dupeCheck = null;
+	var minLevel = null;
 
 	this.fillPriorityCombo = function(combo)
 	{
@@ -832,6 +785,58 @@ var DownloadsUI = (new function($)
 		}
 		return encryptedPassword != '' ?
 			' <span class="label label-info" title="'+ Util.textToAttr(encryptedPassword) +'">encrypted</span>' : '';
+	}
+
+	this.buildBackupLabel = function(group)
+	{
+		var backup = '';
+		var backupPercent = calcBackupPercent(group);
+		if (backupPercent > 0)
+		{
+			backup = ' <a href="#" data-nzbid="' + group.NZBID + '" data-area="backup" class="badge-link"><span class="label label-warning" title="with backup news servers">backup: ' +
+				(backupPercent < 10 ? Util.round1(backupPercent) : Util.round0(backupPercent)) + '%</span> ';
+		}
+		return backup;
+	}
+
+	function calcBackupPercent(group)
+	{
+		var downloadedArticles = group.SuccessArticles + group.FailedArticles;
+		if (downloadedArticles === 0)
+		{
+			return 0;
+		}
+
+		if (minLevel === null)
+		{
+			for (var i=0; i < Status.status.NewsServers.length; i++)
+			{
+				var server = Status.status.NewsServers[i];
+				var level = parseInt(Options.option('Server' + server.ID + '.Level'));
+				if (minLevel === null || minLevel > level)
+				{
+					minLevel = level;
+				}
+			}
+		}
+
+		var backupArticles = 0;
+		for (var j=0; j < group.ServerStats.length; j++)
+		{
+			var stat = group.ServerStats[j];
+			var level = parseInt(Options.option('Server' + stat.ServerID + '.Level'));
+			if (level > minLevel && stat.SuccessArticles > 0)
+			{
+				backupArticles += stat.SuccessArticles;
+			}
+		}
+
+		var backupPercent = 0;
+		if (backupArticles > 0)
+		{
+			backupPercent = backupArticles * 100.0 / downloadedArticles;
+		}
+		return backupPercent;
 	}
 
 	function formatDupeText(dupeKey, dupeScore, dupeMode)

@@ -184,7 +184,7 @@ var History = (new function($)
 
 		var status = HistoryUI.buildStatus(hist);
 
-		var name = '<a href="#" histid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
+		var name = '<a href="#" data-nzbid="' + hist.ID + '">' + Util.textToHtml(Util.formatNZBName(hist.Name)) + '</a>';
 		name += DownloadsUI.buildEncryptedLabel(hist.Kind === 'NZB' ? hist.Parameters : []);
 
 		var dupe = DownloadsUI.buildDupe(hist.DupeKey, hist.DupeScore, hist.DupeMode);
@@ -194,6 +194,8 @@ var History = (new function($)
 		{
 			var category = Util.textToHtml(hist.Category);
 		}
+
+		var backup = hist.Kind === 'NZB' ? DownloadsUI.buildBackupLabel(hist) : '';
 
 		if (hist.Kind === 'URL')
 		{
@@ -206,7 +208,7 @@ var History = (new function($)
 
 		if (!UISettings.miniTheme)
 		{
-			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name + dupe, category, item.data.age, item.data.size];
+			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name + dupe + backup, category, item.data.age, item.data.size];
 		}
 		else
 		{
@@ -371,7 +373,8 @@ var History = (new function($)
 		e.preventDefault();
 		e.stopPropagation();
 
-		var histid = $(this).attr('histid');
+		var histid = $(this).attr('data-nzbid');
+		var area = $(this).attr('data-area');
 		$(this).blur();
 
 		var hist = null;
@@ -391,7 +394,7 @@ var History = (new function($)
 			return;
 		}
 
-		HistoryEditDialog.showModal(hist);
+		HistoryEditDialog.showModal(hist, area);
 	}
 
 	function filterCallback(item)

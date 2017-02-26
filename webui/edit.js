@@ -1556,6 +1556,7 @@ var HistoryEditDialog = (new function()
 	var lastFullscreen;
 	var saveCompleted;
 	var logFilled;
+	var showing;
 
 	this.init = function()
 	{
@@ -1597,7 +1598,7 @@ var HistoryEditDialog = (new function()
 		TabDialog.extend($HistoryEditDialog);
 	}
 
-	this.showModal = function(hist)
+	this.showModal = function(hist, area)
 	{
 		Refresher.pause();
 
@@ -1776,6 +1777,13 @@ var HistoryEditDialog = (new function()
 		logFilled = false;
 		notification = null;
 
+		if (area === 'backup')
+		{
+			showing = true;
+			$('#HistoryEdit_ServStats').trigger('click');
+		}
+		showing = false;
+
 		$HistoryEditDialog.modal({backdrop: 'static'});
 	}
 
@@ -1842,14 +1850,14 @@ var HistoryEditDialog = (new function()
 	{
 		e.preventDefault();
 
-		$('#HistoryEdit_Back').fadeIn(500);
+		$('#HistoryEdit_Back').fadeIn(showing ? 0 : 500);
 		$('#HistoryEdit_BackSpace').hide();
 		var tab = '#' + $(this).attr('data-tab');
 		lastPage = $(tab);
 		lastFullscreen = ($(this).attr('data-fullscreen') === 'true') && !UISettings.miniTheme;
 
 		$HistoryEditDialog.switchTab($('#HistoryEdit_GeneralTab'), lastPage,
-			e.shiftKey || !UISettings.slideAnimation ? 0 : 500,
+			e.shiftKey || !UISettings.slideAnimation || showing ? 0 : 500,
 			{fullscreen: lastFullscreen, mini: UISettings.miniTheme});
 
 		if (tab === '#HistoryEdit_LogTab' && !logFilled && curHist.MessageCount > 0)
