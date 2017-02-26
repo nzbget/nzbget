@@ -61,6 +61,7 @@ private:
 	char m_authInfo[256+1];
 	char m_authToken[48+1];
 	static char m_serverAuthToken[3][48+1];
+	CString m_forwardedFor;
 
 	void Dispatch();
 	void SendAuthResponse();

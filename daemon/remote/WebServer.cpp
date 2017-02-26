@@ -127,11 +127,12 @@ void WebProcessor::ParseHeaders()
 	{
 		if (char* pe = strrchr(p, '\r')) *pe = '\0';
 		debug("header=%s", p);
+
 		if (!strncasecmp(p, "Content-Length: ", 16))
 		{
 			m_contentLen = atoi(p + 16);
 		}
-		if (!strncasecmp(p, "Authorization: Basic ", 21) && Util::EmptyStr(m_authInfo))
+		else if (!strncasecmp(p, "Authorization: Basic ", 21) && Util::EmptyStr(m_authInfo))
 		{
 			char* authInfo64 = p + 21;
 			if (strlen(authInfo64) > sizeof(m_authInfo))
@@ -141,7 +142,7 @@ void WebProcessor::ParseHeaders()
 			}
 			m_authInfo[WebUtil::DecodeBase64(authInfo64, 0, m_authInfo)] = '\0';
 		}
-		if (!strncasecmp(p, "X-Authorization: Basic ", 23))
+		else if (!strncasecmp(p, "X-Authorization: Basic ", 23))
 		{
 			char* authInfo64 = p + 23;
 			if (strlen(authInfo64) > sizeof(m_authInfo))
@@ -151,15 +152,15 @@ void WebProcessor::ParseHeaders()
 			}
 			m_authInfo[WebUtil::DecodeBase64(authInfo64, 0, m_authInfo)] = '\0';
 		}
-		if (!strncasecmp(p, "Accept-Encoding: ", 17))
+		else if (!strncasecmp(p, "Accept-Encoding: ", 17))
 		{
 			m_gzip = strstr(p, "gzip");
 		}
-		if (!strncasecmp(p, "Origin: ", 8))
+		else if (!strncasecmp(p, "Origin: ", 8))
 		{
 			m_origin = p + 8;
 		}
-		if (!strncasecmp(p, "Cookie: ", 8))
+		else if (!strncasecmp(p, "Cookie: ", 8))
 		{
 			debug("%s", p);
 			const char* tok = strstr(p, "Auth-Token=");
@@ -169,7 +170,11 @@ void WebProcessor::ParseHeaders()
 				m_authToken[sizeof(m_authToken)-1] = '\0';
 			}
 		}
-		if (*p == '\0')
+		else if (!strncasecmp(p, "X-Forwarded-For: ", 17))
+		{
+			m_forwardedFor = p + 17;
+		}
+		else if (*p == '\0')
 		{
 			break;
 		}
@@ -263,8 +268,10 @@ bool WebProcessor::CheckCredentials()
 		}
 		else
 		{
-			warn("Request received on port %i from %s, but username or password invalid (%s:%s)",
-				g_Options->GetControlPort(), m_connection->GetRemoteAddr(), m_authInfo, pw);
+			warn("Request received on port %i from %s%s, but username or password invalid (%s:%s)",
+				g_Options->GetControlPort(), m_connection->GetRemoteAddr(),
+				!m_forwardedFor.Empty() ? (char*)BString<1024>(" (forwarded for: %s)", *m_forwardedFor) : "",
+				m_authInfo, pw);
 			return false;
 		}
 	}
