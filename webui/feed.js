@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -189,6 +189,14 @@ var FeedDialog = (new function($)
 			RPC.call('previewfeed', [id, name, url, filter, feedBacklog, feedPauseNzb, feedCategory,
 				feedPriority, feedInterval, feedScript, false, 0, ''], itemsLoaded, feedFailure);
 		}
+
+		if (!UISettings.miniTheme)
+		{
+			$('#FeedDialog_TableBlock').removeClass('modal-inner-scroll');
+			$('#FeedDialog_TableBlock').css('top', '');
+			$('#FeedDialog_TableBlock').css('top', $('#FeedDialog_TableBlock').position().top);
+			$('#FeedDialog_TableBlock').addClass('modal-inner-scroll');
+		}
 	}
 
 	function feedFailure(res)
@@ -266,6 +274,12 @@ var FeedDialog = (new function($)
 			else
 			{
 				var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + ' ' + status;
+				if (item.Category !== '')
+				{
+					info += ' <span class="label label-info">' + item.Category + '</span>';
+				}
+				info += ' <span class="label label-info">' + age + '</span>' +
+					' <span class="label label-info">' + size + '</span>';
 				fields = [info];
 			}
 
