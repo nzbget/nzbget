@@ -330,7 +330,7 @@
 			</ul>
 
 			<!-- ***  CATEGORY DROP DOWN MENU -->
-			<ul class="dropdown-menu" id="CategoryMenu">
+			<ul class="dropdown-menu" id="DownloadsCategoryMenu">
 				<li class="menu-header">Category</li>
 				<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-category">&lt;None&gt;</td></tr></table></a></li>
 				<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
@@ -421,6 +421,13 @@
 			<div class="toolbox-info clearfix">
 				<div id="HistoryTable_info"></div>
 			</div>
+
+			<!-- ***  CATEGORY DROP DOWN MENU -->
+			<ul class="dropdown-menu" id="HistoryCategoryMenu">
+				<li class="menu-header">Category</li>
+				<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-category">&lt;None&gt;</td></tr></table></a></li>
+				<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
+			</ul>
 
 			<br>
 		</div>
@@ -2877,6 +2884,10 @@
 
 <div id="Notif_History_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Deleted</strong>
+</div>
+
+<div id="Notif_History_Changed" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Changed</strong>
 </div>
 
 <div id="Notif_History_Returned" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">

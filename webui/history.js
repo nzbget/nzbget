@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ var History = (new function($)
 	var $HistoryTabBadge;
 	var $HistoryTabBadgeEmpty;
 	var $HistoryRecordsPerPage;
+	var $CategoryMenu;
 
 	// State
 	var history;
@@ -51,6 +52,7 @@ var History = (new function($)
 		$HistoryTabBadge = $('#HistoryTabBadge');
 		$HistoryTabBadgeEmpty = $('#HistoryTabBadgeEmpty');
 		$HistoryRecordsPerPage = $('#HistoryRecordsPerPage');
+		$CategoryMenu = $('#HistoryCategoryMenu');
 
 		var recordsPerPage = UISettings.read('HistoryRecordsPerPage', 10);
 		$HistoryRecordsPerPage.val(recordsPerPage);
@@ -74,6 +76,8 @@ var History = (new function($)
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
+		$HistoryTable.on('click', 'td:nth-child(5) span', categoryClick);
+		$CategoryMenu.on('click', 'a', categoryMenuClick);
 	}
 
 	this.applyTheme = function()
@@ -192,7 +196,8 @@ var History = (new function($)
 
 		if (hist.Kind !== 'DUP')
 		{
-			var category = Util.textToHtml(hist.Category);
+			category = '<span data-nzbid="' + hist.NZBID + '">' +
+				(hist.Category !== '' ? Util.textToHtml(hist.Category) : '&nbsp;') + '</span>';
 		}
 
 		var backup = hist.Kind === 'NZB' ? DownloadsUI.buildBackupLabel(hist) : '';
@@ -377,24 +382,47 @@ var History = (new function($)
 		var area = $(this).attr('data-area');
 		$(this).blur();
 
-		var hist = null;
-
-		// find history object
-		for (var i=0; i<history.length; i++)
-		{
-			var gr = history[i];
-			if (gr.ID == histid)
-			{
-				hist = gr;
-				break;
-			}
-		}
+		var hist = findHist(histid);
 		if (hist == null)
 		{
 			return;
 		}
 
 		HistoryEditDialog.showModal(hist, area);
+	}
+
+	function findHist(nzbid)
+	{
+		for (var i=0; i<history.length; i++)
+		{
+			var gr = history[i];
+			if (gr.NZBID == nzbid)
+			{
+				return gr;
+			}
+		}
+		return null;
+	}
+
+	function categoryClick(e)
+	{
+		e.preventDefault();
+		e.stopPropagation();
+		DownloadsUI.fillCategoryMenu($CategoryMenu);
+		var group = findHist($(this).attr('data-nzbid'));
+		$CategoryMenu.data('nzbid', group.NZBID);
+		$('i', $CategoryMenu).removeClass('icon-ok').addClass('icon-empty');
+		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
+		Frontend.showPopupMenu($CategoryMenu, this, -1, $(this).height() + 2);
+	}
+
+	function categoryMenuClick(e)
+	{
+		e.preventDefault();
+		var category = $(this).parent().attr('data');
+		var nzbid = $CategoryMenu.data('nzbid');
+		notification = '#Notif_History_Changed';
+		RPC.call('editqueue', ['HistorySetCategory', category, [nzbid]], editCompleted);
 	}
 
 	function filterCallback(item)

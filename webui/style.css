@@ -1173,11 +1173,13 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 
 /* category column */
-#DownloadsTable > tbody > tr > td:nth-child(5) {
+#DownloadsTable > tbody > tr > td:nth-child(5),
+#HistoryTable > tbody > tr > td:nth-child(5) {
 	padding: 3px 1px;
 }
 
-#DownloadsTable > tbody > tr > td:nth-child(5) > span {
+#DownloadsTable > tbody > tr > td:nth-child(5) > span,
+#HistoryTable > tbody > tr > td:nth-child(5) > span {
 	cursor: pointer;
 	display: inline-block;
 	cursor: pointer;
@@ -1187,12 +1189,14 @@ table.table-hidecheck tbody > tr > td:first-child {
 	position: relative;
 }
 
-#DownloadsTable > tbody > tr > td:nth-child(5) > span:hover {
+#DownloadsTable > tbody > tr > td:nth-child(5) > span:hover,
+#HistoryTable > tbody > tr > td:nth-child(5) > span:hover {
 	border: 1px solid #aaa;
 	border-radius: 3px;
 }
 
-#DownloadsTable > tbody > tr > td:nth-child(5) > span:hover::after {
+#DownloadsTable > tbody > tr > td:nth-child(5) > span:hover::after,
+#HistoryTable > tbody > tr > td:nth-child(5) > span:hover::after {
 	border-top: 4px solid #888;
 	border-right: 4px solid transparent;
 	border-left: 4px solid transparent;
@@ -1202,7 +1206,12 @@ table.table-hidecheck tbody > tr > td:first-child {
 	bottom: 7px;
 }
 
-#CategoryMenu li:not(:hover) .empty-category {
+#DownloadsCategoryMenu, #HistoryCategoryMenu {
+	z-index: 2000;
+}
+
+#DownloadsCategoryMenu li:not(:hover) .empty-category,
+#HistoryCategoryMenu li:not(:hover) .empty-category {
 	color: #888;
 }
 

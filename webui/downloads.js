@@ -45,7 +45,6 @@ var Downloads = (new function($)
 	var groups;
 	var urls;
 	var nameColumnWidth = null;
-	var categoryMenuInitialized = false;
 
 	var statusData = {
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
@@ -78,7 +77,7 @@ var Downloads = (new function($)
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
 		$DownloadsTable_Name = $('#DownloadsTable_Name');
 		$PriorityMenu = $('#PriorityMenu');
-		$CategoryMenu = $('#CategoryMenu');
+		$CategoryMenu = $('#DownloadsCategoryMenu');
 
 		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
@@ -593,9 +592,9 @@ var Downloads = (new function($)
 		e.preventDefault();
 		e.stopPropagation();
 		var group = findGroup($(this).attr('data-nzbid'));
-		$('#PriorityMenu').data('nzbid', group.NZBID);
-		$('#PriorityMenu i').removeClass('icon-ok').addClass('icon-empty');
-		$('#PriorityMenu li[data=' + group.MaxPriority + '] i').addClass('icon-ok');
+		$PriorityMenu.data('nzbid', group.NZBID);
+		$('i', $PriorityMenu).removeClass('icon-ok').addClass('icon-empty');
+		$('li[data=' + group.MaxPriority + '] i', $PriorityMenu).addClass('icon-ok');
 		Frontend.showPopupMenu('#PriorityMenu', this, -20, $(this).height());
 	}
 
@@ -603,7 +602,7 @@ var Downloads = (new function($)
 	{
 		e.preventDefault();
 		var priority = $(this).parent().attr('data');
-		var nzbid = $('#PriorityMenu').data('nzbid');
+		var nzbid = $PriorityMenu.data('nzbid');
 		notification = '#Notif_Downloads_Changed';
 		RPC.call('editqueue', ['GroupSetPriority', '' + priority, [nzbid]], editCompleted);
 	}
@@ -612,39 +611,19 @@ var Downloads = (new function($)
 	{
 		e.preventDefault();
 		e.stopPropagation();
-		fillCategoryMenu();
+		DownloadsUI.fillCategoryMenu($CategoryMenu);
 		var group = findGroup($(this).attr('data-nzbid'));
-		$('#CategoryMenu').data('nzbid', group.NZBID);
-		$('#CategoryMenu i').removeClass('icon-ok').addClass('icon-empty');
-		$('#CategoryMenu li[data="' + group.Category + '"] i').addClass('icon-ok');
-		Frontend.showPopupMenu('#CategoryMenu', this, -1, $(this).height() + 2);
-	}
-
-	function fillCategoryMenu()
-	{
-		if (categoryMenuInitialized)
-		{
-			return;
-		}
-
-		var menu = $('#CategoryMenu');
-		var templ = $('#CategoryMenu > li:last-child');
-		for (var i=0; i < Options.categories.length; i++)
-		{
-			var item = templ.clone().show();
-			$('td:last-child', item).text(Options.categories[i]);
-			item.attr('data', Options.categories[i]);
-			menu.append(item);
-		}
-
-		categoryMenuInitialized = true;
+		$CategoryMenu.data('nzbid', group.NZBID);
+		$('i', $CategoryMenu).removeClass('icon-ok').addClass('icon-empty');
+		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
+		Frontend.showPopupMenu($CategoryMenu, this, -1, $(this).height() + 2);
 	}
 
 	function categoryMenuClick(e)
 	{
 		e.preventDefault();
 		var category = $(this).parent().attr('data');
-		var nzbid = $('#CategoryMenu').data('nzbid');
+		var nzbid = $CategoryMenu.data('nzbid');
 		notification = '#Notif_Downloads_Changed';
 		RPC.call('editqueue', ['GroupSetCategory', category, [nzbid]], editCompleted);
 	}
@@ -683,6 +662,23 @@ var DownloadsUI = (new function($)
 		{
 			combo.append($('<option></option>').text(Options.categories[i]));
 		}
+	}
+
+	this.fillCategoryMenu = function(menu)
+	{
+		if (menu.data('initialized'))
+		{
+			return;
+		}
+		var templ = $('li:last-child', menu);
+		for (var i=0; i < Options.categories.length; i++)
+		{
+			var item = templ.clone().show();
+			$('td:last-child', item).text(Options.categories[i]);
+			item.attr('data', Options.categories[i]);
+			menu.append(item);
+		}
+		menu.data('initialized', true);
 	}
 
 	this.buildStatusText = function(group)
