@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -506,6 +506,40 @@ var Frontend = (new function($)
 		}
 	}
 	this.alignPopupMenu = alignPopupMenu;
+
+	function showPopupMenu(menu, parent, offsetX, offsetY)
+	{
+		var $menu = $(menu);
+		if ($menu.is(':visible'))
+		{
+			$menu.hide();
+			return;
+		}
+		var $parent = $(parent);
+		$menu.css({left: $parent.position().left + offsetX, top: $parent.position().top + offsetY});
+		$menu.show();
+
+		if ($menu.offset().left + $menu.outerWidth() > $(window).width())
+		{
+			$menu.css({ left: $(window).width() - $menu.outerWidth() });
+		}
+		if ($menu.offset().top + $menu.outerHeight() > $(window).height())
+		{
+			$menu.css({ top: $parent.position().top - $menu.outerHeight() });
+		}
+		if ($menu.offset().top + $menu.outerHeight() > $(window).height())
+		{
+			$menu.css({ top: $(window).height() - $menu.outerHeight() });
+		}
+
+		if (UISettings.miniTheme)
+		{
+			alignPopupMenu($menu);
+		}
+
+		$('html').on('click.PopupMenu', function () { $menu.hide(); $('html').off('click.PopupMenu'); });
+	}
+	this.showPopupMenu = showPopupMenu;
 
 	function alignCenterDialogs()
 	{

@@ -36,6 +36,7 @@ var Downloads = (new function($)
 	var $DownloadQueueEmpty;
 	var $DownloadsRecordsPerPage;
 	var $DownloadsTable_Name;
+	var $PriorityMenu;
 
 	// State
 	var notification = null;
@@ -74,6 +75,7 @@ var Downloads = (new function($)
 		$DownloadQueueEmpty = $('#DownloadQueueEmpty');
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
 		$DownloadsTable_Name = $('#DownloadsTable_Name');
+		$PriorityMenu = $('#PriorityMenu');
 
 		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
@@ -100,6 +102,8 @@ var Downloads = (new function($)
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
+		$DownloadsTable.on('click', 'td:nth-child(2) > div', priorityClick);
+		$PriorityMenu.on('click', 'a', priorityMenuClick);
 	}
 
 	this.applyTheme = function()
@@ -204,7 +208,7 @@ var Downloads = (new function($)
 		var group = item.data;
 
 		var status = DownloadsUI.buildStatus(group);
-		var priority = DownloadsUI.buildPriority(group.MaxPriority);
+		var priority = DownloadsUI.buildPriority(group);
 		var progresslabel = DownloadsUI.buildProgressLabel(group, nameColumnWidth);
 		var progress = DownloadsUI.buildProgress(group, item.data.size, item.data.left, item.data.estimated);
 		var dupe = DownloadsUI.buildDupe(group.DupeKey, group.DupeScore, group.DupeMode);
@@ -320,6 +324,19 @@ var Downloads = (new function($)
 	}
 
 	/*** EDIT ******************************************************/
+
+	function findGroup(nzbid)
+	{
+		for (var i=0; i<groups.length; i++)
+		{
+			var gr = groups[i];
+			if (gr.NZBID == nzbid)
+			{
+				return gr;
+			}
+		}
+		return null;
+	}
 
 	function itemClick(e)
 	{
@@ -565,6 +582,26 @@ var Downloads = (new function($)
 		}
 	}
 
+	function priorityClick(e)
+	{
+		e.preventDefault();
+		e.stopPropagation();
+		var group = findGroup($(this).attr('data-nzbid'));
+		$('#PriorityMenu').data('nzbid', group.NZBID);
+		$('#PriorityMenu i').removeClass('icon-ok').addClass('icon-empty');
+		$('#PriorityMenu li[data=' + group.MaxPriority + '] i').addClass('icon-ok');
+		Frontend.showPopupMenu('#PriorityMenu', this, -20, $(this).height());
+	}
+
+	function priorityMenuClick(e)
+	{
+		e.preventDefault();
+		var priority = $(this).parent().attr('data');
+		var nzbid = $('#PriorityMenu').data('nzbid');
+		notification = '#Notif_Downloads_Changed';
+		RPC.call('editqueue', ['GroupSetPriority', '' + priority, [nzbid]], editCompleted);
+	}
+
 }(jQuery));
 
 
@@ -752,8 +789,9 @@ var DownloadsUI = (new function($)
 		}
 	}
 
-	this.buildPriority = function(priority)
+	this.buildPriority = function(group)
 	{
+		var priority = group.MaxPriority
 		var text;
 
 		if (priority >= 900) text = ' <div class="icon-circle-red" title="Force priority"></div>';
@@ -767,6 +805,8 @@ var DownloadsUI = (new function($)
 		{
 			text = text.replace('priority', 'priority (' + priority + ')');
 		}
+
+		text = text.replace('<div', '<div data-nzbid="' + group.NZBID + '"');
 
 		return text;
 	}

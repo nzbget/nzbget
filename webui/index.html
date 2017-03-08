@@ -318,6 +318,17 @@
 				 To add downloads click Add button or put nzb-files into incoming nzb-directory (option <em>NzbDir</em>).
 			</div>
 
+			<!-- ***  PRIORITY DROP DOWN MENU -->
+			<ul class="dropdown-menu" id="PriorityMenu">
+				<li class="menu-header">Priority</li>
+				<li data="900"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Force</td></tr></table></a></li>
+				<li data="100"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Very High</td></tr></table></a></li>
+				<li data="50"><a href="#"><table><tr><td><i class="icon-empty"></td><td>High</td></tr></table></a></li>
+				<li data="0"><a href="#"><table><tr><td><i class="icon-ok"></td><td>Normal</td></tr></table></a></li>
+				<li data="-50"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Low</td></tr></table></a></li>
+				<li data="-100"><a href="#"><table><tr><td><i class="icon-emptyok"></td><td>Very Low</td></tr></table></a></li>
+			</ul>
+
 			<br>
 		</div>
 
@@ -2779,6 +2790,10 @@
 
 <div id="Notif_Downloads_Saved" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
     <strong>Saved</strong>
+</div>
+
+<div id="Notif_Downloads_Changed" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
+    <strong>Changed</strong>
 </div>
 
 <div id="Notif_Downloads_Pausing" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">

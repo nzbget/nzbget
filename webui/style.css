@@ -1167,6 +1167,10 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 /* END: Progress bars */
 
+#DownloadsTable > tbody > tr > td:nth-child(2) > div {
+	cursor: pointer;
+}
+
 input[readonly],
 select[readonly],
 textarea[readonly],
@@ -2009,7 +2013,6 @@ div.multiset-toolbar button {
 	top: -20px;
 	padding: 6px 10px;
 	border-radius: 12px;
-	margin
 }
 
 #TableDragBox .table-bordered {
