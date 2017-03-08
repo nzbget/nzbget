@@ -1,7 +1,7 @@
 /*!
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1167,10 +1167,46 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 /* END: Progress bars */
 
-#DownloadsTable > tbody > tr > td:nth-child(2) > div {
+/* priority column */
+#DownloadsTable > tbody > tr > td:nth-child(2) {
 	cursor: pointer;
 }
 
+/* category column */
+#DownloadsTable > tbody > tr > td:nth-child(5) {
+	padding: 3px 1px;
+}
+
+#DownloadsTable > tbody > tr > td:nth-child(5) > span {
+	cursor: pointer;
+	display: inline-block;
+	cursor: pointer;
+	border: 1px solid transparent;
+	width: 100%;
+	padding: 1px 0px 1px 3px;
+	position: relative;
+}
+
+#DownloadsTable > tbody > tr > td:nth-child(5) > span:hover {
+	border: 1px solid #aaa;
+	border-radius: 3px;
+}
+
+#DownloadsTable > tbody > tr > td:nth-child(5) > span:hover::after {
+	border-top: 4px solid #888;
+	border-right: 4px solid transparent;
+	border-left: 4px solid transparent;
+	content: "";
+	position: absolute;
+	right: 2px;
+	bottom: 7px;
+}
+
+#CategoryMenu li:not(:hover) .empty-category {
+	color: #888;
+}
+
+/* controls */
 input[readonly],
 select[readonly],
 textarea[readonly],

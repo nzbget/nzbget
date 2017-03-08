@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ var Downloads = (new function($)
 	var $DownloadsRecordsPerPage;
 	var $DownloadsTable_Name;
 	var $PriorityMenu;
+	var $CategoryMenu;
 
 	// State
 	var notification = null;
@@ -44,6 +45,7 @@ var Downloads = (new function($)
 	var groups;
 	var urls;
 	var nameColumnWidth = null;
+	var categoryMenuInitialized = false;
 
 	var statusData = {
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
@@ -76,6 +78,7 @@ var Downloads = (new function($)
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
 		$DownloadsTable_Name = $('#DownloadsTable_Name');
 		$PriorityMenu = $('#PriorityMenu');
+		$CategoryMenu = $('#CategoryMenu');
 
 		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
@@ -102,8 +105,10 @@ var Downloads = (new function($)
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
-		$DownloadsTable.on('click', 'td:nth-child(2) > div', priorityClick);
+		$DownloadsTable.on('click', 'td:nth-child(2) div', priorityClick);
+		$DownloadsTable.on('click', 'td:nth-child(5) span', categoryClick);
 		$PriorityMenu.on('click', 'a', priorityMenuClick);
+		$CategoryMenu.on('click', 'a', categoryMenuClick);
 	}
 
 	this.applyTheme = function()
@@ -238,7 +243,8 @@ var Downloads = (new function($)
 				'">health: ' + Math.floor(group.Health / 10) + '%</span> ';
 		}
 
-		var category = Util.textToHtml(group.Category);
+		var category = '<span data-nzbid="' + group.NZBID + '">' +
+			(group.Category !== '' ? Util.textToHtml(group.Category) : '&nbsp;') + '</span>';
 		var backup = DownloadsUI.buildBackupLabel(group);
 
 		if (!UISettings.miniTheme)
@@ -251,7 +257,7 @@ var Downloads = (new function($)
 			var info = '<div class="check img-check"></div><span class="row-title">' +
 				name + '</span>' + url + ' ' + (group.MaxPriority == 0 ? '' : priority) +
 				' ' + (group.Status === 'QUEUED' ? '' : status) + dupe + health + backup + propagation;
-			if (category)
+			if (group.Category !== '')
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
 			}
@@ -600,6 +606,47 @@ var Downloads = (new function($)
 		var nzbid = $('#PriorityMenu').data('nzbid');
 		notification = '#Notif_Downloads_Changed';
 		RPC.call('editqueue', ['GroupSetPriority', '' + priority, [nzbid]], editCompleted);
+	}
+
+	function categoryClick(e)
+	{
+		e.preventDefault();
+		e.stopPropagation();
+		fillCategoryMenu();
+		var group = findGroup($(this).attr('data-nzbid'));
+		$('#CategoryMenu').data('nzbid', group.NZBID);
+		$('#CategoryMenu i').removeClass('icon-ok').addClass('icon-empty');
+		$('#CategoryMenu li[data="' + group.Category + '"] i').addClass('icon-ok');
+		Frontend.showPopupMenu('#CategoryMenu', this, -1, $(this).height() + 2);
+	}
+
+	function fillCategoryMenu()
+	{
+		if (categoryMenuInitialized)
+		{
+			return;
+		}
+
+		var menu = $('#CategoryMenu');
+		var templ = $('#CategoryMenu > li:last-child');
+		for (var i=0; i < Options.categories.length; i++)
+		{
+			var item = templ.clone().show();
+			$('td:last-child', item).text(Options.categories[i]);
+			item.attr('data', Options.categories[i]);
+			menu.append(item);
+		}
+
+		categoryMenuInitialized = true;
+	}
+
+	function categoryMenuClick(e)
+	{
+		e.preventDefault();
+		var category = $(this).parent().attr('data');
+		var nzbid = $('#CategoryMenu').data('nzbid');
+		notification = '#Notif_Downloads_Changed';
+		RPC.call('editqueue', ['GroupSetCategory', category, [nzbid]], editCompleted);
 	}
 
 }(jQuery));
@@ -957,7 +1004,7 @@ var DownloadsUI = (new function($)
 
 			widthHelper.remove();
 
-			categoryColumnWidth += 'px';
+			categoryColumnWidth = (categoryColumnWidth + 3) + 'px';
 		}
 
 		return categoryColumnWidth;

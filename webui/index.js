@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -523,13 +523,13 @@ var Frontend = (new function($)
 		{
 			$menu.css({ left: $(window).width() - $menu.outerWidth() });
 		}
-		if ($menu.offset().top + $menu.outerHeight() > $(window).height())
+		if ($menu.offset().top + $menu.outerHeight() > $(window).height() + $(window).scrollTop())
 		{
 			$menu.css({ top: $parent.position().top - $menu.outerHeight() });
 		}
-		if ($menu.offset().top + $menu.outerHeight() > $(window).height())
+		if ($menu.offset().top < $(window).scrollTop())
 		{
-			$menu.css({ top: $(window).height() - $menu.outerHeight() });
+			$menu.css({ top: $(window).scrollTop() });
 		}
 
 		if (UISettings.miniTheme)
