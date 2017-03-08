@@ -20,7 +20,8 @@
 /*
  * In this module:
  *   1) Download tab;
- *   2) Functions for html generation for downloads, also used from other modules (edit and add dialogs).
+ *   2) Functions for html generation for downloads, also used from other modules (edit and add dialogs);
+ *   3) Popup menus in downloads list.
  */
 
 /*** DOWNLOADS TAB ***********************************************************/
@@ -105,9 +106,12 @@ var Downloads = (new function($)
 
 		$DownloadsTable.on('click', 'a', itemClick);
 		$DownloadsTable.on('click', 'td:nth-child(2) div', priorityClick);
+		$DownloadsTable.on('click', 'td:nth-child(3) span', statusClick);
 		$DownloadsTable.on('click', 'td:nth-child(5) span', categoryClick);
 		$PriorityMenu.on('click', 'a', priorityMenuClick);
 		$CategoryMenu.on('click', 'a', categoryMenuClick);
+
+		DownloadsActionsMenu.init();
 	}
 
 	this.applyTheme = function()
@@ -595,7 +599,9 @@ var Downloads = (new function($)
 		$PriorityMenu.data('nzbid', group.NZBID);
 		$('i', $PriorityMenu).removeClass('icon-ok').addClass('icon-empty');
 		$('li[data=' + group.MaxPriority + '] i', $PriorityMenu).addClass('icon-ok');
-		Frontend.showPopupMenu('#PriorityMenu', this, -20, $(this).height());
+		Frontend.showPopupMenu($PriorityMenu, 'left',
+			{ left: $(this).offset().left - 30, top: $(this).offset().top - 3,
+				width: $(this).width() + 30, height: $(this).height() + 5 });
 	}
 
 	function priorityMenuClick(e)
@@ -607,6 +613,19 @@ var Downloads = (new function($)
 		RPC.call('editqueue', ['GroupSetPriority', '' + priority, [nzbid]], editCompleted);
 	}
 
+	function statusClick(e)
+	{
+		e.preventDefault();
+		e.stopPropagation();
+		var group = findGroup($(this).attr('data-nzbid'));
+
+		DownloadsActionsMenu.showPopupMenu(group, 'left',
+			{ left: $(this).offset().left - 30, top: $(this).offset().top - 2,
+				width: $(this).width() + 30, height: $(this).height() + 5 },
+			function(_notification) { notification = _notification; },
+			editCompleted);
+	}
+
 	function categoryClick(e)
 	{
 		e.preventDefault();
@@ -616,7 +635,9 @@ var Downloads = (new function($)
 		$CategoryMenu.data('nzbid', group.NZBID);
 		$('i', $CategoryMenu).removeClass('icon-ok').addClass('icon-empty');
 		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
-		Frontend.showPopupMenu($CategoryMenu, this, -1, $(this).height() + 2);
+		Frontend.showPopupMenu($CategoryMenu, 'left',
+			{ left: $(this).offset().left - 30, top: $(this).offset().top - 1,
+				width: $(this).width() + 30, height: $(this).height() + 4 });
 	}
 
 	function categoryMenuClick(e)
@@ -714,7 +735,7 @@ var DownloadsUI = (new function($)
 			badgeClass = 'label-important';
 		}
 
-		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
+		return '<span data-nzbid="' + group.NZBID + '" class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
 	this.buildProgress = function(group, totalsize, remaining, estimated)
@@ -1006,6 +1027,30 @@ var DownloadsUI = (new function($)
 		return categoryColumnWidth;
 	}
 
+	this.buildDNZBLinks = function(parameters, prefix)
+	{
+		$('.' + prefix).hide();
+		var hasItems = false;
+
+		for (var i=0; i < parameters.length; i++)
+		{
+			var param = parameters[i];
+			if (param.Name.substr(0, 6) === '*DNZB:')
+			{
+				var linkName = param.Name.substr(6, 100);
+				var $paramLink = $('#' + prefix + '_' + linkName);
+				if($paramLink.length > 0)
+				{
+					$paramLink.attr('href', param.Value);
+					$paramLink.show();
+					hasItems = true;
+				}
+			}
+		}
+
+		Util.show('#' + prefix + '_Section', hasItems);
+	}
+
 	this.deleteConfirm = function(actionCallback, multi, hasNzb, hasUrl, selCount)
 	{
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
@@ -1045,4 +1090,95 @@ var DownloadsUI = (new function($)
 
 		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init, selCount);
 	}
+}(jQuery));
+
+/*** DOWNLOADS ACTION MENU *************************************************************************/
+
+var DownloadsActionsMenu = (new function()
+{
+	'use strict'
+
+	var $ActionsMenu;
+	var curGroup;
+	var beforeCallback;
+	var completedCallback;
+
+	this.init = function()
+	{
+		$ActionsMenu = $('#DownloadsActionsMenu');
+		$('#DownloadsActions_Pause').click(itemPause);
+		$('#DownloadsActions_Resume').click(itemResume);
+		$('#DownloadsActions_Delete').click(itemDelete);
+		$('#DownloadsActions_CancelPP').click(itemCancelPP);
+	}
+
+	this.showPopupMenu = function(group, anchor, rect, before, completed)
+	{
+		curGroup = group;
+		beforeCallback = before;
+		completedCallback = completed;
+
+		// setup menu items
+		Util.show('#DownloadsActions_CancelPP', group.postprocess);
+		Util.show('#DownloadsActions_Delete', !group.postprocess);
+		Util.show('#DownloadsActions_Pause', group.Kind === 'NZB' && !group.postprocess);
+		Util.show('#DownloadsActions_Resume', false);
+
+		if (!group.postprocess &&
+			(group.RemainingSizeHi == group.PausedSizeHi &&
+				group.RemainingSizeLo == group.PausedSizeLo &&
+				group.Kind === 'NZB'))
+		{
+			$('#DownloadsActions_Resume').show();
+			$('#DownloadsActions_Pause').hide();
+		}
+
+		DownloadsUI.buildDNZBLinks(group.Parameters, 'DownloadsActions_DNZB');
+		
+		Frontend.showPopupMenu($ActionsMenu, anchor, rect);
+	}
+	
+	function itemPause(e)
+	{
+		e.preventDefault();
+		beforeCallback('#Notif_Downloads_Paused');
+		RPC.call('editqueue', ['GroupPause', '', [curGroup.NZBID]], completedCallback);
+	}
+
+	function itemResume(e)
+	{
+		e.preventDefault();
+		beforeCallback('#Notif_Downloads_Resumed');
+		RPC.call('editqueue', ['GroupResume', '', [curGroup.NZBID]], function()
+		{
+			if (Options.option('ParCheck') === 'force')
+			{
+				completedCallback();
+			}
+			else
+			{
+				RPC.call('editqueue', ['GroupPauseExtraPars', '', [curGroup.NZBID]], completedCallback);
+			}
+		});
+	}
+
+	function itemDelete(e)
+	{
+		e.preventDefault();
+		DownloadsUI.deleteConfirm(doItemDelete, false, curGroup.Kind === 'NZB', curGroup.Kind === 'URL');
+	}
+
+	function doItemDelete(command)
+	{
+		beforeCallback('#Notif_Downloads_Deleted');
+		RPC.call('editqueue', [command, '', [curGroup.NZBID]], completedCallback);
+	}
+
+	function itemCancelPP(e)
+	{
+		e.preventDefault();
+		beforeCallback('#Notif_Downloads_PostCanceled');
+		RPC.call('editqueue', ['PostDelete', '', [curGroup.NZBID]], completedCallback);
+	}
+
 }(jQuery));

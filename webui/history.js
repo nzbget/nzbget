@@ -20,7 +20,8 @@
 /*
  * In this module:
  *   1) History tab;
- *   2) Functions for html generation for history, also used from other modules (edit dialog).
+ *   2) Functions for html generation for history, also used from other modules (edit dialog);
+ *   3) Popup menus in history list.
  */
 
 /*** HISTORY TAB AND EDIT HISTORY DIALOG **********************************************/
@@ -77,7 +78,10 @@ var History = (new function($)
 
 		$HistoryTable.on('click', 'a', editClick);
 		$HistoryTable.on('click', 'td:nth-child(5) span', categoryClick);
+		$HistoryTable.on('click', 'td:nth-child(2) span', statusClick);
 		$CategoryMenu.on('click', 'a', categoryMenuClick);
+
+		HistoryActionsMenu.init();
 	}
 
 	this.applyTheme = function()
@@ -404,6 +408,19 @@ var History = (new function($)
 		return null;
 	}
 
+	function statusClick(e)
+	{
+		e.preventDefault();
+		e.stopPropagation();
+		var hist = findHist($(this).attr('data-nzbid'));
+
+		HistoryActionsMenu.showPopupMenu(hist, 'left',
+			{ left: $(this).offset().left - 30, top: $(this).offset().top - 2,
+				width: $(this).width() + 30, height: $(this).height() + 5 },
+			function(_notification) { notification = _notification; },
+			editCompleted);
+	}
+
 	function categoryClick(e)
 	{
 		e.preventDefault();
@@ -413,7 +430,9 @@ var History = (new function($)
 		$CategoryMenu.data('nzbid', group.NZBID);
 		$('i', $CategoryMenu).removeClass('icon-ok').addClass('icon-empty');
 		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
-		Frontend.showPopupMenu($CategoryMenu, this, -1, $(this).height() + 2);
+		Frontend.showPopupMenu($CategoryMenu, 'bottom-left',
+			{ left: $(this).offset().left - 30, top: $(this).offset().top - 1,
+				width: $(this).width() + 30, height: $(this).height() + 4 });
 	}
 
 	function categoryMenuClick(e)
@@ -544,7 +563,7 @@ var HistoryUI = (new function($)
 			case 'WARNING':
 				badgeClass = 'label-warning'; break;
 		}
-		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
+		return '<span data-nzbid="' + hist.NZBID + '"class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
 	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount, pageSelCount, selPercentage)
@@ -591,6 +610,144 @@ var HistoryUI = (new function($)
 			html = html.replace(/nzbs/g, 'nzb');
 			$('#ConfirmDialog_Text').html(html);
 		}
+	}
+}(jQuery));
+
+/*** HISTORY ACTION MENU *************************************************************************/
+
+var HistoryActionsMenu = (new function()
+{
+	'use strict'
+
+	var $ActionsMenu;
+	var curHist;
+	var beforeCallback;
+	var completedCallback;
+
+	this.init = function()
+	{
+		$ActionsMenu = $('#HistoryActionsMenu');
+		$('#HistoryActions_Delete').click(itemDelete);
+		$('#HistoryActions_Return, #HistoryActions_ReturnURL').click(itemReturn);
+		$('#HistoryActions_Reprocess').click(itemReprocess);
+		$('#HistoryActions_Redownload').click(itemRedownload);
+		$('#HistoryActions_RetryFailed').click(itemRetryFailed);
+		$('#HistoryActions_MarkSuccess').click(itemSuccess);
+		$('#HistoryActions_MarkGood').click(itemGood);
+		$('#HistoryActions_MarkBad').click(itemBad);
+	}
+
+	this.showPopupMenu = function(hist, anchor, rect, before, completed)
+	{
+		curHist = hist;
+		beforeCallback = before;
+		completedCallback = completed;
+
+		// setup menu items
+		Util.show('#HistoryActions_Return', hist.RemainingFileCount > 0);
+		Util.show('#HistoryActions_ReturnURL', hist.Kind === 'URL');
+		Util.show('#HistoryActions_Redownload, #HistoryActions_Reprocess', hist.Kind === 'NZB');
+		Util.show('#HistoryActions_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.RetryData);
+		var dupeCheck = Options.option('DupeCheck') === 'yes';
+		Util.show('#HistoryActions_MarkSuccess', dupeCheck && ((hist.Kind === 'NZB' && hist.MarkStatus !== 'SUCCESS') || (hist.Kind === 'DUP' && hist.DupStatus !== 'SUCCESS')) &&
+			hist.Status.substr(0, 7) !== 'SUCCESS');
+		Util.show('#HistoryActions_MarkGood', dupeCheck && ((hist.Kind === 'NZB' && hist.MarkStatus !== 'GOOD') || (hist.Kind === 'DUP' && hist.DupStatus !== 'GOOD')));
+		Util.show('#HistoryActions_MarkBad', dupeCheck && hist.Kind !== 'URL');
+
+		DownloadsUI.buildDNZBLinks(hist.Parameters ? hist.Parameters : [], 'HistoryActions_DNZB');
+		
+		Frontend.showPopupMenu($ActionsMenu, anchor, rect);
+	}
+	
+	function itemDelete(e)
+	{
+		e.preventDefault();
+		HistoryUI.deleteConfirm(doItemDelete, curHist.Kind === 'NZB', curHist.Kind === 'DUP',
+			curHist.ParStatus === 'FAILURE' || curHist.UnpackStatus === 'FAILURE' ||
+			curHist.DeleteStatus != 'NONE', false);
+	}
+
+	function doItemDelete(command)
+	{
+		beforeCallback('#Notif_History_Deleted');
+		RPC.call('editqueue', [command, '', [curHist.ID]], completedCallback);
+	}
+
+	function itemReturn(e)
+	{
+		e.preventDefault();
+		beforeCallback('#Notif_History_Returned');
+		RPC.call('editqueue', ['HistoryReturn', '', [curHist.ID]], completedCallback);
+	}
+
+	function itemRedownload(e)
+	{
+		e.preventDefault();
+		if (curHist.SuccessArticles > 0)
+		{
+			ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog', doItemRedownload,
+				function () { HistoryUI.confirmMulti(false); });
+		}
+		else
+		{
+			doItemRedownload();
+		}
+	}
+
+	function doItemRedownload()
+	{
+		beforeCallback('#Notif_History_Returned');
+		RPC.call('editqueue', ['HistoryRedownload', '', [curHist.ID]], completedCallback);
+	}
+
+	function itemReprocess(e)
+	{
+		e.preventDefault();
+		beforeCallback('#Notif_History_Reprocess');
+		RPC.call('editqueue', ['HistoryProcess', '', [curHist.ID]], completedCallback);
+	}
+
+	function itemRetryFailed(e)
+	{
+		e.preventDefault();
+		beforeCallback('#Notif_History_RetryFailed');
+		RPC.call('editqueue', ['HistoryRetryFailed', '', [curHist.ID]], completedCallback);
+	}
+
+	function itemSuccess(e)
+	{
+		e.preventDefault();
+		ConfirmDialog.showModal('HistoryEditSuccessConfirmDialog', doItemSuccess, function () { HistoryUI.confirmMulti(false); });
+	}
+
+	function doItemSuccess()
+	{
+		beforeCallback('#Notif_History_Marked');
+		RPC.call('editqueue', ['HistoryMarkSuccess', '', [curHist.ID]], completedCallback);
+	}
+
+	function itemGood(e)
+	{
+		e.preventDefault();
+		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood, function () { HistoryUI.confirmMulti(false); });
+	}
+
+	function doItemGood()
+	{
+		beforeCallback('#Notif_History_Marked');
+		RPC.call('editqueue', ['HistoryMarkGood', '', [curHist.ID]], completedCallback);
+	}
+
+	function itemBad(e)
+	{
+		e.preventDefault();
+		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad, function () { HistoryUI.confirmMulti(false); });
+	}
+
+	function doItemBad()
+	{
+		beforeCallback('#Notif_History_Marked');
+		RPC.call('editqueue', ['HistoryMarkBad', '', [curHist.ID]], completedCallback);
 	}
 }(jQuery));
 

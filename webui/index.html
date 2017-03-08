@@ -295,7 +295,7 @@
 					<tr>
 						<th><div class="check img-check"></div></th>
 						<th width="14px" class="text-center"><a href="#" onclick="Downloads.sort('priority', event)" title="Priority">P</a></th>
-						<th width="95px">Status</th>
+						<th width="97px">Status</th>
 						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name', event)">Name</a></th>
 						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category', event)">Category</a></th>
 						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age', event)">Age</a></th>
@@ -317,24 +317,6 @@
 				<h4 class="alert-heading">Download queue is empty.</h4>
 				 To add downloads click Add button or put nzb-files into incoming nzb-directory (option <em>NzbDir</em>).
 			</div>
-
-			<!-- ***  PRIORITY DROP DOWN MENU -->
-			<ul class="dropdown-menu" id="PriorityMenu">
-				<li class="menu-header">Priority</li>
-				<li data="900"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Force</td></tr></table></a></li>
-				<li data="100"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Very High</td></tr></table></a></li>
-				<li data="50"><a href="#"><table><tr><td><i class="icon-empty"></td><td>High</td></tr></table></a></li>
-				<li data="0"><a href="#"><table><tr><td><i class="icon-ok"></td><td>Normal</td></tr></table></a></li>
-				<li data="-50"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Low</td></tr></table></a></li>
-				<li data="-100"><a href="#"><table><tr><td><i class="icon-emptyok"></td><td>Very Low</td></tr></table></a></li>
-			</ul>
-
-			<!-- ***  CATEGORY DROP DOWN MENU -->
-			<ul class="dropdown-menu" id="DownloadsCategoryMenu">
-				<li class="menu-header">Category</li>
-				<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-category">&lt;None&gt;</td></tr></table></a></li>
-				<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
-			</ul>
 
 			<br>
 		</div>
@@ -421,13 +403,6 @@
 			<div class="toolbox-info clearfix">
 				<div id="HistoryTable_info"></div>
 			</div>
-
-			<!-- ***  CATEGORY DROP DOWN MENU -->
-			<ul class="dropdown-menu" id="HistoryCategoryMenu">
-				<li class="menu-header">Category</li>
-				<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-category">&lt;None&gt;</td></tr></table></a></li>
-				<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
-			</ul>
 
 			<br>
 		</div>
@@ -1310,17 +1285,7 @@
 
 	<div class="modal-footer">
 		<div class="btn-group dropup pull-left">
-			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
-			<ul class="dropdown-menu footer-button-menu" id="DownloadsEdit_ActionsMenu">
-				<li class="menu-header">Actions</li>
-				<li><a href="#" id="DownloadsEdit_Resume"><i class="icon-play"></i> Resume</a></li>
-				<li><a href="#" id="DownloadsEdit_Pause"><i class="icon-pause"></i> Pause</a></li>
-				<li><a href="#" id="DownloadsEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
-				<li><a href="#" id="DownloadsEdit_CancelPP"><i class="icon-remove"></i> Cancel Post-Processing</a></li>
-				<li class="menu-header" id="DownloadsEdit_DNZB_Section">Indexer Links</li>
-				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
-				<li><a href="#" target="_blank" class="DownloadsEdit_DNZB" id="DownloadsEdit_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
-			</ul>
+			<a class="btn" id="DownloadsEdit_Actions">Actions <span class="caret"></span></a>
 		</div>
 
 		<div class="dialog-transmit hide" style="position:absolute;margin-left:260px;" id="DownloadsEdit_Transmit"><img src="img/transmit.gif"></div>
@@ -1328,6 +1293,36 @@
 		<a href="#" class="btn btn-primary" id="DownloadsEdit_Save">Save</a>
 	</div>
 </div>
+
+<!-- *** PRIORITY DROP DOWN MENU -->
+<ul class="dropdown-menu" id="PriorityMenu">
+	<li class="menu-header">Priority</li>
+	<li data="900"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Force</td></tr></table></a></li>
+	<li data="100"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Very High</td></tr></table></a></li>
+	<li data="50"><a href="#"><table><tr><td><i class="icon-empty"></td><td>High</td></tr></table></a></li>
+	<li data="0"><a href="#"><table><tr><td><i class="icon-ok"></td><td>Normal</td></tr></table></a></li>
+	<li data="-50"><a href="#"><table><tr><td><i class="icon-empty"></td><td>Low</td></tr></table></a></li>
+	<li data="-100"><a href="#"><table><tr><td><i class="icon-emptyok"></td><td>Very Low</td></tr></table></a></li>
+</ul>
+
+<!-- *** DOWNLOADS ACTIONS DROP DOWN MENU -->
+<ul class="dropdown-menu" id="DownloadsActionsMenu">
+	<li class="menu-header">Actions</li>
+	<li><a href="#" id="DownloadsActions_Resume"><i class="icon-play"></i> Resume</a></li>
+	<li><a href="#" id="DownloadsActions_Pause"><i class="icon-pause"></i> Pause</a></li>
+	<li><a href="#" id="DownloadsActions_Delete"><i class="icon-trash"></i> Delete</a></li>
+	<li><a href="#" id="DownloadsActions_CancelPP"><i class="icon-remove"></i> Cancel Post-Processing</a></li>
+	<li class="menu-header" id="DownloadsActions_DNZB_Section">Indexer Links</li>
+	<li><a href="#" target="_blank" class="DownloadsActions_DNZB" id="DownloadsActions_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
+	<li><a href="#" target="_blank" class="DownloadsActions_DNZB" id="DownloadsActions_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
+</ul>
+
+<!-- *** DOWNLAODS CATEGORY DROP DOWN MENU -->
+<ul class="dropdown-menu" id="DownloadsCategoryMenu">
+	<li class="menu-header">Category</li>
+	<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-category">&lt;None&gt;</td></tr></table></a></li>
+	<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
+</ul>
 
 <!-- *** MULTI EDIT DOWNLOAD DIALOG ************************************************************ -->
 
@@ -1682,23 +1677,7 @@
 	<div class="modal-footer">
 
 		<div class="btn-group dropup pull-left">
-			<a class="btn dropdown-toggle" data-toggle="dropdown">Actions <span class="caret"></span></a>
-			<ul class="dropdown-menu footer-button-menu" id="HistoryEdit_ActionsMenu">
-				<li class="menu-header">Actions</li>
-				<li><a href="#" id="HistoryEdit_Delete"><i class="icon-trash"></i> Delete</a></li>
-				<li><a href="#" id="HistoryEdit_Reprocess"><i class="icon-process"></i> Post-Process Again</a></li>
-				<li><a href="#" id="HistoryEdit_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
-				<li><a href="#" id="HistoryEdit_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
-				<li><a href="#" id="HistoryEdit_Redownload"><i class="icon-downloads"></i> Download Again</a></li>
-				<li><a href="#" id="HistoryEdit_RetryFailed"><i class="icon-downloads"></i> Retry Failed Articles</a></li>
-				<li><a href="#" id="HistoryEdit_MarkSuccess"><i class="icon-ok"></i> Mark as Success</a></li>
-				<li><a href="#" id="HistoryEdit_MarkGood"><i class="icon-plus"></i> Mark as Good</a></li>
-				<li><a href="#" id="HistoryEdit_MarkBad"><i class="icon-minus"></i> Mark as Bad</a></li>
-				<li class="menu-header" id="HistoryEdit_DNZB_Section">Indexer Links</li>
-				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
-				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
-				<li><a href="#" target="_blank" class="HistoryEdit_DNZB" id="HistoryEdit_DNZB_Report"><i class="icon-alert"></i> Report This NZB</a></li>
-			</ul>
+			<a class="btn dropdown-toggle" id="HistoryEdit_Actions" data-toggle="dropdown">Actions <span class="caret"></span></a>
 		</div>
 
 		<div class="dialog-transmit" style="position:absolute;margin-left:320px;" id="HistoryEdit_Transmit"><img src="img/transmit.gif"></div>
@@ -1706,6 +1685,31 @@
 		<a href="#" class="btn btn-primary" id="HistoryEdit_Save">Save</a>
 	</div>
 </div>
+
+<!-- *** HISTORY ACTIONS DROP DOWN MENU -->
+<ul class="dropdown-menu" id="HistoryActionsMenu">
+	<li class="menu-header">Actions</li>
+	<li><a href="#" id="HistoryActions_Delete"><i class="icon-trash"></i> Delete</a></li>
+	<li><a href="#" id="HistoryActions_Reprocess"><i class="icon-process"></i> Post-Process Again</a></li>
+	<li><a href="#" id="HistoryActions_Return"><i class="icon-downloads"></i> Download Remaining Files</a></li>
+	<li><a href="#" id="HistoryActions_ReturnURL"><i class="icon-downloads"></i> Download Again</a></li>
+	<li><a href="#" id="HistoryActions_Redownload"><i class="icon-downloads"></i> Download Again</a></li>
+	<li><a href="#" id="HistoryActions_RetryFailed"><i class="icon-downloads"></i> Retry Failed Articles</a></li>
+	<li><a href="#" id="HistoryActions_MarkSuccess"><i class="icon-ok"></i> Mark as Success</a></li>
+	<li><a href="#" id="HistoryActions_MarkGood"><i class="icon-plus"></i> Mark as Good</a></li>
+	<li><a href="#" id="HistoryActions_MarkBad"><i class="icon-minus"></i> Mark as Bad</a></li>
+	<li class="menu-header" id="HistoryActions_DNZB_Section">Indexer Links</li>
+	<li><a href="#" target="_blank" class="HistoryActions_DNZB" id="HistoryActions_DNZB_Details"><i class="icon-postcard"></i> Details</a></li>
+	<li><a href="#" target="_blank" class="HistoryActions_DNZB" id="HistoryActions_DNZB_MoreInfo"><i class="icon-link"></i> More Info</a></li>
+	<li><a href="#" target="_blank" class="HistoryActions_DNZB" id="HistoryActions_DNZB_Report"><i class="icon-alert"></i> Report This NZB</a></li>
+</ul>
+
+<!-- *** HISTORY CATEGORY DROP DOWN MENU -->
+<ul class="dropdown-menu" id="HistoryCategoryMenu">
+	<li class="menu-header">Category</li>
+	<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-category">&lt;None&gt;</td></tr></table></a></li>
+	<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
+</ul>
 
 <!-- *** FEED VIEW DIALOG ************************************************************ -->
 

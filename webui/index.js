@@ -174,6 +174,7 @@ var Frontend = (new function($)
 	var switchingTheme = false;
 	var activeTab = 'Downloads';
 	var lastTab = '';
+	var lastMenu = $();
 
 	this.init = function()
 	{
@@ -507,7 +508,7 @@ var Frontend = (new function($)
 	}
 	this.alignPopupMenu = alignPopupMenu;
 
-	function showPopupMenu(menu, parent, offsetX, offsetY)
+	function showPopupMenu(menu, anchor, rect)
 	{
 		var $menu = $(menu);
 		if ($menu.is(':visible'))
@@ -515,17 +516,27 @@ var Frontend = (new function($)
 			$menu.hide();
 			return;
 		}
-		var $parent = $(parent);
-		$menu.css({left: $parent.position().left + offsetX, top: $parent.position().top + offsetY});
+
+		lastMenu.hide();
+		lastMenu = $menu;
+
+		$menu.css({
+			left: rect.left + (anchor.indexOf('right') > -1 ? rect.width - $menu.outerWidth() : 0),
+			top: rect.top + (anchor.indexOf('top') > -1 ? - $menu.outerHeight() : rect.height)
+		});
 		$menu.show();
 
+		if ($menu.offset().top < $(window).scrollTop())
+		{
+			$menu.css({ top: rect.top + rect.height });
+		}
 		if ($menu.offset().left + $menu.outerWidth() > $(window).width())
 		{
 			$menu.css({ left: $(window).width() - $menu.outerWidth() });
 		}
 		if ($menu.offset().top + $menu.outerHeight() > $(window).height() + $(window).scrollTop())
 		{
-			$menu.css({ top: $parent.position().top - $menu.outerHeight() });
+			$menu.css({ top: rect.top - $menu.outerHeight() });
 		}
 		if ($menu.offset().top < $(window).scrollTop())
 		{

@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,10 +56,7 @@ var DownloadsEditDialog = (new function($)
 		$DownloadsEdit_ParamData = $('#DownloadsEdit_ParamData');
 
 		$('#DownloadsEdit_Save').click(saveChanges);
-		$('#DownloadsEdit_Pause').click(itemPause);
-		$('#DownloadsEdit_Resume').click(itemResume);
-		$('#DownloadsEdit_Delete').click(itemDelete);
-		$('#DownloadsEdit_CancelPP').click(itemCancelPP);
+		$('#DownloadsEdit_Actions').click(itemActions);
 		$('#DownloadsEdit_Param, #DownloadsEdit_Log, #DownloadsEdit_File, #DownloadsEdit_Dupe').click(tabClick);
 		$('#DownloadsEdit_Back').click(backClick);
 		$('#DownloadsEdit_Category').change(categoryChange);
@@ -205,10 +202,6 @@ var DownloadsEditDialog = (new function($)
 		var postParamConfig = ParamTab.createPostParamConfig();
 
 		Util.show('#DownloadsEdit_NZBNameReadonly', group.postprocess);
-		Util.show('#DownloadsEdit_CancelPP', group.postprocess);
-		Util.show('#DownloadsEdit_Delete', !group.postprocess);
-		Util.show('#DownloadsEdit_Pause', group.Kind === 'NZB' && !group.postprocess);
-		Util.show('#DownloadsEdit_Resume', false);
 		Util.show('#DownloadsEdit_Save', !group.postprocess);
 		Util.show('#DownloadsEdit_StatisticsGroup', group.Kind === 'NZB');
 		Util.show('#DownloadsEdit_File', group.Kind === 'NZB');
@@ -236,21 +229,12 @@ var DownloadsEditDialog = (new function($)
 			$('#DownloadsEdit_Category').removeAttr('disabled');
 			$('#DownloadsEdit_Close').removeClass('btn-primary');
 			$('#DownloadsEdit_Close').text('Cancel');
-
-			if (group.RemainingSizeHi == group.PausedSizeHi && group.RemainingSizeLo == group.PausedSizeLo &&
-			    group.Kind === 'NZB')
-			{
-				$('#DownloadsEdit_Resume').show();
-				$('#DownloadsEdit_Pause').hide();
-			}
 		}
 
 		if (postParam)
 		{
 			postParams = ParamTab.buildPostParamTab($DownloadsEdit_ParamData, postParamConfig, curGroup.Parameters);
 		}
-
-		EditUI.buildDNZBLinks(curGroup.Parameters, 'DownloadsEdit_DNZB');
 
 		enableAllButtons();
 
@@ -429,51 +413,21 @@ var DownloadsEditDialog = (new function($)
 			: saveDupeKey();
 	}
 
-	function itemPause(e)
+	function itemActions(e)
 	{
 		e.preventDefault();
-		disableAllButtons();
-		notification = '#Notif_Downloads_Paused';
-		RPC.call('editqueue', ['GroupPause', '', [curGroup.NZBID]], completed);
-	}
+		e.stopPropagation();
+		var elem = $('#DownloadsEdit_Actions').parent();
 
-	function itemResume(e)
-	{
-		e.preventDefault();
-		disableAllButtons();
-		notification = '#Notif_Downloads_Resumed';
-		RPC.call('editqueue', ['GroupResume', '', [curGroup.NZBID]], function()
-		{
-			if (Options.option('ParCheck') === 'force')
+		DownloadsActionsMenu.showPopupMenu(curGroup, 'top',
+			{ left: elem.offset().left, top: elem.offset().top - 1,
+				width: elem.width(), height: elem.height() + 2 },
+			function(_notification)
 			{
-				completed();
-			}
-			else
-			{
-				RPC.call('editqueue', ['GroupPauseExtraPars', '', [curGroup.NZBID]], completed);
-			}
-		});
-	}
-
-	function itemDelete(e)
-	{
-		e.preventDefault();
-		DownloadsUI.deleteConfirm(doItemDelete, false, curGroup.Kind === 'NZB', curGroup.Kind === 'URL');
-	}
-
-	function doItemDelete(command)
-	{
-		disableAllButtons();
-		notification = '#Notif_Downloads_Deleted';
-		RPC.call('editqueue', [command, '', [curGroup.NZBID]], completed);
-	}
-
-	function itemCancelPP(e)
-	{
-		e.preventDefault();
-		disableAllButtons();
-		notification = '#Notif_Downloads_PostCanceled';
-		RPC.call('editqueue', ['PostDelete', '', [curGroup.NZBID]], completed);
+				disableAllButtons();
+				notification = _notification;
+			},
+			completed);
 	}
 
 	function categoryChange()
@@ -856,30 +810,6 @@ var DownloadsEditDialog = (new function($)
 var EditUI = (new function($)
 {
 	'use strict'
-
-	this.buildDNZBLinks = function(parameters, prefix)
-	{
-		$('.' + prefix).hide();
-		var hasItems = false;
-
-		for (var i=0; i < parameters.length; i++)
-		{
-			var param = parameters[i];
-			if (param.Name.substr(0, 6) === '*DNZB:')
-			{
-				var linkName = param.Name.substr(6, 100);
-				var $paramLink = $('#' + prefix + '_' + linkName);
-				if($paramLink.length > 0)
-				{
-					$paramLink.attr('href', param.Value);
-					$paramLink.show();
-					hasItems = true;
-				}
-			}
-		}
-
-		Util.show('#' + prefix + '_Section', hasItems);
-	}
 
 	/*** TAB: SERVER STATISTICS **************************************************/
 
@@ -1563,16 +1493,9 @@ var HistoryEditDialog = (new function()
 		$HistoryEdit_ParamData = $('#HistoryEdit_ParamData');
 
 		$('#HistoryEdit_Save').click(saveChanges);
-		$('#HistoryEdit_Delete').click(itemDelete);
-		$('#HistoryEdit_Return, #HistoryEdit_ReturnURL').click(itemReturn);
-		$('#HistoryEdit_Reprocess').click(itemReprocess);
-		$('#HistoryEdit_Redownload').click(itemRedownload);
-		$('#HistoryEdit_RetryFailed').click(itemRetryFailed);
+		$('#HistoryEdit_Actions').click(itemActions);
 		$('#HistoryEdit_Param, #HistoryEdit_Dupe, #HistoryEdit_Log').click(tabClick);
 		$('#HistoryEdit_Back').click(backClick);
-		$('#HistoryEdit_MarkSuccess').click(itemSuccess);
-		$('#HistoryEdit_MarkGood').click(itemGood);
-		$('#HistoryEdit_MarkBad').click(itemBad);
 
 		LogTab.init('History');
 
@@ -1727,18 +1650,10 @@ var HistoryEditDialog = (new function()
 		Util.show($('#HistoryEdit_DupeBackup').closest('.control-group'), hist.Kind === 'NZB');
 		$('#HistoryEdit_DupeMode').closest('.control-group').toggleClass('last-group', hist.Kind !== 'NZB');
 
-		Util.show('#HistoryEdit_Return', hist.RemainingFileCount > 0);
-		Util.show('#HistoryEdit_ReturnURL', hist.Kind === 'URL');
-		Util.show('#HistoryEdit_Redownload', hist.Kind === 'NZB');
-		Util.show('#HistoryEdit_RetryFailed', hist.Kind === 'NZB' && hist.FailedArticles > 0 && hist.RetryData);
-		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup, #HistoryEdit_Reprocess', hist.Kind === 'NZB');
+		Util.show('#HistoryEdit_PathGroup, #HistoryEdit_StatisticsGroup', hist.Kind === 'NZB');
 		Util.show('#HistoryEdit_CategoryGroup', hist.Kind !== 'DUP');
 		Util.show('#HistoryEdit_DupGroup', hist.Kind === 'DUP');
 		var dupeCheck = Options.option('DupeCheck') === 'yes';
-		Util.show('#HistoryEdit_MarkSuccess', dupeCheck && ((hist.Kind === 'NZB' && hist.MarkStatus !== 'SUCCESS') || (hist.Kind === 'DUP' && hist.DupStatus !== 'SUCCESS')) &&
-			hist.Status.substr(0, 7) !== 'SUCCESS');
-		Util.show('#HistoryEdit_MarkGood', dupeCheck && ((hist.Kind === 'NZB' && hist.MarkStatus !== 'GOOD') || (hist.Kind === 'DUP' && hist.DupStatus !== 'GOOD')));
-		Util.show('#HistoryEdit_MarkBad', dupeCheck && hist.Kind !== 'URL');
 		Util.show('#HistoryEdit_Dupe', dupeCheck);
 		$('#HistoryEdit_CategoryGroup').toggleClass('control-group-last', hist.Kind === 'URL');
 
@@ -1756,8 +1671,6 @@ var HistoryEditDialog = (new function()
 
 		var postLog = hist.MessageCount > 0;
 		Util.show('#HistoryEdit_Log', postLog);
-
-		EditUI.buildDNZBLinks(curHist.Parameters ? curHist.Parameters : [], 'HistoryEdit_DNZB');
 
 		enableAllButtons();
 
@@ -1894,78 +1807,6 @@ var HistoryEditDialog = (new function()
 		$('#HistoryEdit_Transmit').hide();
 	}
 
-	function itemDelete(e)
-	{
-		e.preventDefault();
-		HistoryUI.deleteConfirm(doItemDelete, curHist.Kind === 'NZB', curHist.Kind === 'DUP',
-			curHist.ParStatus === 'FAILURE' || curHist.UnpackStatus === 'FAILURE' ||
-			curHist.DeleteStatus != 'NONE', false);
-	}
-
-	function doItemDelete(command)
-	{
-		disableAllButtons();
-		notification = '#Notif_History_Deleted';
-		RPC.call('editqueue', [command, '', [curHist.ID]], completed);
-	}
-
-	function itemReturn(e)
-	{
-		e.preventDefault();
-		disableAllButtons();
-		notification = '#Notif_History_Returned';
-		RPC.call('editqueue', ['HistoryReturn', '', [curHist.ID]], completed);
-	}
-
-	function itemRedownload(e)
-	{
-		e.preventDefault();
-		if (curHist.SuccessArticles > 0)
-		{
-			ConfirmDialog.showModal('HistoryEditRedownloadConfirmDialog', doItemRedownload,
-				function () { HistoryUI.confirmMulti(false); });
-		}
-		else
-		{
-			doItemRedownload();
-		}
-	}
-
-	function doItemRedownload()
-	{
-		disableAllButtons();
-		notification = '#Notif_History_Returned';
-		RPC.call('editqueue', ['HistoryRedownload', '', [curHist.ID]], completed);
-	}
-
-	function itemReprocess(e)
-	{
-		e.preventDefault();
-		disableAllButtons();
-		saveCompleted = reprocess;
-		saveDupeKey();
-	}
-
-	function reprocess()
-	{
-		notification = '#Notif_History_Reprocess';
-		RPC.call('editqueue', ['HistoryProcess', '', [curHist.ID]], completed);
-	}
-
-	function itemRetryFailed(e)
-	{
-		e.preventDefault();
-		disableAllButtons();
-		saveCompleted = retryFailed;
-		saveDupeKey();
-	}
-
-	function retryFailed()
-	{
-		notification = '#Notif_History_RetryFailed';
-		RPC.call('editqueue', ['HistoryRetryFailed', '', [curHist.ID]], completed);
-	}
-
 	function completed()
 	{
 		$HistoryEditDialog.modal('hide');
@@ -2010,43 +1851,21 @@ var HistoryEditDialog = (new function()
 			: saveDupeKey();
 	}
 
-	function itemSuccess(e)
+	function itemActions(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditSuccessConfirmDialog', doItemSuccess, function () { HistoryUI.confirmMulti(false); });
-	}
+		e.stopPropagation();
+		var elem = $('#HistoryEdit_Actions').parent();
 
-	function doItemSuccess()
-	{
-		disableAllButtons();
-		notification = '#Notif_History_Marked';
-		RPC.call('editqueue', ['HistoryMarkSuccess', '', [curHist.ID]], completed);
-	}
-
-	function itemGood(e)
-	{
-		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood, function () { HistoryUI.confirmMulti(false); });
-	}
-
-	function doItemGood()
-	{
-		disableAllButtons();
-		notification = '#Notif_History_Marked';
-		RPC.call('editqueue', ['HistoryMarkGood', '', [curHist.ID]], completed);
-	}
-
-	function itemBad(e)
-	{
-		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad, function () { HistoryUI.confirmMulti(false); });
-	}
-
-	function doItemBad()
-	{
-		disableAllButtons();
-		notification = '#Notif_History_Marked';
-		RPC.call('editqueue', ['HistoryMarkBad', '', [curHist.ID]], completed);
+		HistoryActionsMenu.showPopupMenu(curHist, 'top',
+			{ left: elem.offset().left, top: elem.offset().top - 1,
+				width: elem.width(), height: elem.height() + 2 },
+			function(_notification)
+			{
+				disableAllButtons();
+				notification = _notification;
+			},
+			completed);
 	}
 
 	/*** TAB: POST-PROCESSING PARAMETERS **************************************************/

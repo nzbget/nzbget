@@ -1167,12 +1167,12 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 /* END: Progress bars */
 
-/* priority column */
-#DownloadsTable > tbody > tr > td:nth-child(2) {
+/* priority popup menu */
+#DownloadsTable > tbody > tr > td:nth-child(2) > div {
 	cursor: pointer;
 }
 
-/* category column */
+/* category popup menu */
 #DownloadsTable > tbody > tr > td:nth-child(5),
 #HistoryTable > tbody > tr > td:nth-child(5) {
 	padding: 3px 1px;
@@ -1180,7 +1180,6 @@ table.table-hidecheck tbody > tr > td:first-child {
 
 #DownloadsTable > tbody > tr > td:nth-child(5) > span,
 #HistoryTable > tbody > tr > td:nth-child(5) > span {
-	cursor: pointer;
 	display: inline-block;
 	cursor: pointer;
 	border: 1px solid transparent;
@@ -1193,6 +1192,10 @@ table.table-hidecheck tbody > tr > td:first-child {
 #HistoryTable > tbody > tr > td:nth-child(5) > span:hover {
 	border: 1px solid #aaa;
 	border-radius: 3px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+	user-select: none;
 }
 
 #DownloadsTable > tbody > tr > td:nth-child(5) > span:hover::after,
@@ -1206,13 +1209,34 @@ table.table-hidecheck tbody > tr > td:first-child {
 	bottom: 7px;
 }
 
-#DownloadsCategoryMenu, #HistoryCategoryMenu {
-	z-index: 2000;
-}
-
 #DownloadsCategoryMenu li:not(:hover) .empty-category,
 #HistoryCategoryMenu li:not(:hover) .empty-category {
 	color: #888;
+}
+
+/* status(actions) popup menu */
+#DownloadsTable > tbody > tr > td:nth-child(3) > span:hover,
+#HistoryTable > tbody > tr > td:nth-child(2) > span:hover {
+	cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+	user-select: none;
+}
+
+#DownloadsTable > tbody > tr > td:nth-child(3) > span:hover::after,
+#HistoryTable > tbody > tr > td:nth-child(2) > span:hover::after {
+	border-top: 4px solid #888;
+	border-right: 4px solid transparent;
+	border-left: 4px solid transparent;
+	content: "";
+	position: absolute;
+	margin-left: 6px;
+	margin-top: 7px;
+}
+
+.dropdown-menu {
+	z-index: 3000;
 }
 
 /* controls */
@@ -1500,10 +1524,6 @@ ul.help > li {
 	min-width: 10px;
 	right: 0;
 	left: auto;
-}
-
-.footer-button-menu {
-	text-align: left;
 }
 
 .data-statistics {
