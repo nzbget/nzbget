@@ -246,8 +246,7 @@ var Downloads = (new function($)
 				'">health: ' + Math.floor(group.Health / 10) + '%</span> ';
 		}
 
-		var category = '<span data-nzbid="' + group.NZBID + '">' +
-			(group.Category !== '' ? Util.textToHtml(group.Category) : '&nbsp;') + '</span>';
+		var category = DownloadsUI.buildCategory(group);
 		var backup = DownloadsUI.buildBackupLabel(group);
 
 		if (!UISettings.miniTheme)
@@ -632,6 +631,12 @@ var Downloads = (new function($)
 		e.stopPropagation();
 		DownloadsUI.fillCategoryMenu($CategoryMenu);
 		var group = findGroup($(this).attr('data-nzbid'));
+
+		if (group.postprocess)
+		{
+			return;
+		}
+
 		$CategoryMenu.data('nzbid', group.NZBID);
 		$('i', $CategoryMenu).removeClass('icon-ok').addClass('icon-empty');
 		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
@@ -735,7 +740,17 @@ var DownloadsUI = (new function($)
 			badgeClass = 'label-important';
 		}
 
-		return '<span data-nzbid="' + group.NZBID + '" class="label label-status ' + badgeClass + '">' + statusText + '</span>';
+		return '<span data-nzbid="' + group.NZBID + '" class="dropdown-context label label-status ' + badgeClass + '">' + statusText + '</span>';
+	}
+
+	this.buildCategory = function(group)
+	{
+		var category = '<span class="' + (group.postprocess ? '' : 'dropdown-context ') + 
+			'dropdown-category'+
+			(group.Category === '' ? ' empty-item hover-only' : '') +
+			'" data-nzbid="' + group.NZBID + '">' +
+			Util.textToHtml(group.Category !== '' ? group.Category : '<None>') + '</span>';
+		return category;
 	}
 
 	this.buildProgress = function(group, totalsize, remaining, estimated)
@@ -870,7 +885,7 @@ var DownloadsUI = (new function($)
 			text = text.replace('priority', 'priority (' + priority + ')');
 		}
 
-		text = text.replace('<div', '<div data-nzbid="' + group.NZBID + '"');
+		text = text.replace('" title', ' dropdown-context dropdown-priority" data-nzbid="' + group.NZBID + '" title');
 
 		return text;
 	}

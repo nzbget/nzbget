@@ -196,14 +196,7 @@ var History = (new function($)
 		name += DownloadsUI.buildEncryptedLabel(hist.Kind === 'NZB' ? hist.Parameters : []);
 
 		var dupe = DownloadsUI.buildDupe(hist.DupeKey, hist.DupeScore, hist.DupeMode);
-		var category = '';
-
-		if (hist.Kind !== 'DUP')
-		{
-			category = '<span data-nzbid="' + hist.NZBID + '">' +
-				(hist.Category !== '' ? Util.textToHtml(hist.Category) : '&nbsp;') + '</span>';
-		}
-
+		var category = hist.Kind !== 'DUP' ? DownloadsUI.buildCategory(hist) : '';
 		var backup = hist.Kind === 'NZB' ? DownloadsUI.buildBackupLabel(hist) : '';
 
 		if (hist.Kind === 'URL')
@@ -563,7 +556,7 @@ var HistoryUI = (new function($)
 			case 'WARNING':
 				badgeClass = 'label-warning'; break;
 		}
-		return '<span data-nzbid="' + hist.NZBID + '"class="label label-status ' + badgeClass + '">' + statusText + '</span>';
+		return '<span data-nzbid="' + hist.NZBID + '"class="dropdown-context label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
 	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount, pageSelCount, selPercentage)
