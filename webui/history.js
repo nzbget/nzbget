@@ -347,12 +347,7 @@ var History = (new function($)
 	{
 		Refresher.pause();
 
-		var ids = [];
-		var checkedRows = $HistoryTable.fasttable('checkedRows');
-		for (var id in checkedRows)
-		{
-			ids.push(parseInt(id));
-		}
+		var ids = buildContextIdList();
 
 		RPC.call('editqueue', [command, '', ids], function()
 		{
@@ -401,6 +396,22 @@ var History = (new function($)
 		return null;
 	}
 
+	function buildContextIdList(hist)
+	{
+		var editIds = [];
+		var checkedRows = $HistoryTable.fasttable('checkedRows');
+		for (var id in checkedRows)
+		{
+			editIds.push(parseInt(id));
+		}
+		if (hist !== undefined && editIds.indexOf(hist.NZBID) === -1)
+		{
+			editIds = [hist.NZBID];
+		}
+		return editIds;
+	}
+	this.buildContextIdList = buildContextIdList;
+
 	function statusClick(e)
 	{
 		e.preventDefault();
@@ -419,10 +430,14 @@ var History = (new function($)
 		e.preventDefault();
 		e.stopPropagation();
 		DownloadsUI.fillCategoryMenu($CategoryMenu);
-		var group = findHist($(this).attr('data-nzbid'));
-		$CategoryMenu.data('nzbid', group.NZBID);
+
+		var hist = findHist($(this).attr('data-nzbid'));
+		var editIds = buildContextIdList(hist);
+		$CategoryMenu.data('nzbids', editIds);
+		DownloadsUI.updateContextWarning($CategoryMenu, editIds);
 		$('i', $CategoryMenu).removeClass('icon-ok').addClass('icon-empty');
-		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
+		$('li[data="' + hist.Category + '"] i', $CategoryMenu).addClass('icon-ok');
+
 		Frontend.showPopupMenu($CategoryMenu, 'bottom-left',
 			{ left: $(this).offset().left - 30, top: $(this).offset().top - 1,
 				width: $(this).width() + 30, height: $(this).height() + 4 });
@@ -432,9 +447,9 @@ var History = (new function($)
 	{
 		e.preventDefault();
 		var category = $(this).parent().attr('data');
-		var nzbid = $CategoryMenu.data('nzbid');
+		var nzbids = $CategoryMenu.data('nzbids');
 		notification = '#Notif_History_Changed';
-		RPC.call('editqueue', ['HistorySetCategory', category, [nzbid]], editCompleted);
+		RPC.call('editqueue', ['HistorySetCategory', category, nzbids], editCompleted);
 	}
 
 	function filterCallback(item)
@@ -616,6 +631,7 @@ var HistoryActionsMenu = (new function()
 	var curHist;
 	var beforeCallback;
 	var completedCallback;
+	var editIds;
 
 	this.init = function()
 	{
@@ -635,6 +651,7 @@ var HistoryActionsMenu = (new function()
 		curHist = hist;
 		beforeCallback = before;
 		completedCallback = completed;
+		editIds = History.buildContextIdList(hist);
 
 		// setup menu items
 		Util.show('#HistoryActions_Return', hist.RemainingFileCount > 0);
@@ -646,6 +663,7 @@ var HistoryActionsMenu = (new function()
 			hist.Status.substr(0, 7) !== 'SUCCESS');
 		Util.show('#HistoryActions_MarkGood', dupeCheck && ((hist.Kind === 'NZB' && hist.MarkStatus !== 'GOOD') || (hist.Kind === 'DUP' && hist.DupStatus !== 'GOOD')));
 		Util.show('#HistoryActions_MarkBad', dupeCheck && hist.Kind !== 'URL');
+		DownloadsUI.updateContextWarning($ActionsMenu, editIds);
 
 		DownloadsUI.buildDNZBLinks(hist.Parameters ? hist.Parameters : [], 'HistoryActions_DNZB');
 		
@@ -663,14 +681,14 @@ var HistoryActionsMenu = (new function()
 	function doItemDelete(command)
 	{
 		beforeCallback('#Notif_History_Deleted');
-		RPC.call('editqueue', [command, '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', [command, '', editIds], completedCallback);
 	}
 
 	function itemReturn(e)
 	{
 		e.preventDefault();
 		beforeCallback('#Notif_History_Returned');
-		RPC.call('editqueue', ['HistoryReturn', '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', ['HistoryReturn', '', editIds], completedCallback);
 	}
 
 	function itemRedownload(e)
@@ -690,57 +708,60 @@ var HistoryActionsMenu = (new function()
 	function doItemRedownload()
 	{
 		beforeCallback('#Notif_History_Returned');
-		RPC.call('editqueue', ['HistoryRedownload', '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', ['HistoryRedownload', '', editIds], completedCallback);
 	}
 
 	function itemReprocess(e)
 	{
 		e.preventDefault();
 		beforeCallback('#Notif_History_Reprocess');
-		RPC.call('editqueue', ['HistoryProcess', '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', ['HistoryProcess', '', editIds], completedCallback);
 	}
 
 	function itemRetryFailed(e)
 	{
 		e.preventDefault();
 		beforeCallback('#Notif_History_RetryFailed');
-		RPC.call('editqueue', ['HistoryRetryFailed', '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', ['HistoryRetryFailed', '', editIds], completedCallback);
 	}
 
 	function itemSuccess(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditSuccessConfirmDialog', doItemSuccess, function () { HistoryUI.confirmMulti(false); });
+		ConfirmDialog.showModal('HistoryEditSuccessConfirmDialog', doItemSuccess,
+			function () { HistoryUI.confirmMulti(editIds.length > 1); });
 	}
 
 	function doItemSuccess()
 	{
 		beforeCallback('#Notif_History_Marked');
-		RPC.call('editqueue', ['HistoryMarkSuccess', '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', ['HistoryMarkSuccess', '', editIds], completedCallback);
 	}
 
 	function itemGood(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood, function () { HistoryUI.confirmMulti(false); });
+		ConfirmDialog.showModal('HistoryEditGoodConfirmDialog', doItemGood,
+			function () { HistoryUI.confirmMulti(editIds.length > 1); });
 	}
 
 	function doItemGood()
 	{
 		beforeCallback('#Notif_History_Marked');
-		RPC.call('editqueue', ['HistoryMarkGood', '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', ['HistoryMarkGood', '', editIds], completedCallback);
 	}
 
 	function itemBad(e)
 	{
 		e.preventDefault();
-		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad, function () { HistoryUI.confirmMulti(false); });
+		ConfirmDialog.showModal('HistoryEditBadConfirmDialog', doItemBad,
+			function () { HistoryUI.confirmMulti(editIds.length > 1); });
 	}
 
 	function doItemBad()
 	{
 		beforeCallback('#Notif_History_Marked');
-		RPC.call('editqueue', ['HistoryMarkBad', '', [curHist.ID]], completedCallback);
+		RPC.call('editqueue', ['HistoryMarkBad', '', editIds], completedCallback);
 	}
 }(jQuery));
 

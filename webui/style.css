@@ -1211,6 +1211,19 @@ td:hover > span.hover-only {
 	color: #888;
 }
 
+.dropdown-warning {
+	text-align: center;
+	background: repeating-linear-gradient(-45deg, #FFFFD8, #FFFFD8 6px, #E7E8D1 6px, #E7E8D1 12px);
+	padding: 2px;
+	font-size: 12px;
+	line-height: 14px;
+	color: #966C38;
+	text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.75), 0 1px 0 rgba(255, 255, 255, 0.75), -1px 0 0 rgba(255, 255, 255, 0.75);
+	border-top: solid 1px #ccc;
+	border-bottom: solid 1px #ccc;
+	margin-bottom: 1px;
+}
+
 /* controls */
 input[readonly],
 select[readonly],

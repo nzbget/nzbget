@@ -403,10 +403,16 @@ var Downloads = (new function($)
 		return checkedEditIDs;
 	}
 
-	this.buildEditIDList = function()
+	function buildContextIdList(group)
 	{
-		return checkBuildEditIDList(true, true, true);
+		var editIds = checkBuildEditIDList(true, true, true);
+		if (editIds.indexOf(group.NZBID) === -1)
+		{
+			editIds = [group.NZBID];
+		}
+		return editIds;
 	}
+	this.buildContextIdList = buildContextIdList;
 
 	/*** TOOLBAR: SELECTED ITEMS ******************************************************/
 
@@ -595,9 +601,12 @@ var Downloads = (new function($)
 		e.preventDefault();
 		e.stopPropagation();
 		var group = findGroup($(this).attr('data-nzbid'));
-		$PriorityMenu.data('nzbid', group.NZBID);
+		var editIds = buildContextIdList(group);
+		$PriorityMenu.data('nzbids', editIds);
+		DownloadsUI.updateContextWarning($PriorityMenu, editIds);
 		$('i', $PriorityMenu).removeClass('icon-ok').addClass('icon-empty');
 		$('li[data=' + group.MaxPriority + '] i', $PriorityMenu).addClass('icon-ok');
+
 		Frontend.showPopupMenu($PriorityMenu, 'left',
 			{ left: $(this).offset().left - 30, top: $(this).offset().top - 3,
 				width: $(this).width() + 30, height: $(this).height() + 5 });
@@ -607,9 +616,9 @@ var Downloads = (new function($)
 	{
 		e.preventDefault();
 		var priority = $(this).parent().attr('data');
-		var nzbid = $PriorityMenu.data('nzbid');
+		var nzbids = $PriorityMenu.data('nzbids');
 		notification = '#Notif_Downloads_Changed';
-		RPC.call('editqueue', ['GroupSetPriority', '' + priority, [nzbid]], editCompleted);
+		RPC.call('editqueue', ['GroupSetPriority', '' + priority, nzbids], editCompleted);
 	}
 
 	function statusClick(e)
@@ -637,9 +646,12 @@ var Downloads = (new function($)
 			return;
 		}
 
-		$CategoryMenu.data('nzbid', group.NZBID);
+		var editIds = buildContextIdList(group);
+		$CategoryMenu.data('nzbids', editIds);
+		DownloadsUI.updateContextWarning($CategoryMenu, editIds);
 		$('i', $CategoryMenu).removeClass('icon-ok').addClass('icon-empty');
 		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
+
 		Frontend.showPopupMenu($CategoryMenu, 'left',
 			{ left: $(this).offset().left - 30, top: $(this).offset().top - 1,
 				width: $(this).width() + 30, height: $(this).height() + 4 });
@@ -649,9 +661,9 @@ var Downloads = (new function($)
 	{
 		e.preventDefault();
 		var category = $(this).parent().attr('data');
-		var nzbid = $CategoryMenu.data('nzbid');
+		var nzbids = $CategoryMenu.data('nzbids');
 		notification = '#Notif_Downloads_Changed';
-		RPC.call('editqueue', ['GroupSetCategory', category, [nzbid]], editCompleted);
+		RPC.call('editqueue', ['GroupSetCategory', category, nzbids], editCompleted);
 	}
 
 }(jQuery));
@@ -1105,6 +1117,13 @@ var DownloadsUI = (new function($)
 
 		ConfirmDialog.showModal('DownloadsDeleteConfirmDialog', action, init, selCount);
 	}
+
+	this.updateContextWarning = function(menu, editIds)
+	{
+		var warning = $('.dropdown-warning', $(menu));
+		Util.show(warning, editIds.length > 1);
+		warning.text(editIds.length + ' records selected');
+	}	
 }(jQuery));
 
 /*** DOWNLOADS ACTION MENU *************************************************************************/
@@ -1117,6 +1136,7 @@ var DownloadsActionsMenu = (new function()
 	var curGroup;
 	var beforeCallback;
 	var completedCallback;
+	var editIds;
 
 	this.init = function()
 	{
@@ -1132,12 +1152,14 @@ var DownloadsActionsMenu = (new function()
 		curGroup = group;
 		beforeCallback = before;
 		completedCallback = completed;
+		editIds = Downloads.buildContextIdList(group);
 
 		// setup menu items
 		Util.show('#DownloadsActions_CancelPP', group.postprocess);
 		Util.show('#DownloadsActions_Delete', !group.postprocess);
 		Util.show('#DownloadsActions_Pause', group.Kind === 'NZB' && !group.postprocess);
 		Util.show('#DownloadsActions_Resume', false);
+		DownloadsUI.updateContextWarning($ActionsMenu, editIds);
 
 		if (!group.postprocess &&
 			(group.RemainingSizeHi == group.PausedSizeHi &&
@@ -1149,22 +1171,22 @@ var DownloadsActionsMenu = (new function()
 		}
 
 		DownloadsUI.buildDNZBLinks(group.Parameters, 'DownloadsActions_DNZB');
-		
+	
 		Frontend.showPopupMenu($ActionsMenu, anchor, rect);
 	}
-	
+
 	function itemPause(e)
 	{
 		e.preventDefault();
 		beforeCallback('#Notif_Downloads_Paused');
-		RPC.call('editqueue', ['GroupPause', '', [curGroup.NZBID]], completedCallback);
+		RPC.call('editqueue', ['GroupPause', '', editIds], completedCallback);
 	}
 
 	function itemResume(e)
 	{
 		e.preventDefault();
 		beforeCallback('#Notif_Downloads_Resumed');
-		RPC.call('editqueue', ['GroupResume', '', [curGroup.NZBID]], function()
+		RPC.call('editqueue', ['GroupResume', '', editIds], function()
 		{
 			if (Options.option('ParCheck') === 'force')
 			{
@@ -1172,7 +1194,7 @@ var DownloadsActionsMenu = (new function()
 			}
 			else
 			{
-				RPC.call('editqueue', ['GroupPauseExtraPars', '', [curGroup.NZBID]], completedCallback);
+				RPC.call('editqueue', ['GroupPauseExtraPars', '', editIds], completedCallback);
 			}
 		});
 	}
@@ -1186,14 +1208,14 @@ var DownloadsActionsMenu = (new function()
 	function doItemDelete(command)
 	{
 		beforeCallback('#Notif_Downloads_Deleted');
-		RPC.call('editqueue', [command, '', [curGroup.NZBID]], completedCallback);
+		RPC.call('editqueue', [command, '', editIds], completedCallback);
 	}
 
 	function itemCancelPP(e)
 	{
 		e.preventDefault();
 		beforeCallback('#Notif_Downloads_PostCanceled');
-		RPC.call('editqueue', ['PostDelete', '', [curGroup.NZBID]], completedCallback);
+		RPC.call('editqueue', ['PostDelete', '', editIds], completedCallback);
 	}
 
 }(jQuery));
