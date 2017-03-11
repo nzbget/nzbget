@@ -747,14 +747,9 @@ ul.dropdown-menu > li > a > i {
 	margin-right: 10px;
 }
 
-.label {
-	/* -ms-padding-bottom: 1px; */
-}
-
 .label-status {
 	text-transform: uppercase;
 }
-
 
 .label-inline {
 	display: inline-block;
@@ -1054,7 +1049,6 @@ table.table-check > tbody > tr > td:first-child {
 div.check {
 	width: 12px;
 	height: 12px;
-	border-color: #DDDDDD;
 	border: 1px solid #DDDDDD;
 	margin-top: 2px;
 	margin-bottom: 3px;
@@ -1062,10 +1056,12 @@ div.check {
 	-moz-border-radius: 2px;
 	border-radius: 2px;
 }
-
 div.check:hover {
-	border-color: #0088cc;
 	border: 1px solid #0088cc;
+}
+
+th > div.check {
+	margin-bottom: 2px;
 }
 
 table.table-cancheck tr  div.img-check {
@@ -1169,30 +1165,41 @@ table.table-hidecheck tbody > tr > td:first-child {
 
 /* DROP-DOWN CONTEXT MENUS */
 
-.dropdown-context:hover {
+td.dropdown-cell {
+	padding: 0;
+}
+
+th.dropafter-cell,
+td.dropafter-cell {
+	padding-left: 0;
+}
+
+td.dropdown-cell > div {
+	padding: 5px 12px 6px 4px;
+	margin: 0px 0;
+	display: inline-block;
+	position: relative;
+}
+
+td.dropdown-cell > div:hover {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
 	user-select: none;
+}
+
+td.dropdown-cell > div:not(.dropdown-disabled):hover {
 	cursor: pointer;
 }
 
-.dropdown-context:hover::after {
+td.dropdown-cell > div:not(.dropdown-disabled):hover::after {
 	border-top: 4px solid #888;
 	border-right: 4px solid transparent;
 	border-left: 4px solid transparent;
 	content: "";
 	position: absolute;
-	margin-left: 4px;
-	margin-top: 1px;
-}
-
-.dropdown-priority:hover::after {
-	margin-left: 6px;
-}
-
-.dropdown-category:hover::after {
-	margin-left: 0px;
+	margin-bottom: 8px;
+	margin-left: 2px;
 }
 
 .dropdown-menu {
@@ -1200,15 +1207,7 @@ table.table-hidecheck tbody > tr > td:first-child {
 }
 
 .dropdown-menu li:not(:hover) .empty-item {
-	color: #888;
-}
-
-.hover-only:not(:hover) {
-	color: transparent;
-}
-
-td:hover > span.hover-only {
-	color: #888;
+	color: #bbb;
 }
 
 .dropdown-warning {
@@ -1222,6 +1221,34 @@ td:hover > span.hover-only {
 	border-top: solid 1px #ccc;
 	border-bottom: solid 1px #ccc;
 	margin-bottom: 1px;
+}
+
+table th.priority-cell {
+	padding-left: 8px;
+}
+
+table td.priority-cell {
+	width: 16px;
+}
+
+td.dropdown-cell.priority-cell > div {
+	padding-right: 7px;
+}
+
+td.dropdown-cell.priority-cell > div:not(.dropdown-disabled):hover::after {
+	margin-left: -1px;
+}
+
+#DownloadsTable td:first-child {
+	padding-right: 6px;
+}
+
+td span.none-category {
+	color: transparent;
+}
+
+td:hover span.none-category {
+	color: #aaa;
 }
 
 /* controls */
@@ -1390,9 +1417,6 @@ textarea[readonly],
 
 .dragover, .dragover .table-striped tbody tr:nth-child(odd) td, .dragover .table-striped tbody tr:nth-child(odd) th {
 	background-color: #dff0d8;
-}
-
-.dialog-add-files {
 }
 
 ul.help > li {

@@ -105,9 +105,9 @@ var Downloads = (new function($)
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
-		$DownloadsTable.on('click', 'td:nth-child(2) div', priorityClick);
-		$DownloadsTable.on('click', 'td:nth-child(3) span', statusClick);
-		$DownloadsTable.on('click', 'td:nth-child(5) span', categoryClick);
+		$DownloadsTable.on('click', 'td:nth-child(2).dropdown-cell > div:not(.dropdown-disabled)', priorityClick);
+		$DownloadsTable.on('click', 'td:nth-child(3).dropdown-cell > div', statusClick);
+		$DownloadsTable.on('click', 'td:nth-child(5).dropdown-cell > div:not(.dropdown-disabled)', categoryClick);
 		$PriorityMenu.on('click', 'a', priorityMenuClick);
 		$CategoryMenu.on('click', 'a', categoryMenuClick);
 
@@ -246,11 +246,14 @@ var Downloads = (new function($)
 				'">health: ' + Math.floor(group.Health / 10) + '%</span> ';
 		}
 
-		var category = DownloadsUI.buildCategory(group);
+		var category = group.Category !== '' ? Util.textToHtml(group.Category) : '<span class="none-category">None</span>';
 		var backup = DownloadsUI.buildBackupLabel(group);
 
 		if (!UISettings.miniTheme)
 		{
+			priority = '<div data-nzbid="' + group.NZBID + '"' +  (group.postprocess ? ' class="dropdown-disabled"' : '') + '>' + priority + '</div>';
+			status = '<div data-nzbid="' + group.NZBID + '">' + status + '</div>';
+			category = '<div data-nzbid="' + group.NZBID + '"' +  (group.postprocess ? ' class="dropdown-disabled"' : '') + '>' + category + '</div>';
 			var info = name + ' ' + url + dupe + health + backup + propagation + progresslabel;
 			item.fields = ['<div class="check img-check"></div>', priority, status, info, category, item.data.age, progress, item.data.estimated];
 		}
@@ -274,11 +277,23 @@ var Downloads = (new function($)
 
 	function renderCellCallback(cell, index, item)
 	{
-		if (index == 1)
+		if (index === 1)
 		{
-			cell.className = 'text-center';
+			cell.className = 'priority-cell' + (!UISettings.miniTheme ? ' dropdown-cell' : '');
 		}
-		else if (5 <= index && index <= 8)
+		else if (index === 2 || index === 4)
+		{
+			cell.className = !UISettings.miniTheme ? 'dropdown-cell dropafter-cell' : '';
+		}
+		else if (index === 3)
+		{
+			cell.className = !UISettings.miniTheme ? 'dropafter-cell' : '';
+		}
+		else if (index === 5)
+		{
+			cell.className = 'text-right' + (!UISettings.miniTheme ? ' dropafter-cell' : '');
+		}
+		else if (6 <= index && index <= 8)
 		{
 			cell.className = 'text-right';
 		}
@@ -606,10 +621,9 @@ var Downloads = (new function($)
 		DownloadsUI.updateContextWarning($PriorityMenu, editIds);
 		$('i', $PriorityMenu).removeClass('icon-ok').addClass('icon-empty');
 		$('li[data=' + group.MaxPriority + '] i', $PriorityMenu).addClass('icon-ok');
-
 		Frontend.showPopupMenu($PriorityMenu, 'left',
-			{ left: $(this).offset().left - 30, top: $(this).offset().top - 3,
-				width: $(this).width() + 30, height: $(this).height() + 5 });
+			{ left: $(this).offset().left - 30, top: $(this).offset().top,
+				width: $(this).width() + 30, height: $(this).outerHeight() - 2});
 	}
 
 	function priorityMenuClick(e)
@@ -628,8 +642,8 @@ var Downloads = (new function($)
 		var group = findGroup($(this).attr('data-nzbid'));
 
 		DownloadsActionsMenu.showPopupMenu(group, 'left',
-			{ left: $(this).offset().left - 30, top: $(this).offset().top - 2,
-				width: $(this).width() + 30, height: $(this).height() + 5 },
+			{ left: $(this).offset().left - 30, top: $(this).offset().top,
+				width: $(this).width() + 30, height: $(this).outerHeight() - 2 },
 			function(_notification) { notification = _notification; },
 			editCompleted);
 	}
@@ -653,8 +667,8 @@ var Downloads = (new function($)
 		$('li[data="' + group.Category + '"] i', $CategoryMenu).addClass('icon-ok');
 
 		Frontend.showPopupMenu($CategoryMenu, 'left',
-			{ left: $(this).offset().left - 30, top: $(this).offset().top - 1,
-				width: $(this).width() + 30, height: $(this).height() + 4 });
+			{ left: $(this).offset().left - 30, top: $(this).offset().top,
+				width: $(this).width() + 30, height: $(this).outerHeight() - 2 });
 	}
 
 	function categoryMenuClick(e)
@@ -752,17 +766,7 @@ var DownloadsUI = (new function($)
 			badgeClass = 'label-important';
 		}
 
-		return '<span data-nzbid="' + group.NZBID + '" class="dropdown-context label label-status ' + badgeClass + '">' + statusText + '</span>';
-	}
-
-	this.buildCategory = function(group)
-	{
-		var category = '<span class="' + (group.postprocess ? '' : 'dropdown-context ') + 
-			'dropdown-category'+
-			(group.Category === '' ? ' empty-item hover-only' : '') +
-			'" data-nzbid="' + group.NZBID + '">' +
-			Util.textToHtml(group.Category !== '' ? group.Category : '<None>') + '</span>';
-		return category;
+		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
 	this.buildProgress = function(group, totalsize, remaining, estimated)
@@ -896,8 +900,6 @@ var DownloadsUI = (new function($)
 		{
 			text = text.replace('priority', 'priority (' + priority + ')');
 		}
-
-		text = text.replace('" title', ' dropdown-context dropdown-priority" data-nzbid="' + group.NZBID + '" title');
 
 		return text;
 	}
@@ -1048,7 +1050,7 @@ var DownloadsUI = (new function($)
 
 			widthHelper.remove();
 
-			categoryColumnWidth = (categoryColumnWidth + 3) + 'px';
+			categoryColumnWidth = (categoryColumnWidth + 8) + 'px';
 		}
 
 		return categoryColumnWidth;

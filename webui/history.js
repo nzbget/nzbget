@@ -77,8 +77,8 @@ var History = (new function($)
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
-		$HistoryTable.on('click', 'td:nth-child(5) span', categoryClick);
-		$HistoryTable.on('click', 'td:nth-child(2) span', statusClick);
+		$HistoryTable.on('click', 'td:nth-child(2).dropdown-cell > div', statusClick);
+		$HistoryTable.on('click', 'td:nth-child(5).dropdown-cell > div:not(.dropdown-disabled)', categoryClick);
 		$CategoryMenu.on('click', 'a', categoryMenuClick);
 
 		HistoryActionsMenu.init();
@@ -196,7 +196,9 @@ var History = (new function($)
 		name += DownloadsUI.buildEncryptedLabel(hist.Kind === 'NZB' ? hist.Parameters : []);
 
 		var dupe = DownloadsUI.buildDupe(hist.DupeKey, hist.DupeScore, hist.DupeMode);
-		var category = hist.Kind !== 'DUP' ? DownloadsUI.buildCategory(hist) : '';
+		var category = hist.Kind !== 'DUP' ?
+			(hist.Category !== '' ? Util.textToHtml(hist.Category) : '<span class="none-category">None</span>')
+			: '';
 		var backup = hist.Kind === 'NZB' ? DownloadsUI.buildBackupLabel(hist) : '';
 
 		if (hist.Kind === 'URL')
@@ -210,6 +212,8 @@ var History = (new function($)
 
 		if (!UISettings.miniTheme)
 		{
+			status = '<div data-nzbid="' + hist.NZBID + '">' + status + '</div>';
+			category = '<div data-nzbid="' + hist.NZBID + '"' +  (hist.Kind === 'DUP' ? ' class="dropdown-disabled"' : '') + '>' + category + '</div>';
 			item.fields = ['<div class="check img-check"></div>', status, item.data.time, name + dupe + backup, category, item.data.age, item.data.size];
 		}
 		else
@@ -230,11 +234,19 @@ var History = (new function($)
 
 	function renderCellCallback(cell, index, item)
 	{
-		if (index === 2)
+		if (index === 1 || index === 4)
 		{
-			cell.className = 'text-center';
+			cell.className = !UISettings.miniTheme ? 'dropdown-cell' : '';
 		}
-		else if (index === 5 || index === 6)
+		else if (index === 2)
+		{
+			cell.className = 'text-center' + (!UISettings.miniTheme ? ' dropafter-cell' : '');
+		}
+		else if (index === 5)
+		{
+			cell.className = 'text-right' + (!UISettings.miniTheme ? ' dropafter-cell' : '');
+		}
+		else if (index === 6)
 		{
 			cell.className = 'text-right';
 		}
@@ -419,8 +431,8 @@ var History = (new function($)
 		var hist = findHist($(this).attr('data-nzbid'));
 
 		HistoryActionsMenu.showPopupMenu(hist, 'left',
-			{ left: $(this).offset().left - 30, top: $(this).offset().top - 2,
-				width: $(this).width() + 30, height: $(this).height() + 5 },
+			{ left: $(this).offset().left - 30, top: $(this).offset().top,
+				width: $(this).width() + 30, height: $(this).outerHeight() - 2 },
 			function(_notification) { notification = _notification; },
 			editCompleted);
 	}
@@ -439,8 +451,8 @@ var History = (new function($)
 		$('li[data="' + hist.Category + '"] i', $CategoryMenu).addClass('icon-ok');
 
 		Frontend.showPopupMenu($CategoryMenu, 'bottom-left',
-			{ left: $(this).offset().left - 30, top: $(this).offset().top - 1,
-				width: $(this).width() + 30, height: $(this).height() + 4 });
+			{ left: $(this).offset().left - 30, top: $(this).offset().top,
+				width: $(this).width() + 30, height: $(this).outerHeight() - 2 });
 	}
 
 	function categoryMenuClick(e)
@@ -571,7 +583,7 @@ var HistoryUI = (new function($)
 			case 'WARNING':
 				badgeClass = 'label-warning'; break;
 		}
-		return '<span data-nzbid="' + hist.NZBID + '"class="dropdown-context label label-status ' + badgeClass + '">' + statusText + '</span>';
+		return '<span class="label label-status ' + badgeClass + '">' + statusText + '</span>';
 	}
 
 	this.deleteConfirm = function(actionCallback, hasNzb, hasDup, hasFailed, multi, selCount, pageSelCount, selPercentage)

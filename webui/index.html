@@ -294,11 +294,11 @@
 				<thead>
 					<tr>
 						<th><div class="check img-check"></div></th>
-						<th width="14px" class="text-center"><a href="#" onclick="Downloads.sort('priority', event)" title="Priority">P</a></th>
-						<th width="97px">Status</th>
-						<th id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name', event)">Name</a></th>
+						<th class="priority-cell"><a href="#" onclick="Downloads.sort('priority', event)" title="Priority">P</a></th>
+						<th width="102px">Status</th>
+						<th class="dropafter-cell" id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name', event)">Name</a></th>
 						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category', event)">Category</a></th>
-						<th width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age', event)">Age</a></th>
+						<th class="dropafter-cell" width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age', event)">Age</a></th>
 						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size', event)">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left', event)">Left</a></div></th>
 						<th width="60px" class="text-right">Est. Time</th>
 					</tr>
@@ -386,11 +386,11 @@
 				<thead>
 				    <tr>
                         <th><div class="check img-check"></div></th>
-                        <th width="75px">Status</th>
-                        <th width="170px" class="text-center">Time</th>
+                        <th width="78px">Status</th>
+                        <th width="170px" class="text-center dropafter-cell">Time</th>
                         <th>Name</th>
                         <th id="HistoryTable_Category">Category</th>
-                        <th width="30px" class="text-right">Age</th>
+                        <th width="30px" class="text-right dropafter-cell">Age</th>
                         <th width="70px" class="text-right">Size</th>
     				</tr>
 					<tr>
@@ -1323,7 +1323,7 @@
 <ul class="dropdown-menu" id="DownloadsCategoryMenu">
 	<li class="menu-header">Category</li>
 	<li class="dropdown-warning">XX records selected</li>
-	<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-item">&lt;None&gt;</td></tr></table></a></li>
+	<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-item">None</td></tr></table></a></li>
 	<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
 </ul>
 
@@ -1712,7 +1712,7 @@
 <ul class="dropdown-menu" id="HistoryCategoryMenu">
 	<li class="menu-header">Category</li>
 	<li class="dropdown-warning">XX records selected</li>
-	<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-item">&lt;None&gt;</td></tr></table></a></li>
+	<li data=""><a href="#"><table><tr><td><i class="icon-empty"></td><td class="empty-item">None</td></tr></table></a></li>
 	<li style="display: none;"><a href="#"><table><tr><td><i class="icon-empty"></td><td>$Name</td></tr></table></a></li>
 </ul>
 
