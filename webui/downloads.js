@@ -677,7 +677,7 @@ var Downloads = (new function($)
 		var category = $(this).parent().attr('data');
 		var nzbids = $CategoryMenu.data('nzbids');
 		notification = '#Notif_Downloads_Changed';
-		RPC.call('editqueue', ['GroupSetCategory', category, nzbids], editCompleted);
+		RPC.call('editqueue', ['GroupApplyCategory', category, nzbids], editCompleted);
 	}
 
 }(jQuery));
