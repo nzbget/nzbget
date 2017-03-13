@@ -848,11 +848,24 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 					postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 						"Deleting queued post-job %s", postInfo->GetNzbInfo()->GetName());
 					JobCompleted(downloadQueue, postInfo);
+
+					m_activeJobs.erase(std::remove_if(m_activeJobs.begin(), m_activeJobs.end(),
+						[postInfo](NzbInfo* postJob)
+						{
+							return postInfo == postJob->GetPostInfo();
+						}),
+						m_activeJobs.end());
+
 					ok = true;
 				}
 				break;
 			}
 		}
+	}
+
+	if (ok)
+	{
+		downloadQueue->Save();
 	}
 
 	return ok;
