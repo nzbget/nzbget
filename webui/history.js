@@ -690,17 +690,29 @@ var HistoryActionsMenu = (new function()
 			curHist.DeleteStatus != 'NONE', false);
 	}
 
+	function execAction(command, notification)
+	{
+		function performAction()
+		{
+			RPC.call('editqueue', [command, '', editIds], completedCallback);
+		}
+
+		var async = beforeCallback(notification, performAction);
+		if (!async)
+		{
+			performAction();
+		}
+	}
+
 	function doItemDelete(command)
 	{
-		beforeCallback('#Notif_History_Deleted');
-		RPC.call('editqueue', [command, '', editIds], completedCallback);
+		execAction(command, '#Notif_History_Deleted');
 	}
 
 	function itemReturn(e)
 	{
 		e.preventDefault();
-		beforeCallback('#Notif_History_Returned');
-		RPC.call('editqueue', ['HistoryReturn', '', editIds], completedCallback);
+		execAction('HistoryReturn', '#Notif_History_Returned');
 	}
 
 	function itemRedownload(e)
@@ -719,22 +731,19 @@ var HistoryActionsMenu = (new function()
 
 	function doItemRedownload()
 	{
-		beforeCallback('#Notif_History_Returned');
-		RPC.call('editqueue', ['HistoryRedownload', '', editIds], completedCallback);
+		execAction('HistoryRedownload', '#Notif_History_Returned');
 	}
 
 	function itemReprocess(e)
 	{
 		e.preventDefault();
-		beforeCallback('#Notif_History_Reprocess');
-		RPC.call('editqueue', ['HistoryProcess', '', editIds], completedCallback);
+		execAction('HistoryProcess', '#Notif_History_Reprocess');
 	}
 
 	function itemRetryFailed(e)
 	{
 		e.preventDefault();
-		beforeCallback('#Notif_History_RetryFailed');
-		RPC.call('editqueue', ['HistoryRetryFailed', '', editIds], completedCallback);
+		execAction('HistoryRetryFailed', '#Notif_History_RetryFailed');
 	}
 
 	function itemSuccess(e)
@@ -746,8 +755,7 @@ var HistoryActionsMenu = (new function()
 
 	function doItemSuccess()
 	{
-		beforeCallback('#Notif_History_Marked');
-		RPC.call('editqueue', ['HistoryMarkSuccess', '', editIds], completedCallback);
+		execAction('HistoryMarkSuccess', '#Notif_History_Marked');
 	}
 
 	function itemGood(e)
@@ -759,8 +767,7 @@ var HistoryActionsMenu = (new function()
 
 	function doItemGood()
 	{
-		beforeCallback('#Notif_History_Marked');
-		RPC.call('editqueue', ['HistoryMarkGood', '', editIds], completedCallback);
+		execAction('HistoryMarkGood', '#Notif_History_Marked');
 	}
 
 	function itemBad(e)
@@ -772,8 +779,7 @@ var HistoryActionsMenu = (new function()
 
 	function doItemBad()
 	{
-		beforeCallback('#Notif_History_Marked');
-		RPC.call('editqueue', ['HistoryMarkBad', '', editIds], completedCallback);
+		execAction('HistoryMarkBad', '#Notif_History_Marked');
 	}
 }(jQuery));
 

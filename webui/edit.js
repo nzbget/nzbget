@@ -1860,10 +1860,13 @@ var HistoryEditDialog = (new function()
 		HistoryActionsMenu.showPopupMenu(curHist, 'top',
 			{ left: elem.offset().left, top: elem.offset().top - 1,
 				width: elem.width(), height: elem.height() + 2 },
-			function(_notification)
+			function(_notification, actionCallback)
 			{
 				disableAllButtons();
 				notification = _notification;
+				saveCompleted = actionCallback;
+				saveName();
+				return true; // async
 			},
 			completed);
 	}
