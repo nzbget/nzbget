@@ -374,7 +374,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 			bufAvail = recv(m_socket, m_readBuf, m_readBuf.Size() - 1, 0);
 			if (bufAvail < 0)
 			{
-				ReportError("Could not receive data on socket", nullptr, true);
+				ReportError("Could not receive data on socket from %s", m_host, true);
 				m_broken = true;
 				break;
 			}
@@ -446,7 +446,7 @@ std::unique_ptr<Connection> Connection::Accept()
 	SOCKET socket = accept(m_socket, nullptr, nullptr);
 	if (socket == INVALID_SOCKET && m_status != csCancelled)
 	{
-		ReportError("Could not accept connection", nullptr, true);
+		ReportError("Could not accept connection for %s", m_host, true);
 	}
 	if (socket == INVALID_SOCKET)
 	{
@@ -466,7 +466,7 @@ int Connection::TryRecv(char* buffer, int size)
 
 	if (received < 0)
 	{
-		ReportError("Could not receive data on socket", nullptr, true);
+		ReportError("Could not receive data on socket from %s", m_host, true);
 	}
 
 	return received;
@@ -498,7 +498,7 @@ bool Connection::Recv(char * buffer, int size)
 		// Did the recv succeed?
 		if (received <= 0)
 		{
-			ReportError("Could not receive data on socket", nullptr, true);
+			ReportError("Could not receive data on socket from %s", m_host, true);
 			return false;
 		}
 		bufPtr += received;
@@ -813,7 +813,7 @@ void Connection::Cancel()
 		int r = shutdown(m_socket, SHUT_RDWR);
 		if (r == -1)
 		{
-			ReportError("Could not shutdown connection", nullptr, true);
+			ReportError("Could not shutdown connection for %s", m_host, true);
 		}
 	}
 }
