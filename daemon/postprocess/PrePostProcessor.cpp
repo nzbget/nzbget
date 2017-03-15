@@ -541,8 +541,6 @@ void PrePostProcessor::CheckPostQueue()
 			break;
 		}
 
-		Util::SetStandByMode(false);
-
 		m_activeJobs.push_back(postJob);
 
 		PostInfo* postInfo = postJob->GetPostInfo();
@@ -561,6 +559,8 @@ void PrePostProcessor::CheckPostQueue()
 		downloadQueue->Save();
 		UpdatePauseState();
 	}
+
+	Util::SetStandByMode(m_activeJobs.empty());
 }
 
 void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo, bool allowPar)
