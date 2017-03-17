@@ -96,6 +96,7 @@
     <ClCompile Include="daemon\connect\TlsSocket.cpp" />
     <ClCompile Include="daemon\connect\WebDownloader.cpp" />
     <ClCompile Include="daemon\extension\FeedScript.cpp" />
+    <ClCompile Include="daemon\extension\CommandScript.cpp" />
     <ClCompile Include="daemon\extension\NzbScript.cpp" />
     <ClCompile Include="daemon\extension\PostScript.cpp" />
     <ClCompile Include="daemon\extension\QueueScript.cpp" />
@@ -193,6 +194,7 @@
     <ClInclude Include="daemon\connect\TlsSocket.h" />
     <ClInclude Include="daemon\connect\WebDownloader.h" />
     <ClInclude Include="daemon\extension\FeedScript.h" />
+    <ClInclude Include="daemon\extension\CommandScript.h" />
     <ClInclude Include="daemon\extension\NzbScript.h" />
     <ClInclude Include="daemon\extension\PostScript.h" />
     <ClInclude Include="daemon\extension\QueueScript.h" />

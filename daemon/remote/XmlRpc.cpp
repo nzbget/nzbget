@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include "DiskState.h"
 #include "ScriptConfig.h"
 #include "QueueScript.h"
+#include "CommandScript.h"
 
 extern void ExitProc();
 extern void Reload();
@@ -304,6 +305,12 @@ private:
 	};
 
 	void PrintError(const char* errMsg);
+};
+
+class StartScriptXmlCommand : public XmlCommand
+{
+public:
+	virtual void Execute();
 };
 
 
@@ -708,6 +715,10 @@ std::unique_ptr<XmlCommand> XmlRpcProcessor::CreateCommand(const char* methodNam
 	else if (!strcasecmp(methodName, "testserver"))
 	{
 		command = std::make_unique<TestServerXmlCommand>();
+	}
+	else if (!strcasecmp(methodName, "startscript"))
+	{
+		command = std::make_unique<StartScriptXmlCommand>();
 	}
 	else
 	{
@@ -3358,4 +3369,25 @@ void TestServerXmlCommand::PrintError(const char* errMsg)
 	{
 		m_errText = EncodeStr(errMsg);
 	}
+}
+
+// bool startscript(string script, string command);
+void StartScriptXmlCommand::Execute()
+{
+	if (!CheckSafeMethod())
+	{
+		return;
+	}
+
+	char* script;
+	char* command;
+	if (!NextParamAsStr(&script) || !NextParamAsStr(&command))
+	{
+		BuildErrorResponse(2, "Invalid parameter");
+		return;
+	}
+
+	CommandScriptController::StartScript(script, command);
+
+	BuildBoolResponse(true);
 }

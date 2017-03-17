@@ -28,6 +28,8 @@ nzbget_SOURCES = \
 	daemon/connect/WebDownloader.h \
 	daemon/extension/FeedScript.cpp \
 	daemon/extension/FeedScript.h \
+	daemon/extension/CommandScript.cpp \
+	daemon/extension/CommandScript.h \
 	daemon/extension/NzbScript.cpp \
 	daemon/extension/NzbScript.h \
 	daemon/extension/PostScript.cpp \

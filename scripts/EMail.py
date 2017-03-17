@@ -119,6 +119,12 @@ for	optname in required_options:
 		print('[ERROR] Option %s is missing in configuration file. Please check script settings' % optname[6:])
 		sys.exit(POSTPROCESS_ERROR)
 
+# Check if the script is executed from settings page with a custom command
+command = os.environ.get('NZBCP_COMMAND', '')
+if command != '':
+	print('Executing command ' + command)
+	sys.exit(POSTPROCESS_SUCCESS)
+
 status = os.environ['NZBPP_STATUS']
 total_status = os.environ['NZBPP_TOTALSTATUS']
 

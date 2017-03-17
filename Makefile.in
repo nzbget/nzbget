@@ -153,9 +153,12 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TlsSocket.cpp \
 	daemon/connect/TlsSocket.h daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h daemon/extension/FeedScript.cpp \
-	daemon/extension/FeedScript.h daemon/extension/NzbScript.cpp \
-	daemon/extension/NzbScript.h daemon/extension/PostScript.cpp \
-	daemon/extension/PostScript.h daemon/extension/QueueScript.cpp \
+	daemon/extension/FeedScript.h \
+	daemon/extension/CommandScript.cpp \
+	daemon/extension/CommandScript.h \
+	daemon/extension/NzbScript.cpp daemon/extension/NzbScript.h \
+	daemon/extension/PostScript.cpp daemon/extension/PostScript.h \
+	daemon/extension/QueueScript.cpp \
 	daemon/extension/QueueScript.h daemon/extension/ScanScript.cpp \
 	daemon/extension/ScanScript.h \
 	daemon/extension/SchedulerScript.cpp \
@@ -293,7 +296,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_PAR2_TRUE@@WITH_TESTS_TRUE@	ParRenamerTest.$(OBJEXT)
 am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	WebDownloader.$(OBJEXT) FeedScript.$(OBJEXT) \
-	NzbScript.$(OBJEXT) PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
+	CommandScript.$(OBJEXT) NzbScript.$(OBJEXT) \
+	PostScript.$(OBJEXT) QueueScript.$(OBJEXT) \
 	ScanScript.$(OBJEXT) SchedulerScript.$(OBJEXT) \
 	ScriptConfig.$(OBJEXT) FeedCoordinator.$(OBJEXT) \
 	FeedFile.$(OBJEXT) FeedFilter.$(OBJEXT) FeedInfo.$(OBJEXT) \
@@ -480,9 +484,12 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TlsSocket.cpp \
 	daemon/connect/TlsSocket.h daemon/connect/WebDownloader.cpp \
 	daemon/connect/WebDownloader.h daemon/extension/FeedScript.cpp \
-	daemon/extension/FeedScript.h daemon/extension/NzbScript.cpp \
-	daemon/extension/NzbScript.h daemon/extension/PostScript.cpp \
-	daemon/extension/PostScript.h daemon/extension/QueueScript.cpp \
+	daemon/extension/FeedScript.h \
+	daemon/extension/CommandScript.cpp \
+	daemon/extension/CommandScript.h \
+	daemon/extension/NzbScript.cpp daemon/extension/NzbScript.h \
+	daemon/extension/PostScript.cpp daemon/extension/PostScript.h \
+	daemon/extension/QueueScript.cpp \
 	daemon/extension/QueueScript.h daemon/extension/ScanScript.cpp \
 	daemon/extension/ScanScript.h \
 	daemon/extension/SchedulerScript.cpp \
@@ -858,6 +865,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ColoredFrontend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandLineParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandLineParserTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandScript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Decoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiskService.Po@am__quote@
@@ -1026,6 +1034,20 @@ FeedScript.obj: daemon/extension/FeedScript.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/extension/FeedScript.cpp' object='FeedScript.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FeedScript.obj `if test -f 'daemon/extension/FeedScript.cpp'; then $(CYGPATH_W) 'daemon/extension/FeedScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/extension/FeedScript.cpp'; fi`
+
+CommandScript.o: daemon/extension/CommandScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CommandScript.o -MD -MP -MF "$(DEPDIR)/CommandScript.Tpo" -c -o CommandScript.o `test -f 'daemon/extension/CommandScript.cpp' || echo '$(srcdir)/'`daemon/extension/CommandScript.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CommandScript.Tpo" "$(DEPDIR)/CommandScript.Po"; else rm -f "$(DEPDIR)/CommandScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/extension/CommandScript.cpp' object='CommandScript.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CommandScript.o `test -f 'daemon/extension/CommandScript.cpp' || echo '$(srcdir)/'`daemon/extension/CommandScript.cpp
+
+CommandScript.obj: daemon/extension/CommandScript.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CommandScript.obj -MD -MP -MF "$(DEPDIR)/CommandScript.Tpo" -c -o CommandScript.obj `if test -f 'daemon/extension/CommandScript.cpp'; then $(CYGPATH_W) 'daemon/extension/CommandScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/extension/CommandScript.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CommandScript.Tpo" "$(DEPDIR)/CommandScript.Po"; else rm -f "$(DEPDIR)/CommandScript.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/extension/CommandScript.cpp' object='CommandScript.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CommandScript.obj `if test -f 'daemon/extension/CommandScript.cpp'; then $(CYGPATH_W) 'daemon/extension/CommandScript.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/extension/CommandScript.cpp'; fi`
 
 NzbScript.o: daemon/extension/NzbScript.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbScript.o -MD -MP -MF "$(DEPDIR)/NzbScript.Tpo" -c -o NzbScript.o `test -f 'daemon/extension/NzbScript.cpp' || echo '$(srcdir)/'`daemon/extension/NzbScript.cpp; \

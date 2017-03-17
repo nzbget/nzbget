@@ -1503,7 +1503,12 @@ var Config = (new function($)
 		var optFormId = $(button).attr('id');
 		var option = findOptionById(optFormId);
 		console.log(option);
-		alert(option.name);
+		RPC.call('startscript', ['EMail.py', option.caption],
+			function (result)
+			{
+				PopupNotification.show(result ? '#Notif_Config_Script_Started' : '#Notif_Config_Script_Failed');
+			}
+		);
 	}
 
 	/*** RSS FEEDS ********************************************************************/
