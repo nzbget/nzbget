@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -245,7 +245,7 @@ var Options = (new function($)
 					description += '\n';
 				}
 			}
-			else if (line.indexOf('=') > -1)
+			else if (line.indexOf('=') > -1 || line.indexOf('@') > -1)
 			{
 				if (!section)
 				{
@@ -260,9 +260,16 @@ var Options = (new function($)
 
 				var option = {};
 				var enabled = line.substr(0, 1) !== '#';
-				option.caption = line.substr(enabled ? 0 : 1, line.indexOf('=') - (enabled ? 0 : 1)).trim();
+				var command = line.indexOf('=') === -1 && line.indexOf('@') > -1;
+				option.caption = line.substr(enabled ? 0 : 1, line.indexOf(command ? '@' : '=') - (enabled ? 0 : 1)).trim();
+				if (command)
+				{
+					var optpos = option.caption.indexOf('[');
+					option.commandopts = optpos > -1 ? option.caption.substring(optpos + 1, option.caption.indexOf(']')).toLowerCase() : 'settings';
+					option.caption = optpos > -1 ? option.caption.substring(0, optpos) : option.caption;
+				}
 				option.name = (nameprefix != '' ? nameprefix : '') + option.caption;
-				option.defvalue = line.substr(line.indexOf('=') + 1, 1000).trim();
+				option.defvalue = line.substr(line.indexOf(command ? '@' : '=') + 1, 1000).trim();
 				option.value = null;
 				option.sectionId = section.id;
 				option.select = [];
@@ -404,7 +411,7 @@ var Options = (new function($)
 					var option = section.options[j];
 					option.value = null;
 					var val = findOption(values, option.name);
-					if (val)
+					if (val && !option.commandopts)
 					{
 						option.value = val.Value;
 					}
@@ -773,7 +780,7 @@ var Config = (new function($)
 				'<label class="control-label">' +
 				'<a class="option-name" href="#" data-optid="' + option.formId + '" '+
 				'onclick="Config.scrollToOption(event, this)">' + caption + '</a>' +
-				(option.value === null && !section.postparam ?
+				(option.value === null && !section.postparam && !option.commandopts ?
 					' <a data-toggle="modal" href="#ConfigNewOptionHelp" class="label label-info">new</a>' : '') + '</label>'+
 				'<div class="controls">';
 
@@ -844,6 +851,13 @@ var Config = (new function($)
 			html += '</td><td>';
 			html += '<button type="button" id="' + option.formId + '_Editor" class="btn" onclick="' + option.editor.click + '($(\'input\', $(this).closest(\'table\')).attr(\'id\'))">' + option.editor.caption + '</button>';
 			html += '</td></tr></table>';
+		}
+		else if (option.commandopts)
+		{
+			option.type = 'command';
+			html += '<button type="button" id="' + option.formId + '" class="btn ' + 
+				(option.commandopts.indexOf('danger') > -1 ? 'btn-danger' : 'btn-inverse') + 
+				'" onclick="Config.commandClick(this)">' + value +  '</button>';
 		}
 		else
 		{
@@ -1484,6 +1498,14 @@ var Config = (new function($)
 		Util.show('#' + btnId, command === 'Script');
 	}
 
+	this.commandClick = function(button)
+	{
+		var optFormId = $(button).attr('id');
+		var option = findOptionById(optFormId);
+		console.log(option);
+		alert(option.name);
+	}
+
 	/*** RSS FEEDS ********************************************************************/
 
 	this.editFilter = function(optFormId)
@@ -1635,7 +1657,7 @@ var Config = (new function($)
 					for (var j=0; j < section.options.length; j++)
 					{
 						var option = section.options[j];
-						if (!option.template && !(option.type === 'info'))
+						if (!option.template && !(option.type === 'info') && !option.commandopts)
 						{
 							var oldValue = option.value;
 							var newValue = getOptionValue(option);

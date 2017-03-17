@@ -2,7 +2,7 @@
 #
 # E-Mail post-processing script for NZBGet
 #
-# Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,6 +59,11 @@
 
 # SMTP server password, if required.
 #Password=mypass
+
+# Send test e-mail.
+#
+# Click the button to send a test e-mail to check correctness of smtp settings.
+#ConnectionTest@Test
 
 # Append statistics to the message (yes, no).
 #Statistics=yes
