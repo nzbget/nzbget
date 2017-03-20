@@ -27,12 +27,14 @@
 static const int COMMANDPROCESS_SUCCESS = 93;
 static const int COMMANDPROCESS_ERROR = 94;
 
-void CommandScriptController::StartScript(const char* scriptName, const char* command)
+void CommandScriptController::StartScript(const char* scriptName, const char* command,
+	std::unique_ptr<Options::OptEntries> modifiedOptions)
 {
 	CommandScriptController* scriptController = new CommandScriptController();
 	scriptController->m_script = scriptName;
 	scriptController->m_command = command;
 	scriptController->m_logId = g_CommandScriptLog->Reset();
+	scriptController->m_modifiedOptions = std::move(modifiedOptions);
 
 	scriptController->SetAutoDestroy(true);
 
@@ -87,6 +89,11 @@ void CommandScriptController::PrepareParams(const char* scriptName)
 	PrepareEnvScript(nullptr, scriptName);
 }
 
+const char* CommandScriptController::GetOptValue(const char* name, const char* value)
+{
+	Options::OptEntry* entry = m_modifiedOptions->FindOption(name);
+	return entry ? entry->GetValue() : value;
+}
 
 void CommandScriptController::AddMessage(Message::EKind kind, const char * text)
 {

@@ -198,14 +198,15 @@ void ScriptController::PrepareEnvOptions(const char* stripPrefix)
 
 	for (Options::OptEntry& optEntry : g_Options->GuardOptEntries())
 	{
+		const char* value = GetOptValue(optEntry.GetName(), optEntry.GetValue());
 		if (stripPrefix && !strncmp(optEntry.GetName(), stripPrefix, prefixLen) &&
 			(int)strlen(optEntry.GetName()) > prefixLen)
 		{
-			SetEnvVarSpecial("NZBPO", optEntry.GetName() + prefixLen, optEntry.GetValue());
+			SetEnvVarSpecial("NZBPO", optEntry.GetName() + prefixLen, value);
 		}
 		else if (!stripPrefix)
 		{
-			SetEnvVarSpecial("NZBOP", optEntry.GetName(), optEntry.GetValue());
+			SetEnvVarSpecial("NZBOP", optEntry.GetName(), value);
 		}
 	}
 }

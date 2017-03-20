@@ -28,16 +28,18 @@ class CommandScriptController : public Thread, public NzbScriptController
 {
 public:
 	virtual void Run();
-	static void StartScript(const char* scriptName, const char* command);
+	static void StartScript(const char* scriptName, const char* command, std::unique_ptr<Options::OptEntries> modifiedOptions);
 
 protected:
 	virtual void ExecuteScript(ScriptConfig::Script* script);
 	virtual void AddMessage(Message::EKind kind, const char* text);
+	virtual const char* GetOptValue(const char* name, const char* value);
 
 private:
 	CString m_script;
 	CString m_command;
 	int m_logId;
+	std::unique_ptr<Options::OptEntries> m_modifiedOptions;
 
 	void PrepareParams(const char* scriptName);
 };

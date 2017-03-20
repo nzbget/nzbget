@@ -1504,7 +1504,8 @@ var Config = (new function($)
 		var option = findOptionById(optFormId);
 		var script = option.name.substr(0, option.name.indexOf(':'));
 		var command = option.name.substr(option.name.indexOf(':') + 1, 1000);
-		RPC.call('startscript', [script, command],
+		var changedOptions = prepareSaveRequest(true, false, true);
+		RPC.call('startscript', [script, command, changedOptions],
 			function (result)
 			{
 				if (result)
@@ -1655,7 +1656,7 @@ var Config = (new function($)
 		return false;
 	}
 
-	function prepareSaveRequest(onlyUserChanges, webSettings)
+	function prepareSaveRequest(onlyUserChanges, webSettings, onlyChangedOptions)
 	{
 		var modified = false;
 		var request = [];
@@ -1682,14 +1683,18 @@ var Config = (new function($)
 							{
 								if (onlyUserChanges)
 								{
-									modified = modified || (oldValue != newValue && oldValue !== null);
+									var optmodified = oldValue != newValue && oldValue !== null;
 								}
 								else
 								{
-									modified = modified || (oldValue != newValue) || (option.value === null);
+									var optmodified = (oldValue != newValue) || (option.value === null);
 								}
-								var opt = {Name: option.name, Value: newValue};
-								request.push(opt);
+								modified = modified || optmodified;
+								if (optmodified || !onlyChangedOptions)
+								{
+									var opt = {Name: option.name, Value: newValue};
+									request.push(opt);
+								}
 							}
 						}
 						modified = modified || section.modified;

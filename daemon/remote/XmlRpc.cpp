@@ -3381,7 +3381,7 @@ void TestServerXmlCommand::PrintError(const char* errMsg)
 	}
 }
 
-// bool startscript(string script, string command);
+// bool startscript(string script, string command, struct[] options);
 void StartScriptXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
@@ -3397,7 +3397,21 @@ void StartScriptXmlCommand::Execute()
 		return;
 	}
 
-	CommandScriptController::StartScript(script, command);
+	std::unique_ptr<Options::OptEntries> optEntries = std::make_unique<Options::OptEntries>();
+
+	char* name;
+	char* value;
+	char* dummy;
+	while ((IsJson() && NextParamAsStr(&dummy) && NextParamAsStr(&name) &&
+		NextParamAsStr(&dummy) && NextParamAsStr(&value)) ||
+		(!IsJson() && NextParamAsStr(&name) && NextParamAsStr(&value)))
+	{
+		DecodeStr(name);
+		DecodeStr(value);
+		optEntries->emplace_back(name, value);
+	}
+
+	CommandScriptController::StartScript(script, command, std::move(optEntries));
 
 	BuildBoolResponse(true);
 }

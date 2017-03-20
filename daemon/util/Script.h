@@ -78,6 +78,7 @@ protected:
 	void ResetEnv();
 	void PrepareEnvOptions(const char* stripPrefix);
 	void PrepareArgs();
+	virtual const char* GetOptValue(const char* name, const char* value) { return value; }
 	int StartProcess();
 	int WaitProcess();
 #ifdef WIN32
