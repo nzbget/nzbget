@@ -60,10 +60,8 @@
 # SMTP server password, if required.
 #Password=mypass
 
-# Send test e-mail.
-#
-# Click the button to send a test e-mail to check correctness of smtp settings.
-#ConnectionTest@Test
+# To check connection parameters click the button.
+#ConnectionTest@Send Test E-Mail
 
 # Append statistics to the message (yes, no).
 #Statistics=yes
@@ -120,41 +118,43 @@ for	optname in required_options:
 		sys.exit(POSTPROCESS_ERROR)
 
 # Check if the script is executed from settings page with a custom command
-command = os.environ.get('NZBCP_COMMAND', '')
-if command != '':
-	print('Executing command ' + command)
-	sys.exit(POSTPROCESS_SUCCESS)
+command = os.environ.get('NZBCP_COMMAND')
+test_mode = command == 'ConnectionTest'
+if command != None and not test_mode:
+	print('[ERROR] Invalid command ' + command)
+	sys.exit(POSTPROCESS_ERROR)
 
-status = os.environ['NZBPP_STATUS']
-total_status = os.environ['NZBPP_TOTALSTATUS']
+status = os.environ.get('NZBPP_STATUS') if not test_mode else 'SUCCESS/ALL'
+total_status = os.environ.get('NZBPP_TOTALSTATUS') if not test_mode else 'SUCCESS'
 
 # If any script fails the status of the item in the history is "WARNING/SCRIPT".
 # This status however is not passed to pp-scripts in the env var "NZBPP_STATUS"
 # because most scripts are independent of each other and should work even
 # if a previous script has failed. But not in the case of E-Mail script,
 # which should take the status of the previous scripts into account as well.
-if total_status == 'SUCCESS' and os.environ['NZBPP_SCRIPTSTATUS'] == 'FAILURE':
+if total_status == 'SUCCESS' and os.environ.get('NZBPP_SCRIPTSTATUS') == 'FAILURE':
 	total_status = 'WARNING'
 	status = 'WARNING/SCRIPT'
 
 success = total_status == 'SUCCESS'
 
-if success and os.environ.get('NZBPO_SENDMAIL') == 'OnFailure':
+if success and os.environ.get('NZBPO_SENDMAIL') == 'OnFailure' and not test_mode:
 	print('[INFO] Skipping sending of message for successful download')
 	sys.exit(POSTPROCESS_NONE)
 
 if success:
-	subject = 'Success for "%s"' % (os.environ['NZBPP_NZBNAME'])
-	text = 'Download of "%s" has successfully completed.' % (os.environ['NZBPP_NZBNAME'])
+	subject = 'Success for "%s"' % (os.environ.get('NZBPP_NZBNAME', 'Test download'))
+	text = 'Download of "%s" has successfully completed.' % (os.environ.get('NZBPP_NZBNAME', 'Test download'))
 else:
 	subject = 'Failure for "%s"' % (os.environ['NZBPP_NZBNAME'])
 	text = 'Download of "%s" has failed.' % (os.environ['NZBPP_NZBNAME'])
 
 text += '\nStatus: %s' % status
 
-if os.environ.get('NZBPO_STATISTICS') == 'yes' or \
+if (os.environ.get('NZBPO_STATISTICS') == 'yes' or \
 	os.environ.get('NZBPO_NZBLOG') == 'Always' or \
-	(os.environ.get('NZBPO_NZBLOG') == 'OnFailure' and not success):
+	(os.environ.get('NZBPO_NZBLOG') == 'OnFailure' and not success)) and \
+	not test_mode:
 	# To get statistics or the post-processing log we connect to NZBGet via XML-RPC.
 	# For more info visit http://nzbget.net/RPC_API_reference
 	# First we need to know connection info: host, port and password of NZBGet server.
@@ -173,7 +173,7 @@ if os.environ.get('NZBPO_STATISTICS') == 'yes' or \
 	# Create remote server object
 	server = ServerProxy(rpcUrl)
 
-if os.environ.get('NZBPO_STATISTICS') == 'yes':
+if os.environ.get('NZBPO_STATISTICS') == 'yes' and not test_mode:
 	# Find correct nzb in method listgroups
 	groups = server.listgroups(0)
 	nzbID = int(os.environ['NZBPP_NZBID'])
@@ -217,7 +217,7 @@ if os.environ.get('NZBPO_STATISTICS') == 'yes':
 
 # add list of downloaded files
 files = False
-if os.environ.get('NZBPO_FILELIST') == 'yes':
+if os.environ.get('NZBPO_FILELIST') == 'yes' and not test_mode:
 	text += '\n\nFiles:'
 	for dirname, dirnames, filenames in os.walk(os.environ['NZBPP_DIRECTORY']):
 		for filename in filenames:
@@ -227,14 +227,15 @@ if os.environ.get('NZBPO_FILELIST') == 'yes':
 		text += '\n<no files found in the destination directory (moved by a script?)>'
 
 # add _brokenlog.txt (if exists)
-if os.environ.get('NZBPO_BROKENLOG') == 'yes':
+if os.environ.get('NZBPO_BROKENLOG') == 'yes' and not test_mode:
 	brokenlog = '%s/_brokenlog.txt' % os.environ['NZBPP_DIRECTORY']
 	if os.path.exists(brokenlog):
 		text += '\n\nBrokenlog:\n' + open(brokenlog, 'r').read().strip()
 
 # add post-processing log
-if os.environ.get('NZBPO_NZBLOG') == 'Always' or \
-	(os.environ.get('NZBPO_NZBLOG') == 'OnFailure' and not success):
+if (os.environ.get('NZBPO_NZBLOG') == 'Always' or \
+	(os.environ.get('NZBPO_NZBLOG') == 'OnFailure' and not success)) and \
+	not test_mode:
 
 	# To get the item log we connect to NZBGet via XML-RPC and call
 	# method "loadlog", which returns the log for a given nzb item.
