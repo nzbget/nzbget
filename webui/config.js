@@ -1502,11 +1502,19 @@ var Config = (new function($)
 	{
 		var optFormId = $(button).attr('id');
 		var option = findOptionById(optFormId);
-		console.log(option);
-		RPC.call('startscript', ['EMail.py', option.caption],
+		var script = option.name.substr(0, option.name.indexOf(':'));
+		var command = option.name.substr(option.name.indexOf(':') + 1, 1000);
+		RPC.call('startscript', [script, command],
 			function (result)
 			{
-				PopupNotification.show(result ? '#Notif_Config_Script_Started' : '#Notif_Config_Script_Failed');
+				if (result)
+				{
+					ExecScriptDialog.showModal(script);
+				}
+				else
+				{
+					PopupNotification.show('#Notif_Config_Script_Failed');
+				}
 			}
 		);
 	}
@@ -2948,6 +2956,84 @@ var UpdateDialog = (new function($)
 					setTimeout(checkStatus, 500);
 				}
 			});
+	}
+
+}(jQuery));
+
+
+/*** EXEC SCRIPT DIALOG *******************************************************/
+
+var ExecScriptDialog = (new function($)
+{
+	'use strict'
+
+	// Controls
+	var $ExecScriptDialog;
+	var $ExecScriptDialog_Log;
+	var $ExecScriptDialog_Title;
+	var $ExecScriptDialog_Status;
+
+	// State
+	var logReceived = false;
+
+	this.init = function()
+	{
+		$ExecScriptDialog = $('#ExecScriptDialog');
+		$ExecScriptDialog_Log = $('#ExecScriptDialog_Log');
+		$ExecScriptDialog_Title = $('#ExecScriptDialog_Title');
+		$ExecScriptDialog_Status = $('#ExecScriptDialog_Status');
+	}
+
+	this.showModal = function(scriptName)
+	{
+		$ExecScriptDialog_Title.text('Executing script ' + scriptName);
+		$ExecScriptDialog_Log.text('');
+		$ExecScriptDialog_Status.show();
+		$ExecScriptDialog.modal({backdrop: 'static'});
+		updateLog();
+	}
+
+	function updateLog()
+	{
+		RPC.call('logscript', [0, 100], function(data)
+			{
+				updateLogTable(data);
+				setTimeout(updateLog, 500);
+			});
+	}
+
+	function setLogContentAndScroll(html)
+	{
+		var scroll = $ExecScriptDialog_Log.prop('scrollHeight') - $ExecScriptDialog_Log.prop('scrollTop') === $ExecScriptDialog_Log.prop('clientHeight');
+		$ExecScriptDialog_Log.html(html);
+		if (scroll)
+		{
+			$ExecScriptDialog_Log.scrollTop($ExecScriptDialog_Log.prop('scrollHeight'));
+		}
+	}
+
+	function updateLogTable(messages)
+	{
+		var html = '';
+		for (var i=0; i < messages.length; i++)
+		{
+			var message = messages[i];
+			var text = Util.textToHtml(message.Text);
+			if (text.substr(0, 7) === 'Script ')
+			{
+				$ExecScriptDialog_Status.fadeOut(500);
+				if (message.Kind === 'INFO')
+				{
+					text = '<span class="script-log-success">' + text + '</span>';
+				}
+			}
+			if (message.Kind === 'ERROR')
+			{
+				text = '<span class="script-log-error">' + text + '</span>';
+			}
+			html = html + text + '\n';
+		}
+		setLogContentAndScroll(html);
 	}
 
 }(jQuery));

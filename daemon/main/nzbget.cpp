@@ -52,6 +52,7 @@
 #include "Util.h"
 #include "FileSystem.h"
 #include "StackTrace.h"
+#include "CommandScript.h"
 #ifdef WIN32
 #include "WinService.h"
 #include "WinConsole.h"
@@ -85,6 +86,7 @@ ArticleCache* g_ArticleCache;
 QueueScriptCoordinator* g_QueueScriptCoordinator;
 ServiceCoordinator* g_ServiceCoordinator;
 ScriptConfig* g_ScriptConfig;
+CommandScriptLog* g_CommandScriptLog; 
 #ifdef WIN32
 WinConsole* g_WinConsole;
 #endif
@@ -205,6 +207,7 @@ private:
 	std::unique_ptr<QueueScriptCoordinator> m_queueScriptCoordinator;
 	std::unique_ptr<ServiceCoordinator> m_serviceCoordinator;
 	std::unique_ptr<ScriptConfig> m_scriptConfig;
+	std::unique_ptr<CommandScriptLog> m_commandScriptLog;
 #ifdef WIN32
 	std::unique_ptr<WinConsole> m_winConsole;
 #endif
@@ -368,6 +371,9 @@ void NZBGet::CreateGlobals()
 	m_scriptConfig = std::make_unique<ScriptConfig>();
 	g_ScriptConfig = m_scriptConfig.get();
 
+	m_commandScriptLog = std::make_unique<CommandScriptLog>();
+	g_CommandScriptLog = m_commandScriptLog.get();
+
 	m_scheduler = std::make_unique<Scheduler>();
 
 	m_diskService = std::make_unique<DiskService>();
@@ -440,6 +446,7 @@ void NZBGet::Cleanup()
 	g_QueueScriptCoordinator = nullptr;
 	g_Maintenance = nullptr;
 	g_StatMeter = nullptr;
+	g_CommandScriptLog = nullptr;
 #ifdef WIN32
 	g_WinConsole = nullptr;
 #endif

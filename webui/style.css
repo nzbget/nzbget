@@ -1900,17 +1900,17 @@ div.multiset-toolbar button {
 	background-color: #ffffff;
 }
 
-#UpdateProgressDialog {
+.log-dialog {
 	width: 640px;
 	margin-left: -320px;
 }
 
-#UpdateProgressDialog .modal-body {
+.log-dialog .modal-body {
 	min-height: 280px;
 	position: relative;
 }
 
-#UpdateProgressDialog_Log {
+.log-dialog .modal-body pre {
 	min-height: 270px;
 	background-color: #222222;
 	color: #cccccc;
@@ -1927,8 +1927,13 @@ div.multiset-toolbar button {
 		  border-radius: 3px;
 }
 
-.update-log-error {
-	color: #ff0000;
+.update-log-error,
+.script-log-error {
+	color: #dd0000;
+}
+
+.script-log-success {
+	color: #00dd00;
 }
 
 /* FEED FILTER DIALOG */

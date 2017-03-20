@@ -2677,7 +2677,7 @@
 
 <!-- *** INSTALL DIALOG ************************************************** -->
 
-<div class="modal modal-center hide" id="UpdateProgressDialog">
+<div class="modal modal-center hide log-dialog" id="UpdateProgressDialog">
 	<div class="modal-header">
 	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
 	<h3>Updating NZBGet</h3>
@@ -2685,6 +2685,23 @@
 	<div class="modal-body">
 		<pre id="UpdateProgressDialog_Log">
 		</pre>
+	</div>
+</div>
+
+<!-- *** EXEC SCRIPT DIALOG ************************************************** -->
+
+<div class="modal modal-center hide log-dialog" id="ExecScriptDialog">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3 id="ExecScriptDialog_Title">Executing script</h3>
+	</div>
+	<div class="modal-body">
+		<pre id="ExecScriptDialog_Log">
+		</pre>
+	</div>
+	<div class="modal-footer">
+		<div class="pull-left" id="ExecScriptDialog_Status">You may close this dialog any time, the script remains running in background.</div>
+		<a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
 	</div>
 </div>
 
@@ -2990,10 +3007,6 @@
 
 <div id="Notif_Config_TestConnectionOK" data-duration="1000" class="alert alert-success alert-center alert-center-small hide">
     <strong>Connection successful</strong>
-</div>
-
-<div id="Notif_Config_Script_Started" data-duration="2000" class="alert alert-inverse alert-center alert-center-medium hide">
-    <strong>Script started, check messages for script output</strong>
 </div>
 
 <div id="Notif_Config_Script_Failed" data-duration="1000" class="alert alert-error alert-center alert-center-small hide">

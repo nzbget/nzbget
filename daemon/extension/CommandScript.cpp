@@ -24,11 +24,15 @@
 #include "Log.h"
 #include "Util.h"
 
+static const int COMMANDPROCESS_SUCCESS = 93;
+static const int COMMANDPROCESS_ERROR = 94;
+
 void CommandScriptController::StartScript(const char* scriptName, const char* command)
 {
 	CommandScriptController* scriptController = new CommandScriptController();
 	scriptController->m_script = scriptName;
 	scriptController->m_command = command;
+	scriptController->m_logId = g_CommandScriptLog->Reset();
 
 	scriptController->SetAutoDestroy(true);
 
@@ -52,9 +56,26 @@ void CommandScriptController::ExecuteScript(ScriptConfig::Script* script)
 	SetLogPrefix(script->GetDisplayName());
 	PrepareParams(script->GetName());
 
-	Execute();
+	int exitCode = Execute();
 
+	infoName[0] = 'S'; // uppercase
 	SetLogPrefix(nullptr);
+
+	switch (exitCode)
+	{
+		case COMMANDPROCESS_SUCCESS:
+			PrintMessage(Message::mkInfo, "%s successful", *infoName);
+			break;
+
+		case COMMANDPROCESS_ERROR:
+		case -1: // Execute() returns -1 if the process could not be started (file not found or other problem)
+			PrintMessage(Message::mkError, "%s failed", *infoName);
+			break;
+
+		default:
+			PrintMessage(Message::mkError, "%s failed (terminated with unknown status)", *infoName);
+			break;
+	}
 }
 
 void CommandScriptController::PrepareParams(const char* scriptName)
@@ -64,4 +85,30 @@ void CommandScriptController::PrepareParams(const char* scriptName)
 	SetEnvVar("NZBCP_COMMAND", m_command);
 
 	PrepareEnvScript(nullptr, scriptName);
+}
+
+
+void CommandScriptController::AddMessage(Message::EKind kind, const char * text)
+{
+	NzbScriptController::AddMessage(kind, text);
+	g_CommandScriptLog->AddMessage(m_logId, kind, text);
+}
+
+
+int CommandScriptLog::Reset()
+{
+	Guard guard(m_logMutex);
+	m_messages.clear();
+	return ++m_idScriptGen;
+}
+
+void CommandScriptLog::AddMessage(int scriptId, Message::EKind kind, const char * text)
+{
+	Guard guard(m_logMutex);
+
+	// save only messages from the last started script
+	if (scriptId == m_idScriptGen)
+	{
+		m_messages.emplace_back(++m_idMessageGen, kind, Util::CurrentTime(), text);
+	}
 }

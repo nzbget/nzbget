@@ -22,6 +22,7 @@
 #define COMMANDSCRIPT_H
 
 #include "NzbScript.h"
+#include "Log.h"
 
 class CommandScriptController : public Thread, public NzbScriptController
 {
@@ -31,12 +32,30 @@ public:
 
 protected:
 	virtual void ExecuteScript(ScriptConfig::Script* script);
+	virtual void AddMessage(Message::EKind kind, const char* text);
 
 private:
 	CString m_script;
 	CString m_command;
+	int m_logId;
 
 	void PrepareParams(const char* scriptName);
 };
+
+class CommandScriptLog
+{
+public:
+	GuardedMessageList GuardMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
+	int Reset();
+	void AddMessage(int scriptId, Message::EKind kind, const char* text);
+
+private:
+	MessageList m_messages;
+	Mutex m_logMutex;
+	int m_idMessageGen;
+	int m_idScriptGen;
+};
+
+extern CommandScriptLog* g_CommandScriptLog;
 
 #endif

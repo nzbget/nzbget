@@ -313,6 +313,12 @@ public:
 	virtual void Execute();
 };
 
+class LogScriptXmlCommand : public LogXmlCommand
+{
+protected:
+	virtual GuardedMessageList GuardMessages();
+};
+
 
 //*****************************************************************
 // XmlRpcProcessor
@@ -719,6 +725,10 @@ std::unique_ptr<XmlCommand> XmlRpcProcessor::CreateCommand(const char* methodNam
 	else if (!strcasecmp(methodName, "startscript"))
 	{
 		command = std::make_unique<StartScriptXmlCommand>();
+	}
+	else if (!strcasecmp(methodName, "logscript"))
+	{
+		command = std::make_unique<LogScriptXmlCommand>();
 	}
 	else
 	{
@@ -3390,4 +3400,10 @@ void StartScriptXmlCommand::Execute()
 	CommandScriptController::StartScript(script, command);
 
 	BuildBoolResponse(true);
+}
+
+// struct[] logscript(idfrom, entries)
+GuardedMessageList LogScriptXmlCommand::GuardMessages()
+{
+	return g_CommandScriptLog->GuardMessages();
 }
