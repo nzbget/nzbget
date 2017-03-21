@@ -368,6 +368,23 @@ bool TlsSocket::Start()
 			Close();
 			return false;
 		}
+
+		// For ECC certificates
+		EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+		if (!ecdh)
+		{
+			ReportError("Could not generate ecdh parameters for TLS", false);
+			Close();
+			return false;
+		}
+		if (!SSL_CTX_set_tmp_ecdh((SSL_CTX*)m_context, ecdh))
+		{
+			ReportError("Could not set ecdh parameters for TLS", false);
+			EC_KEY_free(ecdh);
+			Close();
+			return false;
+		}
+		EC_KEY_free(ecdh);
 	}
 
 	if (m_isClient && !m_certStore.Empty())
