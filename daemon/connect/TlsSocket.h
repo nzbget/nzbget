@@ -60,7 +60,7 @@ private:
 	void* m_context = nullptr;
 	void* m_session = nullptr;
 
-	void ReportError(const char* errMsg);
+	void ReportError(const char* errMsg, bool suppressable = true);
 	bool ValidateCert();
 
 	static void Final();

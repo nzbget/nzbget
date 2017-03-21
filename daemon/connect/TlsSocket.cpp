@@ -205,11 +205,11 @@ TlsSocket::~TlsSocket()
 	Close();
 }
 
-void TlsSocket::ReportError(const char* errMsg)
+void TlsSocket::ReportError(const char* errMsg, bool suppressable)
 {
 #ifdef HAVE_LIBGNUTLS
 	const char* errstr = gnutls_strerror(m_retCode);
-	if (m_suppressErrors)
+	if (suppressable && m_suppressErrors)
 	{
 		debug("%s: %s", errMsg, errstr);
 	}
@@ -227,7 +227,7 @@ void TlsSocket::ReportError(const char* errMsg)
 		ERR_error_string_n(errcode, errstr, sizeof(errstr));
 		errstr[1024-1] = '\0';
 
-		if (m_suppressErrors)
+		if (suppressable && m_suppressErrors)
 		{
 			debug("%s: %s", errMsg, errstr);
 		}
@@ -257,7 +257,7 @@ bool TlsSocket::Start()
 	m_retCode = gnutls_certificate_allocate_credentials(&cred);
 	if (m_retCode != 0)
 	{
-		ReportError("Could not create TLS context");
+		ReportError("Could not create TLS context", false);
 		return false;
 	}
 
@@ -269,7 +269,7 @@ bool TlsSocket::Start()
 			m_certFile, m_keyFile, GNUTLS_X509_FMT_PEM);
 		if (m_retCode != 0)
 		{
-			ReportError("Could not load certificate or key file");
+			ReportError("Could not load certificate or key file", false);
 			Close();
 			return false;
 		}
@@ -279,7 +279,7 @@ bool TlsSocket::Start()
 	m_retCode = gnutls_init(&sess, m_isClient ? GNUTLS_CLIENT : GNUTLS_SERVER);
 	if (m_retCode != 0)
 	{
-		ReportError("Could not create TLS session");
+		ReportError("Could not create TLS session", false);
 		Close();
 		return false;
 	}
@@ -294,7 +294,7 @@ bool TlsSocket::Start()
 	m_retCode = gnutls_priority_set_direct((gnutls_session_t)m_session, priority, nullptr);
 	if (m_retCode != 0)
 	{
-		ReportError("Could not select cipher for TLS");
+		ReportError("Could not select cipher for TLS", false);
 		Close();
 		return false;
 	}
@@ -314,7 +314,7 @@ bool TlsSocket::Start()
 		(gnutls_certificate_credentials_t*)m_context);
 	if (m_retCode != 0)
 	{
-		ReportError("Could not initialize TLS session");
+		ReportError("Could not initialize TLS session", false);
 		Close();
 		return false;
 	}
@@ -344,7 +344,7 @@ bool TlsSocket::Start()
 
 	if (!m_context)
 	{
-		ReportError("Could not create TLS context");
+		ReportError("Could not create TLS context", false);
 		return false;
 	}
 
@@ -352,19 +352,19 @@ bool TlsSocket::Start()
 	{
 		if (SSL_CTX_use_certificate_chain_file((SSL_CTX*)m_context, m_certFile) != 1)
 		{
-			ReportError("Could not load certificate file");
+			ReportError("Could not load certificate file", false);
 			Close();
 			return false;
 		}
 		if (SSL_CTX_use_PrivateKey_file((SSL_CTX*)m_context, m_keyFile, SSL_FILETYPE_PEM) != 1)
 		{
-			ReportError("Could not load key file");
+			ReportError("Could not load key file", false);
 			Close();
 			return false;
 		}
 		if (!SSL_CTX_set_options((SSL_CTX*)m_context, SSL_OP_NO_SSLv3))
 		{
-			ReportError("Could not select minimum protocol version for TLS");
+			ReportError("Could not select minimum protocol version for TLS", false);
 			Close();
 			return false;
 		}
@@ -375,7 +375,7 @@ bool TlsSocket::Start()
 		// Enable certificate validation
 		if (SSL_CTX_load_verify_locations((SSL_CTX*)m_context, m_certStore, nullptr) != 1)
 		{
-			ReportError("Could not set certificate store location");
+			ReportError("Could not set certificate store location", false);
 			Close();
 			return false;
 		}
@@ -386,14 +386,14 @@ bool TlsSocket::Start()
 	m_session = SSL_new((SSL_CTX*)m_context);
 	if (!m_session)
 	{
-		ReportError("Could not create TLS session");
+		ReportError("Could not create TLS session", false);
 		Close();
 		return false;
 	}
 
 	if (!m_cipher.Empty() && !SSL_set_cipher_list((SSL*)m_session, m_cipher))
 	{
-		ReportError("Could not select cipher for TLS");
+		ReportError("Could not select cipher for TLS", false);
 		Close();
 		return false;
 	}
