@@ -1505,19 +1505,22 @@ var Config = (new function($)
 		var script = option.name.substr(0, option.name.indexOf(':'));
 		var command = option.name.substr(option.name.indexOf(':') + 1, 1000);
 		var changedOptions = prepareSaveRequest(true, false, true);
-		RPC.call('startscript', [script, command, changedOptions],
-			function (result)
-			{
-				if (result)
-				{
-					ExecScriptDialog.showModal(script);
-				}
-				else
-				{
-					PopupNotification.show('#Notif_Config_Script_Failed');
-				}
-			}
-		);
+
+		function execScript()
+		{
+			ExecScriptDialog.showModal(script, command, 'SETTINGS', changedOptions);
+		}
+
+		if (option.commandopts.indexOf('danger') > -1)
+		{
+			$('#DangerScriptConfirmDialog_OK').text(option.defvalue);
+			$('#DangerScriptConfirmDialog_Command').text(command);
+			ConfirmDialog.showModal('DangerScriptConfirmDialog', execScript);
+		}
+		else
+		{
+			execScript();
+		}
 	}
 
 	/*** RSS FEEDS ********************************************************************/
@@ -2989,13 +2992,27 @@ var ExecScriptDialog = (new function($)
 		$ExecScriptDialog_Status = $('#ExecScriptDialog_Status');
 	}
 
-	this.showModal = function(scriptName)
+	this.showModal = function(script, command, context, changedOptions)
 	{
-		$ExecScriptDialog_Title.text('Executing script ' + scriptName);
+		$ExecScriptDialog_Title.text('Executing script ' + script);
 		$ExecScriptDialog_Log.text('');
 		$ExecScriptDialog_Status.show();
 		$ExecScriptDialog.modal({backdrop: 'static'});
-		updateLog();
+
+		RPC.call('startscript', [script, command, context, changedOptions],
+			function (result)
+			{
+				if (result)
+				{
+					updateLog();
+				}
+				else
+				{
+					setLogContentAndScroll('<span class="script-log-error">Script start failed</span>');
+					$ExecScriptDialog_Status.hide();
+				}
+			}
+		);
 	}
 
 	function updateLog()

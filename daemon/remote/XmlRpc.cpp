@@ -3381,7 +3381,7 @@ void TestServerXmlCommand::PrintError(const char* errMsg)
 	}
 }
 
-// bool startscript(string script, string command, struct[] options);
+// bool startscript(string script, string command, string context, struct[] options);
 void StartScriptXmlCommand::Execute()
 {
 	if (!CheckSafeMethod())
@@ -3391,7 +3391,8 @@ void StartScriptXmlCommand::Execute()
 
 	char* script;
 	char* command;
-	if (!NextParamAsStr(&script) || !NextParamAsStr(&command))
+	char* context;
+	if (!NextParamAsStr(&script) || !NextParamAsStr(&command) || !NextParamAsStr(&context))
 	{
 		BuildErrorResponse(2, "Invalid parameter");
 		return;
@@ -3411,9 +3412,9 @@ void StartScriptXmlCommand::Execute()
 		optEntries->emplace_back(name, value);
 	}
 
-	CommandScriptController::StartScript(script, command, std::move(optEntries));
+	bool ok = CommandScriptController::StartScript(script, command, std::move(optEntries));
 
-	BuildBoolResponse(true);
+	BuildBoolResponse(ok);
 }
 
 // struct[] logscript(idfrom, entries)

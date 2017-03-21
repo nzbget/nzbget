@@ -23,11 +23,12 @@
 #include "Options.h"
 #include "Log.h"
 #include "Util.h"
+#include "FileSystem.h"
 
 static const int COMMANDPROCESS_SUCCESS = 93;
 static const int COMMANDPROCESS_ERROR = 94;
 
-void CommandScriptController::StartScript(const char* scriptName, const char* command,
+bool CommandScriptController::StartScript(const char* scriptName, const char* command,
 	std::unique_ptr<Options::OptEntries> modifiedOptions)
 {
 	CommandScriptController* scriptController = new CommandScriptController();
@@ -39,6 +40,15 @@ void CommandScriptController::StartScript(const char* scriptName, const char* co
 	scriptController->SetAutoDestroy(true);
 
 	scriptController->Start();
+
+	for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
+	{
+		if (FileSystem::SameFilename(scriptName, script.GetName()))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void CommandScriptController::Run()

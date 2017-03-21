@@ -28,7 +28,7 @@ class CommandScriptController : public Thread, public NzbScriptController
 {
 public:
 	virtual void Run();
-	static void StartScript(const char* scriptName, const char* command, std::unique_ptr<Options::OptEntries> modifiedOptions);
+	static bool StartScript(const char* scriptName, const char* command, std::unique_ptr<Options::OptEntries> modifiedOptions);
 
 protected:
 	virtual void ExecuteScript(ScriptConfig::Script* script);
