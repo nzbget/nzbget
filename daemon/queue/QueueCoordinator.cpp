@@ -568,12 +568,14 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 	debug("Article downloaded");
 
 	FileInfo* fileInfo = articleDownloader->GetFileInfo();
-	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
-	ArticleInfo* articleInfo = articleDownloader->GetArticleInfo();
-	bool retry = false;
-	bool fileCompleted = false;
+	bool completeFileParts = false;
 
 	{
+		NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
+		ArticleInfo* articleInfo = articleDownloader->GetArticleInfo();
+		bool retry = false;
+		bool fileCompleted = false;
+
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 		if (articleDownloader->GetStatus() == ArticleDownloader::adFinished)
@@ -642,35 +644,44 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 		{
 			fileCompleted = true;
 		}
+
+		completeFileParts = fileCompleted && (!fileInfo->GetDeleted() || nzbInfo->GetParking());
+
+		if (!completeFileParts)
+		{
+			DeleteDownloader(downloadQueue, articleDownloader, false);
+		}
 	}
 
-	bool deleteFileObj = false;
-
-	if (fileCompleted && (!fileInfo->GetDeleted() || nzbInfo->GetParking()))
+	if (completeFileParts)
 	{
 		// all jobs done
 		articleDownloader->CompleteFileParts();
 		fileInfo->SetPartialChanged(false);
-		deleteFileObj = true;
-	}
 
-	{
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		DeleteDownloader(downloadQueue, articleDownloader, true);
+	}
+}
 
-		bool hasOtherDownloaders = fileInfo->GetActiveDownloads() > 1;
-		deleteFileObj |= fileInfo->GetDeleted() && !hasOtherDownloaders;
+void QueueCoordinator::DeleteDownloader(DownloadQueue* downloadQueue,
+	ArticleDownloader* articleDownloader, bool fileCompleted)
+{
+	FileInfo* fileInfo = articleDownloader->GetFileInfo();
+	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
+	bool hasOtherDownloaders = fileInfo->GetActiveDownloads() > 1;
+	bool deleteFileObj = fileCompleted || (fileInfo->GetDeleted() && !hasOtherDownloaders);
 
-		// remove downloader from downloader list
-		m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), articleDownloader));
+	// remove downloader from downloader list
+	m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), articleDownloader));
 
-		fileInfo->SetActiveDownloads(fileInfo->GetActiveDownloads() - 1);
-		nzbInfo->SetActiveDownloads(nzbInfo->GetActiveDownloads() - 1);
+	fileInfo->SetActiveDownloads(fileInfo->GetActiveDownloads() - 1);
+	nzbInfo->SetActiveDownloads(nzbInfo->GetActiveDownloads() - 1);
 
-		if (deleteFileObj)
-		{
-			DeleteFileInfo(downloadQueue, fileInfo, fileCompleted);
-			downloadQueue->Save();
-		}
+	if (deleteFileObj)
+	{
+		DeleteFileInfo(downloadQueue, fileInfo, fileCompleted);
+		downloadQueue->Save();
 	}
 }
 

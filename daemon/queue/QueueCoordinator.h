@@ -83,6 +83,7 @@ private:
 	bool GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
 	void StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);
 	void ArticleCompleted(ArticleDownloader* articleDownloader);
+	void DeleteDownloader(DownloadQueue* downloadQueue, ArticleDownloader* articleDownloader, bool fileCompleted);
 	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
 	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void ResetHangingDownloads();
