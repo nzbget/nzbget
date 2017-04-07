@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -562,6 +562,7 @@ var StatDialog = (new function($)
 	var chartData = null;
 	var mouseOverIndex = -1;
 	var clockOK = false;
+	var volumeMode = false;
 
 	var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -647,8 +648,11 @@ var StatDialog = (new function($)
 			});
 	}
 
-	this.showModal = function()
+	this.showModal = function(serverId)
 	{
+		volumeMode = serverId !== undefined;
+		curServer = serverId !== undefined ? serverId : 0;
+
 		$('#StatDialog_GeneralTab').show();
 		$('#StatDialog_VolumesTab').hide();
 		$('#StatDialog_Back').hide();
@@ -663,6 +667,8 @@ var StatDialog = (new function($)
 			$('#StatDialog_MonthTitle').text('Billing month:');
 		}
 
+		$('#StatDialog_Volume_MONTH, #StatDialog_Volume_MONTH2').text(monthNames[(new Date()).getMonth()] + ' ' + (new Date()).getFullYear());
+
 		monthListInitialized = false;
 		updateServerList();
 		lastTab = null;
@@ -671,6 +677,11 @@ var StatDialog = (new function($)
 		redrawStatistics();
 		$StatDialog.modal();
 		firstLoadStatisticsData();
+
+		if (volumeMode)
+		{
+			$('#StatDialog_Volumes').click();
+		}
 	}
 
 	this.redraw = function()
@@ -750,21 +761,27 @@ var StatDialog = (new function($)
 	{
 		e.preventDefault();
 
-		$('#StatDialog_Back').fadeIn(500);
-		$('#StatDialog_BackSpace').hide();
+		if (!volumeMode)
+		{
+			$('#StatDialog_Back').fadeIn(500);
+			$('#StatDialog_BackSpace').hide();
+		}
 		lastTab = '#' + $(this).attr('data-tab');
 		lastPage = $(lastTab);
 		lastFullscreen = ($(this).attr('data-fullscreen') === 'true') && !UISettings.miniTheme;
 		redrawLock++;
 		$StatDialog.switchTab($('#StatDialog_GeneralTab'), lastPage,
-			e.shiftKey || !UISettings.slideAnimation ? 0 : 500,
+			e.shiftKey || !UISettings.slideAnimation || volumeMode ? 0 : 500,
 			{ fullscreen: lastFullscreen,
 			  toggleClass: 'modal-mini modal-large',
 			  mini: UISettings.miniTheme,
 			  complete: tabSwitchCompleted});
 		if (lastTab === '#StatDialog_VolumesTab')
 		{
-			redrawChart();
+			if (servervolumes)
+			{
+				redrawChart();
+			}
 			$('#StatDialog_Title').text('Downloaded volumes');
 		}
 	}

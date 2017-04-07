@@ -947,6 +947,8 @@ var Config = (new function($)
 			{
 				html += ' <button type="button" class="btn config-button" data-multiid="' + multiid + '" ' +
 					'onclick="Config.testConnection(this, \'' + setname + '\',\'' + section.id + '\')">Test Connection</button>';
+				html += ' <button type="button" class="btn config-button" data-multiid="' + multiid + '" ' +
+					'onclick="Config.serverStats(this, \'' + setname + '\',\'' + section.id + '\')">Volume Statistics</button>';
 			}
 			html += '<hr>';
 			html += '</div>';
@@ -1609,6 +1611,58 @@ var Config = (new function($)
 					});
 				});
 		});
+	}
+
+	/*** DOWNLOADED VOLUMES FOR A SERVER *******************************************************/
+
+	this.serverStats = function(control, setname, sectionId)
+	{
+		var multiid = parseInt($(control).attr('data-multiid'));
+
+		// Because the settings page isn't saved yet and user can reorder servers
+		// we cannot just use the server-id in teh call to "StatDialog".
+		// Instead we need to find the server in loaded options and get its ID from there.
+
+		var serverName = getOptionValue(findOptionByName('Server' + multiid + '.Name'));
+		var serverHost = getOptionValue(findOptionByName('Server' + multiid + '.Host'));
+		var serverPort = getOptionValue(findOptionByName('Server' + multiid + '.Port'));
+		console.log(serverName, serverHost, serverPort);
+		var serverId = 0;
+
+		// searching by name
+		var opt = undefined;
+		for (var i = 1; opt !== null; i++)
+		{
+			var opt = Options.option('Server' + i + '.Name');
+			if (opt === serverName)
+			{
+				serverId = i;
+				break;
+			}
+		}
+		if (serverId === 0)
+		{
+			// searching by host:port
+			var host = undefined;
+			for (var i = 1; host !== null; i++)
+			{
+				host = Options.option('Server' + i + '.Host');
+				var port = Options.option('Server' + i + '.Port');
+				if (host === serverHost && port === serverPort)
+				{
+					serverId = i;
+					break;
+				}
+			}
+		}
+
+		if (serverId === 0)
+		{
+			AlertDialog.showModal('Downloaded volumes', 'No statistics available for that server yet.');
+			return;
+		}
+
+		StatDialog.showModal(serverId);
 	}
 
 	/*** SAVE ********************************************************************/
