@@ -3130,7 +3130,7 @@ GuardedMessageList LogUpdateXmlCommand::GuardMessages()
 	return g_Maintenance->GuardMessages();
 }
 
-// struct[] servervolumes()
+// struct[] servervolumes(bool BytesPerSeconds, bool BytesPerMinutes, bool BytesPerHours, bool BytesPerDays)
 void ServerVolumesXmlCommand::Execute()
 {
 	const char* XML_VOLUME_ITEM_START =
@@ -3201,6 +3201,10 @@ void ServerVolumesXmlCommand::Execute()
 
 	AppendResponse(IsJson() ? "[\n" : "<array><data>\n");
 
+	bool BytesPer[] = {true, true, true, true};
+	NextParamAsBool(&BytesPer[0]) && NextParamAsBool(&BytesPer[1]) &&
+		NextParamAsBool(&BytesPer[2]) && NextParamAsBool(&BytesPer[3]);
+
 	int index = 0;
 
 	for (ServerVolume& serverVolume : g_StatMeter->GuardServerVolumes())
@@ -3226,25 +3230,28 @@ void ServerVolumesXmlCommand::Execute()
 
 		for (int i=0; i<4; i++)
 		{
-			ServerVolume::VolumeArray* volumeArray = VolumeArrays[i];
-			const char* arrayName = VolumeNames[i];
-
-			AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_START : XML_BYTES_ARRAY_START, arrayName);
-
-			int index2 = 0;
-			for (int64 bytes : *volumeArray)
+			if (BytesPer[i])
 			{
-				uint32 sizeHi, sizeLo, sizeMB;
-				Util::SplitInt64(bytes, &sizeHi, &sizeLo);
-				sizeMB = (int)(bytes / 1024 / 1024);
+				ServerVolume::VolumeArray* volumeArray = VolumeArrays[i];
+				const char* arrayName = VolumeNames[i];
 
-				AppendCondResponse(",\n", IsJson() && index2++ > 0);
-				AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_ITEM : XML_BYTES_ARRAY_ITEM,
-						 sizeLo, sizeHi, sizeMB);
+				AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_START : XML_BYTES_ARRAY_START, arrayName);
+
+				int index2 = 0;
+				for (int64 bytes : *volumeArray)
+				{
+					uint32 sizeHi, sizeLo, sizeMB;
+					Util::SplitInt64(bytes, &sizeHi, &sizeLo);
+					sizeMB = (int)(bytes / 1024 / 1024);
+
+					AppendCondResponse(",\n", IsJson() && index2++ > 0);
+					AppendFmtResponse(IsJson() ? JSON_BYTES_ARRAY_ITEM : XML_BYTES_ARRAY_ITEM,
+							 sizeLo, sizeHi, sizeMB);
+				}
+
+				AppendResponse(IsJson() ? JSON_BYTES_ARRAY_END : XML_BYTES_ARRAY_END);
+				AppendCondResponse(",\n", IsJson() && i < 3);
 			}
-
-			AppendResponse(IsJson() ? JSON_BYTES_ARRAY_END : XML_BYTES_ARRAY_END);
-			AppendCondResponse(",\n", IsJson() && i < 3);
 		}
 		AppendResponse(IsJson() ? JSON_VOLUME_ITEM_END : XML_VOLUME_ITEM_END);
 		index++;
