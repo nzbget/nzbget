@@ -3037,6 +3037,7 @@ var ExecScriptDialog = (new function($)
 
 	// State
 	var logReceived = false;
+	var visible = false;
 
 	this.init = function()
 	{
@@ -3044,6 +3045,7 @@ var ExecScriptDialog = (new function($)
 		$ExecScriptDialog_Log = $('#ExecScriptDialog_Log');
 		$ExecScriptDialog_Title = $('#ExecScriptDialog_Title');
 		$ExecScriptDialog_Status = $('#ExecScriptDialog_Status');
+		$ExecScriptDialog.on('hidden', function() { visible = false; });
 	}
 
 	this.showModal = function(script, command, context, changedOptions)
@@ -3052,6 +3054,7 @@ var ExecScriptDialog = (new function($)
 		$ExecScriptDialog_Log.text('');
 		$ExecScriptDialog_Status.show();
 		$ExecScriptDialog.modal({backdrop: 'static'});
+		visible = true;
 
 		RPC.call('startscript', [script, command, context, changedOptions],
 			function (result)
@@ -3074,7 +3077,10 @@ var ExecScriptDialog = (new function($)
 		RPC.call('logscript', [0, 100], function(data)
 			{
 				updateLogTable(data);
-				setTimeout(updateLog, 500);
+				if (visible)
+				{
+					setTimeout(updateLog, 500);
+				}
 			});
 	}
 
