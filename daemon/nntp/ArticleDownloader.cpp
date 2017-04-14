@@ -316,14 +316,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	}
 
 	// retrieve article
-	for (int retry = 3; retry > 0; retry--)
-	{
-		response = m_connection->Request(BString<1024>("ARTICLE %s\r\n", m_articleInfo->GetMessageId()));
-		if ((response && !strncmp(response, "2", 1)) || m_connection->GetAuthError())
-		{
-			break;
-		}
-	}
+	response = m_connection->Request(BString<1024>("ARTICLE %s\r\n", m_articleInfo->GetMessageId()));
 
 	status = CheckResponse(response, "could not fetch article");
 	if (status != adFinished)
