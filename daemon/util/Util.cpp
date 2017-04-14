@@ -429,19 +429,6 @@ std::vector<CString> Util::SplitStr(const char* str, const char* separators)
 	return result;
 }
 
-bool Util::ObfuscatedFilename(const char* str)
-{
-	for (const char* p = str; *p; p++)
-	{
-		char ch = *p;
-		if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */

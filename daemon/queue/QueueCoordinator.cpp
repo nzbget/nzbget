@@ -621,9 +621,10 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			articleDownloader->GetStatus() == ArticleDownloader::adFinished &&
 			articleDownloader->GetArticleFilename())
 		{
-			// prefer filename from nzb-file to filename read from article if the name from article seems to be obfuscated
-			bool useFilenameFromArticle = !Util::ObfuscatedFilename(articleDownloader->GetArticleFilename()) || nzbInfo->GetManyDupeFiles();
-			if (useFilenameFromArticle)
+			// Use file names from article metadata unless explicitly disabled via pp-parameters
+			NzbParameter* nameParameter = nzbInfo->GetParameters()->Find("*naming", false);
+			bool useArticleNames = !(nameParameter && !strcasecmp(nameParameter->GetValue(), "nzb"));
+			if (useArticleNames)
 			{
 				fileInfo->SetFilename(articleDownloader->GetArticleFilename());
 				fileInfo->MakeValidFilename();

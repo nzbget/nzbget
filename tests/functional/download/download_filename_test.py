@@ -10,7 +10,7 @@ def test_small_obfuscated(nserv, nzbget):
 def test_small_obfuscated_bad(nserv, nzbget):
 	nzb_content = nzbget.load_nzb('small-obfuscated.nzb')
 	nzb_content = nzb_content.replace(';fsdkhKHGuwuMNBKskd', ';gpl.txt')
-	hist = nzbget.download_nzb('small-obfuscated.mod.nzb', nzb_content)
+	hist = nzbget.download_nzb('small-obfuscated.mod.nzb', nzb_content, params=[('*naming', 'nzb')])
 	assert hist['Status'] == 'SUCCESS/HEALTH'
 	assert not os.path.exists(hist['DestDir'] + '/fsdkhKHGuwuMNBKskd')
 	assert os.path.exists(hist['DestDir'] + '/gpl.txt')
