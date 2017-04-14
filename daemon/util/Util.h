@@ -53,6 +53,9 @@ public:
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
 	static char* ReduceStr(char* str, const char* from, const char* to);
 
+	/* check if filename looks like obfuscated name */
+	static bool ObfuscatedFilename(const char* str);
+
 	/* Calculate Hash using Bob Jenkins (1996) algorithm */
 	static uint32 HashBJ96(const char* buffer, int bufSize, uint32 initValue);
 

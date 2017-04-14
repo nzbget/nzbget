@@ -621,8 +621,13 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			articleDownloader->GetStatus() == ArticleDownloader::adFinished &&
 			articleDownloader->GetArticleFilename())
 		{
-			fileInfo->SetFilename(articleDownloader->GetArticleFilename());
-			fileInfo->MakeValidFilename();
+			// prefer filename from nzb-file to filename read from article if the name from article seems to be obfuscated
+			bool useFilenameFromArticle = !Util::ObfuscatedFilename(articleDownloader->GetArticleFilename()) || nzbInfo->GetManyDupeFiles();
+			if (useFilenameFromArticle)
+			{
+				fileInfo->SetFilename(articleDownloader->GetArticleFilename());
+				fileInfo->MakeValidFilename();
+			}
 			fileInfo->SetFilenameConfirmed(true);
 			if (g_Options->GetDupeCheck() &&
 				nzbInfo->GetDupeMode() != dmForce &&

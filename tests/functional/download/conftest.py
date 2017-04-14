@@ -41,6 +41,11 @@ def prepare_testdata(request):
 			os.makedirs(nserv_datadir + '/small')
 		shutil.copyfile(nzbget_srcdir +'/COPYING', nserv_datadir + '/small/small.dat')
 
+	if not os.path.exists(nserv_datadir + '/small-obfuscated.nzb'):
+		if not os.path.exists(nserv_datadir + '/small-obfuscated'):
+			os.makedirs(nserv_datadir + '/small-obfuscated')
+		shutil.copyfile(nzbget_srcdir +'/COPYING', nserv_datadir + '/small-obfuscated/fsdkhKHGuwuMNBKskd')
+
 	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '3000', '-q']):
 		pytest.exit('Test file generation failed')
 
