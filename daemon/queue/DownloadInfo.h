@@ -564,6 +564,8 @@ public:
 	bool GetParFull() { return m_parFull; }
 	int GetFeedId() { return m_feedId; }
 	void SetFeedId(int feedId) { m_feedId = feedId; }
+	bool GetAllConfirmed() { return m_allConfirmed; }
+	void SetAllConfirmed(bool allConfirmed) { m_allConfirmed = allConfirmed; }
 	void MoveFileList(NzbInfo* srcNzbInfo);
 	void UpdateMinMaxTime();
 	PostInfo* GetPostInfo() { return m_postInfo.get(); }
@@ -666,6 +668,7 @@ private:
 	int m_messageCount = 0;
 	int m_cachedMessageCount = 0;
 	int m_feedId = 0;
+	bool m_allConfirmed = false;
 
 	static int m_idGen;
 	static int m_idMax;

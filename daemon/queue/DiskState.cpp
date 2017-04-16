@@ -1091,6 +1091,13 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFil
 			status = ArticleInfo::aiUndefined;
 		}
 
+		if (status == ArticleInfo::aiFinished && !g_Options->GetDirectWrite() &&
+			!fileInfo->GetForceDirectWrite() && !pa->GetResultFilename())
+		{
+			pa->SetResultFilename(BString<1024>("%s%c%i.%03i", g_Options->GetTempDir(),
+				PATH_SEPARATOR, fileInfo->GetId(), pa->GetPartNumber()));
+		}
+
 		// don't allow all articles be completed or the file will stuck.
 		// such states should never be saved on disk but just in case.
 		if (completedArticles == size - 1 && !completed)
@@ -1330,9 +1337,23 @@ void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 	DirBrowser dir(g_Options->GetTempDir());
 	while (const char* filename = dir.Next())
 	{
+		bool garbage = strstr(filename, ".tmp") || strstr(filename, ".dec");
+
 		int id, part;
-		if (strstr(filename, ".tmp") || strstr(filename, ".dec") ||
-			(sscanf(filename, "%i.%i", &id, &part) == 2))
+		if (!garbage && sscanf(filename, "%i.%i", &id, &part) == 2)
+		{
+			garbage = true;
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+			{
+				if (nzbInfo->GetFileList()->Find(id))
+				{
+					garbage = false;
+					break;
+				}
+			}
+		}
+
+		if (garbage)
 		{
 			BString<1024> fullFilename("%s%c%s", g_Options->GetTempDir(), PATH_SEPARATOR, filename);
 			FileSystem::DeleteFile(fullFilename);
