@@ -292,6 +292,7 @@ public:
 	int GetMonthlyQuota() { return m_monthlyQuota; }
 	int GetQuotaStartDay() { return m_quotaStartDay; }
 	int GetDailyQuota() { return m_dailyQuota; }
+	bool GetDirectRename() { return m_directRename; }
 
 	Categories* GetCategories() { return &m_categories; }
 	Category* FindCategory(const char* name, bool searchAliases) { return m_categories.FindCategory(name, searchAliases); }
@@ -399,6 +400,7 @@ private:
 	int m_parBuffer = 0;
 	int m_parThreads = 0;
 	bool m_rarRename = false;
+	bool m_directRename = false;
 	EHealthCheck m_healthCheck = hcNone;
 	CString m_extensions;
 	CString m_scriptOrder;

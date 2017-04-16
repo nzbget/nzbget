@@ -98,6 +98,7 @@ static const char* OPTION_PARBUFFER				= "ParBuffer";
 static const char* OPTION_PARTHREADS			= "ParThreads";
 static const char* OPTION_RARRENAME				= "RarRename";
 static const char* OPTION_HEALTHCHECK			= "HealthCheck";
+static const char* OPTION_DIRECTRENAME			= "DirectRename";
 static const char* OPTION_UMASK					= "UMask";
 static const char* OPTION_UPDATEINTERVAL		= "UpdateInterval";
 static const char* OPTION_CURSESNZBNAME			= "CursesNzbName";
@@ -467,6 +468,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_PARTHREADS, "1");
 	SetOption(OPTION_RARRENAME, "yes");
 	SetOption(OPTION_HEALTHCHECK, "none");
+	SetOption(OPTION_DIRECTRENAME, "no");
 	SetOption(OPTION_SCRIPTORDER, "");
 	SetOption(OPTION_EXTENSIONS, "");
 	SetOption(OPTION_DAEMONUSERNAME, "root");
@@ -729,6 +731,7 @@ void Options::InitOptions()
 	m_parQuick				= (bool)ParseEnumValue(OPTION_PARQUICK, BoolCount, BoolNames, BoolValues);
 	m_parRename				= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_rarRename				= (bool)ParseEnumValue(OPTION_RARRENAME, BoolCount, BoolNames, BoolValues);
+	m_directRename			= (bool)ParseEnumValue(OPTION_DIRECTRENAME, BoolCount, BoolNames, BoolValues);
 	m_reloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
 	m_cursesNzbName			= (bool)ParseEnumValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_cursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
@@ -1709,6 +1712,11 @@ void Options::CheckOptions()
 	{
 		LocateOptionSrcPos(OPTION_PARRENAME);
 		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_PARRENAME);
+	}
+	if (m_directRename)
+	{
+		LocateOptionSrcPos(OPTION_DIRECTRENAME);
+		ConfigError("Invalid value for option \"%s\": program was compiled without parcheck-support", OPTION_DIRECTRENAME);
 	}
 #endif
 
