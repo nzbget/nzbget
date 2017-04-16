@@ -225,7 +225,7 @@ void QueueCoordinator::Run()
 			wasStandBy = standBy;
 			if (standBy)
 			{
-				SavePartialState();
+				SaveAllPartialState();
 			}
 		}
 
@@ -248,7 +248,7 @@ void QueueCoordinator::Run()
 			ResetHangingDownloads();
 			if (!standBy)
 			{
-				SavePartialState();
+				SaveAllPartialState();
 			}
 			resetCounter = 0;
 			g_StatMeter->IntervalCheck();
@@ -257,7 +257,7 @@ void QueueCoordinator::Run()
 	}
 
 	WaitJobs();
-	SavePartialState();
+	SaveAllPartialState();
 
 	debug("Exiting QueueCoordinator-loop");
 }
@@ -500,6 +500,12 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			break;
 		}
 
+		if (g_Options->GetDirectRename() && !fileInfo->GetNzbInfo()->GetAllConfirmed() &&
+			GetNextFirstArticle(fileInfo->GetNzbInfo(), fileInfo, articleInfo))
+		{
+			return true;
+		}
+
 		if (fileInfo->GetArticles()->empty() && g_Options->GetSaveQueue() && g_Options->GetServerMode())
 		{
 			g_DiskState->LoadArticles(fileInfo);
@@ -512,8 +518,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			if (article->GetStatus() == ArticleInfo::aiUndefined)
 			{
 				articleInfo = article;
-				ok = true;
-				break;
+				return true;
 			}
 		}
 
@@ -525,7 +530,52 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 		}
 	}
 
-	return ok;
+	return false;
+}
+
+bool QueueCoordinator::GetNextFirstArticle(NzbInfo* nzbInfo, FileInfo* &fileInfo, ArticleInfo* &articleInfo)
+{
+	// find a file not renamed yet
+	for (FileInfo* fileInfo1 : nzbInfo->GetFileList())
+	{
+		if (!fileInfo1->GetFilenameConfirmed())
+		{
+			if (fileInfo1->GetArticles()->empty() && g_Options->GetSaveQueue() && g_Options->GetServerMode())
+			{
+				g_DiskState->LoadArticles(fileInfo1);
+				LoadPartialState(fileInfo1);
+			}
+			if (!fileInfo1->GetArticles()->empty())
+			{
+				ArticleInfo* article = fileInfo1->GetArticles()->at(0).get();
+				if (article->GetStatus() == ArticleInfo::aiUndefined)
+				{
+					fileInfo = fileInfo1;
+					articleInfo = article;
+					return true;
+				}
+			}
+		}
+	}
+
+	// no more files for renaming remained
+	nzbInfo->SetAllConfirmed(true);
+
+	// discard article infos if possible
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
+	{
+		for (FileInfo* fileInfo1 : nzbInfo->GetFileList())
+		{
+			if (fileInfo1->GetActiveDownloads() == 0 && fileInfo1->GetCachedArticles() == 0)
+			{
+				detail("Discarding article infos for %s/%s", nzbInfo->GetName(), fileInfo1->GetFilename());
+				SavePartialState(fileInfo1);
+				fileInfo1->GetArticles()->clear();
+			}
+		}
+	}
+
+	return false;
 }
 
 void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection)
@@ -773,7 +823,7 @@ void QueueCoordinator::DiscardTempFiles(FileInfo* fileInfo)
 	}
 }
 
-void QueueCoordinator::SavePartialState()
+void QueueCoordinator::SaveAllPartialState()
 {
 	if (!(g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetContinuePartial()))
 	{
@@ -785,18 +835,23 @@ void QueueCoordinator::SavePartialState()
 	{
 		for (FileInfo* fileInfo : nzbInfo->GetFileList())
 		{
-			if (fileInfo->GetPartialChanged())
-			{
-				debug("Saving partial state for %s", fileInfo->GetFilename());
-				if (fileInfo->GetPartialState() == FileInfo::psCompleted)
-				{
-					g_DiskState->DiscardFile(fileInfo->GetId(), false, false, true);
-				}
-				g_DiskState->SaveFileState(fileInfo, false);
-				fileInfo->SetPartialChanged(false);
-				fileInfo->SetPartialState(FileInfo::psPartial);
-			}
+			SavePartialState(fileInfo);
 		}
+	}
+}
+
+void QueueCoordinator::SavePartialState(FileInfo* fileInfo)
+{
+	if (fileInfo->GetPartialChanged())
+	{
+		debug("Saving partial state for %s", fileInfo->GetFilename());
+		if (fileInfo->GetPartialState() == FileInfo::psCompleted)
+		{
+			g_DiskState->DiscardFile(fileInfo->GetId(), false, false, true);
+		}
+		g_DiskState->SaveFileState(fileInfo, false);
+		fileInfo->SetPartialChanged(false);
+		fileInfo->SetPartialState(FileInfo::psPartial);
 	}
 }
 

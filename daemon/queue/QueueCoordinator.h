@@ -81,6 +81,7 @@ private:
 	int m_serverConfigGeneration = 0;
 
 	bool GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
+	bool GetNextFirstArticle(NzbInfo* nzbInfo, FileInfo* &fileInfo, ArticleInfo* &articleInfo);
 	void StartArticleDownload(FileInfo* fileInfo, ArticleInfo* articleInfo, NntpConnection* connection);
 	void ArticleCompleted(ArticleDownloader* articleDownloader);
 	void DeleteDownloader(DownloadQueue* downloadQueue, ArticleDownloader* articleDownloader, bool fileCompleted);
@@ -89,7 +90,8 @@ private:
 	void ResetHangingDownloads();
 	void AdjustDownloadsLimit();
 	void Load();
-	void SavePartialState();
+	void SaveAllPartialState();
+	void SavePartialState(FileInfo* fileInfo);
 	void LoadPartialState(FileInfo* fileInfo);
 	void WaitJobs();
 };
