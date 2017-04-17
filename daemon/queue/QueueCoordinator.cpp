@@ -30,6 +30,7 @@
 #include "FileSystem.h"
 #include "Decoder.h"
 #include "StatMeter.h"
+#include "DirectRenamer.h"
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
 	int ID, EEditAction action, const char* args)
@@ -589,6 +590,11 @@ void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* art
 	articleDownloader->SetArticleInfo(articleInfo);
 	articleDownloader->SetConnection(connection);
 
+	if (articleInfo->GetPartNumber() == 1 && g_Options->GetDirectRename())
+	{
+		articleDownloader->SetContentAnalyzer(std::make_unique<RenameContentAnalyzer>());
+	}
+
 	BString<1024> infoName("%s%c%s [%i/%i]", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
 	articleDownloader->SetInfoName(infoName);
 
@@ -690,6 +696,11 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 				fileInfo->SetDupeDeleted(true);
 				DeleteQueueEntry(downloadQueue, fileInfo);
 			}
+		}
+
+		if (articleDownloader->GetContentAnalyzer() && articleDownloader->GetStatus() == ArticleDownloader::adFinished)
+		{
+			((RenameContentAnalyzer*)articleDownloader->GetContentAnalyzer())->Finish(fileInfo, articleInfo);
 		}
 
 		nzbInfo->SetDownloadedSize(nzbInfo->GetDownloadedSize() + articleDownloader->GetDownloadedSize());

@@ -108,6 +108,8 @@ nzbget_SOURCES = \
 	daemon/postprocess/Repair.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
+	daemon/queue/DirectRenamer.cpp \
+	daemon/queue/DirectRenamer.h \
 	daemon/queue/DiskState.cpp \
 	daemon/queue/DiskState.h \
 	daemon/queue/DownloadInfo.cpp \

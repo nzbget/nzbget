@@ -192,6 +192,9 @@ public:
 	void SetPartialState(EPartialState partialState) { m_partialState = partialState; }
 	uint32 GetCrc() { return m_crc; }
 	void SetCrc(uint32 crc) { m_crc = crc; }
+	const char* GetHash16k() { return m_hash16k; }
+	void SetHash16k(const char* hash16k) { m_hash16k = hash16k; }
+
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
 private:
@@ -228,6 +231,7 @@ private:
 	bool m_forceDirectWrite = false;
 	EPartialState m_partialState = psNone;
 	uint32 m_crc = 0;
+	CString m_hash16k;
 
 	static int m_idGen;
 	static int m_idMax;

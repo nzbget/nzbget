@@ -296,6 +296,11 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	m_writingStarted = false;
 	m_articleInfo->SetCrc(0);
 
+	if (m_contentAnalyzer)
+	{
+		m_contentAnalyzer->Reset();
+	}
+
 	if (m_connection->GetNewsServer()->GetJoinGroup())
 	{
 		// change group
@@ -540,6 +545,11 @@ bool ArticleDownloader::Write(char* line, int len)
 	}
 
 	bool ok = len == 0 || m_articleWriter.Write(line, len);
+
+	if (m_contentAnalyzer)
+	{
+		m_contentAnalyzer->Append(line, len);
+	}
 
 	return ok;
 }

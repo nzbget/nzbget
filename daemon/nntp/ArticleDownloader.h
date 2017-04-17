@@ -29,6 +29,15 @@
 #include "NntpConnection.h"
 #include "Decoder.h"
 #include "ArticleWriter.h"
+#include "Util.h"
+
+class ArticleContentAnalyzer
+{
+public:
+	virtual ~ArticleContentAnalyzer() {};
+	virtual void Reset() = 0;
+	virtual void Append(const void* buffer, int len) = 0;
+};
 
 class ArticleDownloader : public Thread, public Subject
 {
@@ -77,6 +86,8 @@ public:
 	void SetConnection(NntpConnection* connection) { m_connection = connection; }
 	void CompleteFileParts() { m_articleWriter.CompleteFileParts(); }
 	int GetDownloadedSize() { return m_downloadedSize; }
+	void SetContentAnalyzer(std::unique_ptr<ArticleContentAnalyzer> contentAnalyzer) { m_contentAnalyzer = std::move(contentAnalyzer); }
+	ArticleContentAnalyzer* GetContentAnalyzer() { return m_contentAnalyzer.get(); }
 
 	void LogDebugInfo();
 
@@ -97,6 +108,7 @@ private:
 	ServerStatList m_serverStats;
 	bool m_writingStarted;
 	int m_downloadedSize = 0;
+	std::unique_ptr<ArticleContentAnalyzer> m_contentAnalyzer;
 
 	EStatus Download();
 	EStatus DecodeCheck();
