@@ -700,7 +700,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 
 		if (articleDownloader->GetContentAnalyzer() && articleDownloader->GetStatus() == ArticleDownloader::adFinished)
 		{
-			((RenameContentAnalyzer*)articleDownloader->GetContentAnalyzer())->Finish(fileInfo, articleInfo);
+			ApplyAnalyzerData(downloadQueue, fileInfo, articleInfo, articleDownloader->GetContentAnalyzer());
 		}
 
 		nzbInfo->SetDownloadedSize(nzbInfo->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
@@ -1265,4 +1265,39 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, RawFileLi
 	downloadQueue->GetQueue()->Add(std::move(nzbInfo));
 
 	return true;
+}
+
+void QueueCoordinator::ApplyAnalyzerData(DownloadQueue* downloadQueue, FileInfo* fileInfo,
+	ArticleInfo* articleInfo, ArticleContentAnalyzer* articleContentAnalyzer)
+{
+	debug("Applying analyzer data %s for ", fileInfo->GetFilename());
+
+	RenameContentAnalyzer* contentAnalyzer = (RenameContentAnalyzer*)articleContentAnalyzer;
+	contentAnalyzer->Finish();
+
+	// we don't support analyzing of files split into articles smaller than 16KB
+	if (articleInfo->GetSize() >= 16 * 1024 || fileInfo->GetArticles()->size() == 1)
+	{
+		fileInfo->SetHash16k(contentAnalyzer->GetHash16k());
+		debug("file: %s; article-hash16k: %s", fileInfo->GetFilename(), fileInfo->GetHash16k());
+	}
+
+	debug("%s detected: %s", (contentAnalyzer->GetParFile() ? "Par2-file" : "Non-par2-file"), fileInfo->GetFilename());
+
+	if (fileInfo->GetParFile() != contentAnalyzer->GetParFile())
+	{
+		debug("Changed parfile-flag for %s", fileInfo->GetFilename());
+		fileInfo->SetParFile(contentAnalyzer->GetParFile());
+
+		NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
+		int delta = fileInfo->GetParFile() ? 1 : -1;
+
+		nzbInfo->SetParSize(nzbInfo->GetParSize() + fileInfo->GetSize() * delta);
+		nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() + fileInfo->GetSuccessSize() * delta);
+		nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() +
+			fileInfo->GetFailedSize() * delta + fileInfo->GetMissedSize() * delta);
+		nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1 * delta);
+
+		downloadQueue->Save();
+	}
 }

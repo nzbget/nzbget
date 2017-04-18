@@ -20,11 +20,11 @@
 
 #include "nzbget.h"
 #include "DirectRenamer.h"
-#include "Log.h"
 #include "Options.h"
 
 #ifndef DISABLE_PARCHECK
 #include "par2cmdline.h"
+#include "par2fileformat.h"
 #include "md5.h"
 #endif
 
@@ -50,8 +50,13 @@ void RenameContentAnalyzer::Append(const void* buffer, int len)
 		m_md5Context = new Par2::MD5Context();
 	}
 
-	int rem16kSize = std::min(len, 16 * 1024 - m_dataSize);
+	if (m_dataSize == 0 && len >= sizeof(Par2::packet_magic) &&
+		(*(Par2::MAGIC*)buffer) == Par2::packet_magic)
+	{
+		m_parFile = true;
+	}
 
+	int rem16kSize = std::min(len, 16 * 1024 - m_dataSize);
 	if (rem16kSize > 0)
 	{
 		((Par2::MD5Context*)m_md5Context)->Update(buffer, rem16kSize);
@@ -62,18 +67,12 @@ void RenameContentAnalyzer::Append(const void* buffer, int len)
 }
 
 // Must be called with locked DownloadQueue
-void RenameContentAnalyzer::Finish(FileInfo* fileInfo, ArticleInfo* articleInfo)
+void RenameContentAnalyzer::Finish()
 {
 #ifndef DISABLE_PARCHECK
 	Par2::MD5Hash hash;
 	((Par2::MD5Context*)m_md5Context)->Final(hash);
 
-	// we don't support analyzing of files split into articles smaller than 16KB
-	if (articleInfo->GetSize() >= 16 * 1024 || fileInfo->GetArticles()->size() == 1)
-	{
-		fileInfo->SetHash16k(hash.print().c_str());
-	}
+	m_hash16k = hash.print().c_str();
 #endif
-
-	debug("file: %s; article-hash16k: %s", fileInfo->GetFilename(), fileInfo->GetHash16k());
 }

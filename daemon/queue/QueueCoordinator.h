@@ -86,6 +86,8 @@ private:
 	void ArticleCompleted(ArticleDownloader* articleDownloader);
 	void DeleteDownloader(DownloadQueue* downloadQueue, ArticleDownloader* articleDownloader, bool fileCompleted);
 	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
+	void ApplyAnalyzerData(DownloadQueue* downloadQueue, FileInfo* fileInfo,
+		ArticleInfo* articleInfo, ArticleContentAnalyzer* articleContentAnalyzer);
 	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void ResetHangingDownloads();
 	void AdjustDownloadsLimit();

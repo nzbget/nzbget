@@ -29,12 +29,16 @@ public:
 	virtual ~RenameContentAnalyzer();
 	virtual void Reset();
 	virtual void Append(const void* buffer, int len);
-	void Finish(FileInfo* fileInfo, ArticleInfo* articleInfo);
+	void Finish();
+	const char* GetHash16k() { return m_hash16k; }
+	bool GetParFile() { return m_parFile; }
 
 private:
 	// declared as void* to prevent inclusion if par2-modules into this header file
 	void* m_md5Context = nullptr;
 	int m_dataSize = 0;
+	CString m_hash16k;
+	bool m_parFile = false;
 };
 
 #endif
