@@ -102,7 +102,7 @@ def prepare_testdata(request):
 		pytest.exit('Test file generation failed')
 
 	if not os.path.exists(nserv_datadir + '/obfuscated1.nzb'):
-		create_test_file(nserv_datadir + '/obfuscated1', sevenzip_bin, 5)
+		create_test_file(nserv_datadir + '/obfuscated1', sevenzip_bin, 5, 1)
 		os.chdir(nserv_datadir + '/obfuscated1')
 		if 0 != subprocess.call([par2_bin, 'c', '-b100', 'parrename.par2', '*']):
 			pytest.exit('Test file generation failed')
@@ -116,7 +116,7 @@ def prepare_testdata(request):
 			pytest.exit('Test file generation failed')
 
 	if not os.path.exists(nserv_datadir + '/obfuscated2.nzb'):
-		create_test_file(nserv_datadir + '/obfuscated2', sevenzip_bin, 5)
+		create_test_file(nserv_datadir + '/obfuscated2', sevenzip_bin, 5, 1)
 		os.chdir(nserv_datadir + '/obfuscated2')
 		if 0 != subprocess.call([par2_bin, 'c', '-b100', 'parrename.par2', '*']):
 			pytest.exit('Test file generation failed')
@@ -133,20 +133,42 @@ def prepare_testdata(request):
 		if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '100000', '-q']):
 			pytest.exit('Test file generation failed')
 
-def create_test_file(bigdir, sevenzip_bin, sizemb):
+	if not os.path.exists(nserv_datadir + '/obfuscated3.nzb'):
+		create_test_file(nserv_datadir + '/obfuscated3', sevenzip_bin, 100, 10)
+		os.chdir(nserv_datadir + '/obfuscated3')
+		if 0 != subprocess.call([par2_bin, 'c', '-b100', 'parrename.par2', '*']):
+			pytest.exit('Test file generation failed')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.001', nserv_datadir + '/obfuscated3/abc.51')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.002', nserv_datadir + '/obfuscated3/abc.01')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.003', nserv_datadir + '/obfuscated3/abc.21')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.004', nserv_datadir + '/obfuscated3/abc.34')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.005', nserv_datadir + '/obfuscated3/abc.17')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.006', nserv_datadir + '/obfuscated3/abc.00')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.007', nserv_datadir + '/obfuscated3/abc.32')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.008', nserv_datadir + '/obfuscated3/abc.32')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.009', nserv_datadir + '/obfuscated3/abc.41')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.010', nserv_datadir + '/obfuscated3/abc.50')
+		os.rename(nserv_datadir + '/obfuscated3/100mb.7z.011', nserv_datadir + '/obfuscated3/abc.43')
+		os.rename(nserv_datadir + '/obfuscated3/parrename.par2', nserv_datadir + '/obfuscated3/abc.00')
+		os.rename(nserv_datadir + '/obfuscated3/parrename.vol0+1.par2', nserv_datadir + '/obfuscated3/abc.02')
+		os.rename(nserv_datadir + '/obfuscated3/parrename.vol1+2.par2', nserv_datadir + '/obfuscated3/abc.91')
+		os.rename(nserv_datadir + '/obfuscated3/parrename.vol3+2.par2', nserv_datadir + '/obfuscated3/abc.92')
+		if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '100000', '-q']):
+			pytest.exit('Test file generation failed')
+
+def create_test_file(bigdir, sevenzip_bin, sizemb, partmb):
 	print('Preparing test file (' + str(sizemb) + 'MB)')
 
 	if not os.path.exists(bigdir):
 		os.makedirs(bigdir)
 
 	f = open(bigdir + '/' + str(sizemb) + 'mb.dat', 'wb')
-	for n in xrange(sizemb):
-		if n % 8 == 0:
-			print('Writing block %i from %i' % (n, sizemb))
-		f.write(os.urandom(1024 * 1024))
+	for n in xrange(sizemb / partmb):
+		print('Writing block %i from %i' % (n + 1, sizemb / partmb))
+		f.write(os.urandom(partmb * 1024 * 1024))
 	f.close()
 
-	if 0 != subprocess.call([sevenzip_bin, 'a', bigdir + '/' + str(sizemb) + 'mb.7z', '-mx=0', '-v1m', bigdir + '/' + str(sizemb) + 'mb.dat']):
+	if 0 != subprocess.call([sevenzip_bin, 'a', bigdir + '/' + str(sizemb) + 'mb.7z', '-mx=0', '-v' + str(partmb) + 'm', bigdir + '/' + str(sizemb) + 'mb.dat']):
 		pytest.exit('Test file generation failed')
 
 	os.remove(bigdir + '/' + str(sizemb) + 'mb.dat')
