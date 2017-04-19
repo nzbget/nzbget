@@ -192,8 +192,6 @@ public:
 	void SetPartialState(EPartialState partialState) { m_partialState = partialState; }
 	uint32 GetCrc() { return m_crc; }
 	void SetCrc(uint32 crc) { m_crc = crc; }
-	const char* GetHash16k() { return m_hash16k; }
-	void SetHash16k(const char* hash16k) { m_hash16k = hash16k; }
 
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
@@ -231,7 +229,6 @@ private:
 	bool m_forceDirectWrite = false;
 	EPartialState m_partialState = psNone;
 	uint32 m_crc = 0;
-	CString m_hash16k;
 
 	static int m_idGen;
 	static int m_idMax;
@@ -324,6 +321,39 @@ class ScriptStatusList : public ScriptStatusListBase
 {
 public:
 	ScriptStatus::EStatus CalcTotalStatus();
+};
+
+class RenameInfo
+{
+public:
+	class FileHash
+	{
+	public:
+		FileHash(const char* filename, const char* hash) :
+			m_filename(filename), m_hash(hash) {}
+	private:
+		CString m_filename;
+		CString m_hash;
+	};
+
+	typedef std::deque<FileHash> FileHashList;
+
+	bool GetAllFirst() { return m_allFirst; }
+	void SetAllFirst(bool allFirst) { m_allFirst = allFirst; }
+	bool GetWaitingPar() { return m_waitingPar; }
+	void SetWaitingPar(bool waitingPar) { m_waitingPar = waitingPar; }
+	bool GetLoadingPar() { return m_loadingPar; }
+	void SetLoadingPar(bool loadingPar) { m_loadingPar = loadingPar; }
+	FileHashList* GetParHashes() { return &m_parHashes; }
+	FileHashList* GetArticleHashes() { return &m_articleHashes; }
+	void Reset();
+
+private:
+	bool m_allFirst = false;
+	bool m_waitingPar = false;
+	bool m_loadingPar = false;
+	FileHashList m_parHashes;
+	FileHashList m_articleHashes;
 };
 
 enum EDupeMode
@@ -568,8 +598,6 @@ public:
 	bool GetParFull() { return m_parFull; }
 	int GetFeedId() { return m_feedId; }
 	void SetFeedId(int feedId) { m_feedId = feedId; }
-	bool GetAllConfirmed() { return m_allConfirmed; }
-	void SetAllConfirmed(bool allConfirmed) { m_allConfirmed = allConfirmed; }
 	void MoveFileList(NzbInfo* srcNzbInfo);
 	void UpdateMinMaxTime();
 	PostInfo* GetPostInfo() { return m_postInfo.get(); }
@@ -583,6 +611,7 @@ public:
 	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }
 	int GetCachedMessageCount() { return m_cachedMessageCount; }
 	GuardedMessageList GuardCachedMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
+	RenameInfo* GetRenameInfo() { return &m_renameInfo; }
 	void UpdateCurrentStats();
 	void UpdateCompletedStats(FileInfo* fileInfo);
 	void UpdateDeletedStats(FileInfo* fileInfo);
@@ -672,7 +701,7 @@ private:
 	int m_messageCount = 0;
 	int m_cachedMessageCount = 0;
 	int m_feedId = 0;
-	bool m_allConfirmed = false;
+	RenameInfo m_renameInfo;
 
 	static int m_idGen;
 	static int m_idMax;

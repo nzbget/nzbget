@@ -880,3 +880,13 @@ void DownloadQueue::CalcRemainingSize(int64* remaining, int64* remainingForced)
 		*remainingForced = remainingForcedSize;
 	}
 }
+
+
+void RenameInfo::Reset()
+{
+	m_allFirst = false;
+	m_waitingPar = false;
+	m_loadingPar = false;
+	m_parHashes.clear();
+	m_articleHashes.clear();
+}

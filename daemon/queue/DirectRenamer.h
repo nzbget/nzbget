@@ -21,7 +21,20 @@
 #ifndef DIRECTRENAMER_H
 #define DIRECTRENAMER_H
 
+#include "Observer.h"
 #include "ArticleDownloader.h"
+
+class DirectRenamer : public Observer
+{
+public:
+	DirectRenamer();
+
+protected:
+	virtual void Update(Subject* caller, void* aspect) { DownloadQueueUpdate(aspect); }
+
+private:
+	void DownloadQueueUpdate(void* aspect);
+};
 
 class RenameContentAnalyzer : public ArticleContentAnalyzer
 {

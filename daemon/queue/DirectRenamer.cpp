@@ -28,6 +28,111 @@
 #include "md5.h"
 #endif
 
+class DirectParRepairer : public Par2::Par2Repairer
+{
+public:
+	DirectParRepairer() : Par2::Par2Repairer(m_nout, m_nout) {};
+	friend class DirectParLoader;
+private:
+	class NullStreamBuf : public std::streambuf {};
+	NullStreamBuf m_nullbuf;
+	std::ostream m_nout{&m_nullbuf};
+};
+
+class DirectParLoader : public Thread
+{
+public:
+	static void StartLoader(NzbInfo* nzbInfo, FileInfo* fileInfo);
+	virtual void Run();
+
+private:
+	CString m_parFilename;
+	int m_nzbId;
+};
+
+void DirectParLoader::StartLoader(NzbInfo* nzbInfo, FileInfo* fileInfo)
+{
+	debug("Starting DirectParLoader for %s", fileInfo->GetFilename());
+	DirectParLoader* directParLoader = new DirectParLoader();
+	directParLoader->m_nzbId = nzbInfo->GetId();
+	directParLoader->m_parFilename = BString<1024>("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename());
+	directParLoader->SetAutoDestroy(true);
+	directParLoader->Start();
+}
+
+void DirectParLoader::Run()
+{
+	debug("Started DirectParLoader for par2-file %s", *m_parFilename);
+
+	DirectParRepairer repairer;
+
+	if (!repairer.LoadPacketsFromFile(*m_parFilename))
+	{
+		warn("Could not load par2-file %s", *m_parFilename);
+		return;
+	}
+
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+	g_Options->SetTempPauseDownload(false);
+
+	NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
+	if (!nzbInfo)
+	{
+		// nzb isn't in queue anymore
+		return;
+	}
+
+	nzbInfo->PrintMessage(Message::mkInfo, "Loaded par2-file %s for direct renaming",
+		FileSystem::BaseFileName(m_parFilename));
+
+	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer.sourcefilemap)
+	{
+		if (IsStopped())
+		{
+			break;
+		}
+
+		Par2::Par2RepairerSourceFile* sourceFile = entry.second;
+		if (!sourceFile || !sourceFile->GetDescriptionPacket())
+		{
+			nzbInfo->PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s",
+				FileSystem::BaseFileName(m_parFilename));
+			return;
+		}
+		std::string filename = Par2::DiskFile::TranslateFilename(sourceFile->GetDescriptionPacket()->FileName());
+		std::string hash = sourceFile->GetDescriptionPacket()->Hash16k().print();
+
+		debug("file: %s, hash-16k: %s", filename.c_str(), hash.c_str());
+		nzbInfo->PrintMessage(Message::mkDetail, "Found filename %s", filename.c_str());
+		nzbInfo->GetRenameInfo()->GetParHashes()->emplace_back(filename.c_str(), hash.c_str());
+	}
+}
+
+
+DirectRenamer::DirectRenamer()
+{
+	debug("Creating PrePostProcessor");
+
+	DownloadQueue::Guard()->Attach(this);
+}
+
+void DirectRenamer::DownloadQueueUpdate(void* aspect)
+{
+	DownloadQueue::Aspect* queueAspect = (DownloadQueue::Aspect*)aspect;
+	if (queueAspect->action == DownloadQueue::eaFileCompleted &&
+		queueAspect->fileInfo->GetParFile() &&
+		!queueAspect->nzbInfo->GetRenameInfo()->GetLoadingPar() &&
+		queueAspect->nzbInfo->GetRenameInfo()->GetParHashes()->empty())
+	{
+		queueAspect->nzbInfo->PrintMessage(Message::mkDetail, "Loading par2-file %s for direct rename", queueAspect->fileInfo->GetFilename());
+		g_Options->SetTempPauseDownload(true);
+		queueAspect->nzbInfo->GetRenameInfo()->SetLoadingPar(true);
+		DirectParLoader::StartLoader(queueAspect->nzbInfo, queueAspect->fileInfo);
+	}
+}
+
+
 RenameContentAnalyzer::~RenameContentAnalyzer()
 {
 	Reset();

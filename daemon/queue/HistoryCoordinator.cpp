@@ -500,10 +500,10 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->SetRepairSec(0);
 	nzbInfo->SetUnpackSec(0);
 	nzbInfo->SetExtraParBlocks(0);
-	nzbInfo->SetAllConfirmed(false);
 	nzbInfo->GetCompletedFiles()->clear();
 	nzbInfo->GetServerStats()->clear();
 	nzbInfo->GetCurrentServerStats()->clear();
+	nzbInfo->GetRenameInfo()->Reset();
 
 	nzbInfo->MoveFileList(newNzbInfo.get());
 

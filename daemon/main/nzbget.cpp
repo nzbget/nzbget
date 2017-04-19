@@ -39,7 +39,7 @@
 #include "PrePostProcessor.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
-#include "ParChecker.h"
+#include "DirectRenamer.h"
 #include "Scheduler.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
@@ -219,6 +219,7 @@ private:
 	std::unique_ptr<DiskService> m_diskService;
 	std::unique_ptr<Scheduler> m_scheduler;
 	std::unique_ptr<CommandLineParser> m_commandLineParser;
+	std::unique_ptr<DirectRenamer> m_directRenamer;
 
 	bool m_reloading = false;
 	bool m_daemonized = false;
@@ -377,6 +378,8 @@ void NZBGet::CreateGlobals()
 	m_scheduler = std::make_unique<Scheduler>();
 
 	m_diskService = std::make_unique<DiskService>();
+
+	m_directRenamer = std::make_unique<DirectRenamer>();
 }
 
 void NZBGet::BootConfig()

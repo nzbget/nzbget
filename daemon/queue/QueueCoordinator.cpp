@@ -501,7 +501,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			break;
 		}
 
-		if (g_Options->GetDirectRename() && !fileInfo->GetNzbInfo()->GetAllConfirmed() &&
+		if (g_Options->GetDirectRename() && !fileInfo->GetNzbInfo()->GetRenameInfo()->GetAllFirst() &&
 			GetNextFirstArticle(fileInfo->GetNzbInfo(), fileInfo, articleInfo))
 		{
 			return true;
@@ -560,7 +560,7 @@ bool QueueCoordinator::GetNextFirstArticle(NzbInfo* nzbInfo, FileInfo* &fileInfo
 	}
 
 	// no more files for renaming remained
-	nzbInfo->SetAllConfirmed(true);
+	nzbInfo->GetRenameInfo()->SetAllFirst(true);
 
 	// discard article infos if possible
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
@@ -1275,21 +1275,23 @@ void QueueCoordinator::ApplyAnalyzerData(DownloadQueue* downloadQueue, FileInfo*
 	RenameContentAnalyzer* contentAnalyzer = (RenameContentAnalyzer*)articleContentAnalyzer;
 	contentAnalyzer->Finish();
 
+	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
+
 	// we don't support analyzing of files split into articles smaller than 16KB
 	if (articleInfo->GetSize() >= 16 * 1024 || fileInfo->GetArticles()->size() == 1)
 	{
-		fileInfo->SetHash16k(contentAnalyzer->GetHash16k());
-		debug("file: %s; article-hash16k: %s", fileInfo->GetFilename(), fileInfo->GetHash16k());
+		nzbInfo->GetRenameInfo()->GetArticleHashes()->emplace_back(fileInfo->GetFilename(), contentAnalyzer->GetHash16k());
+		debug("file: %s; article-hash16k: %s", fileInfo->GetFilename(), contentAnalyzer->GetHash16k());
 	}
 
-	debug("%s detected: %s", (contentAnalyzer->GetParFile() ? "Par2-file" : "Non-par2-file"), fileInfo->GetFilename());
+	nzbInfo->PrintMessage(Message::mkDetail, "Detected %s %s",
+		(contentAnalyzer->GetParFile() ? "par2-file" : "non-par2-file"), fileInfo->GetFilename());
 
 	if (fileInfo->GetParFile() != contentAnalyzer->GetParFile())
 	{
-		debug("Changed parfile-flag for %s", fileInfo->GetFilename());
+		debug("Changing par2-flag for %s", fileInfo->GetFilename());
 		fileInfo->SetParFile(contentAnalyzer->GetParFile());
 
-		NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
 		int delta = fileInfo->GetParFile() ? 1 : -1;
 
 		nzbInfo->SetParSize(nzbInfo->GetParSize() + fileInfo->GetSize() * delta);
@@ -1299,5 +1301,13 @@ void QueueCoordinator::ApplyAnalyzerData(DownloadQueue* downloadQueue, FileInfo*
 		nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1 * delta);
 
 		downloadQueue->Save();
+	}
+
+	if (fileInfo->GetParFile() && !nzbInfo->GetRenameInfo()->GetWaitingPar() &&
+		nzbInfo->GetRenameInfo()->GetParHashes()->empty())
+	{
+		nzbInfo->PrintMessage(Message::mkDetail, "Increasing priority for par2-file %s", fileInfo->GetFilename());
+		fileInfo->SetExtraPriority(true);
+		nzbInfo->GetRenameInfo()->SetWaitingPar(true);
 	}
 }
