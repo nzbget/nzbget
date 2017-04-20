@@ -21,37 +21,25 @@
 #ifndef DIRECTRENAMER_H
 #define DIRECTRENAMER_H
 
-#include "Observer.h"
 #include "ArticleDownloader.h"
 
-class DirectRenamer : public Observer
+class DirectRenamer
 {
 public:
-	DirectRenamer();
+	std::unique_ptr<ArticleContentAnalyzer> MakeArticleContentAnalyzer();
+	void ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo,
+		ArticleInfo* articleInfo, ArticleContentAnalyzer* articleContentAnalyzer);
+	void FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 
 protected:
-	virtual void Update(Subject* caller, void* aspect) { DownloadQueueUpdate(aspect); }
+	virtual void RenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo) = 0;
 
 private:
-	void DownloadQueueUpdate(void* aspect);
-};
+	void CheckState(NzbInfo* nzbInfo);
+	void RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, RenameInfo::FileHashList* parHashes);
+	void RenameFile(NzbInfo* nzbInfo, const char* oldName, const char* newName);
 
-class RenameContentAnalyzer : public ArticleContentAnalyzer
-{
-public:
-	virtual ~RenameContentAnalyzer();
-	virtual void Reset();
-	virtual void Append(const void* buffer, int len);
-	void Finish();
-	const char* GetHash16k() { return m_hash16k; }
-	bool GetParFile() { return m_parFile; }
-
-private:
-	// declared as void* to prevent inclusion if par2-modules into this header file
-	void* m_md5Context = nullptr;
-	int m_dataSize = 0;
-	CString m_hash16k;
-	bool m_parFile = false;
+	friend class DirectParLoader;
 };
 
 #endif

@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include "Observer.h"
 #include "QueueEditor.h"
 #include "NntpConnection.h"
+#include "DirectRenamer.h"
 
 class QueueCoordinator : public Thread, public Observer, public Debuggable
 {
@@ -60,6 +61,7 @@ private:
 	class CoordinatorDownloadQueue : public DownloadQueue
 	{
 	public:
+		CoordinatorDownloadQueue(QueueCoordinator* owner) : m_owner(owner) {}
 		virtual bool EditEntry(int ID, EEditAction action, const char* args);
 		virtual bool EditList(IdList* idList, NameList* nameList, EMatchMode matchMode,
 			EEditAction action, const char* args);
@@ -73,9 +75,21 @@ private:
 		friend class QueueCoordinator;
 	};
 
-	CoordinatorDownloadQueue m_downloadQueue;
+	class CoordinatorDirectRenamer : public DirectRenamer
+	{
+	public:
+		CoordinatorDirectRenamer(QueueCoordinator* owner) : m_owner(owner) {}
+	protected:
+		virtual void RenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
+			{ m_owner->DirectRenameCompleted(downloadQueue, nzbInfo); }
+	private:
+		QueueCoordinator* m_owner;
+	};
+
+	CoordinatorDownloadQueue m_downloadQueue{this};
 	ActiveDownloads m_activeDownloads;
 	QueueEditor m_queueEditor;
+	CoordinatorDirectRenamer m_directRenamer{this};
 	bool m_hasMoreJobs = true;
 	int m_downloadsLimit;
 	int m_serverConfigGeneration = 0;
@@ -86,8 +100,7 @@ private:
 	void ArticleCompleted(ArticleDownloader* articleDownloader);
 	void DeleteDownloader(DownloadQueue* downloadQueue, ArticleDownloader* articleDownloader, bool fileCompleted);
 	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
-	void ApplyAnalyzerData(DownloadQueue* downloadQueue, FileInfo* fileInfo,
-		ArticleInfo* articleInfo, ArticleContentAnalyzer* articleContentAnalyzer);
+	void DirectRenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void ResetHangingDownloads();
 	void AdjustDownloadsLimit();

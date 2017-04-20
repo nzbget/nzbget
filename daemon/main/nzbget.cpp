@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@
 #include "PrePostProcessor.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
-#include "DirectRenamer.h"
 #include "Scheduler.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
@@ -219,7 +218,6 @@ private:
 	std::unique_ptr<DiskService> m_diskService;
 	std::unique_ptr<Scheduler> m_scheduler;
 	std::unique_ptr<CommandLineParser> m_commandLineParser;
-	std::unique_ptr<DirectRenamer> m_directRenamer;
 
 	bool m_reloading = false;
 	bool m_daemonized = false;
@@ -378,8 +376,6 @@ void NZBGet::CreateGlobals()
 	m_scheduler = std::make_unique<Scheduler>();
 
 	m_diskService = std::make_unique<DiskService>();
-
-	m_directRenamer = std::make_unique<DirectRenamer>();
 }
 
 void NZBGet::BootConfig()

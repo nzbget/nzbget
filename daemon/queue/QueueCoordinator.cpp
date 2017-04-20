@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 #include "FileSystem.h"
 #include "Decoder.h"
 #include "StatMeter.h"
-#include "DirectRenamer.h"
 
 bool QueueCoordinator::CoordinatorDownloadQueue::EditEntry(
 	int ID, EEditAction action, const char* args)
@@ -72,7 +71,6 @@ QueueCoordinator::QueueCoordinator()
 {
 	debug("Creating QueueCoordinator");
 
-	m_downloadQueue.m_owner = this;
 	CoordinatorDownloadQueue::Init(&m_downloadQueue);
 }
 
@@ -562,20 +560,6 @@ bool QueueCoordinator::GetNextFirstArticle(NzbInfo* nzbInfo, FileInfo* &fileInfo
 	// no more files for renaming remained
 	nzbInfo->GetRenameInfo()->SetAllFirst(true);
 
-	// discard article infos if possible
-	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
-	{
-		for (FileInfo* fileInfo1 : nzbInfo->GetFileList())
-		{
-			if (fileInfo1->GetActiveDownloads() == 0 && fileInfo1->GetCachedArticles() == 0)
-			{
-				detail("Discarding article infos for %s/%s", nzbInfo->GetName(), fileInfo1->GetFilename());
-				SavePartialState(fileInfo1);
-				fileInfo1->GetArticles()->clear();
-			}
-		}
-	}
-
 	return false;
 }
 
@@ -592,7 +576,7 @@ void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* art
 
 	if (articleInfo->GetPartNumber() == 1 && g_Options->GetDirectRename())
 	{
-		articleDownloader->SetContentAnalyzer(std::make_unique<RenameContentAnalyzer>());
+		articleDownloader->SetContentAnalyzer(m_directRenamer.MakeArticleContentAnalyzer());
 	}
 
 	BString<1024> infoName("%s%c%s [%i/%i]", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
@@ -700,7 +684,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 
 		if (articleDownloader->GetContentAnalyzer() && articleDownloader->GetStatus() == ArticleDownloader::adFinished)
 		{
-			ApplyAnalyzerData(downloadQueue, fileInfo, articleInfo, articleDownloader->GetContentAnalyzer());
+			m_directRenamer.ArticleDownloaded(downloadQueue, fileInfo, articleInfo, articleDownloader->GetContentAnalyzer());
 		}
 
 		nzbInfo->SetDownloadedSize(nzbInfo->GetDownloadedSize() + articleDownloader->GetDownloadedSize());
@@ -802,6 +786,11 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 			FileSystem::BaseFileName(fileInfo->GetOutputFilename()) : fileInfo->GetFilename(),
 			fileStatus,
 			fileStatus == CompletedFile::cfSuccess ? fileInfo->GetCrc() : 0);
+	}
+
+	if (g_Options->GetDirectRename())
+	{
+		m_directRenamer.FileDownloaded(downloadQueue, fileInfo);
 	}
 
 	std::unique_ptr<FileInfo> srcFileInfo = nzbInfo->GetFileList()->Remove(fileInfo);
@@ -1267,47 +1256,6 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, RawFileLi
 	return true;
 }
 
-void QueueCoordinator::ApplyAnalyzerData(DownloadQueue* downloadQueue, FileInfo* fileInfo,
-	ArticleInfo* articleInfo, ArticleContentAnalyzer* articleContentAnalyzer)
+void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	debug("Applying analyzer data %s for ", fileInfo->GetFilename());
-
-	RenameContentAnalyzer* contentAnalyzer = (RenameContentAnalyzer*)articleContentAnalyzer;
-	contentAnalyzer->Finish();
-
-	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();
-
-	// we don't support analyzing of files split into articles smaller than 16KB
-	if (articleInfo->GetSize() >= 16 * 1024 || fileInfo->GetArticles()->size() == 1)
-	{
-		nzbInfo->GetRenameInfo()->GetArticleHashes()->emplace_back(fileInfo->GetFilename(), contentAnalyzer->GetHash16k());
-		debug("file: %s; article-hash16k: %s", fileInfo->GetFilename(), contentAnalyzer->GetHash16k());
-	}
-
-	nzbInfo->PrintMessage(Message::mkDetail, "Detected %s %s",
-		(contentAnalyzer->GetParFile() ? "par2-file" : "non-par2-file"), fileInfo->GetFilename());
-
-	if (fileInfo->GetParFile() != contentAnalyzer->GetParFile())
-	{
-		debug("Changing par2-flag for %s", fileInfo->GetFilename());
-		fileInfo->SetParFile(contentAnalyzer->GetParFile());
-
-		int delta = fileInfo->GetParFile() ? 1 : -1;
-
-		nzbInfo->SetParSize(nzbInfo->GetParSize() + fileInfo->GetSize() * delta);
-		nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() + fileInfo->GetSuccessSize() * delta);
-		nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() +
-			fileInfo->GetFailedSize() * delta + fileInfo->GetMissedSize() * delta);
-		nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1 * delta);
-
-		downloadQueue->Save();
-	}
-
-	if (fileInfo->GetParFile() && !nzbInfo->GetRenameInfo()->GetWaitingPar() &&
-		nzbInfo->GetRenameInfo()->GetParHashes()->empty())
-	{
-		nzbInfo->PrintMessage(Message::mkDetail, "Increasing priority for par2-file %s", fileInfo->GetFilename());
-		fileInfo->SetExtraPriority(true);
-		nzbInfo->GetRenameInfo()->SetWaitingPar(true);
-	}
 }

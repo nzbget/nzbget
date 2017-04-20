@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,9 @@
 class NzbInfo;
 class DownloadQueue;
 class PostInfo;
+
+typedef std::vector<int> IdList;
+typedef std::vector<CString> NameList;
 
 class ServerStat
 {
@@ -331,6 +334,8 @@ public:
 	public:
 		FileHash(const char* filename, const char* hash) :
 			m_filename(filename), m_hash(hash) {}
+		const char* GetFilename() { return m_filename; }
+		const char* GetHash() { return m_hash; }
 	private:
 		CString m_filename;
 		CString m_hash;
@@ -344,16 +349,16 @@ public:
 	void SetWaitingPar(bool waitingPar) { m_waitingPar = waitingPar; }
 	bool GetLoadingPar() { return m_loadingPar; }
 	void SetLoadingPar(bool loadingPar) { m_loadingPar = loadingPar; }
-	FileHashList* GetParHashes() { return &m_parHashes; }
 	FileHashList* GetArticleHashes() { return &m_articleHashes; }
+	NameList* GetParFiles() { return &m_parFiles; }
 	void Reset();
 
 private:
 	bool m_allFirst = false;
 	bool m_waitingPar = false;
 	bool m_loadingPar = false;
-	FileHashList m_parHashes;
 	FileHashList m_articleHashes;
+	NameList m_parFiles;
 };
 
 enum EDupeMode
@@ -794,10 +799,6 @@ private:
 	Thread* m_postThread = nullptr;
 	ParredFiles m_parredFiles;
 };
-
-typedef std::vector<int> IdList;
-
-typedef std::vector<CString> NameList;
 
 class DupInfo
 {
