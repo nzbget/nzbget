@@ -1258,4 +1258,21 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, RawFileLi
 
 void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+	{
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
+		{
+			// save new file name into disk state file
+			g_DiskState->SaveFile(fileInfo);
+
+			// discard article infos to free up memory if possible
+			if (g_Options->GetContinuePartial() && fileInfo->GetActiveDownloads() == 0 && fileInfo->GetCachedArticles() == 0)
+			{
+				debug("Discarding article infos for %s/%s", nzbInfo->GetName(), fileInfo->GetFilename());
+				fileInfo->SetPartialChanged(true);
+				SavePartialState(fileInfo);
+				fileInfo->GetArticles()->clear();
+			}
+		}
+	}
 }

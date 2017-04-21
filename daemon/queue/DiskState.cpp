@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -840,7 +840,7 @@ bool DiskState::SaveFile(FileInfo* fileInfo)
 	debug("Saving FileInfo %i to disk", fileInfo->GetId());
 
 	BString<100> filename("%i", fileInfo->GetId());
-	StateFile stateFile(filename, 4, false);
+	StateFile stateFile(filename, 5, false);
 
 	StateDiskFile* outfile = stateFile.BeginWrite();
 	if (!outfile)
@@ -856,7 +856,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile)
 	outfile.PrintLine("%s", fileInfo->GetSubject());
 	outfile.PrintLine("%s", fileInfo->GetFilename());
 
-	outfile.PrintLine("%i", (int)fileInfo->GetTime());
+	outfile.PrintLine("%i,%i", (int)fileInfo->GetFilenameConfirmed(), (int)fileInfo->GetTime());
 
 	uint32 High, Low;
 	Util::SplitInt64(fileInfo->GetSize(), &High, &Low);
@@ -894,7 +894,7 @@ bool DiskState::LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles)
 	debug("Loading FileInfo %i from disk", fileInfo->GetId());
 
 	BString<100> filename("%i", fileInfo->GetId());
-	StateFile stateFile(filename, 4, false);
+	StateFile stateFile(filename, 5, false);
 
 	StateDiskFile* infile = stateFile.BeginRead();
 	if (!infile)
@@ -915,7 +915,14 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, StateDiskFile& infile, int form
 	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (fileSummary) fileInfo->SetFilename(buf);
 
-	if (formatVersion >= 4)
+	if (formatVersion >= 5)
+	{
+		int time, filenameConfirmed;
+		if (infile.ScanLine("%i,%i", &filenameConfirmed, &time) != 2) goto error;
+		if (fileSummary) fileInfo->SetFilenameConfirmed((bool)filenameConfirmed);
+		if (fileSummary) fileInfo->SetTime((time_t)time);
+	}
+	else if (formatVersion >= 4)
 	{
 		int time;
 		if (infile.ScanLine("%i", &time) != 1) goto error;
