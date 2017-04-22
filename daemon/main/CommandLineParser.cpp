@@ -517,6 +517,10 @@ void CommandLineParser::InitCommandLine(int argc, const char* const_argv[])
 					{
 						m_editQueueAction = DownloadQueue::eaGroupParkDelete;
 					}
+					else if (!strcasecmp(optarg, "SF"))
+					{
+						m_editQueueAction = DownloadQueue::eaGroupSortFiles;
+					}
 					else if (!strcasecmp(optarg, "C") || !strcasecmp(optarg, "K") || !strcasecmp(optarg, "CP"))
 					{
 						// switch "K" is provided for compatibility with v. 0.8.0 and can be removed in future versions
@@ -741,11 +745,11 @@ void CommandLineParser::PrintUsage(const char* com)
 		"                 S          Print only server status\n"
 		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax\n"
-		"  -P, --pause   [D|O|S]  Pause server\n"
+		"  -P, --pause   [D|O|S]     Pause server\n"
 		"                 D          Pause download queue (default)\n"
 		"                 O          Pause post-processor queue\n"
 		"                 S          Pause scan of incoming nzb-directory\n"
-		"  -U, --unpause [D|O|S]  Unpause server\n"
+		"  -U, --unpause [D|O|S]     Unpause server\n"
 		"                 D          Unpause download queue (default)\n"
 		"                 O          Unpause post-processor queue\n"
 		"                 S          Unpause scan of incoming nzb-directory\n"
@@ -772,7 +776,6 @@ void CommandLineParser::PrintUsage(const char* com)
 		"       T                    Move to top of queue\n"
 		"       B                    Move to bottom of queue\n"
 		"       D                    Delete\n"
-		"    - for files (F) and groups (G):\n"
 		"       P                    Pause\n"
 		"       U                    Resume (unpause)\n"
 		"    - for groups (G):\n"
@@ -784,6 +787,7 @@ void CommandLineParser::PrintUsage(const char* com)
 		"       CP <name>            Set category and apply post-process parameters\n"
 		"       N <name>             Rename\n"
 		"       M                    Merge\n"
+		"       SF                   Sort inner files for optimal order\n"
 		"       S <name>             Split - create new group from selected files\n"
 		"       O <name>=<value>     Set post-process parameter\n"
 		"    - for post-jobs (O):\n"
