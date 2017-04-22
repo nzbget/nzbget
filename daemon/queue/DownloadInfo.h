@@ -909,7 +909,7 @@ public:
 		eaFileResume, // resume (unpause) files
 		eaFileDelete, // delete files
 		eaFilePauseAllPars, // pause only (all) pars (does not affect other files)
-		eaFilePauseExtraPars, // pause only (almost all) pars, except main par-file (does not affect other files)
+		eaFilePauseExtraPars, // pause (almost all) pars, except main par-file (does not affect other files)
 		eaFileReorder, // set file order
 		eaFileSplit, // split - create new group from selected files
 		eaGroupMoveOffset, // move group to offset relative to the current position in download-queue
@@ -935,6 +935,7 @@ public:
 		eaGroupSetDupeScore, // set duplicate score
 		eaGroupSetDupeMode, // set duplicate mode
 		eaGroupSort, // sort groups
+		eaGroupSortFiles, // sort files for optimal download order
 		eaPostDelete, // cancel post-processing
 		eaHistoryDelete, // hide history-item
 		eaHistoryFinalDelete, // delete history-item

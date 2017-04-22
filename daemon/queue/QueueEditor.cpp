@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -436,7 +436,11 @@ bool QueueEditor::InternEditList(ItemList* itemList,
 						{
 							EditGroup(item.m_nzbInfo, action, args);
 						}
+						break;
 
+					case DownloadQueue::eaGroupSortFiles:
+						SortGroupFiles(item.m_nzbInfo);
+						break;
 
 					default:
 						// suppress compiler warning "enumeration not handled in switch"
@@ -1257,6 +1261,26 @@ void QueueEditor::SetNzbDupeParam(NzbInfo* nzbInfo, DownloadQueue::EEditAction a
 			// suppress compiler warning
 			break;
 	}
+}
+
+void QueueEditor::SortGroupFiles(NzbInfo* nzbInfo)
+{
+	debug("QueueEditor: sorting inner files for '%s'", nzbInfo->GetName());
+
+	std::sort(nzbInfo->GetFileList()->begin(), nzbInfo->GetFileList()->end(),
+		[](std::unique_ptr<FileInfo>& fileInfo1, std::unique_ptr<FileInfo>& fileInfo2)
+		{
+			if (!fileInfo1->GetParFile() && !fileInfo2->GetParFile())
+			{
+				return strcmp(fileInfo1->GetFilename(), fileInfo2->GetFilename()) < 0;
+			}
+			else if (fileInfo1->GetParFile() && fileInfo2->GetParFile())
+			{
+				return fileInfo1->GetSize() <= fileInfo2->GetSize();
+			}
+
+			return !fileInfo1->GetParFile() && fileInfo2->GetParFile();
+		});
 }
 
 bool QueueEditor::DeleteUrl(NzbInfo* nzbInfo, DownloadQueue::EEditAction action)

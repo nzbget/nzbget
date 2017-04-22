@@ -1275,4 +1275,15 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 			}
 		}
 	}
+
+	if (g_Options->GetParCheck() != Options::pcForce)
+	{
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupResume, nullptr);
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupPauseAllPars, nullptr);
+	}
+
+	if (g_Options->GetReorderFiles())
+	{
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupSortFiles, nullptr);
+	}
 }

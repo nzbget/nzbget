@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ private:
 	void DeleteEntry(FileInfo* fileInfo);
 	void MoveEntry(FileInfo* fileInfo, int offset);
 	void MoveGroup(NzbInfo* nzbInfo, int offset);
+	void SortGroupFiles(NzbInfo* nzbInfo);
 	bool ItemListContainsItem(ItemList* itemList, int id);
 
 	friend class GroupSorter;
