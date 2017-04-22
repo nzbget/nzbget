@@ -77,6 +77,8 @@ RequestExecutionLevel admin
 !insertmacro MUI_PAGE_LICENSE "..\NZBGet\COPYING"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW MyFinishShow
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE MyFinishLeave
 !insertmacro MUI_PAGE_FINISH
 
 !insertmacro MUI_UNPAGE_WELCOME
@@ -195,6 +197,33 @@ ${EndIf}
 FunctionEnd
 
 
+; Add an extra checkbox for file association
+var Checkbox
+var Checkbox_State
+
+Function MyFinishShow
+${NSD_CreateCheckbox} 120u 130u 100% 10u "Associate With NZB Files"
+Pop $Checkbox
+SetCtlColors $Checkbox "" "ffffff"
+FunctionEnd
+
+Function MyFinishLeave
+${NSD_GetState} $Checkbox $Checkbox_State
+${If} $Checkbox_State <> 0
+
+	WriteRegStr HKCR ".nzb" "" "NZBGet.NZBFile"
+	WriteRegStr HKCR "NZBGet.NZBFile" "" `NZB File`
+	WriteRegStr HKCR "NZBGet.NZBFile\DefaultIcon" "" `$INSTDIR\nzbget.exe,00`
+	WriteRegStr HKCR "NZBGet.NZBFile\shell" "" "open"
+	WriteRegStr HKCR "NZBGet.NZBFile\shell\open" "" `Open with NZBGet`
+	WriteRegStr HKCR "NZBGet.NZBFile\shell\open\command" "" `$INSTDIR\nzbget.exe -A $\"%1$\"`	
+	
+	System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
+	
+${EndIf}
+FunctionEnd
+
+
 ;--------------------------------
 ;Uninstaller Section
 
@@ -223,6 +252,9 @@ Delete "$DESKTOP\NZBGet.lnk"
 
 DeleteRegKey HKCU "Software\NZBGet"
 DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet"
+
+DeleteRegKey HKCR `NZBGet.NZBFile`
+DeleteRegValue HKCR ".nzb" ""
 
 ; Refresh desktop window
 System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
