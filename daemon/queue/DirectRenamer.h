@@ -36,8 +36,10 @@ protected:
 
 private:
 	void CheckState(NzbInfo* nzbInfo);
+	void UnpausePars(NzbInfo* nzbInfo);
 	void RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, RenameInfo::FileHashList* parHashes);
 	void RenameFile(NzbInfo* nzbInfo, const char* oldName, const char* newName);
+	bool NeedRenamePars(NzbInfo* nzbInfo);
 
 	friend class DirectParLoader;
 };

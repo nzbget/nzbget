@@ -343,6 +343,28 @@ public:
 
 	typedef std::deque<FileHash> FileHashList;
 
+	class ParFile
+	{
+	public:
+		ParFile(int id, const char* filename, const char* setId) :
+			m_id(id), m_filename(filename), m_setId(setId) {}
+		int GetId() { return m_id; }
+		const char* GetFilename() { return m_filename; }
+		const char* GetSetId() { return m_setId; }
+		bool GetCompleted() { return m_completed; }
+		void SetCompleted(bool completed) { m_completed = completed; }
+		bool GetWanted() { return m_wanted; }
+		void SetWanted(bool wanted) { m_wanted = wanted; }
+	private:
+		int m_id;
+		CString m_filename;
+		CString m_setId;
+		bool m_completed = false;
+		bool m_wanted = false;
+	};
+
+	typedef std::deque<ParFile> ParFileList;
+
 	bool GetAllFirst() { return m_allFirst; }
 	void SetAllFirst(bool allFirst) { m_allFirst = allFirst; }
 	bool GetWaitingPar() { return m_waitingPar; }
@@ -350,7 +372,7 @@ public:
 	bool GetLoadingPar() { return m_loadingPar; }
 	void SetLoadingPar(bool loadingPar) { m_loadingPar = loadingPar; }
 	FileHashList* GetArticleHashes() { return &m_articleHashes; }
-	NameList* GetParFiles() { return &m_parFiles; }
+	ParFileList* GetParFiles() { return &m_parFiles; }
 	void Reset();
 
 private:
@@ -358,7 +380,7 @@ private:
 	bool m_waitingPar = false;
 	bool m_loadingPar = false;
 	FileHashList m_articleHashes;
-	NameList m_parFiles;
+	ParFileList m_parFiles;
 };
 
 enum EDupeMode
