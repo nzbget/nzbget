@@ -125,7 +125,7 @@ void DirectParLoader::Run()
 		std::string filename = Par2::DiskFile::TranslateFilename(sourceFile->GetDescriptionPacket()->FileName());
 		std::string hash = sourceFile->GetDescriptionPacket()->Hash16k().print();
 
-		info("file: %s, hash-16k: %s", filename.c_str(), hash.c_str());
+		debug("file: %s, hash-16k: %s", filename.c_str(), hash.c_str());
 		parHashes.emplace_back(filename.c_str(), hash.c_str());
 	}
 
@@ -177,6 +177,7 @@ void DirectRenamer::ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fi
 	if (fileInfo->GetParFile() && !nzbInfo->GetRenameInfo()->GetWaitingPar())
 	{
 		nzbInfo->PrintMessage(Message::mkDetail, "Increasing priority for par2-file %s", fileInfo->GetFilename());
+		fileInfo->SetPaused(false);
 		fileInfo->SetExtraPriority(true);
 		nzbInfo->GetRenameInfo()->SetWaitingPar(true);
 	}
