@@ -1276,7 +1276,7 @@ void QueueEditor::SortGroupFiles(NzbInfo* nzbInfo)
 			}
 			else if (fileInfo1->GetParFile() && fileInfo2->GetParFile())
 			{
-				return fileInfo1->GetSize() <= fileInfo2->GetSize();
+				return fileInfo1->GetSize() < fileInfo2->GetSize();
 			}
 
 			return !fileInfo1->GetParFile() && fileInfo2->GetParFile();
