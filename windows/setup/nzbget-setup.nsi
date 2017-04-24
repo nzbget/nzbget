@@ -253,8 +253,11 @@ Delete "$DESKTOP\NZBGet.lnk"
 DeleteRegKey HKCU "Software\NZBGet"
 DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet"
 
-DeleteRegKey HKCR `NZBGet.NZBFile`
-DeleteRegValue HKCR ".nzb" ""
+ReadRegStr $R0 HKCR ".nzb" ""
+${If} $R0 == "NZBGet.NZBFile"
+	DeleteRegKey HKCR `NZBGet.NZBFile`
+	DeleteRegValue HKCR ".nzb" ""
+${EndIf}
 
 ; Refresh desktop window
 System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
