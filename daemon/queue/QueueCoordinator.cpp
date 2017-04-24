@@ -640,6 +640,10 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 		{
 			articleInfo->SetStatus(ArticleInfo::aiUndefined);
 			retry = true;
+			if (g_Options->GetDirectRename() && articleInfo->GetPartNumber() == 0)
+			{
+				nzbInfo->GetRenameInfo()->SetAllFirst(false);
+			}
 		}
 
 		if (!retry)
