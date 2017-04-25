@@ -114,6 +114,7 @@ private:
 	QueueList m_queueList;
 	bool m_scanning = false;
 	Mutex m_scanMutex;
+	static int m_idGen;
 
 	void CheckIncomingNzbs(const char* directory, const char* category, bool checkStat);
 	bool AddFileToQueue(const char* filename, const char* nzbName, const char* category,

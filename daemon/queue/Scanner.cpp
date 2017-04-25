@@ -28,6 +28,8 @@
 #include "Util.h"
 #include "FileSystem.h"
 
+int Scanner::m_idGen = 0;
+
 Scanner::QueueData::QueueData(const char* filename, const char* nzbName, const char* category,
 	int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
 	NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
@@ -493,8 +495,8 @@ Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* ca
 	}
 	else
 	{
-		int num = 1;
-		while (num == 1 || FileSystem::FileExists(tempFileName))
+		int num = ++m_idGen;
+		while (tempFileName.Empty() || FileSystem::FileExists(tempFileName))
 		{
 			tempFileName.Format("%s%cnzb-%i.tmp", g_Options->GetTempDir(), PATH_SEPARATOR, num);
 			num++;
