@@ -26,7 +26,6 @@
 class WinConsole : public Thread
 {
 public:
-	WinConsole();
 	~WinConsole();
 	virtual void Stop();
 	void InitAppMode();
@@ -37,16 +36,16 @@ protected:
 	virtual void Run();
 
 private:
-	bool m_appMode;
-	char** m_defaultArguments;
-	char** m_initialArguments;
-	int m_initialArgumentCount;
-	HWND m_trayWindow;
-	NOTIFYICONDATA* m_iconData;
+	bool m_appMode = false;
+	char** m_defaultArguments = nullptr;
+	char** m_initialArguments = nullptr;
+	int m_initialArgumentCount = 0;
+	HWND m_trayWindow = 0;
+	NOTIFYICONDATA* m_iconData = nullptr;
 	UINT m_taskbarCreatedMessage;
 	HMENU m_menu;
 	HINSTANCE m_instance;
-	bool m_modal;
+	bool m_modal = false;
 	HFONT m_linkFont;
 	HFONT m_nameFont;
 	HFONT m_titleFont;
@@ -56,14 +55,15 @@ private:
 	HICON m_idleIcon;
 	HICON m_workingIcon;
 	HICON m_pausedIcon;
-	bool m_autostart;
-	bool m_showTrayIcon;
-	bool m_showConsole;
-	bool m_showWebUI;
-	bool m_autoParam;
-	bool m_running;
-	bool m_runningService;
-	bool m_doubleClick;
+	bool m_autostart = false;
+	bool m_showTrayIcon = true;
+	bool m_showConsole = false;
+	bool m_showWebUI = true;
+	bool m_autoParam = false;
+	bool m_addParam = false;
+	bool m_running = false;
+	bool m_runningService = false;
+	bool m_doubleClick = false;
 
 	void CreateResources();
 	void CreateTrayIcon();
@@ -82,9 +82,9 @@ private:
 	void BuildMenu();
 	void ShowCategoryDir(int catIndex);
 	void SetupConfigFile();
-	void SetupScripts();
 	void ShowFactoryResetDialog();
 	void ResetFactoryDefaults();
+	void RunAnotherInstance();
 
 	static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType);
 	static LRESULT CALLBACK TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);

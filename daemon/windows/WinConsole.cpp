@@ -71,29 +71,11 @@ BOOL WINAPI WinConsole::ConsoleCtrlHandler(DWORD dwCtrlType)
 	}
 }
 
-WinConsole::WinConsole()
-{
-	m_initialArguments = nullptr;
-	m_initialArgumentCount = 0;
-	m_defaultArguments = nullptr;
-	m_iconData = nullptr;
-	m_modal = false;
-	m_autostart = false;
-	m_showTrayIcon = true;
-	m_showConsole = false;
-	m_showWebUI = true;
-	m_autoParam = false;
-	m_doubleClick = false;
-	m_trayWindow = 0;
-	m_running = false;
-	m_runningService = false;
-}
-
 WinConsole::~WinConsole()
 {
 	if (m_initialArguments)
 	{
-		g_Arguments =	(char*(*)[])m_initialArguments;
+		g_Arguments = (char*(*)[])m_initialArguments;
 		g_ArgumentCount = m_initialArgumentCount;
 	}
 	free(m_defaultArguments);
@@ -107,7 +89,6 @@ void WinConsole::InitAppMode()
 	m_instance = (HINSTANCE)GetModuleHandle(0);
 	DWORD processId;
 	GetWindowThreadProcessId(GetConsoleWindow(), &processId);
-	m_appMode = false;
 
 	if (GetCurrentProcessId() == processId && g_ArgumentCount == 1)
 	{
@@ -131,24 +112,27 @@ void WinConsole::InitAppMode()
 			{
 				break;
 			}
-			if (!strcmp((*g_Arguments)[i], "-app"))
+			else if (!strcmp((*g_Arguments)[i], "-app"))
 			{
 				m_appMode = true;
 			}
-
-			if (!strcmp((*g_Arguments)[i], "-auto"))
+			else if (!strcmp((*g_Arguments)[i], "-auto"))
 			{
 				m_autoParam = true;
 			}
+			else if (!strcmp((*g_Arguments)[i], "-A"))
+			{
+				m_addParam = true;
+			}
 		}
 
-		if (m_appMode)
+		if (m_appMode || m_autoParam)
 		{
 			m_initialArguments = (char**)g_Arguments;
 			m_initialArgumentCount = g_ArgumentCount;
 
 			// remove "-app" from command line
-			int argc = g_ArgumentCount - 1 - (m_autoParam ? 1 : 0);
+			int argc = g_ArgumentCount - (m_appMode ? 1 : 0) - (m_autoParam ? 1 : 0);
 			m_defaultArguments = (char**)malloc(sizeof(char*) * (argc + 2));
 
 			int p = 0;
@@ -166,7 +150,13 @@ void WinConsole::InitAppMode()
 		}
 	}
 
-	// m_bAppMode indicates whether the program was started as a standalone app
+	if (m_addParam)
+	{
+		RunAnotherInstance();
+		return;
+	}
+
+	// m_appMode indicates whether the program was started as a standalone app
 	// (not from a dos box window). In that case we hide the console window,
 	// show the tray icon and start in server mode
 
@@ -179,7 +169,7 @@ void WinConsole::InitAppMode()
 
 void WinConsole::Run()
 {
-	if (!m_appMode)
+	if (!m_appMode || m_addParam)
 	{
 		return;
 	}
@@ -1042,4 +1032,13 @@ void WinConsole::ResetFactoryDefaults()
 
 	mayStartBrowser = true;
 	Reload();
+}
+
+void WinConsole::RunAnotherInstance()
+{
+	ShowWindow(GetConsoleWindow(), SW_HIDE);
+	if (!(FindWindow("NZBGet tray window", nullptr) || IsServiceRunning()))
+	{
+		ShellExecute(0, "open", (*g_Arguments)[0], nullptr, nullptr, SW_SHOWNORMAL);
+	}
 }

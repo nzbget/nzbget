@@ -216,7 +216,7 @@ ${If} $Checkbox_State <> 0
 	WriteRegStr HKCR "NZBGet.NZBFile\DefaultIcon" "" `$INSTDIR\nzbget.exe,00`
 	WriteRegStr HKCR "NZBGet.NZBFile\shell" "" "open"
 	WriteRegStr HKCR "NZBGet.NZBFile\shell\open" "" `Open with NZBGet`
-	WriteRegStr HKCR "NZBGet.NZBFile\shell\open\command" "" `$INSTDIR\nzbget.exe -A $\"%1$\"`	
+	WriteRegStr HKCR "NZBGet.NZBFile\shell\open\command" "" `$INSTDIR\nzbget.exe -app -A $\"%1$\"`	
 	
 	System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
 	
