@@ -2849,21 +2849,21 @@ uninstall-conf:
 #    we create new file "code_revision.c" with empty revision number.
 code_revision.cpp: FORCE
 	@ if test -d ./.git ; then \
-		B="$(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')"; \
-		M="$(shell git status --porcelain)" ; \
+		B=`git branch | sed -n -e 's/^\* \(.*\)/\1/p'`; \
+		M=`git status --porcelain` ; \
 		if test "$$M" != "" ; then \
 			M="M" ; \
 		fi ; \
 		if test "$$B" = "master" ; then \
 			V="$$M" ; \
 		elif test "$$B" = "develop" ; then \
-			V="$(shell git rev-list HEAD | wc -l | xargs)" ; \
+			V=`git rev-list HEAD | wc -l | xargs` ; \
 			V="$${V}$$M" ; \
 		else \
-			V="$(shell git rev-list HEAD | wc -l | xargs)" ; \
+			V=`git rev-list HEAD | wc -l | xargs` ; \
 			V="$${V}$$M ($$B)" ; \
 		fi ; \
-		H="$(shell test -f ./code_revision.cpp && head -n 1 code_revision.cpp)"; \
+		H=`test -f ./code_revision.cpp && head -n 1 code_revision.cpp`; \
 		if test "/* $$V */" != "$$H" ; then \
 			( \
 			echo "/* $$V */" ;\
