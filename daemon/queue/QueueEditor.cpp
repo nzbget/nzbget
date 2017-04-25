@@ -1268,7 +1268,7 @@ void QueueEditor::SortGroupFiles(NzbInfo* nzbInfo)
 	debug("QueueEditor: sorting inner files for '%s'", nzbInfo->GetName());
 
 	std::sort(nzbInfo->GetFileList()->begin(), nzbInfo->GetFileList()->end(),
-		[](std::unique_ptr<FileInfo>& fileInfo1, std::unique_ptr<FileInfo>& fileInfo2)
+		[](const std::unique_ptr<FileInfo>& fileInfo1, const std::unique_ptr<FileInfo>& fileInfo2)
 		{
 			if (!fileInfo1->GetParFile() && !fileInfo2->GetParFile())
 			{

@@ -272,10 +272,10 @@ void DirectRenamer::UnpausePars(NzbInfo* nzbInfo)
 	std::sort(
 		nzbInfo->GetRenameInfo()->GetParFiles()->begin(),
 		nzbInfo->GetRenameInfo()->GetParFiles()->end(),
-		[nzbInfo](RenameInfo::ParFile& parFile1, RenameInfo::ParFile& parFile2)
+		[nzbInfo](const RenameInfo::ParFile& parFile1, const RenameInfo::ParFile& parFile2)
 		{
-			FileInfo* fileInfo1 = nzbInfo->GetFileList()->Find(parFile1.GetId());
-			FileInfo* fileInfo2 = nzbInfo->GetFileList()->Find(parFile2.GetId());
+			FileInfo* fileInfo1 = nzbInfo->GetFileList()->Find(const_cast<RenameInfo::ParFile&>(parFile1).GetId());
+			FileInfo* fileInfo2 = nzbInfo->GetFileList()->Find(const_cast<RenameInfo::ParFile&>(parFile2).GetId());
 			return (!fileInfo1 && fileInfo2) ||
 				(fileInfo1 && fileInfo2 && fileInfo1->GetSize() < fileInfo2->GetSize());
 		});
