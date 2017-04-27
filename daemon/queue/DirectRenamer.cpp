@@ -407,7 +407,16 @@ void DirectRenamer::RenameFile(NzbInfo* nzbInfo, const char* oldName, const char
 	{
 		if (!strcmp(fileInfo->GetFilename(), oldName))
 		{
-			nzbInfo->PrintMessage(Message::mkInfo, "Renaming in-progress file %s to %s", oldName, newName);
+			bool written = fileInfo->GetOutputFilename() &&
+				!Util::EndsWith(fileInfo->GetOutputFilename(), ".out.tmp");
+			if (written)
+			{
+				RenameCompletedFile(nzbInfo, oldName, newName);
+			}
+			else
+			{
+				nzbInfo->PrintMessage(Message::mkInfo, "Renaming in-progress file %s to %s", oldName, newName);
+			}
 			fileInfo->SetFilename(newName);
 			return;
 		}
@@ -417,18 +426,27 @@ void DirectRenamer::RenameFile(NzbInfo* nzbInfo, const char* oldName, const char
 	{
 		if (!strcmp(completedFile.GetFileName(), oldName))
 		{
-			BString<1024> oldFullFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, oldName);
-			nzbInfo->PrintMessage(Message::mkInfo, "Renaming completed file %s to %s", oldName, newName);
-			if (!FileSystem::MoveFile(oldFullFilename, newFullFilename))
+			if (RenameCompletedFile(nzbInfo, oldName, newName))
 			{
-				nzbInfo->PrintMessage(Message::mkError, "Could not rename completed file %s to %s: %s",
-					oldName, newName, *FileSystem::GetLastErrorMessage());
-				return;
+				completedFile.SetFileName(newName);
 			}
-			completedFile.SetFileName(newName);
 			return;
 		}
 	}
+}
+
+bool DirectRenamer::RenameCompletedFile(NzbInfo* nzbInfo, const char* oldName, const char* newName)
+{
+	BString<1024> oldFullFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, oldName);
+	BString<1024> newFullFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, newName);
+	nzbInfo->PrintMessage(Message::mkInfo, "Renaming completed file %s to %s", oldName, newName);
+	if (!FileSystem::MoveFile(oldFullFilename, newFullFilename))
+	{
+		nzbInfo->PrintMessage(Message::mkError, "Could not rename completed file %s to %s: %s",
+			*oldFullFilename, *newFullFilename, *FileSystem::GetLastErrorMessage());
+		return false;
+	}
+	return true;
 }
 
 

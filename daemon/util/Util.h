@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ public:
 	static char* Trim(char* str);
 	static bool EmptyStr(const char* str) { return !str || !*str; }
 	static std::vector<CString> SplitStr(const char* str, const char* separators);
+	static bool EndsWith(const char* str, const char* suffix);
 
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
 	static char* ReduceStr(char* str, const char* from, const char* to);

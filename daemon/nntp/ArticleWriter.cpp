@@ -292,14 +292,16 @@ void ArticleWriter::CompleteFileParts()
 
 	BString<1024> nzbName;
 	BString<1024> nzbDestDir;
+	BString<1024> filename;
 
 	{
 		GuardedDownloadQueue guard = DownloadQueue::Guard();
 		nzbName = m_fileInfo->GetNzbInfo()->GetName();
 		nzbDestDir = m_fileInfo->GetNzbInfo()->GetDestDir();
+		filename = m_fileInfo->GetFilename();
 	}
 
-	BString<1024> infoFilename("%s%c%s", *nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
+	BString<1024> infoFilename("%s%c%s", *nzbName, (int)PATH_SEPARATOR, *filename);
 
 	bool cached = m_fileInfo->GetCachedArticles() > 0;
 
@@ -332,11 +334,11 @@ void ArticleWriter::CompleteFileParts()
 	CString ofn;
 	if (m_fileInfo->GetForceDirectWrite())
 	{
-		ofn.Format("%s%c%s", *nzbDestDir, PATH_SEPARATOR, m_fileInfo->GetFilename());
+		ofn.Format("%s%c%s", *nzbDestDir, PATH_SEPARATOR, *filename);
 	}
 	else
 	{
-		ofn = FileSystem::MakeUniqueFilename(nzbDestDir, m_fileInfo->GetFilename());
+		ofn = FileSystem::MakeUniqueFilename(nzbDestDir, *filename);
 	}
 
 	DiskFile outfile;
@@ -436,9 +438,9 @@ void ArticleWriter::CompleteFileParts()
 					m_fileInfo->SetFailedArticles(m_fileInfo->GetFailedArticles() + 1);
 					m_fileInfo->SetSuccessArticles(m_fileInfo->GetSuccessArticles() - 1);
 					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-						"Could not find file %s for %s%c%s [%i/%i]",
-						pa->GetResultFilename(), *nzbName, (int)PATH_SEPARATOR, m_fileInfo->GetFilename(),
-						pa->GetPartNumber(), (int)m_fileInfo->GetArticles()->size());
+						"Could not find file %s for %s [%i/%i]",
+						pa->GetResultFilename(), *infoFilename, pa->GetPartNumber(),
+						(int)m_fileInfo->GetArticles()->size());
 				}
 			}
 			else if (!g_Options->GetDecode())
@@ -527,7 +529,7 @@ void ArticleWriter::CompleteFileParts()
 			DiskFile file;
 			if (file.Open(brokenLogName, DiskFile::omAppend))
 			{
-				file.Print("%s (%i/%i)%s", m_fileInfo->GetFilename(), m_fileInfo->GetSuccessArticles(),
+				file.Print("%s (%i/%i)%s", *filename, m_fileInfo->GetSuccessArticles(),
 					m_fileInfo->GetTotalArticles(), LINE_ENDING);
 				file.Close();
 			}
@@ -538,11 +540,25 @@ void ArticleWriter::CompleteFileParts()
 		m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkInfo, "Partially downloaded %s", *infoFilename);
 	}
 
-	m_fileInfo->SetCrc(crc);
-	m_fileInfo->SetOutputFilename(ofn);
-
 	{
 		GuardedDownloadQueue guard = DownloadQueue::Guard();
+
+		m_fileInfo->SetCrc(crc);
+		m_fileInfo->SetOutputFilename(ofn);
+
+		if (strcmp(m_fileInfo->GetFilename(), filename))
+		{
+			// file was renamed during completion, need to move the file
+			ofn = FileSystem::MakeUniqueFilename(nzbDestDir, m_fileInfo->GetFilename());
+			if (!FileSystem::MoveFile(m_fileInfo->GetOutputFilename(), ofn))
+			{
+				m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
+					"Could not rename file %s to %s: %s", m_fileInfo->GetOutputFilename(),
+					*ofn, *FileSystem::GetLastErrorMessage());
+			}
+			m_fileInfo->SetOutputFilename(ofn);
+		}
+
 		if (strcmp(m_fileInfo->GetNzbInfo()->GetDestDir(), nzbDestDir))
 		{
 			// destination directory was changed during completion, need to move the file

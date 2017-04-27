@@ -429,6 +429,29 @@ std::vector<CString> Util::SplitStr(const char* str, const char* separators)
 	return result;
 }
 
+bool Util::EndsWith(const char* str, const char* suffix)
+{
+	if (!str)
+	{
+		return false;
+	}
+
+	if (EmptyStr(suffix))
+	{
+		return true;
+	}
+
+	int lenStr = strlen(str);
+	int lenSuf = strlen(suffix);
+
+	if (lenSuf > lenStr)
+	{
+		return false;
+	}
+
+	return !strcmp(str + lenStr - lenSuf, suffix);
+}
+
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */
