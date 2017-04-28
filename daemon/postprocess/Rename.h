@@ -78,8 +78,8 @@ private:
 	protected:
 		virtual void UpdateProgress() { m_owner->UpdateRarRenameProgress(); }
 		virtual void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
-		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFileName)
-			{ m_owner->RegisterRenamedFile(oldFilename, newFileName); }
+		virtual void RegisterRenamedFile(const char* oldFilename, const char* newFilename)
+			{ m_owner->RegisterRenamedFile(oldFilename, newFilename); }
 		virtual bool IsStopped() { return m_owner->IsStopped(); };
 	private:
 		RenameController* m_owner;
@@ -92,7 +92,7 @@ private:
 
 	void ExecRename(const char* destDir, const char* finalDir, const char* nzbName);
 	void RenameCompleted();
-	void RegisterRenamedFile(const char* oldFilename, const char* newFileName);
+	void RegisterRenamedFile(const char* oldFilename, const char* newFilename);
 };
 
 #endif

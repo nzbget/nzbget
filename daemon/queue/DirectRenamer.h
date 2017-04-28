@@ -26,6 +26,40 @@
 class DirectRenamer
 {
 public:
+	class FileHash
+	{
+	public:
+		FileHash(const char* filename, const char* hash) :
+			m_filename(filename), m_hash(hash) {}
+		const char* GetFilename() { return m_filename; }
+		const char* GetHash() { return m_hash; }
+
+	private:
+		CString m_filename;
+		CString m_hash;
+	};
+
+	typedef std::deque<FileHash> FileHashList;
+
+	class ParFile
+	{
+	public:
+		ParFile(int id, const char* filename, const char* setId, bool completed) :
+			m_id(id), m_filename(filename), m_setId(setId), m_completed(completed) {}
+		int GetId() { return m_id; }
+		const char* GetFilename() { return m_filename; }
+		const char* GetSetId() { return m_setId; }
+		bool GetCompleted() { return m_completed; }
+
+	private:
+		int m_id;
+		CString m_filename;
+		CString m_setId;
+		bool m_completed = false;
+	};
+
+	typedef std::deque<ParFile> ParFileList;
+
 	std::unique_ptr<ArticleContentAnalyzer> MakeArticleContentAnalyzer();
 	void ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo,
 		ArticleInfo* articleInfo, ArticleContentAnalyzer* articleContentAnalyzer);
@@ -37,10 +71,12 @@ protected:
 private:
 	void CheckState(NzbInfo* nzbInfo);
 	void UnpausePars(NzbInfo* nzbInfo);
-	void RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, RenameInfo::FileHashList* parHashes);
-	void RenameFile(NzbInfo* nzbInfo, const char* oldName, const char* newName);
+	void RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, FileHashList* parHashes);
 	bool RenameCompletedFile(NzbInfo* nzbInfo, const char* oldName, const char* newName);
 	bool NeedRenamePars(NzbInfo* nzbInfo);
+	void CollectPars(NzbInfo* nzbInfo, ParFileList* parFiles);
+	CString BuildNewRegularName(const char* oldName, FileHashList* parHashes, const char* hash16k);
+	CString BuildNewParName(const char* oldName, const char* destDir, const char* setId, int& vol);
 
 	friend class DirectParLoader;
 };

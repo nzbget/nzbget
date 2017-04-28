@@ -791,9 +791,10 @@ void FileInfo::SetActiveDownloads(int activeDownloads)
 }
 
 
-CompletedFile::CompletedFile(int id, const char* fileName, EStatus status, uint32 crc) :
-	m_id(id), m_fileName(fileName), m_status(status), m_crc(crc)
-
+CompletedFile::CompletedFile(int id, const char* filename, EStatus status, uint32 crc,
+	bool parFile, const char* hash16k, const char* parSetId) :
+	m_id(id), m_filename(filename), m_status(status), m_crc(crc), m_parFile(parFile),
+	m_hash16k(hash16k), m_parSetId(parSetId)
 {
 	if (FileInfo::m_idMax < m_id)
 	{
@@ -879,14 +880,4 @@ void DownloadQueue::CalcRemainingSize(int64* remaining, int64* remainingForced)
 	{
 		*remainingForced = remainingForcedSize;
 	}
-}
-
-
-void RenameInfo::Reset()
-{
-	m_allFirst = false;
-	m_waitingPar = false;
-	m_loadingPar = false;
-	m_articleHashes.clear();
-	m_parFiles.clear();
 }

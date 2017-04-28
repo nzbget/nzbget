@@ -467,7 +467,7 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile)
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
 		outfile.PrintLine("%i,%i,%u,%s", completedFile.GetId(), (int)completedFile.GetStatus(),
-			completedFile.GetCrc(), completedFile.GetFileName());
+			completedFile.GetCrc(), completedFile.GetFilename());
 	}
 
 	outfile.PrintLine("%i", (int)nzbInfo->GetParameters()->size());
@@ -577,8 +577,8 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 	nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
 	nzbInfo->SetUnpackStatus((NzbInfo::EUnpackStatus)unpackStatus);
 	nzbInfo->SetMoveStatus((NzbInfo::EMoveStatus)moveStatus);
-	nzbInfo->SetParRenameStatus((NzbInfo::ERenameStatus)parRenameStatus);
-	nzbInfo->SetRarRenameStatus((NzbInfo::ERenameStatus)rarRenameStatus);
+	nzbInfo->SetParRenameStatus((NzbInfo::EPostRenameStatus)parRenameStatus);
+	nzbInfo->SetRarRenameStatus((NzbInfo::EPostRenameStatus)rarRenameStatus);
 	nzbInfo->SetDeleteStatus((NzbInfo::EDeleteStatus)deleteStatus);
 	nzbInfo->SetMarkStatus((NzbInfo::EMarkStatus)markStatus);
 	if (nzbInfo->GetKind() == NzbInfo::nkNzb ||
@@ -711,7 +711,8 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 			}
 		}
 
-		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName, (CompletedFile::EStatus)status, crc);
+		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName,
+			(CompletedFile::EStatus)status, crc, false, nullptr, nullptr);
 	}
 
 	int parameterCount;

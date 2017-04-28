@@ -74,7 +74,7 @@ ParChecker::EFileStatus RepairController::PostParChecker::FindFileCrc(const char
 
 	for (CompletedFile& completedFile2 : m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
-		if (!strcasecmp(completedFile2.GetFileName(), filename))
+		if (!strcasecmp(completedFile2.GetFilename(), filename))
 		{
 			completedFile = &completedFile2;
 			break;
@@ -85,7 +85,7 @@ ParChecker::EFileStatus RepairController::PostParChecker::FindFileCrc(const char
 		return ParChecker::fsUnknown;
 	}
 
-	debug("Found completed file: %s, CRC: %.8x, Status: %i", FileSystem::BaseFileName(completedFile->GetFileName()), completedFile->GetCrc(), (int)completedFile->GetStatus());
+	debug("Found completed file: %s, CRC: %.8x, Status: %i", FileSystem::BaseFileName(completedFile->GetFilename()), completedFile->GetCrc(), (int)completedFile->GetStatus());
 
 	*crc = completedFile->GetCrc();
 

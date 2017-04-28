@@ -195,6 +195,10 @@ public:
 	void SetPartialState(EPartialState partialState) { m_partialState = partialState; }
 	uint32 GetCrc() { return m_crc; }
 	void SetCrc(uint32 crc) { m_crc = crc; }
+	const char* GetHash16k() { return m_hash16k; }
+	void SetHash16k(const char* hash16k) { m_hash16k = hash16k; }
+	const char* GetParSetId() { return m_parSetId; }
+	void SetParSetId(const char* parSetId) { m_parSetId = parSetId; }
 
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
@@ -232,6 +236,8 @@ private:
 	bool m_forceDirectWrite = false;
 	EPartialState m_partialState = psNone;
 	uint32 m_crc = 0;
+	CString m_hash16k;
+	CString m_parSetId;
 
 	static int m_idGen;
 	static int m_idMax;
@@ -253,18 +259,27 @@ public:
 		cfFailure
 	};
 
-	CompletedFile(int id, const char* fileName, EStatus status, uint32 crc);
+	CompletedFile(int id, const char* filename, EStatus status, uint32 crc, 
+		bool parFile, const char* hash16k, const char* parSetId);
 	int GetId() { return m_id; }
-	void SetFileName(const char* fileName) { m_fileName = fileName; }
-	const char* GetFileName() { return m_fileName; }
+	void SetFilename(const char* filename) { m_filename = filename; }
+	const char* GetFilename() { return m_filename; }
+	bool GetParFile() { return m_parFile; }
 	EStatus GetStatus() { return m_status; }
 	uint32 GetCrc() { return m_crc; }
+	const char* GetHash16k() { return m_hash16k; }
+	void SetHash16k(const char* hash16k) { m_hash16k = hash16k; }
+	const char* GetParSetId() { return m_parSetId; }
+	void SetParSetId(const char* parSetId) { m_parSetId = parSetId; }
 
 private:
 	int m_id;
-	CString m_fileName;
+	CString m_filename;
 	EStatus m_status;
 	uint32 m_crc;
+	bool m_parFile;
+	CString m_hash16k;
+	CString m_parSetId;
 };
 
 typedef std::deque<CompletedFile> CompletedFileList;
@@ -326,63 +341,6 @@ public:
 	ScriptStatus::EStatus CalcTotalStatus();
 };
 
-class RenameInfo
-{
-public:
-	class FileHash
-	{
-	public:
-		FileHash(const char* filename, const char* hash) :
-			m_filename(filename), m_hash(hash) {}
-		const char* GetFilename() { return m_filename; }
-		const char* GetHash() { return m_hash; }
-	private:
-		CString m_filename;
-		CString m_hash;
-	};
-
-	typedef std::deque<FileHash> FileHashList;
-
-	class ParFile
-	{
-	public:
-		ParFile(int id, const char* filename, const char* setId) :
-			m_id(id), m_filename(filename), m_setId(setId) {}
-		int GetId() { return m_id; }
-		const char* GetFilename() { return m_filename; }
-		const char* GetSetId() { return m_setId; }
-		bool GetCompleted() { return m_completed; }
-		void SetCompleted(bool completed) { m_completed = completed; }
-		bool GetWanted() { return m_wanted; }
-		void SetWanted(bool wanted) { m_wanted = wanted; }
-	private:
-		int m_id;
-		CString m_filename;
-		CString m_setId;
-		bool m_completed = false;
-		bool m_wanted = false;
-	};
-
-	typedef std::deque<ParFile> ParFileList;
-
-	bool GetAllFirst() { return m_allFirst; }
-	void SetAllFirst(bool allFirst) { m_allFirst = allFirst; }
-	bool GetWaitingPar() { return m_waitingPar; }
-	void SetWaitingPar(bool waitingPar) { m_waitingPar = waitingPar; }
-	bool GetLoadingPar() { return m_loadingPar; }
-	void SetLoadingPar(bool loadingPar) { m_loadingPar = loadingPar; }
-	FileHashList* GetArticleHashes() { return &m_articleHashes; }
-	ParFileList* GetParFiles() { return &m_parFiles; }
-	void Reset();
-
-private:
-	bool m_allFirst = false;
-	bool m_waitingPar = false;
-	bool m_loadingPar = false;
-	FileHashList m_articleHashes;
-	ParFileList m_parFiles;
-};
-
 enum EDupeMode
 {
 	dmScore,
@@ -393,7 +351,15 @@ enum EDupeMode
 class NzbInfo
 {
 public:
-	enum ERenameStatus
+	enum EDirectRenameStatus
+	{
+		tsNone,
+		tsRunning,
+		tsFailure,
+		tsSuccess
+	};
+
+	enum EPostRenameStatus
 	{
 		rsNone,
 		rsSkipped,
@@ -546,10 +512,12 @@ public:
 	void BuildDestDirName();
 	CString BuildFinalDirName();
 	CompletedFileList* GetCompletedFiles() { return &m_completedFiles; }
-	ERenameStatus GetParRenameStatus() { return m_parRenameStatus; }
-	void SetParRenameStatus(ERenameStatus renameStatus) { m_parRenameStatus = renameStatus; }
-	ERenameStatus GetRarRenameStatus() { return m_rarRenameStatus; }
-	void SetRarRenameStatus(ERenameStatus renameStatus) { m_rarRenameStatus = renameStatus; }
+	void SetDirectRenameStatus(EDirectRenameStatus renameStatus) { m_directRenameStatus = renameStatus; }
+	EDirectRenameStatus GetDirectRenameStatus() { return m_directRenameStatus; }
+	EPostRenameStatus GetParRenameStatus() { return m_parRenameStatus; }
+	void SetParRenameStatus(EPostRenameStatus renameStatus) { m_parRenameStatus = renameStatus; }
+	EPostRenameStatus GetRarRenameStatus() { return m_rarRenameStatus; }
+	void SetRarRenameStatus(EPostRenameStatus renameStatus) { m_rarRenameStatus = renameStatus; }
 	EParStatus GetParStatus() { return m_parStatus; }
 	void SetParStatus(EParStatus parStatus) { m_parStatus = parStatus; }
 	EUnpackStatus GetUnpackStatus() { return m_unpackStatus; }
@@ -638,7 +606,12 @@ public:
 	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }
 	int GetCachedMessageCount() { return m_cachedMessageCount; }
 	GuardedMessageList GuardCachedMessages() { return GuardedMessageList(&m_messages, &m_logMutex); }
-	RenameInfo* GetRenameInfo() { return &m_renameInfo; }
+	bool GetAllFirst() { return m_allFirst; }
+	void SetAllFirst(bool allFirst) { m_allFirst = allFirst; }
+	bool GetWaitingPar() { return m_waitingPar; }
+	void SetWaitingPar(bool waitingPar) { m_waitingPar = waitingPar; }
+	bool GetLoadingPar() { return m_loadingPar; }
+	void SetLoadingPar(bool loadingPar) { m_loadingPar = loadingPar; }
 	void UpdateCurrentStats();
 	void UpdateCompletedStats(FileInfo* fileInfo);
 	void UpdateDeletedStats(FileInfo* fileInfo);
@@ -680,8 +653,9 @@ private:
 	time_t m_maxTime = 0;
 	int m_priority = 0;
 	CompletedFileList m_completedFiles;
-	ERenameStatus m_parRenameStatus = rsNone;
-	ERenameStatus m_rarRenameStatus = rsNone;
+	EDirectRenameStatus m_directRenameStatus = tsNone;
+	EPostRenameStatus m_parRenameStatus = rsNone;
+	EPostRenameStatus m_rarRenameStatus = rsNone;
 	EParStatus m_parStatus = psNone;
 	EUnpackStatus m_unpackStatus = usNone;
 	ECleanupStatus m_cleanupStatus = csNone;
@@ -728,7 +702,9 @@ private:
 	int m_messageCount = 0;
 	int m_cachedMessageCount = 0;
 	int m_feedId = 0;
-	RenameInfo m_renameInfo;
+	bool m_allFirst = false;
+	bool m_waitingPar = false;
+	bool m_loadingPar = false;
 
 	static int m_idGen;
 	static int m_idMax;

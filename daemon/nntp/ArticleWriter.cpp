@@ -690,14 +690,14 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	// move already downloaded files to new destination
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		BString<1024> oldFileName("%s%c%s", oldDestDir, (int)PATH_SEPARATOR, completedFile.GetFileName());
-		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFileName());
+		BString<1024> oldFileName("%s%c%s", oldDestDir, (int)PATH_SEPARATOR, completedFile.GetFilename());
+		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFilename());
 
 		// check if file was not moved already
 		if (strcmp(oldFileName, newFileName))
 		{
 			// prevent overwriting of existing files
-			newFileName = FileSystem::MakeUniqueFilename(nzbInfo->GetDestDir(), completedFile.GetFileName());
+			newFileName = FileSystem::MakeUniqueFilename(nzbInfo->GetDestDir(), completedFile.GetFilename());
 
 			detail("Moving file %s to %s", *oldFileName, *newFileName);
 			if (!FileSystem::MoveFile(oldFileName, newFileName))

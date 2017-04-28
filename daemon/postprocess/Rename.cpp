@@ -207,13 +207,13 @@ void RenameController::UpdateRarRenameProgress()
 /**
 *  Update file name in the CompletedFiles-list of NZBInfo
 */
-void RenameController::RegisterRenamedFile(const char* oldFilename, const char* newFileName)
+void RenameController::RegisterRenamedFile(const char* oldFilename, const char* newFilename)
 {
 	for (CompletedFile& completedFile : m_postInfo->GetNzbInfo()->GetCompletedFiles())
 	{
-		if (!strcasecmp(completedFile.GetFileName(), oldFilename))
+		if (!strcasecmp(completedFile.GetFilename(), oldFilename))
 		{
-			completedFile.SetFileName(newFileName);
+			completedFile.SetFilename(newFilename);
 			break;
 		}
 	}

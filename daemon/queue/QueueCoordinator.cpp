@@ -499,7 +499,9 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			break;
 		}
 
-		if (g_Options->GetDirectRename() && !fileInfo->GetNzbInfo()->GetRenameInfo()->GetAllFirst() &&
+		if (g_Options->GetDirectRename() &&
+			fileInfo->GetNzbInfo()->GetDirectRenameStatus() <= NzbInfo::tsRunning &&
+			!fileInfo->GetNzbInfo()->GetAllFirst() &&
 			GetNextFirstArticle(fileInfo->GetNzbInfo(), fileInfo, articleInfo))
 		{
 			return true;
@@ -551,6 +553,7 @@ bool QueueCoordinator::GetNextFirstArticle(NzbInfo* nzbInfo, FileInfo* &fileInfo
 				{
 					fileInfo = fileInfo1;
 					articleInfo = article;
+					nzbInfo->SetDirectRenameStatus(NzbInfo::tsRunning);
 					return true;
 				}
 			}
@@ -558,7 +561,7 @@ bool QueueCoordinator::GetNextFirstArticle(NzbInfo* nzbInfo, FileInfo* &fileInfo
 	}
 
 	// no more files for renaming remained
-	nzbInfo->GetRenameInfo()->SetAllFirst(true);
+	nzbInfo->SetAllFirst(true);
 
 	return false;
 }
@@ -640,9 +643,9 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 		{
 			articleInfo->SetStatus(ArticleInfo::aiUndefined);
 			retry = true;
-			if (g_Options->GetDirectRename() && articleInfo->GetPartNumber() == 0)
+			if (articleInfo->GetPartNumber() == 1)
 			{
-				nzbInfo->GetRenameInfo()->SetAllFirst(false);
+				nzbInfo->SetAllFirst(false);
 			}
 		}
 
@@ -789,7 +792,8 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 			completed && fileInfo->GetOutputFilename() ?
 			FileSystem::BaseFileName(fileInfo->GetOutputFilename()) : fileInfo->GetFilename(),
 			fileStatus,
-			fileStatus == CompletedFile::cfSuccess ? fileInfo->GetCrc() : 0);
+			fileStatus == CompletedFile::cfSuccess ? fileInfo->GetCrc() : 0,
+			fileInfo->GetParFile(), fileInfo->GetHash16k(), fileInfo->GetParSetId());
 	}
 
 	if (g_Options->GetDirectRename())
@@ -1294,15 +1298,15 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 			fileInfo->SetCompletedArticles(0);
 			fileInfo->SetRemainingSize(fileInfo->GetSize() - fileInfo->GetMissedSize());
 
+			// discard temporary files
+			DiscardTempFiles(fileInfo);
+			g_DiskState->DiscardFile(fileInfo->GetId(), false, true, false);
+
 			fileInfo->SetOutputFilename(nullptr);
 			fileInfo->SetOutputInitialized(false);
 			fileInfo->SetCachedArticles(0);
 			fileInfo->SetPartialChanged(false);
 			fileInfo->SetPartialState(FileInfo::psNone);
-
-			// discard temporary files
-			DiscardTempFiles(fileInfo);
-			g_DiskState->DiscardFile(fileInfo->GetId(), false, true, false);
 
 			if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 			{
@@ -1338,6 +1342,8 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 			*Util::FormatSize(discardedSize), discardedCount);
 	}
 
+	nzbInfo->SetDirectRenameStatus(NzbInfo::tsSuccess);
+
 	if (g_Options->GetParCheck() != Options::pcForce)
 	{
 		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupResume, nullptr);
@@ -1348,4 +1354,6 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 	{
 		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupSortFiles, nullptr);
 	}
+
+	downloadQueue->Save();
 }

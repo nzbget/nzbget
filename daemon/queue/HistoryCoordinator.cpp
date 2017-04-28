@@ -130,8 +130,8 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		nzbInfo->UpdateCompletedStats(fileInfo);
-		nzbInfo->GetCompletedFiles()->emplace_back(fileInfo->GetId(),
-			fileInfo->GetFilename(), CompletedFile::cfNone, 0);
+		nzbInfo->GetCompletedFiles()->emplace_back(fileInfo->GetId(), fileInfo->GetFilename(),
+			CompletedFile::cfNone, 0, fileInfo->GetParFile(), fileInfo->GetHash16k(), fileInfo->GetParSetId());
 	}
 
 	// Cleaning up parked files if par-check was successful or unpack was successful or
@@ -169,7 +169,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 			(completedFile.GetStatus() == CompletedFile::cfPartial &&
 			 &completedFile == &*nzbInfo->GetCompletedFiles()->rbegin()))
 		{
-			nzbInfo->PrintMessage(Message::mkDetail, "Parking file %s", completedFile.GetFileName());
+			nzbInfo->PrintMessage(Message::mkDetail, "Parking file %s", completedFile.GetFilename());
 			nzbInfo->SetParkedFileCount(nzbInfo->GetParkedFileCount() + 1);
 		}
 	}
@@ -177,6 +177,11 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	nzbInfo->GetFileList()->clear();
 	nzbInfo->SetRemainingParCount(0);
 	nzbInfo->SetParking(false);
+
+	if (nzbInfo->GetDirectRenameStatus() == NzbInfo::tsRunning)
+	{
+		nzbInfo->SetDirectRenameStatus(NzbInfo::tsFailure);
+	}
 
 	nzbInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", nzbInfo->GetName());
 }
@@ -493,6 +498,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->SetParStatus(NzbInfo::psNone);
 	nzbInfo->SetParRenameStatus(NzbInfo::rsNone);
 	nzbInfo->SetRarRenameStatus(NzbInfo::rsNone);
+	nzbInfo->SetDirectRenameStatus(NzbInfo::tsNone);
 	nzbInfo->SetDownloadedSize(0);
 	nzbInfo->SetDownloadSec(0);
 	nzbInfo->SetPostTotalSec(0);
@@ -500,10 +506,12 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->SetRepairSec(0);
 	nzbInfo->SetUnpackSec(0);
 	nzbInfo->SetExtraParBlocks(0);
+	nzbInfo->SetAllFirst(false);
+	nzbInfo->SetWaitingPar(false);
+	nzbInfo->SetLoadingPar(false);
 	nzbInfo->GetCompletedFiles()->clear();
 	nzbInfo->GetServerStats()->clear();
 	nzbInfo->GetCurrentServerStats()->clear();
-	nzbInfo->GetRenameInfo()->Reset();
 
 	nzbInfo->MoveFileList(newNzbInfo.get());
 
@@ -588,7 +596,7 @@ void HistoryCoordinator::HistoryRetry(DownloadQueue* downloadQueue, HistoryList:
 				  g_DiskState->LoadFileState(fileInfo.get(), g_ServerPool->GetServers(), true) &&
 				  (resetFailed || fileInfo->GetRemainingSize() > 0))))
 			{
-				fileInfo->SetFilename(completedFile.GetFileName());
+				fileInfo->SetFilename(completedFile.GetFilename());
 				fileInfo->SetNzbInfo(nzbInfo);
 
 				BString<1024> outputFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename());
