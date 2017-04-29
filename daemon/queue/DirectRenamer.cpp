@@ -205,15 +205,15 @@ void DirectRenamer::ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fi
 		debug("file: %s; setid: %s", fileInfo->GetFilename(), fileInfo->GetParSetId());
 	}
 
-	CheckState(nzbInfo);
+	CheckState(downloadQueue, nzbInfo);
 }
 
 void DirectRenamer::FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo)
 {
-	CheckState(fileInfo->GetNzbInfo());
+	CheckState(downloadQueue, fileInfo->GetNzbInfo());
 }
 
-void DirectRenamer::CheckState(NzbInfo* nzbInfo)
+void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
 	if (nzbInfo->GetDirectRenameStatus() > NzbInfo::tsRunning)
 	{
@@ -238,6 +238,7 @@ void DirectRenamer::CheckState(NzbInfo* nzbInfo)
 		// all first articles downloaded
 		UnpausePars(nzbInfo);
 		nzbInfo->SetWaitingPar(true);
+		downloadQueue->Save();
 	}
 
 	if (nzbInfo->GetWaitingPar() && !nzbInfo->GetLoadingPar())
@@ -354,10 +355,12 @@ void DirectRenamer::RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, 
 				nzbInfo->PrintMessage(Message::mkInfo, "Renaming in-progress file %s to %s",
 					fileInfo->GetFilename(), *newName);
 				fileInfo->SetFilename(newName);
+				fileInfo->SetFilenameConfirmed(true);
 			}
 			else if (RenameCompletedFile(nzbInfo, fileInfo->GetFilename(), newName))
 			{
 				fileInfo->SetFilename(newName);
+				fileInfo->SetFilenameConfirmed(true);
 			}
 		}
 	}
@@ -436,11 +439,18 @@ CString DirectRenamer::BuildNewParName(const char* oldName, const char* destDir,
 bool DirectRenamer::NeedRenamePars(NzbInfo* nzbInfo)
 {
 	// renaming is needed if par2-files from same par-set have different base names
+	// or of any par2-file has non .par2-extension
 	ParFileList parFiles;
 	CollectPars(nzbInfo, &parFiles);
 
 	for (ParFile& parFile : parFiles)
 	{
+		if (!(Util::EndsWith(parFile.GetFilename(), ".par2") ||
+			Util::EndsWith(parFile.GetFilename(), ".PAR2")))
+		{
+			return true;
+		}
+
 		int baseLen;
 		ParParser::ParseParFilename(parFile.GetFilename(), false, &baseLen, nullptr);
 		BString<1024> basename;

@@ -265,7 +265,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 	bool ok = true;
 
 	{
-		StateFile stateFile("queue", 59, true);
+		StateFile stateFile("queue", 60, true);
 		if (!downloadQueue->GetQueue()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -288,7 +288,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 
 	if (saveHistory)
 	{
-		StateFile stateFile("history", 59, true);
+		StateFile stateFile("history", 60, true);
 		if (!downloadQueue->GetHistory()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -320,7 +320,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	int formatVersion = 0;
 
 	{
-		StateFile stateFile("queue", 59, true);
+		StateFile stateFile("queue", 60, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -349,7 +349,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 
 	if (formatVersion == 0 || formatVersion >= 57)
 	{
-		StateFile stateFile("history", 59, true);
+		StateFile stateFile("history", 60, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -428,9 +428,10 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile)
 	outfile.PrintLine("%i,%i,%i,%i,%i", (int)nzbInfo->GetPriority(),
 		nzbInfo->GetPostInfo() ? (int)nzbInfo->GetPostInfo()->GetStage() + 1 : 0,
 		(int)nzbInfo->GetDeletePaused(), (int)nzbInfo->GetManyDupeFiles(), nzbInfo->GetFeedId());
-	outfile.PrintLine("%i,%i,%i,%i,%i,%i,%i,%i", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
-		(int)nzbInfo->GetMoveStatus(), (int)nzbInfo->GetParRenameStatus(), (int)nzbInfo->GetRarRenameStatus(), 
-		(int)nzbInfo->GetDeleteStatus(), (int)nzbInfo->GetMarkStatus(), (int)nzbInfo->GetUrlStatus());
+	outfile.PrintLine("%i,%i,%i,%i,%i,%i,%i,%i,%i", (int)nzbInfo->GetParStatus(), (int)nzbInfo->GetUnpackStatus(),
+		(int)nzbInfo->GetMoveStatus(), (int)nzbInfo->GetParRenameStatus(), (int)nzbInfo->GetRarRenameStatus(),
+		(int)nzbInfo->GetDirectRenameStatus(), (int)nzbInfo->GetDeleteStatus(), (int)nzbInfo->GetMarkStatus(),
+		(int)nzbInfo->GetUrlStatus());
 	outfile.PrintLine("%i,%i,%i", (int)nzbInfo->GetUnpackCleanedUpDisk(), (int)nzbInfo->GetHealthPaused(),
 		(int)nzbInfo->GetAddUrlPaused());
 	outfile.PrintLine("%i,%i,%i", nzbInfo->GetFileCount(), nzbInfo->GetParkedFileCount(),
@@ -466,8 +467,11 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile)
 	outfile.PrintLine("%i", (int)nzbInfo->GetCompletedFiles()->size());
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		outfile.PrintLine("%i,%i,%u,%s", completedFile.GetId(), (int)completedFile.GetStatus(),
-			completedFile.GetCrc(), completedFile.GetFilename());
+		outfile.PrintLine("%i,%i,%u,%i,%s,%s,%s", completedFile.GetId(), (int)completedFile.GetStatus(),
+			completedFile.GetCrc(), (int)completedFile.GetParFile(),
+			completedFile.GetHash16k() ? completedFile.GetHash16k() : "",
+			completedFile.GetParSetId() ? completedFile.GetParSetId() : "",
+			completedFile.GetFilename());
 	}
 
 	outfile.PrintLine("%i", (int)nzbInfo->GetParameters()->size());
@@ -568,17 +572,33 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 	}
 	nzbInfo->SetFeedId(feedId);
 
-	int parStatus, unpackStatus, moveStatus, parRenameStatus, rarRenameStatus, deleteStatus, markStatus, urlStatus;
-	if (formatVersion < 58 && infile.ScanLine("%i,%i,%i,%i,%i,%i,%i", &parStatus, &unpackStatus, &moveStatus,
-		&parRenameStatus, &deleteStatus, &markStatus, &urlStatus) != 7) goto error;
-	rarRenameStatus = 0;
-	if (formatVersion >= 58 && infile.ScanLine("%i,%i,%i,%i,%i,%i,%i,%i", &parStatus, &unpackStatus, &moveStatus,
-		&parRenameStatus, &rarRenameStatus, &deleteStatus, &markStatus, &urlStatus) != 8) goto error;
+	int parStatus, unpackStatus, moveStatus, parRenameStatus, rarRenameStatus,
+		directRenameStatus, deleteStatus, markStatus, urlStatus;
+	if (formatVersion >= 60)
+	{
+		if (infile.ScanLine("%i,%i,%i,%i,%i,%i,%i,%i,%i", &parStatus,
+			&unpackStatus, &moveStatus, &parRenameStatus, &rarRenameStatus, &directRenameStatus,
+			&deleteStatus, &markStatus, &urlStatus) != 9) goto error;
+	}
+	else if (formatVersion >= 58)
+	{
+		directRenameStatus = 0;
+		if (infile.ScanLine("%i,%i,%i,%i,%i,%i,%i,%i", &parStatus,
+			&unpackStatus, &moveStatus, &parRenameStatus, &rarRenameStatus, &deleteStatus,
+			&markStatus, &urlStatus) != 8) goto error;
+	}
+	else
+	{
+		rarRenameStatus = directRenameStatus = 0;
+		if (infile.ScanLine("%i,%i,%i,%i,%i,%i,%i", &parStatus, &unpackStatus, &moveStatus,
+			&parRenameStatus, &deleteStatus, &markStatus, &urlStatus) != 7) goto error;
+	}
 	nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
 	nzbInfo->SetUnpackStatus((NzbInfo::EUnpackStatus)unpackStatus);
 	nzbInfo->SetMoveStatus((NzbInfo::EMoveStatus)moveStatus);
 	nzbInfo->SetParRenameStatus((NzbInfo::EPostRenameStatus)parRenameStatus);
 	nzbInfo->SetRarRenameStatus((NzbInfo::EPostRenameStatus)rarRenameStatus);
+	nzbInfo->SetDirectRenameStatus((NzbInfo::EDirectRenameStatus)directRenameStatus);
 	nzbInfo->SetDeleteStatus((NzbInfo::EDeleteStatus)deleteStatus);
 	nzbInfo->SetMarkStatus((NzbInfo::EMarkStatus)markStatus);
 	if (nzbInfo->GetKind() == NzbInfo::nkNzb ||
@@ -690,10 +710,31 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 		char* fileName = buf;
 		int status = 0;
 		uint32 crc = 0;
+		int parFile = 0;
+		char* hash16k = nullptr;
+		char* parSetId = nullptr;
 
 		if (formatVersion >= 49)
 		{
-			if (formatVersion >= 50)
+			if (formatVersion >= 60)
+			{
+				if (sscanf(buf, "%i,%i,%u,%i", &id, &status, &crc, &parFile) != 4) goto error;
+				hash16k = strchr(buf, ',');
+				if (hash16k) hash16k = strchr(hash16k+1, ',');
+				if (hash16k) hash16k = strchr(hash16k+1, ',');
+				if (hash16k) hash16k = strchr(hash16k+1, ',');
+				if (hash16k)
+				{
+					parSetId = strchr(++hash16k, ',');
+					if (parSetId)
+					{
+						*parSetId++ = '\0';
+						fileName = strchr(parSetId, ',');
+						if (fileName) *fileName = '\0';
+					}
+				}
+			}
+			else if (formatVersion >= 50)
 			{
 				if (sscanf(buf, "%i,%i,%u", &id, &status, &crc) != 3) goto error;
 				fileName = strchr(buf, ',');
@@ -712,7 +753,9 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 		}
 
 		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName,
-			(CompletedFile::EStatus)status, crc, false, nullptr, nullptr);
+			(CompletedFile::EStatus)status, crc, (bool)parFile,
+			Util::EmptyStr(hash16k) ? nullptr : hash16k,
+			Util::EmptyStr(parSetId) ? nullptr : parSetId);
 	}
 
 	int parameterCount;
@@ -785,7 +828,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 			{
 				fileInfo->SetTime(time);
 			}
-			fileInfo->SetExtraPriority(extraPriority != 0);
+			fileInfo->SetExtraPriority((bool)extraPriority);
 			fileInfo->SetNzbInfo(nzbInfo);
 			nzbInfo->GetFileList()->Add(std::move(fileInfo));
 		}
@@ -987,7 +1030,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	debug("Saving FileState %i to disk", fileInfo->GetId());
 
 	BString<100> filename("%i%s", fileInfo->GetId(), completed ? "c" : "s");
-	StateFile stateFile(filename, 4, false);
+	StateFile stateFile(filename, 5, false);
 
 	StateDiskFile* outfile = stateFile.BeginWrite();
 	if (!outfile)
@@ -1009,6 +1052,8 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, StateDiskFile& outfile, bool c
 	outfile.PrintLine("%u,%u,%u,%u,%u,%u", High1, Low1, High2, Low2, High3, Low3);
 
 	outfile.PrintLine("%s", fileInfo->GetFilename());
+	outfile.PrintLine("%s", fileInfo->GetHash16k());
+	outfile.PrintLine("%i", (int)fileInfo->GetParFile());
 
 	SaveServerStats(fileInfo->GetServerStats(), outfile);
 
@@ -1028,7 +1073,7 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	debug("Loading FileInfo %i from disk", fileInfo->GetId());
 
 	BString<100> filename("%i%s", fileInfo->GetId(), completed ? "c" : "s");
-	StateFile stateFile(filename, 4, false);
+	StateFile stateFile(filename, 5, false);
 
 	StateDiskFile* infile = stateFile.BeginRead();
 	if (!infile)
@@ -1054,11 +1099,21 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFil
 	fileInfo->SetSuccessSize(Util::JoinInt64(High2, Low2));
 	fileInfo->SetFailedSize(Util::JoinInt64(High3, Low3));
 
+	char buf[1024];
+
 	if (formatVersion >= 4)
 	{
-		char buf[1024];
 		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		fileInfo->SetFilename(buf);
+	}
+
+	if (formatVersion >= 5)
+	{
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+		fileInfo->SetHash16k(*buf ? buf : nullptr);
+		int parFile = 0;
+		if (infile.ScanLine("%i", &parFile) != 1) goto error;
+		fileInfo->SetParFile((bool)parFile);
 	}
 
 	if (!LoadServerStats(fileInfo->GetServerStats(), servers, infile)) goto error;

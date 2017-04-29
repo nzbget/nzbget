@@ -1271,7 +1271,7 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+		if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && !fileInfo->GetArticles()->empty())
 		{
 			// save new file name into disk state file
 			g_DiskState->SaveFile(fileInfo);
@@ -1325,7 +1325,8 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 			}
 		}
 
-		if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial() &&
+		if (g_Options->GetSaveQueue() && g_Options->GetServerMode() &&
+			!fileInfo->GetArticles()->empty() && g_Options->GetContinuePartial() &&
 			fileInfo->GetActiveDownloads() == 0 && fileInfo->GetCachedArticles() == 0)
 		{
 			// discard article infos to free up memory if possible

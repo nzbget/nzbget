@@ -69,7 +69,7 @@ protected:
 	virtual void RenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo) = 0;
 
 private:
-	void CheckState(NzbInfo* nzbInfo);
+	void CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void UnpausePars(NzbInfo* nzbInfo);
 	void RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, FileHashList* parHashes);
 	bool RenameCompletedFile(NzbInfo* nzbInfo, const char* oldName, const char* newName);
