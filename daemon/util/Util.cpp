@@ -452,6 +452,19 @@ bool Util::EndsWith(const char* str, const char* suffix)
 	return !strcmp(str + lenStr - lenSuf, suffix);
 }
 
+bool Util::AlphaNum(const char* str)
+{
+	for (const char* p = str; *p; p++)
+	{
+		char ch = *p;
+		if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */

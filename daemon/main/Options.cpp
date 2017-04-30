@@ -93,6 +93,7 @@ static const char* OPTION_PARREPAIR				= "ParRepair";
 static const char* OPTION_PARSCAN				= "ParScan";
 static const char* OPTION_PARQUICK				= "ParQuick";
 static const char* OPTION_POSTSTRATEGY			= "PostStrategy";
+static const char* OPTION_FILENAMING			= "FileNaming";
 static const char* OPTION_PARRENAME				= "ParRename";
 static const char* OPTION_PARBUFFER				= "ParBuffer";
 static const char* OPTION_PARTHREADS			= "ParThreads";
@@ -464,6 +465,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_PARSCAN, "extended");
 	SetOption(OPTION_PARQUICK, "yes");
 	SetOption(OPTION_POSTSTRATEGY, "sequential");
+	SetOption(OPTION_FILENAMING, "article");
 	SetOption(OPTION_PARRENAME, "yes");
 	SetOption(OPTION_PARBUFFER, "16");
 	SetOption(OPTION_PARTHREADS, "1");
@@ -774,6 +776,11 @@ void Options::InitOptions()
 	const int PostStrategyValues[] = { ppSequential, ppBalanced, ppAggressive, ppRocket };
 	const int PostStrategyCount = 4;
 	m_postStrategy = (EPostStrategy)ParseEnumValue(OPTION_POSTSTRATEGY, PostStrategyCount, PostStrategyNames, PostStrategyValues);
+
+	const char* FileNamingNames[] = { "auto", "article", "nzb" };
+	const int FileNamingValues[] = { nfAuto, nfArticle, nfNzb };
+	const int FileNamingCount = 4;
+	m_fileNaming = (EFileNaming)ParseEnumValue(OPTION_FILENAMING, FileNamingCount, FileNamingNames, FileNamingValues);
 
 	const char* HealthCheckNames[] = { "pause", "delete", "park", "none" };
 	const int HealthCheckValues[] = { hcPause, hcDelete, hcPark, hcNone };

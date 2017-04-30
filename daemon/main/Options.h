@@ -92,6 +92,12 @@ public:
 		ppAggressive,
 		ppRocket
 	};
+	enum EFileNaming
+	{
+		nfAuto,
+		nfArticle,
+		nfNzb
+	};
 
 	class OptEntry
 	{
@@ -294,6 +300,7 @@ public:
 	int GetDailyQuota() { return m_dailyQuota; }
 	bool GetDirectRename() { return m_directRename; }
 	bool GetReorderFiles() { return m_reorderFiles; }
+	EFileNaming GetFileNaming() { return m_fileNaming; }
 
 	Categories* GetCategories() { return &m_categories; }
 	Category* FindCategory(const char* name, bool searchAliases) { return m_categories.FindCategory(name, searchAliases); }
@@ -444,6 +451,7 @@ private:
 	int m_quotaStartDay = 0;
 	int m_dailyQuota = 0;
 	bool m_reorderFiles = false;
+	EFileNaming m_fileNaming = nfArticle;
 
 	// Current state
 	bool m_serverMode = false;
