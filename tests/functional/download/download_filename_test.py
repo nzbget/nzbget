@@ -1,6 +1,6 @@
 import os
 
-nzbget_options = ['HealthCheck=none', 'ArticleCache=500', 'DirectWrite=yes']
+nzbget_options = ['HealthCheck=none', 'ArticleCache=500', 'DirectWrite=yes', 'FileNaming=auto']
 
 def test_small_obfuscated(nserv, nzbget):
 	hist = nzbget.download_nzb('small-obfuscated.nzb')
