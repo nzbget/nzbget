@@ -410,7 +410,8 @@ void RepairController::FindPars(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, 
 
 			if (exactParName)
 			{
-				useFile = ParParser::SameParCollection(fileInfo->GetFilename(), FileSystem::BaseFileName(parFilename));
+				useFile = ParParser::SameParCollection(fileInfo->GetFilename(),
+					FileSystem::BaseFileName(parFilename), fileInfo->GetFilenameConfirmed());
 			}
 			else if (strictParName)
 			{

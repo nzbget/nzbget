@@ -29,6 +29,7 @@
 #include "PrePostProcessor.h"
 #include "HistoryCoordinator.h"
 #include "UrlCoordinator.h"
+#include "ParParser.h"
 
 const int MAX_ID = 1000000000;
 
@@ -1272,14 +1273,42 @@ void QueueEditor::SortGroupFiles(NzbInfo* nzbInfo)
 		{
 			if (!fileInfo1->GetParFile() && !fileInfo2->GetParFile())
 			{
-				return strcmp(fileInfo1->GetFilename(), fileInfo2->GetFilename()) < 0;
+				// ".rar"-files are ordered before ".r01", etc. files
+				int len1 = strlen(fileInfo1->GetFilename());
+				int len2 = strlen(fileInfo2->GetFilename());
+				const char* ext1 = strrchr(fileInfo1->GetFilename(), '.');
+				const char* ext2 = strrchr(fileInfo2->GetFilename(), '.');
+				int ext1len = ext1 ? strlen(ext1) : 0;
+				int ext2len = ext2 ? strlen(ext2) : 0;
+				bool sameBaseName = len1 == len2 && ext1len == 4 && ext2len == 4 &&
+					!strncmp(fileInfo1->GetFilename(), fileInfo2->GetFilename(), len1 - 4);
+				if (sameBaseName && !strcmp(ext1, ".rar") && ext2[1] == 'r' &&
+					isnumber(ext2[2]) && isnumber(ext2[3]))
+				{
+					return true;
+				}
+				else if (sameBaseName && !strcmp(ext2, ".rar") && ext1[1] == 'r' &&
+					isnumber(ext1[2]) && isnumber(ext1[3]))
+				{
+					return false;
+				}
 			}
-			else if (fileInfo1->GetParFile() && fileInfo2->GetParFile())
+			else if (fileInfo1->GetParFile() && fileInfo2->GetParFile() &&
+				ParParser::SameParCollection(fileInfo1->GetFilename(), fileInfo2->GetFilename(),
+					fileInfo1->GetFilenameConfirmed() && fileInfo2->GetFilenameConfirmed()))
 			{
 				return fileInfo1->GetSize() < fileInfo2->GetSize();
 			}
+			else if (!fileInfo1->GetParFile() && fileInfo2->GetParFile())
+			{
+				return true;
+			}
+			else if (fileInfo1->GetParFile() && !fileInfo2->GetParFile())
+			{
+				return false;
+			}
 
-			return !fileInfo1->GetParFile() && fileInfo2->GetParFile();
+			return strcmp(fileInfo1->GetFilename(), fileInfo2->GetFilename()) < 0;
 		});
 }
 

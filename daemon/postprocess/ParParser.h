@@ -31,7 +31,7 @@ public:
 
 	static bool FindMainPars(const char* path, ParFileList* fileList);
 	static bool ParseParFilename(const char* parFilename, bool confirmedFilename, int* baseNameLen, int* blocks);
-	static bool SameParCollection(const char* filename1, const char* filename2);
+	static bool SameParCollection(const char* filename1, const char* filename2, bool confirmedFilenames);
 };
 
 #endif

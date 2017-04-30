@@ -44,7 +44,7 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 			bool exists = false;
 			for (CString& filename2 : fileList)
 			{
-				exists = SameParCollection(filename, filename2);
+				exists = SameParCollection(filename, filename2, true);
 				if (exists)
 				{
 					break;
@@ -59,11 +59,11 @@ bool ParParser::FindMainPars(const char* path, ParFileList* fileList)
 	return fileList && !fileList->empty();
 }
 
-bool ParParser::SameParCollection(const char* filename1, const char* filename2)
+bool ParParser::SameParCollection(const char* filename1, const char* filename2, bool confirmedFilenames)
 {
 	int baseLen1 = 0, baseLen2 = 0;
-	return ParseParFilename(filename1, false, &baseLen1, nullptr) &&
-		ParseParFilename(filename2, false, &baseLen2, nullptr) &&
+	return ParseParFilename(filename1, confirmedFilenames, &baseLen1, nullptr) &&
+		ParseParFilename(filename2, confirmedFilenames, &baseLen2, nullptr) &&
 		baseLen1 == baseLen2 &&
 		!strncasecmp(filename1, filename2, baseLen1);
 }
