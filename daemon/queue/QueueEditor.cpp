@@ -1283,12 +1283,12 @@ void QueueEditor::SortGroupFiles(NzbInfo* nzbInfo)
 				bool sameBaseName = len1 == len2 && ext1len == 4 && ext2len == 4 &&
 					!strncmp(fileInfo1->GetFilename(), fileInfo2->GetFilename(), len1 - 4);
 				if (sameBaseName && !strcmp(ext1, ".rar") && ext2[1] == 'r' &&
-					isnumber(ext2[2]) && isnumber(ext2[3]))
+					isdigit(ext2[2]) && isdigit(ext2[3]))
 				{
 					return true;
 				}
 				else if (sameBaseName && !strcmp(ext2, ".rar") && ext1[1] == 'r' &&
-					isnumber(ext1[2]) && isnumber(ext1[3]))
+					isdigit(ext1[2]) && isdigit(ext1[3]))
 				{
 					return false;
 				}
