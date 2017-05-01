@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ static const char* QUEUE_EVENT_NAMES[] = {
 	"URL_COMPLETED",
 	"NZB_MARKED",
 	"NZB_ADDED",
+	"NZB_NAMED",
 	"NZB_DOWNLOADED",
 	"NZB_DELETED" };
 

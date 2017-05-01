@@ -885,6 +885,7 @@ public:
 		eaNzbFound,
 		eaNzbAdded,
 		eaNzbDeleted,
+		eaNzbNamed,
 		eaFileCompleted,
 		eaFileDeleted,
 		eaUrlCompleted

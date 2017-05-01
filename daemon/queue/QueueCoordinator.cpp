@@ -1361,4 +1361,7 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 	}
 
 	downloadQueue->Save();
+
+	DownloadQueue::Aspect namedAspect = { DownloadQueue::eaNzbNamed, downloadQueue, nzbInfo, nullptr };
+	downloadQueue->Notify(&namedAspect);
 }

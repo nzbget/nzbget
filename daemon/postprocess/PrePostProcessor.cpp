@@ -168,6 +168,10 @@ void PrePostProcessor::DownloadQueueUpdate(void* aspect)
 	{
 		NzbAdded(queueAspect->downloadQueue, queueAspect->nzbInfo);
 	}
+	else if (queueAspect->action == DownloadQueue::eaNzbNamed)
+	{
+		g_QueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeNzbNamed);
+	}
 	else if (queueAspect->action == DownloadQueue::eaNzbDeleted &&
 		queueAspect->nzbInfo->GetDeleting() &&
 		!queueAspect->nzbInfo->GetPostInfo() &&
