@@ -280,6 +280,7 @@ public:
 	int GetKeepHistory() { return m_keepHistory; }
 	bool GetAccurateRate() { return m_accurateRate; }
 	bool GetUnpack() { return m_unpack; }
+	bool GetDirectUnpack() { return m_directUnpack; }
 	bool GetUnpackCleanupDisk() { return m_unpackCleanupDisk; }
 	const char* GetUnrarCmd() { return m_unrarCmd; }
 	const char* GetSevenZipCmd() { return m_sevenZipCmd; }
@@ -432,6 +433,7 @@ private:
 	int m_keepHistory = 0;
 	bool m_accurateRate = false;
 	bool m_unpack = false;
+	bool m_directUnpack = false;
 	bool m_unpackCleanupDisk = false;
 	CString m_unrarCmd;
 	CString m_sevenZipCmd;
