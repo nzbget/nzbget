@@ -34,8 +34,37 @@ public:
 	static void StartJob(NzbInfo* nzbInfo);
 	void FileDownloaded(FileInfo* fileInfo);
 
+protected:
+	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
+	virtual void AddMessage(Message::EKind kind, const char* text);
+
 private:
+	typedef std::vector<CString> ParamListBase;
+	class ParamList : public ParamListBase
+	{
+	public:
+		bool Exists(const char* param);
+	};
+
 	NzbInfo* m_nzbInfo;
+	CString m_name;
+	CString m_infoName;
+	CString m_infoNameUp;
+	CString m_destDir;
+	CString m_finalDir;
+	CString m_unpackDir;
+	CString m_password;
+	CString m_waitingFile;
+	bool m_hasRarFiles = false;
+	bool m_allOkMessageReceived = false;
+	bool m_unpackOk = false;
+	bool m_finalDirCreated = false;
+
+	void CreateUnpackDir();
+	void CheckArchiveFiles();
+	void ExecuteUnrar();
+	bool PrepareCmdParams(const char* command, ParamList* params, const char* infoName);
+	void WaitNextVolume(const char* filename);
 };
 
 #endif
