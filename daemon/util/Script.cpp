@@ -314,7 +314,8 @@ int ScriptController::Execute()
 	{
 #endif
 
-	int pipein = StartProcess();
+	int pipein = -1, pipeout = -1;
+	StartProcess(&pipein, &pipeout);
 	if (pipein == -1)
 	{
 		m_completed = true;
@@ -327,8 +328,23 @@ int ScriptController::Execute()
 	{
 		PrintMessage(Message::mkError, "Could not open pipe to %s", *m_infoName);
 		close(pipein);
+		close(pipeout);
 		m_completed = true;
 		return -1;
+	}
+
+	if (m_needWrite)
+	{
+		// open the write end
+		m_writepipe = fdopen(pipeout, "w");
+		if (!m_writepipe)
+		{
+			PrintMessage(Message::mkError, "Could not open pipe to %s", *m_infoName);
+			close(pipein);
+			close(pipeout);
+			m_completed = true;
+			return -1;
+		}
 	}
 
 #ifdef CHILD_WATCHDOG
@@ -385,6 +401,11 @@ int ScriptController::Execute()
 		fclose(m_readpipe);
 	}
 
+	if (m_writepipe)
+	{
+		fclose(m_writepipe);
+	}
+
 	if (m_terminated && m_infoName)
 	{
 		warn("Interrupted %s", *m_infoName);
@@ -431,7 +452,7 @@ void ScriptController::BuildCommandLine(char* cmdLineBuf, int bufSize)
 /*
 * Returns file descriptor of the read-pipe or -1 on error.
 */
-int ScriptController::StartProcess()
+void ScriptController::StartProcess(int* pipein, int* pipeout)
 {
 	CString workingDir = m_workingDir;
 	if (workingDir.Empty())
@@ -457,21 +478,27 @@ int ScriptController::StartProcess()
 	}
 
 	// create pipes to write and read data
-	HANDLE readPipe, writePipe;
+	HANDLE readPipe, readProcPipe;
+	HANDLE writePipe = 0, writeProcPipe = 0;
 	SECURITY_ATTRIBUTES securityAttributes = { 0 };
 	securityAttributes.nLength = sizeof(securityAttributes);
 	securityAttributes.bInheritHandle = TRUE;
 
-	CreatePipe(&readPipe, &writePipe, &securityAttributes, 0);
-
+	CreatePipe(&readPipe, &readProcPipe, &securityAttributes, 0);
 	SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
+
+	if (m_needWrite)
+	{
+		CreatePipe(&writeProcPipe, &writePipe, &securityAttributes, 0);
+		SetHandleInformation(writePipe, HANDLE_FLAG_INHERIT, 0);
+	}
 
 	STARTUPINFOW startupInfo = { 0 };
 	startupInfo.cb = sizeof(startupInfo);
 	startupInfo.dwFlags = STARTF_USESTDHANDLES;
-	startupInfo.hStdInput = 0;
-	startupInfo.hStdOutput = writePipe;
-	startupInfo.hStdError = writePipe;
+	startupInfo.hStdInput = writeProcPipe;
+	startupInfo.hStdOutput = readProcPipe;
+	startupInfo.hStdError = readProcPipe;
 
 	PROCESS_INFORMATION processInfo = { 0 };
 
@@ -502,8 +529,10 @@ int ScriptController::StartProcess()
 			PrintMessage(Message::mkError, "Could not build short path for %s", workingDir);
 		}
 		CloseHandle(readPipe);
+		CloseHandle(readProcPipe);
 		CloseHandle(writePipe);
-		return -1;
+		CloseHandle(writeProcPipe);
+		return;
 	}
 
 	debug("Child Process-ID: %i", (int)processInfo.dwProcessId);
@@ -511,24 +540,29 @@ int ScriptController::StartProcess()
 	m_processId = processInfo.hProcess;
 	m_dwProcessId = processInfo.dwProcessId;
 
-	// close unused "write" end
-	CloseHandle(writePipe);
+	// close unused pipe ends
+	CloseHandle(readProcPipe);
+	CloseHandle(writeProcPipe);
 
-	int pipein = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
-	return pipein;
+	*pipein = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
+	if (m_needWrite)
+	{
+		*pipeout = _open_osfhandle((intptr_t)writePipe, _O_WRONLY);
+	}
 
 #else
 
-	int p[2];
-	int pipein;
-	int pipeout;
+	int pin[] = {0, 0};
+	int pout[] = {0, 0};
 
-	// create the pipe
-	if (pipe(p))
+	// create the pipes
+	if (pipe(pin) || (m_needWrite && pipe(pout)))
 	{
 		PrintMessage(Message::mkError, "Could not open pipe: errno %i", errno);
-		return -1;
+		return;
 	}
+	*pipein = pin[0];
+	*pipeout = pout[1];
 
 	std::vector<char*> environmentStrings = m_environmentStrings.GetStrings();
 	char** envdata = environmentStrings.data();
@@ -538,18 +572,20 @@ int ScriptController::StartProcess()
 	args.emplace_back(nullptr);
 	char* const* argdata = (char* const*)args.data();
 
-	pipein = p[0];
-	pipeout = p[1];
-
 	debug("forking");
 	pid_t pid = fork();
 
 	if (pid == -1)
 	{
 		PrintMessage(Message::mkError, "Could not start %s: errno %i", *m_infoName, errno);
-		close(pipein);
-		close(pipeout);
-		return -1;
+		close(pin[0]);
+		close(pin[1]);
+		if (m_needWrite)
+		{
+			close(pout[0]);
+			close(pout[1]);
+		}
+		return;
 	}
 	else if (pid == 0)
 	{
@@ -562,14 +598,19 @@ int ScriptController::StartProcess()
 		// create new process group (see Terminate() where it is used)
 		setsid();
 
-		// close up the "read" end
-		close(pipein);
-
 		// make the pipeout to be the same as stdout and stderr
-		dup2(pipeout, 1);
-		dup2(pipeout, 2);
+		dup2(pin[1], 1);
+		dup2(pin[1], 2);
+		close(pin[0]);
+		close(pin[1]);
 
-		close(pipeout);
+		if (m_needWrite)
+		{
+			// make the pipein to be the same as stdin
+			dup2(pout[0], 0);
+			close(pout[0]);
+			close(pout[1]);
+		}
 
 #ifdef CHILD_WATCHDOG
 		write(1, "\n", 1);
@@ -609,11 +650,10 @@ int ScriptController::StartProcess()
 
 	m_processId = pid;
 
-	// close unused "write" end
-	close(pipeout);
+	// close unused pipe ends
+	close(pin[1]);
+	close(pout[0]);
 #endif
-
-	return pipein;
 }
 
 int ScriptController::WaitProcess()
@@ -822,4 +862,10 @@ void ScriptController::PrintMessage(Message::EKind kind, const char* format, ...
 	{
 		AddMessage(kind, tmp2);
 	}
+}
+
+void ScriptController::Write(const char* str)
+{
+	fwrite(str, 1, strlen(str), m_writepipe);
+	fflush(m_writepipe);
 }

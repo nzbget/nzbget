@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,8 +79,10 @@ protected:
 	void PrepareEnvOptions(const char* stripPrefix);
 	void PrepareArgs();
 	virtual const char* GetOptValue(const char* name, const char* value) { return value; }
-	int StartProcess();
+	void StartProcess(int* pipein, int* pipeout);
 	int WaitProcess();
+	void SetNeedWrite(bool needWrite) { m_needWrite = needWrite; }
+	void Write(const char* str);
 #ifdef WIN32
 	void BuildCommandLine(char* cmdLineBuf, int bufSize);
 #endif
@@ -95,7 +97,9 @@ private:
 	bool m_terminated = false;
 	bool m_completed = false;
 	bool m_detached = false;
-	FILE* m_readpipe;
+	bool m_needWrite = false;
+	FILE* m_readpipe = 0;
+	FILE* m_writepipe = 0;
 #ifdef WIN32
 	HANDLE m_processId = 0;
 	DWORD m_dwProcessId = 0;
