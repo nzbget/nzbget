@@ -594,7 +594,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 			&parRenameStatus, &deleteStatus, &markStatus, &urlStatus) != 7) goto error;
 	}
 	nzbInfo->SetParStatus((NzbInfo::EParStatus)parStatus);
-	nzbInfo->SetUnpackStatus((NzbInfo::EUnpackStatus)unpackStatus);
+	nzbInfo->SetUnpackStatus((NzbInfo::EPostUnpackStatus)unpackStatus);
 	nzbInfo->SetMoveStatus((NzbInfo::EMoveStatus)moveStatus);
 	nzbInfo->SetParRenameStatus((NzbInfo::EPostRenameStatus)parRenameStatus);
 	nzbInfo->SetRarRenameStatus((NzbInfo::EPostRenameStatus)rarRenameStatus);

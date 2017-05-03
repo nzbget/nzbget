@@ -63,6 +63,7 @@ private:
 	void DeleteCleanup(NzbInfo* nzbInfo);
 	bool IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars);
 	void WaitJobs();
+	void FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, FileInfo* fileInfo);
 };
 
 extern PrePostProcessor* g_PrePostProcessor;

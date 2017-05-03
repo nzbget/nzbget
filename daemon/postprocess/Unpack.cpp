@@ -103,7 +103,7 @@ void UnpackController::Run()
 			m_postInfo->GetLastUnpackStatus() == (int)NzbInfo::usPassword ?
 				 "%s failed: checksum error in the encrypted file. Corrupt file or wrong password." : "%s failed.",
 			*m_infoNameUp);
-		m_postInfo->GetNzbInfo()->SetUnpackStatus((NzbInfo::EUnpackStatus)m_postInfo->GetLastUnpackStatus());
+		m_postInfo->GetNzbInfo()->SetUnpackStatus((NzbInfo::EPostUnpackStatus)m_postInfo->GetLastUnpackStatus());
 	}
 	else if (unpack && hasFiles)
 	{

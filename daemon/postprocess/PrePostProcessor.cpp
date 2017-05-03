@@ -34,6 +34,7 @@
 #include "NzbFile.h"
 #include "QueueScript.h"
 #include "ParParser.h"
+#include "DirectUnpack.h"
 
 PrePostProcessor::PrePostProcessor()
 {
@@ -186,9 +187,9 @@ void PrePostProcessor::DownloadQueueUpdate(void* aspect)
 	else if ((queueAspect->action == DownloadQueue::eaFileCompleted ||
 		queueAspect->action == DownloadQueue::eaFileDeleted))
 	{
-		if (queueAspect->action == DownloadQueue::eaFileCompleted && !queueAspect->nzbInfo->GetPostInfo())
+		if (queueAspect->action == DownloadQueue::eaFileCompleted)
 		{
-			g_QueueScriptCoordinator->EnqueueScript(queueAspect->nzbInfo, QueueScriptCoordinator::qeFileDownloaded);
+			FileDownloaded(queueAspect->downloadQueue, queueAspect->nzbInfo, queueAspect->fileInfo);
 		}
 
 #ifndef DISABLE_PARCHECK
@@ -878,4 +879,29 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 	}
 
 	return ok;
+}
+
+void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, FileInfo* fileInfo)
+{
+	if (!nzbInfo->GetPostInfo())
+	{
+		g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeFileDownloaded);
+	}
+
+	if (g_Options->GetDirectUnpack())
+	{
+		if (!nzbInfo->GetUnpackThread())
+		{
+			NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
+			bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
+			if (wantUnpack && nzbInfo->GetFailedArticles() == 0)
+			{
+				DirectUnpack::StartJob(nzbInfo);
+			}
+		}
+		else
+		{
+			((DirectUnpack*)nzbInfo->GetUnpackThread())->FileDownloaded(fileInfo);
+		}
+	}
 }

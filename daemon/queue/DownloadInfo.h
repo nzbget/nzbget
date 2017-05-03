@@ -377,7 +377,15 @@ public:
 		psManual
 	};
 
-	enum EUnpackStatus
+	enum EDirectUnpackStatus
+	{
+		nsNone,
+		nsRunning,
+		nsFailure,
+		nsSuccess
+	};
+
+	enum EPostUnpackStatus
 	{
 		usNone,
 		usSkipped,
@@ -520,8 +528,10 @@ public:
 	void SetRarRenameStatus(EPostRenameStatus renameStatus) { m_rarRenameStatus = renameStatus; }
 	EParStatus GetParStatus() { return m_parStatus; }
 	void SetParStatus(EParStatus parStatus) { m_parStatus = parStatus; }
-	EUnpackStatus GetUnpackStatus() { return m_unpackStatus; }
-	void SetUnpackStatus(EUnpackStatus unpackStatus) { m_unpackStatus = unpackStatus; }
+	EDirectUnpackStatus GetDirectUnpackStatus() { return m_directUnpackStatus; }
+	void SetDirectUnpackStatus(EDirectUnpackStatus directUnpackStatus) { m_directUnpackStatus = directUnpackStatus; }
+	EPostUnpackStatus GetUnpackStatus() { return m_unpackStatus; }
+	void SetUnpackStatus(EPostUnpackStatus unpackStatus) { m_unpackStatus = unpackStatus; }
 	ECleanupStatus GetCleanupStatus() { return m_cleanupStatus; }
 	void SetCleanupStatus(ECleanupStatus cleanupStatus) { m_cleanupStatus = cleanupStatus; }
 	EMoveStatus GetMoveStatus() { return m_moveStatus; }
@@ -612,6 +622,8 @@ public:
 	void SetWaitingPar(bool waitingPar) { m_waitingPar = waitingPar; }
 	bool GetLoadingPar() { return m_loadingPar; }
 	void SetLoadingPar(bool loadingPar) { m_loadingPar = loadingPar; }
+	Thread* GetUnpackThread() { return m_unpackThread; }
+	void SetUnpackThread(Thread* unpackThread) { m_unpackThread = unpackThread; }
 	void UpdateCurrentStats();
 	void UpdateCompletedStats(FileInfo* fileInfo);
 	void UpdateDeletedStats(FileInfo* fileInfo);
@@ -657,7 +669,8 @@ private:
 	EPostRenameStatus m_parRenameStatus = rsNone;
 	EPostRenameStatus m_rarRenameStatus = rsNone;
 	EParStatus m_parStatus = psNone;
-	EUnpackStatus m_unpackStatus = usNone;
+	EDirectUnpackStatus m_directUnpackStatus = nsNone;
+	EPostUnpackStatus m_unpackStatus = usNone;
 	ECleanupStatus m_cleanupStatus = csNone;
 	EMoveStatus m_moveStatus = msNone;
 	EDeleteStatus m_deleteStatus = dsNone;
@@ -705,6 +718,7 @@ private:
 	bool m_allFirst = false;
 	bool m_waitingPar = false;
 	bool m_loadingPar = false;
+	Thread* m_unpackThread = nullptr;
 
 	static int m_idGen;
 	static int m_idMax;

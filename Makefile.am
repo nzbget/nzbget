@@ -108,6 +108,8 @@ nzbget_SOURCES = \
 	daemon/postprocess/Repair.h \
 	daemon/postprocess/Unpack.cpp \
 	daemon/postprocess/Unpack.h \
+	daemon/postprocess/DirectUnpack.cpp \
+	daemon/postprocess/DirectUnpack.h \
 	daemon/queue/DirectRenamer.cpp \
 	daemon/queue/DirectRenamer.h \
 	daemon/queue/DiskState.cpp \
@@ -239,6 +241,7 @@ nzbget_SOURCES += \
 	tests/postprocess/DupeMatcherTest.cpp \
 	tests/postprocess/RarRenamerTest.cpp \
 	tests/postprocess/RarReaderTest.cpp \
+	tests/postprocess/DirectUnpackTest.cpp \
 	tests/queue/NzbFileTest.cpp \
 	tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp \

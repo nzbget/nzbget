@@ -113,6 +113,7 @@ bin_PROGRAMS = nzbget$(EXEEXT)
 @WITH_TESTS_TRUE@	tests/postprocess/DupeMatcherTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/RarRenamerTest.cpp \
 @WITH_TESTS_TRUE@	tests/postprocess/RarReaderTest.cpp \
+@WITH_TESTS_TRUE@	tests/postprocess/DirectUnpackTest.cpp \
 @WITH_TESTS_TRUE@	tests/queue/NzbFileTest.cpp \
 @WITH_TESTS_TRUE@	tests/nntp/ServerPoolTest.cpp \
 @WITH_TESTS_TRUE@	tests/util/FileSystemTest.cpp \
@@ -208,10 +209,13 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/postprocess/RarReader.h daemon/postprocess/Rename.cpp \
 	daemon/postprocess/Rename.h daemon/postprocess/Repair.cpp \
 	daemon/postprocess/Repair.h daemon/postprocess/Unpack.cpp \
-	daemon/postprocess/Unpack.h daemon/queue/DirectRenamer.cpp \
-	daemon/queue/DirectRenamer.h daemon/queue/DiskState.cpp \
-	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
-	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
+	daemon/postprocess/Unpack.h \
+	daemon/postprocess/DirectUnpack.cpp \
+	daemon/postprocess/DirectUnpack.h \
+	daemon/queue/DirectRenamer.cpp daemon/queue/DirectRenamer.h \
+	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
+	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
+	daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
@@ -265,6 +269,7 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	tests/postprocess/DupeMatcherTest.cpp \
 	tests/postprocess/RarRenamerTest.cpp \
 	tests/postprocess/RarReaderTest.cpp \
+	tests/postprocess/DirectUnpackTest.cpp \
 	tests/queue/NzbFileTest.cpp tests/nntp/ServerPoolTest.cpp \
 	tests/util/FileSystemTest.cpp tests/util/NStringTest.cpp \
 	tests/util/UtilTest.cpp tests/postprocess/ParCheckerTest.cpp \
@@ -288,7 +293,9 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 @WITH_TESTS_TRUE@	FeedFilterTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	DupeMatcherTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	RarRenamerTest.$(OBJEXT) \
-@WITH_TESTS_TRUE@	RarReaderTest.$(OBJEXT) NzbFileTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	RarReaderTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	DirectUnpackTest.$(OBJEXT) \
+@WITH_TESTS_TRUE@	NzbFileTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	ServerPoolTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	FileSystemTest.$(OBJEXT) \
 @WITH_TESTS_TRUE@	NStringTest.$(OBJEXT) UtilTest.$(OBJEXT)
@@ -314,7 +321,8 @@ am_nzbget_OBJECTS = Connection.$(OBJEXT) TlsSocket.$(OBJEXT) \
 	ParChecker.$(OBJEXT) ParParser.$(OBJEXT) ParRenamer.$(OBJEXT) \
 	PrePostProcessor.$(OBJEXT) RarRenamer.$(OBJEXT) \
 	RarReader.$(OBJEXT) Rename.$(OBJEXT) Repair.$(OBJEXT) \
-	Unpack.$(OBJEXT) DirectRenamer.$(OBJEXT) DiskState.$(OBJEXT) \
+	Unpack.$(OBJEXT) DirectUnpack.$(OBJEXT) \
+	DirectRenamer.$(OBJEXT) DiskState.$(OBJEXT) \
 	DownloadInfo.$(OBJEXT) DupeCoordinator.$(OBJEXT) \
 	HistoryCoordinator.$(OBJEXT) NzbFile.$(OBJEXT) \
 	QueueCoordinator.$(OBJEXT) QueueEditor.$(OBJEXT) \
@@ -540,10 +548,13 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/postprocess/RarReader.h daemon/postprocess/Rename.cpp \
 	daemon/postprocess/Rename.h daemon/postprocess/Repair.cpp \
 	daemon/postprocess/Repair.h daemon/postprocess/Unpack.cpp \
-	daemon/postprocess/Unpack.h daemon/queue/DirectRenamer.cpp \
-	daemon/queue/DirectRenamer.h daemon/queue/DiskState.cpp \
-	daemon/queue/DiskState.h daemon/queue/DownloadInfo.cpp \
-	daemon/queue/DownloadInfo.h daemon/queue/DupeCoordinator.cpp \
+	daemon/postprocess/Unpack.h \
+	daemon/postprocess/DirectUnpack.cpp \
+	daemon/postprocess/DirectUnpack.h \
+	daemon/queue/DirectRenamer.cpp daemon/queue/DirectRenamer.h \
+	daemon/queue/DiskState.cpp daemon/queue/DiskState.h \
+	daemon/queue/DownloadInfo.cpp daemon/queue/DownloadInfo.h \
+	daemon/queue/DupeCoordinator.cpp \
 	daemon/queue/DupeCoordinator.h \
 	daemon/queue/HistoryCoordinator.cpp \
 	daemon/queue/HistoryCoordinator.h daemon/queue/NzbFile.cpp \
@@ -871,6 +882,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Decoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirectRenamer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirectUnpack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirectUnpackTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiskService.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiskState.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DownloadInfo.Po@am__quote@
@@ -1597,6 +1610,20 @@ Unpack.obj: daemon/postprocess/Unpack.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/Unpack.cpp' object='Unpack.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Unpack.obj `if test -f 'daemon/postprocess/Unpack.cpp'; then $(CYGPATH_W) 'daemon/postprocess/Unpack.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/Unpack.cpp'; fi`
+
+DirectUnpack.o: daemon/postprocess/DirectUnpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DirectUnpack.o -MD -MP -MF "$(DEPDIR)/DirectUnpack.Tpo" -c -o DirectUnpack.o `test -f 'daemon/postprocess/DirectUnpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/DirectUnpack.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DirectUnpack.Tpo" "$(DEPDIR)/DirectUnpack.Po"; else rm -f "$(DEPDIR)/DirectUnpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/DirectUnpack.cpp' object='DirectUnpack.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DirectUnpack.o `test -f 'daemon/postprocess/DirectUnpack.cpp' || echo '$(srcdir)/'`daemon/postprocess/DirectUnpack.cpp
+
+DirectUnpack.obj: daemon/postprocess/DirectUnpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DirectUnpack.obj -MD -MP -MF "$(DEPDIR)/DirectUnpack.Tpo" -c -o DirectUnpack.obj `if test -f 'daemon/postprocess/DirectUnpack.cpp'; then $(CYGPATH_W) 'daemon/postprocess/DirectUnpack.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/DirectUnpack.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DirectUnpack.Tpo" "$(DEPDIR)/DirectUnpack.Po"; else rm -f "$(DEPDIR)/DirectUnpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='daemon/postprocess/DirectUnpack.cpp' object='DirectUnpack.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DirectUnpack.obj `if test -f 'daemon/postprocess/DirectUnpack.cpp'; then $(CYGPATH_W) 'daemon/postprocess/DirectUnpack.cpp'; else $(CYGPATH_W) '$(srcdir)/daemon/postprocess/DirectUnpack.cpp'; fi`
 
 DirectRenamer.o: daemon/queue/DirectRenamer.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DirectRenamer.o -MD -MP -MF "$(DEPDIR)/DirectRenamer.Tpo" -c -o DirectRenamer.o `test -f 'daemon/queue/DirectRenamer.cpp' || echo '$(srcdir)/'`daemon/queue/DirectRenamer.cpp; \
@@ -2367,6 +2394,20 @@ RarReaderTest.obj: tests/postprocess/RarReaderTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/RarReaderTest.cpp' object='RarReaderTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RarReaderTest.obj `if test -f 'tests/postprocess/RarReaderTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/RarReaderTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/RarReaderTest.cpp'; fi`
+
+DirectUnpackTest.o: tests/postprocess/DirectUnpackTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DirectUnpackTest.o -MD -MP -MF "$(DEPDIR)/DirectUnpackTest.Tpo" -c -o DirectUnpackTest.o `test -f 'tests/postprocess/DirectUnpackTest.cpp' || echo '$(srcdir)/'`tests/postprocess/DirectUnpackTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DirectUnpackTest.Tpo" "$(DEPDIR)/DirectUnpackTest.Po"; else rm -f "$(DEPDIR)/DirectUnpackTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/DirectUnpackTest.cpp' object='DirectUnpackTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DirectUnpackTest.o `test -f 'tests/postprocess/DirectUnpackTest.cpp' || echo '$(srcdir)/'`tests/postprocess/DirectUnpackTest.cpp
+
+DirectUnpackTest.obj: tests/postprocess/DirectUnpackTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DirectUnpackTest.obj -MD -MP -MF "$(DEPDIR)/DirectUnpackTest.Tpo" -c -o DirectUnpackTest.obj `if test -f 'tests/postprocess/DirectUnpackTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/DirectUnpackTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/DirectUnpackTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DirectUnpackTest.Tpo" "$(DEPDIR)/DirectUnpackTest.Po"; else rm -f "$(DEPDIR)/DirectUnpackTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/postprocess/DirectUnpackTest.cpp' object='DirectUnpackTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DirectUnpackTest.obj `if test -f 'tests/postprocess/DirectUnpackTest.cpp'; then $(CYGPATH_W) 'tests/postprocess/DirectUnpackTest.cpp'; else $(CYGPATH_W) '$(srcdir)/tests/postprocess/DirectUnpackTest.cpp'; fi`
 
 NzbFileTest.o: tests/queue/NzbFileTest.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NzbFileTest.o -MD -MP -MF "$(DEPDIR)/NzbFileTest.Tpo" -c -o NzbFileTest.o `test -f 'tests/queue/NzbFileTest.cpp' || echo '$(srcdir)/'`tests/queue/NzbFileTest.cpp; \

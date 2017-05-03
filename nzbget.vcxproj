@@ -141,6 +141,7 @@
     <ClCompile Include="daemon\postprocess\RarRenamer.cpp" />
     <ClCompile Include="daemon\postprocess\Rename.cpp" />
     <ClCompile Include="daemon\postprocess\Unpack.cpp" />
+    <ClCompile Include="daemon\postprocess\DirectUnpack.cpp" />
     <ClCompile Include="daemon\queue\DirectRenamer.cpp" />
     <ClCompile Include="daemon\queue\DiskState.cpp" />
     <ClCompile Include="daemon\queue\DownloadInfo.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="daemon\postprocess\RarRenamer.h" />
     <ClInclude Include="daemon\postprocess\Rename.h" />
     <ClInclude Include="daemon\postprocess\Unpack.h" />
+    <ClInclude Include="daemon\postprocess\DirectUnpack.h" />
     <ClInclude Include="daemon\queue\DirectRenamer.h" />
     <ClInclude Include="daemon\queue\DiskState.h" />
     <ClInclude Include="daemon\queue\DownloadInfo.h" />
