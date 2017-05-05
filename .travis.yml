@@ -33,4 +33,4 @@ matrix:
 script:
   - $COMPILER --version
   - CXX=$COMPILER ./configure --enable-tests && make
-  - ./nzbget --tests exclude:[DupeMatcher]
+  - ./nzbget --tests exclude:[Unrar]

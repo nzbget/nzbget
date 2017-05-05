@@ -38,7 +38,7 @@ public:
 	virtual void Save() {};
 };
 
-TEST_CASE("Direct-unpack simple", "[Rar][DirectUnpack][Slow][TestData]")
+TEST_CASE("Direct-unpack simple", "[Rar][DirectUnpack][Unrar][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("WriteLog=none");
@@ -48,6 +48,8 @@ TEST_CASE("Direct-unpack simple", "[Rar][DirectUnpack][Slow][TestData]")
 	DirectUnpackDownloadQueueMock downloadQueue;
 
 	TestUtil::PrepareWorkingDir("empty");
+
+	INFO("This test requires working unrar 5 in search path");
 
 	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile3.part01.rar").c_str(),
 		(TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str()));
@@ -84,7 +86,7 @@ TEST_CASE("Direct-unpack simple", "[Rar][DirectUnpack][Slow][TestData]")
 	REQUIRE(FileSystem::FileExists((TestUtil::WorkingDir() + "/_unpack/testfile3.dat").c_str()));
 }
 
-TEST_CASE("Direct-unpack two archives", "[Rar][DirectUnpack][Slow][TestData]")
+TEST_CASE("Direct-unpack two archives", "[Rar][DirectUnpack][Unrar][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("WriteLog=none");
@@ -94,6 +96,8 @@ TEST_CASE("Direct-unpack two archives", "[Rar][DirectUnpack][Slow][TestData]")
 	DirectUnpackDownloadQueueMock downloadQueue;
 
 	TestUtil::PrepareWorkingDir("empty");
+
+	INFO("This test requires working unrar 5 in search path");
 
 	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile3.part01.rar").c_str(),
 		(TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str()));

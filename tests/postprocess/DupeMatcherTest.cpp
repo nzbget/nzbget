@@ -27,7 +27,7 @@
 #include "FileSystem.h"
 #include "TestUtil.h"
 
-TEST_CASE("Dupe matcher", "[Par][DupeMatcher][Slow][TestData]")
+TEST_CASE("Dupe matcher", "[Par][DupeMatcher][Unrar][Slow][TestData]")
 {
 	Options options(nullptr, nullptr);
 
