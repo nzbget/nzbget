@@ -32,21 +32,24 @@ public:
 	virtual void Run();
 	virtual void Stop();
 	static void StartJob(NzbInfo* nzbInfo);
-	void FileDownloaded(FileInfo* fileInfo);
+	void FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo);
+	void NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 
 protected:
 	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);
 	virtual void AddMessage(Message::EKind kind, const char* text);
 
 private:
-	typedef std::vector<CString> ParamListBase;
-	class ParamList : public ParamListBase
+	class ParamList : public std::vector<CString>
 	{
 	public:
-		bool Exists(const char* param);
+		bool Exists(const char* param) { return std::find(begin(), end(), param) != end(); }
 	};
 
-	NzbInfo* m_nzbInfo;
+	typedef std::deque<CString> ArchiveList;
+
+	int m_nzbId;
 	CString m_name;
 	CString m_infoName;
 	CString m_infoNameUp;
@@ -55,16 +58,24 @@ private:
 	CString m_unpackDir;
 	CString m_password;
 	CString m_waitingFile;
-	bool m_hasRarFiles = false;
+	CString m_progressLabel;
 	bool m_allOkMessageReceived = false;
 	bool m_unpackOk = false;
 	bool m_finalDirCreated = false;
+	bool m_nzbCompleted = false;
+	Mutex m_volumeMutex;
+	ArchiveList m_archives;
+	bool m_processed = false;
+	time_t m_extraStartTime = 0;
 
 	void CreateUnpackDir();
-	void CheckArchiveFiles();
-	void ExecuteUnrar();
+	void FindArchiveFiles();
+	void ExecuteUnrar(const char* archiveName);
 	bool PrepareCmdParams(const char* command, ParamList* params, const char* infoName);
 	void WaitNextVolume(const char* filename);
+	void Cleanup();
+	bool IsMainArchive(const char* filename);
+	void SetProgressLabel(NzbInfo* nzbInfo, const char* progressLabel);
 };
 
 #endif

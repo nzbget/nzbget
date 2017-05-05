@@ -49,7 +49,7 @@ public:
 	static char* Trim(char* str);
 	static bool EmptyStr(const char* str) { return !str || !*str; }
 	static std::vector<CString> SplitStr(const char* str, const char* separators);
-	static bool EndsWith(const char* str, const char* suffix);
+	static bool EndsWith(const char* str, const char* suffix, bool caseSensitive);
 	static bool AlphaNum(const char* str);
 
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */

@@ -38,7 +38,7 @@ public:
 	virtual void Save() {};
 };
 
-TEST_CASE("Direct-unpack", "[Rar][DirectUnpack][Slow][TestData]")
+TEST_CASE("Direct-unpack simple", "[Rar][DirectUnpack][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("WriteLog=none");
@@ -56,16 +56,84 @@ TEST_CASE("Direct-unpack", "[Rar][DirectUnpack][Slow][TestData]")
 	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile3.part03.rar").c_str(),
 		(TestUtil::WorkingDir() + "/testfile3.part03.rar").c_str()));
 
-	NzbInfo nzbInfo;
-	nzbInfo.SetName("test");
-	nzbInfo.SetDestDir(TestUtil::WorkingDir().c_str());
+	std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
+	NzbInfo* nzbPtr = nzbInfo.get();
+	nzbInfo->SetName("test");
+	nzbInfo->SetDestDir(TestUtil::WorkingDir().c_str());
+	downloadQueue.GetQueue()->Add(std::move(nzbInfo), false);
 
-	DirectUnpack::StartJob(&nzbInfo);
+	DirectUnpack::StartJob(nzbPtr);
 
-	while (nzbInfo.GetDirectUnpackStatus() == NzbInfo::nsRunning)
+	while (true)
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		if (nzbPtr->GetUnpackThread())
+		{
+			((DirectUnpack*)nzbPtr->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbPtr);
+			break;
+		}
+		usleep(50*1000);
+	}
+
+	while (nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsRunning)
 	{
 		usleep(20 * 1000);
 	}
 
-	REQUIRE(nzbInfo.GetDirectUnpackStatus() == NzbInfo::nsSuccess);
+	REQUIRE(nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsSuccess);
+	REQUIRE(FileSystem::FileExists((TestUtil::WorkingDir() + "/_unpack/testfile3.dat").c_str()));
+}
+
+TEST_CASE("Direct-unpack two archives", "[Rar][DirectUnpack][Slow][TestData]")
+{
+	Options::CmdOptList cmdOpts;
+	cmdOpts.push_back("WriteLog=none");
+	cmdOpts.push_back("NzbLog=no");
+	Options options(&cmdOpts, nullptr);
+
+	DirectUnpackDownloadQueueMock downloadQueue;
+
+	TestUtil::PrepareWorkingDir("empty");
+
+	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile3.part01.rar").c_str(),
+		(TestUtil::WorkingDir() + "/testfile3.part01.rar").c_str()));
+	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile3.part02.rar").c_str(),
+		(TestUtil::WorkingDir() + "/testfile3.part02.rar").c_str()));
+	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile3.part03.rar").c_str(),
+		(TestUtil::WorkingDir() + "/testfile3.part03.rar").c_str()));
+
+	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile5.part01.rar").c_str(),
+		(TestUtil::WorkingDir() + "/testfile5.part01.rar").c_str()));
+	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile5.part02.rar").c_str(),
+		(TestUtil::WorkingDir() + "/testfile5.part02.rar").c_str()));
+	REQUIRE(FileSystem::CopyFile((TestUtil::TestDataDir() + "/rarrenamer/testfile5.part03.rar").c_str(),
+		(TestUtil::WorkingDir() + "/testfile5.part03.rar").c_str()));
+
+	std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
+	NzbInfo* nzbPtr = nzbInfo.get();
+	nzbInfo->SetName("test");
+	nzbInfo->SetDestDir(TestUtil::WorkingDir().c_str());
+	downloadQueue.GetQueue()->Add(std::move(nzbInfo), false);
+
+	DirectUnpack::StartJob(nzbPtr);
+
+	while (true)
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		if (nzbPtr->GetUnpackThread())
+		{
+			((DirectUnpack*)nzbPtr->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbPtr);
+			break;
+		}
+		usleep(50 * 1000);
+	}
+
+	while (nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsRunning)
+	{
+		usleep(20 * 1000);
+	}
+
+	REQUIRE(nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsSuccess);
+	REQUIRE(FileSystem::FileExists((TestUtil::WorkingDir() + "/_unpack/testfile3.dat").c_str()));
+	REQUIRE(FileSystem::FileExists((TestUtil::WorkingDir() + "/_unpack/testfile5.dat").c_str()));
 }

@@ -499,6 +499,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	nzbInfo->SetParRenameStatus(NzbInfo::rsNone);
 	nzbInfo->SetRarRenameStatus(NzbInfo::rsNone);
 	nzbInfo->SetDirectRenameStatus(NzbInfo::tsNone);
+	nzbInfo->SetDirectUnpackStatus(NzbInfo::nsNone);
 	nzbInfo->SetDownloadedSize(0);
 	nzbInfo->SetDownloadSec(0);
 	nzbInfo->SetPostTotalSec(0);

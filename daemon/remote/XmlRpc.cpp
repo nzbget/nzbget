@@ -1999,6 +1999,10 @@ const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 		{
 			status = queueScriptActive ? "QS_EXECUTING" : "QS_QUEUED";
 		}
+		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsRunning)
+		{
+			status = "UNPACKING";
+		}
 		else
 		{
 			status = postStageName[nzbInfo->GetPostInfo()->GetStage()];

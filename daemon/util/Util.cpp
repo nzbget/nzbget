@@ -429,7 +429,7 @@ std::vector<CString> Util::SplitStr(const char* str, const char* separators)
 	return result;
 }
 
-bool Util::EndsWith(const char* str, const char* suffix)
+bool Util::EndsWith(const char* str, const char* suffix, bool caseSensitive)
 {
 	if (!str)
 	{
@@ -449,7 +449,14 @@ bool Util::EndsWith(const char* str, const char* suffix)
 		return false;
 	}
 
-	return !strcmp(str + lenStr - lenSuf, suffix);
+	if (caseSensitive)
+	{
+		return !strcmp(str + lenStr - lenSuf, suffix);
+	}
+	else
+	{
+		return !strcasecmp(str + lenStr - lenSuf, suffix);
+	}
 }
 
 bool Util::AlphaNum(const char* str)

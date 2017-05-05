@@ -114,13 +114,21 @@ void PrePostProcessor::WaitJobs()
 void PrePostProcessor::Stop()
 {
 	Thread::Stop();
-	GuardedDownloadQueue guard = DownloadQueue::Guard();
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 	for (NzbInfo* postJob : m_activeJobs)
 	{
 		if (postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread())
 		{
 			postJob->GetPostInfo()->GetPostThread()->Stop();
+		}
+	}
+
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	{
+		if (nzbInfo->GetUnpackThread())
+		{
+			nzbInfo->GetUnpackThread()->Stop();
 		}
 	}
 }
@@ -287,16 +295,31 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 			nzbInfo->SetParStatus(NzbInfo::psSkipped);
 		}
 
+		if (nzbInfo->GetUnpackThread())
+		{
+			((DirectUnpack*)nzbInfo->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbInfo);
+		}
+
 		downloadQueue->Save();
 	}
 	else
 	{
+		if (nzbInfo->GetUnpackThread())
+		{
+			((DirectUnpack*)nzbInfo->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbInfo);
+		}
+
 		NzbCompleted(downloadQueue, nzbInfo, true);
 	}
 }
 
 void PrePostProcessor::NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
+	if (nzbInfo->GetUnpackThread())
+	{
+		((DirectUnpack*)nzbInfo->GetUnpackThread())->NzbDeleted(downloadQueue, nzbInfo);
+	}
+
 	if (nzbInfo->GetDeleteStatus() == NzbInfo::dsNone)
 	{
 		nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
@@ -521,6 +544,7 @@ NzbInfo* PrePostProcessor::PickNextJob(DownloadQueue* downloadQueue, bool allowP
 	{
 		if (nzbInfo1->GetPostInfo() && !nzbInfo1->GetPostInfo()->GetWorking() &&
 			!g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
+			nzbInfo1->GetDirectUnpackStatus() != NzbInfo::nsRunning &&
 			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
 			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()) &&
 			(allowPar || !nzbInfo1->GetPostInfo()->GetNeedParCheck()) &&
@@ -857,6 +881,12 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 				{
 					postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 						"Deleting queued post-job %s", postInfo->GetNzbInfo()->GetName());
+
+					if (postInfo->GetNzbInfo()->GetUnpackThread())
+					{
+						((DirectUnpack*)postInfo->GetNzbInfo()->GetUnpackThread())->NzbDeleted(downloadQueue, postInfo->GetNzbInfo());
+					}
+
 					JobCompleted(downloadQueue, postInfo);
 
 					m_activeJobs.erase(std::remove_if(m_activeJobs.begin(), m_activeJobs.end(),
@@ -890,7 +920,7 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 
 	if (g_Options->GetDirectUnpack())
 	{
-		if (!nzbInfo->GetUnpackThread())
+		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone)
 		{
 			NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
 			bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
@@ -899,9 +929,9 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 				DirectUnpack::StartJob(nzbInfo);
 			}
 		}
-		else
+		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsRunning)
 		{
-			((DirectUnpack*)nzbInfo->GetUnpackThread())->FileDownloaded(fileInfo);
+			((DirectUnpack*)nzbInfo->GetUnpackThread())->FileDownloaded(downloadQueue, fileInfo);
 		}
 	}
 }

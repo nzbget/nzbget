@@ -97,6 +97,7 @@ private:
 	void CreateUnpackDir();
 	bool Cleanup();
 	void CheckArchiveFiles();
+	bool CanUseDirectUnpacked();
 	void SetProgressLabel(const char* progressLabel);
 #ifndef DISABLE_PARCHECK
 	void RequestParCheck(bool forceRepair);

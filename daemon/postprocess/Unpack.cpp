@@ -111,7 +111,7 @@ void UnpackController::Run()
 
 		CreateUnpackDir();
 
-		if (m_hasRarFiles)
+		if (m_hasRarFiles && !CanUseDirectUnpacked())
 		{
 			UnpackArchives(upUnrar, false);
 		}
@@ -682,6 +682,17 @@ bool UnpackController::FileHasRarSignature(const char* filename)
 	bool rar = cnt == sizeof(fileSignature) &&
 		(!strcmp(rar4Signature, fileSignature) || !strcmp(rar5Signature, fileSignature));
 	return rar;
+}
+
+bool UnpackController::CanUseDirectUnpacked()
+{
+	if (m_postInfo->GetNzbInfo()->GetDirectUnpackStatus() != NzbInfo::nsSuccess)
+	{
+		return false;
+	}
+
+	PrintMessage(Message::mkInfo, "Using directly unpacked files");
+	return true;
 }
 
 bool UnpackController::Cleanup()

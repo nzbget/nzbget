@@ -349,7 +349,7 @@ void DirectRenamer::RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, 
 		if (newName)
 		{
 			bool written = fileInfo->GetOutputFilename() &&
-				!Util::EndsWith(fileInfo->GetOutputFilename(), ".out.tmp");
+				!Util::EndsWith(fileInfo->GetOutputFilename(), ".out.tmp", true);
 			if (!written)
 			{
 				nzbInfo->PrintMessage(Message::mkInfo, "Renaming in-progress file %s to %s",
@@ -445,8 +445,7 @@ bool DirectRenamer::NeedRenamePars(NzbInfo* nzbInfo)
 
 	for (ParFile& parFile : parFiles)
 	{
-		if (!(Util::EndsWith(parFile.GetFilename(), ".par2") ||
-			Util::EndsWith(parFile.GetFilename(), ".PAR2")))
+		if (!Util::EndsWith(parFile.GetFilename(), ".par2", false))
 		{
 			return true;
 		}
