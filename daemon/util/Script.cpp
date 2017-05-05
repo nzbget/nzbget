@@ -326,20 +326,21 @@ int ScriptController::Execute()
 	m_readpipe = fdopen(pipein, "r");
 	if (!m_readpipe)
 	{
-		PrintMessage(Message::mkError, "Could not open pipe to %s", *m_infoName);
+		PrintMessage(Message::mkError, "Could not open read pipe to %s", *m_infoName);
 		close(pipein);
 		close(pipeout);
 		m_completed = true;
 		return -1;
 	}
 
+	m_writepipe = 0;
 	if (m_needWrite)
 	{
 		// open the write end
 		m_writepipe = fdopen(pipeout, "w");
 		if (!m_writepipe)
 		{
-			PrintMessage(Message::mkError, "Could not open pipe to %s", *m_infoName);
+			PrintMessage(Message::mkError, "Could not open write pipe to %s", *m_infoName);
 			close(pipein);
 			close(pipeout);
 			m_completed = true;
@@ -556,11 +557,19 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 	int pout[] = {0, 0};
 
 	// create the pipes
-	if (pipe(pin) || (m_needWrite && pipe(pout)))
+	if (pipe(pin))
 	{
-		PrintMessage(Message::mkError, "Could not open pipe: errno %i", errno);
+		PrintMessage(Message::mkError, "Could not open read pipe: errno %i", errno);
 		return;
 	}
+	if (m_needWrite && pipe(pout))
+	{
+		PrintMessage(Message::mkError, "Could not open write pipe: errno %i", errno);
+		close(pin[0]);
+		close(pin[1]);
+		return;
+	}
+
 	*pipein = pin[0];
 	*pipeout = pout[1];
 
@@ -652,7 +661,10 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 
 	// close unused pipe ends
 	close(pin[1]);
-	close(pout[0]);
+	if (m_needWrite)
+	{
+		close(pout[0]);
+	}
 #endif
 }
 
