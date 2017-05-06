@@ -128,7 +128,7 @@ void PrePostProcessor::Stop()
 	{
 		if (nzbInfo->GetUnpackThread())
 		{
-			nzbInfo->GetUnpackThread()->Stop();
+			((DirectUnpack*)nzbInfo->GetUnpackThread())->Stop(downloadQueue, nzbInfo);
 		}
 	}
 }

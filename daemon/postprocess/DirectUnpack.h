@@ -30,8 +30,8 @@ class DirectUnpack : public Thread, public ScriptController
 {
 public:
 	virtual void Run();
-	virtual void Stop();
 	static void StartJob(NzbInfo* nzbInfo);
+	void Stop(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
@@ -76,6 +76,7 @@ private:
 	void Cleanup();
 	bool IsMainArchive(const char* filename);
 	void SetProgressLabel(NzbInfo* nzbInfo, const char* progressLabel);
+	void AddExtraTime(NzbInfo* nzbInfo);
 };
 
 #endif

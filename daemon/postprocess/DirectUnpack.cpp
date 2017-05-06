@@ -39,12 +39,15 @@ void DirectUnpack::StartJob(NzbInfo* nzbInfo)
 
 void DirectUnpack::Run()
 {
+	debug("Entering DirectUnpack-loop for %i", m_nzbId);
+
 	{
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
 		if (!nzbInfo)
 		{
+			debug("Could not find NzbInfo for %i", m_nzbId);
 			return;
 		}
 
@@ -117,35 +120,28 @@ void DirectUnpack::Run()
 		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
 		if (!nzbInfo)
 		{
+			debug("Could not find NzbInfo for %s", *m_infoName);
 			return;
 		}
 
 		nzbInfo->SetUnpackThread(nullptr);
 		nzbInfo->SetDirectUnpackStatus(m_processed ? m_unpackOk && !GetTerminated() ? NzbInfo::nsSuccess : NzbInfo::nsFailure : NzbInfo::nsNone);
 
-		if (GetTerminated())
-		{
-			nzbInfo->AddMessage(Message::mkWarning, BString<1024>("%s interrupted", *m_infoNameUp));
-
-		}
-		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsSuccess)
+		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsSuccess && !GetTerminated())
 		{
 			nzbInfo->AddMessage(Message::mkInfo, BString<1024>("%s successful", *m_infoNameUp));
 
 		}
-		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsFailure)
+		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsFailure && !GetTerminated())
 		{
 			nzbInfo->AddMessage(Message::mkWarning, BString<1024>("%s failed", *m_infoNameUp));
 
 		}
 
-		if (m_extraStartTime)
-		{
-			time_t extraTime = Util::CurrentTime() - m_extraStartTime;
-			nzbInfo->SetUnpackSec(nzbInfo->GetUnpackSec() + extraTime);
-			nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() + extraTime);
-		}
+		AddExtraTime(nzbInfo);
 	}
+
+	debug("Exiting DirectUnpack-loop for %i", m_nzbId);
 }
 
 void DirectUnpack::ExecuteUnrar(const char* archiveName)
@@ -322,6 +318,8 @@ bool DirectUnpack::ReadLine(char* buf, int bufSize, FILE* stream)
 
 void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 {
+	debug("%s", text);
+
 	BString<1024> msgText = text;
 	int len = strlen(text);
 
@@ -347,6 +345,10 @@ void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 	{
 		nzbInfo->AddMessage(kind, msgText);
 	}
+	else
+	{
+		ScriptController::AddMessage(kind, msgText);
+	}
 
 	if (!strncmp(msgText, "Unrar: Extracting ", 18) && nzbInfo)
 	{
@@ -368,12 +370,7 @@ void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 		(len > 18 && !strncmp(text + len - 18, " - checksum failed", 18)) ||
 		!strncmp(text, "Unrar: WARNING: You need to start extraction from a previous volume", 67)))
 	{
-		if (nzbInfo)
-		{
-			nzbInfo->AddMessage(Message::mkWarning,
-				BString<1024>("Cancelling %s due to errors", *m_infoName));
-		}
-		Stop();
+		Stop(downloadQueue, nzbInfo);
 	}
 
 	if (!strncmp(text, "Unrar: All OK", 13))
@@ -382,50 +379,59 @@ void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 	}
 }
 
-void DirectUnpack::Stop()
+void DirectUnpack::Stop(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	debug("Stopping direct unpack");
+	debug("Stopping direct unpack for %s", *m_infoName);
+	if (nzbInfo)
+	{
+		nzbInfo->AddMessage(Message::mkWarning, BString<1024>("Cancelling %s", *m_infoName));
+	}
+	else
+	{
+		warn("Cancelling %s", *m_infoName);
+	}
+	AddExtraTime(nzbInfo);
 	Thread::Stop();
 	Terminate();
-	Cleanup();
 }
 
 void DirectUnpack::WaitNextVolume(const char* filename)
 {
-	debug("Looking for %s", filename);
+	debug("WaitNextVolume for %s", filename);
+
 	BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 	if (FileSystem::FileExists(fullFilename))
 	{
-		debug("File %s already there", filename);
 		Write("\n"); // emulating click on Enter-key for "continue"
 	}
 	else
 	{
-		debug("Waiting for %s", filename);
 		Guard guard(m_volumeMutex);
 		m_waitingFile = filename;
 		if (m_nzbCompleted)
 		{
 			// nzb completed but unrar waits for another volume
 			PrintMessage(Message::mkWarning, "Could not find volume %s", filename);
-			Stop();
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+			NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
+			Stop(downloadQueue, nzbInfo);
 		}
 	}
 }
 
 void DirectUnpack::FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo)
 {
+	debug("FileDownloaded for %s/%s", fileInfo->GetNzbInfo()->GetName(), fileInfo->GetFilename());
+
 	if (fileInfo->GetNzbInfo()->GetFailedArticles() > 0)
 	{
-		fileInfo->GetNzbInfo()->AddMessage(Message::mkWarning, BString<1024>("Cancelling %s due to download errors", *m_infoName));
-		Stop();
+		Stop(downloadQueue, fileInfo->GetNzbInfo());
 		return;
 	}
 
 	Guard guard(m_volumeMutex);
 	if (m_waitingFile && !strcasecmp(fileInfo->GetFilename(), m_waitingFile))
 	{
-		debug("File %s just arrived", *m_waitingFile);
 		m_waitingFile = nullptr;
 		Write("\n"); // emulating click on Enter-key for "continue"
 	}
@@ -438,14 +444,16 @@ void DirectUnpack::FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileIn
 
 void DirectUnpack::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
+	debug("NzbDownloaded for %s", nzbInfo->GetName());
+
 	Guard guard(m_volumeMutex);
 	m_nzbCompleted = true;
 	if (m_waitingFile)
 	{
 		// nzb completed but unrar waits for another volume
-		// do not use "PrintMessage" here as it tries to lock already locked "downloadQueue"
 		nzbInfo->AddMessage(Message::mkWarning, BString<1024>("Unrar: Could not find volume %s", *m_waitingFile));
-		Stop();
+		Stop(downloadQueue, nzbInfo);
+		return;
 	}
 
 	m_extraStartTime = Util::CurrentTime();
@@ -458,14 +466,18 @@ void DirectUnpack::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 
 void DirectUnpack::NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
+	debug("NzbDeleted for %s", nzbInfo->GetName());
+
 	nzbInfo->SetUnpackThread(nullptr);
 	nzbInfo->SetDirectUnpackStatus(NzbInfo::nsFailure);
-	Stop();
+	Stop(downloadQueue, nzbInfo);
 }
 
 // Remove _unpack-dir
 void DirectUnpack::Cleanup()
 {
+	debug("Cleanup for %s", *m_infoName);
+
 	CString errmsg;
 	if (FileSystem::DirectoryExists(m_unpackDir) &&
 		!FileSystem::DeleteDirectoryWithContent(m_unpackDir, errmsg))
@@ -485,5 +497,16 @@ void DirectUnpack::SetProgressLabel(NzbInfo* nzbInfo, const char* progressLabel)
 	if (nzbInfo->GetPostInfo())
 	{
 		nzbInfo->GetPostInfo()->SetProgressLabel(progressLabel);
+	}
+}
+
+void DirectUnpack::AddExtraTime(NzbInfo* nzbInfo)
+{
+	if (m_extraStartTime)
+	{
+		time_t extraTime = Util::CurrentTime() - m_extraStartTime;
+		nzbInfo->SetUnpackSec(nzbInfo->GetUnpackSec() + extraTime);
+		nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() + extraTime);
+		m_extraStartTime = 0;
 	}
 }
