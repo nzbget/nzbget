@@ -77,7 +77,7 @@ void PrePostProcessor::WaitJobs()
 {
 	debug("PrePostProcessor: waiting for jobs to complete");
 
-	// wait 5 seconds until all jobs gracefully finish
+	// wait 5 seconds until all post-processing jobs gracefully finish
 	time_t waitStart = Util::CurrentTime();
 	while (Util::CurrentTime() < waitStart + 5)
 	{
@@ -92,7 +92,7 @@ void PrePostProcessor::WaitJobs()
 		usleep(200 * 1000);
 	}
 
-	// kill remaining jobs; not safe but we can't wait any longer
+	// kill remaining post-processing jobs; not safe but we can't wait any longer
 	{
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 		for (NzbInfo* postJob : m_activeJobs)
@@ -105,6 +105,34 @@ void PrePostProcessor::WaitJobs()
 				thread->Kill();
 				delete thread;
 			}
+		}
+	}
+
+	// wait 5 seconds until direct unpack threads gracefully finish
+	waitStart = Util::CurrentTime();
+	while (Util::CurrentTime() < waitStart + 5)
+	{
+		{
+			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+			if (std::find_if(downloadQueue->GetQueue()->begin(),
+				downloadQueue->GetQueue()->end(),
+				[](const std::unique_ptr<NzbInfo>& nzbInfo)
+				{
+					return nzbInfo->GetUnpackThread() != nullptr;
+				}) == downloadQueue->GetQueue()->end())
+			{
+				break;
+			}
+		}
+		usleep(200 * 1000);
+	}
+
+	// disconnect remaining direct unpack jobs
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		{
+			nzbInfo->SetUnpackThread(nullptr);
 		}
 	}
 

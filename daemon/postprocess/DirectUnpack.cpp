@@ -118,7 +118,7 @@ void DirectUnpack::Run()
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
 		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
-		if (!nzbInfo)
+		if (!nzbInfo || nzbInfo->GetUnpackThread() != this)
 		{
 			debug("Could not find NzbInfo for %s", *m_infoName);
 			return;
@@ -130,12 +130,10 @@ void DirectUnpack::Run()
 		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsSuccess && !GetTerminated())
 		{
 			nzbInfo->AddMessage(Message::mkInfo, BString<1024>("%s successful", *m_infoNameUp));
-
 		}
 		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsFailure && !GetTerminated())
 		{
 			nzbInfo->AddMessage(Message::mkWarning, BString<1024>("%s failed", *m_infoNameUp));
-
 		}
 
 		AddExtraTime(nzbInfo);
