@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -414,7 +414,7 @@ int ScriptController::Execute()
 
 	exitCode = 0;
 
-	if (!m_terminated && !m_detached)
+	if (!m_detached)
 	{
 		exitCode = WaitProcess();
 #ifndef WIN32
@@ -671,7 +671,8 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 int ScriptController::WaitProcess()
 {
 #ifdef WIN32
-	WaitForSingleObject(m_processId, INFINITE);
+	// wait max 60 seconds for terminated processes
+	WaitForSingleObject(m_processId, m_terminated ? 60 * 1000 : INFINITE);
 	DWORD exitCode = 0;
 	GetExitCodeProcess(m_processId, &exitCode);
 	return exitCode;
@@ -694,17 +695,6 @@ void ScriptController::Terminate()
 
 #ifdef WIN32
 	BOOL ok = TerminateProcess(m_processId, -1) || m_completed;
-	if (ok)
-	{
-		// wait 60 seconds for process to terminate
-		WaitForSingleObject(m_processId, 60 * 1000);
-	}
-	else
-	{
-		DWORD exitCode = 0;
-		GetExitCodeProcess(m_processId, &exitCode);
-		ok = exitCode != STILL_ACTIVE;
-	}
 #else
 	pid_t killId = m_processId;
 	if (getpgid(killId) == killId)
