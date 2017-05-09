@@ -12,6 +12,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
+            - unrar
       env:
         - COMPILER=g++-5
 
@@ -22,10 +23,15 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
+            - unrar
       env:
         - COMPILER=g++-4.9
 
     - compiler: gcc
+      addons:
+        apt:
+          packages:
+            - unrar
       env:
         - COMPILER=g++-4.8
         - CXXFLAGS="-std=c++11 -O2 -s"
@@ -39,10 +45,11 @@ matrix:
             - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
+            - unrar
       env:
         - COMPILER=clang++-3.6
 
 script:
   - $COMPILER --version
   - CXX=$COMPILER ./configure $CONFIGUREOPTS --enable-tests && make
-  - ./nzbget --tests exclude:[Unrar]
+  - ./nzbget --tests
