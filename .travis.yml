@@ -4,6 +4,7 @@ language: cpp
 
 matrix:
   include:
+
     - compiler: gcc
       addons:
         apt:
@@ -11,7 +12,9 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env: COMPILER=g++-5
+      env:
+        - COMPILER=g++-5
+
     - compiler: gcc
       addons:
         apt:
@@ -19,7 +22,15 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
-      env: COMPILER=g++-4.9
+      env:
+        - COMPILER=g++-4.9
+
+    - compiler: gcc
+      env:
+        - COMPILER=g++-4.8
+        - CXXFLAGS="-std=c++11 -O2 -s"
+        - CONFIGUREOPTS="--disable-cpp-check"
+
     - compiler: clang
       addons:
         apt:
@@ -28,9 +39,10 @@ matrix:
             - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
-      env: COMPILER=clang++-3.6
+      env:
+        - COMPILER=clang++-3.6
 
 script:
   - $COMPILER --version
-  - CXX=$COMPILER ./configure --enable-tests && make
+  - CXX=$COMPILER ./configure $CONFIGUREOPTS --enable-tests && make
   - ./nzbget --tests exclude:[Unrar]
