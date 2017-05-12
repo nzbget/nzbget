@@ -69,8 +69,10 @@ public:
 	virtual void Run();
 
 private:
+	typedef std::vector<CString> ParFiles;
+
 	DirectRenamer* m_owner;
-	NameList m_parFiles;
+	ParFiles m_parFiles;
 	DirectRenamer::FileHashList m_parHashes;
 	int m_nzbId;
 

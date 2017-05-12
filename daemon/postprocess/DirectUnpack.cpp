@@ -125,15 +125,21 @@ void DirectUnpack::Run()
 		}
 
 		nzbInfo->SetUnpackThread(nullptr);
-		nzbInfo->SetDirectUnpackStatus(m_processed ? m_unpackOk && !GetTerminated() ? NzbInfo::nsSuccess : NzbInfo::nsFailure : NzbInfo::nsNone);
+		nzbInfo->SetDirectUnpackStatus(m_processed ? m_unpackOk && !IsStopped() ? NzbInfo::nsSuccess : NzbInfo::nsFailure : NzbInfo::nsNone);
 
-		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsSuccess && !GetTerminated())
+		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsSuccess)
 		{
 			nzbInfo->AddMessage(Message::mkInfo, BString<1024>("%s successful", *m_infoNameUp));
 		}
-		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsFailure && !GetTerminated())
+		else if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsFailure)
 		{
 			nzbInfo->AddMessage(Message::mkWarning, BString<1024>("%s failed", *m_infoNameUp));
+		}
+
+		if (nzbInfo->GetPostInfo() && nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsSuccess)
+		{
+			std::move(m_extractedArchives.begin(), m_extractedArchives.end(),
+				std::back_inserter(*nzbInfo->GetPostInfo()->GetExtractedArchives()));
 		}
 
 		AddExtraTime(nzbInfo);
@@ -177,7 +183,8 @@ void DirectUnpack::ExecuteUnrar(const char* archiveName)
 	params.emplace_back("-vp");
 
 	params.emplace_back(archiveName);
-	params.push_back(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR), true));
+	m_unpackExtendedDir = FileSystem::MakeExtendedPath(m_unpackDir, true);
+	params.push_back(*BString<1024>("%s%c", *m_unpackExtendedDir, PATH_SEPARATOR));
 	SetArgs(std::move(params));
 	SetLogPrefix("Unrar");
 	ResetEnv();
@@ -324,9 +331,9 @@ void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 	// Modify unrar messages for better readability:
 	// remove the destination path part from message "Extracting file.xxx"
 	if (!strncmp(text, "Unrar: Extracting  ", 19) &&
-		!strncmp(text + 19, m_unpackDir, strlen(m_unpackDir)))
+		!strncmp(text + 19, m_unpackExtendedDir, strlen(m_unpackExtendedDir)))
 	{
-		msgText.Format("Unrar: Extracting %s", text + 19 + strlen(m_unpackDir) + 1);
+		msgText.Format("Unrar: Extracting %s", text + 19 + strlen(m_unpackExtendedDir) + 1);
 	}
 
 	if (!strncmp(text, "Unrar: Insert disk with", 23) && strstr(text, " [C]ontinue, [Q]uit"))
@@ -356,6 +363,7 @@ void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 	if (!strncmp(text, "Unrar: Extracting from ", 23) && nzbInfo)
 	{
 		SetProgressLabel(nzbInfo, text + 7);
+		m_extractedArchives.emplace_back(text + 23);
 	}
 
 	if (!IsStopped() && (

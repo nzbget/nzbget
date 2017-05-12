@@ -32,9 +32,6 @@ class NzbInfo;
 class DownloadQueue;
 class PostInfo;
 
-typedef std::vector<int> IdList;
-typedef std::vector<CString> NameList;
-
 class ServerStat
 {
 public:
@@ -751,6 +748,7 @@ public:
 	};
 
 	typedef std::vector<CString> ParredFiles;
+	typedef std::vector<CString> ExtractedArchives;
 
 	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
 	void SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
@@ -789,6 +787,7 @@ public:
 	Thread* GetPostThread() { return m_postThread; }
 	void SetPostThread(Thread* postThread) { m_postThread = postThread; }
 	ParredFiles* GetParredFiles() { return &m_parredFiles; }
+	ExtractedArchives* GetExtractedArchives() { return &m_extractedArchives; }
 
 private:
 	NzbInfo* m_nzbInfo = nullptr;
@@ -810,7 +809,12 @@ private:
 	time_t m_stageTime = 0;
 	Thread* m_postThread = nullptr;
 	ParredFiles m_parredFiles;
+	ExtractedArchives m_extractedArchives;
 };
+
+typedef std::vector<int> IdList;
+
+typedef std::vector<CString> NameList;
 
 class DupInfo
 {

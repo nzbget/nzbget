@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,17 +50,7 @@ void UnpackController::StartJob(PostInfo* postInfo)
 void UnpackController::Run()
 {
 	time_t start = Util::CurrentTime();
-
-	m_cleanedUpDisk = false;
-	m_finalDirCreated = false;
 	m_unpackOk = true;
-	m_unpackStartError = false;
-	m_unpackSpaceError = false;
-	m_unpackDecryptError = false;
-	m_unpackPasswordError = false;
-	m_autoTerminated = false;
-	m_passListTried = false;
-
 	bool unpack;
 
 	{
@@ -111,9 +101,20 @@ void UnpackController::Run()
 
 		CreateUnpackDir();
 
-		if (m_hasRarFiles && !CanUseDirectUnpacked())
+		if (m_hasRarFiles)
 		{
-			UnpackArchives(upUnrar, false);
+			if (m_hasUnpackedRarFiles)
+			{
+				if (m_postInfo->GetNzbInfo()->GetDirectUnpackStatus() == NzbInfo::nsSuccess)
+				{
+					PrintMessage(Message::mkInfo, "Found archive files not processed by direct unpack, unpacking all files again");
+				}
+				UnpackArchives(upUnrar, false);
+			}
+			else
+			{
+				PrintMessage(Message::mkInfo, "Using directly unpacked files");
+			}
 		}
 
 		if (m_hasSevenZipFiles && m_unpackOk)
@@ -277,7 +278,8 @@ void UnpackController::ExecuteUnrar(const char* password)
 	}
 
 	params.emplace_back("*.rar");
-	params.push_back(FileSystem::MakeExtendedPath(BString<1024>("%s%c", *m_unpackDir, PATH_SEPARATOR), true));
+	m_unpackExtendedDir = FileSystem::MakeExtendedPath(m_unpackDir, true);
+	params.push_back(*BString<1024>("%s%c", *m_unpackExtendedDir, PATH_SEPARATOR));
 	SetArgs(std::move(params));
 	SetLogPrefix("Unrar");
 	ResetEnv();
@@ -616,12 +618,6 @@ void UnpackController::CreateUnpackDir()
 
 void UnpackController::CheckArchiveFiles()
 {
-	m_hasRarFiles = false;
-	m_hasRenamedArchiveFiles = false;
-	m_hasSevenZipFiles = false;
-	m_hasSevenZipMultiFiles = false;
-	m_hasSplittedFiles = false;
-
 	RegEx regExRar(".*\\.rar$");
 	RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
 	RegEx regExSevenZip(".*\\.7z$");
@@ -641,6 +637,10 @@ void UnpackController::CheckArchiveFiles()
 			if (regExRar.Match(filename))
 			{
 				m_hasRarFiles = true;
+				m_hasUnpackedRarFiles |= std::find(
+					m_postInfo->GetExtractedArchives()->begin(),
+					m_postInfo->GetExtractedArchives()->end(),
+					filename) == m_postInfo->GetExtractedArchives()->end();
 			}
 			else if (regExSevenZip.Match(filename))
 			{
@@ -682,17 +682,6 @@ bool UnpackController::FileHasRarSignature(const char* filename)
 	bool rar = cnt == sizeof(fileSignature) &&
 		(!strcmp(rar4Signature, fileSignature) || !strcmp(rar5Signature, fileSignature));
 	return rar;
-}
-
-bool UnpackController::CanUseDirectUnpacked()
-{
-	if (m_postInfo->GetNzbInfo()->GetDirectUnpackStatus() != NzbInfo::nsSuccess)
-	{
-		return false;
-	}
-
-	PrintMessage(Message::mkInfo, "Using directly unpacked files");
-	return true;
 }
 
 bool UnpackController::Cleanup()
@@ -850,9 +839,9 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 	// Modify unrar messages for better readability:
 	// remove the destination path part from message "Extracting file.xxx"
 	if (m_unpacker == upUnrar && !strncmp(text, "Unrar: Extracting  ", 19) &&
-		!strncmp(text + 19, m_unpackDir, strlen(m_unpackDir)))
+		!strncmp(text + 19, m_unpackExtendedDir, strlen(m_unpackExtendedDir)))
 	{
-		msgText.Format("Unrar: Extracting %s", text + 19 + strlen(m_unpackDir) + 1);
+		msgText.Format("Unrar: Extracting %s", text + 19 + strlen(m_unpackExtendedDir) + 1);
 	}
 
 	m_postInfo->GetNzbInfo()->AddMessage(kind, msgText);

@@ -56,6 +56,7 @@ private:
 	CString m_destDir;
 	CString m_finalDir;
 	CString m_unpackDir;
+	CString m_unpackExtendedDir;
 	CString m_password;
 	CString m_waitingFile;
 	CString m_progressLabel;
@@ -67,6 +68,7 @@ private:
 	ArchiveList m_archives;
 	bool m_processed = false;
 	time_t m_extraStartTime = 0;
+	ArchiveList m_extractedArchives;
 
 	void CreateUnpackDir();
 	void FindArchiveFiles();

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,27 +65,29 @@ private:
 	CString m_destDir;
 	CString m_finalDir;
 	CString m_unpackDir;
+	CString m_unpackExtendedDir;
 	CString m_password;
-	bool m_interDir;
-	bool m_allOkMessageReceived;
-	bool m_noFilesMessageReceived;
-	bool m_hasParFiles;
-	bool m_hasRarFiles;
-	bool m_hasRenamedArchiveFiles;
-	bool m_hasSevenZipFiles;
-	bool m_hasSevenZipMultiFiles;
-	bool m_hasSplittedFiles;
-	bool m_unpackOk;
-	bool m_unpackStartError;
-	bool m_unpackSpaceError;
-	bool m_unpackDecryptError;
-	bool m_unpackPasswordError;
-	bool m_cleanedUpDisk;
-	bool m_autoTerminated;
 	EUnpacker m_unpacker;
-	bool m_finalDirCreated;
+	bool m_interDir = false;
+	bool m_allOkMessageReceived = false;
+	bool m_noFilesMessageReceived = false;
+	bool m_hasParFiles = false;
+	bool m_hasRarFiles = false;
+	bool m_hasUnpackedRarFiles = false;
+	bool m_hasRenamedArchiveFiles = false;
+	bool m_hasSevenZipFiles = false;
+	bool m_hasSevenZipMultiFiles = false;
+	bool m_hasSplittedFiles = false;
+	bool m_unpackOk = false;
+	bool m_unpackStartError = false;
+	bool m_unpackSpaceError = false;
+	bool m_unpackDecryptError = false;
+	bool m_unpackPasswordError = false;
+	bool m_cleanedUpDisk = false;
+	bool m_autoTerminated = false;
+	bool m_finalDirCreated = false;
+	bool m_passListTried = false;
 	FileList m_joinedFiles;
-	bool m_passListTried;
 
 	void ExecuteUnpack(EUnpacker unpacker, const char* password, bool multiVolumes);
 	void ExecuteUnrar(const char* password);
@@ -97,7 +99,6 @@ private:
 	void CreateUnpackDir();
 	bool Cleanup();
 	void CheckArchiveFiles();
-	bool CanUseDirectUnpacked();
 	void SetProgressLabel(const char* progressLabel);
 #ifndef DISABLE_PARCHECK
 	void RequestParCheck(bool forceRepair);
