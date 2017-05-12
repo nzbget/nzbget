@@ -219,7 +219,7 @@ var History = (new function($)
 		else
 		{
 			var info = '<div class="check img-check"></div><span class="row-title">' + name + '</span>' + dupe +
-				' ' + status + ' <span class="label">' + item.data.time + '</span>';
+				' ' + status + backup + ' <span class="label">' + item.data.time + '</span>';
 			if (category)
 			{
 				info += ' <span class="label label-status">' + category + '</span>';
