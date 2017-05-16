@@ -58,7 +58,6 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 		return;
 	}
 
-	info("DEBUG: Saving queue");
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
 		g_DiskState->SaveDownloadQueue(this, m_historyChanged);
