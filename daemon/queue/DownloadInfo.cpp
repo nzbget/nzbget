@@ -470,12 +470,19 @@ void NzbInfo::SetActiveDownloads(int activeDownloads)
 		if (activeDownloads > 0)
 		{
 			m_downloadStartTime = Util::CurrentTime();
+			m_downloadStartSec = m_downloadSec;
 		}
 		else
 		{
-			m_downloadSec += Util::CurrentTime() - m_downloadStartTime;
+			m_downloadSec = m_downloadStartSec + (Util::CurrentTime() - m_downloadStartTime);
 			m_downloadStartTime = 0;
+			m_changed = true;
 		}
+	}
+	else if (activeDownloads > 0)
+	{
+		m_downloadSec = m_downloadStartSec + (Util::CurrentTime() - m_downloadStartTime);
+		m_changed = true;
 	}
 	m_activeDownloads = activeDownloads;
 }

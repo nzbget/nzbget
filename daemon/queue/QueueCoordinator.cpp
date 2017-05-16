@@ -58,9 +58,15 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 		return;
 	}
 
+	info("DEBUG: Saving queue");
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
 		g_DiskState->SaveDownloadQueue(this, m_historyChanged);
+	}
+
+	for (NzbInfo* nzbInfo : GetQueue())
+	{
+		nzbInfo->SetChanged(false);
 	}
 
 	m_wantSave = false;
@@ -836,18 +842,28 @@ void QueueCoordinator::DiscardTempFiles(FileInfo* fileInfo)
 
 void QueueCoordinator::SaveAllPartialState()
 {
-	if (!(g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetContinuePartial()))
+	if (!(g_Options->GetServerMode() && g_Options->GetSaveQueue()))
 	{
 		return;
 	}
 
+	bool hasUnsavedData = false;
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
-		for (FileInfo* fileInfo : nzbInfo->GetFileList())
+		if (g_Options->GetContinuePartial())
 		{
-			SavePartialState(fileInfo);
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
+			{
+				SavePartialState(fileInfo);
+			}
 		}
+		hasUnsavedData |= nzbInfo->GetChanged();
+	}
+
+	if (hasUnsavedData)
+	{
+		downloadQueue->Save();
 	}
 }
 

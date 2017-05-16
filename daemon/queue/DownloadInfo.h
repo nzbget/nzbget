@@ -592,6 +592,8 @@ public:
 	void SetUnpackSec(int unpackSec) { m_unpackSec = unpackSec; }
 	time_t GetDownloadStartTime() { return m_downloadStartTime; }
 	void SetDownloadStartTime(time_t downloadStartTime) { m_downloadStartTime = downloadStartTime; }
+	bool GetChanged() { return m_changed; }
+	void SetChanged(bool changed) { m_changed = changed; }
 	void SetReprocess(bool reprocess) { m_reprocess = reprocess; }
 	bool GetReprocess() { return m_reprocess; }
 	time_t GetQueueScriptTime() { return m_queueScriptTime; }
@@ -701,12 +703,14 @@ private:
 	std::unique_ptr<PostInfo> m_postInfo;
 	int64 m_downloadedSize = 0;
 	time_t m_downloadStartTime = 0;
+	int m_downloadStartSec = 0;
 	int m_downloadSec = 0;
 	int m_postTotalSec = 0;
 	int m_parSec = 0;
 	int m_repairSec = 0;
 	int m_unpackSec = 0;
 	bool m_reprocess = false;
+	bool m_changed = false;
 	time_t m_queueScriptTime = 0;
 	bool m_parFull = false;
 	int m_messageCount = 0;
