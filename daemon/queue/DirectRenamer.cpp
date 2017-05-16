@@ -81,7 +81,8 @@ private:
 
 void DirectParLoader::StartLoader(DirectRenamer* owner, NzbInfo* nzbInfo)
 {
-	debug("Starting DirectParLoader for %s", nzbInfo->GetName());
+	nzbInfo->PrintMessage(Message::mkInfo, "Directly checking renamed files for %s", nzbInfo->GetName());
+
 	DirectParLoader* directParLoader = new DirectParLoader();
 	directParLoader->m_owner = owner;
 	directParLoader->m_nzbId = nzbInfo->GetId();
@@ -137,7 +138,7 @@ void DirectParLoader::LoadParFile(const char* parFile)
 		return;
 	}
 
-	nzbInfo->PrintMessage(Message::mkInfo, "Loaded par2-file %s for direct renaming", FileSystem::BaseFileName(parFile));
+	nzbInfo->PrintMessage(Message::mkInfo, "Loaded par2-file %s for direct-rename", FileSystem::BaseFileName(parFile));
 
 	for (std::pair<const Par2::MD5Hash, Par2::Par2RepairerSourceFile*>& entry : repairer.sourcefilemap)
 	{
@@ -256,7 +257,6 @@ void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		if (pos == nzbInfo->GetFileList()->end())
 		{
 			// all wanted par2-files are downloaded
-			detail("Loading par2-files for direct renaming");
 			nzbInfo->SetLoadingPar(true);
 			DirectParLoader::StartLoader(this, nzbInfo);
 			return;
@@ -332,6 +332,8 @@ void DirectRenamer::CollectPars(NzbInfo* nzbInfo, ParFileList* parFiles)
 
 void DirectRenamer::RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, FileHashList* parHashes)
 {
+	int renamedCount = 0;
+
 	bool renamePars = NeedRenamePars(nzbInfo);
 	int vol = 1;
 
@@ -358,11 +360,13 @@ void DirectRenamer::RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, 
 					fileInfo->GetFilename(), *newName);
 				fileInfo->SetFilename(newName);
 				fileInfo->SetFilenameConfirmed(true);
+				renamedCount++;
 			}
 			else if (RenameCompletedFile(nzbInfo, fileInfo->GetFilename(), newName))
 			{
 				fileInfo->SetFilename(newName);
 				fileInfo->SetFilenameConfirmed(true);
+				renamedCount++;
 			}
 		}
 	}
@@ -383,7 +387,17 @@ void DirectRenamer::RenameFiles(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, 
 		if (newName && RenameCompletedFile(nzbInfo, completedFile.GetFilename(), newName))
 		{
 			completedFile.SetFilename(newName);
+			renamedCount++;
 		}
+	}
+
+	if (renamedCount > 0)
+	{
+		nzbInfo->PrintMessage(Message::mkInfo, "Successfully renamed %i file(s) for %s", renamedCount, nzbInfo->GetName());
+	}
+	else
+	{
+		nzbInfo->PrintMessage(Message::mkInfo, "No renamed files found for %s", nzbInfo->GetName());
 	}
 
 	RenameCompleted(downloadQueue, nzbInfo);
