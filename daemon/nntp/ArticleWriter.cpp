@@ -84,7 +84,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 			}
 
 			if (!outputInitialized && filename &&
-				FileSystem::FileExists(m_fileInfo->GetNzbInfo()->GetDestDir(), filename))
+				FileSystem::FileExists(BString<1024>("%s%c%s", m_fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, filename)))
 			{
 				m_duplicate = true;
 				return false;

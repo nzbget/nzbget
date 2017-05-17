@@ -41,7 +41,6 @@ public:
 	static bool CopyFile(const char* srcFilename, const char* dstFilename);
 	static bool DeleteFile(const char* filename);
 	static bool FileExists(const char* filename);
-	static bool FileExists(const char* path, const char* filenameWithoutPath);
 	static bool DirectoryExists(const char* dirFilename);
 	static bool CreateDirectory(const char* dirFilename);
 	static bool RemoveDirectory(const char* dirFilename);

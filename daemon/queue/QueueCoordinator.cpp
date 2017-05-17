@@ -688,7 +688,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			if (g_Options->GetDupeCheck() &&
 				nzbInfo->GetDupeMode() != dmForce &&
 				!nzbInfo->GetManyDupeFiles() &&
-				FileSystem::FileExists(nzbInfo->GetDestDir(), fileInfo->GetFilename()))
+				FileSystem::FileExists(BString<1024>("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename())))
 			{
 				warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", fileInfo->GetFilename());
 				fileCompleted = false;

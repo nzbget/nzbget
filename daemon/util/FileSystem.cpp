@@ -527,13 +527,6 @@ bool FileSystem::FileExists(const char* filename)
 #endif
 }
 
-bool FileSystem::FileExists(const char* path, const char* filenameWithoutPath)
-{
-	BString<1024> fullFilename("%s%c%s", path, (int)PATH_SEPARATOR, filenameWithoutPath);
-	bool exists = FileExists(fullFilename);
-	return exists;
-}
-
 bool FileSystem::DirectoryExists(const char* dirFilename)
 {
 #ifdef WIN32
