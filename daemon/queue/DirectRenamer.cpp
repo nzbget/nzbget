@@ -455,7 +455,7 @@ CString DirectRenamer::BuildNewParName(const char* oldName, const char* destDir,
 bool DirectRenamer::NeedRenamePars(NzbInfo* nzbInfo)
 {
 	// renaming is needed if par2-files from same par-set have different base names
-	// or of any par2-file has non .par2-extension
+	// or if any par2-file has non .par2-extension
 	ParFileList parFiles;
 	CollectPars(nzbInfo, &parFiles);
 
@@ -466,20 +466,12 @@ bool DirectRenamer::NeedRenamePars(NzbInfo* nzbInfo)
 			return true;
 		}
 
-		int baseLen;
-		ParParser::ParseParFilename(parFile.GetFilename(), false, &baseLen, nullptr);
-		BString<1024> basename;
-		basename.Set(parFile.GetFilename(), baseLen);
-
 		for (ParFile& parFile2 : parFiles)
 		{
-			ParParser::ParseParFilename(parFile.GetFilename(), false, &baseLen, nullptr);
-			BString<1024> basename2;
-			basename2.Set(parFile2.GetFilename(), baseLen);
-
-			if (&parFile != &parFile2 && strcmp(basename, basename2))
+			if (&parFile != &parFile2 && !strcmp(parFile.GetSetId(), parFile2.GetSetId()) &&
+				!ParParser::SameParCollection(parFile.GetFilename(), parFile2.GetFilename(), false))
 			{
-				return true;
+					return true;
 			}
 		}
 	}
