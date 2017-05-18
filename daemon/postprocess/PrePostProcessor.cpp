@@ -416,7 +416,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 		// download was cancelled, deleting already downloaded files from disk
 		for (CompletedFile& completedFile: nzbInfo->GetCompletedFiles())
 		{
-			BString<1024> fullFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFilename());
+			BString<1024> fullFileName("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, completedFile.GetFilename());
 			if (FileSystem::FileExists(fullFileName))
 			{
 				detail("Deleting file %s", completedFile.GetFilename());

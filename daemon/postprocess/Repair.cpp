@@ -246,7 +246,7 @@ bool RepairController::AddPar(FileInfo* fileInfo, bool deleted)
 	bool sameCollection = fileInfo->GetNzbInfo() == m_parChecker.GetPostInfo()->GetNzbInfo();
 	if (sameCollection && !deleted)
 	{
-		BString<1024> fullFilename("%s%c%s", fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename());
+		BString<1024> fullFilename("%s%c%s", fileInfo->GetNzbInfo()->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename());
 		m_parChecker.AddParFile(fullFilename);
 	}
 	else
@@ -355,7 +355,7 @@ bool RepairController::RequestMorePars(NzbInfo* nzbInfo, const char* parFilename
 		{
 			if (blockInfo.m_fileInfo->GetPaused())
 			{
-				m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), (int)PATH_SEPARATOR, blockInfo.m_fileInfo->GetFilename());
+				m_parChecker.PrintMessage(Message::mkInfo, "Unpausing %s%c%s for par-recovery", nzbInfo->GetName(), PATH_SEPARATOR, blockInfo.m_fileInfo->GetFilename());
 				blockInfo.m_fileInfo->SetPaused(false);
 				blockInfo.m_fileInfo->SetExtraPriority(true);
 			}

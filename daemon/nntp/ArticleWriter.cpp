@@ -84,7 +84,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 			}
 
 			if (!outputInitialized && filename &&
-				FileSystem::FileExists(BString<1024>("%s%c%s", m_fileInfo->GetNzbInfo()->GetDestDir(), (int)PATH_SEPARATOR, filename)))
+				FileSystem::FileExists(BString<1024>("%s%c%s", m_fileInfo->GetNzbInfo()->GetDestDir(), PATH_SEPARATOR, filename)))
 			{
 				m_duplicate = true;
 				return false;
@@ -275,7 +275,7 @@ void ArticleWriter::BuildOutputFilename()
 		else
 		{
 			filename.Format("%s%c%i.out.tmp", m_fileInfo->GetNzbInfo()->GetDestDir(),
-				(int)PATH_SEPARATOR, m_fileInfo->GetId());
+				PATH_SEPARATOR, m_fileInfo->GetId());
 			m_fileInfo->SetOutputFilename(filename);
 		}
 
@@ -301,7 +301,7 @@ void ArticleWriter::CompleteFileParts()
 		filename = m_fileInfo->GetFilename();
 	}
 
-	BString<1024> infoFilename("%s%c%s", *nzbName, (int)PATH_SEPARATOR, *filename);
+	BString<1024> infoFilename("%s%c%s", *nzbName, PATH_SEPARATOR, *filename);
 
 	bool cached = m_fileInfo->GetCachedArticles() > 0;
 
@@ -445,7 +445,7 @@ void ArticleWriter::CompleteFileParts()
 			}
 			else if (!g_Options->GetDecode())
 			{
-				BString<1024> dstFileName("%s%c%03i", *ofn, (int)PATH_SEPARATOR, pa->GetPartNumber());
+				BString<1024> dstFileName("%s%c%03i", *ofn, PATH_SEPARATOR, pa->GetPartNumber());
 				if (!FileSystem::MoveFile(pa->GetResultFilename(), dstFileName))
 				{
 					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
@@ -525,7 +525,7 @@ void ArticleWriter::CompleteFileParts()
 
 		if (g_Options->GetBrokenLog())
 		{
-			BString<1024> brokenLogName("%s%c_brokenlog.txt", *nzbDestDir, (int)PATH_SEPARATOR);
+			BString<1024> brokenLogName("%s%c_brokenlog.txt", *nzbDestDir, PATH_SEPARATOR);
 			DiskFile file;
 			if (file.Open(brokenLogName, DiskFile::omAppend))
 			{
@@ -690,8 +690,8 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	// move already downloaded files to new destination
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		BString<1024> oldFileName("%s%c%s", oldDestDir, (int)PATH_SEPARATOR, completedFile.GetFilename());
-		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, completedFile.GetFilename());
+		BString<1024> oldFileName("%s%c%s", oldDestDir, PATH_SEPARATOR, completedFile.GetFilename());
+		BString<1024> newFileName("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, completedFile.GetFilename());
 
 		// check if file was not moved already
 		if (strcmp(oldFileName, newFileName))
@@ -711,10 +711,10 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 	// move brokenlog.txt
 	if (g_Options->GetBrokenLog())
 	{
-		BString<1024> oldBrokenLogName("%s%c_brokenlog.txt", oldDestDir, (int)PATH_SEPARATOR);
+		BString<1024> oldBrokenLogName("%s%c_brokenlog.txt", oldDestDir, PATH_SEPARATOR);
 		if (FileSystem::FileExists(oldBrokenLogName))
 		{
-			BString<1024> brokenLogName("%s%c_brokenlog.txt", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR);
+			BString<1024> brokenLogName("%s%c_brokenlog.txt", nzbInfo->GetDestDir(), PATH_SEPARATOR);
 
 			detail("Moving file %s to %s", *oldBrokenLogName, *brokenLogName);
 			if (FileSystem::FileExists(brokenLogName))
@@ -887,7 +887,7 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 				if (fileInfo->GetCachedArticles() > 0 && (fileInfo->GetActiveDownloads() == 0 || flushEverything))
 				{
 					m_fileInfo = fileInfo;
-					infoName.Format("%s%c%s", m_fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, m_fileInfo->GetFilename());
+					infoName.Format("%s%c%s", m_fileInfo->GetNzbInfo()->GetName(), PATH_SEPARATOR, m_fileInfo->GetFilename());
 					break;
 				}
 			}

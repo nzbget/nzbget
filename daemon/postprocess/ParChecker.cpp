@@ -408,14 +408,14 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 
 		if (!IsStopped())
 		{
-			BString<1024> fullParFilename( "%s%c%s", *m_destDir, (int)PATH_SEPARATOR, *parFilename);
+			BString<1024> fullParFilename( "%s%c%s", *m_destDir, PATH_SEPARATOR, *parFilename);
 
 			int baseLen = 0;
 			ParParser::ParseParFilename(parFilename, true, &baseLen, nullptr);
 			BString<1024> infoName;
 			infoName.Set(parFilename, baseLen);
 
-			BString<1024> parInfoName("%s%c%s", *m_nzbName, (int)PATH_SEPARATOR, *infoName);
+			BString<1024> parInfoName("%s%c%s", *m_nzbName, PATH_SEPARATOR, *infoName);
 			SetInfoName(parInfoName);
 
 			EStatus status = RunParCheck(fullParFilename);
@@ -1192,7 +1192,7 @@ void ParChecker::Cancel()
 
 void ParChecker::WriteBrokenLog(EStatus status)
 {
-	BString<1024> brokenLogName("%s%c_brokenlog.txt", *m_destDir, (int)PATH_SEPARATOR);
+	BString<1024> brokenLogName("%s%c_brokenlog.txt", *m_destDir, PATH_SEPARATOR);
 
 	if (status != psRepairNotNeeded || FileSystem::FileExists(brokenLogName))
 	{

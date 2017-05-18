@@ -738,7 +738,7 @@ void NCursesFrontend::PrintFilename(FileInfo * fileInfo, int row, bool selected)
 	BString<1024> nzbNiceName;
 	if (m_showNzbname)
 	{
-		nzbNiceName.Format("%s%c", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR);
+		nzbNiceName.Format("%s%c", fileInfo->GetNzbInfo()->GetName(), PATH_SEPARATOR);
 	}
 
 	BString<1024> text("%s%i%s%s%s %s%s (%s%s)%s", Brace1, fileInfo->GetId(),

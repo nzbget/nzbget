@@ -417,7 +417,7 @@ CString FileSystem::MakeValidFilename(const char* filename, bool allowSlashes)
 CString FileSystem::MakeUniqueFilename(const char* destDir, const char* basename)
 {
 	CString result;
-	result.Format("%s%c%s", destDir, (int)PATH_SEPARATOR, basename);
+	result.Format("%s%c%s", destDir, PATH_SEPARATOR, basename);
 
 	int dupeNumber = 0;
 	while (FileExists(result))
@@ -442,12 +442,12 @@ CString FileSystem::MakeUniqueFilename(const char* destDir, const char* basename
 				}
 			}
 
-			result.Format("%s%c%s.duplicate%d%s", destDir, (int)PATH_SEPARATOR,
+			result.Format("%s%c%s.duplicate%d%s", destDir, PATH_SEPARATOR,
 				*filenameWithoutExt, dupeNumber, extension);
 		}
 		else
 		{
-			result.Format("%s%c%s.duplicate%d", destDir, (int)PATH_SEPARATOR,
+			result.Format("%s%c%s.duplicate%d", destDir, PATH_SEPARATOR,
 				basename, dupeNumber);
 		}
 	}
@@ -992,7 +992,7 @@ CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)
 #ifdef WIN32
 DirBrowser::DirBrowser(const char* path)
 {
-	BString<1024> mask("%s%c*.*", path, (int)PATH_SEPARATOR);
+	BString<1024> mask("%s%c*.*", path, PATH_SEPARATOR);
 	m_file = FindFirstFileW(FileSystem::UtfPathToWidePath(mask), &m_findData);
 	m_first = true;
 }

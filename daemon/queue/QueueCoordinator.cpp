@@ -587,7 +587,7 @@ void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* art
 		articleDownloader->SetContentAnalyzer(m_directRenamer.MakeArticleContentAnalyzer());
 	}
 
-	BString<1024> infoName("%s%c%s [%i/%i]", fileInfo->GetNzbInfo()->GetName(), (int)PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
+	BString<1024> infoName("%s%c%s [%i/%i]", fileInfo->GetNzbInfo()->GetName(), PATH_SEPARATOR, fileInfo->GetFilename(), articleInfo->GetPartNumber(), (int)fileInfo->GetArticles()->size());
 	articleDownloader->SetInfoName(infoName);
 
 	articleInfo->SetStatus(ArticleInfo::aiRunning);
@@ -688,7 +688,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			if (g_Options->GetDupeCheck() &&
 				nzbInfo->GetDupeMode() != dmForce &&
 				!nzbInfo->GetManyDupeFiles() &&
-				FileSystem::FileExists(BString<1024>("%s%c%s", nzbInfo->GetDestDir(), (int)PATH_SEPARATOR, fileInfo->GetFilename())))
+				FileSystem::FileExists(BString<1024>("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, fileInfo->GetFilename())))
 			{
 				warn("File \"%s\" seems to be duplicate, cancelling download and deleting file from queue", fileInfo->GetFilename());
 				fileCompleted = false;
