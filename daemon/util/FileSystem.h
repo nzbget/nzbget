@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,7 +43,13 @@ public:
 	static bool FileExists(const char* filename);
 	static bool DirectoryExists(const char* dirFilename);
 	static bool CreateDirectory(const char* dirFilename);
+
+	/* Delete empty directory */
 	static bool RemoveDirectory(const char* dirFilename);
+
+	/* Delete directory which is empty or contains only hidden files or directories */
+	static bool DeleteDirectory(const char* dirFilename);
+
 	static bool DeleteDirectoryWithContent(const char* dirFilename, CString& errmsg);
 	static bool ForceDirectories(const char* path, CString& errmsg);
 	static CString GetCurrentDirectory();

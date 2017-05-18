@@ -731,7 +731,7 @@ bool UnpackController::Cleanup()
 
 	if (!m_unpackOk && m_finalDirCreated)
 	{
-		FileSystem::RemoveDirectory(m_finalDir);
+		FileSystem::DeleteDirectory(m_finalDir);
 	}
 
 	if (m_unpackOk && ok && g_Options->GetUnpackCleanupDisk())

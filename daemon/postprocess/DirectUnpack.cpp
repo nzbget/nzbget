@@ -493,7 +493,7 @@ void DirectUnpack::Cleanup()
 
 	if (m_finalDirCreated)
 	{
-		FileSystem::RemoveDirectory(m_finalDir);
+		FileSystem::DeleteDirectory(m_finalDir);
 	}
 }
 

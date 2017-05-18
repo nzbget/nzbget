@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -571,6 +571,37 @@ bool FileSystem::RemoveDirectory(const char* dirFilename)
 #else
 	return rmdir(dirFilename) == 0;
 #endif
+}
+
+/* Delete directory which is empty or contains only hidden files or directories (whose names start with dot) */
+bool FileSystem::DeleteDirectory(const char* dirFilename)
+{
+	if (RemoveDirectory(dirFilename))
+	{
+		return true;
+	}
+
+	// check if directory contains only hidden files (whose names start with dot)
+	{
+		DirBrowser dir(dirFilename);
+		while (const char* filename = dir.Next())
+		{
+			if (*filename != '.')
+			{
+				// calling RemoveDirectory to set correct errno
+				return RemoveDirectory(dirFilename);
+			}
+		}
+	} // make sure "DirBrowser dir" is destroyed (and has closed its handle) before we trying to delete the directory
+
+	CString errmsg;
+	if (!DeleteDirectoryWithContent(dirFilename, errmsg))
+	{
+		// calling RemoveDirectory to set correct errno
+		return RemoveDirectory(dirFilename);
+	}
+
+	return true;
 }
 
 bool FileSystem::DeleteDirectoryWithContent(const char* dirFilename, CString& errmsg)

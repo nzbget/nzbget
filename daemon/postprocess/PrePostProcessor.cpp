@@ -438,10 +438,7 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 		}
 
 		// delete old directory (if empty)
-		if (FileSystem::DirEmpty(nzbInfo->GetDestDir()))
-		{
-			FileSystem::RemoveDirectory(nzbInfo->GetDestDir());
-		}
+		FileSystem::DeleteDirectory(nzbInfo->GetDestDir());
 	}
 }
 
