@@ -142,12 +142,15 @@ for TARGET in $TARGETS; do
         unrar)
             tar xzf unrarsrc-*.tar.gz
             cd unrar
-            sed 's:^CXX=g++:#CXX=g++:' -i makefile
+            sed 's:^CXX=:#CXX=:' -i makefile
             sed 's:^STRIP=strip:#STRIP=strip:' -i makefile
             sed 's:^LDFLAGS=:LDFLAGS=-static :' -i makefile
             sed 's:^CXXFLAGS=-O2:#CXXFLAGS=-O2:' -i makefile
-            if test "$ENDIAN" = "big"; then
+            if [ "$ENDIAN" = "big" ]; then
                 sed 's:^DEFINES=:DEFINES=-DBIG_ENDIAN :' -i makefile
+            fi
+            if [ "$PLATSUFF" != "-bsd" ]; then
+                sed 's:^DEFINES=:DEFINES=-DUSE_FALLOCATE :' -i makefile
             fi
 
             EXEDIR=
