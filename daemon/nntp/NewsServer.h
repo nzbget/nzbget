@@ -32,7 +32,7 @@
 class NewsServer
 {
 public:
-	NewsServer(int id, bool active, const char* name, const char* host, int port,
+	NewsServer(int id, bool active, const char* name, const char* host, int port, int ipVersion,
 		const char* user, const char* pass, bool joinGroup,
 		bool tls, const char* cipher, int maxConnections, int retention,
 		int level, int group, bool optional);
@@ -45,6 +45,7 @@ public:
 	int GetGroup() { return m_group; }
 	const char* GetHost() { return m_host; }
 	int GetPort() { return m_port; }
+	int GetIpVersion() { return m_ipVersion; }
 	const char* GetUser() { return m_user; }
 	const char* GetPassword() { return m_password; }
 	int GetMaxConnections() { return m_maxConnections; }
@@ -67,6 +68,7 @@ private:
 	int m_group;
 	CString m_host;
 	int m_port;
+	int m_ipVersion;
 	CString m_user;
 	CString m_password;
 	int m_maxConnections;

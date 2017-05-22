@@ -117,7 +117,6 @@ void Connection::Final()
 
 Connection::Connection(const char* host, int port, bool tls) :
 	m_host(host), m_port(port), m_tls(tls)
-
 {
 	debug("Creating Connection");
 
@@ -214,7 +213,7 @@ bool Connection::Bind()
 	struct addrinfo addr_hints, *addr_list, *addr;
 
 	memset(&addr_hints, 0, sizeof(addr_hints));
-	addr_hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
+	addr_hints.ai_family = m_ipVersion == ipV4 ? AF_INET : m_ipVersion == ipV6 ? AF_INET6 : AF_UNSPEC;
 	addr_hints.ai_socktype = SOCK_STREAM,
 	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
 
@@ -518,7 +517,7 @@ bool Connection::DoConnect()
 	struct addrinfo addr_hints, *addr_list, *addr;
 
 	memset(&addr_hints, 0, sizeof(addr_hints));
-	addr_hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	addr_hints.ai_family = m_ipVersion == ipV4 ? AF_INET : m_ipVersion == ipV6 ? AF_INET6 : AF_UNSPEC;
 	addr_hints.ai_socktype = SOCK_STREAM;
 
 	BString<100> portStr("%d", m_port);

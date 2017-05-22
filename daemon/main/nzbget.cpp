@@ -175,7 +175,7 @@ public:
 
 	// Options::Extender
 	virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
-		int port, const char* user, const char* pass, bool joinGroup,
+		int port, int ipVersion, const char* user, const char* pass, bool joinGroup,
 		bool tls, const char* cipher, int maxConnections, int retention,
 		int level, int group, bool optional);
 	virtual void AddFeed(int id, const char* name, const char* url, int interval,
@@ -950,10 +950,10 @@ void NZBGet::Daemonize()
 #endif
 
 void NZBGet::AddNewsServer(int id, bool active, const char* name, const char* host,
-	int port, const char* user, const char* pass, bool joinGroup, bool tls,
+	int port, int ipVersion, const char* user, const char* pass, bool joinGroup, bool tls,
 	const char* cipher, int maxConnections, int retention, int level, int group, bool optional)
 {
-	m_serverPool->AddServer(std::make_unique<NewsServer>(id, active, name, host, port, user, pass, joinGroup,
+	m_serverPool->AddServer(std::make_unique<NewsServer>(id, active, name, host, port, ipVersion, user, pass, joinGroup,
 		tls, cipher, maxConnections, retention, level, group, optional));
 }
 

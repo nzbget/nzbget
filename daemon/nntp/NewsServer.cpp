@@ -22,10 +22,10 @@
 #include "nzbget.h"
 #include "NewsServer.h"
 
-NewsServer::NewsServer(int id, bool active, const char* name, const char* host, int port,
+NewsServer::NewsServer(int id, bool active, const char* name, const char* host, int port, int ipVersion,
 	const char* user, const char* pass, bool joinGroup, bool tls, const char* cipher,
 	int maxConnections, int retention, int level, int group, bool optional) :
-		m_id(id), m_active(active), m_port(port), m_level(level), m_normLevel(level),
+		m_id(id), m_active(active), m_port(port), m_ipVersion(ipVersion), m_level(level), m_normLevel(level),
 		m_group(group), m_maxConnections(maxConnections), m_joinGroup(joinGroup), m_tls(tls),
 		m_name(name), m_host(host ? host : ""), m_user(user ? user : ""), m_password(pass ? pass : ""),
 		m_cipher(cipher ? cipher : ""), m_retention(retention), m_optional(optional)

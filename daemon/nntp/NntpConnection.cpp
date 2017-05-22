@@ -27,10 +27,13 @@
 
 static const int CONNECTION_LINEBUFFER_SIZE = 1024*10;
 
-NntpConnection::NntpConnection(NewsServer* newsServer) : Connection(newsServer->GetHost(), newsServer->GetPort(), newsServer->GetTls()), m_newsServer(newsServer)
+NntpConnection::NntpConnection(NewsServer* newsServer) :
+	Connection(newsServer->GetHost(), newsServer->GetPort(), newsServer->GetTls()), m_newsServer(newsServer)
 {
 	m_lineBuf.Reserve(CONNECTION_LINEBUFFER_SIZE);
 	SetCipher(newsServer->GetCipher());
+	SetIPVersion(newsServer->GetIpVersion() == 4 ? Connection::ipV4 :
+		newsServer->GetIpVersion() == 6 ? Connection::ipV6 : Connection::ipAuto);
 }
 
 const char* NntpConnection::Request(const char* req)

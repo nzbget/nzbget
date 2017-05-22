@@ -1007,6 +1007,16 @@ void Options::InitServers()
 			m_tls |= tls;
 		}
 
+		const char* nipversion = GetOption(BString<100>("Server%i.IpVersion", n));
+		int ipversion = 0;
+		if (nipversion)
+		{
+			const char* IpVersionNames[] = {"auto", "ipv4", "ipv6"};
+			const int IpVersionValues[] = {0, 4, 6};
+			const int IpVersionCount = 3;
+			ipversion = ParseEnumValue(BString<100>("Server%i.IpVersion", n), IpVersionCount, IpVersionNames, IpVersionValues);
+		}
+
 		const char* ncipher = GetOption(BString<100>("Server%i.Cipher", n));
 		const char* nconnections = GetOption(BString<100>("Server%i.Connections", n));
 		const char* nretention = GetOption(BString<100>("Server%i.Retention", n));
@@ -1027,6 +1037,7 @@ void Options::InitServers()
 				m_extender->AddNewsServer(n, active, nname,
 					nhost,
 					nport ? atoi(nport) : 119,
+					ipversion,
 					nusername, npassword,
 					joinGroup, tls, ncipher,
 					nconnections ? atoi(nconnections) : 1,
@@ -1524,7 +1535,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections") ||
 			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group") ||
 			!strcasecmp(p, ".retention") || !strcasecmp(p, ".optional") ||
-			!strcasecmp(p, ".notes")))
+			!strcasecmp(p, ".notes") || !strcasecmp(p, ".ipversion")))
 		{
 			return true;
 		}

@@ -167,7 +167,7 @@ public:
 	{
 	public:
 		virtual void AddNewsServer(int id, bool active, const char* name, const char* host,
-			int port, const char* user, const char* pass, bool joinGroup,
+			int port, int ipVersion, const char* user, const char* pass, bool joinGroup,
 			bool tls, const char* cipher, int maxConnections, int retention,
 			int level, int group, bool optional) = 0;
 		virtual void AddFeed(int id, const char* name, const char* url, int interval,

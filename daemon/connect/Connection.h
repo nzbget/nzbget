@@ -44,6 +44,13 @@ public:
 		csCancelled
 	};
 
+	enum EIPVersion
+	{
+		ipAuto,
+		ipV4,
+		ipV6
+	};
+
 	Connection(const char* host, int port, bool tls);
 	Connection(SOCKET socket, bool tls);
 	virtual ~Connection();
@@ -65,6 +72,7 @@ public:
 	const char* GetCipher() { return m_cipher; }
 	void SetCipher(const char* cipher) { m_cipher = cipher; }
 	void SetTimeout(int timeout) { m_timeout = timeout; }
+	void SetIPVersion(EIPVersion ipVersion) { m_ipVersion = ipVersion; }
 	EStatus GetStatus() { return m_status; }
 	void SetSuppressErrors(bool suppressErrors);
 	bool GetSuppressErrors() { return m_suppressErrors; }
@@ -80,6 +88,7 @@ protected:
 	CString m_host;
 	int m_port;
 	bool m_tls;
+	EIPVersion m_ipVersion = ipAuto;
 	SOCKET m_socket = INVALID_SOCKET;
 	CString m_cipher;
 	CharBuffer m_readBuf;
