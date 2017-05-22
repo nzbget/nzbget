@@ -945,7 +945,8 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 
 	if (g_Options->GetDirectUnpack())
 	{
-		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone)
+		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone &&
+			nzbInfo->GetDirectRenameStatus() != NzbInfo::tsRunning)
 		{
 			NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
 			bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
