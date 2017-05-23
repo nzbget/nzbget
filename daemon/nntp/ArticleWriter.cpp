@@ -609,6 +609,9 @@ void ArticleWriter::FlushCache()
 					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 						"Could not open file %s: %s", m_fileInfo->GetOutputFilename(),
 						*FileSystem::GetLastErrorMessage());
+					// prevent multiple error messages
+					pa->DiscardSegment();
+					flushedArticles++;
 					break;
 				}
 				needBufFile = true;
@@ -624,6 +627,9 @@ void ArticleWriter::FlushCache()
 					m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
 						"Could not create file %s: %s", *destFile,
 						*FileSystem::GetLastErrorMessage());
+					// prevent multiple error messages
+					pa->DiscardSegment();
+					flushedArticles++;
 					break;
 				}
 				needBufFile = true;
