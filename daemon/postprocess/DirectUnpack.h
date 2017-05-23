@@ -67,6 +67,7 @@ private:
 	Mutex m_volumeMutex;
 	ArchiveList m_archives;
 	bool m_processed = false;
+	bool m_unpacking = false;
 	time_t m_extraStartTime = 0;
 	ArchiveList m_extractedArchives;
 

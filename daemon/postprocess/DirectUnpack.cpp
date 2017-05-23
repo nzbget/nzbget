@@ -192,7 +192,9 @@ void DirectUnpack::ExecuteUnrar(const char* archiveName)
 	m_allOkMessageReceived = false;
 
 	SetNeedWrite(true);
+	m_unpacking = true;
 	int exitCode = Execute();
+	m_unpacking = false;
 	SetLogPrefix(nullptr);
 
 	m_unpackOk = exitCode == 0 && m_allOkMessageReceived && !GetTerminated();
@@ -388,17 +390,23 @@ void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 void DirectUnpack::Stop(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
 	debug("Stopping direct unpack for %s", *m_infoName);
-	if (nzbInfo)
+	if (m_processed)
 	{
-		nzbInfo->AddMessage(Message::mkWarning, BString<1024>("Cancelling %s", *m_infoName));
-	}
-	else
-	{
-		warn("Cancelling %s", *m_infoName);
+		if (nzbInfo)
+		{
+			nzbInfo->AddMessage(Message::mkWarning, BString<1024>("Cancelling %s", *m_infoName));
+		}
+		else
+		{
+			warn("Cancelling %s", *m_infoName);
+		}
 	}
 	AddExtraTime(nzbInfo);
 	Thread::Stop();
-	Terminate();
+	if (m_unpacking)
+	{
+		Terminate();
+	}
 }
 
 void DirectUnpack::WaitNextVolume(const char* filename)
