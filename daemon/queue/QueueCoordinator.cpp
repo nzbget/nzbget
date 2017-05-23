@@ -809,6 +809,12 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 		m_directRenamer.FileDownloaded(downloadQueue, fileInfo);
 	}
 
+	if (nzbInfo->GetDirectRenameStatus() == NzbInfo::tsRunning &&
+		!nzbInfo->GetDeleting() && nzbInfo->IsDownloadCompleted(true))
+	{
+		DiscardDirectRename(downloadQueue, nzbInfo);
+	}
+
 	std::unique_ptr<FileInfo> srcFileInfo = nzbInfo->GetFileList()->Remove(fileInfo);
 
 	DownloadQueue::Aspect aspect = { completed && !fileDeleted ?
@@ -1284,9 +1290,6 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* downloadQueue, RawFileLi
 
 void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
-	int64 discardedSize = 0;
-	int discardedCount = 0;
-
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
 		if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && !fileInfo->GetArticles()->empty())
@@ -1294,7 +1297,37 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 			// save new file name into disk state file
 			g_DiskState->SaveFile(fileInfo);
 		}
+	}
 
+	DiscardDirectRename(downloadQueue, nzbInfo);
+
+	nzbInfo->SetDirectRenameStatus(NzbInfo::tsSuccess);
+
+	if (g_Options->GetParCheck() != Options::pcForce)
+	{
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupResume, nullptr);
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupPauseAllPars, nullptr);
+	}
+
+	if (g_Options->GetReorderFiles())
+	{
+		nzbInfo->PrintMessage(Message::mkInfo, "Reordering files for %s", nzbInfo->GetName());
+		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupSortFiles, nullptr);
+	}
+
+	downloadQueue->Save();
+
+	DownloadQueue::Aspect namedAspect = { DownloadQueue::eaNzbNamed, downloadQueue, nzbInfo, nullptr };
+	downloadQueue->Notify(&namedAspect);
+}
+
+void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
+{
+	int64 discardedSize = 0;
+	int discardedCount = 0;
+
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
+	{
 		if (fileInfo->GetParFile() && fileInfo->GetCompletedArticles() == 1 && fileInfo->GetActiveDownloads() == 0)
 		{
 			// discard downloaded articles from partially downloaded par-files
@@ -1360,23 +1393,4 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 		nzbInfo->PrintMessage(Message::mkDetail, "Discarded %s from %i files used for direct renaming",
 			*Util::FormatSize(discardedSize), discardedCount);
 	}
-
-	nzbInfo->SetDirectRenameStatus(NzbInfo::tsSuccess);
-
-	if (g_Options->GetParCheck() != Options::pcForce)
-	{
-		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupResume, nullptr);
-		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupPauseAllPars, nullptr);
-	}
-
-	if (g_Options->GetReorderFiles())
-	{
-		nzbInfo->PrintMessage(Message::mkInfo, "Reordering files for %s", nzbInfo->GetName());
-		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupSortFiles, nullptr);
-	}
-
-	downloadQueue->Save();
-
-	DownloadQueue::Aspect namedAspect = { DownloadQueue::eaNzbNamed, downloadQueue, nzbInfo, nullptr };
-	downloadQueue->Notify(&namedAspect);
 }

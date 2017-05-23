@@ -247,7 +247,7 @@ void PrePostProcessor::DownloadQueueUpdate(void* aspect)
 			 queueAspect->fileInfo->GetDupeDeleted()) &&
 			queueAspect->fileInfo->GetNzbInfo()->GetDeleteStatus() != NzbInfo::dsHealth &&
 			!queueAspect->nzbInfo->GetPostInfo() &&
-			IsNzbFileCompleted(queueAspect->nzbInfo, true))
+			queueAspect->nzbInfo->IsDownloadCompleted(true))
 		{
 			queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
 				"Collection %s completely downloaded", queueAspect->nzbInfo->GetName());
@@ -258,7 +258,7 @@ void PrePostProcessor::DownloadQueueUpdate(void* aspect)
 			(queueAspect->action == DownloadQueue::eaFileCompleted &&
 			 queueAspect->fileInfo->GetNzbInfo()->GetDeleteStatus() > NzbInfo::dsNone)) &&
 			!queueAspect->nzbInfo->GetPostInfo() &&
-			IsNzbFileCompleted(queueAspect->nzbInfo, false))
+			queueAspect->nzbInfo->IsDownloadCompleted(false))
 		{
 			queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
 				"Collection %s deleted from queue", queueAspect->nzbInfo->GetName());
@@ -574,7 +574,7 @@ NzbInfo* PrePostProcessor::PickNextJob(DownloadQueue* downloadQueue, bool allowP
 			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()) &&
 			(allowPar || !nzbInfo1->GetPostInfo()->GetNeedParCheck()) &&
 			(std::find(m_activeJobs.begin(), m_activeJobs.end(), nzbInfo1) == m_activeJobs.end()) &&
-			IsNzbFileCompleted(nzbInfo1, true))
+			nzbInfo1->IsDownloadCompleted(true))
 		{
 			nzbInfo = nzbInfo1;
 		}
@@ -790,31 +790,12 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 
 	nzbInfo->LeavePostProcess();
 
-	if (IsNzbFileCompleted(nzbInfo, true))
+	if (nzbInfo->IsDownloadCompleted(true))
 	{
 		NzbCompleted(downloadQueue, nzbInfo, false);
 	}
 
 	m_queuedJobs--;
-}
-
-bool PrePostProcessor::IsNzbFileCompleted(NzbInfo* nzbInfo, bool ignorePausedPars)
-{
-	if (nzbInfo->GetActiveDownloads())
-	{
-		return false;
-	}
-
-	for (FileInfo* fileInfo : nzbInfo->GetFileList())
-	{
-		if ((!fileInfo->GetPaused() || !ignorePausedPars || !fileInfo->GetParFile()) &&
-			!fileInfo->GetDeleted())
-		{
-			return false;
-		}
-	}
-
-	return true;
 }
 
 void PrePostProcessor::UpdatePauseState()
@@ -945,8 +926,7 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 
 	if (g_Options->GetDirectUnpack())
 	{
-		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone &&
-			nzbInfo->GetDirectRenameStatus() != NzbInfo::tsRunning)
+		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone)
 		{
 			NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
 			bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));

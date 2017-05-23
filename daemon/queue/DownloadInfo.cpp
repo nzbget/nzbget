@@ -732,6 +732,24 @@ void NzbInfo::UpdateDeletedStats(FileInfo* fileInfo)
 	m_currentServerStats.ListOp(fileInfo->GetServerStats(), ServerStatList::soSubtract);
 }
 
+bool NzbInfo::IsDownloadCompleted(bool ignorePausedPars)
+{
+	if (m_activeDownloads)
+	{
+		return false;
+	}
+
+	for (FileInfo* fileInfo : &m_fileList)
+	{
+		if ((!fileInfo->GetPaused() || !ignorePausedPars || !fileInfo->GetParFile()) &&
+			!fileInfo->GetDeleted())
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
 
 void ArticleInfo::AttachSegment(std::unique_ptr<SegmentData> content, int64 offset, int size)
 {

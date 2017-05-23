@@ -101,6 +101,7 @@ private:
 	void DeleteDownloader(DownloadQueue* downloadQueue, ArticleDownloader* articleDownloader, bool fileCompleted);
 	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
 	void DirectRenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void ResetHangingDownloads();
 	void AdjustDownloadsLimit();

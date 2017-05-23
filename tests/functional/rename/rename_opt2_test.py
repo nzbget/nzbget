@@ -57,3 +57,21 @@ def test_rename_obf3dmf2(nserv, nzbget):
 	nzb_content = nzb_content.replace('abc.00?1=0:4704', 'abc.00?1=0:4704!0')
 	hist = nzbget.download_nzb('obfuscated3-damaged-first2.nzb', nzb_content, unpack=True)
 	assert hist['Status'] == 'SUCCESS/UNPACK'
+
+def test_parchecker_healthy(nserv, nzbget):
+	hist = nzbget.download_nzb('parchecker.nzb')
+	assert hist['Status'] == 'SUCCESS/HEALTH'
+
+def test_parchecker_repair(nserv, nzbget):
+	nzb_content = nzbget.load_nzb('parchecker.nzb')
+	nzb_content = nzb_content.replace('parchecker/testfile.dat?1=0:3000', 'parchecker/testfile.dat?1=0:3000!0')
+	hist = nzbget.download_nzb('parchecker.repair.nzb', nzb_content)
+	assert hist['Status'] == 'SUCCESS/PAR'
+
+def test_parchecker_damagedpar(nserv, nzbget):
+	nzb_content = nzbget.load_nzb('parchecker.nzb')
+	nzb_content = nzb_content.replace('parchecker/testfile.par2?1=0:3000', 'parchecker/testfile.par2?1=0:3000!0')
+	hist = nzbget.download_nzb('parchecker.damagedpar.nzb', nzb_content)
+	assert hist['Status'] == 'SUCCESS/HEALTH'
+	for entry in nzbget.api.loadlog(hist['ID'], 0, 10000):
+		assert entry['Kind'] != 'ERROR', entry['Text']

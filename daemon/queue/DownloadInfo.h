@@ -626,6 +626,7 @@ public:
 	void UpdateCurrentStats();
 	void UpdateCompletedStats(FileInfo* fileInfo);
 	void UpdateDeletedStats(FileInfo* fileInfo);
+	bool IsDownloadCompleted(bool ignorePausedPars);
 
 	static const int FORCE_PRIORITY = 900;
 
