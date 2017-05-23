@@ -223,17 +223,22 @@ void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		return;
 	}
 
-	// check if all first articles are downloaded
-	FileList::iterator pos = std::find_if(
-		nzbInfo->GetFileList()->begin(), nzbInfo->GetFileList()->end(),
-		[](std::unique_ptr<FileInfo>& fileInfo)
-		{
-			return Util::EmptyStr(fileInfo->GetHash16k());
-		});
-
-	if (pos != nzbInfo->GetFileList()->end())
+	// check if all first articles are successfully downloaded (1)
+	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		return;
+		if (Util::EmptyStr(fileInfo->GetHash16k()))
+		{
+			return;
+		}
+	}
+
+	// check if all first articles are successfully downloaded (2)
+	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
+	{
+		if (Util::EmptyStr(completedFile.GetHash16k()))
+		{
+			return;
+		}
 	}
 
 	if (!nzbInfo->GetWaitingPar())

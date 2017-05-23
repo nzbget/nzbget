@@ -1,4 +1,4 @@
-nzbget_options = ['ParRename=no', 'RarRename=no', 'ParCheck=auto', 'DirectRename=yes']
+nzbget_options = ['ParRename=yes', 'RarRename=yes', 'ParCheck=auto', 'DirectRename=yes']
 
 def test_rename_obf1(nserv, nzbget):
 	hist = nzbget.download_nzb('obfuscated1.nzb', unpack=True)
@@ -62,9 +62,9 @@ def test_rename_obf3dmf2(nserv, nzbget):
 	nzb_content = nzb_content.replace('abc.01?11=0:100000', 'abc.01?11=0:100000!0')
 	nzb_content = nzb_content.replace('abc.00?1=0:4704', 'abc.00?1=0:4704!0')
 	hist = nzbget.download_nzb('obfuscated3-damaged-first2.nzb', nzb_content, unpack=True)
-	assert hist['Status'] == 'WARNING/HEALTH'
+	assert hist['Status'] == 'SUCCESS/UNPACK'
 
-def test_renameparchecker_healthy(nserv, nzbget):
+def test_parchecker_healthy(nserv, nzbget):
 	hist = nzbget.download_nzb('parchecker.nzb')
 	assert hist['Status'] == 'SUCCESS/HEALTH'
 
