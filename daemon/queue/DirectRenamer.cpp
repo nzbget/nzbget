@@ -226,7 +226,8 @@ void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	// check if all first articles are successfully downloaded (1)
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		if (Util::EmptyStr(fileInfo->GetHash16k()))
+		if (Util::EmptyStr(fileInfo->GetHash16k()) ||
+			(fileInfo->GetParFile() && Util::EmptyStr(fileInfo->GetParSetId())))
 		{
 			return;
 		}
@@ -235,7 +236,8 @@ void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 	// check if all first articles are successfully downloaded (2)
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		if (Util::EmptyStr(completedFile.GetHash16k()))
+		if (Util::EmptyStr(completedFile.GetHash16k()) ||
+			(completedFile.GetParFile() && Util::EmptyStr(completedFile.GetParSetId())))
 		{
 			return;
 		}
@@ -510,14 +512,11 @@ void RenameContentAnalyzer::Reset()
 void RenameContentAnalyzer::Append(const void* buffer, int len)
 {
 #ifndef DISABLE_PARCHECK
-	if (m_dataSize == 0 && len >= sizeof(Par2::packet_magic) &&
+	if (m_dataSize == 0 && len >= sizeof(Par2::PACKET_HEADER) &&
 		(*(Par2::MAGIC*)buffer) == Par2::packet_magic)
 	{
 		m_parFile = true;
-		if (len >= sizeof(Par2::PACKET_HEADER))
-		{
-			m_parSetId = ((Par2::PACKET_HEADER*)buffer)->setid.print().c_str();
-		}
+		m_parSetId = ((Par2::PACKET_HEADER*)buffer)->setid.print().c_str();
 	}
 
 	int rem16kSize = std::min(len, 16 * 1024 - m_dataSize);
