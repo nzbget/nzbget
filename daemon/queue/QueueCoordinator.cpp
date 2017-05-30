@@ -582,7 +582,7 @@ void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* art
 	articleDownloader->SetArticleInfo(articleInfo);
 	articleDownloader->SetConnection(connection);
 
-	if (articleInfo->GetPartNumber() == 1 && g_Options->GetDirectRename())
+	if (articleInfo->GetPartNumber() == 1 && g_Options->GetDirectRename() && g_Options->GetDecode())
 	{
 		articleDownloader->SetContentAnalyzer(m_directRenamer.MakeArticleContentAnalyzer());
 	}
