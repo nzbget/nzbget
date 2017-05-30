@@ -924,7 +924,7 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 		g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeFileDownloaded);
 	}
 
-	if (g_Options->GetDirectUnpack())
+	if (g_Options->GetDirectUnpack() && g_Options->GetDecode())
 	{
 		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone)
 		{
