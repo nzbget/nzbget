@@ -43,6 +43,8 @@ public:
 private:
 #ifndef DISABLE_PARCHECK
 	Par2::MD5Context m_md5Context;
+	char m_signature[sizeof(Par2::PACKET_HEADER)];
+	int m_sigLength = 0;
 #endif
 	int m_dataSize = 0;
 	CString m_hash16k;
@@ -512,11 +514,15 @@ void RenameContentAnalyzer::Reset()
 void RenameContentAnalyzer::Append(const void* buffer, int len)
 {
 #ifndef DISABLE_PARCHECK
-	if (m_dataSize == 0 && len >= sizeof(Par2::PACKET_HEADER) &&
-		(*(Par2::MAGIC*)buffer) == Par2::packet_magic)
+	if (m_dataSize < sizeof(m_signature))
+	{
+		memcpy(m_signature + m_dataSize, buffer, std::min((size_t)len, sizeof(m_signature) - m_dataSize));
+	}
+
+	if (m_dataSize >= sizeof(m_signature) && (*(Par2::MAGIC*)m_signature) == Par2::packet_magic)
 	{
 		m_parFile = true;
-		m_parSetId = ((Par2::PACKET_HEADER*)buffer)->setid.print().c_str();
+		m_parSetId = ((Par2::PACKET_HEADER*)m_signature)->setid.print().c_str();
 	}
 
 	int rem16kSize = std::min(len, 16 * 1024 - m_dataSize);
