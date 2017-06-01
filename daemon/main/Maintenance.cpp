@@ -373,7 +373,7 @@ bool Signature::ReadSignature()
 			{
 				hexSig[sigLen - 2] = '\0'; // trim trailing ",
 			}
-			for (; *hexSig && *(hexSig+1);)
+			while (*hexSig && *(hexSig+1) && output != m_signature + sizeof(m_signature))
 			{
 				uchar c1 = *hexSig++;
 				uchar c2 = *hexSig++;
