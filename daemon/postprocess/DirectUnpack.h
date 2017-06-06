@@ -35,6 +35,7 @@ public:
 	void FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	static bool IsArchiveFilename(const char* filename);
 
 protected:
 	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);

@@ -143,6 +143,11 @@ void DirectUnpack::Run()
 		}
 
 		AddExtraTime(nzbInfo);
+
+		if (nzbInfo->GetPostInfo())
+		{
+			nzbInfo->GetPostInfo()->SetWorking(false);
+		}
 	}
 
 	debug("Exiting DirectUnpack-loop for %i", m_nzbId);
@@ -402,6 +407,10 @@ void DirectUnpack::Stop(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		}
 	}
 	AddExtraTime(nzbInfo);
+	if (nzbInfo->GetPostInfo())
+	{
+		nzbInfo->GetPostInfo()->SetWorking(false);
+	}
 	Thread::Stop();
 	if (m_unpacking)
 	{
@@ -523,4 +532,15 @@ void DirectUnpack::AddExtraTime(NzbInfo* nzbInfo)
 		nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() + extraTime);
 		m_extraStartTime = 0;
 	}
+}
+
+bool DirectUnpack::IsArchiveFilename(const char* filename)
+{
+	if (Util::EndsWith(filename, ".rar", false))
+	{
+		return true;
+	}
+
+	RegEx regExRarMultiSeq(".*\\.[r-z][0-9][0-9]$");
+	return regExRarMultiSeq.Match(filename);
 }

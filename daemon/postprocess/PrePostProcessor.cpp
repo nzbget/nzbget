@@ -325,6 +325,8 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 
 		if (nzbInfo->GetUnpackThread())
 		{
+			nzbInfo->GetPostInfo()->SetWorking(true);
+			m_activeJobs.push_back(nzbInfo);
 			((DirectUnpack*)nzbInfo->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbInfo);
 		}
 
@@ -878,6 +880,11 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 						postInfo->GetPostThread()->Stop();
 						ok = true;
 					}
+					else if (postInfo->GetNzbInfo()->GetUnpackThread())
+					{
+						((DirectUnpack*)postInfo->GetNzbInfo()->GetUnpackThread())->NzbDeleted(downloadQueue, postInfo->GetNzbInfo());
+						ok = true;
+					}
 					else
 					{
 						error("Internal error in PrePostProcessor::QueueDelete");
@@ -887,11 +894,6 @@ bool PrePostProcessor::PostQueueDelete(DownloadQueue* downloadQueue, IdList* idL
 				{
 					postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
 						"Deleting queued post-job %s", postInfo->GetNzbInfo()->GetName());
-
-					if (postInfo->GetNzbInfo()->GetUnpackThread())
-					{
-						((DirectUnpack*)postInfo->GetNzbInfo()->GetUnpackThread())->NzbDeleted(downloadQueue, postInfo->GetNzbInfo());
-					}
 
 					JobCompleted(downloadQueue, postInfo);
 
@@ -926,7 +928,10 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 
 	if (g_Options->GetDirectUnpack() && g_Options->GetDecode())
 	{
-		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone)
+		bool allowPar;
+		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone &&
+			DirectUnpack::IsArchiveFilename(fileInfo->GetFilename()) &&
+			CanRunMoreJobs(&allowPar))
 		{
 			NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
 			bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
