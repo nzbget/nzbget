@@ -44,7 +44,6 @@ private:
 #ifndef DISABLE_PARCHECK
 	Par2::MD5Context m_md5Context;
 	char m_signature[sizeof(Par2::PACKET_HEADER)];
-	int m_sigLength = 0;
 #endif
 	int m_dataSize = 0;
 	CString m_hash16k;
