@@ -288,6 +288,7 @@ void ScriptController::PrepareArgs()
 					if (FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, command, 0, 0,
 						m_cmdLine, sizeof(m_cmdLine), (va_list*)args))
 					{
+						Util::TrimRight(Util::ReduceStr(m_cmdLine, "*", ""));
 						debug("CmdLine: %s", m_cmdLine);
 						return;
 					}
