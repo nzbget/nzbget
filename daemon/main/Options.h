@@ -272,7 +272,8 @@ public:
 	int GetNzbDirFileAge() { return m_nzbDirFileAge; }
 	int GetDiskSpace() { return m_diskSpace; }
 	bool GetTls() { return m_tls; }
-	bool GetDumpCore() { return m_dumpCore; }
+	bool GetCrashTrace() { return m_crashTrace; }
+	bool GetCrashDump() { return m_crashDump; }
 	bool GetParPauseQueue() { return m_parPauseQueue; }
 	bool GetScriptPauseQueue() { return m_scriptPauseQueue; }
 	bool GetNzbCleanupDisk() { return m_nzbCleanupDisk; }
@@ -425,7 +426,8 @@ private:
 	int m_nzbDirFileAge = 0;
 	int m_diskSpace = 0;
 	bool m_tls = false;
-	bool m_dumpCore = false;
+	bool m_crashTrace = false;
+	bool m_crashDump = false;
 	bool m_parPauseQueue = false;
 	bool m_scriptPauseQueue = false;
 	bool m_nzbCleanupDisk = false;

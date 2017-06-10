@@ -111,7 +111,8 @@ static const char* OPTION_WRITEBUFFER			= "WriteBuffer";
 static const char* OPTION_NZBDIRINTERVAL		= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE			= "NzbDirFileAge";
 static const char* OPTION_DISKSPACE				= "DiskSpace";
-static const char* OPTION_DUMPCORE				= "DumpCore";
+static const char* OPTION_CRASHTRACE			= "CrashTrace";
+static const char* OPTION_CRASHDUMP				= "CrashDump";
 static const char* OPTION_PARPAUSEQUEUE			= "ParPauseQueue";
 static const char* OPTION_SCRIPTPAUSEQUEUE		= "ScriptPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK		= "NzbCleanupDisk";
@@ -487,7 +488,8 @@ void Options::InitDefaults()
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_DISKSPACE, "250");
-	SetOption(OPTION_DUMPCORE, "no");
+	SetOption(OPTION_CRASHTRACE, "no");
+	SetOption(OPTION_CRASHDUMP, "no");
 	SetOption(OPTION_PARPAUSEQUEUE, "no");
 	SetOption(OPTION_SCRIPTPAUSEQUEUE, "no");
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
@@ -745,7 +747,8 @@ void Options::InitOptions()
 	m_crcCheck				= (bool)ParseEnumValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
 	m_directWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
 	m_decode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
-	m_dumpCore				= (bool)ParseEnumValue(OPTION_DUMPCORE, BoolCount, BoolNames, BoolValues);
+	m_crashTrace			= (bool)ParseEnumValue(OPTION_CRASHTRACE, BoolCount, BoolNames, BoolValues);
+	m_crashDump				= (bool)ParseEnumValue(OPTION_CRASHDUMP, BoolCount, BoolNames, BoolValues);
 	m_parPauseQueue			= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_scriptPauseQueue		= (bool)ParseEnumValue(OPTION_SCRIPTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_nzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
@@ -1721,6 +1724,11 @@ void Options::ConvertOldOption(CString& option, CString& value)
 	if (!strcasecmp(option, "CreateBrokenLog"))
 	{
 		option = "BrokenLog";
+	}
+
+	if (!strcasecmp(option, "DumpCore"))
+	{
+		option = OPTION_CRASHDUMP;
 	}
 }
 

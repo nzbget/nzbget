@@ -147,17 +147,19 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* exPtrs)
 
 #ifdef DEBUG
 	PrintBacktrace(exPtrs->ContextRecord);
-#else
-	 info("Detailed exception information can be printed by debug version of NZBGet (available from download page)");
-#endif
-
-	ExitProcess(-1);
 	return EXCEPTION_CONTINUE_SEARCH;
+#else
+	info("Detailed exception information can be printed by debug version of NZBGet (available from download page)");
+	return EXCEPTION_EXECUTE_HANDLER;
+#endif
 }
 
 void InstallErrorHandler()
 {
-	SetUnhandledExceptionFilter(ExceptionFilter);
+	if (g_Options->GetCrashTrace())
+	{
+		SetUnhandledExceptionFilter(ExceptionFilter);
+	}
 }
 
 #else
@@ -171,7 +173,7 @@ std::vector<sighandler> SignalProcList;
 /**
 * activates the creation of core-files
 */
-void EnableDumpCore()
+void EnableCoreDump()
 {
 	rlimit rlim;
 	rlim.rlim_cur= RLIM_INFINITY;
@@ -248,9 +250,9 @@ void SignalProc(int signum)
 void InstallErrorHandler()
 {
 #ifdef HAVE_SYS_PRCTL_H
-	if (g_Options->GetDumpCore())
+	if (g_Options->GetCrashDump())
 	{
-		EnableDumpCore();
+		EnableCoreDump();
 	}
 #endif
 
@@ -258,7 +260,10 @@ void InstallErrorHandler()
 	signal(SIGTERM, SignalProc);
 	signal(SIGPIPE, SIG_IGN);
 #ifdef DEBUG
-	signal(SIGSEGV, SignalProc);
+	if (g_Options->GetCrashTrace())
+	{
+		signal(SIGSEGV, SignalProc);
+	}
 #endif
 #ifdef SIGCHLD_HANDLER
 	// it could be necessary on some systems to activate a handler for SIGCHLD

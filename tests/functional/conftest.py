@@ -114,6 +114,8 @@ class Nzbget:
 		config.write('WarningTarget=log\n')
 		config.write('ErrorTarget=log\n')
 		config.write('DebugTarget=none\n')
+		config.write('CrashTrace=no\n')
+		config.write('CrashDump=yes\n')
 		config.write('ContinuePartial=no\n')
 		config.write('DirectWrite=yes\n')
 		config.write('ArticleCache=500\n')
