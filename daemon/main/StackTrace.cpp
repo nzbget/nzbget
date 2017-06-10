@@ -149,7 +149,8 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* exPtrs)
 	PrintBacktrace(exPtrs->ContextRecord);
 	return EXCEPTION_CONTINUE_SEARCH;
 #else
-	info("Detailed exception information can be printed by debug version of NZBGet (available from download page)");
+	info("Detailed crash information can be printed by debug version of NZBGet."
+		" For more info visit http://nzbget.net/crash-dump");
 	return EXCEPTION_EXECUTE_HANDLER;
 #endif
 }
