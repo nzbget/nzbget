@@ -95,7 +95,6 @@ public:
 
 	bool IsStopped() { return m_stopped; };
 	bool IsRunning() const { return m_running; }
-	void SetRunning(bool onOff) { m_running = onOff; }
 	bool GetAutoDestroy() { return m_autoDestroy; }
 	void SetAutoDestroy(bool autoDestroy) { m_autoDestroy = autoDestroy; }
 	static int GetThreadCount();

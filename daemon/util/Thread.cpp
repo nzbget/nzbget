@@ -169,12 +169,14 @@ void* Thread::thread_handler(void* object)
 
 	debug("Thread-func exited");
 
-	thread->m_running = false;
-
 	if (thread->m_autoDestroy)
 	{
 		debug("Autodestroying Thread-object");
 		delete thread;
+	}
+	else
+	{
+		thread->m_running = false;
 	}
 
 	{

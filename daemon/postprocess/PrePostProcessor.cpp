@@ -493,7 +493,8 @@ void PrePostProcessor::CleanupJobs(DownloadQueue* downloadQueue)
 		[processor = this, downloadQueue](NzbInfo* postJob)
 		{
 			PostInfo* postInfo = postJob->GetPostInfo();
-			if (!postInfo->GetWorking())
+			if (!postInfo->GetWorking() &&
+				!(postInfo->GetPostThread() && postInfo->GetPostThread()->IsRunning()))
 			{
 				delete postInfo->GetPostThread();
 				postInfo->SetPostThread(nullptr);
