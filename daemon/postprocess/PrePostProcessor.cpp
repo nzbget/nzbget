@@ -930,6 +930,7 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 	{
 		bool allowPar;
 		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone &&
+			nzbInfo->GetDirectRenameStatus() != NzbInfo::tsRunning &&
 			DirectUnpack::IsArchiveFilename(fileInfo->GetFilename()) &&
 			CanRunMoreJobs(&allowPar))
 		{
