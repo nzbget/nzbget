@@ -51,6 +51,7 @@ private:
 	bool m_parFile = false;
 };
 
+#ifndef DISABLE_PARCHECK
 class DirectParRepairer : public Par2::Par2Repairer
 {
 public:
@@ -161,7 +162,7 @@ void DirectParLoader::LoadParFile(const char* parFile)
 		m_parHashes.emplace_back(filename.c_str(), hash.c_str());
 	}
 }
-
+#endif
 
 std::unique_ptr<ArticleContentAnalyzer> DirectRenamer::MakeArticleContentAnalyzer()
 {
@@ -219,6 +220,7 @@ void DirectRenamer::FileDownloaded(DownloadQueue* downloadQueue, FileInfo* fileI
 
 void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 {
+#ifndef DISABLE_PARCHECK
 	if (nzbInfo->GetDirectRenameStatus() > NzbInfo::tsRunning)
 	{
 		return;
@@ -270,6 +272,7 @@ void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 			return;
 		}
 	}
+#endif
 }
 
 // Unpause smallest par-files from each par-set
