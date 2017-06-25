@@ -1,6 +1,102 @@
 nzbget-19.0:
-  - please see repository change log at
-    https://github.com/nzbget/nzbget/commits/develop
+  - unpack during downloading:
+    - downloaded files can now be unpacked as soon as every archive part is
+      downloaded;
+    - new option "DirectUnpack" to activate direct unpacking;
+    - direct unpack works even with obfuscated downloads; option "DirectRename"
+      (see below) must be active for that;
+    - option "ReorderFiles" (see below) should be also active for optimal file
+      download order;
+    - direct unpack works for rar-archives; 7-zip archives and simply splitted
+      files are processed by default unpack module;
+    - direct unpack obviously works only for healthy download; if download is
+      damaged the direct unpack cancels and the download is unpacked during
+        post-processing stage after files are repaired;
+    - direct unpack reduces the time needed to complete download and
+      post-processing;
+    - it also allows to start watching of video files during download (requires
+      compatible video player software);
+  - renaming of obfuscated file names during downloading:
+    - correct file names for obfuscated downloads are now determined during
+      download stage (instead of post-processing stage);
+    - downloaded files are saved into disk directly with correct names;
+    - direct renaming uses par2-files to restore correct file names;
+    - new option "DirectRename" to activate direct renaming;
+    - new queue-event NZB_NAMED, sent after the inner files are renamed;
+  - automatic reordering of files:
+    - inner files within nzb reordered to ensure download of files in archive
+      parts order;
+    - the files are reordered when nzb is added to queue;
+    - if direct renaming is active (option "DirectRename") the files are
+      reordered again after the correct names becomes known;
+    - new option "ReorderFiles";
+    - new command "GroupSortFiles" in api-method "editqueue";
+    - new subcommand "SF" of remote command "-E/--edit";
+  - new option "FileNaming" to control how to name obfuscated files (before they
+    get renamed by par-rename, rar-rename or direct-rename);
+  - TLS certificate verification:
+    - when connecting to a news server (for downloading) or a web server (for
+      fetching of rss feeds and nzb-files) the authenticity of the server is
+      validated using server security certificate. If the check fails that means
+      the connection cannot be trusted and must be closed with an error message
+      explaining the security issue;
+    - new options "CertCheck" and "CertStore";
+    - official NZBGet packages come with activated certificate check;
+    - when updating from an older NZBGet version the option CertCheck will be
+      automatically activated when the settings is saved (switch to Settings
+      page in web-interface and click "Save all changed");
+  - authentication via form in web-interface as alternative to HTTP
+    authentication:
+    - that must help with password tools having issues with HTTP authentication
+      dialog;
+    - new option "FormAuth";
+  - drop-downs (context menus) for priority, category and status columns:
+    - quicker changing of priority and category;
+    - easier access to actions via drop-down (context menu) in status column;
+  - extensions scripts can now be executed from settings page:
+    - script authors define custom buttons;
+    - when clicked the script is executed in a special mode and obtain extra
+      parameters;
+    - example script "Email.py" extended with button "Send test e-mail";
+  - on Windows NZBGet can now associate itself with nzb-files:
+    - use option in Windows installer to register NZBGet for nzb-files;
+  - unrar shipped within Linux package is now compiled with "fallocate" option
+    to improve compatibility with media players when watching videos during
+    downloading and unpacking;
+  - support for HTTP-header "X-Forwarded-For" in IP-logging;
+  - improvements in RSS feed view in phone mode;
+  - set name, password and dupe info when adding via URL by click on a button
+    near URL field in web-interface;
+  - backup-badge for items in history similar to downloads tab;
+  - show backup icon in history in phone theme;
+  - added support for ECC certificates in built-in web-server;
+  - save changes before performing actions in history dialog;
+  - proper exit code on client command success or failure.
+  - added host name to all error messages regarding connection issues;
+  - improved continuos integration with Travis CI:
+    - added gcc 4.8 to test matrix;
+    - installing unrar into test system to allow unit tests requiring unrar;
+  - new button "Volume Statistics" in section "News Servers" of settings page;
+    shows the same volume data as in global statistics dialog;
+  - new option "ServerX.Notes" for user comments on news servers;
+  - new parameters for api-method "servervolumes" as a performance optimization
+    measure to reduce amount of transferred data;
+  - new option to force connection to news servers via ipv4 or ipv6;
+  - removed unnecessary requests to news servers;
+  - updated unrar to v5.40;
+  - clear script execution log before executing script;
+  - added support for crash dumps on Windows:
+    - renamed option "DumpCore" to "CrashDump";
+    - new option "CrashTrace" to make it possible to disable default printing off
+      call stack in order to produce more relevant crash dumps;
+  - fixed: startup scheduler tasks can be executed again;
+  - fixed: "fatal" messages when compiling from sources.
+  - fixed: per-nzb download statistics could be wrong if the program was
+    reloaded during downloading.
+  - fixed crash which may happen between post-processing steps;
+  - fixed: asterix (*) was sometimes passed as parameter to extension scripts
+    (Windows only);
+  - fixed potential crash during update via web-interface.
 
 nzbget-18.1:
   - fixed: crash during download caused by a race condition;
