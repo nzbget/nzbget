@@ -19,6 +19,9 @@
  */
 
 
+#ifndef WIN32
+	#include <sys/un.h>
+#endif
 #include "nzbget.h"
 #include "Connection.h"
 #include "Log.h"
@@ -209,91 +212,121 @@ bool Connection::Bind()
 		return true;
 	}
 
-#ifdef HAVE_GETADDRINFO
-	struct addrinfo addr_hints, *addr_list, *addr;
-
-	memset(&addr_hints, 0, sizeof(addr_hints));
-	addr_hints.ai_family = m_ipVersion == ipV4 ? AF_INET : m_ipVersion == ipV6 ? AF_INET6 : AF_UNSPEC;
-	addr_hints.ai_socktype = SOCK_STREAM,
-	addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
-
-	BString<100> portStr("%d", m_port);
-
-	int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
-	if (res != 0)
-	{
-		ReportError("Could not resolve hostname %s", m_host, true
 #ifndef WIN32
-			, res != EAI_SYSTEM ? res : 0
-			, res != EAI_SYSTEM ? gai_strerror(res) : nullptr
-#endif
-			);
-		return false;
-	}
-
-	m_broken = false;
-	m_socket = INVALID_SOCKET;
-	for (addr = addr_list; addr != nullptr; addr = addr->ai_next)
+	if (m_host && m_host[0] == '/')
 	{
-		m_socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-#ifdef WIN32
-		SetHandleInformation((HANDLE)m_socket, HANDLE_FLAG_INHERIT, 0);
-#endif
-		if (m_socket != INVALID_SOCKET)
+		struct sockaddr_un addr;
+		addr.sun_family = AF_UNIX;
+		if (strlen(m_host) >= sizeof(addr.sun_path))
 		{
-			int opt = 1;
-			setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
-			res = bind(m_socket, addr->ai_addr, addr->ai_addrlen);
-			if (res != -1)
-			{
-				// Connection established
-				break;
-			}
+			ReportError("Binding socket failed for %s: name too long\n", m_host, false);
+			return false;
+		}
+		strcpy(addr.sun_path, m_host);
+
+		m_socket = socket(PF_UNIX, SOCK_STREAM, 0);
+		if (m_socket == INVALID_SOCKET)
+		{
+			ReportError("Socket creation failed for %s", m_host, true);
+			return false;
+		}
+
+		if (bind(m_socket, (struct sockaddr *)&addr, sizeof(addr)) == -1)
+		{
 			// Connection failed
 			closesocket(m_socket);
 			m_socket = INVALID_SOCKET;
 		}
 	}
+	else
+#endif
+	{
+#ifdef HAVE_GETADDRINFO
+		struct addrinfo addr_hints, *addr_list, *addr;
 
-	freeaddrinfo(addr_list);
+		memset(&addr_hints, 0, sizeof(addr_hints));
+		addr_hints.ai_family = m_ipVersion == ipV4 ? AF_INET : m_ipVersion == ipV6 ? AF_INET6 : AF_UNSPEC;
+		addr_hints.ai_socktype = SOCK_STREAM,
+		addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
+
+		BString<100> portStr("%d", m_port);
+
+		int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
+		if (res != 0)
+		{
+			ReportError("Could not resolve hostname %s", m_host, true
+#ifndef WIN32
+				, res != EAI_SYSTEM ? res : 0
+				, res != EAI_SYSTEM ? gai_strerror(res) : nullptr
+#endif
+				);
+			return false;
+		}
+
+		m_broken = false;
+		m_socket = INVALID_SOCKET;
+		for (addr = addr_list; addr != nullptr; addr = addr->ai_next)
+		{
+			m_socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+#ifdef WIN32
+			SetHandleInformation((HANDLE)m_socket, HANDLE_FLAG_INHERIT, 0);
+#endif
+			if (m_socket != INVALID_SOCKET)
+			{
+				int opt = 1;
+				setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
+				res = bind(m_socket, addr->ai_addr, addr->ai_addrlen);
+				if (res != -1)
+				{
+					// Connection established
+					break;
+				}
+				// Connection failed
+				closesocket(m_socket);
+				m_socket = INVALID_SOCKET;
+			}
+		}
+
+		freeaddrinfo(addr_list);
 
 #else
 
-	struct sockaddr_in	sSocketAddress;
-	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
-	sSocketAddress.sin_family = AF_INET;
-	if (!m_host || strlen(m_host) == 0)
-	{
-		sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-	}
-	else
-	{
-		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_host);
-		if (sSocketAddress.sin_addr.s_addr == INADDR_NONE)
+		struct sockaddr_in	sSocketAddress;
+		memset(&sSocketAddress, 0, sizeof(sSocketAddress));
+		sSocketAddress.sin_family = AF_INET;
+		if (!m_host || strlen(m_host) == 0)
 		{
+			sSocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+		}
+		else
+		{
+			sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_host);
+			if (sSocketAddress.sin_addr.s_addr == INADDR_NONE)
+			{
+				return false;
+			}
+		}
+		sSocketAddress.sin_port = htons(m_port);
+
+		m_socket = socket(PF_INET, SOCK_STREAM, 0);
+		if (m_socket == INVALID_SOCKET)
+		{
+			ReportError("Socket creation failed for %s", m_host, true);
 			return false;
 		}
-	}
-	sSocketAddress.sin_port = htons(m_port);
 
-	m_socket = socket(PF_INET, SOCK_STREAM, 0);
-	if (m_socket == INVALID_SOCKET)
-	{
-		ReportError("Socket creation failed for %s", m_host, true);
-		return false;
-	}
+		int opt = 1;
+		setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
 
-	int opt = 1;
-	setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
-
-	int res = bind(m_socket, (struct sockaddr *) &sSocketAddress, sizeof(sSocketAddress));
-	if (res == -1)
-	{
-		// Connection failed
-		closesocket(m_socket);
-		m_socket = INVALID_SOCKET;
-	}
+		int res = bind(m_socket, (struct sockaddr *) &sSocketAddress, sizeof(sSocketAddress));
+		if (res == -1)
+		{
+			// Connection failed
+			closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
+		}
 #endif
+	}
 
 	if (m_socket == INVALID_SOCKET)
 	{
@@ -513,109 +546,140 @@ bool Connection::DoConnect()
 	m_socket = INVALID_SOCKET;
 	m_broken = false;
 
-#ifdef HAVE_GETADDRINFO
-	struct addrinfo addr_hints, *addr_list, *addr;
-
-	memset(&addr_hints, 0, sizeof(addr_hints));
-	addr_hints.ai_family = m_ipVersion == ipV4 ? AF_INET : m_ipVersion == ipV6 ? AF_INET6 : AF_UNSPEC;
-	addr_hints.ai_socktype = SOCK_STREAM;
-
-	BString<100> portStr("%d", m_port);
-
-	int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
-	if (res != 0)
-	{
-		ReportError("Could not resolve hostname %s", m_host, true
 #ifndef WIN32
-					, res != EAI_SYSTEM ? res : 0
-					, res != EAI_SYSTEM ? gai_strerror(res) : nullptr
-#endif
-					);
-		return false;
-	}
-
-	std::vector<SockAddr> triedAddr;
-	bool connected = false;
-
-	for (addr = addr_list; addr != nullptr; addr = addr->ai_next)
+	if (m_host && m_host[0] == '/')
 	{
-		// don't try the same combinations of ai_family, ai_socktype, ai_protocol multiple times
-		SockAddr sa = { addr->ai_family, addr->ai_socktype, addr->ai_protocol };
-		if (std::find(triedAddr.begin(), triedAddr.end(), sa) != triedAddr.end())
+		struct sockaddr_un addr;
+		addr.sun_family = AF_UNIX;
+		if (strlen(m_host) >= sizeof(addr.sun_path))
 		{
-			continue;
+			ReportError("Connection to %s failed: name too long\n", m_host, false);
+			return false;
 		}
-		triedAddr.push_back(sa);
+		strcpy(addr.sun_path, m_host);
 
-		if (m_socket != INVALID_SOCKET)
-		{
-			closesocket(m_socket);
-		}
-
-		m_socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-#ifdef WIN32
-		SetHandleInformation((HANDLE)m_socket, HANDLE_FLAG_INHERIT, 0);
-#endif
+		m_socket = socket(PF_UNIX, SOCK_STREAM, 0);
 		if (m_socket == INVALID_SOCKET)
 		{
-			// try another addr/family/protocol
-			continue;
+			ReportError("Socket creation failed for %s", m_host, true);
+			return false;
 		}
 
-		if (ConnectWithTimeout(addr->ai_addr, addr->ai_addrlen))
+		if (!ConnectWithTimeout(&addr, sizeof(addr)))
 		{
-			// Connection established
-			connected = true;
-			break;
+			ReportError("Connection to %s failed", m_host, true);
+			closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
+			return false;
 		}
 	}
-
-	if (m_socket == INVALID_SOCKET && addr_list)
+	else
+#endif
 	{
-		ReportError("Socket creation failed for %s", m_host, true);
-	}
+#ifdef HAVE_GETADDRINFO
+		struct addrinfo addr_hints, *addr_list, *addr;
 
-	if (!connected && m_socket != INVALID_SOCKET)
-	{
-		ReportError("Connection to %s failed", m_host, true);
-		closesocket(m_socket);
-		m_socket = INVALID_SOCKET;
-	}
+		memset(&addr_hints, 0, sizeof(addr_hints));
+		addr_hints.ai_family = m_ipVersion == ipV4 ? AF_INET : m_ipVersion == ipV6 ? AF_INET6 : AF_UNSPEC;
+		addr_hints.ai_socktype = SOCK_STREAM;
 
-	freeaddrinfo(addr_list);
+		BString<100> portStr("%d", m_port);
 
-	if (m_socket == INVALID_SOCKET)
-	{
-		return false;
-	}
+		int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
+		if (res != 0)
+		{
+			ReportError("Could not resolve hostname %s", m_host, true
+#ifndef WIN32
+						, res != EAI_SYSTEM ? res : 0
+						, res != EAI_SYSTEM ? gai_strerror(res) : nullptr
+#endif
+						);
+			return false;
+		}
+
+		std::vector<SockAddr> triedAddr;
+		bool connected = false;
+
+		for (addr = addr_list; addr != nullptr; addr = addr->ai_next)
+		{
+			// don't try the same combinations of ai_family, ai_socktype, ai_protocol multiple times
+			SockAddr sa = { addr->ai_family, addr->ai_socktype, addr->ai_protocol };
+			if (std::find(triedAddr.begin(), triedAddr.end(), sa) != triedAddr.end())
+			{
+				continue;
+			}
+			triedAddr.push_back(sa);
+
+			if (m_socket != INVALID_SOCKET)
+			{
+				closesocket(m_socket);
+			}
+
+			m_socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+#ifdef WIN32
+			SetHandleInformation((HANDLE)m_socket, HANDLE_FLAG_INHERIT, 0);
+#endif
+			if (m_socket == INVALID_SOCKET)
+			{
+				// try another addr/family/protocol
+				continue;
+			}
+
+			if (ConnectWithTimeout(addr->ai_addr, addr->ai_addrlen))
+			{
+				// Connection established
+				connected = true;
+				break;
+			}
+		}
+
+		if (m_socket == INVALID_SOCKET && addr_list)
+		{
+			ReportError("Socket creation failed for %s", m_host, true);
+		}
+
+		if (!connected && m_socket != INVALID_SOCKET)
+		{
+			ReportError("Connection to %s failed", m_host, true);
+			closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
+		}
+
+		freeaddrinfo(addr_list);
+
+		if (m_socket == INVALID_SOCKET)
+		{
+			return false;
+		}
 
 #else
 
-	struct sockaddr_in	sSocketAddress;
-	memset(&sSocketAddress, 0, sizeof(sSocketAddress));
-	sSocketAddress.sin_family = AF_INET;
-	sSocketAddress.sin_port = htons(m_port);
-	sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_host);
-	if (sSocketAddress.sin_addr.s_addr == INADDR_NONE)
-	{
-		return false;
-	}
+		struct sockaddr_in	sSocketAddress;
+		memset(&sSocketAddress, 0, sizeof(sSocketAddress));
+		sSocketAddress.sin_family = AF_INET;
+		sSocketAddress.sin_port = htons(m_port);
+		sSocketAddress.sin_addr.s_addr = ResolveHostAddr(m_host);
+		if (sSocketAddress.sin_addr.s_addr == INADDR_NONE)
+		{
+			return false;
+		}
 
-	m_socket = socket(PF_INET, SOCK_STREAM, 0);
-	if (m_socket == INVALID_SOCKET)
-	{
-		ReportError("Socket creation failed for %s", m_host, true);
-		return false;
-	}
+		m_socket = socket(PF_INET, SOCK_STREAM, 0);
+		if (m_socket == INVALID_SOCKET)
+		{
+			ReportError("Socket creation failed for %s", m_host, true);
+			return false;
+		}
 
-	if (!ConnectWithTimeout(&sSocketAddress, sizeof(sSocketAddress)))
-	{
-		ReportError("Connection to %s failed", m_host, true);
-		closesocket(m_socket);
-		m_socket = INVALID_SOCKET;
-		return false;
-	}
+		if (!ConnectWithTimeout(&sSocketAddress, sizeof(sSocketAddress)))
+		{
+			ReportError("Connection to %s failed", m_host, true);
+			closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
+			return false;
+		}
 #endif
+	}
 
 	if (!InitSocketOpts())
 	{
@@ -780,6 +844,15 @@ bool Connection::DoDisconnect()
 	{
 #ifndef DISABLE_TLS
 		CloseTls();
+#endif
+#ifndef WIN32
+		int is_listening;
+		socklen_t len = sizeof(is_listening);
+		if (m_host && m_host[0] == '/'
+			&& getsockopt(m_socket, SOL_SOCKET, SO_ACCEPTCONN, &is_listening, &len) == 0 && is_listening)
+		{
+			unlink(m_host);
+		}
 #endif
 		if (m_gracefull)
 		{
@@ -987,6 +1060,13 @@ in_addr_t Connection::ResolveHostAddr(const char* host)
 
 const char* Connection::GetRemoteAddr()
 {
+#ifndef WIN32
+	if (m_host && m_host[0] == '/')
+	{
+		return "-";
+	}
+#endif
+
 	struct sockaddr_in PeerName;
 	int peerNameLength = sizeof(PeerName);
 	if (getpeername(m_socket, (struct sockaddr*)&PeerName, (SOCKLEN_T*) &peerNameLength) >= 0)
