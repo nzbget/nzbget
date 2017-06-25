@@ -21,7 +21,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(nzbget, 19.0-testing, hugbug@users.sourceforge.net)
+AC_INIT(nzbget, 19.0, hugbug@users.sourceforge.net)
 AC_CONFIG_AUX_DIR(posix)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign])
