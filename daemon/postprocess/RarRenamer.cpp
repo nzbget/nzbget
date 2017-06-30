@@ -224,10 +224,10 @@ void RarRenamer::MakeSets()
 						volume.GetVolumeNo() == lastVolume->GetVolumeNo() + 1 &&
 						volume.GetVersion() == lastVolume->GetVersion() &&
 						lastVolume->GetHasNextVolume() &&
-						((volume.GetFiles()->at(0).GetSplitBefore() &&
-						 lastVolume->GetFiles()->at(0).GetSplitAfter() &&
-						 !strcmp(volume.GetFiles()->at(0).GetFilename(), lastVolume->GetFiles()->at(0).GetFilename())) ||
-						 (!volume.GetFiles()->at(0).GetSplitBefore() && !lastVolume->GetFiles()->at(0).GetSplitAfter())))
+						((volume.GetFiles()->front().GetSplitBefore() &&
+						 lastVolume->GetFiles()->back().GetSplitAfter() &&
+						 !strcmp(volume.GetFiles()->front().GetFilename(), lastVolume->GetFiles()->back().GetFilename())) ||
+						 (!volume.GetFiles()->front().GetSplitBefore() && !lastVolume->GetFiles()->back().GetSplitAfter())))
 					{
 						debug("   adding %s", FileSystem::BaseFileName(volume.GetFilename()));
 						set.push_back(&volume);
@@ -237,7 +237,9 @@ void RarRenamer::MakeSets()
 				}
 			}
 
-			bool completed = !set.back()->GetHasNextVolume();
+			RarVolume* lastVolume = set.back();
+			bool completed = !lastVolume->GetHasNextVolume() &&
+				(lastVolume->GetFiles()->empty() || !lastVolume->GetFiles()->back().GetSplitAfter());
 
 			return !completed;
 		}),
