@@ -109,6 +109,10 @@ void UnpackController::Run()
 				{
 					PrintMessage(Message::mkInfo, "Found archive files not processed by direct unpack, unpacking all files again");
 				}
+
+				// Discard info about extracted archives to prevent reusing on next unpack attempt
+				m_postInfo->GetExtractedArchives()->clear();
+
 				UnpackArchives(upUnrar, false);
 			}
 			else
