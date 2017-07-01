@@ -268,6 +268,12 @@ RarVolume::RarBlock RarVolume::ReadRar3Block(DiskFile& file)
 	uint16 size = ((uint16)buf[6] << 8) + buf[5];
 
 	uint32 blocksize = size;
+	if (m_encrypted)
+	{
+		// Align to 16 bytes
+		blocksize = (blocksize + ((~blocksize + 1) & (16 - 1)));
+	}
+
 	block.trailsize = blocksize - sizeof(buf);
 
 	uint8 addbuf[4];
