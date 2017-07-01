@@ -103,11 +103,18 @@ void UnpackController::Run()
 
 		if (m_hasRarFiles)
 		{
-			if (m_hasUnpackedRarFiles)
+			if (m_hasNotUnpackedRarFiles || m_unpackDirCreated)
 			{
 				if (m_postInfo->GetNzbInfo()->GetDirectUnpackStatus() == NzbInfo::nsSuccess)
 				{
-					PrintMessage(Message::mkInfo, "Found archive files not processed by direct unpack, unpacking all files again");
+					if (m_unpackDirCreated)
+					{
+						PrintMessage(Message::mkWarning, "Could not find files unpacked by direct unpack, unpacking all files again");
+					}
+					else
+					{
+						PrintMessage(Message::mkInfo, "Found archive files not processed by direct unpack, unpacking all files again");
+					}
 				}
 
 				// Discard info about extracted archives to prevent reusing on next unpack attempt
@@ -610,6 +617,7 @@ void UnpackController::CreateUnpackDir()
 	const char* destDir = !m_finalDir.Empty() ? *m_finalDir : *m_destDir;
 
 	m_unpackDir.Format("%s%c%s", destDir, PATH_SEPARATOR, "_unpack");
+	m_unpackDirCreated = !FileSystem::DirectoryExists(m_unpackDir);
 
 	detail("Unpacking into %s", *m_unpackDir);
 
@@ -641,7 +649,7 @@ void UnpackController::CheckArchiveFiles()
 			if (regExRar.Match(filename))
 			{
 				m_hasRarFiles = true;
-				m_hasUnpackedRarFiles |= std::find(
+				m_hasNotUnpackedRarFiles |= std::find(
 					m_postInfo->GetExtractedArchives()->begin(),
 					m_postInfo->GetExtractedArchives()->end(),
 					filename) == m_postInfo->GetExtractedArchives()->end();

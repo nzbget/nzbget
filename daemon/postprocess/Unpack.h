@@ -73,7 +73,7 @@ private:
 	bool m_noFilesMessageReceived = false;
 	bool m_hasParFiles = false;
 	bool m_hasRarFiles = false;
-	bool m_hasUnpackedRarFiles = false;
+	bool m_hasNotUnpackedRarFiles = false;
 	bool m_hasRenamedArchiveFiles = false;
 	bool m_hasSevenZipFiles = false;
 	bool m_hasSevenZipMultiFiles = false;
@@ -86,6 +86,7 @@ private:
 	bool m_cleanedUpDisk = false;
 	bool m_autoTerminated = false;
 	bool m_finalDirCreated = false;
+	bool m_unpackDirCreated = false;
 	bool m_passListTried = false;
 	FileList m_joinedFiles;
 
