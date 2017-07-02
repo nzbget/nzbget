@@ -422,6 +422,18 @@ void DirectUnpack::WaitNextVolume(const char* filename)
 {
 	debug("WaitNextVolume for %s", filename);
 
+	// Stop direct unpack if destination directory was changed during unpack
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		NzbInfo* nzbInfo = downloadQueue->GetQueue()->Find(m_nzbId);
+		if (nzbInfo && (strcmp(m_destDir, nzbInfo->GetDestDir()) ||
+			strcmp(m_finalDir, nzbInfo->BuildFinalDirName())))
+		{
+			nzbInfo->AddMessage(Message::mkWarning, BString<1024>("Destination directory changed for %s", nzbInfo->GetName()));
+			Stop(downloadQueue, nzbInfo);
+		}
+	}
+
 	BString<1024> fullFilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
 	if (FileSystem::FileExists(fullFilename))
 	{
