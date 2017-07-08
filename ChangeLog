@@ -1,6 +1,12 @@
 nzbget-19.1:
-  - please see repository change log at
-    https://github.com/nzbget/nzbget/commits/develop
+  - proper handling of changing category (and destination path) during direct
+    unpack; direct unpack now gracefully aborts with cleanup; the files will
+    be unpacked during post-processing stage;
+  - fixed: password protected downloads of certain kind may sometimes end up
+    with no files if direct unpack was active;
+  - fixed: rar-renamer mistakenly renamed some encrypted rar3 files causing
+    unnecessary repair;
+  - fixed: rar-renamer could not process some encrypted rar3-archives.
 
 nzbget-19.0:
   - unpack during downloading:
