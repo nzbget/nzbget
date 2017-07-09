@@ -1,3 +1,7 @@
+nzbget-20.0:
+  - please see repository change log at
+    https://github.com/nzbget/nzbget/commits/develop
+
 nzbget-19.1:
   - proper handling of changing category (and destination path) during direct
     unpack; direct unpack now gracefully aborts with cleanup; the files will
