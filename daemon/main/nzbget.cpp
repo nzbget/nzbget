@@ -499,7 +499,11 @@ void NZBGet::StartRemoteServer()
 	m_remoteServer = std::make_unique<RemoteServer>(false);
 	m_remoteServer->Start();
 
-	if (m_options->GetSecureControl())
+	if (m_options->GetSecureControl()
+#ifndef WIN32
+		&& !(m_options->GetControlIp() && m_options->GetControlIp()[0] == '/')
+#endif
+)
 	{
 		m_remoteSecureServer = std::make_unique<RemoteServer>(true);
 		m_remoteSecureServer->Start();

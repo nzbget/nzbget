@@ -19,9 +19,6 @@
  */
 
 
-#ifndef WIN32
-	#include <sys/un.h>
-#endif
 #include "nzbget.h"
 #include "Connection.h"
 #include "Log.h"
@@ -230,6 +227,8 @@ bool Connection::Bind()
 			ReportError("Socket creation failed for %s", m_host, true);
 			return false;
 		}
+
+		unlink(m_host);
 
 		if (bind(m_socket, (struct sockaddr *)&addr, sizeof(addr)) == -1)
 		{
