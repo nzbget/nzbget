@@ -473,6 +473,8 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 		cmdLine = cmdLineBuf;
 	}
 
+	debug("Starting process: %s", cmdLine);
+
 	WString wideWorkingDir = FileSystem::UtfPathToWidePath(workingDir);
 	if (strlen(workingDir) > 260 - 14)
 	{
@@ -581,6 +583,12 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 	std::copy(m_args.begin(), m_args.end(), std::back_inserter(args));
 	args.emplace_back(nullptr);
 	char* const* argdata = (char* const*)args.data();
+
+	debug("Starting  process: %s", script);
+	for (const char* arg : m_args)
+	{
+		debug("arg: %s", arg);
+	}
 
 	debug("forking");
 	pid_t pid = fork();

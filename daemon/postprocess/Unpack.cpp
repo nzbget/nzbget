@@ -191,7 +191,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 		if (!m_unpackOk && m_hasParFiles && !m_unpackPasswordError &&
 			m_postInfo->GetNzbInfo()->GetParStatus() <= NzbInfo::psSkipped)
 		{
-			// for rar4- or 7z-archives try par-check first, before trying password file
+			debug("For rar4- or 7z-archives try par-check first, before trying password file");
 			return;
 		}
 	}
@@ -218,6 +218,7 @@ void UnpackController::UnpackArchives(EUnpacker unpacker, bool multiVolumes)
 			(m_unpackDecryptError || m_unpackPasswordError) &&
 			infile.ReadLine(password, sizeof(password) - 1))
 		{
+			debug("Password line: %s", password);
 			// trim trailing <CR> and <LF>
 			char* end = password + strlen(password) - 1;
 			while (end >= password && (*end == '\n' || *end == '\r')) *end-- = '\0';
@@ -304,7 +305,7 @@ void UnpackController::ExecuteUnrar(const char* password)
 	SetProgressLabel("");
 
 	m_unpackOk = exitCode == 0 && m_allOkMessageReceived && !GetTerminated();
-	m_unpackStartError = exitCode == -1;
+	m_unpackStartError = exitCode == -1 && !m_autoTerminated;
 	m_unpackSpaceError = exitCode == 5;
 	m_unpackPasswordError |= exitCode == 11; // only for rar5-archives
 
@@ -359,7 +360,7 @@ void UnpackController::ExecuteSevenZip(const char* password, bool multiVolumes)
 	SetProgressLabel("");
 
 	m_unpackOk = exitCode == 0 && m_allOkMessageReceived && !GetTerminated();
-	m_unpackStartError = exitCode == -1;
+	m_unpackStartError = exitCode == -1 && !m_autoTerminated;
 
 	if (!m_unpackOk && exitCode > 0)
 	{
