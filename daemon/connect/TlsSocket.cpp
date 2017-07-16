@@ -515,7 +515,7 @@ bool TlsSocket::ValidateCert()
 		}
 
 		gnutls_datum_t msgdata;
-		if (gnutls_certificate-verification_status_print(status, GNUTLS_CRT_X509, &msgdata, 0) == 0)
+		if (gnutls_certificate_verification_status_print(status, GNUTLS_CRT_X509, &msgdata, 0) == 0)
 		{
 			PrintError(BString<1024>("TLS certificate verification failed for %s: %s."
 				" For more info visit http://nzbget.net/certificate-verification", *m_host, msgdata.data));
