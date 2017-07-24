@@ -60,8 +60,8 @@ Error()
 
 ValidArch()
 {
-    for arch in $ALLARCHS; do
-        if test $arch = $1; then
+    for TARG in $ALLARCHS; do
+        if test "$TARG" = "$1"; then
             return 0
         fi 
     done
