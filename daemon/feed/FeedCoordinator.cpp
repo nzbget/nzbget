@@ -118,8 +118,9 @@ void FeedCoordinator::Run()
 					for (FeedInfo* feedInfo : &m_feeds)
 					{
 						if (((feedInfo->GetInterval() > 0 &&
-							(current - feedInfo->GetLastUpdate() >= feedInfo->GetInterval() * 60 ||
-							 current < feedInfo->GetLastUpdate())) ||
+							 (feedInfo->GetNextUpdate() == 0 ||
+							  current >= feedInfo->GetNextUpdate() ||
+							  current < feedInfo->GetNextUpdate() - feedInfo->GetInterval() * 60)) ||
 							feedInfo->GetFetch()) &&
 							feedInfo->GetStatus() != FeedInfo::fsRunning)
 						{
@@ -291,6 +292,8 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 		m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), feedDownloader));
 	}
 
+	SchedulerNextUpdate(feedInfo, statusOK);
+
 	if (statusOK)
 	{
 		if (!feedInfo->GetPreview())
@@ -335,6 +338,24 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 	{
 		feedInfo->SetStatus(FeedInfo::fsFailed);
 	}
+}
+
+void FeedCoordinator::SchedulerNextUpdate(FeedInfo* feedInfo, bool success)
+{
+	time_t current = Util::CurrentTime();
+	int interval = feedInfo->GetInterval() * 60;
+	if (!success)
+	{
+		// On failure schedule next update sooner:
+		// starting with 1 minute and increasing, but not greater than FeedX.Interval
+		interval = feedInfo->GetLastInterval() * 2;
+		interval = std::max(interval, 60);
+		interval = std::min(interval, feedInfo->GetInterval() * 60);
+	}
+
+	detail("Scheduling update for feed %s in %i minute(s)", feedInfo->GetName(), interval / 60);
+	feedInfo->SetLastInterval(interval);
+	feedInfo->SetNextUpdate(current + interval);
 }
 
 void FeedCoordinator::FilterFeed(FeedInfo* feedInfo, FeedItemList* feedItems)

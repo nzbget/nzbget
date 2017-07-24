@@ -121,6 +121,7 @@ private:
 	void CleanupCache();
 	void CheckSaveFeeds();
 	std::unique_ptr<FeedFile> parseFeed(FeedInfo* feedInfo);
+	void SchedulerNextUpdate(FeedInfo* feedInfo, bool success);
 };
 
 extern FeedCoordinator* g_FeedCoordinator;

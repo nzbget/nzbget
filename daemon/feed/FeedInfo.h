@@ -51,6 +51,10 @@ public:
 	const char* GetExtensions() { return m_extensions; }
 	time_t GetLastUpdate() { return m_lastUpdate; }
 	void SetLastUpdate(time_t lastUpdate) { m_lastUpdate = lastUpdate; }
+	time_t GetNextUpdate() { return m_nextUpdate; }
+	void SetNextUpdate(time_t nextUpdate) { m_nextUpdate = nextUpdate; }
+	int GetLastInterval() { return m_lastInterval; }
+	void SetLastInterval(int lastInterval) { m_lastInterval = lastInterval; }
 	bool GetPreview() { return m_preview; }
 	void SetPreview(bool preview) { m_preview = preview; }
 	EStatus GetStatus() { return m_status; }
@@ -76,6 +80,8 @@ private:
 	CString m_extensions;
 	int m_priority;
 	time_t m_lastUpdate = 0;
+	time_t m_nextUpdate = 0;
+	int m_lastInterval = 0;
 	bool m_preview = false;
 	EStatus m_status = fsUndefined;
 	CString m_outputFilename;
