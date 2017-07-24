@@ -60,11 +60,11 @@ Error()
 
 ValidArch()
 {
-    LIMARCH=`echo " $ALLARCHS " | sed "s/ $1 //"`
-    if test " $ALLARCHS " = "$LIMARCH"; then
-        return 1
+    LIMARCH=`echo "$ALLARCHS" | grep -w "$1"`
+    if test "$ALLARCHS" = "$LIMARCH"; then
+        return 0
     fi
-    return 0
+    return 1
 }
 
 PrintArch()
