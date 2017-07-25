@@ -47,6 +47,8 @@ var Downloads = (new function($)
 	var urls;
 	var nameColumnWidth = null;
 
+	var groupHash = '';
+
 	var statusData = {
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
 		'FETCHING': { Text: 'FETCHING', PostProcess: false },
@@ -127,15 +129,19 @@ var Downloads = (new function($)
 			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
 
-		RPC.call('listgroups', [], groups_loaded);
+		RPC.call('listgroupschanged', [this.groupHash], groups_loaded);
 	}
 
 	function groups_loaded(_groups)
 	{
 		if (!Refresher.isPaused())
 		{
-			groups = _groups;
-			Downloads.groups = groups;
+			if (_groups.hasOwnProperty('groups'))
+			{
+				groups = _groups['groups'];
+				Downloads.groupHash = _groups['hash'];
+				Downloads.groups = groups;
+			}
 			prepare();
 		}
 		RPC.next();
