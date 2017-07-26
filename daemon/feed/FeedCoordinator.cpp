@@ -343,18 +343,24 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 void FeedCoordinator::SchedulerNextUpdate(FeedInfo* feedInfo, bool success)
 {
 	time_t current = Util::CurrentTime();
-	int interval = feedInfo->GetInterval() * 60;
-	if (!success)
+	int interval;
+
+	if (success)
+	{
+		interval = feedInfo->GetInterval() * 60;
+		feedInfo->SetLastInterval(0);
+	}
+	else
 	{
 		// On failure schedule next update sooner:
 		// starting with 1 minute and increasing, but not greater than FeedX.Interval
 		interval = feedInfo->GetLastInterval() * 2;
 		interval = std::max(interval, 60);
 		interval = std::min(interval, feedInfo->GetInterval() * 60);
+		feedInfo->SetLastInterval(interval);
 	}
 
 	detail("Scheduling update for feed %s in %i minute(s)", feedInfo->GetName(), interval / 60);
-	feedInfo->SetLastInterval(interval);
 	feedInfo->SetNextUpdate(current + interval);
 }
 
