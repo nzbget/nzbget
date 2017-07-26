@@ -20,11 +20,11 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.65)
 AC_INIT(nzbget, 20.0-testing, hugbug@users.sourceforge.net)
 AC_CONFIG_AUX_DIR(posix)
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_SRCDIR([daemon/main/nzbget.cpp])
 AC_CONFIG_HEADERS([config.h])
 AM_MAINTAINER_MODE
@@ -599,14 +599,14 @@ dnl
 dnl variadic macros
 dnl 
 AC_MSG_CHECKING(for variadic macros)
-AC_COMPILE_IFELSE([
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 	#define macro(...)   macrofunc(__VA_ARGS__)
 	int macrofunc(int a, int b) { return a + b; }
 	int test() { return macro(1, 2); }
 	],
 	AC_MSG_RESULT([yes])
 	AC_DEFINE([HAVE_VARIADIC_MACROS], 1, Define to 1 if variadic macros are supported),
-	AC_MSG_RESULT([no]))
+	AC_MSG_RESULT([no]))])
 
 
 dnl

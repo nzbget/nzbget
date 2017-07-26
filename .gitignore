@@ -26,11 +26,14 @@
 # GNU Autotools
 .deps/
 config.h
+config.h.in~
 config.log
 config.status
 Makefile
 stamp-h1
 autom4te.cache/
+.dirstamp
+*.o-*
 
 # Visual Studio User-specific files
 *.suo
@@ -57,6 +60,10 @@ ipch/
 *.svclog
 *.scc
 *.sln
+.vscode/
+
+# macOS
+.DS_Store
 
 # NZBGet specific
 nzbget
@@ -64,3 +71,4 @@ code_revision.cpp
 *.temp
 *.pyc
 pytest.ini
+.cache
