@@ -32,12 +32,15 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
 	<!-- Libraries -->
-	<script language="javascript" type="text/javascript" src="lib/jquery.min.js"></script>
-	<script language="javascript" type="text/javascript" src="lib/bootstrap.min.js"></script>
-	<script language="javascript" type="text/javascript" src="lib/raphael.min.js"></script>
-	<script language="javascript" type="text/javascript" src="lib/elycharts.min.js"></script>
+	<!-- %if-debug%
+	<script language="javascript" type="text/javascript" src="lib/jquery.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/bootstrap.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/raphael.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/elycharts.js"></script>
+	%end% -->
 
 	<!-- NZBGet -->
+	<!-- %if-debug%
 	<script language="javascript" type="text/javascript" src="fasttable.js"></script>
 	<script language="javascript" type="text/javascript" src="index.js"></script>
 	<script language="javascript" type="text/javascript" src="util.js"></script>
@@ -49,10 +52,22 @@
 	<script language="javascript" type="text/javascript" src="upload.js"></script>
 	<script language="javascript" type="text/javascript" src="config.js"></script>
 	<script language="javascript" type="text/javascript" src="feed.js"></script>
+	%end% -->
+
+	<!-- Loading all javascript files from libraries and NZBGet in one request -->
+	<!-- %if-not-debug% -->
+	<script language="javascript" type="text/javascript" src="combined.js?lib/jquery.min.js+lib/bootstrap.min.js+lib/raphael.min.js+lib/elycharts.min.js+fasttable.js+index.js+util.js+downloads.js+edit.js+status.js+messages.js+history.js+upload.js+config.js+feed.js"></script>
+	<!-- %end% -->
 
 	<style>.hide{display:none;}</style>
+	<!-- %if-debug%
 	<link rel="stylesheet" type="text/css" href="lib/bootstrap.css" />
 	<link rel="stylesheet" type="text/css" href="style.css" />
+	%end% -->
+	<!-- Loading all css files from libraries and NZBGet in one request -->
+	<!-- %if-not-debug% -->
+	<link rel="stylesheet" type="text/css" href="combined.css?lib/bootstrap.css+style.css" />
+	<!-- %end% -->
 
 	<!-- fav and touch icons -->
 	<link rel="shortcut icon" href="img/favicon.ico">

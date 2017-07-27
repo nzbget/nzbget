@@ -330,28 +330,26 @@ void WebProcessor::Dispatch()
 		return;
 	}
 
-	// for security reasons we allow only characters "0..9 A..Z a..z . - _ /" in the URLs
+	// for security reasons we allow only characters "0..9 A..Z a..z . - + _ / ?" in the URLs
 	// we also don't allow ".." in the URLs
 	for (char *p = m_url; *p; p++)
 	{
 		if (!((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') ||
-			*p == '.' || *p == '-' || *p == '_' || *p == '/') || (*p == '.' && p[1] == '.'))
+			*p == '.' || *p == '-' || *p == '+' || *p == '?' || *p == '_' || *p == '/') || (*p == '.' && p[1] == '.'))
 		{
 			SendErrorResponse(ERR_HTTP_NOT_FOUND, true);
 			return;
 		}
 	}
 
-	const char *defRes = "";
-	if (m_url[strlen(m_url)-1] == '/')
+	if (!strncmp(m_url, "/combined.", 10) && strchr(m_url, '?'))
 	{
-		// default file in directory (if not specified) is "index.html"
-		defRes = "index.html";
+		SendMultiFileResponse();
 	}
-
-	BString<1024> disk_filename("%s%s%s", g_Options->GetWebDir(), *m_url, defRes);
-
-	SendFileResponse(disk_filename);
+	else
+	{
+		SendSingleFileResponse();
+	}
 }
 
 void WebProcessor::SendAuthResponse()
@@ -494,12 +492,21 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	m_connection->Send(body, bodyLen);
 }
 
-void WebProcessor::SendFileResponse(const char* filename)
+void WebProcessor::SendSingleFileResponse()
 {
-	debug("serving file: %s", filename);
+	const char *defRes = "";
+	if (m_url[strlen(m_url)-1] == '/')
+	{
+		// default file in directory (if not specified) is "index.html"
+		defRes = "index.html";
+	}
+
+	BString<1024> filename("%s%s%s", g_Options->GetWebDir(), *m_url, defRes);
+
+	debug("serving file: %s", *filename);
 
 	CharBuffer body;
-	if (!FileSystem::LoadFileIntoBuffer(filename, body, false))
+	if (!FileSystem::LoadFileIntoBuffer(filename, body, true))
 	{
 		// do not print warnings "404 not found" for certain files
 		bool ignorable = !strcmp(filename, "package-info.json") ||
@@ -510,7 +517,48 @@ void WebProcessor::SendFileResponse(const char* filename)
 		return;
 	}
 
-	SendBodyResponse(body, body.Size(), DetectContentType(filename));
+	const char* contentType = DetectContentType(filename);
+	int len = body.Size() - 1;
+
+#ifdef DEBUG
+	if (contentType && !strcmp(contentType, "text/html"))
+	{
+		Util::ReduceStr(body, "<!-- %if-debug%", "");
+		Util::ReduceStr(body, "<!-- %if-not-debug% -->", "<!--");
+		Util::ReduceStr(body, "<!-- %end% -->", "-->");
+		Util::ReduceStr(body, "%end% -->", "");
+		len = strlen(body);
+	}
+#endif
+
+	SendBodyResponse(body, len, contentType);
+}
+
+void WebProcessor::SendMultiFileResponse()
+{
+	debug("serving multiple files: %s", *m_url);
+
+	StringBuilder response;
+	char* filelist = strchr(m_url, '?');
+	*filelist++ = '\0';
+
+	Tokenizer tok(filelist, "+");
+	while (const char* filename = tok.Next())
+	{
+		BString<1024> diskFilename("%s%c%s", g_Options->GetWebDir(), PATH_SEPARATOR, filename);
+
+		CharBuffer body;
+		if (!FileSystem::LoadFileIntoBuffer(diskFilename, body, true))
+		{
+			warn("Web-Server: %s, Resource: /%s", ERR_HTTP_NOT_FOUND, filename);
+			SendErrorResponse(ERR_HTTP_NOT_FOUND, false);
+			return;
+		}
+
+		response.Append(body);
+	}
+
+	SendBodyResponse(response, response.Length(), DetectContentType(m_url));
 }
 
 const char* WebProcessor::DetectContentType(const char* filename)
