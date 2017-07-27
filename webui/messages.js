@@ -94,24 +94,17 @@ var Messages = (new function($)
 
 	this.update = function()
 	{
+		RPC.call('log', [lastID+1, 0], loaded);
+	}
+
+	function loaded(newMessages)
+	{
 		if (maxMessages === null)
 		{
 			maxMessages = parseInt(Options.option('LogBufferSize'));
 			initFilterButtons();
 		}
 
-		if (lastID === 0)
-		{
-			RPC.call('log', [0, maxMessages], loaded);
-		}
-		else
-		{
-			RPC.call('log', [lastID+1, 0], loaded);
-		}
-	}
-
-	function loaded(newMessages)
-	{
 		merge(newMessages);
 		RPC.next();
 	}

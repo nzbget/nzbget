@@ -763,31 +763,23 @@ var Refresher = (new function($)
 		$('#ErrorAlert').hide();
 		refreshStarted();
 
-		loadQueue = new Array(
-			function() { Options.update(); },
-			function() { Status.update(); },
-			function() { Downloads.update(); },
-			function() { Messages.update(); },
-			function() { History.update(); });
+		loadQueue = 4;
+		Status.update();
+		Downloads.update();
+		Messages.update();
+		History.update();
 
-		if (!firstLoad)
+		if (firstLoad)
 		{
-			// query NZBGet configuration only on first refresh
-			loadQueue.shift();
+			loadQueue++;
+			Options.update();
 		}
-
-		loadNext();
 	}
 
 	function loadNext()
 	{
-		if (loadQueue.length > 0)
-		{
-			var nextStep = loadQueue[0];
-			loadQueue.shift();
-			nextStep();
-		}
-		else
+		loadQueue--;
+		if (loadQueue === 0)
 		{
 			firstLoad = false;
 			Frontend.loadCompleted();

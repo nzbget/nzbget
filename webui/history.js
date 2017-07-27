@@ -103,17 +103,17 @@ var History = (new function($)
 
 	this.update = function()
 	{
+		RPC.call('history', [showDup], loaded);
+	}
+
+	function loaded(curHistory)
+	{
 		if (!history)
 		{
 			$('#HistoryTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 			initFilterButtons();
 		}
 
-		RPC.call('history', [showDup], loaded);
-	}
-
-	function loaded(curHistory)
-	{
 		history = curHistory;
 		prepare();
 		RPC.next();

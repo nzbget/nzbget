@@ -59,16 +59,15 @@ var Options = (new function($)
 			_this.options = _options;
 			initCategories();
 			_this.restricted = _this.option('ControlPort') === '***';
-
-			// loading config templates and build list of post-processing parameters
-			_this.postParamConfig = [];
-			RPC.call('configtemplates', [false], function(data)
-				{
-					initPostParamConfig(data);
-					RPC.next();
-				},
-				RPC.next);
 		});
+
+		// loading config templates and build list of post-processing parameters
+		_this.postParamConfig = [];
+		RPC.call('configtemplates', [false], function(data)
+			{
+				initPostParamConfig(data);
+				RPC.next();
+			});
 	}
 
 	this.cleanup = function()
