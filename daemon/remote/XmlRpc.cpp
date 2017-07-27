@@ -34,6 +34,10 @@
 #include "ScriptConfig.h"
 #include "QueueScript.h"
 #include "CommandScript.h"
+#ifndef DISABLE_PARCHECK
+	#include "par2cmdline.h"
+	#include "md5.h"
+#endif
 
 extern void ExitProc();
 extern void Reload();
@@ -141,6 +145,12 @@ public:
 	virtual void Execute();
 private:
 	const char* DetectStatus(NzbInfo* nzbInfo);
+};
+
+class ListGroupsChangedXmlCommand: public ListGroupsXmlCommand
+{
+public:
+	virtual void Execute();
 };
 
 class EditQueueXmlCommand: public XmlCommand
@@ -605,6 +615,10 @@ std::unique_ptr<XmlCommand> XmlRpcProcessor::CreateCommand(const char* methodNam
 	else if (!strcasecmp(methodName, "listgroups"))
 	{
 		command = std::make_unique<ListGroupsXmlCommand>();
+	}
+	else if (!strcasecmp(methodName, "listgroupschanged"))
+	{
+		command = std::make_unique<ListGroupsChangedXmlCommand>();
 	}
 	else if (!strcasecmp(methodName, "editqueue"))
 	{
@@ -2022,6 +2036,71 @@ const char* ListGroupsXmlCommand::DetectStatus(NzbInfo* nzbInfo)
 	}
 
 	return status;
+}
+
+static void base64_encode(char* dst, const unsigned char* src, size_t len)
+{
+	static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	for (; len >= 3; src += 3, len -= 3)
+	{
+		*dst++ = b64[src[0] >> 2];
+		*dst++ = b64[(src[0] << 4 | src[1] >> 4) & 0x3f];
+		*dst++ = b64[(src[1] << 2 | src[2] >> 6) & 0x3f];
+		*dst++ = b64[src[2] & 0x3f];
+	}
+	if (len > 0)
+	{
+		*dst++ = b64[src[0] >> 2];
+		if (len == 2)
+		{
+			*dst++ = b64[(src[0] << 4 | src[1] >> 4) & 0x3f];
+			*dst++ = b64[(src[1] << 2) & 0x3f];
+		}
+		else
+		{
+			*dst++ = b64[(src[0] << 4) & 0x3f];
+			*dst++ = '=';
+		}
+		*dst++ = '=';
+	}
+	*dst = '\0';
+}
+
+void ListGroupsChangedXmlCommand::Execute()
+{
+	char *oldhash = "";
+	NextParamAsStr(&oldhash);
+
+	AppendResponse(IsJson()
+		? "{\"groups\":"
+		: "<struct><member><name>groups</name><value>");
+	size_t skip_hash = strlen(GetResponse());
+
+	ListGroupsXmlCommand::Execute();
+
+#ifdef DISABLE_PARCHECK
+	const char* newhash = !strcmp(oldhash, "AAAAAAAAAAAAAAAAAAAAAA==")
+			? "/////////////////////w==" : "AAAAAAAAAAAAAAAAAAAAAA==";
+#else
+	char newhash[25];
+	Par2::MD5Hash hash;
+	Par2::MD5Context md5;
+	md5.Update(GetResponse() + skip_hash, strlen(GetResponse()) - skip_hash);
+	md5.Final(hash);
+	base64_encode(newhash, hash.hash, sizeof(hash.hash));
+	if (!strcmp(newhash, oldhash))
+	{
+		m_response.SetLength(IsJson() ? 1 : 22);
+	}
+	else
+#endif
+	{
+		AppendResponse(IsJson() ? "," : "</value></member><member><name>");
+	}
+
+	AppendFmtResponse(IsJson() ? "\"hash\":\"%s\"}"
+		: "hash</name><value><string>%s,%s</string></value></member></struct>",
+		newhash);
 }
 
 struct EditCommandEntry
