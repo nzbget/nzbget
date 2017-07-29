@@ -59,6 +59,7 @@ public:
 	const char* GetResponse() { return m_response; }
 	const char* GetContentType() { return m_contentType; }
 	static bool IsRpcRequest(const char* url);
+	bool IsCachable() { return m_cachable; };
 
 private:
 	char* m_request = nullptr;
@@ -68,6 +69,7 @@ private:
 	EUserAccess m_userAccess;
 	CString m_url;
 	StringBuilder m_response;
+	bool m_cachable = false;
 
 	void Dispatch();
 	std::unique_ptr<XmlCommand> CreateCommand(const char* methodName);
@@ -89,6 +91,7 @@ public:
 	const char* GetResponse() { return m_response; }
 	const char* GetCallbackFunc() { return m_callbackFunc; }
 	bool GetFault() { return m_fault; }
+	virtual bool IsCachable() { return false; };
 
 protected:
 	char* m_request = nullptr;

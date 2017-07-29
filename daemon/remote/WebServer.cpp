@@ -25,6 +25,10 @@
 #include "Options.h"
 #include "Util.h"
 #include "FileSystem.h"
+#ifndef DISABLE_PARCHECK
+	#include "par2cmdline.h"
+	#include "md5.h"
+#endif
 
 static const char* ERR_HTTP_BAD_REQUEST = "400 Bad Request";
 static const char* ERR_HTTP_NOT_FOUND = "404 Not Found";
@@ -174,6 +178,10 @@ void WebProcessor::ParseHeaders()
 		{
 			m_forwardedFor = p + 17;
 		}
+		else if (!strncasecmp(p, "If-None-Match: ", 15))
+		{
+			m_oldetag = p + 15;
+		}
 		else if (*p == '\0')
 		{
 			break;
@@ -314,7 +322,7 @@ void WebProcessor::Dispatch()
 		processor.SetUserAccess((XmlRpcProcessor::EUserAccess)m_userAccess);
 		processor.SetUrl(m_url);
 		processor.Execute();
-		SendBodyResponse(processor.GetResponse(), strlen(processor.GetResponse()), processor.GetContentType());
+		SendBodyResponse(processor.GetResponse(), strlen(processor.GetResponse()), processor.GetContentType(), processor.IsCachable());
 		return;
 	}
 
@@ -433,10 +441,40 @@ void WebProcessor::SendRedirectResponse(const char* url)
 	m_connection->Send(responseHeader, responseHeader.Length());
 }
 
-void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* contentType)
+#ifndef DISABLE_PARCHECK
+static void base64_encode(char* dst, const unsigned char* src, size_t len)
+{
+	static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	for (; len >= 3; src += 3, len -= 3)
+	{
+		*dst++ = b64[src[0] >> 2];
+		*dst++ = b64[(src[0] << 4 | src[1] >> 4) & 0x3f];
+		*dst++ = b64[(src[1] << 2 | src[2] >> 6) & 0x3f];
+		*dst++ = b64[src[2] & 0x3f];
+	}
+	if (len > 0)
+	{
+		*dst++ = b64[src[0] >> 2];
+		if (len == 2)
+		{
+			*dst++ = b64[(src[0] << 4 | src[1] >> 4) & 0x3f];
+			*dst++ = b64[(src[1] << 2) & 0x3f];
+		}
+		else
+		{
+			*dst++ = b64[(src[0] << 4) & 0x3f];
+			*dst++ = '=';
+		}
+		*dst++ = '=';
+	}
+	*dst = '\0';
+}
+#endif
+
+void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* contentType, bool cachable)
 {
 	const char* RESPONSE_HEADER =
-		"HTTP/1.1 200 OK\r\n"
+		"HTTP/1.1 %s\r\n"
 		"Connection: close\r\n"
 		"Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
 		"Access-Control-Allow-Origin: %s\r\n"
@@ -448,8 +486,29 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"Content-Length: %i\r\n"
 		"%s"					// Content-Type: xxx
 		"%s"					// Content-Encoding: gzip
+		"%s"					// Etag
 		"Server: nzbget-%s\r\n"
 		"\r\n";
+
+	char newetag[11 + 24];
+	bool unchanged = false;
+#ifndef DISABLE_PARCHECK
+	if (cachable)
+	{
+		strcpy(newetag, "Etag: \"");
+
+		Par2::MD5Hash hash;
+		Par2::MD5Context md5;
+		md5.Update(body, bodyLen);
+		md5.Final(hash);
+
+		base64_encode(newetag + strlen(newetag), hash.hash, sizeof(hash.hash));
+		strcat(newetag, "\"");
+		unchanged = m_oldetag && !strcmp(newetag + 6, m_oldetag);
+
+		strcat(newetag, "\r\n");
+	}
+#endif
 
 #ifndef DISABLE_GZIP
 	CharBuffer gbuf;
@@ -480,16 +539,22 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	}
 
 	BString<1024> responseHeader(RESPONSE_HEADER,
+		unchanged ? (m_httpMethod == hmGet ? "304 Not Modified" : "412 Precondition Failed") : "200 OK",
 		m_origin.Str(),
 		g_Options->GetFormAuth() ? "form" : "http",
 		m_authorized ? m_serverAuthToken[m_userAccess] : "",
-		bodyLen, *contentTypeHeader,
+		unchanged ? 0 : bodyLen,
+		*contentTypeHeader,
 		gzip ? "Content-Encoding: gzip\r\n" : "",
+		cachable ? newetag : "",
 		Util::VersionRevision());
 
 	// Send the request answer
 	m_connection->Send(responseHeader, responseHeader.Length());
-	m_connection->Send(body, bodyLen);
+	if (!unchanged)
+	{
+		m_connection->Send(body, bodyLen);
+	}
 }
 
 void WebProcessor::SendSingleFileResponse()
@@ -531,7 +596,7 @@ void WebProcessor::SendSingleFileResponse()
 	}
 #endif
 
-	SendBodyResponse(body, len, contentType);
+	SendBodyResponse(body, len, contentType, true);
 }
 
 void WebProcessor::SendMultiFileResponse()
@@ -558,7 +623,7 @@ void WebProcessor::SendMultiFileResponse()
 		response.Append(body);
 	}
 
-	SendBodyResponse(response, response.Length(), DetectContentType(m_url));
+	SendBodyResponse(response, response.Length(), DetectContentType(m_url), true);
 }
 
 const char* WebProcessor::DetectContentType(const char* filename)
