@@ -533,6 +533,8 @@ var RPC = (new function($)
 	this.rpcUrl;
 	this.defaultFailureCallback;
 	this.connectErrorMessage = 'Cannot establish connection';
+	this.etags = {};
+	this.cachedResponses = {};
 
 	this.call = function(method, params, completed_callback, failure_callback, timeout, custom_headers)
 	{
@@ -548,6 +550,11 @@ var RPC = (new function($)
 			xhr.timeout = timeout;
 		}
 
+		if (this.etags.hasOwnProperty(method))
+		{
+			xhr.setRequestHeader("If-None-Match", this.etags[method]);
+		}
+
 		for (var i = 0; i < (custom_headers ? custom_headers.length : 0); i++)
 		{
 			xhr.setRequestHeader(custom_headers[i].name, custom_headers[i].value);
@@ -559,17 +566,31 @@ var RPC = (new function($)
 			{
 					var res = 'Unknown error';
 					var result;
-					if (xhr.status === 200)
+					if (xhr.status === 200 || xhr.status === 412)
 					{
-						if (xhr.responseText != '')
+						if (xhr.status === 412 || xhr.responseText != '')
 						{
-							try
+							if (xhr.status === 412)
 							{
-								result = JSON.parse(xhr.responseText);
+								result = RPC.cachedResponses[method];
 							}
-							catch (e)
+							else
 							{
-								res = e;
+								try
+								{
+									result = JSON.parse(xhr.responseText);
+								}
+								catch (e)
+								{
+									res = e;
+								}
+
+								var etag = xhr.getResponseHeader('Etag');
+								if (etag)
+								{
+									RPC.etags[method] = etag;
+									RPC.cachedResponses[method] = result;
+								}
 							}
 							if (result)
 							{

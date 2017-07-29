@@ -38,6 +38,14 @@
 extern void ExitProc();
 extern void Reload();
 
+class CachableXmlCommand: public XmlCommand
+{
+#ifndef DISABLE_PARCHECK
+public:
+	virtual bool IsCachable() { return true; };
+#endif
+};
+
 class ErrorXmlCommand: public XmlCommand
 {
 public:
@@ -122,14 +130,14 @@ protected:
 	virtual GuardedMessageList GuardMessages();
 };
 
-class NzbInfoXmlCommand: public XmlCommand
+class NzbInfoXmlCommand: public CachableXmlCommand
 {
 protected:
 	void AppendNzbInfoFields(NzbInfo* nzbInfo);
 	void AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue);
 };
 
-class ListFilesXmlCommand: public XmlCommand
+class ListFilesXmlCommand: public CachableXmlCommand
 {
 public:
 	virtual void Execute();
@@ -199,7 +207,7 @@ public:
 	virtual void Execute();
 };
 
-class LoadConfigXmlCommand: public XmlCommand
+class LoadConfigXmlCommand: public CachableXmlCommand
 {
 public:
 	virtual void Execute();
@@ -421,6 +429,7 @@ void XmlRpcProcessor::Dispatch()
 		command->SetUserAccess(m_userAccess);
 		command->PrepareParams();
 		command->Execute();
+		m_cachable = command->IsCachable();
 		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), requestId);
 	}
 }
