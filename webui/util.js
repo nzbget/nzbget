@@ -549,6 +549,7 @@ var RPC = (new function($)
 		'readurl':         true,
 		'servervolumes':   true
 	};
+	this.etags = {};
 
 	this.call = function(method, params, completed_callback, failure_callback, timeout, custom_headers)
 	{
@@ -605,6 +606,13 @@ var RPC = (new function($)
 							catch (e)
 							{
 								res = e;
+							}
+
+							var etag = xhr.getResponseHeader('Etag');
+							if (etag)
+							{
+								cached = RPC.etags.hasOwnProperty(method) && RPC.etags[method] == etag;
+								RPC.etags[method] = etag;
 							}
 
 							if (result)
