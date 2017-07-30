@@ -38,12 +38,10 @@
 extern void ExitProc();
 extern void Reload();
 
-class CachableXmlCommand: public XmlCommand
+class SafeXmlCommand: public XmlCommand
 {
-#ifndef DISABLE_PARCHECK
 public:
-	virtual bool IsCachable() { return true; };
-#endif
+	virtual bool IsSafeMethod() { return true; };
 };
 
 class ErrorXmlCommand: public XmlCommand
@@ -95,13 +93,13 @@ public:
 	virtual void Execute();
 };
 
-class VersionXmlCommand: public XmlCommand
+class VersionXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
 };
 
-class DumpDebugXmlCommand: public XmlCommand
+class DumpDebugXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
@@ -113,13 +111,13 @@ public:
 	virtual void Execute();
 };
 
-class StatusXmlCommand: public XmlCommand
+class StatusXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
 };
 
-class LogXmlCommand: public XmlCommand
+class LogXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
@@ -130,14 +128,14 @@ protected:
 	virtual GuardedMessageList GuardMessages();
 };
 
-class NzbInfoXmlCommand: public CachableXmlCommand
+class NzbInfoXmlCommand: public SafeXmlCommand
 {
 protected:
 	void AppendNzbInfoFields(NzbInfo* nzbInfo);
 	void AppendPostInfoFields(PostInfo* postInfo, int logEntries, bool postQueue);
 };
 
-class ListFilesXmlCommand: public CachableXmlCommand
+class ListFilesXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
@@ -195,19 +193,19 @@ private:
 	const char* DetectStatus(HistoryInfo* historyInfo);
 };
 
-class UrlQueueXmlCommand: public XmlCommand
+class UrlQueueXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
 };
 
-class ConfigXmlCommand: public XmlCommand
+class ConfigXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
 };
 
-class LoadConfigXmlCommand: public CachableXmlCommand
+class LoadConfigXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
@@ -219,7 +217,7 @@ public:
 	virtual void Execute();
 };
 
-class ConfigTemplatesXmlCommand: public XmlCommand
+class ConfigTemplatesXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
@@ -246,7 +244,7 @@ public:
 	virtual void Execute();
 };
 
-class ReadUrlXmlCommand: public XmlCommand
+class ReadUrlXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
@@ -270,7 +268,7 @@ protected:
 	virtual GuardedMessageList GuardMessages();
 };
 
-class ServerVolumesXmlCommand: public XmlCommand
+class ServerVolumesXmlCommand: public SafeXmlCommand
 {
 public:
 	virtual void Execute();
@@ -428,9 +426,17 @@ void XmlRpcProcessor::Dispatch()
 		command->SetHttpMethod(m_httpMethod);
 		command->SetUserAccess(m_userAccess);
 		command->PrepareParams();
-		command->Execute();
-		m_cachable = command->IsCachable();
-		BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), requestId);
+		m_safeMethod = command->IsSafeMethod();
+		bool safeToExecute = m_safeMethod || m_httpMethod == XmlRpcProcessor::hmPost || m_protocol == XmlRpcProcessor::rpJsonPRpc;
+		if (safeToExecute)
+		{
+			command->Execute();
+			BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), requestId);
+		}
+		else
+		{
+			BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
+		}
 	}
 }
 
@@ -461,6 +467,7 @@ void XmlRpcProcessor::MutliCall()
 
 		std::unique_ptr<XmlCommand> command = CreateCommand(methodName);
 		command->SetRequest(requestPtr);
+		m_safeMethod |= command->IsSafeMethod();
 		command->Execute();
 
 		debug("MutliCall, Response=%s", command->GetResponse());
@@ -485,12 +492,7 @@ void XmlRpcProcessor::MutliCall()
 
 	if (error)
 	{
-		ErrorXmlCommand command(4, "Parse error");
-		command.SetRequest(m_request);
-		command.SetProtocol(rpXmlRpc);
-		command.PrepareParams();
-		command.Execute();
-		BuildResponse(command.GetResponse(), "", command.GetFault(), nullptr);
+		BuildErrorResponse(4, "Parse error");
 	}
 	else
 	{
@@ -551,6 +553,16 @@ void XmlRpcProcessor::BuildResponse(const char* response, const char* callbackFu
 	m_response.Append(callbackFooter);
 
 	m_contentType = xmlRpc ? "text/xml" : "application/json";
+}
+
+void XmlRpcProcessor::BuildErrorResponse(int errCode, const char* errText)
+{
+	ErrorXmlCommand command(errCode, errText);
+	command.SetRequest(m_request);
+	command.SetProtocol(rpXmlRpc);
+	command.PrepareParams();
+	command.Execute();
+	BuildResponse(command.GetResponse(), "", command.GetFault(), nullptr);
 }
 
 std::unique_ptr<XmlCommand> XmlRpcProcessor::CreateCommand(const char* methodName)
@@ -1076,16 +1088,6 @@ void XmlCommand::DecodeStr(char* str)
 	}
 }
 
-bool XmlCommand::CheckSafeMethod()
-{
-	bool safe = m_httpMethod == XmlRpcProcessor::hmPost || m_protocol == XmlRpcProcessor::rpJsonPRpc;
-	if (!safe)
-	{
-		BuildErrorResponse(4, "Not safe procedure for HTTP-Method GET. Use Method POST instead");
-	}
-	return safe;
-}
-
 //*****************************************************************
 // Commands
 
@@ -1096,11 +1098,6 @@ void ErrorXmlCommand::Execute()
 
 void PauseUnpauseXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	bool ok = true;
 
 	g_Options->SetResumeTime(0);
@@ -1129,11 +1126,6 @@ void PauseUnpauseXmlCommand::Execute()
 // bool scheduleresume(int Seconds)
 void ScheduleResumeXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	int seconds = 0;
 	if (!NextParamAsInt(&seconds) || seconds < 0)
 	{
@@ -1150,22 +1142,12 @@ void ScheduleResumeXmlCommand::Execute()
 
 void ShutdownXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	BuildBoolResponse(true);
 	ExitProc();
 }
 
 void ReloadXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	BuildBoolResponse(true);
 	Reload();
 }
@@ -1188,11 +1170,6 @@ void DumpDebugXmlCommand::Execute()
 
 void SetDownloadRateXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	int rate = 0;
 	if (!NextParamAsInt(&rate) || rate < 0)
 	{
@@ -2100,11 +2077,6 @@ EditCommandEntry EditCommandNameMap[] = {
 //    bool editqueue(string Command, int Offset, string Args, int[] IDs)
 void EditQueueXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	char* editCommand;
 	if (!NextParamAsStr(&editCommand))
 	{
@@ -2170,11 +2142,6 @@ void EditQueueXmlCommand::Execute()
 //   bool append(string NZBFilename, string Category, int Priority, bool AddToTop, string Content, bool AddPaused, string DupeKey, int DupeScore, string DupeMode)
 void DownloadXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	bool v13 = true;
 
 	char* nzbFilename;
@@ -2387,11 +2354,6 @@ void PostQueueXmlCommand::Execute()
 
 void WriteLogXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	char* kind;
 	char* text;
 	if (!NextParamAsStr(&kind) || !NextParamAsStr(&text))
@@ -2435,11 +2397,6 @@ void WriteLogXmlCommand::Execute()
 
 void ClearLogXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	g_Log->Clear();
 
 	BuildBoolResponse(true);
@@ -2447,11 +2404,6 @@ void ClearLogXmlCommand::Execute()
 
 void ScanXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	bool syncMode = false;
 	// optional parameter "SyncMode"
 	NextParamAsBool(&syncMode);
@@ -2957,11 +2909,6 @@ void ViewFeedXmlCommand::Execute()
 // bool fetchfeed(int ID)
 void FetchFeedXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	int id;
 	if (!NextParamAsInt(&id))
 	{
@@ -2977,11 +2924,6 @@ void FetchFeedXmlCommand::Execute()
 // bool editserver(int ID, bool Active)
 void EditServerXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	bool ok = false;
 	int first = true;
 
@@ -3101,11 +3043,6 @@ void CheckUpdatesXmlCommand::Execute()
 // bool startupdate(string branch)
 void StartUpdateXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	char* branchName;
 	if (!NextParamAsStr(&branchName))
 	{
@@ -3277,11 +3214,6 @@ void ServerVolumesXmlCommand::Execute()
 // bool resetservervolume(int serverid, string counter);
 void ResetServerVolumeXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	int serverId;
 	char* counter;
 	if (!NextParamAsInt(&serverId) || !NextParamAsStr(&counter))
@@ -3360,11 +3292,6 @@ void TestServerXmlCommand::Execute()
 	const char* XML_RESPONSE_STR_BODY = "<string>%s</string>";
 	const char* JSON_RESPONSE_STR_BODY = "\"%s\"";
 
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	char* host;
 	int port;
 	char* username;
@@ -3405,11 +3332,6 @@ void TestServerXmlCommand::PrintError(const char* errMsg)
 // bool startscript(string script, string command, string context, struct[] options);
 void StartScriptXmlCommand::Execute()
 {
-	if (!CheckSafeMethod())
-	{
-		return;
-	}
-
 	char* script;
 	char* command;
 	char* context;

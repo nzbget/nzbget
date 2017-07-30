@@ -323,7 +323,7 @@ void WebProcessor::Dispatch()
 		processor.SetUserAccess((XmlRpcProcessor::EUserAccess)m_userAccess);
 		processor.SetUrl(m_url);
 		processor.Execute();
-		SendBodyResponse(processor.GetResponse(), strlen(processor.GetResponse()), processor.GetContentType(), processor.IsCachable());
+		SendBodyResponse(processor.GetResponse(), strlen(processor.GetResponse()), processor.GetContentType(), processor.IsSafeMethod());
 		return;
 	}
 
@@ -468,7 +468,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	{
 		BString<1024> newETag;
 
-#ifdef DISABLE_PARCHECK
+#ifndef DISABLE_PARCHECK
 		Par2::MD5Hash hash;
 		Par2::MD5Context md5;
 		md5.Update(body, bodyLen);

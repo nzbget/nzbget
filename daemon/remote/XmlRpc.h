@@ -59,7 +59,7 @@ public:
 	const char* GetResponse() { return m_response; }
 	const char* GetContentType() { return m_contentType; }
 	static bool IsRpcRequest(const char* url);
-	bool IsCachable() { return m_cachable; };
+	bool IsSafeMethod() { return m_safeMethod; };
 
 private:
 	char* m_request = nullptr;
@@ -69,12 +69,13 @@ private:
 	EUserAccess m_userAccess;
 	CString m_url;
 	StringBuilder m_response;
-	bool m_cachable = false;
+	bool m_safeMethod = false;
 
 	void Dispatch();
 	std::unique_ptr<XmlCommand> CreateCommand(const char* methodName);
 	void MutliCall();
 	void BuildResponse(const char* response, const char* callbackFunc, bool fault, const char* requestId);
+	void BuildErrorResponse(int errCode, const char* errText);
 };
 
 class XmlCommand
@@ -91,7 +92,7 @@ public:
 	const char* GetResponse() { return m_response; }
 	const char* GetCallbackFunc() { return m_callbackFunc; }
 	bool GetFault() { return m_fault; }
-	virtual bool IsCachable() { return false; };
+	virtual bool IsSafeMethod() { return false; };
 
 protected:
 	char* m_request = nullptr;
@@ -110,7 +111,6 @@ protected:
 	void AppendFmtResponse(const char* format, ...);
 	void AppendCondResponse(const char* part, bool cond);
 	bool IsJson();
-	bool CheckSafeMethod();
 	bool NextParamAsInt(int* value);
 	bool NextParamAsBool(bool* value);
 	bool NextParamAsStr(char** valueBuf);
