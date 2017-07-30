@@ -31,6 +31,8 @@
 #include "md5.h"
 #endif
 
+static const char* ERR_HTTP_OK = "200 OK";
+static const char* ERR_HTTP_NOT_MODIFIED = "304 Not Modified";
 static const char* ERR_HTTP_BAD_REQUEST = "400 Bad Request";
 static const char* ERR_HTTP_NOT_FOUND = "404 Not Found";
 static const char* ERR_HTTP_SERVICE_UNAVAILABLE = "503 Service Unavailable";
@@ -517,7 +519,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 	}
 
 	BString<1024> responseHeader(RESPONSE_HEADER,
-		unchanged ? (m_httpMethod == hmGet ? "304 Not Modified" : "412 Precondition Failed") : "200 OK",
+		unchanged ? ERR_HTTP_NOT_MODIFIED : ERR_HTTP_OK,
 		m_origin.Str(),
 		g_Options->GetFormAuth() ? "form" : "http",
 		m_authorized ? m_serverAuthToken[m_userAccess] : "",

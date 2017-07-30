@@ -123,7 +123,7 @@ var Downloads = (new function($)
 
 	this.update = function()
 	{
-		RPC.call('listgroups', [], groups_loaded);
+		RPC.call('listgroups', [], groups_loaded, null, { prefer_cached: true });
 	}
 
 	function groups_loaded(_groups, _cached)

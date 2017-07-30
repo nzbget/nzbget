@@ -104,7 +104,7 @@ var History = (new function($)
 
 	this.update = function()
 	{
-		RPC.call('history', [showDup], loaded);
+		RPC.call('history', [showDup], loaded, null, { prefer_cached: true });
 	}
 
 	function loaded(_history, _cached)
