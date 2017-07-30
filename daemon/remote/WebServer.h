@@ -62,7 +62,7 @@ private:
 	char m_authToken[48+1];
 	static char m_serverAuthToken[3][48+1];
 	CString m_forwardedFor;
-	CString m_oldetag;
+	CString m_oldETag;
 
 	void Dispatch();
 	void SendAuthResponse();

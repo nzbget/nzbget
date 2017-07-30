@@ -585,7 +585,7 @@ var RPC = (new function($)
 									res = e;
 								}
 
-								var etag = xhr.getResponseHeader('Etag');
+								var etag = xhr.getResponseHeader('ETag');
 								if (etag)
 								{
 									RPC.etags[method] = etag;
