@@ -46,6 +46,7 @@ var Downloads = (new function($)
 	var groups;
 	var urls;
 	var nameColumnWidth = null;
+	var cached = false;
 
 	var statusData = {
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
@@ -122,17 +123,18 @@ var Downloads = (new function($)
 
 	this.update = function()
 	{
+		RPC.call('listgroups', [], groups_loaded);
+	}
+
+	function groups_loaded(_groups, _cached)
+	{
 		if (!groups)
 		{
 			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
 
-		RPC.call('listgroups', [], groups_loaded);
-	}
-
-	function groups_loaded(_groups)
-	{
-		if (!Refresher.isPaused())
+		cached = _cached;
+		if (!Refresher.isPaused() && !cached)
 		{
 			groups = _groups;
 			Downloads.groups = groups;
@@ -152,6 +154,12 @@ var Downloads = (new function($)
 
 	this.redraw = function()
 	{
+		if (cached)
+		{
+			cached = false;
+			return;
+		}
+
 		if (!Refresher.isPaused())
 		{
 			redraw_table();

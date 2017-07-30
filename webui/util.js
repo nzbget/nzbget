@@ -566,6 +566,7 @@ var RPC = (new function($)
 			{
 					var res = 'Unknown error';
 					var result;
+					var cached = false;
 					if (xhr.status === 200 || xhr.status === 412)
 					{
 						if (xhr.status === 412 || xhr.responseText != '')
@@ -573,6 +574,7 @@ var RPC = (new function($)
 							if (xhr.status === 412)
 							{
 								result = RPC.cachedResponses[method];
+								cached = true;
 							}
 							else
 							{
@@ -597,7 +599,7 @@ var RPC = (new function($)
 								if (result.error == null)
 								{
 									res = result.result;
-									completed_callback(res);
+									completed_callback(res, cached);
 									return;
 								}
 								else
