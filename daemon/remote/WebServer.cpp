@@ -25,9 +25,10 @@
 #include "Options.h"
 #include "Util.h"
 #include "FileSystem.h"
+
 #ifndef DISABLE_PARCHECK
-	#include "par2cmdline.h"
-	#include "md5.h"
+#include "par2cmdline.h"
+#include "md5.h"
 #endif
 
 static const char* ERR_HTTP_BAD_REQUEST = "400 Bad Request";
@@ -180,7 +181,7 @@ void WebProcessor::ParseHeaders()
 		}
 		else if (!strncasecmp(p, "If-None-Match: ", 15))
 		{
-			m_oldetag = p + 15;
+			m_oldETag = p + 15;
 		}
 		else if (*p == '\0')
 		{
@@ -441,36 +442,6 @@ void WebProcessor::SendRedirectResponse(const char* url)
 	m_connection->Send(responseHeader, responseHeader.Length());
 }
 
-#ifndef DISABLE_PARCHECK
-static void base64_encode(char* dst, const unsigned char* src, size_t len)
-{
-	static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	for (; len >= 3; src += 3, len -= 3)
-	{
-		*dst++ = b64[src[0] >> 2];
-		*dst++ = b64[(src[0] << 4 | src[1] >> 4) & 0x3f];
-		*dst++ = b64[(src[1] << 2 | src[2] >> 6) & 0x3f];
-		*dst++ = b64[src[2] & 0x3f];
-	}
-	if (len > 0)
-	{
-		*dst++ = b64[src[0] >> 2];
-		if (len == 2)
-		{
-			*dst++ = b64[(src[0] << 4 | src[1] >> 4) & 0x3f];
-			*dst++ = b64[(src[1] << 2) & 0x3f];
-		}
-		else
-		{
-			*dst++ = b64[(src[0] << 4) & 0x3f];
-			*dst++ = '=';
-		}
-		*dst++ = '=';
-	}
-	*dst = '\0';
-}
-#endif
-
 void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* contentType, bool cachable)
 {
 	const char* RESPONSE_HEADER =
@@ -486,29 +457,36 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"Content-Length: %i\r\n"
 		"%s"					// Content-Type: xxx
 		"%s"					// Content-Encoding: gzip
-		"%s"					// Etag
+		"%s"					// ETag
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 
-	char newetag[11 + 24];
+	BString<1024> eTagHeader;
 	bool unchanged = false;
-#ifndef DISABLE_PARCHECK
+
 	if (cachable)
 	{
-		strcpy(newetag, "Etag: \"");
+		BString<1024> newETag;
 
+#ifdef DISABLE_PARCHECK
 		Par2::MD5Hash hash;
 		Par2::MD5Context md5;
 		md5.Update(body, bodyLen);
 		md5.Final(hash);
-
-		base64_encode(newetag + strlen(newetag), hash.hash, sizeof(hash.hash));
-		strcat(newetag, "\"");
-		unchanged = m_oldetag && !strcmp(newetag + 6, m_oldetag);
-
-		strcat(newetag, "\r\n");
-	}
+		newETag.Format("\"%s\"", hash.print().c_str());
+#else
+		uint32 hash = Util::HashBJ96(body, bodyLen, 0);
+		newETag.Format("\"%x\"", hash);
 #endif
+
+		unchanged = m_oldETag && !strcmp(newETag, m_oldETag);
+		if (unchanged)
+		{
+			body = "";
+			bodyLen = 0;
+		}
+		eTagHeader.Format("ETag: %s\r\n", *newETag);
+	}
 
 #ifndef DISABLE_GZIP
 	CharBuffer gbuf;
@@ -543,18 +521,15 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		m_origin.Str(),
 		g_Options->GetFormAuth() ? "form" : "http",
 		m_authorized ? m_serverAuthToken[m_userAccess] : "",
-		unchanged ? 0 : bodyLen,
+		bodyLen,
 		*contentTypeHeader,
 		gzip ? "Content-Encoding: gzip\r\n" : "",
-		cachable ? newetag : "",
+		cachable ? *eTagHeader : "",
 		Util::VersionRevision());
 
 	// Send the request answer
 	m_connection->Send(responseHeader, responseHeader.Length());
-	if (!unchanged)
-	{
-		m_connection->Send(body, bodyLen);
-	}
+	m_connection->Send(body, bodyLen);
 }
 
 void WebProcessor::SendSingleFileResponse()
