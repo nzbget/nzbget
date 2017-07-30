@@ -533,33 +533,16 @@ var RPC = (new function($)
 	this.rpcUrl;
 	this.defaultFailureCallback;
 	this.connectErrorMessage = 'Cannot establish connection';
-	this.safeMethods = {
-		'version':         true,
-		'dump':            true,
-		'status':          true,
-		'log':             true,
-		'listgroups':      true,
-		'postqueue':       true,
-		'history':         true,
-		'listfiles':       true,
-		'urlqueue':        true,
-		'config':          true,
-		'loadconfig':      true,
-		'configtemplates': true,
-		'readurl':         true,
-		'servervolumes':   true
-	};
+	this.safeMethods = [];
 	this.etags = {};
 
-	this.call = function(method, params, completed_callback, failure_callback, timeout, custom_headers)
+	this.openRequest = function(method, params, options)
 	{
-		var _this = this;
-
 		var xhr = new XMLHttpRequest();
-		var request;
-		if (this.safeMethods.hasOwnProperty(method))
+
+		if (this.safeMethods.indexOf(method) > -1)
 		{
-			request = '';
+			var request = '';
 			for (var i = 0; i < params.length; i++)
 			{
 				request += '&=' + encodeURIComponent(JSON.stringify(params[i]));
@@ -569,24 +552,32 @@ var RPC = (new function($)
 				request = '?' + request.substr(1);
 			}
 			xhr.open('get', this.rpcUrl + '/' + method + request);
-			request = undefined;
+			xhr._reportRequest = method + request;
 		}
 		else
 		{
 			xhr.open('post', this.rpcUrl);
-			request = JSON.stringify({nocache: new Date().getTime(), method: method, params: params});
+			xhr._request = JSON.stringify({nocache: new Date().getTime(), method: method, params: params});
+			xhr._reportRequest = xhr._request;
 		}
 
-
-		if (timeout)
+		if (options && ('timeout' in options))
 		{
-			xhr.timeout = timeout;
+			xhr.timeout = options['timeout'];
 		}
 
-		for (var i = 0; i < (custom_headers ? custom_headers.length : 0); i++)
+		for (var i = 0; i < (options && ('custom_headers' in options) ? options['custom_headers'].length : 0); i++)
 		{
-			xhr.setRequestHeader(custom_headers[i].name, custom_headers[i].value);
+			xhr.setRequestHeader(options['custom_headers'][i].name, options['custom_headers'][i].value);
 		}
+
+		return xhr;
+	}
+
+	this.call = function(method, params, completed_callback, failure_callback, options)
+	{
+		var _this = this;
+		var xhr = this.openRequest(method, params, options);
 
 		xhr.onreadystatechange = function()
 		{
@@ -599,20 +590,27 @@ var RPC = (new function($)
 					{
 						if (xhr.responseText != '')
 						{
-							try
-							{
-								result = JSON.parse(xhr.responseText);
-							}
-							catch (e)
-							{
-								res = e;
-							}
-
-							var etag = xhr.getResponseHeader('Etag');
+							var etag = xhr.getResponseHeader('ETag');
 							if (etag)
 							{
-								cached = RPC.etags.hasOwnProperty(method) && RPC.etags[method] == etag;
+								cached = RPC.etags[method] == etag;
 								RPC.etags[method] = etag;
+							}
+
+							if (cached && options && ('prefer_cached' in options) && options['prefer_cached'])
+							{
+								result = {result: null, error: null};
+							}
+							else
+							{
+								try
+								{
+									result = JSON.parse(xhr.responseText);
+								}
+								catch (e)
+								{
+									res = e;
+								}
 							}
 
 							if (result)
@@ -628,7 +626,7 @@ var RPC = (new function($)
 									res = result.error.message;
 									if (result.error.message != 'Access denied')
 									{
-										res = res + '<br><br>Request: ' + request;
+										res = res + '<br><br>Request: ' + xhr._reportRequest;
 									}
 								}
 							}
@@ -657,6 +655,6 @@ var RPC = (new function($)
 					}
 			}
 		};
-		xhr.send(request);
+		xhr.send(xhr._request);
 	}
 }(jQuery));

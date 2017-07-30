@@ -93,6 +93,7 @@ public:
 	const char* GetCallbackFunc() { return m_callbackFunc; }
 	bool GetFault() { return m_fault; }
 	virtual bool IsSafeMethod() { return false; };
+	virtual bool IsError() { return false; };
 
 protected:
 	char* m_request = nullptr;

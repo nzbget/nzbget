@@ -698,7 +698,7 @@ var Frontend = (new function($)
 						$('#LoginDialog_Username').focus();
 					}
 				},
-				0, headers);
+				{ custom_headers: headers });
 		}
 
 		$('#LoginDialog_Form').submit(function(e)
@@ -722,7 +722,7 @@ var Frontend = (new function($)
 			{
 				$('#LoginDialog').modal({backdrop: 'static'});
 				$('#LoginDialog_Username').focus();
-			}, 10000);
+			}, { timeout: 10000 } );
 	}
 }(jQuery));
 
@@ -751,6 +751,9 @@ var Refresher = (new function($)
 		RPC.connectErrorMessage = 'Cannot establish connection to NZBGet.'
 		RPC.defaultFailureCallback = rpcFailure;
 		RPC.next = loadNext;
+		RPC.safeMethods = ['version', 'status', 'listgroups', 'history', 'listfiles',
+			'log', 'loadlog', 'logscript', 'logupdate', 'config', 'loadconfig',
+			'configtemplates', 'readurl', 'servervolumes'];
 
 		$('#RefreshMenu li a').click(refreshIntervalClick);
 		$('#RefreshButton').click(refreshClick);

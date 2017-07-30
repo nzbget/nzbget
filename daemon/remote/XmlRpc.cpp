@@ -50,6 +50,7 @@ public:
 	ErrorXmlCommand(int errCode, const char* errText) :
 		m_errCode(errCode), m_errText(errText) {}
 	virtual void Execute();
+	virtual bool IsError() { return true; };
 
 private:
 	int m_errCode;
@@ -428,7 +429,7 @@ void XmlRpcProcessor::Dispatch()
 		command->PrepareParams();
 		m_safeMethod = command->IsSafeMethod();
 		bool safeToExecute = m_safeMethod || m_httpMethod == XmlRpcProcessor::hmPost || m_protocol == XmlRpcProcessor::rpJsonPRpc;
-		if (safeToExecute)
+		if (safeToExecute || command->IsError())
 		{
 			command->Execute();
 			BuildResponse(command->GetResponse(), command->GetCallbackFunc(), command->GetFault(), requestId);
@@ -559,7 +560,7 @@ void XmlRpcProcessor::BuildErrorResponse(int errCode, const char* errText)
 {
 	ErrorXmlCommand command(errCode, errText);
 	command.SetRequest(m_request);
-	command.SetProtocol(rpXmlRpc);
+	command.SetProtocol(m_protocol);
 	command.PrepareParams();
 	command.Execute();
 	BuildResponse(command.GetResponse(), "", command.GetFault(), nullptr);
