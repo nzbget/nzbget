@@ -549,8 +549,6 @@ var RPC = (new function($)
 		'readurl':         true,
 		'servervolumes':   true
 	};
-	this.etags = {};
-	this.cachedResponses = {};
 
 	this.call = function(method, params, completed_callback, failure_callback, timeout, custom_headers)
 	{
