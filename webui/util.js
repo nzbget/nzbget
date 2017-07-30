@@ -533,6 +533,22 @@ var RPC = (new function($)
 	this.rpcUrl;
 	this.defaultFailureCallback;
 	this.connectErrorMessage = 'Cannot establish connection';
+	this.safeMethods = {
+		'version':         true,
+		'dump':            true,
+		'status':          true,
+		'log':             true,
+		'listgroups':      true,
+		'postqueue':       true,
+		'history':         true,
+		'listfiles':       true,
+		'urlqueue':        true,
+		'config':          true,
+		'loadconfig':      true,
+		'configtemplates': true,
+		'readurl':         true,
+		'servervolumes':   true
+	};
 	this.etags = {};
 	this.cachedResponses = {};
 
@@ -540,19 +556,32 @@ var RPC = (new function($)
 	{
 		var _this = this;
 
-		var request = JSON.stringify({nocache: new Date().getTime(), method: method, params: params});
 		var xhr = new XMLHttpRequest();
+		var request;
+		if (this.safeMethods.hasOwnProperty(method))
+		{
+			request = '';
+			for (var i = 0; i < params.length; i++)
+			{
+				request += '&=' + encodeURIComponent(JSON.stringify(params[i]));
+			}
+			if (params.length > 0)
+			{
+				request = '?' + request.substr(1);
+			}
+			xhr.open('get', this.rpcUrl + '/' + method + request);
+			request = undefined;
+		}
+		else
+		{
+			xhr.open('post', this.rpcUrl);
+			request = JSON.stringify({nocache: new Date().getTime(), method: method, params: params});
+		}
 
-		xhr.open('post', this.rpcUrl);
 
 		if (timeout)
 		{
 			xhr.timeout = timeout;
-		}
-
-		if (this.etags.hasOwnProperty(method))
-		{
-			xhr.setRequestHeader("If-None-Match", this.etags[method]);
 		}
 
 		for (var i = 0; i < (custom_headers ? custom_headers.length : 0); i++)
@@ -567,33 +596,19 @@ var RPC = (new function($)
 					var res = 'Unknown error';
 					var result;
 					var cached = false;
-					if (xhr.status === 200 || xhr.status === 412)
+					if (xhr.status === 200)
 					{
-						if (xhr.status === 412 || xhr.responseText != '')
+						if (xhr.responseText != '')
 						{
-							if (xhr.status === 412)
+							try
 							{
-								result = RPC.cachedResponses[method];
-								cached = true;
+								result = JSON.parse(xhr.responseText);
 							}
-							else
+							catch (e)
 							{
-								try
-								{
-									result = JSON.parse(xhr.responseText);
-								}
-								catch (e)
-								{
-									res = e;
-								}
+								res = e;
+							}
 
-								var etag = xhr.getResponseHeader('ETag');
-								if (etag)
-								{
-									RPC.etags[method] = etag;
-									RPC.cachedResponses[method] = result;
-								}
-							}
 							if (result)
 							{
 								if (result.error == null)
