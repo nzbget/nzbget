@@ -44,6 +44,7 @@ var History = (new function($)
 	var curFilter = 'ALL';
 	var activeTab = false;
 	var showDup = false;
+	var cached = false;
 
 	this.init = function(options)
 	{
@@ -106,7 +107,7 @@ var History = (new function($)
 		RPC.call('history', [showDup], loaded);
 	}
 
-	function loaded(curHistory)
+	function loaded(_history, _cached)
 	{
 		if (!history)
 		{
@@ -114,8 +115,12 @@ var History = (new function($)
 			initFilterButtons();
 		}
 
-		history = curHistory;
-		prepare();
+		cached = _cached;
+		if (!Refresher.isPaused() && !cached)
+		{
+			history = _history;
+			prepare();
+		}
 		RPC.next();
 	}
 
@@ -144,9 +149,26 @@ var History = (new function($)
 		}
 	}
 
+	this.redraw = function()
+	{
+		if (cached)
+		{
+			cached = false;
+			return;
+		}
+
+		if (!Refresher.isPaused())
+		{
+			redraw_table();
+		}
+
+		Util.show($HistoryTabBadge, history.length > 0);
+		Util.show($HistoryTabBadgeEmpty, history.length === 0 && UISettings.miniTheme);
+	}
+
 	var SEARCH_FIELDS = ['name', 'status', 'priority', 'category', 'age', 'size', 'time'];
 
-	this.redraw = function()
+	function redraw_table()
 	{
 		var data = [];
 
@@ -181,9 +203,6 @@ var History = (new function($)
 		}
 
 		$HistoryTable.fasttable('update', data);
-
-		Util.show($HistoryTabBadge, history.length > 0);
-		Util.show($HistoryTabBadgeEmpty, history.length === 0 && UISettings.miniTheme);
 	}
 
 	function fillFieldsCallback(item)
