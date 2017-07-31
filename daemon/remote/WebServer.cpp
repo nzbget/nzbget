@@ -370,10 +370,11 @@ void WebProcessor::Dispatch()
 void WebProcessor::SendAuthResponse()
 {
 	const char* AUTH_RESPONSE_HEADER =
-		"HTTP/1.0 401 Unauthorized\r\n"
+		"HTTP/1.1 401 Unauthorized\r\n"
 		"%s"
 		"Connection: %s\r\n"
 		"Content-Type: text/plain\r\n"
+		"Content-Length: 0\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 
@@ -392,6 +393,7 @@ void WebProcessor::SendOptionsResponse()
 		"HTTP/1.1 200 OK\r\n"
 		"Connection: %s\r\n"
 		//"Content-Type: plain/text\r\n"
+		"Content-Length: 0\r\n"
 		"Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
 		"Access-Control-Allow-Origin: %s\r\n"
 		"Access-Control-Allow-Credentials: true\r\n"
@@ -411,7 +413,7 @@ void WebProcessor::SendOptionsResponse()
 void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
 {
 	const char* RESPONSE_HEADER =
-		"HTTP/1.0 %s\r\n"
+		"HTTP/1.1 %s\r\n"
 		"Connection: %s\r\n"
 		"Content-Length: %i\r\n"
 		"Content-Type: text/html\r\n"
@@ -439,9 +441,10 @@ void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
 void WebProcessor::SendRedirectResponse(const char* url)
 {
 	const char* REDIRECT_RESPONSE_HEADER =
-		"HTTP/1.0 301 Moved Permanently\r\n"
+		"HTTP/1.1 301 Moved Permanently\r\n"
 		"Location: %s\r\n"
 		"Connection: %s\r\n"
+		"Content-Length: 0\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 	BString<1024> responseHeader(REDIRECT_RESPONSE_HEADER, url,
