@@ -599,14 +599,13 @@ dnl
 dnl variadic macros
 dnl 
 AC_MSG_CHECKING(for variadic macros)
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([
-	#define macro(...)   macrofunc(__VA_ARGS__)
-	int macrofunc(int a, int b) { return a + b; }
-	int test() { return macro(1, 2); }
-	],
+AC_TRY_COMPILE(
+	[ #define macro(...)   macrofunc(__VA_ARGS__) ]
+	[ int macrofunc(int a, int b) { return a + b; } ],
+	[ int a=macro(1, 2); ],
 	AC_MSG_RESULT([yes])
 	AC_DEFINE([HAVE_VARIADIC_MACROS], 1, Define to 1 if variadic macros are supported),
-	AC_MSG_RESULT([no]))])
+	AC_MSG_RESULT([no]))
 
 
 dnl
