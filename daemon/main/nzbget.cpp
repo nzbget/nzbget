@@ -516,37 +516,36 @@ void NZBGet::StopRemoteServer()
 	{
 		debug("stopping RemoteServer");
 		m_remoteServer->Stop();
-		int maxWaitMSec = 1000;
-		while (m_remoteServer->IsRunning() && maxWaitMSec > 0)
-		{
-			usleep(100 * 1000);
-			maxWaitMSec -= 100;
-		}
-		if (m_remoteServer->IsRunning())
-		{
-			debug("Killing RemoteServer");
-			m_remoteServer->Kill();
-		}
-		debug("RemoteServer stopped");
 	}
 
 	if (m_remoteSecureServer)
 	{
 		debug("stopping RemoteSecureServer");
 		m_remoteSecureServer->Stop();
-		int maxWaitMSec = 1000;
-		while (m_remoteSecureServer->IsRunning() && maxWaitMSec > 0)
-		{
-			usleep(100 * 1000);
-			maxWaitMSec -= 100;
-		}
-		if (m_remoteSecureServer->IsRunning())
-		{
-			debug("Killing RemoteSecureServer");
-			m_remoteSecureServer->Kill();
-		}
-		debug("RemoteSecureServer stopped");
 	}
+
+	int maxWaitMSec = 5000;
+	while (((m_remoteServer && m_remoteServer->IsRunning()) ||
+		(m_remoteSecureServer && m_remoteSecureServer->IsRunning())) &&
+		maxWaitMSec > 0)
+	{
+		usleep(100 * 1000);
+		maxWaitMSec -= 100;
+	}
+
+	if (m_remoteServer && m_remoteServer->IsRunning())
+	{
+		debug("Killing RemoteServer");
+		m_remoteServer->Kill();
+	}
+
+	if (m_remoteSecureServer && m_remoteSecureServer->IsRunning())
+	{
+		debug("Killing RemoteSecureServer");
+		m_remoteSecureServer->Kill();
+	}
+
+	debug("RemoteServer stopped");
 }
 
 void NZBGet::StartFrontend()
