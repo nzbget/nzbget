@@ -111,6 +111,11 @@ void debug(const char* filename, const char* funcname, int lineNr, const char* m
 void debug(const char* msg, ...)
 #endif
 {
+	if (!g_Log)
+	{
+		return;
+	}
+
 	char tmp1[1024];
 
 	va_list ap;
