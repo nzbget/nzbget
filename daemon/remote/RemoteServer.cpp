@@ -60,7 +60,7 @@ void RemoteServer::Run()
 			m_connection = std::make_unique<Connection>(g_Options->GetControlIp(),
 				m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(),
 				m_tls);
-			m_connection->SetTimeout(g_Options->GetUrlTimeout());
+			m_connection->SetTimeout(g_Options->GetRemoteTimeout());
 			m_connection->SetSuppressErrors(false);
 			bind = m_connection->Bind();
 		}

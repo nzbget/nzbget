@@ -69,6 +69,7 @@ static const char* OPTION_CERTCHECK				= "CertCheck";
 static const char* OPTION_AUTHORIZEDIP			= "AuthorizedIP";
 static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
+static const char* OPTION_REMOTETIMEOUT			= "RemoteTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_FLUSHQUEUE			= "FlushQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
@@ -443,6 +444,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_AUTHORIZEDIP, "");
 	SetOption(OPTION_ARTICLETIMEOUT, "60");
 	SetOption(OPTION_URLTIMEOUT, "60");
+	SetOption(OPTION_REMOTETIMEOUT, "90");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_FLUSHQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
@@ -695,6 +697,7 @@ void Options::InitOptions()
 	m_articleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
 	m_urlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
 	m_terminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
+	m_remoteTimeout			= ParseIntValue(OPTION_REMOTETIMEOUT, 10);
 	m_articleRetries		= ParseIntValue(OPTION_ARTICLERETRIES, 10);
 	m_articleInterval		= ParseIntValue(OPTION_ARTICLEINTERVAL, 10);
 	m_urlRetries			= ParseIntValue(OPTION_URLRETRIES, 10);

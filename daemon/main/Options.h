@@ -213,6 +213,7 @@ public:
 	int GetArticleTimeout() { return m_articleTimeout; }
 	int GetUrlTimeout() { return m_urlTimeout; }
 	int GetTerminateTimeout() { return m_terminateTimeout; }
+	int GetRemoteTimeout() { return m_remoteTimeout; }
 	bool GetDecode() { return m_decode; };
 	bool GetAppendCategoryDir() { return m_appendCategoryDir; }
 	bool GetContinuePartial() { return m_continuePartial; }
@@ -367,6 +368,7 @@ private:
 	int m_articleTimeout = 0;
 	int m_urlTimeout = 0;
 	int m_terminateTimeout = 0;
+	int m_remoteTimeout = 0;
 	bool m_appendCategoryDir = false;
 	bool m_continuePartial = false;
 	int m_articleRetries = 0;
