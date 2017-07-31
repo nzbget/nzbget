@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -138,7 +138,7 @@ protected:
 	virtual void PrintError(const char* errMsg);
 	bool DoConnect();
 	bool DoDisconnect();
-	bool InitSocketOpts();
+	bool InitSocketOpts(SOCKET socket);
 	bool ConnectWithTimeout(void* address, int address_len);
 #ifndef HAVE_GETADDRINFO
 	in_addr_t ResolveHostAddr(const char* host);

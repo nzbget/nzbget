@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -184,6 +184,10 @@ void WebProcessor::ParseHeaders()
 		else if (!strncasecmp(p, "If-None-Match: ", 15))
 		{
 			m_oldETag = p + 15;
+		}
+		else if (!strncasecmp(p, "Connection: keep-alive", 22))
+		{
+			m_keepAlive = true;
 		}
 		else if (*p == '\0')
 		{
@@ -368,14 +372,14 @@ void WebProcessor::SendAuthResponse()
 	const char* AUTH_RESPONSE_HEADER =
 		"HTTP/1.0 401 Unauthorized\r\n"
 		"%s"
-		"Connection: close\r\n"
+		"Connection: %s\r\n"
 		"Content-Type: text/plain\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 
 	BString<1024> responseHeader(AUTH_RESPONSE_HEADER,
 		g_Options->GetFormAuth() ? "" : "WWW-Authenticate: Basic realm=\"NZBGet\"\r\n",
-		Util::VersionRevision());
+		m_keepAlive ? "keep-alive" : "close", Util::VersionRevision());
 
 	// Send the response answer
 	debug("ResponseHeader=%s", *responseHeader);
@@ -386,7 +390,7 @@ void WebProcessor::SendOptionsResponse()
 {
 	const char* OPTIONS_RESPONSE_HEADER =
 		"HTTP/1.1 200 OK\r\n"
-		"Connection: close\r\n"
+		"Connection: %s\r\n"
 		//"Content-Type: plain/text\r\n"
 		"Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
 		"Access-Control-Allow-Origin: %s\r\n"
@@ -396,6 +400,7 @@ void WebProcessor::SendOptionsResponse()
 		"Server: nzbget-%s\r\n"
 		"\r\n";
 	BString<1024> responseHeader(OPTIONS_RESPONSE_HEADER,
+		m_keepAlive ? "keep-alive" : "close", 
 		m_origin.Str(), Util::VersionRevision());
 
 	// Send the response answer
@@ -407,7 +412,7 @@ void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
 {
 	const char* RESPONSE_HEADER =
 		"HTTP/1.0 %s\r\n"
-		"Connection: close\r\n"
+		"Connection: %s\r\n"
 		"Content-Length: %i\r\n"
 		"Content-Type: text/html\r\n"
 		"Server: nzbget-%s\r\n"
@@ -422,7 +427,9 @@ void WebProcessor::SendErrorResponse(const char* errCode, bool printWarning)
 		errCode, errCode);
 	int pageContentLen = responseBody.Length();
 
-	BString<1024> responseHeader(RESPONSE_HEADER, errCode, pageContentLen, Util::VersionRevision());
+	BString<1024> responseHeader(RESPONSE_HEADER, errCode,
+		m_keepAlive ? "keep-alive" : "close",
+		pageContentLen, Util::VersionRevision());
 
 	// Send the response answer
 	m_connection->Send(responseHeader, responseHeader.Length());
@@ -434,10 +441,11 @@ void WebProcessor::SendRedirectResponse(const char* url)
 	const char* REDIRECT_RESPONSE_HEADER =
 		"HTTP/1.0 301 Moved Permanently\r\n"
 		"Location: %s\r\n"
-		"Connection: close\r\n"
+		"Connection: %s\r\n"
 		"Server: nzbget-%s\r\n"
 		"\r\n";
-	BString<1024> responseHeader(REDIRECT_RESPONSE_HEADER, url, Util::VersionRevision());
+	BString<1024> responseHeader(REDIRECT_RESPONSE_HEADER, url,
+		m_keepAlive ? "keep-alive" : "close", Util::VersionRevision());
 
 	// Send the response answer
 	debug("ResponseHeader=%s", *responseHeader);
@@ -448,7 +456,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 {
 	const char* RESPONSE_HEADER =
 		"HTTP/1.1 %s\r\n"
-		"Connection: close\r\n"
+		"Connection: %s\r\n"
 		"Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
 		"Access-Control-Allow-Origin: %s\r\n"
 		"Access-Control-Allow-Credentials: true\r\n"
@@ -520,6 +528,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 
 	BString<1024> responseHeader(RESPONSE_HEADER,
 		unchanged ? ERR_HTTP_NOT_MODIFIED : ERR_HTTP_OK,
+		m_keepAlive ? "keep-alive" : "close",
 		m_origin.Str(),
 		g_Options->GetFormAuth() ? "form" : "http",
 		m_authorized ? m_serverAuthToken[m_userAccess] : "",

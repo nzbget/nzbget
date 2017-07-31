@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -83,19 +83,38 @@ void RemoteServer::Run()
 			continue;
 		}
 
-		RequestProcessor* commandThread = new RequestProcessor();
-		commandThread->SetAutoDestroy(true);
-		commandThread->SetConnection(std::move(acceptedConnection));
+		if (!IsStopped())
+		{
+			RequestProcessor* commandThread = new RequestProcessor();
+			commandThread->SetAutoDestroy(true);
+			commandThread->SetConnection(std::move(acceptedConnection));
 #ifndef DISABLE_TLS
-		commandThread->SetTls(m_tls);
+			commandThread->SetTls(m_tls);
 #endif
-		commandThread->Start();
+			Guard guard(m_processorsMutex);
+			m_activeProcessors.push_back(commandThread);
+			commandThread->Attach(this);
+			commandThread->Start();
+		}
 	}
 
 	if (m_connection)
 	{
 		m_connection->Disconnect();
 	}
+
+	// waiting for request processors
+	debug("RemoteServer: waiting for request processor to complete");
+	bool completed = false;
+	while (!completed)
+	{
+		{
+			Guard guard(m_processorsMutex);
+			completed = m_activeProcessors.size() == 0;
+		}
+		usleep(100 * 1000);
+	}
+	debug("RemoteServer: request processor are completed");
 
 	debug("Exiting RemoteServer-loop");
 }
@@ -107,10 +126,26 @@ void RemoteServer::Stop()
 	{
 		m_connection->SetSuppressErrors(true);
 		m_connection->Cancel();
-#ifdef WIN32
 		m_connection->Disconnect();
-#endif
+
+		debug("Stopping RequestProcessors");
+		Guard guard(m_processorsMutex);
+		for (RequestProcessor* requestProcessor : m_activeProcessors)
+		{
+			requestProcessor->Stop();
+		}
+		debug("RequestProcessors are notified");
 	}
+	debug("RemoteServer stop end");
+}
+
+void RemoteServer::Update(Subject* caller, void* aspect)
+{
+	debug("Notification from RequestProcessor received");
+
+	RequestProcessor* requestProcessor = (RequestProcessor*)caller;
+	Guard guard(m_processorsMutex);
+	m_activeProcessors.erase(std::find(m_activeProcessors.begin(), m_activeProcessors.end(), requestProcessor));
 }
 
 //*****************************************************************
@@ -123,8 +158,21 @@ RequestProcessor::~RequestProcessor()
 
 void RequestProcessor::Run()
 {
-	bool ok = false;
+	Execute();
+	Notify(nullptr);
+}
 
+void RequestProcessor::Stop()
+{
+	Thread::Stop();
+	m_connection->Cancel();
+	m_connection->SetGracefull(false);
+	m_connection->Disconnect();
+}
+
+void RequestProcessor::Execute()
+{
+	bool ok = false;
 	m_connection->SetSuppressErrors(true);
 
 #ifndef DISABLE_TLS
@@ -136,7 +184,7 @@ void RequestProcessor::Run()
 #endif
 
 	// Read the first 4 bytes to determine request type
-	int signature = 0;
+	uint32 signature = 0;
 	if (!m_connection->Recv((char*)&signature, 4))
 	{
 		debug("Could not read request signature");
@@ -156,43 +204,64 @@ void RequestProcessor::Run()
 		!strncmp((char*)&signature, "OPTI", 4))
 	{
 		// HTTP request received
-		char buffer[1024];
-		if (m_connection->ReadLine(buffer, sizeof(buffer), nullptr))
+		ok = true;
+		while (ServWebRequest((char*)&signature))
 		{
-			WebProcessor::EHttpMethod httpMethod = WebProcessor::hmGet;
-			char* url = buffer;
-			if (!strncmp((char*)&signature, "POST", 4))
+			if (!m_connection->Recv((char*)&signature, 4))
 			{
-				httpMethod = WebProcessor::hmPost;
-				url++;
+				debug("Could not read request signature");
+				break;
 			}
-			if (!strncmp((char*)&signature, "OPTI", 4) && strlen(url) > 4)
-			{
-				httpMethod = WebProcessor::hmOptions;
-				url += 4;
-			}
-			if (char* p = strchr(url, ' '))
-			{
-				*p = '\0';
-			}
-
-			debug("url: %s", url);
-
-			WebProcessor processor;
-			processor.SetConnection(m_connection.get());
-			processor.SetUrl(url);
-			processor.SetHttpMethod(httpMethod);
-			processor.Execute();
-
-			m_connection->SetGracefull(true);
-			m_connection->Disconnect();
-
-			ok = true;
 		}
+
+		m_connection->SetGracefull(true);
+		m_connection->Disconnect();
 	}
 
 	if (!ok)
 	{
 		warn("Non-nzbget request received on port %i from %s", m_tls ? g_Options->GetSecurePort() : g_Options->GetControlPort(), m_connection->GetRemoteAddr());
 	}
+}
+
+bool RequestProcessor::ServWebRequest(const char* signature)
+{
+	// HTTP request received
+	char buffer[1024];
+	if (!m_connection->ReadLine(buffer, sizeof(buffer), nullptr))
+	{
+		return false;
+	}
+
+	WebProcessor::EHttpMethod httpMethod = WebProcessor::hmGet;
+	char* url = buffer;
+	if (!strncmp(signature, "POST", 4))
+	{
+		httpMethod = WebProcessor::hmPost;
+		url++;
+	}
+	else if (!strncmp(signature, "OPTI", 4) && strlen(url) > 4)
+	{
+		httpMethod = WebProcessor::hmOptions;
+		url += 4;
+	}
+	else if (!(!strncmp(signature, "GET ", 4)))
+	{
+		return false;
+	}
+
+	if (char* p = strchr(url, ' '))
+	{
+		*p = '\0';
+	}
+
+	debug("url: %s", url);
+
+	WebProcessor processor;
+	processor.SetConnection(m_connection.get());
+	processor.SetUrl(url);
+	processor.SetHttpMethod(httpMethod);
+	processor.Execute();
+
+	return processor.GetKeepAlive();
 }

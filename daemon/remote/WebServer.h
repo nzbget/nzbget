@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ public:
 	void SetConnection(Connection* connection) { m_connection = connection; }
 	void SetUrl(const char* url) { m_url = url; }
 	void SetHttpMethod(EHttpMethod httpMethod) { m_httpMethod = httpMethod; }
+	bool GetKeepAlive() { return m_keepAlive; }
 
 private:
 	enum EUserAccess
@@ -63,6 +64,7 @@ private:
 	static char m_serverAuthToken[3][48+1];
 	CString m_forwardedFor;
 	CString m_oldETag;
+	bool m_keepAlive = false;
 
 	void Dispatch();
 	void SendAuthResponse();

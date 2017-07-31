@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,30 +24,42 @@
 
 #include "Thread.h"
 #include "Connection.h"
+#include "Observer.h"
 
-class RemoteServer : public Thread
+class RequestProcessor;
+
+class RemoteServer : public Thread, public Observer
 {
 public:
 	RemoteServer(bool tls) : m_tls(tls) {}
 	virtual void Run();
 	virtual void Stop();
+	void Update(Subject* caller, void* aspect);
 
 private:
+	typedef std::deque<RequestProcessor*> RequestProcessors;
+
 	bool m_tls;
 	std::unique_ptr<Connection> m_connection;
+	RequestProcessors m_activeProcessors;
+	Mutex m_processorsMutex;
 };
 
-class RequestProcessor : public Thread
+class RequestProcessor : public Thread, public Subject
 {
 public:
 	~RequestProcessor();
 	virtual void Run();
+	virtual void Stop();
 	void SetTls(bool tls) { m_tls = tls; }
 	void SetConnection(std::unique_ptr<Connection>&& connection) { m_connection = std::move(connection); }
 
 private:
 	bool m_tls;
 	std::unique_ptr<Connection> m_connection;
+
+	bool ServWebRequest(const char* signature);
+	void Execute();
 };
 
 #endif

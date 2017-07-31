@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -484,6 +484,8 @@ std::unique_ptr<Connection> Connection::Accept()
 		return nullptr;
 	}
 
+	InitSocketOpts(socket);
+
 	return std::make_unique<Connection>(socket, m_tls);
 }
 
@@ -680,7 +682,7 @@ bool Connection::DoConnect()
 #endif
 	}
 
-	if (!InitSocketOpts())
+	if (!InitSocketOpts(m_socket))
 	{
 		return false;
 	}
@@ -695,7 +697,7 @@ bool Connection::DoConnect()
 	return true;
 }
 
-bool Connection::InitSocketOpts()
+bool Connection::InitSocketOpts(SOCKET socket)
 {
 	char* optbuf = nullptr;
 	int optsize = 0;
@@ -710,13 +712,13 @@ bool Connection::InitSocketOpts()
 	optbuf = (char*)&TimeVal;
 	optsize = sizeof(TimeVal);
 #endif
-	int err = setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, optbuf, optsize);
+	int err = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, optbuf, optsize);
 	if (err != 0)
 	{
 		ReportError("Socket initialization failed for %s", m_host, true);
 		return false;
 	}
-	err = setsockopt(m_socket, SOL_SOCKET, SO_SNDTIMEO, optbuf, optsize);
+	err = setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, optbuf, optsize);
 	if (err != 0)
 	{
 		ReportError("Socket initialization failed for %s", m_host, true);
