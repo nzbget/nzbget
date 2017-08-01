@@ -888,6 +888,8 @@ void Connection::Cancel()
 		{
 			ReportError("Could not shutdown connection for %s", m_host, true);
 		}
+		closesocket(m_socket);
+		m_socket = INVALID_SOCKET;
 	}
 }
 

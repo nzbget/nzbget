@@ -126,7 +126,6 @@ void RemoteServer::Stop()
 	{
 		m_connection->SetSuppressErrors(true);
 		m_connection->Cancel();
-		m_connection->Disconnect();
 
 		debug("Stopping RequestProcessors");
 		Guard guard(m_processorsMutex);
@@ -166,8 +165,6 @@ void RequestProcessor::Stop()
 {
 	Thread::Stop();
 	m_connection->Cancel();
-	m_connection->SetGracefull(false);
-	m_connection->Disconnect();
 }
 
 void RequestProcessor::Execute()
