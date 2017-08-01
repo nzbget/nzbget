@@ -541,6 +541,8 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		cachable ? *eTagHeader : "",
 		Util::VersionRevision());
 
+	debug("[%s] (%s) %s", *m_url, *m_oldETag, *responseHeader);
+
 	// Send the request answer
 	m_connection->Send(responseHeader, responseHeader.Length());
 	m_connection->Send(body, bodyLen);
