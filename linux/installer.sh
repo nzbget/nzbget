@@ -2,7 +2,7 @@
 #
 #  This file is part of nzbget. See <http://nzbget.net>.
 #
-#  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#  Copyright (C) 2015-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ PRINTEDTITLE=no
 JUSTUNPACK=no
 UPDATE=no
 VERIFY=yes
+OS=""
 
 Info()
 {
@@ -136,7 +137,7 @@ Verify()
     if test "$REQSIZE" != "$ACTSIZE"; then
         Error "Corrupted installer package detected: file size mismatch."
     fi
-    
+
     # Checking checksum (MD5) of package payload, only if command 'md5sum' is available
     ACTMD5=`dd "if=$0" bs=$HEADER skip=1 2>/dev/null | /bin/sh -c md5sum 2>/dev/null | cut -b-32 2>/dev/null | cat`
     LEN=${#ACTMD5}
@@ -161,7 +162,7 @@ DetectEndianness()
 DetectArch()
 {
     OS=`uname -s`
-    if test "(" "$PLATFORM" = "linux" -a "$OS" != "Linux" ")" -o \
+    if test "(" "$PLATFORM" = "linux" -a "$OS" != "Linux" -a "$OS" != "FreeBSD" ")" -o \
             "(" "$PLATFORM" = "freebsd" -a "$OS" != "FreeBSD" ")" ; then
         PrintHelp
         Error "Operating system ($OS) isn't supported by this installer."
@@ -196,7 +197,7 @@ DetectArch()
         esac
     fi
 
-    if test "$PLATFORM" = "linux"; then
+    if test "$OS" = "Linux"; then
         if test "$ARCH" = ""; then
             MIPS=`cat /proc/cpuinfo | sed -n 's/.*:.*\(mips\).*/&/p'`
             if test "$MIPS" != ""; then
@@ -259,7 +260,7 @@ Unpack()
         rm -f "$OUTDIR/installer.tmp"
     fi
 
-    # Rename unpacked binaries files and store arch selection
+    # Rename unpacked binary files and store arch selection
     if test "$JUSTUNPACK" = "no" -a "$ARCH" != "all"; then
         OLDDIR=`pwd`
         cd "$OUTDIR"
@@ -374,7 +375,7 @@ ConfigureLinux()
 ConfigureFreeBSD()
 {
     # Adjusting config file to current system
-    
+
     # No memory check, assuming all supported FreeBSD machines have enough memory
 
     Info "  Activating article cache (ArticleCache=100)"
@@ -393,15 +394,40 @@ Configure()
     if test ! -f nzbget.conf; then
         cp ./webui/nzbget.conf.template nzbget.conf
 
-        if test "$PLATFORM" = "linux"; then
+        if test "$OS" = "Linux"; then
             ConfigureLinux
         fi
 
-        if test "$PLATFORM" = "freebsd"; then
+        if test "$OS" = "FreeBSD"; then
             ConfigureFreeBSD
         fi
-        
+
         QUICKHELP=yes
+    fi
+}
+
+Linux2FreeBSD()
+{
+    if test "$PLATFORM" = "linux" -a "$OS" = "FreeBSD" ; then
+        # Using Linux installer on FreeBSD machine
+
+        if test "$1" = "brand" ; then
+            Info "  Branding Linux binaries for use on FreeBSD"
+            brandelf -t Linux nzbget
+            brandelf -t Linux unrar
+            brandelf -t Linux 7za
+        fi
+
+        if test "$1" = "kernel-check" ; then
+            MODLINUX=`kldstat | sed -n 's/\(linux.ko\)/\1/p'`
+            if test "$ARCH" = "x86_64"; then
+                MODLINUX=`kldstat | sed -n 's/\(linux64.ko\)/\1/p'`
+            fi
+            if test "$MODLINUX" = ""; then
+                Info ""
+                Info "WARNING: Linux kernel module isn't loaded. See http://nzbget.net/installation-on-freebsd"
+            fi
+        fi
     fi
 }
 
@@ -502,6 +528,7 @@ ABSOUTDIR=`cd "$OUTDIR"; pwd`
 if test "$JUSTUNPACK" = "no"; then
     Info "Configuring..."
     Configure
+    Linux2FreeBSD "brand"
 
     Info "Installation completed"
 
@@ -539,6 +566,7 @@ if test "$JUSTUNPACK" = "no"; then
         Info "Successfully installed into $ABSOUTDIR"
     fi
     Info "For support please visit http://nzbget.net/forum"
+    Linux2FreeBSD "kernel-check"
 else
     Info "Unpacked into $ABSOUTDIR"
 fi
