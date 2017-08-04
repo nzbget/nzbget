@@ -441,7 +441,9 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 		warn("URL %s failed: %s", *m_infoName, hTTPResponse);
 		return adNotFound;
 	}
-	else if (!strncmp(hTTPResponse, "301", 3) || !strncmp(hTTPResponse, "302", 3))
+	else if (!strncmp(hTTPResponse, "301", 3) || !strncmp(hTTPResponse, "302", 3) ||
+		 !strncmp(hTTPResponse, "303", 3) || !strncmp(hTTPResponse, "307", 3) ||
+		 !strncmp(hTTPResponse, "308", 3))
 	{
 		m_redirecting = true;
 		return adRunning;
