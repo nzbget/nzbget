@@ -99,12 +99,6 @@ var Messages = (new function($)
 
 	function loaded(newMessages)
 	{
-		if (maxMessages === null)
-		{
-			maxMessages = parseInt(Options.option('LogBufferSize'));
-			initFilterButtons();
-		}
-
 		merge(newMessages);
 		RPC.next();
 	}
@@ -129,6 +123,12 @@ var Messages = (new function($)
 
 	this.redraw = function()
 	{
+		if (maxMessages === null)
+		{
+			maxMessages = parseInt(Options.option('LogBufferSize'));
+			initFilterButtons();
+		}
+
 		var data = [];
 
 		for (var i=0; i < messages.length; i++)

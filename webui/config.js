@@ -54,12 +54,14 @@ var Options = (new function($)
 
 	this.update = function()
 	{
-		// RPC-function "config" returns CURRENT configurations settings loaded in NZBGet
-		RPC.call('config', [], function(_options) {
-			_this.options = _options;
-			initCategories();
-			_this.restricted = _this.option('ControlPort') === '***';
-		});
+		// RPC-function "config" returns CURRENT configuration settings loaded in NZBGet
+		RPC.call('config', [], function(_options)
+			{
+				_this.options = _options;
+				initCategories();
+				_this.restricted = _this.option('ControlPort') === '***';
+				RPC.next();
+			});
 
 		// loading config templates and build list of post-processing parameters
 		_this.postParamConfig = [];

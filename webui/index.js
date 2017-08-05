@@ -774,7 +774,7 @@ var Refresher = (new function($)
 
 		if (firstLoad)
 		{
-			loadQueue++;
+			loadQueue += 2; // options and configtemplates
 			Options.update();
 		}
 	}
