@@ -29,6 +29,7 @@ ALLTARGETS="dist i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500 x86_64-bsd"
 ROOT=`pwd`
 ROOTPATH=$PATH
 OUTPUTDIR=$ROOT/output
+CROSSCLANG="clang-4.0"
 
 # Configuration
 BUILD=no
@@ -270,8 +271,9 @@ ConstructArchParams()
             TOOLNAME=linux
         ;;
         freebsd)
-            TOOLKIND=crossgcc
-            TOOLNAME=pc-freebsd9
+            TOOLKIND=crossclang
+            TOOLNAME=pc-freebsd
+           	SYSROOT="$TOOLCHAIN_ROOT/sysroot"
         ;;
     esac
 }
@@ -301,17 +303,19 @@ ConfigureTarget()
                 LIBS="-lcrypto -ldl -lz" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
             ;;
-        crossgcc-debug|crossgcc-debug-strip)
-            LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables -I$STAGING/include" \
+        crossclang-debug|crossclang-debug-strip)
+            CXX="$CROSSCLANG" \
+                LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH-$TOOLNAME -lc++ -lm --sysroot=$SYSROOT" \
+                CXXFLAGS="-g --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
                 PKG_CONFIG_LIBDIR="$STAGING/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
                 ;;
-        crossgcc-release|crossgcc-release-nostrip)
-            LDFLAGS="-static $STRIP" \
-                CXXFLAGS="-std=c++14 -O2 $DEBUG -I$STAGING/include" \
+        crossclang-release|crossclang-release-nostrip)
+            CXX="$CROSSCLANG" \
+                LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH-$TOOLNAME -lc++ -lm --sysroot=$SYSROOT" \
+                CXXFLAGS="-O2 $DEBUG --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
                 PKG_CONFIG_LIBDIR="$STAGING/lib/pkgconfig" \
-                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
+                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
                 ;;
     esac
 }
@@ -319,7 +323,7 @@ ConfigureTarget()
 PrecompileHeaders()
 {
     rm -f nzbget.h.gch
-    if [ $PCH == "yes" ]; then
+    if [ $PCH == "yes" -a $TOOLKIND != "crossclang" ]; then
         OPTIM=""
         if [ $CONFIG == "release" -o $CONFIG == "release-nostrip" ]; then
             OPTIM="-O2"
