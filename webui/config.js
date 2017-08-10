@@ -825,8 +825,8 @@ var Config = (new function($)
 				'<span class="add-on">'+ option.select[0] +'</span>'+
 				'</div>';
 		}
-		else if (option.name.toLowerCase().indexOf('password') > -1 &&
-                                option.name.toLowerCase() !== '*unpack:password')
+		else if (option.caption.toLowerCase().indexOf('password') > -1 &&
+            option.caption.toLowerCase() !== '*unpack:password')
 		{
 			option.type = 'password';
 			html += '<div class="password-field input-append">' +
@@ -838,8 +838,8 @@ var Config = (new function($)
                                 '</span>'+
                                 '</div>';
 		}
-		else if (option.name.toLowerCase().indexOf('username') > -1 ||
-				(option.name.indexOf('IP') > -1 && option.name.toLowerCase() !== 'authorizedip'))
+		else if (option.caption.toLowerCase().indexOf('username') > -1 ||
+			(option.caption.indexOf('IP') > -1 && option.caption.toLowerCase() !== 'authorizedip'))
 		{
 			option.type = 'text';
 			html += '<input type="text" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">';
