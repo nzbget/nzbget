@@ -186,7 +186,7 @@ void DirectRenamer::ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fi
 		debug("file: %s; article-hash16k: %s", fileInfo->GetFilename(), fileInfo->GetHash16k());
 	}
 
-	detail("Detected %s %s", (contentAnalyzer->GetParFile() ? "par2-file" : "non-par2-file"), fileInfo->GetFilename());
+	fileInfo->GetNzbInfo()->PrintMessage(Message::mkDetail, "Detected %s %s", (contentAnalyzer->GetParFile() ? "par2-file" : "non-par2-file"), fileInfo->GetFilename());
 
 	if (fileInfo->GetParFile() != contentAnalyzer->GetParFile())
 	{
@@ -200,6 +200,12 @@ void DirectRenamer::ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fi
 		nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() +
 			fileInfo->GetFailedSize() * delta + fileInfo->GetMissedSize() * delta);
 		nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1 * delta);
+
+		if (!fileInfo->GetParFile() && fileInfo->GetPaused())
+		{
+			fileInfo->GetNzbInfo()->PrintMessage(Message::mkInfo, "Resuming non-par2-file %s", fileInfo->GetFilename());
+			fileInfo->SetPaused(false);
+		}
 
 		downloadQueue->Save();
 	}
@@ -314,7 +320,7 @@ void DirectRenamer::UnpausePars(NzbInfo* nzbInfo)
 			FileInfo* fileInfo = nzbInfo->GetFileList()->Find(parFile.GetId());
 			if (fileInfo)
 			{
-				nzbInfo->PrintMessage(Message::mkDetail, "Increasing priority for par2-file %s", fileInfo->GetFilename());
+				nzbInfo->PrintMessage(Message::mkInfo, "Increasing priority for par2-file %s", fileInfo->GetFilename());
 				fileInfo->SetPaused(false);
 				fileInfo->SetExtraPriority(true);
 			}

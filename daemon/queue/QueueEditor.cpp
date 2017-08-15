@@ -840,10 +840,7 @@ void QueueEditor::PausePars(RawFileList* fileList, bool extraParsOnly)
 
 	for (FileInfo* fileInfo : fileList)
 	{
-		BString<1024> loFileName = fileInfo->GetFilename();
-		for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
-
-		if (strstr(loFileName, ".par2"))
+		if (fileInfo->GetParFile())
 		{
 			if (!extraParsOnly)
 			{
@@ -851,6 +848,8 @@ void QueueEditor::PausePars(RawFileList* fileList, bool extraParsOnly)
 			}
 			else
 			{
+				BString<1024> loFileName = fileInfo->GetFilename();
+				for (char* p = loFileName; *p; p++) *p = tolower(*p); // convert string to lowercase
 				if (strstr(loFileName, ".vol"))
 				{
 					Vols.push_back(fileInfo);
