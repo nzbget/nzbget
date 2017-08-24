@@ -1334,6 +1334,14 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 			discardedSize += fileInfo->GetSuccessSize();
 			discardedCount++;
 
+			nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() + fileInfo->GetSuccessSize() + fileInfo->GetFailedSize());
+			if (fileInfo->GetPaused())
+			{
+				nzbInfo->SetPausedSize(nzbInfo->GetPausedSize() + fileInfo->GetSuccessSize() + fileInfo->GetFailedSize());
+			}
+			nzbInfo->GetCurrentServerStats()->ListOp(fileInfo->GetServerStats(), ServerStatList::soSubtract);
+			fileInfo->GetServerStats()->clear();
+
 			nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetCurrentSuccessArticles() - fileInfo->GetSuccessArticles());
 			nzbInfo->SetCurrentSuccessSize(nzbInfo->GetCurrentSuccessSize() - fileInfo->GetSuccessSize());
 			nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() - fileInfo->GetSuccessSize());
