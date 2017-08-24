@@ -47,6 +47,7 @@ var Downloads = (new function($)
 	var urls;
 	var nameColumnWidth = null;
 	var cached = false;
+	var lastDownloadRate;
 
 	var statusData = {
 		'QUEUED': { Text: 'QUEUED', PostProcess: false },
@@ -152,17 +153,17 @@ var Downloads = (new function($)
 		}
 	}
 
-	this.redraw = function()
+	this.redraw = function(force)
 	{
-		if (cached)
+		if (cached && !force && lastDownloadRate === Status.status.DownloadRate)
 		{
-			cached = false;
 			return;
 		}
 
 		if (!Refresher.isPaused())
 		{
 			redraw_table();
+			lastDownloadRate = Status.status.DownloadRate;
 		}
 
 		Util.show($DownloadsTabBadge, groups.length > 0);

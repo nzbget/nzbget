@@ -149,11 +149,10 @@ var History = (new function($)
 		}
 	}
 
-	this.redraw = function()
+	this.redraw = function(force)
 	{
-		if (cached)
+		if (cached && !force)
 		{
-			cached = false;
 			return;
 		}
 
