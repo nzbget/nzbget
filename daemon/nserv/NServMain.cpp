@@ -85,6 +85,10 @@ int NServMain(int argc, char* argv[])
 	TlsSocket::Init();
 #endif
 
+#ifndef WIN32
+	signal(SIGPIPE, SIG_IGN);
+#endif
+
 	NServFrontend frontend;
 	frontend.Start();
 
