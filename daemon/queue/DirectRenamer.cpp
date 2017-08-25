@@ -199,6 +199,7 @@ void DirectRenamer::ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fi
 		nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() + fileInfo->GetSuccessSize() * delta);
 		nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() +
 			fileInfo->GetFailedSize() * delta + fileInfo->GetMissedSize() * delta);
+		nzbInfo->SetParFailedSize(nzbInfo->GetParFailedSize() + fileInfo->GetMissedSize() * delta);
 		nzbInfo->SetRemainingParCount(nzbInfo->GetRemainingParCount() + 1 * delta);
 
 		if (!fileInfo->GetParFile() && fileInfo->GetPaused())
