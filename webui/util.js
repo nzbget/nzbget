@@ -545,7 +545,7 @@ var RPC = (new function($)
 			var request = '';
 			for (var i = 0; i < params.length; i++)
 			{
-				request += '&=' + encodeURIComponent(JSON.stringify(params[i]));
+				request += '&=' + encodeURIComponent(params[i]);
 			}
 			if (params.length > 0)
 			{
