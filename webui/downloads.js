@@ -118,6 +118,7 @@ var Downloads = (new function($)
 
 	this.applyTheme = function()
 	{
+		this.redraw(true);
 		$DownloadsTable.fasttable('setPageSize', UISettings.read('DownloadsRecordsPerPage', 10),
 			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
 	}

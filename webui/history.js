@@ -87,6 +87,7 @@ var History = (new function($)
 
 	this.applyTheme = function()
 	{
+		this.redraw(true);
 		$HistoryTable.fasttable('setPageSize', UISettings.read('HistoryRecordsPerPage', 10),
 			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
 	}
@@ -94,7 +95,7 @@ var History = (new function($)
 	this.show = function()
 	{
 		activeTab = true;
-		this.redraw();
+		this.redraw(true);
 	}
 
 	this.hide = function()

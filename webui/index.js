@@ -655,10 +655,6 @@ var Frontend = (new function($)
 
 		if (initialized && !firstLoad)
 		{
-			Downloads.redraw(true);
-			History.redraw(true);
-			Messages.redraw();
-
 			Downloads.applyTheme();
 			History.applyTheme();
 			Messages.applyTheme();
