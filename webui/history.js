@@ -528,7 +528,7 @@ var History = (new function($)
 	this.filter = function(type)
 	{
 		curFilter = type;
-		History.redraw();
+		History.redraw(true);
 	}
 
 	this.dupClick = function()
