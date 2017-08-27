@@ -3315,6 +3315,11 @@ void TestServerXmlCommand::Execute()
 	connection.SetSuppressErrors(false);
 
 	bool ok = connection.Connect();
+	if (ok)
+	{
+		const char* response = connection.Request("ARTICLE <connection-test>\r\n");
+		ok = response && *response == '4';
+	}
 
 	BString<1024> content(IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
 		ok ? "" : m_errText.Empty() ? "Unknown error" : *m_errText);
