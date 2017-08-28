@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,14 +89,14 @@ private:
 	static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType);
 	static LRESULT CALLBACK TrayWndProcStat(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	BOOL FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	INT_PTR AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	INT_PTR PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	INT_PTR RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	INT_PTR FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
 
 #endif

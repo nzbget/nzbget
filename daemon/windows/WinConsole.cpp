@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -456,12 +456,12 @@ void WinConsole::ShowAboutBox()
 	m_modal = false;
 }
 
-BOOL CALLBACK WinConsole::AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK WinConsole::AboutDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return g_WinConsole->AboutDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
-BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg)
 	{
@@ -507,7 +507,7 @@ BOOL WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 				(HWND)wParam == GetDlgItem(hwndDlg, IDC_ABOUT_GPL))
 			{
 				SetCursor(m_handCursor);
-				SetWindowLong(hwndDlg, DWL_MSGRESULT, TRUE);
+				SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, TRUE);
 				return TRUE;
 			}
 			return FALSE;
@@ -529,12 +529,12 @@ void WinConsole::ShowPrefsDialog()
 	m_modal = false;
 }
 
-BOOL CALLBACK WinConsole::PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK WinConsole::PrefsDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return g_WinConsole->PrefsDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
-BOOL WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR WinConsole::PrefsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg)
 	{
@@ -691,7 +691,7 @@ void WinConsole::ShowRunningDialog()
 	HWND hTrayWindow = FindWindow("NZBGet tray window", nullptr);
 	m_running = true;
 
-	int result = DialogBox(m_instance, MAKEINTRESOURCE(IDD_RUNNINGDIALOG), m_trayWindow, RunningDialogProcStat);
+	INT_PTR result = DialogBox(m_instance, MAKEINTRESOURCE(IDD_RUNNINGDIALOG), m_trayWindow, RunningDialogProcStat);
 
 	switch (result)
 	{
@@ -710,12 +710,12 @@ void WinConsole::ShowRunningDialog()
 	}
 }
 
-BOOL CALLBACK WinConsole::RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK WinConsole::RunningDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return g_WinConsole->RunningDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
-BOOL WinConsole::RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR WinConsole::RunningDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg)
 	{
@@ -913,7 +913,7 @@ void WinConsole::ShowFactoryResetDialog()
 	HWND hTrayWindow = FindWindow("NZBGet tray window", nullptr);
 	m_running = true;
 
-	int result = DialogBox(m_instance, MAKEINTRESOURCE(IDD_FACTORYRESETDIALOG), m_trayWindow, FactoryResetDialogProcStat);
+	INT_PTR result = DialogBox(m_instance, MAKEINTRESOURCE(IDD_FACTORYRESETDIALOG), m_trayWindow, FactoryResetDialogProcStat);
 
 	switch (result)
 	{
@@ -923,12 +923,12 @@ void WinConsole::ShowFactoryResetDialog()
 	}
 }
 
-BOOL CALLBACK WinConsole::FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK WinConsole::FactoryResetDialogProcStat(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return g_WinConsole->FactoryResetDialogProc(hwndDlg, uMsg, wParam, lParam);
 }
 
-BOOL WinConsole::FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR WinConsole::FactoryResetDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg)
 	{

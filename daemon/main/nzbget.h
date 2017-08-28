@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,7 +77,9 @@ compiled */
 /* Suppress warnings */
 #define _CRT_NONSTDC_NO_WARNINGS
 
+#ifndef _WIN64
 #define _USE_32BIT_TIME_T
+#endif
 
 #if _WIN32_WINNT < 0x0501
 #undef _WIN32_WINNT
