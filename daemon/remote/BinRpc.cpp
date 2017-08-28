@@ -871,7 +871,7 @@ void EditQueueBinCommand::Execute()
 	else
 	{
 #ifndef HAVE_REGEX_H
-		if ((QueueEditor::EMatchMode)matchMode == QueueEditor::mmRegEx)
+		if ((DownloadQueue::EMatchMode)matchMode == DownloadQueue::mmRegEx)
 		{
 			SendBoolResponse(false, "Edit-Command failed: the program was compiled without RegEx-support");
 			return;

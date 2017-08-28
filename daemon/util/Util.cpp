@@ -1687,7 +1687,7 @@ int RegEx::GetMatchStart(int index)
 #ifdef HAVE_REGEX_H
 	return m_matches[index].rm_so;
 #else
-	return nullptr;
+	return 0;
 #endif
 }
 

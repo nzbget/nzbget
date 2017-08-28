@@ -69,7 +69,9 @@ compiled */
 #define SOCKLEN_T socklen_t
 
 /* Define to 1 if you have the <regex.h> header file. */
+#ifndef DISABLE_REGEX
 #define HAVE_REGEX_H 1
+#endif
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE

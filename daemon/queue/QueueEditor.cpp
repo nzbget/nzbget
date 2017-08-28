@@ -650,7 +650,7 @@ void QueueEditor::PrepareList(ItemList* itemList, IdList* idList,
 bool QueueEditor::BuildIdListFromNameList(IdList* idList, NameList* nameList, DownloadQueue::EMatchMode matchMode, DownloadQueue::EEditAction action)
 {
 #ifndef HAVE_REGEX_H
-	if (matchMode == mmRegEx)
+	if (matchMode == DownloadQueue::mmRegEx)
 	{
 		return false;
 	}
