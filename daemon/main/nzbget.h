@@ -71,6 +71,13 @@ compiled */
 /* Define to 1 if you have the <regex.h> header file. */
 #ifndef DISABLE_REGEX
 #define HAVE_REGEX_H 1
+// Static linking to regex library
+#define REGEX_STATIC
+#endif
+
+#ifndef DISABLE_GZIP
+// Static linking to zlib library
+#define ZLIB_WINAPI
 #endif
 
 /* Suppress warnings */
@@ -304,6 +311,13 @@ typedef int pid_t;
 // redefine "exit" to avoid printing memory leaks report when terminated because of wrong command line switches
 #define exit(code) ExitProcess(code)
 #endif
+
+#ifdef HAVE_OPENSSL
+FILE _iob[] = {*stdin, *stdout, *stderr};
+extern "C" FILE * __cdecl __iob_func(void) { return _iob; }
+// For static linking of OpenSSL libraries:
+#pragma comment (lib, "legacy_stdio_definitions.lib")
+#endif /* HAVE_OPENSSL */
 
 #else
 
