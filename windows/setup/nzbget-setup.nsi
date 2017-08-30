@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 ; NSIS (http://nsis.sourceforge.net). Moreover a special build of NSIS must be
 ; installed over standard NSIS installation. This special build provides
 ; extra logging required by the install script:
-;  - Speical build with extra logging - http://nsis.sourceforge.net/Special%5FBuilds
+;  - Special build with extra logging - http://nsis.sourceforge.net/Special%5FBuilds
 ; The install script also requires additional plugins:
 ;  - NSIS Simple Service Plugin - http://nsis.sourceforge.net/NSIS_Simple_Service_Plugin
 ;  - AccessControl plug-in - http://nsis.sourceforge.net/AccessControl_plug-in
@@ -34,6 +34,7 @@
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
+!include "x64.nsh"
 
 ;--------------------------------
 ;General
@@ -42,7 +43,7 @@ Name "NZBGet"
 OutFile "..\nzbget-setup.exe"
 
 ;Default installation folder
-InstallDir "$PROGRAMFILES\NZBGet"
+InstallDir "$PROGRAMFILES64\NZBGet"
 
 ;Get installation folder from registry if available
 InstallDirRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "InstallLocation"
@@ -133,6 +134,21 @@ ${EndIf}
 !ifndef DEBUG_UI
 
 File "..\NZBGet\*"
+
+; With Parameter "/32" force installing of 32 bit binaries
+StrCpy $R1 0
+${GetParameters} $R0
+${GetOptions} $R0 "/32" $R0
+IfErrors +2
+StrCpy $R1 32
+
+${If} ${RunningX64}
+${AndIf} $R1 == 0
+  File "..\NZBGet\64\*"
+${Else}
+  File "..\NZBGet\32\*"
+${EndIf}
+
 SetOutPath "$INSTDIR\webui"
 File /r "..\NZBGet\webui\*"
 
