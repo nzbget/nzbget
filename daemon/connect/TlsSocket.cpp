@@ -198,6 +198,23 @@ void TlsSocket::Final()
 #ifdef HAVE_LIBGNUTLS
 	gnutls_global_deinit();
 #endif /* HAVE_LIBGNUTLS */
+
+#ifdef HAVE_OPENSSL
+	FIPS_mode_set(0);
+#ifdef NEED_CRYPTO_LOCKING
+	CRYPTO_set_locking_callback(nullptr);
+	CRYPTO_set_id_callback(nullptr);
+#endif
+	ERR_remove_state(0);
+	SSL_COMP_free_compression_methods();
+	//ENGINE_cleanup();
+	CONF_modules_free();
+	CONF_modules_unload(1);
+	COMP_zlib_cleanup();
+	ERR_free_strings();
+	EVP_cleanup();
+	CRYPTO_cleanup_all_ex_data();
+#endif /* HAVE_OPENSSL */
 }
 
 TlsSocket::~TlsSocket()
