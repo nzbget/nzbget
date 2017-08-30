@@ -897,7 +897,7 @@ void FeedFilter::Rule::ExpandRefValues(FeedItemInfo& feedItemInfo, CString* dest
 			break; // error
 		}
 
-		curvalue.Replace(dollar - curvalue, 2 + varlen + 1, varvalue);
+		curvalue.Replace((int)(dollar - curvalue), 2 + varlen + 1, varvalue);
 	}
 
 	*destStr = std::move(curvalue);

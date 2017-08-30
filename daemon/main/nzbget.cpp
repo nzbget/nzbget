@@ -145,7 +145,7 @@ int main(int argc, char *argv[], char *argp[])
 	InstallUninstallServiceCheck(argc, argv);
 #endif
 
-	srand(Util::CurrentTime());
+	srand((unsigned int)Util::CurrentTime());
 
 #ifdef WIN32
 	for (int i=0; i < argc; i++)

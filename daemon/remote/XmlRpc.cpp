@@ -1352,8 +1352,8 @@ void StatusXmlCommand::Execute()
 	Util::SplitInt64(freeDiskSpace, &freeDiskSpaceHi, &freeDiskSpaceLo);
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
 
-	int serverTime = Util::CurrentTime();
-	int resumeTime = g_Options->GetResumeTime();
+	int serverTime = (int)Util::CurrentTime();
+	int resumeTime = (int)g_Options->GetResumeTime();
 	bool feedActive = g_FeedCoordinator->HasActiveDownloads();
 	int queuedScripts = g_QueueScriptCoordinator->GetQueueSize();
 

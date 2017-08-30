@@ -785,7 +785,7 @@ bool Connection::ConnectWithTimeout(void* address, int address_len)
 	//connect succeeded right away?
 	if (ret != 0)
 	{
-		ret = select(m_socket + 1, &rset, &wset, nullptr, m_timeout ? &ts : nullptr);
+		ret = select((int)m_socket + 1, &rset, &wset, nullptr, m_timeout ? &ts : nullptr);
 		//we are waiting for connect to complete now
 		if (ret < 0)
 		{

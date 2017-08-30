@@ -920,7 +920,7 @@ void Options::SetOption(const char* optname, const char* value)
 			const char* varvalue = GetOption(variable);
 			if (varvalue)
 			{
-				curvalue.Replace(dollar - curvalue, 2 + varlen + 1, varvalue);
+				curvalue.Replace((int)(dollar - curvalue), 2 + varlen + 1, varvalue);
 			}
 			else
 			{
@@ -1505,7 +1505,7 @@ bool Options::SplitOptionString(const char* option, CString& optName, CString& o
 		return false;
 	}
 
-	optName.Set(option, eq - option);
+	optName.Set(option, (int)(eq - option));
 	optValue.Set(eq + 1);
 
 	ConvertOldOption(optName, optValue);

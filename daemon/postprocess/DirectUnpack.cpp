@@ -346,7 +346,7 @@ void DirectUnpack::AddMessage(Message::EKind kind, const char* text)
 	if (!strncmp(text, "Unrar: Insert disk with", 23) && strstr(text, " [C]ontinue, [Q]uit"))
 	{
 		BString<1024> filename;
-		filename.Set(text + 24, strstr(text, " [C]ontinue, [Q]uit") - text - 24);
+		filename.Set(text + 24, (int)(strstr(text, " [C]ontinue, [Q]uit") - text - 24));
 		WaitNextVolume(filename);
 		return;
 	}
@@ -539,7 +539,7 @@ void DirectUnpack::AddExtraTime(NzbInfo* nzbInfo)
 {
 	if (m_extraStartTime)
 	{
-		time_t extraTime = Util::CurrentTime() - m_extraStartTime;
+		int extraTime = (int)(Util::CurrentTime() - m_extraStartTime);
 		nzbInfo->SetUnpackSec(nzbInfo->GetUnpackSec() + extraTime);
 		nzbInfo->SetPostTotalSec(nzbInfo->GetPostTotalSec() + extraTime);
 		m_extraStartTime = 0;

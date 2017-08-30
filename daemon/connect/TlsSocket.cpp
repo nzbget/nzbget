@@ -422,7 +422,7 @@ bool TlsSocket::Start()
 		return false;
 	}
 
-	if (!SSL_set_fd((SSL*)m_session, m_socket))
+	if (!SSL_set_fd((SSL*)m_session, (int)m_socket))
 	{
 		ReportError("Could not set the file descriptor for TLS");
 		Close();

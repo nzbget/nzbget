@@ -1573,7 +1573,7 @@ void URL::ParseUrl()
 		return;
 	}
 
-	m_protocol.Set(m_address, protEnd - m_address);
+	m_protocol.Set(m_address, (int)(protEnd - m_address));
 
 	char* hostStart = protEnd + 3;
 	char* slash = strchr(hostStart, '/');
@@ -1607,7 +1607,7 @@ void URL::ParseUrl()
 	if (slash)
 	{
 		char* resEnd = m_address + strlen(m_address);
-		m_resource.Set(slash, resEnd - slash + 1);
+		m_resource.Set(slash, (int)(resEnd - slash + 1));
 
 		hostEnd = slash - 1;
 	}
@@ -1625,7 +1625,7 @@ void URL::ParseUrl()
 		m_port = atoi(colon + 1);
 	}
 
-	m_host.Set(hostStart, hostEnd - hostStart + 1);
+	m_host.Set(hostStart, (int)(hostEnd - hostStart + 1));
 
 	m_valid = true;
 }
@@ -1732,14 +1732,14 @@ bool WildMask::Match(const char* text)
 			if (!qmark)
 			{
 				ExpandArray();
-				m_wildStart[m_wildCount-1] = str - text;
+				m_wildStart[m_wildCount-1] = (int)(str - text);
 				m_wildLen[m_wildCount-1] = 0;
 				qmark = true;
 			}
 		}
 		else if (m_wantsPositions && qmark)
 		{
-			m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
+			m_wildLen[m_wildCount-1] = (int)(str - (text + m_wildStart[m_wildCount-1]));
 			qmark = false;
 		}
 
@@ -1754,7 +1754,7 @@ bool WildMask::Match(const char* text)
 
 	if (m_wantsPositions && qmark)
 	{
-		m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
+		m_wildLen[m_wildCount-1] = (int)(str - (text + m_wildStart[m_wildCount-1]));
 		qmark = false;
 	}
 
@@ -1764,13 +1764,13 @@ bool WildMask::Match(const char* text)
 		{
 			if (m_wantsPositions && qmark)
 			{
-				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
+				m_wildLen[m_wildCount-1] = (int)(str - (text + m_wildStart[m_wildCount-1]));
 				qmark = false;
 			}
 			if (m_wantsPositions && !star)
 			{
 				ExpandArray();
-				m_wildStart[m_wildCount-1] = str - text;
+				m_wildStart[m_wildCount-1] = (int)(str - text);
 				m_wildLen[m_wildCount-1] = 0;
 				star = true;
 			}
@@ -1792,7 +1792,7 @@ bool WildMask::Match(const char* text)
 			if (m_wantsPositions && !qmark)
 			{
 				ExpandArray();
-				m_wildStart[m_wildCount-1] = str - text;
+				m_wildStart[m_wildCount-1] = (int)(str - text);
 				m_wildLen[m_wildCount-1] = 0;
 				qmark = true;
 			}
@@ -1804,12 +1804,12 @@ bool WildMask::Match(const char* text)
 		{
 			if (m_wantsPositions && qmark)
 			{
-				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
+				m_wildLen[m_wildCount-1] = (int)(str - (text + m_wildStart[m_wildCount-1]));
 				qmark = false;
 			}
 			else if (m_wantsPositions && star)
 			{
-				m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
+				m_wildLen[m_wildCount-1] = (int)(str - (text + m_wildStart[m_wildCount-1]));
 				star = false;
 			}
 
@@ -1832,13 +1832,13 @@ bool WildMask::Match(const char* text)
 
 	if (m_wantsPositions && qmark)
 	{
-		m_wildLen[m_wildCount-1] = str - (text + m_wildStart[m_wildCount-1]);
+		m_wildLen[m_wildCount-1] = (int)(str - (text + m_wildStart[m_wildCount-1]));
 	}
 
 	if (*pat == '*' && m_wantsPositions && !star)
 	{
 		ExpandArray();
-		m_wildStart[m_wildCount-1] = str - text;
+		m_wildStart[m_wildCount-1] = (int)(str - text);
 		m_wildLen[m_wildCount-1] = strlen(str);
 	}
 

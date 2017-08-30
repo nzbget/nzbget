@@ -490,7 +490,7 @@ void StatMeter::CalcQuotaUsage(int64& monthBytes, int64& dayBytes)
 	ServerVolume totalVolume = m_serverVolumes[0];
 
 	time_t locTime = Util::CurrentTime() + g_Options->GetLocalTimeOffset();
-	int daySlot = locTime / 86400 - totalVolume.GetFirstDay();
+	int daySlot = (int)(locTime / 86400) - totalVolume.GetFirstDay();
 
 	dayBytes = 0;
 	if (daySlot < (int)totalVolume.BytesPerDays()->size())
@@ -534,7 +534,7 @@ int StatMeter::CalcMonthSlots(ServerVolume& volume)
 			dayparts.tm_mon++;
 			prevMonth = Util::Timegm(&dayparts);
 		}
-		elapsedDays = (locCurTime - prevMonth) / 60 / 60 / 24 + 1;
+		elapsedDays = (int)(locCurTime - prevMonth) / 60 / 60 / 24 + 1;
 	}
 	else
 	{

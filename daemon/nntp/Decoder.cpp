@@ -143,7 +143,7 @@ BreakLoop:
 		{
 			m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (uchar *)buffer, (uint32)(optr - buffer));
 		}
-		return optr - buffer;
+		return (int)(optr - buffer);
 	}
 	else
 	{
@@ -156,7 +156,7 @@ BreakLoop:
 				pb += 6; //=strlen(" name=")
 				char* pe;
 				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-				m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, pe - pb));
+				m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, (int)(pe - pb)));
 			}
 			pb = strstr(buffer, " size=");
 			if (pb)
@@ -264,7 +264,7 @@ int UDecoder::DecodeBuffer(char* buffer, int len)
 			// extracting filename
 			char* pe;
 			for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-			m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, pe - pb));
+			m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, (int)(pe - pb)));
 
 			m_body = true;
 			return 0;
@@ -312,7 +312,7 @@ int UDecoder::DecodeBuffer(char* buffer, int len)
 			}
 		}
 
-		return optr - buffer;
+		return (int)(optr - buffer);
 	}
 
 	return 0;

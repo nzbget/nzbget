@@ -179,7 +179,7 @@ bool Maintenance::ReadPackageInfoStr(const char* key, CString& value)
 		return false;
 	}
 
-	int len = pend - p;
+	int len = (int)(pend - p);
 	if (len >= sizeof(fileName))
 	{
 		error("Could not parse file %s", *fileName);

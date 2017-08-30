@@ -209,7 +209,7 @@ void NntpProcessor::ServArticle()
 
 	if (from && off && to && end)
 	{
-		m_filename.Set(m_messageid + 1, from - m_messageid - 1);
+		m_filename.Set(m_messageid + 1, (int)(from - m_messageid - 1));
 		m_part = atoi(from + 1);
 		m_offset = atoll(off + 1);
 		m_size = atoi(to + 1);

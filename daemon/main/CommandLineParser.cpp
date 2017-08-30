@@ -894,7 +894,7 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 			if (p)
 			{
 				BString<100> buf;
-				buf.Set(optarg, p - optarg);
+				buf.Set(optarg, (int)(p - optarg));
 				editQueueIdFrom = atoi(buf);
 				editQueueIdTo = atoi(p + 1);
 				if (editQueueIdFrom <= 0 || editQueueIdTo <= 0)

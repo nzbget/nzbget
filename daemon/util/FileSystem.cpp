@@ -428,7 +428,7 @@ CString FileSystem::MakeUniqueFilename(const char* destDir, const char* basename
 		if (extension && extension != basename)
 		{
 			BString<1024> filenameWithoutExt = basename;
-			int end = extension - basename;
+			int end = (int)(extension - basename);
 			filenameWithoutExt[end < 1024 ? end : 1024-1] = '\0';
 
 			if (!strcasecmp(extension, ".par2"))
