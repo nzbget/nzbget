@@ -1,3 +1,5 @@
+import re
+
 nzbget_options = ['ParRename=no', 'RarRename=no', 'ParCheck=auto', 'DirectRename=yes']
 
 def test_rename_obf1(nserv, nzbget):
@@ -35,13 +37,13 @@ def test_rename_obf1dmf(nserv, nzbget):
 def test_rename_obf1dmf2(nserv, nzbget):
 	nzb_content = nzbget.load_nzb('obfuscated1.nzb')
 	nzb_content = nzb_content.replace('abc.01?1=0:100000', 'abc.01?1=0:100000!0')
-	nzb_content = nzb_content.replace('abc.00?1=0:108', 'abc.00?1=0:108!0')
+	nzb_content = re.sub(r'abc.00\?1=0:\d+', r'\g<0>!0', nzb_content)
 	hist = nzbget.download_nzb('obfuscated1-damaged-first2.nzb', nzb_content, unpack=True)
 	assert hist['Status'] == 'SUCCESS/UNPACK'
 
 def test_rename_obf1dmp(nserv, nzbget):
 	nzb_content = nzbget.load_nzb('obfuscated1.nzb')
-	nzb_content = nzb_content.replace('parrename.vol0+1.par2?1=0:57736', 'parrename.vol0+1.par2?1=0:57736!0')
+	nzb_content = re.sub(r'parrename.vol0+1.par2\?1=0:\d+', r'\g<0>!0', nzb_content)
 	hist = nzbget.download_nzb('obfuscated1-damaged-par.nzb', nzb_content, unpack=True)
 	assert hist['Status'] == 'SUCCESS/UNPACK'
 
@@ -60,7 +62,7 @@ def test_rename_obf3dmf(nserv, nzbget):
 def test_rename_obf3dmf2(nserv, nzbget):
 	nzb_content = nzbget.load_nzb('obfuscated3.nzb')
 	nzb_content = nzb_content.replace('abc.01?11=0:100000', 'abc.01?11=0:100000!0')
-	nzb_content = nzb_content.replace('abc.00?1=0:4704', 'abc.00?1=0:4704!0')
+	nzb_content = re.sub(r'abc.00\?1=0:\d+', r'\g<0>!0', nzb_content)
 	hist = nzbget.download_nzb('obfuscated3-damaged-first2.nzb', nzb_content, unpack=True)
 	assert hist['Status'] == 'WARNING/HEALTH'
 
