@@ -206,7 +206,9 @@ void TlsSocket::Final()
 	CRYPTO_set_id_callback(nullptr);
 #endif
 	ERR_remove_state(0);
+#if	OPENSSL_VERSION_NUMBER >= 0x10002000L
 	SSL_COMP_free_compression_methods();
+#endif
 	//ENGINE_cleanup();
 	CONF_modules_free();
 	CONF_modules_unload(1);
