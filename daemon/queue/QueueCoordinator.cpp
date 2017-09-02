@@ -61,6 +61,7 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
 	{
 		g_DiskState->SaveDownloadQueue(this, m_historyChanged);
+		m_stateChanged = true;
 	}
 
 	for (NzbInfo* nzbInfo : GetQueue())
@@ -262,6 +263,7 @@ void QueueCoordinator::Run()
 
 	WaitJobs();
 	SaveAllPartialState();
+	SaveAllFileState();
 
 	debug("Exiting QueueCoordinator-loop");
 }
@@ -464,8 +466,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 	// if the file doesn't have any articles left for download, we store that fact and search again,
 	// ignoring all files which were previously marked as not having any articles.
 
-	// special case: if the file has ExtraPriority-flag set, it has the highest priority and the
-	// Paused-flag is ignored.
+	// special case: if the file has ExtraPriority-flag set, it has the highest priority.
 
 	//debug("QueueCoordinator::GetNextArticle()");
 
@@ -903,6 +904,15 @@ void QueueCoordinator::LoadPartialState(FileInfo* fileInfo)
 		fileInfo->SetOutputInitialized(true);
 		fileInfo->SetForceDirectWrite(true);
 		fileInfo->SetFilenameConfirmed(true);
+	}
+}
+
+void QueueCoordinator::SaveAllFileState()
+{
+	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && m_downloadQueue.m_stateChanged)
+	{
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+		g_DiskState->SaveAllFileInfos(downloadQueue);
 	}
 }
 

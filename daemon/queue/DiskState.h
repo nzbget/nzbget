@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ public:
 	bool LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers);
 	bool SaveFile(FileInfo* fileInfo);
 	bool LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles);
+	bool SaveAllFileInfos(DownloadQueue* downloadQueue);
+	void DiscardQuickFileInfos();
 	bool SaveFileState(FileInfo* fileInfo, bool completed);
 	bool LoadFileState(FileInfo* fileInfo, Servers* servers, bool completed);
 	bool LoadArticles(FileInfo* fileInfo);
@@ -55,7 +57,7 @@ public:
 	void LoadNzbMessages(int nzbId, MessageList* messages);
 
 private:
-	bool SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile);
+	bool SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile, bool articles);
 	bool LoadFileInfo(FileInfo* fileInfo, StateDiskFile& outfile, int formatVersion, bool fileSummary, bool articles);
 	bool SaveFileState(FileInfo* fileInfo, StateDiskFile& outfile, bool completed);
 	bool LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFile& infile, int formatVersion, bool completed);
@@ -76,6 +78,7 @@ private:
 	bool SaveVolumeStat(ServerVolumes* serverVolumes, StateDiskFile& outfile);
 	bool LoadVolumeStat(Servers* servers, ServerVolumes* serverVolumes, StateDiskFile& infile, int formatVersion);
 	void CalcFileStats(DownloadQueue* downloadQueue, int formatVersion);
+	bool LoadAllFileInfos(DownloadQueue* downloadQueue);
 	bool LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers);
 	void SaveServerStats(ServerStatList* serverStatList, StateDiskFile& outfile);
 	bool LoadServerStats(ServerStatList* serverStatList, Servers* servers, StateDiskFile& infile);

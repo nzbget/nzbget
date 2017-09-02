@@ -72,6 +72,7 @@ private:
 		bool m_massEdit = false;
 		bool m_wantSave = false;
 		bool m_historyChanged = false;
+		bool m_stateChanged = false;
 		friend class QueueCoordinator;
 	};
 
@@ -109,6 +110,7 @@ private:
 	void SaveAllPartialState();
 	void SavePartialState(FileInfo* fileInfo);
 	void LoadPartialState(FileInfo* fileInfo);
+	void SaveAllFileState();
 	void WaitJobs();
 };
 

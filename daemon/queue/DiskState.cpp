@@ -27,6 +27,10 @@
 #include "FileSystem.h"
 
 static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
+const int DISKSTATE_QUEUE_VERSION = 60;
+const int DISKSTATE_FILE_VERSION = 5;
+const int DISKSTATE_STATS_VERSION = 3;
+const int DISKSTATE_FEEDS_VERSION = 3;
 
 class StateDiskFile : public DiskFile
 {
@@ -265,7 +269,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 	bool ok = true;
 
 	{
-		StateFile stateFile("queue", 60, true);
+		StateFile stateFile("queue", DISKSTATE_QUEUE_VERSION, true);
 		if (!downloadQueue->GetQueue()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -288,7 +292,7 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 
 	if (saveHistory)
 	{
-		StateFile stateFile("history", 60, true);
+		StateFile stateFile("history", DISKSTATE_QUEUE_VERSION, true);
 		if (!downloadQueue->GetHistory()->empty())
 		{
 			StateDiskFile* outfile = stateFile.BeginWrite();
@@ -320,7 +324,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 	int formatVersion = 0;
 
 	{
-		StateFile stateFile("queue", 60, true);
+		StateFile stateFile("queue", DISKSTATE_QUEUE_VERSION, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -349,7 +353,7 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 
 	if (formatVersion == 0 || formatVersion >= 57)
 	{
-		StateFile stateFile("history", 60, true);
+		StateFile stateFile("history", DISKSTATE_QUEUE_VERSION, true);
 		if (stateFile.FileExists())
 		{
 			StateDiskFile* infile = stateFile.BeginRead();
@@ -360,6 +364,8 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 			if (!LoadHistory(downloadQueue->GetHistory(), servers, *infile, stateFile.GetFileVersion())) goto error;
 		}
 	}
+
+	LoadAllFileInfos(downloadQueue);
 
 	CleanupQueueDir(downloadQueue);
 
@@ -819,19 +825,14 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 
 		std::unique_ptr<FileInfo> fileInfo = std::make_unique<FileInfo>();
 		fileInfo->SetId(id);
-
-		bool res = LoadFile(fileInfo.get(), true, false);
-		if (res)
+		fileInfo->SetPaused(paused);
+		if (formatVersion < 56)
 		{
-			fileInfo->SetPaused(paused);
-			if (formatVersion < 56)
-			{
-				fileInfo->SetTime(time);
-			}
-			fileInfo->SetExtraPriority((bool)extraPriority);
-			fileInfo->SetNzbInfo(nzbInfo);
-			nzbInfo->GetFileList()->Add(std::move(fileInfo));
+			fileInfo->SetTime(time);
 		}
+		fileInfo->SetExtraPriority((bool)extraPriority);
+		fileInfo->SetNzbInfo(nzbInfo);
+		nzbInfo->GetFileList()->Add(std::move(fileInfo));
 	}
 
 	return true;
@@ -884,7 +885,7 @@ bool DiskState::SaveFile(FileInfo* fileInfo)
 	debug("Saving FileInfo %i to disk", fileInfo->GetId());
 
 	BString<100> filename("%i", fileInfo->GetId());
-	StateFile stateFile(filename, 5, false);
+	StateFile stateFile(filename, DISKSTATE_FILE_VERSION, false);
 
 	StateDiskFile* outfile = stateFile.BeginWrite();
 	if (!outfile)
@@ -892,10 +893,10 @@ bool DiskState::SaveFile(FileInfo* fileInfo)
 		return false;
 	}
 
-	return SaveFileInfo(fileInfo, *outfile) && stateFile.FinishWrite();
+	return SaveFileInfo(fileInfo, *outfile, true) && stateFile.FinishWrite();
 }
 
-bool DiskState::SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile)
+bool DiskState::SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile, bool articles)
 {
 	outfile.PrintLine("%s", fileInfo->GetSubject());
 	outfile.PrintLine("%s", fileInfo->GetFilename());
@@ -918,11 +919,14 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile)
 		outfile.PrintLine("%s", *group);
 	}
 
-	outfile.PrintLine("%i", (int)fileInfo->GetArticles()->size());
-	for (ArticleInfo* articleInfo : fileInfo->GetArticles())
+	if (articles)
 	{
-		outfile.PrintLine("%i,%i", articleInfo->GetPartNumber(), articleInfo->GetSize());
-		outfile.PrintLine("%s", articleInfo->GetMessageId());
+		outfile.PrintLine("%i", (int)fileInfo->GetArticles()->size());
+		for (ArticleInfo* articleInfo : fileInfo->GetArticles())
+		{
+			outfile.PrintLine("%i,%i", articleInfo->GetPartNumber(), articleInfo->GetSize());
+			outfile.PrintLine("%s", articleInfo->GetMessageId());
+		}
 	}
 
 	return true;
@@ -938,7 +942,7 @@ bool DiskState::LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles)
 	debug("Loading FileInfo %i from disk", fileInfo->GetId());
 
 	BString<100> filename("%i", fileInfo->GetId());
-	StateFile stateFile(filename, 5, false);
+	StateFile stateFile(filename, DISKSTATE_FILE_VERSION, false);
 
 	StateDiskFile* infile = stateFile.BeginRead();
 	if (!infile)
@@ -999,10 +1003,9 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, StateDiskFile& infile, int form
 		if (fileSummary) fileInfo->GetGroups()->push_back(buf);
 	}
 
-	if (infile.ScanLine("%i", &size) != 1) goto error;
-
 	if (articles)
 	{
+		if (infile.ScanLine("%i", &size) != 1) goto error;
 		for (int i = 0; i < size; i++)
 		{
 			int PartNumber, PartSize;
@@ -1030,7 +1033,7 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, bool completed)
 	debug("Saving FileState %i to disk", fileInfo->GetId());
 
 	BString<100> filename("%i%s", fileInfo->GetId(), completed ? "c" : "s");
-	StateFile stateFile(filename, 5, false);
+	StateFile stateFile(filename, DISKSTATE_FILE_VERSION, false);
 
 	StateDiskFile* outfile = stateFile.BeginWrite();
 	if (!outfile)
@@ -1073,7 +1076,7 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, bool complet
 	debug("Loading FileInfo %i from disk", fileInfo->GetId());
 
 	BString<100> filename("%i%s", fileInfo->GetId(), completed ? "c" : "s");
-	StateFile stateFile(filename, 5, false);
+	StateFile stateFile(filename, DISKSTATE_FILE_VERSION, false);
 
 	StateDiskFile* infile = stateFile.BeginRead();
 	if (!infile)
@@ -1514,7 +1517,7 @@ bool DiskState::SaveFeeds(Feeds* feeds, FeedHistory* feedHistory)
 {
 	debug("Saving feeds state to disk");
 
-	StateFile stateFile("feeds", 3, true);
+	StateFile stateFile("feeds", DISKSTATE_FEEDS_VERSION, true);
 
 	if (feeds->empty() && feedHistory->empty())
 	{
@@ -1542,7 +1545,7 @@ bool DiskState::LoadFeeds(Feeds* feeds, FeedHistory* feedHistory)
 {
 	debug("Loading feeds state from disk");
 
-	StateFile stateFile("feeds", 3, true);
+	StateFile stateFile("feeds", DISKSTATE_FEEDS_VERSION, true);
 
 	if (!stateFile.FileExists())
 	{
@@ -1684,6 +1687,119 @@ void DiskState::CalcFileStats(DownloadQueue* downloadQueue, int formatVersion)
 	}
 }
 
+bool DiskState::SaveAllFileInfos(DownloadQueue* downloadQueue)
+{
+	bool ok = true;
+	StateFile stateFile("files", DISKSTATE_FILE_VERSION, true);
+	if (!downloadQueue->GetQueue()->empty())
+	{
+		StateDiskFile* outfile = stateFile.BeginWrite();
+		if (!outfile)
+		{
+			return false;
+		}
+
+		// save file-infos
+
+		int fileCount = 0;
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		{
+			fileCount += nzbInfo->GetFileList()->size();
+		}
+		outfile->PrintLine("%i", fileCount);
+
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		{
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
+			{
+				outfile->PrintLine("%i", fileInfo->GetId());
+				SaveFileInfo(fileInfo, *outfile, false);
+			}
+		}
+
+		// now rename to dest file name
+		ok = stateFile.FinishWrite();
+	}
+	else
+	{
+		stateFile.Discard();
+	}
+
+	return ok;
+}
+
+bool DiskState::LoadAllFileInfos(DownloadQueue* downloadQueue)
+{
+	if (downloadQueue->GetQueue()->empty())
+	{
+		return true;
+	}
+
+	StateFile stateFile("files", DISKSTATE_FILE_VERSION, false);
+	StateDiskFile* infile = nullptr;
+	bool useHibernate = false;
+
+	if (stateFile.FileExists())
+	{
+		infile = stateFile.BeginRead();
+		useHibernate = infile != nullptr;
+		if (useHibernate)
+		{
+			int fileCount = 0;
+			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+			{
+				fileCount += nzbInfo->GetFileList()->size();
+			}
+			int size = 0;
+			useHibernate = infile->ScanLine("%i", &size) == 1 && size == fileCount;
+		}
+		if (!useHibernate)
+		{
+			stateFile.Discard();
+		}
+	}
+
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	{
+		RawFileList brokenFileInfos;
+
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
+		{
+			bool res = false;
+			if (useHibernate)
+			{
+				int id = 0;
+				infile->ScanLine("%i", &id);
+				if (id == fileInfo->GetId())
+				{
+					res = LoadFileInfo(fileInfo, *infile, stateFile.GetFileVersion(), true, false);
+				}
+			}
+			if (!res)
+			{
+				res = LoadFile(fileInfo, true, false);
+			}
+			if (!res)
+			{
+				brokenFileInfos.push_back(fileInfo);
+			}
+		}
+
+		for (FileInfo* fileInfo : brokenFileInfos)
+		{
+			nzbInfo->GetFileList()->Remove(fileInfo);
+		}
+	}
+
+	return true;
+}
+
+void DiskState::DiscardQuickFileInfos()
+{
+	StateFile stateFile("files", DISKSTATE_FILE_VERSION, false);
+	stateFile.Discard();
+}
+
 bool DiskState::LoadAllFileStates(DownloadQueue* downloadQueue, Servers* servers)
 {
 	BString<1024> cacheFlagFilename("%s%c%s", g_Options->GetQueueDir(), PATH_SEPARATOR, "acache");
@@ -1731,7 +1847,7 @@ bool DiskState::SaveStats(Servers* servers, ServerVolumes* serverVolumes)
 {
 	debug("Saving stats to disk");
 
-	StateFile stateFile("stats", 3, true);
+	StateFile stateFile("stats", DISKSTATE_STATS_VERSION, true);
 
 	if (servers->empty())
 	{
@@ -1759,7 +1875,7 @@ bool DiskState::LoadStats(Servers* servers, ServerVolumes* serverVolumes, bool* 
 {
 	debug("Loading stats from disk");
 
-	StateFile stateFile("stats", 3, true);
+	StateFile stateFile("stats", DISKSTATE_STATS_VERSION, true);
 
 	if (!stateFile.FileExists())
 	{
