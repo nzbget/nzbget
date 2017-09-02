@@ -1071,14 +1071,14 @@ const char* Connection::GetRemoteAddr()
 	}
 #endif
 
-	struct sockaddr_in PeerName;
-	int peerNameLength = sizeof(PeerName);
-	if (getpeername(m_socket, (struct sockaddr*)&PeerName, (SOCKLEN_T*) &peerNameLength) >= 0)
+	sockaddr_in peerName;
+	int peerNameLength = sizeof(peerName);
+	if (getpeername(m_socket, (sockaddr*)&peerName, (SOCKLEN_T*)&peerNameLength) >= 0)
 	{
 #ifdef WIN32
-		m_remoteAddr = inet_ntoa(PeerName.sin_addr);
+		m_remoteAddr = inet_ntoa(peerName.sin_addr);
 #else
-		inet_ntop(AF_INET, &PeerName.sin_addr, m_remoteAddr, m_remoteAddr.Capacity());
+		inet_ntop(peerName.sin_family, &peerName.sin_addr, m_remoteAddr, m_remoteAddr.Capacity());
 		m_remoteAddr[m_remoteAddr.Capacity() - 1] = '\0';
 #endif
 	}
