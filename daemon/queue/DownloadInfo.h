@@ -177,7 +177,7 @@ public:
 	bool GetOutputInitialized() { return m_outputInitialized; }
 	void SetOutputInitialized(bool outputInitialized) { m_outputInitialized = outputInitialized; }
 	bool GetExtraPriority() { return m_extraPriority; }
-	void SetExtraPriority(bool extraPriority) { m_extraPriority = extraPriority; }
+	void SetExtraPriority(bool extraPriority);
 	int GetActiveDownloads() { return m_activeDownloads; }
 	void SetActiveDownloads(int activeDownloads);
 	bool GetDupeDeleted() { return m_dupeDeleted; }
@@ -509,6 +509,9 @@ public:
 	void SetCurrentFailedArticles(int currentFailedArticles) { m_currentFailedArticles = currentFailedArticles; }
 	int GetPriority() { return m_priority; }
 	void SetPriority(int priority) { m_priority = priority; }
+	int GetExtraPriority() { return m_extraPriority; }
+	void SetExtraPriority(int extraPriority) { m_extraPriority = extraPriority; }
+	bool HasExtraPriority() { return m_extraPriority > 0; }
 	bool GetForcePriority() { return m_priority >= FORCE_PRIORITY; }
 	time_t GetMinTime() { return m_minTime; }
 	void SetMinTime(time_t minTime) { m_minTime = minTime; }
@@ -664,6 +667,7 @@ private:
 	time_t m_minTime = 0;
 	time_t m_maxTime = 0;
 	int m_priority = 0;
+	int m_extraPriority = 0;
 	CompletedFileList m_completedFiles;
 	EDirectRenameStatus m_directRenameStatus = tsNone;
 	EPostRenameStatus m_parRenameStatus = rsNone;

@@ -481,20 +481,34 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 
 		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 		{
-			for (FileInfo* fileInfo1 : nzbInfo->GetFileList())
+			bool nzbHigherPriority = fileInfo &&
+				((nzbInfo->HasExtraPriority() == fileInfo->GetNzbInfo()->HasExtraPriority() &&
+					nzbInfo->GetPriority() > fileInfo->GetNzbInfo()->GetPriority()) ||
+					(nzbInfo->HasExtraPriority() > fileInfo->GetNzbInfo()->HasExtraPriority()));
+
+			bool nzbPaused = nzbInfo->GetFileList()->size() - nzbInfo->GetPausedFileCount() <= 0;
+
+			if ((!fileInfo || nzbHigherPriority) && !nzbPaused &&
+				(!(g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) || nzbInfo->GetForcePriority()))
 			{
-				if ((checkedFiles.empty() ||
-					 std::find(checkedFiles.begin(), checkedFiles.end(), fileInfo1) == checkedFiles.end()) &&
-					!fileInfo1->GetPaused() && !fileInfo1->GetDeleted() &&
-					(g_Options->GetPropagationDelay() == 0 ||
-					 (int)fileInfo1->GetTime() < (int)curDate - g_Options->GetPropagationDelay()) &&
-					(!(g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) || nzbInfo->GetForcePriority()) &&
-					(!fileInfo ||
-					 (fileInfo1->GetExtraPriority() == fileInfo->GetExtraPriority() &&
-					  fileInfo1->GetNzbInfo()->GetPriority() > fileInfo->GetNzbInfo()->GetPriority()) ||
-					 (fileInfo1->GetExtraPriority() > fileInfo->GetExtraPriority())))
+				for (FileInfo* fileInfo1 : nzbInfo->GetFileList())
 				{
-					fileInfo = fileInfo1;
+					bool alreadyChecked = !checkedFiles.empty() &&
+						std::find(checkedFiles.begin(), checkedFiles.end(), fileInfo1) != checkedFiles.end();
+
+					bool propagationWait = g_Options->GetPropagationDelay() > 0 &&
+						(int)curDate > (int)fileInfo1->GetTime() + g_Options->GetPropagationDelay();
+
+					bool higherPriority = fileInfo &&
+						((fileInfo1->GetExtraPriority() == fileInfo->GetExtraPriority() &&
+							fileInfo1->GetNzbInfo()->GetPriority() > fileInfo->GetNzbInfo()->GetPriority()) ||
+							(fileInfo1->GetExtraPriority() > fileInfo->GetExtraPriority()));
+
+					if (!alreadyChecked && !propagationWait && !fileInfo1->GetPaused() && 
+						!fileInfo1->GetDeleted() && (!fileInfo || higherPriority))
+					{
+						fileInfo = fileInfo1;
+					}
 				}
 			}
 		}

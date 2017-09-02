@@ -652,6 +652,7 @@ void NzbInfo::UpdateCurrentStats()
 	m_currentFailedSize = m_failedSize;
 	m_parCurrentSuccessSize = m_parSuccessSize;
 	m_parCurrentFailedSize = m_parFailedSize;
+	m_extraPriority = 0;
 
 	m_currentServerStats.ListOp(&m_serverStats, ServerStatList::soSet);
 
@@ -662,6 +663,7 @@ void NzbInfo::UpdateCurrentStats()
 		m_currentFailedArticles += fileInfo->GetFailedArticles();
 		m_currentSuccessSize += fileInfo->GetSuccessSize();
 		m_currentFailedSize += fileInfo->GetFailedSize();
+		m_extraPriority += fileInfo->GetExtraPriority() ? 1 : 0;
 
 		if (fileInfo->GetPaused())
 		{
@@ -685,6 +687,7 @@ void NzbInfo::UpdateCompletedStats(FileInfo* fileInfo)
 	m_failedSize += fileInfo->GetFailedSize();
 	m_failedArticles += fileInfo->GetFailedArticles();
 	m_successArticles += fileInfo->GetSuccessArticles();
+	m_extraPriority -= fileInfo->GetExtraPriority() ? 1 : 0;
 
 	if (fileInfo->GetParFile())
 	{
@@ -713,6 +716,7 @@ void NzbInfo::UpdateDeletedStats(FileInfo* fileInfo)
 	m_currentSuccessArticles -= fileInfo->GetSuccessArticles();
 	m_currentFailedArticles -= fileInfo->GetFailedArticles() + fileInfo->GetMissedArticles();
 	m_remainingSize -= fileInfo->GetRemainingSize();
+	m_extraPriority -= fileInfo->GetExtraPriority() ? 1 : 0;
 
 	if (fileInfo->GetParFile())
 	{
@@ -794,6 +798,15 @@ void FileInfo::SetPaused(bool paused)
 		m_nzbInfo->SetPausedSize(m_nzbInfo->GetPausedSize() + (paused ? m_remainingSize : - m_remainingSize));
 	}
 	m_paused = paused;
+}
+
+void FileInfo::SetExtraPriority(bool extraPriority)
+{
+	if (m_extraPriority != extraPriority && m_nzbInfo)
+	{
+		m_nzbInfo->SetExtraPriority(m_nzbInfo->GetExtraPriority() + (extraPriority ? 1 : -1));
+	}
+	m_extraPriority = extraPriority;
 }
 
 void FileInfo::MakeValidFilename()
