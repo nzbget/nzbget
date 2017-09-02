@@ -1426,6 +1426,50 @@ void DiskState::CleanupTempDir(DownloadQueue* downloadQueue)
 
 void DiskState::CleanupQueueDir(DownloadQueue* downloadQueue)
 {
+	// Prepare sorted id lists for faster search
+
+	std::vector<int> nzbIdList;
+	std::vector<int> fileIdList;
+
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	{
+		nzbIdList.push_back(nzbInfo->GetId());
+
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
+		{
+			fileIdList.push_back(fileInfo->GetId());
+		}
+
+		for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
+		{
+			fileIdList.push_back(completedFile.GetId());
+		}
+	}
+
+	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
+	{
+		if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+		{
+			NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
+			nzbIdList.push_back(nzbInfo->GetId());
+
+			for (FileInfo* fileInfo : nzbInfo->GetFileList())
+			{
+				fileIdList.push_back(fileInfo->GetId());
+			}
+
+			for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
+			{
+				fileIdList.push_back(completedFile.GetId());
+			}
+		}
+	}
+
+	std::sort(nzbIdList.begin(), nzbIdList.end());
+	std::sort(fileIdList.begin(), fileIdList.end());
+
+	// Do cleanup
+
 	int deletedFiles = 0;
 
 	DirBrowser dir(g_Options->GetQueueDir());
@@ -1438,74 +1482,12 @@ void DiskState::CleanupQueueDir(DownloadQueue* downloadQueue)
 		if ((sscanf(filename, "%i%c", &id, &suffix) == 2 && (suffix == 's' || suffix == 'c')) ||
 			(sscanf(filename, "%i", &id) == 1 && !strchr(filename, '.')))
 		{
-			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-			{
-				for (FileInfo* fileInfo : nzbInfo->GetFileList())
-				{
-					if (fileInfo->GetId() == id)
-					{
-						goto next;
-					}
-				}
-
-				for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
-				{
-					if (completedFile.GetId() == id)
-					{
-						goto next;
-					}
-				}
-			}
-
-			for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
-			{
-				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
-				{
-					NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
-
-					for (FileInfo* fileInfo : nzbInfo->GetFileList())
-					{
-						if (fileInfo->GetId() == id)
-						{
-							goto next;
-						}
-					}
-
-					for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
-					{
-						if (completedFile.GetId() == id)
-						{
-							goto next;
-						}
-					}
-				}
-			}
-
-			del = true;
+			del = !std::binary_search(fileIdList.begin(), fileIdList.end(), id);
 		}
 
 		if (!del && sscanf(filename, "n%i.log", &id) == 1)
 		{
-			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-			{
-				if (nzbInfo->GetId() == id)
-				{
-					goto next;
-				}
-			}
-
-			for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
-			{
-				if (historyInfo->GetKind() == HistoryInfo::hkNzb)
-				{
-					if (historyInfo->GetNzbInfo()->GetId() == id)
-					{
-						goto next;
-					}
-				}
-			}
-
-			del = true;
+			del = !std::binary_search(nzbIdList.begin(), nzbIdList.end(), id);
 		}
 
 		if (del)
@@ -1515,8 +1497,6 @@ void DiskState::CleanupQueueDir(DownloadQueue* downloadQueue)
 			FileSystem::DeleteFile(fullFilename);
 			deletedFiles++;
 		}
-
-		next:;
 	}
 
 	if (deletedFiles > 0)
