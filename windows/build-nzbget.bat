@@ -254,13 +254,10 @@ if not exist resources (
 	if errorlevel 1 goto BUILD_FAILED
 )
 
-if not exist setup (
-	mkdir setup
-	xcopy /E ..\nzbget-%VERSION%\windows\setup setup
-	if errorlevel 1 goto BUILD_FAILED
-)
+copy ..\nzbget-%VERSION%\windows\nzbget-setup.nsi .
+if errorlevel 1 goto BUILD_FAILED
 
-%NSIS%\makensis.exe setup\nzbget-setup.nsi
+%NSIS%\makensis.exe nzbget-setup.nsi
 if errorlevel 1 goto BUILD_FAILED
 
 GOTO:EOF

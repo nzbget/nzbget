@@ -40,7 +40,7 @@
 ;General
 
 Name "NZBGet"
-OutFile "..\nzbget-setup.exe"
+OutFile "nzbget-setup.exe"
 
 ;Default installation folder
 InstallDir "$PROGRAMFILES64\NZBGet"
@@ -58,11 +58,11 @@ RequestExecutionLevel admin
 
 ;  !define MUI_ABORTWARNING
 
-!define MUI_ICON "..\resources\mainicon.ico"
+!define MUI_ICON "resources\mainicon.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 
-!define MUI_WELCOMEFINISHPAGE_BITMAP "install.bmp"
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP "uninstall.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "resources\install.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "resources\uninstall.bmp"
 
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_FUNCTION RunAction
@@ -75,7 +75,7 @@ RequestExecutionLevel admin
 ;Pages
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "..\NZBGet\COPYING"
+!insertmacro MUI_PAGE_LICENSE "NZBGet\COPYING"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW MyFinishShow
@@ -133,7 +133,7 @@ ${EndIf}
 
 !ifndef DEBUG_UI
 
-File "..\NZBGet\*"
+File "NZBGet\*"
 
 ; With Parameter "/32" force installing of 32 bit binaries
 StrCpy $R1 0
@@ -144,13 +144,13 @@ StrCpy $R1 32
 
 ${If} ${RunningX64}
 ${AndIf} $R1 == 0
-  File "..\NZBGet\64\*"
+  File "NZBGet\64\*"
 ${Else}
-  File "..\NZBGet\32\*"
+  File "NZBGet\32\*"
 ${EndIf}
 
 SetOutPath "$INSTDIR\webui"
-File /r "..\NZBGet\webui\*"
+File /r "NZBGet\webui\*"
 
 ${If} ${FileExists} "$INSTDIR\nzbget.conf"
   ; When updating a portable installation install all scripts into exe-directory
@@ -164,7 +164,7 @@ ${Else}
   Pop $0
   SetShellVarContext current
 ${EndIf}
-File "..\NZBGet\scripts\*"
+File "NZBGet\scripts\*"
 
 !endif
 

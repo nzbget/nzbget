@@ -792,9 +792,9 @@ windows_FILES = \
 	windows/resources/trayicon_idle.ico \
 	windows/resources/trayicon_paused.ico \
 	windows/resources/trayicon_working.ico \
-	windows/setup/nzbget-setup.nsi \
-	windows/setup/install.bmp \
-	windows/setup/uninstall.bmp
+	windows/resources/install.bmp \
+	windows/resources/uninstall.bmp \
+	windows/nzbget-setup.nsi
 
 osx_FILES = \
 	osx/App_Prefix.pch \
