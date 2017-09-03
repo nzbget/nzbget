@@ -134,7 +134,7 @@ echo Downloading verification signature...
 nzbget.exe -B webget "%TEMP%\%SIG_FILE%" "%SIG_URL%"
 if errorlevel 1 goto DOWNLOAD_FAILURE
 
-SET SETUP_EXE=nzbget-%VER%-bin-win32-setup.exe
+SET SETUP_EXE=nzbget-%VER%-bin-windows-setup.exe
 
 echo Downloading %SETUP_EXE%...
 nzbget.exe -B webget "%TEMP%\%SETUP_EXE%" "%DNL_URL%"
