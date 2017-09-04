@@ -497,7 +497,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 						std::find(checkedFiles.begin(), checkedFiles.end(), fileInfo1) != checkedFiles.end();
 
 					bool propagationWait = g_Options->GetPropagationDelay() > 0 &&
-						(int)curDate > (int)fileInfo1->GetTime() + g_Options->GetPropagationDelay();
+						(int)fileInfo1->GetTime() + g_Options->GetPropagationDelay() >= (int)curDate;
 
 					bool higherPriority = fileInfo &&
 						((fileInfo1->GetExtraPriority() == fileInfo->GetExtraPriority() &&
