@@ -1071,16 +1071,34 @@ const char* Connection::GetRemoteAddr()
 	}
 #endif
 
-	sockaddr_in peerName;
+	m_remoteAddr.Clear();
+
+	char peerName[1024];
 	int peerNameLength = sizeof(peerName);
 	if (getpeername(m_socket, (sockaddr*)&peerName, (SOCKLEN_T*)&peerNameLength) >= 0)
 	{
 #ifdef WIN32
-		m_remoteAddr = inet_ntoa(peerName.sin_addr);
+		HMODULE module = LoadLibrary("ws2_32.dll");
+		if (module)
+		{
+			using inet_ntop_t = PCTSTR WSAAPI (INT Family, PVOID pAddr, PTSTR pStringBuf, size_t StringBufSize);
+			inet_ntop_t* inet_ntop = (inet_ntop_t*)GetProcAddress(module, "inet_ntop");
+			if (inet_ntop)
+			{
+				inet_ntop(((sockaddr_in*)&peerName)->sin_family, &((sockaddr_in*)&peerName)->sin_addr,
+					m_remoteAddr, m_remoteAddr.Capacity());
+			}
+			FreeLibrary(module);
+		}
+		if (m_remoteAddr.Empty())
+		{
+			m_remoteAddr = inet_ntoa(((sockaddr_in*)&peerName)->sin_addr);
+		}
 #else
-		inet_ntop(peerName.sin_family, &peerName.sin_addr, m_remoteAddr, m_remoteAddr.Capacity());
-		m_remoteAddr[m_remoteAddr.Capacity() - 1] = '\0';
+		inet_ntop(((sockaddr_in*)&peerName)->sin_family, &((sockaddr_in*)&peerName)->sin_addr,
+			m_remoteAddr, m_remoteAddr.Capacity());
 #endif
+		m_remoteAddr[m_remoteAddr.Capacity() - 1] = '\0';
 	}
 
 	return m_remoteAddr;
