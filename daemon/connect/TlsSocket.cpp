@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2008-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -434,7 +434,7 @@ bool TlsSocket::Start()
 		return false;
 	}
 
-	if (m_host && !SSL_set_tlsext_host_name((SSL*)m_session, m_host))
+	if (m_isClient && m_host && !SSL_set_tlsext_host_name((SSL*)m_session, m_host))
 	{
 		ReportError("Could not set host name for TLS");
 		Close();

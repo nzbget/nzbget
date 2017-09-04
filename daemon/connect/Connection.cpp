@@ -127,11 +127,11 @@ Connection::Connection(SOCKET socket, bool tls)
 {
 	debug("Creating Connection");
 
-	m_host = GetRemoteAddr();
 	m_port = 0;
 	m_tls = tls;
 	m_status = csConnected;
 	m_socket = socket;
+	m_host = GetRemoteAddr();
 	m_bufAvail = 0;
 	m_timeout = 60;
 	m_suppressErrors = true;
