@@ -826,17 +826,17 @@ var Config = (new function($)
 				'</div>';
 		}
 		else if (option.caption.toLowerCase().indexOf('password') > -1 &&
-            option.caption.toLowerCase() !== '*unpack:password')
+			option.caption.toLowerCase() !== '*unpack:password')
 		{
 			option.type = 'password';
 			html += '<div class="password-field input-append">' +
-                                '<input type="password" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">'+
-                                '<span class="add-on">'+
-                                '<label class="checkbox">'+
-                                '<input type="checkbox" onclick="Config.togglePassword(this, \'' + option.formId + '\')" /> Show'+
-                                '</label>'+
-                                '</span>'+
-                                '</div>';
+				'<input type="password" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">'+
+				'<span class="add-on">'+
+				'<label class="checkbox">'+
+				'<input type="checkbox" onclick="Config.togglePassword(this, \'' + option.formId + '\')" /> Show'+
+				'</label>'+
+				'</span>'+
+				'</div>';
 		}
 		else if (option.caption.toLowerCase().indexOf('username') > -1 ||
 			(option.caption.indexOf('IP') > -1 && option.caption.toLowerCase() !== 'authorizedip'))
@@ -1186,11 +1186,11 @@ var Config = (new function($)
 		$('.btn@[value=' + value + ']', control).addClass('btn-primary');
 	}
 
-        this.togglePassword = function(control, target)
-        {
-                var checked = $(control).is(':checked');
-                $('#'+target).prop('type', checked ? 'text' : 'password');
-        }
+	this.togglePassword = function(control, target)
+	{
+		var checked = $(control).is(':checked');
+		$('#'+target).prop('type', checked ? 'text' : 'password');
+	}
 
 	/*** CHANGE/ADD/REMOVE OPTIONS *************************************************************/
 
