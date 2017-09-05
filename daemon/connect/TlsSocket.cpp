@@ -222,6 +222,10 @@ void TlsSocket::Final()
 TlsSocket::~TlsSocket()
 {
 	Close();
+
+#ifdef HAVE_OPENSSL
+	ERR_remove_state(0);
+#endif
 }
 
 void TlsSocket::ReportError(const char* errMsg, bool suppressable)
