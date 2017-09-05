@@ -296,6 +296,7 @@ var Frontend = (new function($)
 			selectInitialTab();
 			windowResized();
 			firstLoad = false;
+			UpdateDialog.checkUpdate();
 		}
 	}
 
