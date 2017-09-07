@@ -883,14 +883,22 @@ void Connection::Cancel()
 	debug("Cancelling connection");
 	if (m_socket != INVALID_SOCKET)
 	{
-		m_status = csCancelled;
-		int r = shutdown(m_socket, SHUT_RDWR);
-		if (r == -1)
+		if (m_status == csListening)
 		{
-			ReportError("Could not shutdown connection for %s", m_host, true);
+			m_status = csCancelled;
+			SOCKET socket = m_socket;
+			m_socket = INVALID_SOCKET;
+			closesocket(socket);
 		}
-		closesocket(m_socket);
-		m_socket = INVALID_SOCKET;
+		else
+		{
+			m_status = csCancelled;
+			int r = shutdown(m_socket, SHUT_RDWR);
+			if (r == -1)
+			{
+				ReportError("Could not shutdown connection for %s", m_host, true);
+			}
+		}
 	}
 }
 
