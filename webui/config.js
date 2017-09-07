@@ -2736,7 +2736,7 @@ var UpdateDialog = (new function($)
 
 	function closeClick()
 	{
-		if ($UpdateDialog_Close.text() === 'Remind me tomorrow')
+		if ($UpdateDialog_Close.text() === 'Remind Me Tomorrow')
 		{
 			UISettings.write('LastUpdateCheck', new Date() / 1);
 		}
@@ -2748,12 +2748,11 @@ var UpdateDialog = (new function($)
 		$('#UpdateDialog_CheckProgress').show();
 		$('#UpdateDialog_CheckFailed').hide();
 		$('#UpdateDialog_Versions').hide();
-		$('#UpdateDialog_Hint').hide();
 		$('#UpdateDialog_UpdateAvail').hide();
 		$('#UpdateDialog_DownloadAvail').hide();
 		$('#UpdateDialog_UpdateNotAvail').hide();
 		$('#UpdateDialog_InstalledInfo').show();
-		$UpdateDialog_Close.text(foreground ? 'Close' : 'Remind me tomorrow');
+		$UpdateDialog_Close.text(foreground ? 'Close' : 'Remind Me Tomorrow');
 		$('#UpdateDialog_VerInstalled').text(Options.option('Version'));
 
 		PackageInfo = {};
@@ -2878,7 +2877,6 @@ var UpdateDialog = (new function($)
 		$('#UpdateDialog_CheckProgress').hide();
 		$('#UpdateDialog_Versions').show();
 		$('#UpdateDialog_InstalledInfo').show();
-		$('#UpdateDialog_Hint').show();
 
 		$('#UpdateDialog_CurStable').text(VersionInfo['stable-version'] ? VersionInfo['stable-version'] : 'no data');
 		$('#UpdateDialog_CurTesting').text(VersionInfo['testing-version'] ? formatTesting(VersionInfo['testing-version']) : 'no data');

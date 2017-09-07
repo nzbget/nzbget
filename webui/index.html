@@ -2697,20 +2697,31 @@
 		</tr>
 	</tbody></table>
 
-	<div id="UpdateDialog_Hint">
-		<hr>
-		<p>To configure automatic check use option <strong><em>UpdateCheck</em></strong> in section "SECURITY".</p>
-	</div>
-	
 	</div>
 	<div class="modal-footer">
-		<div class="control-group pull-left hide">
-			<label class="checkbox"><input type="checkbox" id="UpdateDialog_AutoCheck">Automatically check for updates</label>
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#UpdateDialogHelp" class="btn pull-left">Quick Help</a>
 		</div>
 		<a href="#" class="btn" id="UpdateDialog_Close" data-dismiss="modal">Close</a>
 	</div>
 </div>
 
+<!-- *** QUICK HELP: EXPLAINING UPDATE OPTIONS ************************************************************ -->
+
+<div class="modal no-footer hide" id="UpdateDialogHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining update options</h3>
+	</div>
+	<div class="modal-body">
+	<p>When installed using official installer the pogram offers automatic installation of updates directly
+		via web-interface. For packages provided by third-parties please use their update instructions.</p>
+	<p>The program can also automatically check for new versions. By default you'll be notifed about
+		new <strong>stable</strong> releases. To disable notifications or to activate them also for
+		<strong>testing</strong> releases use option <strong>UpdateCheck</strong> in section "SECURITY".</p>
+	</div>
+</div>
+	
 <!-- *** INSTALL DIALOG ************************************************** -->
 
 <div class="modal modal-center hide log-dialog" id="UpdateProgressDialog">
