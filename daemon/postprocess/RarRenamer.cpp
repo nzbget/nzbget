@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -217,6 +217,8 @@ void RarRenamer::MakeSets()
 			while (found)
 			{
 				found = false;
+				std::vector<RarVolume*> candidates;
+
 				RarVolume* lastVolume = set.back();
 				for (RarVolume& volume : *volumes)
 				{
@@ -229,11 +231,36 @@ void RarRenamer::MakeSets()
 						 !strcmp(volume.GetFiles()->front().GetFilename(), lastVolume->GetFiles()->back().GetFilename())) ||
 						 (!volume.GetFiles()->front().GetSplitBefore() && !lastVolume->GetFiles()->back().GetSplitAfter())))
 					{
-						debug("   adding %s", FileSystem::BaseFileName(volume.GetFilename()));
-						set.push_back(&volume);
-						found = true;
-						break;
+						debug("   found candidate %s", FileSystem::BaseFileName(volume.GetFilename()));
+						candidates.push_back(&volume);
 					}
+				}
+
+				RarVolume* nextVolume = nullptr;
+
+				if (candidates.size() > 1)
+				{
+					for (RarVolume* volume : candidates)
+					{
+						if (SameArchiveName(FileSystem::BaseFileName(set[0]->GetFilename()),
+							FileSystem::BaseFileName(volume->GetFilename()), set[0]->GetNewNaming()))
+						{
+							nextVolume = volume;
+							break;
+						}
+					}
+				}
+
+				if (!nextVolume && !candidates.empty())
+				{
+					nextVolume = candidates.front();
+				}
+
+				if (nextVolume)
+				{
+					debug("   adding %s", FileSystem::BaseFileName(nextVolume->GetFilename()));
+					set.push_back(nextVolume);
+					found = true;
 				}
 			}
 
@@ -253,6 +280,42 @@ void RarRenamer::MakeSets()
 		{
 			debug("   %s", FileSystem::BaseFileName(volume->GetFilename()));
 		}
+	}
+}
+
+bool RarRenamer::SameArchiveName(const char* filename1, const char* filename2, bool newNaming)
+{
+	if (strlen(filename1) != strlen(filename2))
+	{
+		return false;
+	}
+
+	const char* ext1 = strrchr(filename1, '.');
+	const char* ext2 = strrchr(filename2, '.');
+
+	if (!(ext1 && ext2 && strlen(ext1) == strlen(ext2)))
+	{
+		return false;
+	}
+
+	if (newNaming)
+	{
+		if (ext1 == filename1 || ext2 == filename2)
+		{
+			return false;
+		}
+		BString<1024> name1, name2;
+		name1.Set(filename1, ext1 - filename1);
+		name2.Set(filename2, ext2 - filename2);
+		ext1 = strrchr(name1, '.');
+		ext2 = strrchr(name2, '.');
+		return ext1 && ext2 && strlen(ext1) == strlen(ext2) &&
+			!strncmp(ext1, ".part", 5) && !strncmp(ext2, ".part", 5) &&
+			!strncmp(name1, name2, ext1 - name1);
+	}
+	else
+	{
+		return !strncmp(filename1, filename2, ext1 - filename1);
 	}
 }
 

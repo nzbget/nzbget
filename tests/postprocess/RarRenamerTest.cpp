@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,18 @@ RarRenamerMock::RarRenamerMock()
 TEST_CASE("Rar-renamer: rename not needed", "[Rar][RarRenamer][Slow][TestData]")
 {
 	RarRenamerMock rarRenamer;
+
+	rarRenamer.Execute();
+
+	REQUIRE(rarRenamer.GetRenamedCount() == 0);
+}
+
+TEST_CASE("Rar-renamer: rename not needed 2", "[Rar][RarRenamer][Slow][TestData]")
+{
+	RarRenamerMock rarRenamer;
+
+	REQUIRE(FileSystem::CopyFile((TestUtil::WorkingDir() + "/testfile5.part02.rar").c_str(), (TestUtil::WorkingDir() + "/12348").c_str()));
+	REQUIRE(FileSystem::CopyFile((TestUtil::WorkingDir() + "/testfile3oldnam.r00").c_str(), (TestUtil::WorkingDir() + "/testfile3oldnamB.r00").c_str()));
 
 	rarRenamer.Execute();
 

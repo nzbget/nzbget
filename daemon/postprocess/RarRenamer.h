@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,7 @@ private:
 	void MakeSets();
 	bool IsSetProperlyNamed(RarVolumeSet& set);
 	RarFile* FindMainFile(RarVolumeSet& set);
+	static bool SameArchiveName(const char* filename1, const char* filename2, bool newNaming);
 };
 
 #endif
