@@ -143,6 +143,7 @@ static const char* OPTION_MONTHLYQUOTA			= "MonthlyQuota";
 static const char* OPTION_QUOTASTARTDAY			= "QuotaStartDay";
 static const char* OPTION_DAILYQUOTA			= "DailyQuota";
 static const char* OPTION_REORDERFILES			= "ReorderFiles";
+static const char* OPTION_UPDATECHECK			= "UpdateCheck";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -524,6 +525,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_QUOTASTARTDAY, "1");
 	SetOption(OPTION_DAILYQUOTA, "0");
 	SetOption(OPTION_REORDERFILES, "no");
+	SetOption(OPTION_UPDATECHECK, "none");
 }
 
 void Options::InitOptFile()

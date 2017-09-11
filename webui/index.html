@@ -2654,17 +2654,9 @@
 	<p id="UpdateDialog_InstalledInfo" style="margin-top:0px; margin-bottom:5px;">Currently installed: <span id="UpdateDialog_VerInstalled"></span></p>
 	<p id="UpdateDialog_CheckProgress" class="hide">Checking for updates <img style="margin-left:5px;vertical-align:top;margin-top:1px;" src="img/transmit.gif" width="16px" height="16px"></p>
 	<p id="UpdateDialog_CheckFailed" class="hide failure-message"><strong>Check failed. Please try again later.</strong></p>
-	<p id="UpdateDialog_UpdateAvail"><strong>An update is available for your platform!</strong></p>
-	<p id="UpdateDialog_UpdateNotAvail" class="hide"><strong>No updates are available for your platform.</strong></p>
-
-	<div id="UpdateDialog_UpdateNoInfo" class="hide">
-	<p><strong>Automatic updates are not configured for your platform.</strong></p>
-	<p class="alert alert-info">
-	If you compiled the program yourself you know how to update.
-	If you installed a binary package ask maintainer to add support for automatic updates.
-	If you create a public package please read <a href="http://nzbget.net/packaging" target="_blank">"About Packaging"</a>.
-	</p>
-	</div>
+	<p id="UpdateDialog_UpdateAvail"><strong>An update is available!</strong></p>
+	<p id="UpdateDialog_DownloadAvail"><strong>A new version is available!</strong></p>
+	<p id="UpdateDialog_UpdateNotAvail" class="hide"><strong>You are running the most current version.</strong></p>
 
 	<table id="UpdateDialog_Versions" class="table" style="margin-top:10px;">
 	<thead>
@@ -2687,24 +2679,49 @@
 		</tr>
 		<tr id="UpdateDialog_AvailRow">
 			<td class="update-row-name">For your platform</td>
-			<td class="text-center"><span id="UpdateDialog_AvailStable"></span><br>
+			<td class="text-center"><span id="UpdateDialog_AvailStableBlock"><span id="UpdateDialog_AvailStable"></span><br></span>
 			<span id="UpdateDialog_AvailNotesStableBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesStable" href="#" target="_blank">package info</a><br></span>
 			<a class="btn btn-success" id="UpdateDialog_InstallStable" data-kind="stable" href="#">Install</a></td>
-			<td class="text-center"><span id="UpdateDialog_AvailTesting"></span><br>
+			<td class="text-center"><span id="UpdateDialog_AvailTestingBlock"><span id="UpdateDialog_AvailTesting"></span><br></span>
 			<span id="UpdateDialog_AvailNotesTestingBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesTesting" href="#" target="_blank">package info</a><br></span>
 			<a class="btn btn-success" id="UpdateDialog_InstallTesting" data-kind="testing" href="#">Install</a></td>
-			<td class="text-center"><span id="UpdateDialog_AvailDevel"></span><br>
+			<td class="text-center"><span id="UpdateDialog_AvailDevelBlock"><span id="UpdateDialog_AvailDevel"></span><br></span>
 			<span id="UpdateDialog_AvailNotesDevelBlock"><a class="update-release-notes" id="UpdateDialog_AvailNotesDevel" href="#" target="_blank">package info</a><br></span>
 			<a class="btn btn-success" id="UpdateDialog_InstallDevel" data-kind="devel" href="#">Install</a></td>
+		</tr>
+		<tr id="UpdateDialog_DownloadRow">
+			<td class="update-row-name"></td>
+			<td class="text-center"><a class="btn btn-success" id="UpdateDialog_DownloadStable" href="http://nzbget.net/download" target="_blank">Download</a></td>
+			<td class="text-center"><a class="btn btn-success" id="UpdateDialog_DownloadTesting" href="http://nzbget.net/download" target="_blank">Download</a></td>
+			<td class="text-center"></td>
 		</tr>
 	</tbody></table>
 
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn btn-primary" data-dismiss="modal">Cancel</a>
+		<div class="btn-group pull-left">
+			<a data-toggle="modal" href="#UpdateDialogHelp" class="btn pull-left">Quick Help</a>
+		</div>
+		<a href="#" class="btn" id="UpdateDialog_Close" data-dismiss="modal">Close</a>
 	</div>
 </div>
 
+<!-- *** QUICK HELP: EXPLAINING UPDATE OPTIONS ************************************************************ -->
+
+<div class="modal no-footer hide" id="UpdateDialogHelp">
+	<div class="modal-header">
+	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
+	<h3>Help: Explaining update options</h3>
+	</div>
+	<div class="modal-body">
+	<p>When installed using official installer the program offers automatic installation of updates directly
+		via web-interface. For packages provided by third-parties please refer to their update instructions.</p>
+	<p>The program can also automatically check for new versions. By default you'll be notifed about
+		new <strong>stable</strong> releases. To disable notifications or to activate them also for
+		<strong>testing</strong> releases use option <strong>UpdateCheck</strong> in section "SECURITY".</p>
+	</div>
+</div>
+	
 <!-- *** INSTALL DIALOG ************************************************** -->
 
 <div class="modal modal-center hide log-dialog" id="UpdateProgressDialog">

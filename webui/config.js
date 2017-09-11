@@ -826,17 +826,17 @@ var Config = (new function($)
 				'</div>';
 		}
 		else if (option.caption.toLowerCase().indexOf('password') > -1 &&
-            option.caption.toLowerCase() !== '*unpack:password')
+			option.caption.toLowerCase() !== '*unpack:password')
 		{
 			option.type = 'password';
 			html += '<div class="password-field input-append">' +
-                                '<input type="password" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">'+
-                                '<span class="add-on">'+
-                                '<label class="checkbox">'+
-                                '<input type="checkbox" onclick="Config.togglePassword(this, \'' + option.formId + '\')" /> Show'+
-                                '</label>'+
-                                '</span>'+
-                                '</div>';
+				'<input type="password" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">'+
+				'<span class="add-on">'+
+				'<label class="checkbox">'+
+				'<input type="checkbox" onclick="Config.togglePassword(this, \'' + option.formId + '\')" /> Show'+
+				'</label>'+
+				'</span>'+
+				'</div>';
 		}
 		else if (option.caption.toLowerCase().indexOf('username') > -1 ||
 			(option.caption.indexOf('IP') > -1 && option.caption.toLowerCase() !== 'authorizedip'))
@@ -1186,11 +1186,11 @@ var Config = (new function($)
 		$('.btn@[value=' + value + ']', control).addClass('btn-primary');
 	}
 
-        this.togglePassword = function(control, target)
-        {
-                var checked = $(control).is(':checked');
-                $('#'+target).prop('type', checked ? 'text' : 'password');
-        }
+	this.togglePassword = function(control, target)
+	{
+		var checked = $(control).is(':checked');
+		$('#'+target).prop('type', checked ? 'text' : 'password');
+	}
 
 	/*** CHANGE/ADD/REMOVE OPTIONS *************************************************************/
 
@@ -1627,7 +1627,6 @@ var Config = (new function($)
 		var serverName = getOptionValue(findOptionByName('Server' + multiid + '.Name'));
 		var serverHost = getOptionValue(findOptionByName('Server' + multiid + '.Host'));
 		var serverPort = getOptionValue(findOptionByName('Server' + multiid + '.Port'));
-		console.log(serverName, serverHost, serverPort);
 		var serverId = 0;
 
 		// searching by name
@@ -2685,6 +2684,7 @@ var UpdateDialog = (new function($)
 	var $UpdateDialog;
 	var $UpdateProgressDialog;
 	var $UpdateProgressDialog_Log;
+	var $UpdateDialog_Close;
 
 	// State
 	var VersionInfo;
@@ -2693,6 +2693,7 @@ var UpdateDialog = (new function($)
 	var lastUpTimeSec;
 	var installing = false;
 	var logReceived = false;
+	var foreground = false;
 
 	this.init = function()
 	{
@@ -2700,6 +2701,7 @@ var UpdateDialog = (new function($)
 		$('#UpdateDialog_InstallStable,#UpdateDialog_InstallTesting,#UpdateDialog_InstallDevel').click(install);
 		$UpdateProgressDialog = $('#UpdateProgressDialog');
 		$UpdateProgressDialog_Log = $('#UpdateProgressDialog_Log');
+		$UpdateDialog_Close = $('#UpdateDialog_Close');
 
 		$UpdateDialog.on('hidden', resumeRefresher);
 		$UpdateProgressDialog.on('hidden', resumeRefresher);
@@ -2707,7 +2709,7 @@ var UpdateDialog = (new function($)
 
 	function resumeRefresher()
 	{
-		if (!installing)
+		if (!installing && foreground)
 		{
 			Refresher.resume();
 		}
@@ -2715,15 +2717,33 @@ var UpdateDialog = (new function($)
 
 	this.showModal = function()
 	{
+		foreground = true;
+		this.performCheck();
+		$UpdateDialog.modal({backdrop: 'static'});
+	}
+
+	this.checkUpdate = function()
+	{
+		var lastCheck = new Date(parseInt(UISettings.read('LastUpdateCheck', '0')));
+		var hoursSinceLastCheck = Math.abs(new Date() - lastCheck) / (60*60*1000);
+		if (Options.option('UpdateCheck') !== 'none' && hoursSinceLastCheck > 12)
+		{
+			UISettings.write('LastUpdateCheck', new Date() / 1);
+			this.performCheck();
+		}
+	}
+
+	this.performCheck = function()
+	{
 		$('#UpdateDialog_Install').hide();
 		$('#UpdateDialog_CheckProgress').show();
 		$('#UpdateDialog_CheckFailed').hide();
 		$('#UpdateDialog_Versions').hide();
 		$('#UpdateDialog_UpdateAvail').hide();
+		$('#UpdateDialog_DownloadAvail').hide();
 		$('#UpdateDialog_UpdateNotAvail').hide();
-		$('#UpdateDialog_UpdateNoInfo').hide();
 		$('#UpdateDialog_InstalledInfo').show();
-
+		$UpdateDialog_Close.text(foreground ? 'Close' : 'Remind Me Later');
 		$('#UpdateDialog_VerInstalled').text(Options.option('Version'));
 
 		PackageInfo = {};
@@ -2731,11 +2751,12 @@ var UpdateDialog = (new function($)
 		UpdateInfo = {};
 
 		installing = false;
-		Refresher.pause();
+		if (foreground)
+		{
+			Refresher.pause();
+		}
 
-		$UpdateDialog.modal({backdrop: 'static'});
-
-		RPC.call('readurl', ['http://nzbget.net/info/nzbget-version.json?nocache=' + new Date().getTime(), 'version info'], loadedUpstreamInfo, error);
+		RPC.call('readurl', ['http://nzbget.net/info/nzbget-version.json?nocache=' + new Date().getTime(), 'nzbget version info'], loadedUpstreamInfo, error);
 	}
 
 	function error(e)
@@ -2754,23 +2775,23 @@ var UpdateDialog = (new function($)
 	function loadedUpstreamInfo(data)
 	{
 		VersionInfo = parseJsonP(data);
-		if (VersionInfo['devel-version'])
+		if (VersionInfo['devel-version'] || !foreground)
 		{
 			loadPackageInfo();
 		}
 		else
 		{
-			loadGitVerData();
+			loadGitVerData(loadPackageInfo);
 		}
 	}
 
-	function loadGitVerData()
+	function loadGitVerData(callback)
 	{
-		// fetching devel version number from svn viewer
-		RPC.call('readurl', ['https://github.com/nzbget/nzbget', 'git revision info'],
+		// fetching devel version number from github web-site
+		RPC.call('readurl', ['https://github.com/nzbget/nzbget', 'nzbget git revision info'],
 			function(gitRevData)
 			{
-				RPC.call('readurl', ['https://raw.githubusercontent.com/nzbget/nzbget/develop/configure.ac', 'git branch info'],
+				RPC.call('readurl', ['https://raw.githubusercontent.com/nzbget/nzbget/develop/configure.ac', 'nzbget git branch info'],
 					function(gitBranchData)
 					{
 						var html = document.createElement('DIV');
@@ -2789,9 +2810,9 @@ var UpdateDialog = (new function($)
 							}
 						}
 
-						loadPackageInfo();
-					}, error);
-			}, error);
+						callback();
+					}, callback);
+			}, callback);
 	}
 
 	function loadPackageInfo()
@@ -2804,7 +2825,7 @@ var UpdateDialog = (new function($)
 		PackageInfo = parseJsonP(data);
 		if (PackageInfo['update-info-link'])
 		{
-			RPC.call('readurl', [PackageInfo['update-info-link'], 'update info'], loadedUpdateInfo, loadedAll);
+			RPC.call('readurl', [PackageInfo['update-info-link'], 'nzbget update info'], loadedUpdateInfo, loadedAll);
 		}
 		else if (PackageInfo['update-info-script'])
 		{
@@ -2854,6 +2875,8 @@ var UpdateDialog = (new function($)
 		$('#UpdateDialog_CurNotesStable').attr('href', VersionInfo['stable-release-notes']);
 		$('#UpdateDialog_CurNotesTesting').attr('href', VersionInfo['testing-release-notes']);
 		$('#UpdateDialog_CurNotesDevel').attr('href', VersionInfo['devel-release-notes']);
+		$('#UpdateDialog_DownloadStable').attr('href', VersionInfo['stable-download']);
+		$('#UpdateDialog_DownloadTesting').attr('href', VersionInfo['testing-download']);
 		Util.show('#UpdateDialog_CurNotesStable', VersionInfo['stable-release-notes']);
 		Util.show('#UpdateDialog_CurNotesTesting', VersionInfo['testing-release-notes']);
 		Util.show('#UpdateDialog_CurNotesDevel', VersionInfo['devel-release-notes']);
@@ -2862,6 +2885,16 @@ var UpdateDialog = (new function($)
 		$('#UpdateDialog_AvailTesting').text(UpdateInfo['testing-version'] ? formatTesting(UpdateInfo['testing-version']) : 'not available');
 		$('#UpdateDialog_AvailDevel').text(UpdateInfo['devel-version'] ? formatTesting(UpdateInfo['devel-version']) : 'not available');
 
+		if (UpdateInfo['stable-version'] === VersionInfo['stable-version'] &&
+			UpdateInfo['testing-version'] === VersionInfo['testing-version'])
+		{
+			$('#UpdateDialog_AvailStableBlock,#UpdateDialog_AvailTestingBlock,#UpdateDialog_AvailDevelBlock').hide();
+			$('#UpdateDialog_AvailRow .update-row-name').text('');
+			$('#UpdateDialog_AvailRow td').css('border-style', 'none');
+		}
+
+		$('#UpdateDialog_DownloadRow td').css('border-style', 'none');
+		
 		$('#UpdateDialog_AvailNotesStable').attr('href', UpdateInfo['stable-package-info']);
 		$('#UpdateDialog_AvailNotesTesting').attr('href', UpdateInfo['testing-package-info']);
 		$('#UpdateDialog_AvailNotesDevel').attr('href', UpdateInfo['devel-package-info']);
@@ -2869,31 +2902,87 @@ var UpdateDialog = (new function($)
 		Util.show('#UpdateDialog_AvailNotesTestingBlock', UpdateInfo['testing-package-info']);
 		Util.show('#UpdateDialog_AvailNotesDevelBlock', UpdateInfo['devel-package-info']);
 
-		var installedRev = revision(installedVersion);
 		var installedVer = vernumber(installedVersion);
-		var installedStable = installedRev === 0 && installedVersion.indexOf('testing') === -1;
+		var installedRev = revision(installedVersion);
+		var installedTesting = installedRev > 0 || installedVersion.indexOf('testing') > -1;
 
 		var canInstallStable = UpdateInfo['stable-version'] &&
-			((installedStable && installedVer < vernumber(UpdateInfo['stable-version'])) ||
-			 (!installedStable && installedVer <= vernumber(UpdateInfo['stable-version'])));
+			((installedVer < vernumber(UpdateInfo['stable-version'])) ||
+			 (installedTesting && installedVer === vernumber(UpdateInfo['stable-version'])));
 		var canInstallTesting = UpdateInfo['testing-version'] &&
-			((installedStable && installedVer < vernumber(UpdateInfo['testing-version'])) ||
-			 (!installedStable && (installedRev === 0 || installedRev < revision(UpdateInfo['testing-version']))));
+			((installedVer < vernumber(UpdateInfo['testing-version'])) ||
+			 (installedTesting && installedVer === vernumber(UpdateInfo['testing-version'])) &&
+			  installedRev < revision(UpdateInfo['testing-version']));
 		var canInstallDevel = UpdateInfo['devel-version'] &&
-			((installedStable && installedVer < vernumber(UpdateInfo['devel-version'])) ||
-			 (!installedStable && (installedRev === 0 || installedRev < revision(UpdateInfo['devel-version']))));
+			((installedVer < vernumber(UpdateInfo['devel-version'])) ||
+			 (installedTesting && installedVer === vernumber(UpdateInfo['devel-version'])) &&
+			  installedRev < revision(UpdateInfo['devel-version']));
 		Util.show('#UpdateDialog_InstallStable', canInstallStable);
 		Util.show('#UpdateDialog_InstallTesting', canInstallTesting);
 		Util.show('#UpdateDialog_InstallDevel', canInstallDevel);
 
+		var canDownloadStable = 
+			((installedVer < vernumber(VersionInfo['stable-version'])) ||
+			 (installedTesting && installedVer === vernumber(VersionInfo['stable-version'])));
+		var canDownloadTesting = 
+			((installedVer < vernumber(VersionInfo['testing-version'])) ||
+			 (installedTesting && installedVer === vernumber(VersionInfo['testing-version']) &&
+			  installedRev < revision(VersionInfo['testing-version'])));
+		Util.show('#UpdateDialog_DownloadStable', canDownloadStable);
+		Util.show('#UpdateDialog_DownloadTesting', canDownloadTesting);
+
 		var hasUpdateSource = PackageInfo['update-info-link'] || PackageInfo['update-info-script'];
 		var hasUpdateInfo = UpdateInfo['stable-version'] || UpdateInfo['testing-version'] || UpdateInfo['devel-version'];
 		var canUpdate = canInstallStable || canInstallTesting || canInstallDevel;
+		var canDownload = canDownloadStable || canDownloadTesting;
 		Util.show('#UpdateDialog_UpdateAvail', canUpdate);
-		Util.show('#UpdateDialog_UpdateNotAvail', hasUpdateInfo && !canUpdate);
-		Util.show('#UpdateDialog_UpdateNoInfo', !hasUpdateSource);
+		Util.show('#UpdateDialog_UpdateNotAvail', !canUpdate && !canDownload);
 		Util.show('#UpdateDialog_CheckFailed', hasUpdateSource && !hasUpdateInfo);
+		Util.show('#UpdateDialog_DownloadRow,#UpdateDialog_DownloadAvail', canDownload && !canUpdate);
 		$('#UpdateDialog_AvailRow').toggleClass('hide', !hasUpdateInfo);
+
+		if (!foreground &&
+			(((canInstallStable || canDownloadStable) && notificationAllowed('stable')) ||
+			 (Options.option('UpdateCheck') === 'testing' && installedRev > 0 &&
+			  (canInstallTesting || canDownloadTesting) && notificationAllowed('testing'))))
+		{
+			$UpdateDialog.modal({backdrop: 'static'});
+			loadDevelVersionInfo();
+		}
+	}
+
+	function loadDevelVersionInfo()
+	{
+		if (!VersionInfo['devel-version'])
+		{
+			$('#UpdateDialog_CurDevel').text('loading...');
+			loadGitVerData(function()
+				{
+					$('#UpdateDialog_CurDevel').text(VersionInfo['devel-version'] ? formatTesting(VersionInfo['devel-version']) : 'no data');
+				});
+		}
+	}
+
+	function notificationAllowed(branch)
+	{
+		// We don't want to update all users on release day.
+		// Parameter "update-rate" controls the spreading speed of the release.
+		// It contains comma-separated list of percentages of users, which should get
+		// notification about new release at a given day after release.
+
+		var rateCurve = UpdateInfo[branch + '-update-rate'] ? UpdateInfo[branch + '-update-rate'] : VersionInfo[branch + '-update-rate'];
+		if (!rateCurve)
+		{
+			return true;
+		}
+
+		var rates = rateCurve.split(',');
+		var releaseDate = new Date(UpdateInfo[branch + '-date'] ? UpdateInfo[branch + '-date'] : VersionInfo[branch + '-date']);
+		var daysSinceRelease = Math.floor((new Date() - releaseDate) / (1000*60*60*24));
+		var coverage = rates[Math.min(daysSinceRelease, rates.length-1)];
+		var dice = Math.floor(Math.random() * 100);
+
+		return dice <= coverage;
 	}
 
 	function install(e)
