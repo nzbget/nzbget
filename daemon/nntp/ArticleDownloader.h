@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,16 +56,6 @@ public:
 		adFatalError
 	};
 
-	class ArticleWriterImpl : public ArticleWriter
-	{
-	public:
-		void SetOwner(ArticleDownloader* owner) { m_owner = owner; }
-	protected:
-		virtual void SetLastUpdateTimeNow() { m_owner->SetLastUpdateTimeNow(); }
-	private:
-		ArticleDownloader* m_owner;
-	};
-
 	ArticleDownloader();
 	virtual ~ArticleDownloader();
 	void SetFileInfo(FileInfo* fileInfo) { m_fileInfo = fileInfo; }
@@ -104,7 +94,7 @@ private:
 	Decoder::EFormat m_format = Decoder::efUnknown;
 	YDecoder m_yDecoder;
 	UDecoder m_uDecoder;
-	ArticleWriterImpl m_articleWriter;
+	ArticleWriter m_articleWriter;
 	ServerStatList m_serverStats;
 	bool m_writingStarted;
 	int m_downloadedSize = 0;

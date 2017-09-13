@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -417,7 +417,6 @@ void ArticleWriter::CompleteFileParts()
 				outfile.Seek(pa->GetSegmentOffset());
 				outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
 				pa->DiscardSegment();
-				SetLastUpdateTimeNow();
 			}
 			else if (g_Options->GetDecode() && !directWrite)
 			{
@@ -429,7 +428,6 @@ void ArticleWriter::CompleteFileParts()
 					{
 						cnt = (int)infile.Read(buffer, buffer.Size());
 						outfile.Write(buffer, cnt);
-						SetLastUpdateTimeNow();
 					}
 					infile.Close();
 				}

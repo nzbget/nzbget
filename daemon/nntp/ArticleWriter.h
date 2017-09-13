@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,9 +59,6 @@ public:
 	void CompleteFileParts();
 	static bool MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir);
 	void FlushCache();
-
-protected:
-	virtual void SetLastUpdateTimeNow() {}
 
 private:
 	FileInfo* m_fileInfo;
