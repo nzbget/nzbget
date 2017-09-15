@@ -14,6 +14,7 @@ def pytest_addoption(parser):
 @pytest.fixture(scope='session', autouse=True)
 def prepare_testdata(request):
 	print('Preparing test data for "download"')
+	pytest.check_config()
 
 	nserv_datadir = pytest.config.getini('nserv_datadir')
 	nzbget_bin = pytest.config.getini('nzbget_bin')

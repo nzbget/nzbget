@@ -3,20 +3,15 @@ import shutil
 import subprocess
 import pytest
 
-def pytest_addoption(parser):
-	parser.addini('par2_bin', 'path to par2 binary', default=None)
-
 @pytest.fixture(scope='session', autouse=True)
 def prepare_testdata(request):
 	print('Preparing test data for "rename"')
+	pytest.check_config()
 
 	nserv_datadir = pytest.config.getini('nserv_datadir')
 	nzbget_bin = pytest.config.getini('nzbget_bin')
 	sevenzip_bin = pytest.config.getini('sevenzip_bin')
 	par2_bin = pytest.config.getini('par2_bin')
-
-	if not os.path.exists(par2_bin):
-		pytest.exit('Cannot prepare test files. Set option "par2_bin in pytest.ini"')
 
 	if not os.path.exists(nserv_datadir):
 		print('Creating nserv datadir')

@@ -5,6 +5,7 @@ import sys
 import time
 import shutil
 import base64
+import distutils.spawn
 try:
 	from xmlrpclib import ServerProxy # python 2
 except ImportError:
@@ -15,15 +16,18 @@ nzbget_maindir = nzbget_srcdir + '/tests/testdata/nzbget.temp'
 nzbget_configfile = nzbget_maindir + '/nzbget.conf'
 nzbget_rpcurl = 'http://127.0.0.1:6789/xmlrpc';
 
-nzbget_bin = nzbget_srcdir + '/nzbget'
-if os.name == 'nt':
-	nzbget_bin += '.exe'
+exe_ext = '.exe' if os.name == 'nt' else ''
+
+nzbget_bin = nzbget_srcdir + '/nzbget' + exe_ext
 nserv_datadir = nzbget_srcdir + '/tests/testdata/nserv.temp'
 
-if os.name == 'nt':
-	sevenzip_bin = nzbget_srcdir + '/7z.exe'
-else:
-	sevenzip_bin = nzbget_srcdir + '/p7zip'
+sevenzip_bin = distutils.spawn.find_executable('7z')
+if sevenzip_bin == None:
+	sevenzip_bin = nzbget_srcdir + '/7z' + exe_ext
+
+par2_bin = distutils.spawn.find_executable('par2')
+if par2_bin == None:
+	par2_bin = nzbget_srcdir + '/par2' + exe_ext
 
 has_failures = False
 
@@ -32,6 +36,7 @@ def pytest_addoption(parser):
 	parser.addini('nserv_datadir', 'path to nserv datadir', default=nserv_datadir)
 	parser.addini('nzbget_maindir', 'path to nzbget maindir', default=nzbget_maindir)
 	parser.addini('sevenzip_bin', 'path to 7-zip', default=sevenzip_bin)
+	parser.addini('par2_bin', 'path to par2 binary', default=par2_bin)
 	parser.addoption("--hold", action="store_true", help="Hold at the end of test (keep NZBGet running)")
 
 def check_config():
@@ -40,10 +45,13 @@ def check_config():
 	if not os.path.exists(nzbget_bin):
 		pytest.exit('Could not find nzbget binary at ' + nzbget_bin + '. Alternative path can be set via pytest ini option "nzbget_bin".')
 
-	global sevenzip_bin
+	global sevenzip_bin, par2_bin
 	sevenzip_bin = pytest.config.getini('sevenzip_bin')
+	par2_bin = pytest.config.getini('par2_bin')
 	if not os.path.exists(sevenzip_bin):
-		pytest.exit('Could not find 7-zip binary at ' + sevenzip_bin + '. Alternative path can be set via pytest ini option "sevenzip_bin".')
+		pytest.exit('Could not find 7-zip binary in search path or at ' + sevenzip_bin + '. Alternative path can be set via pytest ini option "sevenzip_bin".')
+	if not os.path.exists(par2_bin):
+		pytest.exit('Could not find par2 binary in search path or at ' + par2_bin + '. Alternative path can be set via pytest ini option "par2_bin".')
 
 	global nserv_datadir
 	nserv_datadir = pytest.config.getini('nserv_datadir')
@@ -52,6 +60,8 @@ def check_config():
 	nzbget_maindir = pytest.config.getini('nzbget_maindir')
 	global nzbget_configfile
 	nzbget_configfile = nzbget_maindir + '/nzbget.conf'
+
+pytest.check_config = check_config
 
 class NServ:
 
@@ -171,7 +181,6 @@ class Nzbget:
 		in_file.close()
 		return nzbcontent
 
-
 	def download_nzb(self, nzb_name, nzb_content = None, unpack = None, dupekey = '', dupescore = 0, dupemode = 'FORCE', params = None):
 		if not nzb_content:
 			nzb_content = self.load_nzb(nzb_name)
@@ -197,7 +206,6 @@ class Nzbget:
 @pytest.fixture(scope='module')
 
 def nzbget(request):
-
 	check_config()
 
 	instance = Nzbget(getattr(request.module, 'nzbget_options', []), request.session)
