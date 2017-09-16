@@ -13,6 +13,8 @@ matrix:
           packages:
             - g++-5
             - unrar
+            - p7zip-full
+            - par2
       env:
         - COMPILER=g++-5
 
@@ -24,6 +26,8 @@ matrix:
           packages:
             - g++-4.9
             - unrar
+            - p7zip-full
+            - par2
       env:
         - COMPILER=g++-4.9
 
@@ -32,6 +36,8 @@ matrix:
         apt:
           packages:
             - unrar
+            - p7zip-full
+            - par2
       env:
         - COMPILER=g++-4.8
         - CXXFLAGS="-std=c++11 -O2 -s"
@@ -46,10 +52,16 @@ matrix:
           packages:
             - clang-3.6
             - unrar
+            - p7zip-full
+            - par2
       env:
         - COMPILER=clang++-3.6
+
+install:
+  - sudo pip install -U pytest
 
 script:
   - $COMPILER --version
   - CXX=$COMPILER ./configure $CONFIGUREOPTS --enable-tests && make
   - ./nzbget --tests
+  - cd tests/functional && pytest -v
