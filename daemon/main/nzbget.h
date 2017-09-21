@@ -181,6 +181,10 @@ using namespace MSXML;
 #include <sys/prctl.h>
 #endif
 
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#endif
+
 #ifdef HAVE_BACKTRACE
 #include <execinfo.h>
 #endif
@@ -363,6 +367,13 @@ typedef unsigned long long uint64;
 #endif
 
 typedef unsigned char uchar;
+
+// Assume little endian if byte order is not defined
+#ifndef __BYTE_ORDER
+#define __LITTLE_ENDIAN 1234
+#define __BIG_ENDIAN    4321
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#endif
 
 #ifdef __GNUC__
 #define PRINTF_SYNTAX(strindex) __attribute__ ((format (printf, strindex, strindex+1)))

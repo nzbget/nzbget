@@ -67,6 +67,8 @@ dnl Checks for header files.
 dnl
 AC_CHECK_HEADERS(sys/prctl.h)
 AC_CHECK_HEADERS(regex.h)
+AC_CHECK_HEADERS(endian.h)
+AC_CHECK_HEADERS(getopt.h)
 
 
 dnl
@@ -327,11 +329,8 @@ AC_MSG_RESULT($ENABLEPARCHECK)
 if test "$ENABLEPARCHECK" = "yes"; then
 	dnl PAR2 checks. 
 	dnl 
-	dnl Checks for header files.
-	AC_CHECK_HEADERS([endian.h] [getopt.h])
 	dnl Checks for typedefs, structures, and compiler characteristics.
 	AC_TYPE_SIZE_T
-	AC_C_BIGENDIAN
 	AC_FUNC_FSEEKO
 	dnl Checks for library functions.
 	AC_CHECK_FUNCS([stricmp])

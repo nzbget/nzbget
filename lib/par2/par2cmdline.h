@@ -25,12 +25,6 @@
 //#define snprintf _snprintf
 #define stat _stat
 
-#define __LITTLE_ENDIAN 1234
-#define __BIG_ENDIAN    4321
-#define __PDP_ENDIAN    3412
-
-#define __BYTE_ORDER __LITTLE_ENDIAN
-
 namespace Par2
 {
 
@@ -74,29 +68,6 @@ typedef unsigned long long u64;
 #endif
 
 #define _MAX_PATH 255
-
-#if HAVE_ENDIAN_H
-#  include <endian.h>
-#  ifndef __LITTLE_ENDIAN
-#    ifdef _LITTLE_ENDIAN
-#      define __LITTLE_ENDIAN _LITTLE_ENDIAN
-#      define __LITTLE_ENDIAN _LITTLE_ENDIAN
-#      define __BIG_ENDIAN _BIG_ENDIAN
-#      define __PDP_ENDIAN _PDP_ENDIAN
-#    else
-#      error <endian.h> does not define __LITTLE_ENDIAN etc.
-#    endif
-#  endif
-#else
-#  define __LITTLE_ENDIAN 1234
-#  define __BIG_ENDIAN    4321
-#  define __PDP_ENDIAN    3412
-#  if WORDS_BIGENDIAN
-#    define __BYTE_ORDER __BIG_ENDIAN
-#  else
-#    define __BYTE_ORDER __LITTLE_ENDIAN
-#  endif
-#endif
 
 #endif
 
