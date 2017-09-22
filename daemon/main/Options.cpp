@@ -109,6 +109,7 @@ static const char* OPTION_CURSESGROUP			= "CursesGroup";
 static const char* OPTION_CRCCHECK				= "CrcCheck";
 static const char* OPTION_DIRECTWRITE			= "DirectWrite";
 static const char* OPTION_WRITEBUFFER			= "WriteBuffer";
+static const char* OPTION_RATEBUFFER			= "RateBuffer";
 static const char* OPTION_NZBDIRINTERVAL		= "NzbDirInterval";
 static const char* OPTION_NZBDIRFILEAGE			= "NzbDirFileAge";
 static const char* OPTION_DISKSPACE				= "DiskSpace";
@@ -488,6 +489,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_CRCCHECK, "yes");
 	SetOption(OPTION_DIRECTWRITE, "yes");
 	SetOption(OPTION_WRITEBUFFER, "0");
+	SetOption(OPTION_RATEBUFFER, "0");
 	SetOption(OPTION_NZBDIRINTERVAL, "5");
 	SetOption(OPTION_NZBDIRFILEAGE, "60");
 	SetOption(OPTION_DISKSPACE, "250");
@@ -712,6 +714,7 @@ void Options::InitOptions()
 	m_umask					= ParseIntValue(OPTION_UMASK, 8);
 	m_updateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
 	m_writeBuffer			= ParseIntValue(OPTION_WRITEBUFFER, 10);
+	m_rateBuffer			= ParseIntValue(OPTION_RATEBUFFER, 10);
 	m_nzbDirInterval		= ParseIntValue(OPTION_NZBDIRINTERVAL, 10);
 	m_nzbDirFileAge			= ParseIntValue(OPTION_NZBDIRFILEAGE, 10);
 	m_diskSpace				= ParseIntValue(OPTION_DISKSPACE, 10);

@@ -339,21 +339,20 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	bool end = false;
 	CharBuffer lineBuf(1024*10);
 	status = adRunning;
+	int rateBuffer = 0;
 
 	while (!IsStopped())
 	{
-		time_t oldTime = m_lastUpdateTime;
-		SetLastUpdateTimeNow();
-		if (oldTime != m_lastUpdateTime)
-		{
-			AddServerData();
-		}
-
 		// Throttle the bandwidth
 		while (!IsStopped() && (g_Options->GetDownloadRate() > 0.0f) &&
 			(g_StatMeter->CalcCurrentDownloadSpeed() > g_Options->GetDownloadRate() ||
 			g_StatMeter->CalcMomentaryDownloadSpeed() > g_Options->GetDownloadRate()))
 		{
+			if (rateBuffer > 0)
+			{
+				g_StatMeter->AddSpeedReading(rateBuffer);
+				rateBuffer = 0;
+			}
 			SetLastUpdateTimeNow();
 			usleep(10 * 1000);
 		}
@@ -361,10 +360,17 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		int len = 0;
 		char* line = m_connection->ReadLine(lineBuf, lineBuf.Size(), &len);
 
-		g_StatMeter->AddSpeedReading(len);
-		if (g_Options->GetAccurateRate())
+		rateBuffer += len;
+		if (rateBuffer > g_Options->GetRateBuffer())
 		{
-			AddServerData();
+			g_StatMeter->AddSpeedReading(rateBuffer);
+			rateBuffer = 0;
+			time_t oldTime = m_lastUpdateTime;
+			SetLastUpdateTimeNow();
+			if (oldTime != m_lastUpdateTime || g_Options->GetAccurateRate())
+			{
+				AddServerData();
+			}
 		}
 
 		// Have we encountered a timeout?
@@ -431,6 +437,11 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			status = adFatalError;
 			break;
 		}
+	}
+
+	if (rateBuffer > 0)
+	{
+		g_StatMeter->AddSpeedReading(rateBuffer);
 	}
 
 	if (!end && status == adRunning && !IsStopped())
