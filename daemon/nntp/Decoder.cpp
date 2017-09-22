@@ -115,9 +115,8 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 		}
 
 #ifdef SKIP_ARTICLE_DECODING
-		return len;
-#endif
-
+		char* optr = buffer + len;
+#else
 		char* iptr = buffer;
 		char* optr = buffer;
 		while (true)
@@ -142,6 +141,7 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 			iptr++;
 		}
 BreakLoop:
+#endif
 
 		if (m_crcCheck)
 		{
