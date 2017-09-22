@@ -114,6 +114,10 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 			return 0;
 		}
 
+#ifdef SKIP_ARTICLE_DECODING
+		return len;
+#endif
+
 		char* iptr = buffer;
 		char* optr = buffer;
 		while (true)
@@ -196,6 +200,10 @@ BreakLoop:
 
 Decoder::EStatus YDecoder::Check()
 {
+#ifdef SKIP_ARTICLE_DECODING
+	return dsFinished;
+#endif
+
 	m_calculatedCRC ^= 0xFFFFFFFF;
 
 	debug("Expected crc32=%x", m_expectedCRC);

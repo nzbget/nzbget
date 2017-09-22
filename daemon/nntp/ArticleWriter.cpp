@@ -156,8 +156,12 @@ bool ArticleWriter::Write(char* buffer, int len)
 	{
 		if (m_articlePtr > m_articleSize)
 		{
+#ifdef SKIP_ARTICLE_DECODING
+			m_articlePtr = m_articleSize;
+#else
 			detail("Decoding %s failed: article size mismatch", *m_infoName);
 			return false;
+#endif
 		}
 		memcpy(m_articleData.GetData() + m_articlePtr - len, buffer, len);
 		return true;
@@ -408,14 +412,18 @@ void ArticleWriter::CompleteFileParts()
 				pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1)
 			{
 				memset(buffer, 0, buffer.Size());
+#ifndef SKIP_ARTICLE_WRITING
 				while (pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1 &&
 					outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), buffer.Size())));
+#endif
 			}
 
 			if (pa->GetSegmentContent())
 			{
+#ifndef SKIP_ARTICLE_WRITING
 				outfile.Seek(pa->GetSegmentOffset());
 				outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
+#endif
 				pa->DiscardSegment();
 			}
 			else if (g_Options->GetDecode() && !directWrite)
@@ -644,7 +652,9 @@ void ArticleWriter::FlushCache()
 				outfile.Seek(pa->GetSegmentOffset());
 			}
 
+#ifndef SKIP_ARTICLE_WRITING
 			outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
+#endif
 
 			flushedSize += pa->GetSegmentSize();
 			flushedArticles++;
