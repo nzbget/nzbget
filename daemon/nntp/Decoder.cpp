@@ -117,35 +117,22 @@ int YDecoder::DecodeBuffer(char* buffer, int len)
 #ifdef SKIP_ARTICLE_DECODING
 		char* optr = buffer + len;
 #else
-		char* iptr = buffer;
+		len -= 2;  // strip trailing \r\n
 		char* optr = buffer;
-		while (true)
+		for (int i = 0; i < len; i++)
 		{
-			switch (*iptr)
+			char c = buffer[i];
+			if (c == '=')
 			{
-				case '=':	//escape-sequence
-					iptr++;
-					*optr = *iptr - 64 - 42;
-					optr++;
-					break;
-				case '\n':	// ignored char
-				case '\r':	// ignored char
-					break;
-				case '\0':
-					goto BreakLoop;
-				default:	// normal char
-					*optr = *iptr - 42;
-					optr++;
-					break;
+				c = buffer[++i] - 64;
 			}
-			iptr++;
+			*optr++ = c - 42;
 		}
-BreakLoop:
 #endif
 
 		if (m_crcCheck)
 		{
-			m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (uchar *)buffer, (uint32)(optr - buffer));
+			m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (uchar*)buffer, (uint32)(optr - buffer));
 		}
 		return (int)(optr - buffer);
 	}
