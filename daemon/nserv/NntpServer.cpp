@@ -28,9 +28,10 @@ class NntpProcessor : public Thread
 {
 public:
 	NntpProcessor(int id, int serverId, const char* dataDir, const char* cacheDir,
-		const char* secureCert, const char* secureKey, int latency, int speed) :
+		const char* secureCert, const char* secureKey, int latency, int speed, NntpCache* cache) :
 		m_id(id), m_serverId(serverId), m_dataDir(dataDir), m_cacheDir(cacheDir),
-		m_secureCert(secureCert), m_secureKey(secureKey), m_latency(latency), m_speed(speed) {}
+		m_secureCert(secureCert), m_secureKey(secureKey), m_latency(latency),
+		m_speed(speed), m_cache(cache) {}
 	~NntpProcessor() { m_connection->Disconnect(); }
 	virtual void Run();
 	void SetConnection(std::unique_ptr<Connection>&& connection) { m_connection = std::move(connection); }
@@ -52,12 +53,14 @@ private:
 	int m_size;
 	bool m_sendHeaders;
 	int64 m_start;
+	NntpCache* m_cache;
 
 	void ServArticle();
 	void SendSegment();
 	bool ServerInList(const char* servList);
 	void SendData(const char* buffer, int size);
 };
+
 
 void NntpServer::Run()
 {
@@ -105,7 +108,7 @@ void NntpServer::Run()
 		}
 		
 		NntpProcessor* commandThread = new NntpProcessor(num++, m_id, m_dataDir,
-			m_cacheDir, m_secureCert, m_secureKey, m_latency, m_speed);
+			m_cacheDir, m_secureCert, m_secureKey, m_latency, m_speed, m_cache);
 		commandThread->SetAutoDestroy(true);
 		commandThread->SetConnection(std::move(acceptedConnection));
 		commandThread->Start();
@@ -272,10 +275,23 @@ void NntpProcessor::SendSegment()
 	BString<1024> cacheFileDir("%s/%s", m_cacheDir, *m_filename);
 	BString<1024> cacheFileName("%i=%lli-%i", m_part, (long long)m_offset, m_size);
 	BString<1024> cacheFullFilename("%s/%s", *cacheFileDir, *cacheFileName);
+	BString<1024> cacheKey("%s/%s", *m_filename, *cacheFileName);
+
+	CString cachedData;
+	int cachedSize;
+	if (m_cache)
+	{
+		m_cache->Find(cacheKey, cachedData, cachedSize);
+	}
 
 	DiskFile cacheFile;
-	bool readCache = m_cacheDir && cacheFile.Open(cacheFullFilename, DiskFile::omRead);
-	bool writeCache = m_cacheDir && !readCache;
+	bool readCache = !cachedData && m_cacheDir && cacheFile.Open(cacheFullFilename, DiskFile::omRead);
+	bool writeCache = !cachedData && m_cacheDir && !readCache;
+	StringBuilder cacheMem;
+	if (m_cache && !cachedData)
+	{
+		cacheMem.Reserve((int)(m_size * 1.1));
+	}
 
 	CString errmsg;
 	if (writeCache && !FileSystem::ForceDirectories(cacheFileDir, errmsg))
@@ -288,15 +304,19 @@ void NntpProcessor::SendSegment()
 		error("Could not create file %s: %s", *cacheFullFilename, *FileSystem::GetLastErrorMessage());
 	}
 
-	if (!readCache && !FileSystem::FileExists(fullFilename))
+	if (!cachedData && !readCache && !FileSystem::FileExists(fullFilename))
 	{
 		m_connection->WriteLine(CString::FormatStr("430 Article not found\r\n"));
 		return;
 	}
 
 	YEncoder encoder(fullFilename, m_part, m_offset, m_size, 
-		[proc = this, writeCache, &cacheFile](const char* buf, int size)
+		[proc = this, writeCache, &cacheFile, &cacheMem](const char* buf, int size)
 		{
+			if (proc->m_cache)
+			{
+				cacheMem.Append(buf);
+			}
 			if (writeCache)
 			{
 				cacheFile.Write(buf, size);
@@ -304,7 +324,7 @@ void NntpProcessor::SendSegment()
 			proc->SendData(buf, size);
 		});
 
-	if (!readCache && !encoder.OpenFile(errmsg))
+	if (!cachedData && !readCache && !encoder.OpenFile(errmsg))
 	{
 		m_connection->WriteLine(CString::FormatStr("403 %s\r\n", *errmsg));
 		return;
@@ -318,7 +338,11 @@ void NntpProcessor::SendSegment()
 		m_connection->WriteLine("\r\n");
 	}
 
-	if (readCache)
+	if (cachedData)
+	{
+		SendData(cachedData, cachedSize);
+	}
+	else if (readCache)
 	{
 		cacheFile.Seek(0, DiskFile::soEnd);
 		int size = (int)cacheFile.Position();
@@ -328,11 +352,20 @@ void NntpProcessor::SendSegment()
 		{
 			error("Could not read file %s: %s", *cacheFullFilename, *FileSystem::GetLastErrorMessage());
 		}
+		if (m_cache)
+		{
+			cacheMem.Append(buf, size);
+		}
 		SendData(buf, size);
 	}
 	else
 	{
 		encoder.WriteSegment();
+	}
+
+	if (!cachedData && cacheMem.Length() > 0)
+	{
+		m_cache->Append(cacheKey, cacheMem, cacheMem.Length());
 	}
 
 	m_connection->WriteLine(".\r\n");
@@ -377,4 +410,52 @@ void NntpProcessor::SendData(const char* buffer, int size)
 		}
 		sent += len;
 	}
+}
+
+
+void NntpCache::Append(const char* key, const char* data, int len)
+{
+	Guard guard(m_lock);
+	Reserve(len);
+	if (!len)
+	{
+		len = strlen(data);
+	}
+	m_items.emplace(key, std::make_unique<CacheItem>(key, data, len));
+	m_size += len;
+}
+
+void NntpCache::Reserve(int64 required)
+{
+	if (m_limit == 0 || m_size + required < m_limit)
+	{
+		return;
+	}
+
+/*	while (m_size > 0 && m_size + required > m_limit)
+	{
+		CacheList::iterator pos = std::min_element(m_items.begin(), m_items.end(),
+			[](const std::unique_ptr<CacheItem>& a, const std::unique_ptr<CacheItem>& b)
+			{
+				return a->m_lastAccess < b->m_lastAccess;
+			});
+
+		m_size -= (*pos)->m_size;
+		m_items.erase(pos);
+	} */
+}
+
+bool NntpCache::Find(const char* key, CString& data, int& size)
+{
+	Guard guard(m_lock);
+
+	CacheMap::iterator pos = m_items.find(key);
+	if (pos != m_items.end())
+	{
+		data = *(*pos).second->m_data;
+		size = (*pos).second->m_size;
+		return true;
+	}
+
+	return false;
 }
