@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,9 +28,9 @@ class NntpProcessor : public Thread
 {
 public:
 	NntpProcessor(int id, int serverId, const char* dataDir, const char* cacheDir,
-		const char* secureCert, const char* secureKey) :
+		const char* secureCert, const char* secureKey, int latency, int speed) :
 		m_id(id), m_serverId(serverId), m_dataDir(dataDir), m_cacheDir(cacheDir),
-		m_secureCert(secureCert), m_secureKey(secureKey) {}
+		m_secureCert(secureCert), m_secureKey(secureKey), m_latency(latency), m_speed(speed) {}
 	~NntpProcessor() { m_connection->Disconnect(); }
 	virtual void Run();
 	void SetConnection(std::unique_ptr<Connection>&& connection) { m_connection = std::move(connection); }
@@ -39,6 +39,8 @@ private:
 	int m_id;
 	int m_serverId;
 	std::unique_ptr<Connection> m_connection;
+	int m_latency;
+	int m_speed;
 	const char* m_dataDir;
 	const char* m_cacheDir;
 	const char* m_secureCert;
@@ -49,10 +51,12 @@ private:
 	int64 m_offset;
 	int m_size;
 	bool m_sendHeaders;
+	int64 m_start;
 
 	void ServArticle();
 	void SendSegment();
 	bool ServerInList(const char* servList);
+	void SendData(const char* buffer, int size);
 };
 
 void NntpServer::Run()
@@ -60,6 +64,13 @@ void NntpServer::Run()
 	debug("Entering NntpServer-loop");
 
 	info("Listening on port %i", m_port);
+
+#ifdef WIN32
+	if (m_speed > 0)
+	{
+		timeBeginPeriod(1);
+	}
+#endif
 
 	int num = 1;
 
@@ -93,8 +104,8 @@ void NntpServer::Run()
 			continue;
 		}
 		
-		NntpProcessor* commandThread = new NntpProcessor(num++, m_id,
-			m_dataDir, m_cacheDir, m_secureCert, m_secureKey);
+		NntpProcessor* commandThread = new NntpProcessor(num++, m_id, m_dataDir,
+			m_cacheDir, m_secureCert, m_secureKey, m_latency, m_speed);
 		commandThread->SetAutoDestroy(true);
 		commandThread->SetConnection(std::move(acceptedConnection));
 		commandThread->Start();
@@ -199,6 +210,11 @@ void NntpProcessor::ServArticle()
 {
 	detail("[%i] Serving: %s", m_id, m_messageid);
 
+	if (m_latency)
+	{
+		usleep(1000 * m_latency);
+	}
+
 	bool ok = false;
 
 	const char* from = strchr(m_messageid, '?');
@@ -250,6 +266,8 @@ void NntpProcessor::SendSegment()
 {
 	detail("[%i] Sending segment %s (%i=%lli:%i)", m_id, *m_filename, m_part, (long long)m_offset, m_size);
 
+	m_start = Util::GetCurrentTicks();
+
 	BString<1024> fullFilename("%s/%s", m_dataDir, *m_filename);
 	BString<1024> cacheFileDir("%s/%s", m_cacheDir, *m_filename);
 	BString<1024> cacheFileName("%i=%lli-%i", m_part, (long long)m_offset, m_size);
@@ -277,13 +295,13 @@ void NntpProcessor::SendSegment()
 	}
 
 	YEncoder encoder(fullFilename, m_part, m_offset, m_size, 
-		[con = m_connection.get(), writeCache, &cacheFile](const char* buf, int size)
+		[proc = this, writeCache, &cacheFile](const char* buf, int size)
 		{
 			if (writeCache)
 			{
 				cacheFile.Write(buf, size);
 			}
-			con->Send(buf, size);
+			proc->SendData(buf, size);
 		});
 
 	if (!readCache && !encoder.OpenFile(errmsg))
@@ -310,7 +328,7 @@ void NntpProcessor::SendSegment()
 		{
 			error("Could not read file %s: %s", *cacheFullFilename, *FileSystem::GetLastErrorMessage());
 		}
-		m_connection->Send(buf, size);
+		SendData(buf, size);
 	}
 	else
 	{
@@ -318,4 +336,45 @@ void NntpProcessor::SendSegment()
 	}
 
 	m_connection->WriteLine(".\r\n");
+}
+
+void NntpProcessor::SendData(const char* buffer, int size)
+{
+	if (m_speed == 0)
+	{
+		m_connection->Send(buffer, size);
+		return;
+	}
+
+	int64 expectedTime = (int64)1000 * size / (m_speed * 1024) - (Util::GetCurrentTicks() - m_start) / 1000;
+
+	int chunkNum = 21;
+	int chunkSize = size;
+	int pause = 0;
+
+	while (pause < 1 && chunkNum > 1)
+	{
+		chunkNum--;
+		chunkSize = size / chunkNum;
+		pause = (int)(expectedTime / chunkNum);
+	}
+
+	int sent = 0;
+	for (int i = 0; i < chunkNum; i++)
+	{
+		int len = sent + chunkSize < size ? chunkSize : size - sent;
+
+		while (sent + len < size && *(buffer + sent + len) != '\r')
+		{
+			len++;
+		}
+		
+		m_connection->Send(buffer + sent, len);
+		int64 now = Util::GetCurrentTicks();
+		if (now + pause * 1000 < m_start + expectedTime * 1000)
+		{
+			usleep(pause * 1000);
+		}
+		sent += len;
+	}
 }

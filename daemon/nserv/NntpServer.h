@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,9 +28,11 @@ class NntpServer : public Thread
 {
 public:
 	NntpServer(int id, const char* host, int port, const char* secureCert,
-		const char* secureKey, const char* dataDir, const char* cacheDir) :
+		const char* secureKey, const char* dataDir, const char* cacheDir,
+		int latency, int speed) :
 		m_id(id), m_host(host), m_port(port), m_secureCert(secureCert),
-		m_secureKey(secureKey), m_dataDir(dataDir), m_cacheDir(cacheDir) {}
+		m_secureKey(secureKey), m_dataDir(dataDir), m_cacheDir(cacheDir),
+		m_latency(latency), m_speed(speed) {}
 	virtual void Run();
 	virtual void Stop();
 
@@ -38,6 +40,8 @@ private:
 	int m_id;
 	CString m_host;
 	int m_port;
+	int m_latency;
+	int m_speed;
 	CString m_dataDir;
 	CString m_cacheDir;
 	CString m_secureCert;

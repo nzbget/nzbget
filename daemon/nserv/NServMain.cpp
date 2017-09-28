@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,8 @@ struct NServOpts
 	bool generateNzb;
 	int segmentSize;
 	bool quit;
+	int latency;
+	int speed;
 
 	NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts);
 };
@@ -113,7 +115,8 @@ int NServMain(int argc, char* argv[])
 	for (int i = 0; i < opts.instances; i++)
 	{
 		instances.emplace_back(std::make_unique<NntpServer>(i + 1, opts.bindAddress,
-			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir));
+			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir,
+			opts.latency, opts.speed));
 		instances.back()->Start();
 	}
 
@@ -153,6 +156,8 @@ void NServPrintUsage(const char* com)
 		"    -p <port>       - port number for the first instance (default is 6791)\n"
 		"    -s <cert> <key> - paths to SSL certificate and key files\n"
 		"    -v <verbose>    - verbosity level 0..3 (default is 2)\n"
+		"    -w <msec>       - response latency (in milliseconds)\n"
+		"    -r <KB/s>       - speed throttling (in kilobytes per second)\n"
 		"    -z <seg-size>   - generate nzbs for all files in data-dir (size in bytes)\n"
 		"    -q              - quit after generating nzbs (in combination with -z)\n"
 		, FileSystem::BaseFileName(com));
@@ -166,9 +171,10 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 	generateNzb = false;
 	segmentSize = 500000;
 	quit = false;
+	latency = 0;
 	int verbosity = 2;
 
-	char short_options[] = "b:c:d:l:p:i:s:v:z:q";
+	char short_options[] = "b:c:d:l:p:i:s:v:w:r:z:q";
 
 	optind = 2;
 	while (true)
@@ -209,6 +215,14 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 
 			case 'v':
 				verbosity = atoi(optind > argc ? "1" : argv[optind - 1]);
+				break;
+
+			case 'w':
+				latency = atoi(optind > argc ? "0" : argv[optind - 1]);
+				break;
+
+			case 'r':
+				speed = atoi(optind > argc ? "0" : argv[optind - 1]);
 				break;
 
 			case 'z':
