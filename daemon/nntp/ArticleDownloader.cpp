@@ -328,7 +328,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		return status;
 	}
 
-	if (g_Options->GetDecode())
+	if (!g_Options->GetRawArticle())
 	{
 		m_yDecoder.Clear();
 		m_yDecoder.SetCrcCheck(g_Options->GetCrcCheck());
@@ -420,7 +420,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			}
 		}
 
-		if (m_format == Decoder::efUnknown && g_Options->GetDecode())
+		if (m_format == Decoder::efUnknown && !g_Options->GetRawArticle())
 		{
 			m_format = Decoder::DetectFormat(line, len, body);
 			if (m_format != Decoder::efUnknown)
@@ -432,7 +432,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		}
 
 		// write to output file
-		if (((body && m_format != Decoder::efUnknown) || !g_Options->GetDecode()) && !Write(line, len))
+		if (((body && m_format != Decoder::efUnknown) || g_Options->GetRawArticle()) && !Write(line, len))
 		{
 			status = adFatalError;
 			break;
@@ -515,7 +515,7 @@ bool ArticleDownloader::Write(char* line, int len)
 	int64 articleOffset = 0;
 	int articleSize = 0;
 
-	if (g_Options->GetDecode())
+	if (!g_Options->GetRawArticle())
 	{
 		if (m_format == Decoder::efYenc)
 		{
@@ -566,7 +566,7 @@ bool ArticleDownloader::Write(char* line, int len)
 
 ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 {
-	if (g_Options->GetDecode())
+	if (!g_Options->GetRawArticle())
 	{
 		Decoder* decoder = nullptr;
 		if (m_format == Decoder::efYenc)

@@ -309,7 +309,7 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 		g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeNzbDeleted);
 	}
 
-	if (!nzbInfo->GetPostInfo() && g_Options->GetDecode())
+	if (!nzbInfo->GetPostInfo() && !g_Options->GetRawArticle() && !g_Options->GetSkipWrite())
 	{
 		nzbInfo->PrintMessage(Message::mkInfo, "Queueing %s for post-processing", nzbInfo->GetName());
 
@@ -927,7 +927,7 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 		g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeFileDownloaded);
 	}
 
-	if (g_Options->GetDirectUnpack() && g_Options->GetDecode())
+	if (g_Options->GetDirectUnpack() && !g_Options->GetRawArticle() && !g_Options->GetSkipWrite())
 	{
 		bool allowPar;
 		if (nzbInfo->GetDirectUnpackStatus() == NzbInfo::nsNone &&

@@ -75,7 +75,8 @@ static const char* OPTION_FLUSHQUEUE			= "FlushQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
-static const char* OPTION_DECODE				= "Decode";
+static const char* OPTION_RAWARTICLE			= "RawArticle";
+static const char* OPTION_SKIPWRITE				= "SkipWrite";
 static const char* OPTION_ARTICLERETRIES		= "ArticleRetries";
 static const char* OPTION_ARTICLEINTERVAL		= "ArticleInterval";
 static const char* OPTION_URLRETRIES			= "UrlRetries";
@@ -171,6 +172,7 @@ static const char* OPTION_HISTORYCLEANUPDISK	= "HistoryCleanupDisk";
 static const char* OPTION_SCANSCRIPT			= "ScanScript";
 static const char* OPTION_QUEUESCRIPT			= "QueueScript";
 static const char* OPTION_FEEDSCRIPT			= "FeedScript";
+static const char* OPTION_DECODE				= "Decode";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -452,7 +454,8 @@ void Options::InitDefaults()
 	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
-	SetOption(OPTION_DECODE, "yes");
+	SetOption(OPTION_RAWARTICLE, "no");
+	SetOption(OPTION_SKIPWRITE, "no");
 	SetOption(OPTION_ARTICLERETRIES, "3");
 	SetOption(OPTION_ARTICLEINTERVAL, "10");
 	SetOption(OPTION_URLRETRIES, "3");
@@ -754,7 +757,8 @@ void Options::InitOptions()
 	m_cursesGroup			= (bool)ParseEnumValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
 	m_crcCheck				= (bool)ParseEnumValue(OPTION_CRCCHECK, BoolCount, BoolNames, BoolValues);
 	m_directWrite			= (bool)ParseEnumValue(OPTION_DIRECTWRITE, BoolCount, BoolNames, BoolValues);
-	m_decode				= (bool)ParseEnumValue(OPTION_DECODE, BoolCount, BoolNames, BoolValues);
+	m_rawArticle			= (bool)ParseEnumValue(OPTION_RAWARTICLE, BoolCount, BoolNames, BoolValues);
+	m_skipWrite				= (bool)ParseEnumValue(OPTION_SKIPWRITE, BoolCount, BoolNames, BoolValues);
 	m_crashTrace			= (bool)ParseEnumValue(OPTION_CRASHTRACE, BoolCount, BoolNames, BoolValues);
 	m_crashDump				= (bool)ParseEnumValue(OPTION_CRASHDUMP, BoolCount, BoolNames, BoolValues);
 	m_parPauseQueue			= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
@@ -1738,6 +1742,12 @@ void Options::ConvertOldOption(CString& option, CString& value)
 	{
 		option = OPTION_CRASHDUMP;
 	}
+
+	if (!strcasecmp(option, OPTION_DECODE))
+	{
+		option = OPTION_RAWARTICLE;
+		value = !strcasecmp(value, "no") ? "yes" : "no";
+	}
 }
 
 void Options::CheckOptions()
@@ -1811,9 +1821,14 @@ void Options::CheckOptions()
 		m_certCheck = false;
 	}
 
-	if (!m_decode)
+	if (m_rawArticle)
 	{
 		m_directWrite = false;
+	}
+
+	if (m_skipWrite)
+	{
+		m_directRename = false;
 	}
 
 	// if option "ConfigTemplate" is not set, use "WebDir" as default location for template

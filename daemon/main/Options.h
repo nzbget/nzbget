@@ -214,7 +214,8 @@ public:
 	int GetUrlTimeout() { return m_urlTimeout; }
 	int GetTerminateTimeout() { return m_terminateTimeout; }
 	int GetRemoteTimeout() { return m_remoteTimeout; }
-	bool GetDecode() { return m_decode; };
+	bool GetRawArticle() { return m_rawArticle; };
+	bool GetSkipWrite() { return m_skipWrite; };
 	bool GetAppendCategoryDir() { return m_appendCategoryDir; }
 	bool GetContinuePartial() { return m_continuePartial; }
 	int GetArticleRetries() { return m_articleRetries; }
@@ -363,7 +364,8 @@ private:
 	EMessageTarget m_errorTarget = mtScreen;
 	EMessageTarget m_debugTarget = mtNone;
 	EMessageTarget m_detailTarget = mtScreen;
-	bool m_decode = true;
+	bool m_skipWrite = false;
+	bool m_rawArticle = false;
 	bool m_brokenLog = false;
 	bool m_nzbLog = false;
 	int m_articleTimeout = 0;

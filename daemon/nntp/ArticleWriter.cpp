@@ -106,7 +106,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 	}
 
 	// allocate cache buffer
-	if (g_Options->GetArticleCache() > 0 && g_Options->GetDecode() &&
+	if (g_Options->GetArticleCache() > 0 && !g_Options->GetRawArticle() &&
 		(!g_Options->GetDirectWrite() || m_format == Decoder::efYenc))
 	{
 		m_articleData = g_ArticleCache->Alloc(m_articleSize);
@@ -147,12 +147,12 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 
 bool ArticleWriter::Write(char* buffer, int len)
 {
-	if (g_Options->GetDecode())
+	if (!g_Options->GetRawArticle())
 	{
 		m_articlePtr += len;
 	}
 
-	if (g_Options->GetDecode() && m_articleData.GetData())
+	if (!g_Options->GetRawArticle() && m_articleData.GetData())
 	{
 		if (m_articlePtr > m_articleSize)
 		{
@@ -183,7 +183,7 @@ void ArticleWriter::Finish(bool success)
 
 	bool directWrite = (g_Options->GetDirectWrite() || m_fileInfo->GetForceDirectWrite()) && m_format == Decoder::efYenc;
 
-	if (g_Options->GetDecode())
+	if (!g_Options->GetRawArticle())
 	{
 		if (!directWrite && !m_articleData.GetData())
 		{
@@ -309,7 +309,7 @@ void ArticleWriter::CompleteFileParts()
 
 	bool cached = m_fileInfo->GetCachedArticles() > 0;
 
-	if (!g_Options->GetDecode())
+	if (g_Options->GetRawArticle())
 	{
 		detail("Moving articles for %s", *infoFilename);
 	}
@@ -348,7 +348,7 @@ void ArticleWriter::CompleteFileParts()
 	DiskFile outfile;
 	BString<1024> tmpdestfile("%s.tmp", *ofn);
 
-	if (g_Options->GetDecode() && !directWrite)
+	if (!g_Options->GetRawArticle() && !directWrite)
 	{
 		FileSystem::DeleteFile(tmpdestfile);
 		if (!outfile.Open(tmpdestfile, DiskFile::omWrite))
@@ -368,7 +368,7 @@ void ArticleWriter::CompleteFileParts()
 		}
 		tmpdestfile = *m_outputFilename;
 	}
-	else if (!g_Options->GetDecode())
+	else if (g_Options->GetRawArticle())
 	{
 		FileSystem::DeleteFile(tmpdestfile);
 		if (!FileSystem::CreateDirectory(ofn))
@@ -396,7 +396,7 @@ void ArticleWriter::CompleteFileParts()
 		CharBuffer buffer;
 		bool firstArticle = true;
 
-		if (g_Options->GetDecode() && !directWrite)
+		if (!g_Options->GetRawArticle() && !directWrite)
 		{
 			buffer.Reserve(1024 * 64);
 		}
@@ -408,25 +408,27 @@ void ArticleWriter::CompleteFileParts()
 				continue;
 			}
 
-			if (g_Options->GetDecode() && !directWrite && pa->GetSegmentOffset() > -1 &&
+			if (!g_Options->GetRawArticle() && !directWrite && pa->GetSegmentOffset() > -1 &&
 				pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1)
 			{
 				memset(buffer, 0, buffer.Size());
-#ifndef SKIP_ARTICLE_WRITING
-				while (pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1 &&
-					outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), buffer.Size())));
-#endif
+				if (!g_Options->GetSkipWrite())
+				{
+					while (pa->GetSegmentOffset() > outfile.Position() && outfile.Position() > -1 &&
+						outfile.Write(buffer, std::min((int)(pa->GetSegmentOffset() - outfile.Position()), buffer.Size())));
+				}
 			}
 
 			if (pa->GetSegmentContent())
 			{
-#ifndef SKIP_ARTICLE_WRITING
-				outfile.Seek(pa->GetSegmentOffset());
-				outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
-#endif
+				if (!g_Options->GetSkipWrite())
+				{
+					outfile.Seek(pa->GetSegmentOffset());
+					outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
+				}
 				pa->DiscardSegment();
 			}
-			else if (g_Options->GetDecode() && !directWrite)
+			else if (!g_Options->GetRawArticle() && !directWrite && !g_Options->GetSkipWrite())
 			{
 				DiskFile infile;
 				if (pa->GetResultFilename() && infile.Open(pa->GetResultFilename(), DiskFile::omRead))
@@ -449,7 +451,7 @@ void ArticleWriter::CompleteFileParts()
 						(int)m_fileInfo->GetArticles()->size());
 				}
 			}
-			else if (!g_Options->GetDecode())
+			else if (g_Options->GetRawArticle())
 			{
 				BString<1024> dstFileName("%s%c%03i", *ofn, PATH_SEPARATOR, pa->GetPartNumber());
 				if (!FileSystem::MoveFile(pa->GetResultFilename(), dstFileName))
@@ -652,9 +654,10 @@ void ArticleWriter::FlushCache()
 				outfile.Seek(pa->GetSegmentOffset());
 			}
 
-#ifndef SKIP_ARTICLE_WRITING
-			outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
-#endif
+			if (!g_Options->GetSkipWrite())
+			{
+				outfile.Write(pa->GetSegmentContent(), pa->GetSegmentSize());
+			}
 
 			flushedSize += pa->GetSegmentSize();
 			flushedArticles++;
