@@ -91,6 +91,8 @@ import os
 import sys
 import datetime
 import smtplib
+import urllib2
+
 from email.mime.text import MIMEText
 try:
 	from xmlrpclib import ServerProxy # python 2
@@ -163,7 +165,7 @@ if (os.environ.get('NZBPO_STATISTICS') == 'yes' or \
 	host = os.environ['NZBOP_CONTROLIP'];
 	port = os.environ['NZBOP_CONTROLPORT'];
 	username = os.environ['NZBOP_CONTROLUSERNAME'];
-	password = os.environ['NZBOP_CONTROLPASSWORD'];
+	password = urllib2.quote(os.environ['NZBOP_CONTROLPASSWORD']);
 
 	if host == '0.0.0.0': host = '127.0.0.1'
 

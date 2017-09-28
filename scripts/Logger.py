@@ -36,6 +36,8 @@
 import os
 import sys
 import datetime
+import urllib2
+
 try:
 	from xmlrpclib import ServerProxy # python 2
 except ImportError:
@@ -66,7 +68,7 @@ if not os.path.exists(os.environ['NZBPP_DIRECTORY']):
 host = os.environ['NZBOP_CONTROLIP'];
 port = os.environ['NZBOP_CONTROLPORT'];
 username = os.environ['NZBOP_CONTROLUSERNAME'];
-password = os.environ['NZBOP_CONTROLPASSWORD'];
+password = urllib2.quote(os.environ['NZBOP_CONTROLPASSWORD']);
 
 if host == '0.0.0.0': host = '127.0.0.1'
 
