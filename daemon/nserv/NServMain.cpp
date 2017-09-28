@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,9 @@ struct NServOpts
 	bool generateNzb;
 	int segmentSize;
 	bool quit;
+	int latency;
+	int speed;
+	int cacheSize;
 
 	NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts);
 };
@@ -109,11 +112,13 @@ int NServMain(int argc, char* argv[])
 	}
 
 	std::vector<std::unique_ptr<NntpServer>> instances;
+	NntpCache cache((int64)opts.cacheSize * 1024 * 1024);
 
 	for (int i = 0; i < opts.instances; i++)
 	{
 		instances.emplace_back(std::make_unique<NntpServer>(i + 1, opts.bindAddress,
-			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir));
+			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir,
+			opts.latency, opts.speed, opts.cacheSize ? &cache : nullptr));
 		instances.back()->Start();
 	}
 
@@ -147,12 +152,15 @@ void NServPrintUsage(const char* com)
 		"    -d <data-dir>   - directory whose files will be served\n"
 		"  Optional switches:\n"
 		"    -c <cache-dir>  - directory to store encoded articles\n"
+		"    -m <MB>         - in-memory cache (needs filling)\n"
 		"    -l <log-file>   - write into log-file (disabled by default)\n"
 		"    -i <instances>  - number of server instances (default is 1)\n"
 		"    -b <address>    - ip address to bind to (default is 0.0.0.0)\n"
 		"    -p <port>       - port number for the first instance (default is 6791)\n"
 		"    -s <cert> <key> - paths to SSL certificate and key files\n"
 		"    -v <verbose>    - verbosity level 0..3 (default is 2)\n"
+		"    -w <msec>       - response latency (in milliseconds)\n"
+		"    -r <KB/s>       - speed throttling (in kilobytes per second)\n"
 		"    -z <seg-size>   - generate nzbs for all files in data-dir (size in bytes)\n"
 		"    -q              - quit after generating nzbs (in combination with -z)\n"
 		, FileSystem::BaseFileName(com));
@@ -166,9 +174,12 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 	generateNzb = false;
 	segmentSize = 500000;
 	quit = false;
+	latency = 0;
+	cacheSize = 0;
+	speed = 0;
 	int verbosity = 2;
 
-	char short_options[] = "b:c:d:l:p:i:s:v:z:q";
+	char short_options[] = "b:c:d:l:p:i:m:s:v:w:r:z:q";
 
 	optind = 2;
 	while (true)
@@ -183,6 +194,10 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 
 			case 'c':
 				cacheDir = optind > argc ? nullptr : argv[optind - 1];
+				break;
+
+			case 'm':
+				cacheSize = atoi(optind > argc ? "0" : argv[optind - 1]);
 				break;
 
 			case 'l':
@@ -209,6 +224,14 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 
 			case 'v':
 				verbosity = atoi(optind > argc ? "1" : argv[optind - 1]);
+				break;
+
+			case 'w':
+				latency = atoi(optind > argc ? "0" : argv[optind - 1]);
+				break;
+
+			case 'r':
+				speed = atoi(optind > argc ? "0" : argv[optind - 1]);
 				break;
 
 			case 'z':
