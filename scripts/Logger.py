@@ -72,10 +72,8 @@ password = os.environ['NZBOP_CONTROLPASSWORD'];
 
 if host == '0.0.0.0': host = '127.0.0.1'
 
-# Build an URL for XML-RPC requests
-d = {'u': username, 'p': password, 'h': host, 'po': port}
-d2 = {k: quote(v) for k, v in d.items()}
-rpcUrl = 'http://{u}:{p}@{h}:{po}/xmlrpc'.format(**d2)
+# Build a URL for XML-RPC requests
+rpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (quote(username), quote(password), host, port);
 
 # Create remote server object
 server = ServerProxy(rpcUrl)
