@@ -167,6 +167,11 @@ bool ArticleWriter::Write(char* buffer, int len)
 		return true;
 	}
 
+	if (g_Options->GetSkipWrite())
+	{
+		return true;
+	}
+
 	return m_outFile.Write(buffer, len) > 0;
 }
 
@@ -193,9 +198,8 @@ void ArticleWriter::Finish(bool success)
 					"Could not rename file %s to %s: %s", *m_tempFilename, m_resultFilename,
 					*FileSystem::GetLastErrorMessage());
 			}
+			FileSystem::DeleteFile(m_tempFilename);
 		}
-
-		FileSystem::DeleteFile(m_tempFilename);
 
 		if (m_articleData.GetData())
 		{
@@ -228,15 +232,16 @@ void ArticleWriter::Finish(bool success)
 /* creates output file and subdirectores */
 bool ArticleWriter::CreateOutputFile(int64 size)
 {
-	if (g_Options->GetDirectWrite() && FileSystem::FileExists(m_outputFilename) &&
-		FileSystem::FileSize(m_outputFilename) == size)
+	if (FileSystem::FileExists(m_outputFilename))
 	{
-		// keep existing old file from previous program session
-		return true;
+		if (FileSystem::FileSize(m_outputFilename) == size)
+		{
+			// keep existing old file from previous program session
+			return true;
+		}
+		// delete existing old file from previous program session
+		FileSystem::DeleteFile(m_outputFilename);
 	}
-
-	// delete eventually existing old file from previous program session
-	FileSystem::DeleteFile(m_outputFilename);
 
 	// ensure the directory exist
 	BString<1024> destDir;
