@@ -36,6 +36,8 @@
 import os
 import sys
 import datetime
+from urllib2 import quote # python 2/3
+
 try:
 	from xmlrpclib import ServerProxy # python 2
 except ImportError:
@@ -70,8 +72,8 @@ password = os.environ['NZBOP_CONTROLPASSWORD'];
 
 if host == '0.0.0.0': host = '127.0.0.1'
 
-# Build an URL for XML-RPC requests
-rpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port);
+# Build a URL for XML-RPC requests
+rpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (quote(username), quote(password), host, port);
 
 # Create remote server object
 server = ServerProxy(rpcUrl)
