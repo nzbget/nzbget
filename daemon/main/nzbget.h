@@ -210,6 +210,7 @@ using namespace MSXML;
 #include <list>
 #include <set>
 #include <map>
+#include <unordered_map>
 #include <iterator>
 #include <algorithm>
 #include <iostream>

@@ -46,7 +46,7 @@ private:
 		time_t m_lastAccess;
 	};
 
-	typedef std::map<std::string, std::unique_ptr<CacheItem>> CacheMap;
+	typedef std::unordered_map<std::string, std::unique_ptr<CacheItem>> CacheMap;
 
 	CacheMap m_items;
 	int64 m_size = 0;
