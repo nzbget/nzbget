@@ -414,6 +414,10 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 			{
 				break;
 			}
+			else
+			{
+				m_totalBytesRead += bufAvail;
+			}
 			bufPtr = m_readBuf;
 			m_readBuf[bufAvail] = '\0';
 		}
@@ -455,8 +459,6 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 	{
 		*bytesReadOut = bytesRead;
 	}
-
-	m_totalBytesRead += bytesRead;
 
 	if (inpBuffer == buffer)
 	{
@@ -502,6 +504,10 @@ int Connection::TryRecv(char* buffer, int size)
 	{
 		ReportError("Could not receive data on socket from %s", m_host, true);
 	}
+	else
+	{
+		m_totalBytesRead += received;
+	}
 
 	return received;
 }
@@ -537,6 +543,7 @@ bool Connection::Recv(char * buffer, int size)
 		}
 		bufPtr += received;
 		NeedBytes -= received;
+		m_totalBytesRead += received;
 	}
 	return true;
 }

@@ -320,7 +320,8 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	}
 
 	// retrieve article
-	response = m_connection->Request(BString<1024>("ARTICLE %s\r\n", m_articleInfo->GetMessageId()));
+	response = m_connection->Request(BString<1024>("%s %s\r\n",
+		g_Options->GetRawArticle() ? "ARTICLE" : "BODY", m_articleInfo->GetMessageId()));
 
 	status = CheckResponse(response, "could not fetch article");
 	if (status != adFinished)
@@ -330,51 +331,35 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 
 	if (!g_Options->GetRawArticle())
 	{
-		m_yDecoder.Clear();
-		m_yDecoder.SetCrcCheck(g_Options->GetCrcCheck());
-		m_uDecoder.Clear();
+		m_decoder.Clear();
+		m_decoder.SetCrcCheck(g_Options->GetCrcCheck());
 	}
 
-	bool body = false;
-	bool end = false;
-	CharBuffer lineBuf(1024*10);
 	status = adRunning;
-	int rateBuffer = 0;
+	CharBuffer lineBuf(1024*4);
 
-	while (!IsStopped())
+	while (!IsStopped() && !m_decoder.GetEof())
 	{
-		// Throttle the bandwidth
+		// throttle the bandwidth
 		while (!IsStopped() && (g_Options->GetDownloadRate() > 0.0f) &&
 			(g_StatMeter->CalcCurrentDownloadSpeed() > g_Options->GetDownloadRate() ||
 			g_StatMeter->CalcMomentaryDownloadSpeed() > g_Options->GetDownloadRate()))
 		{
-			if (rateBuffer > 0)
-			{
-				g_StatMeter->AddSpeedReading(rateBuffer);
-				rateBuffer = 0;
-			}
 			SetLastUpdateTimeNow();
 			usleep(10 * 1000);
 		}
 
-		int len = 0;
-		char* line = m_connection->ReadLine(lineBuf, lineBuf.Size(), &len);
-
-		rateBuffer += len;
-		if (rateBuffer > g_Options->GetRateBuffer())
+		char* buffer;
+		int len;
+		m_connection->ReadBuffer(&buffer, &len);
+		if (len == 0)
 		{
-			g_StatMeter->AddSpeedReading(rateBuffer);
-			rateBuffer = 0;
-			time_t oldTime = m_lastUpdateTime;
-			SetLastUpdateTimeNow();
-			if (oldTime != m_lastUpdateTime || g_Options->GetAccurateRate())
-			{
-				AddServerData();
-			}
+			len = m_connection->TryRecv(lineBuf, lineBuf.Size());
+			buffer = lineBuf;
 		}
 
-		// Have we encountered a timeout?
-		if (!line)
+		// have we encountered a timeout?
+		if (len <= 0)
 		{
 			if (!IsStopped())
 			{
@@ -384,70 +369,25 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			break;
 		}
 
-		//detect end of article
-		if (!strcmp(line, ".\r\n") || !strcmp(line, ".\n"))
+		g_StatMeter->AddSpeedReading(len);
+		time_t oldTime = m_lastUpdateTime;
+		SetLastUpdateTimeNow();
+		if (oldTime != m_lastUpdateTime || g_Options->GetAccurateRate())
 		{
-			end = true;
-			break;
+			AddServerData();
 		}
 
-		//detect lines starting with "." (marked as "..")
-		if (!strncmp(line, "..", 2))
-		{
-			line++;
-			len--;
-		}
+		// TODO: add support for RawArticle-mode (g_Options->GetRawArticle())
 
-		if (!body)
-		{
-			// detect body of article
-			if (*line == '\r' || *line == '\n')
-			{
-				body = true;
-			}
-			// check id of returned article
-			else if (!strncmp(line, "Message-ID: ", 12))
-			{
-				char* p = line + 12;
-				if (strncmp(p, m_articleInfo->GetMessageId(), strlen(m_articleInfo->GetMessageId())))
-				{
-					if (char* e = strrchr(p, '\r')) *e = '\0'; // remove trailing CR-character
-					detail("Article %s @ %s failed: Wrong message-id, expected %s, returned %s", *m_infoName,
-						*m_connectionName, m_articleInfo->GetMessageId(), p);
-					status = adFailed;
-					break;
-				}
-			}
-		}
-
-		if (m_format == Decoder::efUnknown && !g_Options->GetRawArticle())
-		{
-			m_format = Decoder::DetectFormat(line, len, body);
-			if (m_format != Decoder::efUnknown)
-			{
-				// sometimes news servers misbehave and send article body without new line separator between headers and body
-				// if we found decoder signature we know the body is already arrived
-				body = true;
-			}
-		}
+		// decode article data
+		len = m_decoder.DecodeBuffer(buffer, len);
 
 		// write to output file
-		if (((body && m_format != Decoder::efUnknown) || g_Options->GetRawArticle()) && !Write(line, len))
+		if (len > 0 && !Write(buffer, len))
 		{
 			status = adFatalError;
 			break;
 		}
-	}
-
-	if (rateBuffer > 0)
-	{
-		g_StatMeter->AddSpeedReading(rateBuffer);
-	}
-
-	if (!end && status == adRunning && !IsStopped())
-	{
-		detail("Article %s @ %s failed: article incomplete", *m_infoName, *m_connectionName);
-		status = adFailed;
 	}
 
 	if (IsStopped())
@@ -508,57 +448,42 @@ ArticleDownloader::EStatus ArticleDownloader::CheckResponse(const char* response
 	}
 }
 
-bool ArticleDownloader::Write(char* line, int len)
+bool ArticleDownloader::Write(char* buffer, int len)
 {
 	const char* articleFilename = nullptr;
 	int64 articleFileSize = 0;
 	int64 articleOffset = 0;
 	int articleSize = 0;
 
-	if (!g_Options->GetRawArticle())
+	if (!m_writingStarted)
 	{
-		if (m_format == Decoder::efYenc)
+		if (!g_Options->GetRawArticle())
 		{
-			len = m_yDecoder.DecodeBuffer(line, len);
-			articleFilename = m_yDecoder.GetArticleFilename();
-			articleFileSize = m_yDecoder.GetSize();
-		}
-		else if (m_format == Decoder::efUx)
-		{
-			len = m_uDecoder.DecodeBuffer(line, len);
-			articleFilename = m_uDecoder.GetArticleFilename();
-		}
-		else
-		{
-			detail("Decoding %s failed: unsupported encoding", *m_infoName);
-			return false;
-		}
-
-		if (len > 0 && m_format == Decoder::efYenc)
-		{
-			if (m_yDecoder.GetBegin() == 0 || m_yDecoder.GetEnd() == 0)
+			articleFilename = m_decoder.GetArticleFilename();
+			if (m_decoder.GetFormat() == Decoder::efYenc)
 			{
-				return false;
+				if (m_decoder.GetBeginPos() == 0 || m_decoder.GetEndPos() == 0)
+				{
+					return false;
+				}
+				articleFileSize = m_decoder.GetSize();
+				articleOffset = m_decoder.GetBeginPos() - 1;
+				articleSize = (int)(m_decoder.GetEndPos() - m_decoder.GetBeginPos() + 1);
 			}
-			articleOffset = m_yDecoder.GetBegin() - 1;
-			articleSize = (int)(m_yDecoder.GetEnd() - m_yDecoder.GetBegin() + 1);
 		}
-	}
 
-	if (!m_writingStarted && len > 0)
-	{
-		if (!m_articleWriter.Start(m_format, articleFilename, articleFileSize, articleOffset, articleSize))
+		if (!m_articleWriter.Start(m_decoder.GetFormat(), articleFilename, articleFileSize, articleOffset, articleSize))
 		{
 			return false;
 		}
 		m_writingStarted = true;
 	}
 
-	bool ok = len == 0 || m_articleWriter.Write(line, len);
+	bool ok = m_articleWriter.Write(buffer, len);
 
 	if (m_contentAnalyzer)
 	{
-		m_contentAnalyzer->Append(line, len);
+		m_contentAnalyzer->Append(buffer, len);
 	}
 
 	return ok;
@@ -568,34 +493,19 @@ ArticleDownloader::EStatus ArticleDownloader::DecodeCheck()
 {
 	if (!g_Options->GetRawArticle())
 	{
-		Decoder* decoder = nullptr;
-		if (m_format == Decoder::efYenc)
-		{
-			decoder = &m_yDecoder;
-		}
-		else if (m_format == Decoder::efUx)
-		{
-			decoder = &m_uDecoder;
-		}
-		else
-		{
-			detail("Decoding %s failed: no binary data or unsupported encoding format", *m_infoName);
-			return adFailed;
-		}
-
-		Decoder::EStatus status = decoder->Check();
+		Decoder::EStatus status = m_decoder.Check();
 
 		if (status == Decoder::dsFinished)
 		{
-			if (decoder->GetArticleFilename())
+			if (m_decoder.GetArticleFilename())
 			{
-				m_articleFilename = decoder->GetArticleFilename();
+				m_articleFilename = m_decoder.GetArticleFilename();
 			}
 
-			if (m_format == Decoder::efYenc)
+			if (m_decoder.GetFormat() == Decoder::efYenc)
 			{
 				m_articleInfo->SetCrc(g_Options->GetCrcCheck() ?
-					m_yDecoder.GetCalculatedCrc() : m_yDecoder.GetExpectedCrc());
+					m_decoder.GetCalculatedCrc() : m_decoder.GetExpectedCrc());
 			}
 
 			return adFinished;

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,8 +24,6 @@
 #include "Util.h"
 #include "YEncode.h"
 
-const char* Decoder::FormatNames[] = { "Unknown", "yEnc", "UU" };
-
 void Decoder::Init()
 {
 	YEncode::init();
@@ -39,19 +37,120 @@ void Decoder::Init()
 	printf("%s\n", YEncode::inc_crc32_simd ? "SIMD Crc32 (incremental) routine can be used" : "SIMD Crc32 (incremental) routine isn't available for this CPU");
 }
 
+Decoder::Decoder()
+{
+	Clear();
+}
+
 void Decoder::Clear()
 {
 	m_articleFilename.Clear();
+	m_body = false;
+	m_begin = false;
+	m_part = false;
+	m_end = false;
+	m_crc = false;
+	m_eof = false;
+	m_expectedCRC = 0;
+	m_calculatedCRC = 0xFFFFFFFF;
+	m_beginPos = 0;
+	m_endPos = 0;
+	m_size = 0;
+	m_endSize = 0;
+	m_state = 0;
+	m_crcCheck = false;
+	m_lineBuf.Reserve(1024*8);
+	m_lineBuf.SetLength(0);
+	m_extraChar = '\0';
+	m_lastChar1 = '\0';
+	m_lastChar2 = '\0';
 }
 
-Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len, bool inBody)
+/* At the beginning of article the processing goes line by line to find '=ybegin'-marker.
+ * Once the yEnc-data is started switches to blockwise processing.
+ * At the end of yEnc-data switches back to line by line mode to
+ * process '=yend'-marker and EOF-marker.
+ * UU-encoded articles are processed completely in line by line mode.
+ */
+int Decoder::DecodeBuffer(char* buffer, int len)
+{
+	int outlen = 0;
+
+	if (m_body && m_format == efYenc)
+	{
+		outlen = DecodeYenc(buffer, buffer, len);
+		if (m_body)
+		{
+			return outlen;
+		}
+	}
+	else
+	{
+		m_lineBuf.Append(buffer, len);
+	}
+
+	char* line = (char*)m_lineBuf;
+	while (char* end = strchr(line, '\n'))
+	{
+		int llen = end - line + 1;
+
+		if (line[0] == '.' && line[1] == '\r')
+		{
+			m_eof = true;
+			m_lineBuf.SetLength(0);
+			return outlen;
+		}
+
+		if (m_format == efUnknown)
+		{
+			m_format = DetectFormat(line, llen);
+		}
+
+		if (m_format == efYenc)
+		{
+			ProcessYenc(line, llen);
+			if (m_body)
+			{
+				outlen = DecodeYenc(end + 1, buffer, m_lineBuf.Length() - (end + 1 - m_lineBuf));
+				if (m_body)
+				{
+					m_lineBuf.SetLength(0);
+					return outlen;
+				}
+				line = (char*)m_lineBuf;
+				continue;
+			}
+		}
+		else if (m_format == efUx)
+		{
+			outlen += DecodeUx(line, llen);
+		}
+
+		line = end + 1;
+	}
+
+	if (*line)
+	{
+		len = m_lineBuf.Length() - (line - m_lineBuf);
+		memmove((char*)m_lineBuf, line, len);
+		m_lineBuf.SetLength(len);
+	}
+	else
+	{
+		m_lineBuf.SetLength(0);
+	}
+
+	return outlen;
+}
+
+Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len)
 {
 	if (!strncmp(buffer, "=ybegin ", 8))
 	{
 		return efYenc;
 	}
 
-	if (inBody && (len == 62 || len == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
+	if ((len == 62 || len == 63) && (buffer[62] == '\n' || buffer[62] == '\r') && *buffer == 'M')
 	{
 		return efUx;
 	}
@@ -78,133 +177,182 @@ Decoder::EFormat Decoder::DetectFormat(const char* buffer, int len, bool inBody)
 	return efUnknown;
 }
 
-/**
-  * YDecoder: fast implementation of yEnc-Decoder
-  */
-
-YDecoder::YDecoder()
+void Decoder::ProcessYenc(char* buffer, int len)
 {
-	Clear();
-}
-
-void YDecoder::Clear()
-{
-	Decoder::Clear();
-
-	m_body = false;
-	m_begin = false;
-	m_part = false;
-	m_end = false;
-	m_crc = false;
-	m_expectedCRC = 0;
-	m_calculatedCRC = 0xFFFFFFFF;
-	m_beginPos = 0;
-	m_endPos = 0;
-	m_size = 0;
-	m_endSize = 0;
-	m_crcCheck = false;
-}
-
-int YDecoder::DecodeBuffer(char* buffer, int len)
-{
-	if (m_body && !m_end)
+	if (!strncmp(buffer, "=ybegin ", 8))
 	{
-		if (!strncmp(buffer, "=yend ", 6))
+		m_begin = true;
+		char* pb = strstr(buffer, " name=");
+		if (pb)
 		{
-			m_end = true;
-			char* pb = strstr(buffer, m_part ? " pcrc32=" : " crc32=");
-			if (pb)
-			{
-				m_crc = true;
-				pb += 7 + (int)m_part; //=strlen(" crc32=") or strlen(" pcrc32=")
-				m_expectedCRC = strtoul(pb, nullptr, 16);
-			}
-			pb = strstr(buffer, " size=");
-			if (pb)
-			{
-				pb += 6; //=strlen(" size=")
-				m_endSize = (int64)atoll(pb);
-			}
-			return 0;
+			pb += 6; //=strlen(" name=")
+			char* pe;
+			for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++);
+			m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, (int)(pe - pb)));
 		}
+		pb = strstr(buffer, " size=");
+		if (pb)
+		{
+			pb += 6; //=strlen(" size=")
+			m_size = (int64)atoll(pb);
+		}
+		m_part = strstr(buffer, " part=");
+		if (!m_part)
+		{
+			m_body = true;
+			m_beginPos = 1;
+			m_endPos = m_size;
+		}
+	}
+	else if (!strncmp(buffer, "=ypart ", 7))
+	{
+		m_part = true;
+		m_body = true;
+		char* pb = strstr(buffer, " begin=");
+		if (pb)
+		{
+			pb += 7; //=strlen(" begin=")
+			m_beginPos = (int64)atoll(pb);
+		}
+		pb = strstr(buffer, " end=");
+		if (pb)
+		{
+			pb += 5; //=strlen(" end=")
+			m_endPos = (int64)atoll(pb);
+		}
+	}
+	else if (!strncmp(buffer, "=yend ", 6))
+	{
+		m_end = true;
+		char* pb = strstr(buffer, m_part ? " pcrc32=" : " crc32=");
+		if (pb)
+		{
+			m_crc = true;
+			pb += 7 + (int)m_part; //=strlen(" crc32=") or strlen(" pcrc32=")
+			m_expectedCRC = strtoul(pb, nullptr, 16);
+		}
+		pb = strstr(buffer, " size=");
+		if (pb)
+		{
+			pb += 6; //=strlen(" size=")
+			m_endSize = (int64)atoll(pb);
+		}
+	}
+}
+
+// find end of yEnc-data or article data
+char* Decoder::FindStreamEnd(char* buffer, int len)
+{
+	// 0: previous characters are '\r\n' OR there is no previous character
+	if (m_state == 0 && len > 1 &&
+		((buffer[0] == '=' && buffer[1] == 'y') ||
+		 (buffer[0] == '.' && buffer[1] == '\r')))
+	{
+		return buffer;
+	}
+	// 1: previous character is '='
+	if (m_state == 1 && buffer[0] == 'y')
+	{
+		m_extraChar = '=';
+		return buffer;
+	}
+	// 2: previous character is '\r'
+	if (m_state == 2 && len > 2 && buffer[0] == '\n' &&
+		((buffer[1] == '=' && buffer[2] == 'y') ||
+		 (buffer[1] == '.' && buffer[2] == '\r')))
+	{
+		return buffer + 1;
+	}
+
+	// previous characters are '\n.'
+	if (m_lastChar2 == '\n' && m_lastChar1 == '.' && buffer[0] == '\r')
+	{
+		m_extraChar = '.';
+		return buffer;
+	}
+
+	char* last = buffer + len - 1;
+	char* line = buffer;
+	int llen = len;
+	while (char* end = (char*)memchr(line, '\n', llen))
+	{
+		if (end + 2 <= last &&
+			((end[1] == '=' && end[2] == 'y') ||
+			 (end[1] == '.' && end[2] == '\r')))
+		{
+			return end + 1;
+		}
+		llen -= end - line;
+		line = end + 1;
+	}
+
+	// save last two characters for future use
+	m_lastChar1 = buffer[len - 1];
+	if (len > 1)
+	{
+		m_lastChar2 = buffer[len - 2];
+	}
+
+	return  nullptr;
+}
+
+int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
+{
+	int inpLen = len;
+	char* end = FindStreamEnd(buffer, len);
+	if (end)
+	{
+		len = end - buffer;
+	}
 
 #ifdef SKIP_ARTICLE_DECODING
-		char* optr = buffer + len;
+	m_state = m_lastChar2 == '\r' && m_lastChar1 == '\n' ? 0 :
+		m_lastChar1 == '=' ? 1 : m_lastChar1 == '\r' ? 2 : 3;
 #else
-		len -= 2;  // strip trailing \r\n
-		char* optr = buffer;
-		for (int i = 0; i < len; i++)
-		{
-			char c = buffer[i];
-			if (c == '=')
-			{
-				c = buffer[++i] - 64;
-			}
-			*optr++ = c - 42;
-		}
+	len = (int)YEncode::decode((const uchar*)buffer, (uchar*)outbuf, len, &m_state);
 #endif
 
-		if (m_crcCheck)
-		{
-			m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (uchar*)buffer, (uint32)(optr - buffer));
-		}
-		return (int)(optr - buffer);
-	}
-	else
+	if (end)
 	{
-		if (!m_part && !strncmp(buffer, "=ybegin ", 8))
+		// switch back to line mode to process '=yend'- or eof- marker
+		m_lineBuf.SetLength(0);
+		if (m_extraChar)
 		{
-			m_begin = true;
-			char* pb = strstr(buffer, " name=");
-			if (pb)
-			{
-				pb += 6; //=strlen(" name=")
-				char* pe;
-				for (pe = pb; *pe != '\0' && *pe != '\n' && *pe != '\r'; pe++) ;
-				m_articleFilename = WebUtil::Latin1ToUtf8(CString(pb, (int)(pe - pb)));
-			}
-			pb = strstr(buffer, " size=");
-			if (pb)
-			{
-				pb += 6; //=strlen(" size=")
-				m_size = (int64)atoll(pb);
-			}
-			m_part = strstr(buffer, " part=");
-			if (!m_part)
-			{
-				m_body = true;
-				m_beginPos = 1;
-				m_endPos = m_size;
-			}
+			m_lineBuf.Append(&m_extraChar, 1);
 		}
-		else if (m_part && !strncmp(buffer, "=ypart ", 7))
-		{
-			m_part = true;
-			m_body = true;
-			char* pb = strstr(buffer, " begin=");
-			if (pb)
-			{
-				pb += 7; //=strlen(" begin=")
-				m_beginPos = (int64)atoll(pb);
-			}
-			pb = strstr(buffer, " end=");
-			if (pb)
-			{
-				pb += 5; //=strlen(" end=")
-				m_endPos = (int64)atoll(pb);
-			}
-		}
+		m_lineBuf.Append(end, inpLen - (end - buffer));
+		m_body = false;
 	}
 
-	return 0;
+	if (m_crcCheck)
+	{
+		m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (uchar*)outbuf, (uint32)len);
+	}
+
+	return len;
 }
 
-Decoder::EStatus YDecoder::Check()
+Decoder::EStatus Decoder::Check()
 {
 #ifdef SKIP_ARTICLE_DECODING
 	return dsFinished;
 #endif
 
+	switch (m_format)
+	{
+		case efYenc:
+			return CheckYenc();
+			 
+		case efUx:
+			return CheckUx();
+
+		default:
+			return dsUnknownError;
+	}
+}
+
+Decoder::EStatus Decoder::CheckYenc()
+{
 	m_calculatedCRC ^= 0xFFFFFFFF;
 
 	debug("Expected crc32=%x", m_expectedCRC);
@@ -231,24 +379,7 @@ Decoder::EStatus YDecoder::Check()
 }
 
 
-/**
-  * UDecoder: supports UU encoding formats
-  */
-
-UDecoder::UDecoder()
-{
-	Clear();
-}
-
-void UDecoder::Clear()
-{
-	Decoder::Clear();
-
-	m_body = false;
-	m_end = false;
-}
-
-/* DecodeBuffer-function uses portions of code from tool UUDECODE by Clem Dye
+/* DecodeUx-function uses portions of code from tool UUDECODE by Clem Dye
  * UUDECODE.c (http://www.bastet.com/uue.zip)
  * Copyright (C) 1998 Clem Dye
  *
@@ -257,7 +388,7 @@ void UDecoder::Clear()
 
 #define UU_DECODE_CHAR(c) (c == '`' ? 0 : (((c) - ' ') & 077))
 
-int UDecoder::DecodeBuffer(char* buffer, int len)
+int Decoder::DecodeUx(char* buffer, int len)
 {
 	if (!m_body)
 	{
@@ -327,7 +458,7 @@ int UDecoder::DecodeBuffer(char* buffer, int len)
 	return 0;
 }
 
-Decoder::EStatus UDecoder::Check()
+Decoder::EStatus Decoder::CheckUx()
 {
 	if (!m_body)
 	{

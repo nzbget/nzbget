@@ -91,9 +91,7 @@ private:
 	CString m_connectionName;
 	CString m_articleFilename;
 	time_t m_lastUpdateTime;
-	Decoder::EFormat m_format = Decoder::efUnknown;
-	YDecoder m_yDecoder;
-	UDecoder m_uDecoder;
+	Decoder m_decoder;
 	ArticleWriter m_articleWriter;
 	ServerStatList m_serverStats;
 	bool m_writingStarted;
@@ -105,7 +103,7 @@ private:
 	void FreeConnection(bool keepConnected);
 	EStatus CheckResponse(const char* response, const char* comment);
 	void SetStatus(EStatus status) { m_status = status; }
-	bool Write(char* line, int len);
+	bool Write(char* buffer, int len);
 	void AddServerData();
 };
 

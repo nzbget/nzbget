@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,35 +43,23 @@ public:
 		efUx,
 	};
 
-	static const char* FormatNames[];
-
+	Decoder();
 	static void Init();
-	virtual ~Decoder() {}
-	virtual EStatus Check() = 0;
-	virtual void Clear();
-	virtual int DecodeBuffer(char* buffer, int len) = 0;
-	const char* GetArticleFilename() { return m_articleFilename; }
-	static EFormat DetectFormat(const char* buffer, int len, bool inBody);
-
-protected:
-	CString m_articleFilename;
-};
-
-class YDecoder: public Decoder
-{
-public:
-	YDecoder();
-	virtual EStatus Check();
-	virtual void Clear();
-	virtual int DecodeBuffer(char* buffer, int len);
+	EStatus Check();
+	void Clear();
+	int DecodeBuffer(char* buffer, int len);
 	void SetCrcCheck(bool crcCheck) { m_crcCheck = crcCheck; }
-	int64 GetBegin() { return m_beginPos; }
-	int64 GetEnd() { return m_endPos; }
+	EFormat GetFormat() { return m_format; }
+	int64 GetBeginPos() { return m_beginPos; }
+	int64 GetEndPos() { return m_endPos; }
 	int64 GetSize() { return m_size; }
 	uint32 GetExpectedCrc() { return m_expectedCRC; }
 	uint32 GetCalculatedCrc() { return m_calculatedCRC; }
+	bool GetEof() { return m_eof; }
+	const char* GetArticleFilename() { return m_articleFilename; }
 
 private:
+	EFormat m_format = efUnknown;
 	bool m_begin;
 	bool m_part;
 	bool m_body;
@@ -83,20 +71,22 @@ private:
 	int64 m_endPos;
 	int64 m_size;
 	int64 m_endSize;
+	bool m_eof;
 	bool m_crcCheck;
-};
+	char m_state;
+	CString m_articleFilename;
+	StringBuilder m_lineBuf;
+	char m_extraChar;
+	char m_lastChar1;
+	char m_lastChar2;
 
-class UDecoder: public Decoder
-{
-public:
-	UDecoder();
-	virtual EStatus Check();
-	virtual void Clear();
-	virtual int DecodeBuffer(char* buffer, int len);
-
-private:
-	bool m_body;
-	bool m_end;
+	EFormat DetectFormat(const char* buffer, int len);
+	void ProcessYenc(char* buffer, int len);
+	int DecodeYenc(char* buffer, char* outbuf, int len);
+	char* FindStreamEnd(char* buffer, int len);
+	EStatus CheckYenc();
+	int DecodeUx(char* buffer, int len);
+	EStatus CheckUx();
 };
 
 #endif
