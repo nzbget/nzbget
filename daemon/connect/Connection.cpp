@@ -246,7 +246,7 @@ bool Connection::Bind()
 
 		memset(&addr_hints, 0, sizeof(addr_hints));
 		addr_hints.ai_family = m_ipVersion == ipV4 ? AF_INET : m_ipVersion == ipV6 ? AF_INET6 : AF_UNSPEC;
-		addr_hints.ai_socktype = SOCK_STREAM,
+		addr_hints.ai_socktype = SOCK_STREAM;
 		addr_hints.ai_flags = AI_PASSIVE;    // For wildcard IP address
 
 		BString<100> portStr("%d", m_port);

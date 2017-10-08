@@ -615,7 +615,7 @@ std::unique_ptr<FeedFile> FeedCoordinator::parseFeed(FeedInfo* feedInfo)
 		error("Feed file %s kept for troubleshooting (will be deleted on next successful feed fetch)", feedInfo->GetOutputFilename());
 		feedFile.reset();
 	}
-	return std::move(feedFile);
+	return feedFile;
 }
 
 void FeedCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
