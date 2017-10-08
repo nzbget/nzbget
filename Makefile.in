@@ -312,6 +312,10 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	lib/par2/reedsolomon.h lib/par2/verificationhashtable.cpp \
 	lib/par2/verificationhashtable.h \
 	lib/par2/verificationpacket.cpp lib/par2/verificationpacket.h \
+	lib/yencode/YEncode.h lib/yencode/SimdInit.cpp \
+	lib/yencode/ScalarDecoder.cpp lib/yencode/Sse2Decoder.cpp \
+	lib/yencode/Ssse3Decoder.cpp lib/yencode/PclmulCrc.cpp \
+	lib/yencode/NeonDecoder.cpp lib/yencode/ArmCrc.cpp \
 	lib/catch/catch.h tests/suite/TestMain.cpp \
 	tests/suite/TestMain.h tests/suite/TestUtil.cpp \
 	tests/suite/TestUtil.h tests/main/CommandLineParserTest.cpp \
@@ -425,7 +429,13 @@ am_nzbget_OBJECTS = daemon/connect/Connection.$(OBJEXT) \
 	daemon/nserv/NntpServer.$(OBJEXT) \
 	daemon/nserv/NzbGenerator.$(OBJEXT) \
 	daemon/nserv/YEncoder.$(OBJEXT) code_revision.$(OBJEXT) \
-	$(am__objects_1) $(am__objects_2) $(am__objects_3)
+	$(am__objects_1) lib/yencode/SimdInit.$(OBJEXT) \
+	lib/yencode/ScalarDecoder.$(OBJEXT) \
+	lib/yencode/Sse2Decoder.$(OBJEXT) \
+	lib/yencode/Ssse3Decoder.$(OBJEXT) \
+	lib/yencode/PclmulCrc.$(OBJEXT) \
+	lib/yencode/NeonDecoder.$(OBJEXT) lib/yencode/ArmCrc.$(OBJEXT) \
+	$(am__objects_2) $(am__objects_3)
 nzbget_OBJECTS = $(am_nzbget_OBJECTS)
 nzbget_LDADD = $(LDADD)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -553,6 +563,7 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+ARMCRC_CXXFLAGS = @ARMCRC_CXXFLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -585,6 +596,7 @@ MAINT = @MAINT@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
+NEON_CXXFLAGS = @NEON_CXXFLAGS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -594,11 +606,14 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PCLMUL_CXXFLAGS = @PCLMUL_CXXFLAGS@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSE2_CXXFLAGS = @SSE2_CXXFLAGS@
+SSSE3_CXXFLAGS = @SSSE3_CXXFLAGS@
 STRIP = @STRIP@
 TAR = @TAR@
 VERSION = @VERSION@
@@ -668,6 +683,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 zlib_CFLAGS = @zlib_CFLAGS@
 zlib_LIBS = @zlib_LIBS@
+
+# Simd decoder and Crc32
 nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/connect/Connection.h daemon/connect/TlsSocket.cpp \
 	daemon/connect/TlsSocket.h daemon/connect/WebDownloader.cpp \
@@ -760,14 +777,18 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/nserv/NntpServer.h daemon/nserv/NntpServer.cpp \
 	daemon/nserv/NzbGenerator.h daemon/nserv/NzbGenerator.cpp \
 	daemon/nserv/YEncoder.h daemon/nserv/YEncoder.cpp \
-	code_revision.cpp $(am__append_1) $(am__append_2) \
-	$(am__append_3)
+	code_revision.cpp $(am__append_1) lib/yencode/YEncode.h \
+	lib/yencode/SimdInit.cpp lib/yencode/ScalarDecoder.cpp \
+	lib/yencode/Sse2Decoder.cpp lib/yencode/Ssse3Decoder.cpp \
+	lib/yencode/PclmulCrc.cpp lib/yencode/NeonDecoder.cpp \
+	lib/yencode/ArmCrc.cpp $(am__append_2) $(am__append_3)
 AM_CPPFLAGS = -I$(srcdir)/daemon/connect -I$(srcdir)/daemon/extension \
 	-I$(srcdir)/daemon/feed -I$(srcdir)/daemon/frontend \
 	-I$(srcdir)/daemon/main -I$(srcdir)/daemon/nntp \
 	-I$(srcdir)/daemon/postprocess -I$(srcdir)/daemon/queue \
 	-I$(srcdir)/daemon/remote -I$(srcdir)/daemon/util \
-	-I$(srcdir)/daemon/nserv -I$(srcdir)/lib/par2 $(am__append_4)
+	-I$(srcdir)/daemon/nserv -I$(srcdir)/lib/par2 \
+	-I$(srcdir)/lib/yencode $(am__append_4)
 EXTRA_DIST = \
 	$(windows_FILES) \
 	$(osx_FILES) \
@@ -1313,6 +1334,26 @@ lib/par2/verificationhashtable.$(OBJEXT): lib/par2/$(am__dirstamp) \
 	lib/par2/$(DEPDIR)/$(am__dirstamp)
 lib/par2/verificationpacket.$(OBJEXT): lib/par2/$(am__dirstamp) \
 	lib/par2/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/$(am__dirstamp):
+	@$(MKDIR_P) lib/yencode
+	@: > lib/yencode/$(am__dirstamp)
+lib/yencode/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) lib/yencode/$(DEPDIR)
+	@: > lib/yencode/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/SimdInit.$(OBJEXT): lib/yencode/$(am__dirstamp) \
+	lib/yencode/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/ScalarDecoder.$(OBJEXT): lib/yencode/$(am__dirstamp) \
+	lib/yencode/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/Sse2Decoder.$(OBJEXT): lib/yencode/$(am__dirstamp) \
+	lib/yencode/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/Ssse3Decoder.$(OBJEXT): lib/yencode/$(am__dirstamp) \
+	lib/yencode/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/PclmulCrc.$(OBJEXT): lib/yencode/$(am__dirstamp) \
+	lib/yencode/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/NeonDecoder.$(OBJEXT): lib/yencode/$(am__dirstamp) \
+	lib/yencode/$(DEPDIR)/$(am__dirstamp)
+lib/yencode/ArmCrc.$(OBJEXT): lib/yencode/$(am__dirstamp) \
+	lib/yencode/$(DEPDIR)/$(am__dirstamp)
 tests/suite/$(am__dirstamp):
 	@$(MKDIR_P) tests/suite
 	@: > tests/suite/$(am__dirstamp)
@@ -1455,6 +1496,7 @@ mostlyclean-compile:
 	-rm -f daemon/remote/*.$(OBJEXT)
 	-rm -f daemon/util/*.$(OBJEXT)
 	-rm -f lib/par2/*.$(OBJEXT)
+	-rm -f lib/yencode/*.$(OBJEXT)
 	-rm -f tests/feed/*.$(OBJEXT)
 	-rm -f tests/main/*.$(OBJEXT)
 	-rm -f tests/nntp/*.$(OBJEXT)
@@ -1559,6 +1601,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@lib/par2/$(DEPDIR)/reedsolomon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@lib/par2/$(DEPDIR)/verificationhashtable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@lib/par2/$(DEPDIR)/verificationpacket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/yencode/$(DEPDIR)/ArmCrc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/yencode/$(DEPDIR)/NeonDecoder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/yencode/$(DEPDIR)/PclmulCrc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/yencode/$(DEPDIR)/ScalarDecoder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/yencode/$(DEPDIR)/SimdInit.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/yencode/$(DEPDIR)/Sse2Decoder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/yencode/$(DEPDIR)/Ssse3Decoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/feed/$(DEPDIR)/FeedFilterTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/main/$(DEPDIR)/CommandLineParserTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/main/$(DEPDIR)/OptionsTest.Po@am__quote@
@@ -1940,6 +1989,8 @@ distclean-generic:
 	-rm -f daemon/util/$(am__dirstamp)
 	-rm -f lib/par2/$(DEPDIR)/$(am__dirstamp)
 	-rm -f lib/par2/$(am__dirstamp)
+	-rm -f lib/yencode/$(DEPDIR)/$(am__dirstamp)
+	-rm -f lib/yencode/$(am__dirstamp)
 	-rm -f tests/feed/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/feed/$(am__dirstamp)
 	-rm -f tests/main/$(DEPDIR)/$(am__dirstamp)
@@ -1964,7 +2015,7 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR) daemon/connect/$(DEPDIR) daemon/extension/$(DEPDIR) daemon/feed/$(DEPDIR) daemon/frontend/$(DEPDIR) daemon/main/$(DEPDIR) daemon/nntp/$(DEPDIR) daemon/nserv/$(DEPDIR) daemon/postprocess/$(DEPDIR) daemon/queue/$(DEPDIR) daemon/remote/$(DEPDIR) daemon/util/$(DEPDIR) lib/par2/$(DEPDIR) tests/feed/$(DEPDIR) tests/main/$(DEPDIR) tests/nntp/$(DEPDIR) tests/postprocess/$(DEPDIR) tests/queue/$(DEPDIR) tests/suite/$(DEPDIR) tests/util/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) daemon/connect/$(DEPDIR) daemon/extension/$(DEPDIR) daemon/feed/$(DEPDIR) daemon/frontend/$(DEPDIR) daemon/main/$(DEPDIR) daemon/nntp/$(DEPDIR) daemon/nserv/$(DEPDIR) daemon/postprocess/$(DEPDIR) daemon/queue/$(DEPDIR) daemon/remote/$(DEPDIR) daemon/util/$(DEPDIR) lib/par2/$(DEPDIR) lib/yencode/$(DEPDIR) tests/feed/$(DEPDIR) tests/main/$(DEPDIR) tests/nntp/$(DEPDIR) tests/postprocess/$(DEPDIR) tests/queue/$(DEPDIR) tests/suite/$(DEPDIR) tests/util/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -2015,7 +2066,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR) daemon/connect/$(DEPDIR) daemon/extension/$(DEPDIR) daemon/feed/$(DEPDIR) daemon/frontend/$(DEPDIR) daemon/main/$(DEPDIR) daemon/nntp/$(DEPDIR) daemon/nserv/$(DEPDIR) daemon/postprocess/$(DEPDIR) daemon/queue/$(DEPDIR) daemon/remote/$(DEPDIR) daemon/util/$(DEPDIR) lib/par2/$(DEPDIR) tests/feed/$(DEPDIR) tests/main/$(DEPDIR) tests/nntp/$(DEPDIR) tests/postprocess/$(DEPDIR) tests/queue/$(DEPDIR) tests/suite/$(DEPDIR) tests/util/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) daemon/connect/$(DEPDIR) daemon/extension/$(DEPDIR) daemon/feed/$(DEPDIR) daemon/frontend/$(DEPDIR) daemon/main/$(DEPDIR) daemon/nntp/$(DEPDIR) daemon/nserv/$(DEPDIR) daemon/postprocess/$(DEPDIR) daemon/queue/$(DEPDIR) daemon/remote/$(DEPDIR) daemon/util/$(DEPDIR) lib/par2/$(DEPDIR) lib/yencode/$(DEPDIR) tests/feed/$(DEPDIR) tests/main/$(DEPDIR) tests/nntp/$(DEPDIR) tests/postprocess/$(DEPDIR) tests/queue/$(DEPDIR) tests/suite/$(DEPDIR) tests/util/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -2063,6 +2114,12 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 
 .PRECIOUS: Makefile
 
+
+lib/yencode/Sse2Decoder.$(OBJEXT) : CXXFLAGS+=$(SSE2_CXXFLAGS)
+lib/yencode/Ssse3Decoder.$(OBJEXT) : CXXFLAGS+=$(SSSE3_CXXFLAGS)
+lib/yencode/PclmulCrc.$(OBJEXT) : CXXFLAGS+=$(PCLMUL_CXXFLAGS)
+lib/yencode/NeonDecoder.$(OBJEXT) : CXXFLAGS+=$(NEON_CXXFLAGS)
+lib/yencode/ArmCrc.$(OBJEXT) : CXXFLAGS+=$(ARMCRC_CXXFLAGS)
 
 # Note about "sed": 
 # We need to make some changes in installed files.

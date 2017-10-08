@@ -22,8 +22,22 @@
 #include "Decoder.h"
 #include "Log.h"
 #include "Util.h"
+#include "YEncode.h"
 
 const char* Decoder::FormatNames[] = { "Unknown", "yEnc", "UU" };
+
+void Decoder::Init()
+{
+	YEncode::init();
+
+	debug("%s", YEncode::decode_simd ? "SIMD yEnc decoder can be used" : "SIMD yEnc decoder isn't available for this CPU");
+	debug("%s", YEncode::crc32_simd ? "SIMD Crc32 routine can be used" : "SIMD Crc32 routine isn't available for this CPU");
+	debug("%s", YEncode::inc_crc32_simd ? "SIMD Crc32 (incremental) routine can be used" : "SIMD Crc32 (incremental) routine isn't available for this CPU");
+
+	printf("%s\n", YEncode::decode_simd ? "SIMD yEnc decoder can be used" : "SIMD yEnc decoder isn't available for this CPU");
+	printf("%s\n", YEncode::crc32_simd ? "SIMD Crc32 routine can be used" : "SIMD Crc32 routine isn't available for this CPU");
+	printf("%s\n", YEncode::inc_crc32_simd ? "SIMD Crc32 (incremental) routine can be used" : "SIMD Crc32 (incremental) routine isn't available for this CPU");
+}
 
 void Decoder::Clear()
 {

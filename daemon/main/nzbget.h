@@ -59,9 +59,6 @@ compiled */
 /* Define to 1 if variadic macros are supported */
 #define HAVE_VARIADIC_MACROS
 
-/* Define to 1 if libpar2 supports cancelling (needs a special patch) */
-#define HAVE_PAR2_CANCEL
-
 /* Define to 1 if function GetAddrInfo is supported */
 #define HAVE_GETADDRINFO
 
@@ -93,6 +90,12 @@ compiled */
 #if _WIN32_WINNT < 0x0501
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
+#endif
+
+#ifdef _WIN64
+#define __amd64__
+#else
+#define __i686__
 #endif
 
 #ifdef _DEBUG
@@ -311,6 +314,10 @@ typedef int pid_t;
 #define FOPEN_RBP "rb+N"
 #define FOPEN_WB "wbN"
 #define FOPEN_AB "abN"
+
+#define __SSE2__
+#define __SSSE3__
+#define __PCLMUL__
 
 #ifdef DEBUG
 // redefine "exit" to avoid printing memory leaks report when terminated because of wrong command line switches

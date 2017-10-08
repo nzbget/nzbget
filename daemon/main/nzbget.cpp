@@ -262,6 +262,7 @@ void NZBGet::Init()
 #ifndef DISABLE_TLS
 		TlsSocket::Init();
 #endif
+		Decoder::Init();
 	}
 
 	CreateGlobals();

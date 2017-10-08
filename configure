@@ -628,6 +628,11 @@ LTLIBOBJS
 LIBOBJS
 WITH_TESTS_FALSE
 WITH_TESTS_TRUE
+ARMCRC_CXXFLAGS
+NEON_CXXFLAGS
+PCLMUL_CXXFLAGS
+SSSE3_CXXFLAGS
+SSE2_CXXFLAGS
 zlib_LIBS
 zlib_CFLAGS
 nettle_LIBS
@@ -5756,48 +5761,13 @@ fi
 done
 
 
-for ac_header in sys/prctl.h
+for ac_header in sys/prctl.h regex.h endian.h getopt.h
 do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "sys/prctl.h" "ac_cv_header_sys_prctl_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_prctl_h" = xyes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_PRCTL_H 1
-_ACEOF
-
-fi
-
-done
-
-for ac_header in regex.h
-do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "regex.h" "ac_cv_header_regex_h" "$ac_includes_default"
-if test "x$ac_cv_header_regex_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_REGEX_H 1
-_ACEOF
-
-fi
-
-done
-
-for ac_header in endian.h
-do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "endian.h" "ac_cv_header_endian_h" "$ac_includes_default"
-if test "x$ac_cv_header_endian_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ENDIAN_H 1
-_ACEOF
-
-fi
-
-done
-
-for ac_header in getopt.h
-do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "getopt.h" "ac_cv_header_getopt_h" "$ac_includes_default"
-if test "x$ac_cv_header_getopt_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETOPT_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
@@ -6569,12 +6539,12 @@ main ()
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: size_t" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: size_t" >&5
 $as_echo "size_t" >&6; }
-    SOCKLEN_T=size_t
+	SOCKLEN_T=size_t
 else
 
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <stddef.h>
@@ -6591,14 +6561,14 @@ main ()
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: int" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: int" >&5
 $as_echo "int" >&6; }
-      SOCKLEN_T=int
+	SOCKLEN_T=int
 else
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: could not determine" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: could not determine" >&5
 $as_echo "$as_me: WARNING: could not determine" >&2;}
-      SOCKLEN_T=int
+	SOCKLEN_T=int
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
@@ -8364,6 +8334,35 @@ else
 $as_echo "#define DISABLE_GZIP 1" >>confdefs.h
 
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use SIMD-optimized routines" >&5
+$as_echo_n "checking whether to use SIMD-optimized routines... " >&6; }
+USE_SIMD=no
+case $host_cpu in
+	i?86|x86_64)
+		SSE2_CXXFLAGS="-msse2"
+		SSSE3_CXXFLAGS="-mssse3"
+		PCLMUL_CXXFLAGS="-msse4.1 -mpclmul"
+		USE_SIMD=yes
+		;;
+	arm)
+		NEON_CXXFLAGS="-mfpu=neon"
+		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		USE_SIMD=yes
+		;;
+	aarch64)
+		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		USE_SIMD=yes
+		;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_SIMD" >&5
+$as_echo "$USE_SIMD" >&6; }
+
+
+
+
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use an empty SIGCHLD handler" >&5

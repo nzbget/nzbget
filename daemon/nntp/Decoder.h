@@ -45,6 +45,7 @@ public:
 
 	static const char* FormatNames[];
 
+	static void Init();
 	virtual ~Decoder() {}
 	virtual EStatus Check() = 0;
 	virtual void Clear();

@@ -214,6 +214,23 @@ nzbget_SOURCES += \
 	lib/par2/verificationpacket.h
 endif
 
+# Simd decoder and Crc32
+nzbget_SOURCES += \
+	lib/yencode/YEncode.h \
+	lib/yencode/SimdInit.cpp \
+	lib/yencode/ScalarDecoder.cpp \
+	lib/yencode/Sse2Decoder.cpp \
+	lib/yencode/Ssse3Decoder.cpp \
+	lib/yencode/PclmulCrc.cpp \
+	lib/yencode/NeonDecoder.cpp \
+	lib/yencode/ArmCrc.cpp
+
+lib/yencode/Sse2Decoder.$(OBJEXT) : CXXFLAGS+=$(SSE2_CXXFLAGS)
+lib/yencode/Ssse3Decoder.$(OBJEXT) : CXXFLAGS+=$(SSSE3_CXXFLAGS)
+lib/yencode/PclmulCrc.$(OBJEXT) : CXXFLAGS+=$(PCLMUL_CXXFLAGS)
+lib/yencode/NeonDecoder.$(OBJEXT) : CXXFLAGS+=$(NEON_CXXFLAGS)
+lib/yencode/ArmCrc.$(OBJEXT) : CXXFLAGS+=$(ARMCRC_CXXFLAGS)
+
 AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/connect \
 	-I$(srcdir)/daemon/extension \
@@ -226,7 +243,8 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/remote \
 	-I$(srcdir)/daemon/util \
 	-I$(srcdir)/daemon/nserv \
-	-I$(srcdir)/lib/par2
+	-I$(srcdir)/lib/par2 \
+	-I$(srcdir)/lib/yencode
 
 if WITH_TESTS
 nzbget_SOURCES += \

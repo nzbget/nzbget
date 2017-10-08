@@ -65,10 +65,7 @@ fi
 dnl
 dnl Checks for header files.
 dnl
-AC_CHECK_HEADERS(sys/prctl.h)
-AC_CHECK_HEADERS(regex.h)
-AC_CHECK_HEADERS(endian.h)
-AC_CHECK_HEADERS(getopt.h)
+AC_CHECK_HEADERS(sys/prctl.h regex.h endian.h getopt.h)
 
 
 dnl
@@ -148,7 +145,7 @@ if test "$FOUND" = "no"; then
 		[	char* szHost; struct hostent hinfobuf; char* strbuf; int h_errnop;
 			struct hostent* hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &h_errnop); ],
 		AC_MSG_RESULT([[yes, and it takes 5 arguments]])
-		FOUND="yes"                      
+		FOUND="yes"
 		AC_DEFINE([HAVE_GETHOSTBYNAME_R_5], 1, [Define to 1 if gethostbyname_r takes 5 arguments]),
 		FOUND="no")
 	
@@ -198,17 +195,17 @@ AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/socket.h>],[
 (void)getsockopt (1, 1, 1, NULL, (size_t*)NULL)],[
-    AC_MSG_RESULT(size_t)
-    SOCKLEN_T=size_t],[
-    AC_TRY_COMPILE([
+	AC_MSG_RESULT(size_t)
+	SOCKLEN_T=size_t],[
+	AC_TRY_COMPILE([
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/socket.h>],[
 (void)getsockopt (1, 1, 1, NULL, (int*)NULL)],[
-      AC_MSG_RESULT(int)
-      SOCKLEN_T=int],[
-      AC_MSG_WARN(could not determine)
-      SOCKLEN_T=int])])])
+	AC_MSG_RESULT(int)
+	SOCKLEN_T=int],[
+	AC_MSG_WARN(could not determine)
+	SOCKLEN_T=int])])])
 AC_DEFINE_UNQUOTED(SOCKLEN_T, $SOCKLEN_T, [Determine what socket length (socklen_t) data type is])
 
 
@@ -538,6 +535,36 @@ if test "$USEZLIB" = "yes"; then
 else
 	AC_DEFINE([DISABLE_GZIP],1,[Define to 1 to disable gzip-support])
 fi
+
+
+dnl
+dnl Determine if CPU supports SIMD instructions
+dnl
+AC_MSG_CHECKING(whether to use SIMD-optimized routines)
+USE_SIMD=no
+case $host_cpu in
+	i?86|x86_64)
+		SSE2_CXXFLAGS="-msse2"
+		SSSE3_CXXFLAGS="-mssse3"
+		PCLMUL_CXXFLAGS="-msse4.1 -mpclmul"
+		USE_SIMD=yes
+		;;
+	arm)
+		NEON_CXXFLAGS="-mfpu=neon"
+		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		USE_SIMD=yes
+		;;
+	aarch64)
+		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		USE_SIMD=yes
+		;;
+esac
+AC_MSG_RESULT($USE_SIMD)
+AC_SUBST([SSE2_CXXFLAGS])
+AC_SUBST([SSSE3_CXXFLAGS])
+AC_SUBST([PCLMUL_CXXFLAGS])
+AC_SUBST([NEON_CXXFLAGS])
+AC_SUBST([ARMCRC_CXXFLAGS])
 
 
 dnl 
