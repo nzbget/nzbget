@@ -269,7 +269,10 @@ void NntpProcessor::SendSegment()
 {
 	detail("[%i] Sending segment %s (%i=%lli:%i)", m_id, *m_filename, m_part, (long long)m_offset, m_size);
 
-	m_start = Util::GetCurrentTicks();
+	if (m_speed > 0)
+	{
+		m_start = Util::GetCurrentTicks();
+	}
 
 	BString<1024> fullFilename("%s/%s", m_dataDir, *m_filename);
 	BString<1024> cacheFileDir("%s/%s", m_cacheDir, *m_filename);
@@ -277,11 +280,12 @@ void NntpProcessor::SendSegment()
 	BString<1024> cacheFullFilename("%s/%s", *cacheFileDir, *cacheFileName);
 	BString<1024> cacheKey("%s/%s", *m_filename, *cacheFileName);
 
-	CString cachedData;
+	CString cachedBuffer;
+	const char* cachedData = nullptr;
 	int cachedSize;
 	if (m_cache)
 	{
-		m_cache->Find(cacheKey, cachedData, cachedSize);
+		m_cache->Find(cacheKey, cachedData, cachedBuffer, cachedSize);
 	}
 
 	DiskFile cacheFile;
@@ -445,15 +449,20 @@ void NntpCache::Reserve(int64 required)
 	} */
 }
 
-bool NntpCache::Find(const char* key, CString& data, int& size)
+bool NntpCache::Find(const char* key, const char*& data, CString& buffer, int& size)
 {
 	Guard guard(m_lock);
 
 	CacheMap::iterator pos = m_items.find(key);
 	if (pos != m_items.end())
 	{
-		data = *(*pos).second->m_data;
+		data = (*pos).second->m_data;
 		size = (*pos).second->m_size;
+		if (m_limit > 0)
+		{
+			buffer = *(*pos).second->m_data;
+			data = buffer;
+		}
 		return true;
 	}
 

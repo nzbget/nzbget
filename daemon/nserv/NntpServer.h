@@ -30,7 +30,7 @@ class NntpCache
 public:
 	NntpCache(int64 limit) : m_limit(limit) {}
 	void Append(const char* key, const char* data, int len = 0);
-	bool Find(const char* key, CString& data, int& size);
+	bool Find(const char* key, const char*& data, CString& buffer, int& size);
 
 private:
 	class CacheItem

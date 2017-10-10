@@ -118,7 +118,7 @@ int NServMain(int argc, char* argv[])
 	{
 		instances.emplace_back(std::make_unique<NntpServer>(i + 1, opts.bindAddress,
 			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir,
-			opts.latency, opts.speed, opts.cacheSize ? &cache : nullptr));
+			opts.latency, opts.speed, opts.cacheSize > -1 ? &cache : nullptr));
 		instances.back()->Start();
 	}
 
@@ -175,7 +175,7 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 	segmentSize = 500000;
 	quit = false;
 	latency = 0;
-	cacheSize = 0;
+	cacheSize = -1;
 	speed = 0;
 	int verbosity = 2;
 
@@ -197,7 +197,7 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 				break;
 
 			case 'm':
-				cacheSize = atoi(optind > argc ? "0" : argv[optind - 1]);
+				cacheSize = atoi(optind > argc ? "-1" : argv[optind - 1]);
 				break;
 
 			case 'l':
