@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ void YEncoder::WriteSegment()
 	outbuf.Append(CString::FormatStr("=ybegin part=%i line=128 size=%lli name=%s\r\n", m_part, (long long)m_fileSize, FileSystem::BaseFileName(m_filename)));
 	outbuf.Append(CString::FormatStr("=ypart begin=%lli end=%lli\r\n", (long long)(m_offset + 1), (long long)(m_offset + m_size)));
 
-	uint32 crc = 0xFFFFFFFF;
+	Crc32 crc;
 	CharBuffer inbuf(std::min(m_size, 16 * 1024 * 1024));
 	int lnsz = 0;
 	char* out = (char*)outbuf + outbuf.Length();
@@ -82,7 +82,7 @@ void YEncoder::WriteSegment()
 			return; // error;
 		}
 
-		crc = Util::Crc32m(crc, (uchar*)(const char*)inbuf, (int)readBytes);
+		crc.Append((uchar*)(const char*)inbuf, (int)readBytes);
 
 		char* in = inbuf;
 		while (readBytes > 0)
@@ -122,10 +122,8 @@ void YEncoder::WriteSegment()
 			}
 		}
 	}
-	crc ^= 0xFFFFFFFF;
-
 	m_diskfile.Close();
 
-	outbuf.Append(CString::FormatStr("=yend size=%i part=0 pcrc32=%08x\r\n", m_size, (unsigned int)crc));
+	outbuf.Append(CString::FormatStr("=yend size=%i part=0 pcrc32=%08x\r\n", m_size, (unsigned int)crc.Finish()));
 	m_writeFunc(outbuf, outbuf.Length());
 }

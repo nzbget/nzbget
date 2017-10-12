@@ -469,7 +469,7 @@ void ArticleWriter::CompleteFileParts()
 
 			if (m_format == Decoder::efYenc)
 			{
-				crc = firstArticle ? pa->GetCrc() : Util::Crc32Combine(crc, pa->GetCrc(), pa->GetSegmentSize());
+				crc = firstArticle ? pa->GetCrc() : Crc32::Combine(crc, pa->GetCrc(), pa->GetSegmentSize());
 				firstArticle = false;
 			}
 		}

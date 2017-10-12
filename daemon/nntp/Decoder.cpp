@@ -24,21 +24,11 @@
 #include "Util.h"
 #include "YEncode.h"
 
-void Decoder::Init()
-{
-	YEncode::init();
-
-	debug("%s", YEncode::decode_simd ? "SIMD yEnc decoder can be used" : "SIMD yEnc decoder isn't available for this CPU");
-	debug("%s", YEncode::crc32_simd ? "SIMD Crc32 routine can be used" : "SIMD Crc32 routine isn't available for this CPU");
-	debug("%s", YEncode::inc_crc32_simd ? "SIMD Crc32 (incremental) routine can be used" : "SIMD Crc32 (incremental) routine isn't available for this CPU");
-
-	printf("%s\n", YEncode::decode_simd ? "SIMD yEnc decoder can be used" : "SIMD yEnc decoder isn't available for this CPU");
-	printf("%s\n", YEncode::crc32_simd ? "SIMD Crc32 routine can be used" : "SIMD Crc32 routine isn't available for this CPU");
-	printf("%s\n", YEncode::inc_crc32_simd ? "SIMD Crc32 (incremental) routine can be used" : "SIMD Crc32 (incremental) routine isn't available for this CPU");
-}
-
 Decoder::Decoder()
 {
+	debug("%s", YEncode::decode_simd ? "SIMD yEnc decoder can be used" : "SIMD yEnc decoder isn't available for this CPU");
+	debug("%s", YEncode::crc_simd ? "SIMD Crc routine can be used" : "SIMD Crc routine isn't available for this CPU");
+
 	Clear();
 }
 
@@ -52,7 +42,7 @@ void Decoder::Clear()
 	m_crc = false;
 	m_eof = false;
 	m_expectedCRC = 0;
-	m_calculatedCRC = 0xFFFFFFFF;
+	m_crc32.Reset();
 	m_beginPos = 0;
 	m_endPos = 0;
 	m_size = 0;
@@ -326,7 +316,7 @@ int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 
 	if (m_crcCheck)
 	{
-		m_calculatedCRC = Util::Crc32m(m_calculatedCRC, (uchar*)outbuf, (uint32)len);
+		m_crc32.Append((uchar*)outbuf, (uint32)len);
 	}
 
 	return len;
@@ -353,7 +343,7 @@ Decoder::EStatus Decoder::Check()
 
 Decoder::EStatus Decoder::CheckYenc()
 {
-	m_calculatedCRC ^= 0xFFFFFFFF;
+	m_calculatedCRC = m_crc32.Finish();
 
 	debug("Expected crc32=%x", m_expectedCRC);
 	debug("Calculated crc32=%x", m_calculatedCRC);

@@ -551,11 +551,11 @@ case $host_cpu in
 		;;
 	arm)
 		NEON_CXXFLAGS="-mfpu=neon"
-		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		ACLECRC_CXXFLAGS="-march=armv8-a+crc"
 		USE_SIMD=yes
 		;;
 	aarch64)
-		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		ACLECRC_CXXFLAGS="-march=armv8-a+crc"
 		USE_SIMD=yes
 		;;
 esac
@@ -564,7 +564,7 @@ AC_SUBST([SSE2_CXXFLAGS])
 AC_SUBST([SSSE3_CXXFLAGS])
 AC_SUBST([PCLMUL_CXXFLAGS])
 AC_SUBST([NEON_CXXFLAGS])
-AC_SUBST([ARMCRC_CXXFLAGS])
+AC_SUBST([ACLECRC_CXXFLAGS])
 
 
 dnl 

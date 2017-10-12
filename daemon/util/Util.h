@@ -86,10 +86,6 @@ public:
 
 	static void Init();
 
-	static uint32 Crc32(uchar *block, uint32 length);
-	static uint32 Crc32m(uint32 startCrc, uchar *block, uint32 length);
-	static uint32 Crc32Combine(uint32 crc1, uint32 crc2, uint32 len2);
-
 	/*
 	* Returns number of available CPU cores or -1 if it could not be determined
 	*/
@@ -315,6 +311,19 @@ private:
 	const char* m_separators;
 	char* m_savePtr = nullptr;
 	bool m_working = false;
+};
+
+class Crc32
+{
+public:
+	Crc32() { Reset(); }
+	void Reset();
+	void Append(uchar* block, uint32 length);
+	uint32 Finish();
+	static uint32 Combine(uint32 crc1, uint32 crc2, uint32 len2);
+
+private:
+	alignas(16) uint32_t m_state[4 * 5]; // = YEncode::crc_state
 };
 
 #endif

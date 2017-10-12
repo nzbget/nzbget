@@ -628,7 +628,7 @@ LTLIBOBJS
 LIBOBJS
 WITH_TESTS_FALSE
 WITH_TESTS_TRUE
-ARMCRC_CXXFLAGS
+ACLECRC_CXXFLAGS
 NEON_CXXFLAGS
 PCLMUL_CXXFLAGS
 SSSE3_CXXFLAGS
@@ -8348,11 +8348,11 @@ case $host_cpu in
 		;;
 	arm)
 		NEON_CXXFLAGS="-mfpu=neon"
-		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		ACLECRC_CXXFLAGS="-march=armv8-a+crc"
 		USE_SIMD=yes
 		;;
 	aarch64)
-		ARMCRC_CXXFLAGS="-march=armv8-a+crc"
+		ACLECRC_CXXFLAGS="-march=armv8-a+crc"
 		USE_SIMD=yes
 		;;
 esac

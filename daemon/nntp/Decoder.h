@@ -22,6 +22,7 @@
 #define DECODER_H
 
 #include "NString.h"
+#include "Util.h"
 
 class Decoder
 {
@@ -44,7 +45,6 @@ public:
 	};
 
 	Decoder();
-	static void Init();
 	EStatus Check();
 	void Clear();
 	int DecodeBuffer(char* buffer, int len);
@@ -79,6 +79,7 @@ private:
 	char m_extraChar;
 	char m_lastChar1;
 	char m_lastChar2;
+	Crc32 m_crc32;
 
 	EFormat DetectFormat(const char* buffer, int len);
 	void ProcessYenc(char* buffer, int len);

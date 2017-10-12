@@ -20,6 +20,8 @@
 
 #include "nzbget.h"
 
+#include "YEncode.h"
+
 #ifdef __ARM_FEATURE_CRC32
 #include <arm_acle.h>
 #endif
@@ -28,7 +30,14 @@ namespace YEncode
 {
 #ifdef __ARM_FEATURE_CRC32
 
-inline uint32_t crc_arm(uint32_t crc, const unsigned char *src, long len) {
+void crc_arm_init(crc_state *const s)
+{
+	s->crc0[0] = ~0;
+}
+
+void crc_arm(crc_state *const s, const unsigned char *src, long len) {
+	uint32_t crc = s->crc0[0];
+
 	// initial alignment
 	if (len >= 16) { // 16 is an arbitrary number; it just needs to be >=8
 		if ((uintptr_t)src & sizeof(uint8_t)) {
@@ -71,23 +80,25 @@ inline uint32_t crc_arm(uint32_t crc, const unsigned char *src, long len) {
 	if (len & sizeof(uint8_t))
 		crc = __crc32b(crc, *src);
 	
-	return crc;
+	s->crc0[0] = crc;
 }
 
-uint32_t do_crc32_arm(const unsigned char *src, long len)
+uint32_t crc_arm_finish(crc_state *const s)
 {
-	return ~crc_arm(~0, src, len);
+	return ~s->crc0[0];
 }
 
-extern uint32_t (*crc32_arm)(const unsigned char *src, long len);
-extern uint32_t (*inc_crc32_simd)(uint32_t crc, const unsigned char* src, long len);
+extern void (*crc_init_acle)(crc_state *const s);
+extern void (*crc_incr_acle)(crc_state *const s, const unsigned char *src, long len);
+extern uint32_t (*crc_finish_acle)(crc_state *const s);
 #endif
 
-void init_crc32_arm()
+void init_crc_acle()
 {
 #ifdef __ARM_FEATURE_CRC32
-	crc32_arm = &do_crc32_arm;
-	inc_crc32_simd = &crc_arm;
+	crc_init_acle = &crc_arm_init;
+	crc_incr_acle = &crc_arm;
+	crc_finish_acle = &crc_arm_finish;
 #endif
 }
 

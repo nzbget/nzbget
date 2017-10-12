@@ -32,17 +32,28 @@ namespace YEncode
 {
 
 size_t (*decode)(const unsigned char*, unsigned char*, size_t, char* state) = nullptr;
-size_t (*decode_simd)(const unsigned char*, unsigned char*, size_t, char* state) = nullptr;
-uint32_t (*crc32_simd)(const unsigned char* src, long len) = nullptr;
-uint32_t (*inc_crc32_simd)(uint32_t crc, const unsigned char* src, long len) = nullptr;
+bool decode_simd = false;
+
+void (*crc_init)(crc_state *const s) = nullptr;
+void (*crc_incr)(crc_state *const s, const unsigned char *src, long len) = nullptr;
+uint32_t (*crc_finish)(crc_state *const s) = nullptr;
+bool crc_simd = false;
+
+void crc_slice_init(crc_state *const s);
+void crc_slice(crc_state *const s, const unsigned char *src, long len);
+uint32_t crc_slice_finish(crc_state *const s);
 
 #if defined(__i686__) || defined(__amd64__)
 size_t (*decode_sse2)(const unsigned char* src, unsigned char* dest, size_t len, char* state) = nullptr;
 extern void init_decode_sse2();
+
 size_t (*decode_ssse3)(const unsigned char* src, unsigned char* dest, size_t len, char* state) = nullptr;
 extern void init_decode_ssse3();
-uint32_t (*crc32_pclmul)(const unsigned char *src, long len) = nullptr;
-extern void init_crc32_pclmul();
+
+void (*crc_init_pclmul)(crc_state *const s) = nullptr;
+void (*crc_incr_pclmul)(crc_state *const s, const unsigned char *src, long len) = nullptr;
+uint32_t (*crc_finish_pclmul)(crc_state *const s) = nullptr;
+extern void init_crc_pclmul();
 
 class CpuId
 {
@@ -66,13 +77,19 @@ public:
 #if defined(__arm__) || defined(__aarch64__)
 size_t (*decode_neon)(const unsigned char* src, unsigned char* dest, size_t len, char* state) = nullptr;
 extern void init_decode_neon();
-uint32_t (*crc32_arm)(const unsigned char *src, long len) = nullptr;
-extern void init_crc32_arm();
+
+void (*crc_init_acle)(crc_state *const s) = nullptr;
+void (*crc_incr_acle)(crc_state *const s, const unsigned char *src, long len) = nullptr;
+uint32_t (*crc_finish_acle)(crc_state *const s) = nullptr;
+extern void init_crc_acle();
 #endif
 
 void init()
 {
 	decode = &decode_scalar;
+	crc_init = &crc_slice_init;
+	crc_incr = &crc_slice;
+	crc_finish = &crc_slice_finish;
 
 #if defined(__i686__) || defined(__amd64__)
 	CpuId cpuid(1);
@@ -85,20 +102,31 @@ void init()
 	if (cpu_supports_sse2)
 	{
 		init_decode_sse2();
-		decode_simd = decode_sse2;
+		if (decode_sse2)
+		{
+			decode = decode_sse2;
+			decode_simd = true;
+		}
 	}
 	if (cpu_supports_ssse3)
 	{
 		init_decode_ssse3();
 		if (decode_ssse3)
 		{
-			decode_simd = decode_ssse3;
+			decode = decode_ssse3;
+			decode_simd = true;
 		}
 	}
 	if (cpu_supports_sse41 && cpu_supports_pclmul)
 	{
-		init_crc32_pclmul();
-		crc32_simd = crc32_pclmul;
+		init_crc_pclmul();
+		if (crc_init_pclmul && crc_incr_pclmul && crc_finish_pclmul)
+		{
+			crc_init = crc_init_pclmul;
+			crc_incr = crc_incr_pclmul;
+			crc_finish = crc_finish_pclmul;
+			crc_simd = true;
+		}
 	}
 #endif
 
@@ -123,19 +151,24 @@ void init()
 	if (cpu_supports_neon)
 	{
 		init_decode_neon();
-		decode_simd = decode_neon;
+		if (decode_neon)
+		{
+			decode = decode_neon;
+			decode_simd = true;
+		}
 	}
 	if (cpu_supports_crc)
 	{
-		init_crc32_arm();
-		crc32_simd = crc32_arm;
+		init_crc_acle();
+		if (crc_init_acle && crc_incr_acle && crc_finish_acle)
+		{
+			crc_init = crc_init_acle;
+			crc_incr = crc_incr_acle;
+			crc_finish = crc_finish_acle;
+			crc_simd = true;
+		}
 	}
 #endif
-
-	if (decode_simd)
-	{
-		decode = decode_simd;
-	}
 }
 
 }

@@ -58,8 +58,8 @@ nzbget_SOURCES = \
 	daemon/frontend/LoggableFrontend.h \
 	daemon/frontend/NCursesFrontend.cpp \
 	daemon/frontend/NCursesFrontend.h \
-    daemon/main/CommandLineParser.cpp \
-    daemon/main/CommandLineParser.h \
+	daemon/main/CommandLineParser.cpp \
+	daemon/main/CommandLineParser.h \
 	daemon/main/DiskService.cpp \
 	daemon/main/DiskService.h \
 	daemon/main/Maintenance.cpp \
@@ -223,13 +223,14 @@ nzbget_SOURCES += \
 	lib/yencode/Ssse3Decoder.cpp \
 	lib/yencode/PclmulCrc.cpp \
 	lib/yencode/NeonDecoder.cpp \
-	lib/yencode/ArmCrc.cpp
+	lib/yencode/AcleCrc.cpp \
+	lib/yencode/SliceCrc.cpp
 
 lib/yencode/Sse2Decoder.$(OBJEXT) : CXXFLAGS+=$(SSE2_CXXFLAGS)
 lib/yencode/Ssse3Decoder.$(OBJEXT) : CXXFLAGS+=$(SSSE3_CXXFLAGS)
 lib/yencode/PclmulCrc.$(OBJEXT) : CXXFLAGS+=$(PCLMUL_CXXFLAGS)
 lib/yencode/NeonDecoder.$(OBJEXT) : CXXFLAGS+=$(NEON_CXXFLAGS)
-lib/yencode/ArmCrc.$(OBJEXT) : CXXFLAGS+=$(ARMCRC_CXXFLAGS)
+lib/yencode/AcleCrc.$(OBJEXT) : CXXFLAGS+=$(ACLECRC_CXXFLAGS)
 
 AM_CPPFLAGS = \
 	-I$(srcdir)/daemon/connect \

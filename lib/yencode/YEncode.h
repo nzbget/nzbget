@@ -28,10 +28,22 @@ namespace YEncode
 
 void init();
 extern size_t (*decode)(const unsigned char* inbuf, unsigned char* outbuf, size_t, char* state);
-extern size_t (*decode_simd)(const unsigned char* inbuf, unsigned char* outbuf, size_t, char* state);
 size_t decode_scalar(const unsigned char* src, unsigned char* dest, size_t len, char* state);
-extern uint32_t (*crc32_simd)(const unsigned char* src, long len);
-extern uint32_t (*inc_crc32_simd)(uint32_t crc, const unsigned char* src, long len);
+extern bool decode_simd;
+
+struct crc_state
+{
+#if defined(__i686__) || defined(__amd64__)
+	alignas(16) uint32_t crc0[4 * 5];
+#else
+	uint32_t crc0[1];
+#endif
+};
+
+extern void (*crc_init)(crc_state *const s);
+extern void (*crc_incr)(crc_state *const s, const unsigned char *src, long len);
+extern uint32_t (*crc_finish)(crc_state *const s);
+extern bool crc_simd;
 
 }
 

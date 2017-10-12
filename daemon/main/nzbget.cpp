@@ -52,6 +52,7 @@
 #include "FileSystem.h"
 #include "StackTrace.h"
 #include "CommandScript.h"
+#include "YEncode.h"
 #ifdef WIN32
 #include "WinService.h"
 #include "WinConsole.h"
@@ -112,6 +113,7 @@ int main(int argc, char *argv[], char *argp[])
 #endif
 
 	Util::Init();
+	YEncode::init();
 
 	g_ArgumentCount = argc;
 	g_Arguments = (char*(*)[])argv;
@@ -262,7 +264,6 @@ void NZBGet::Init()
 #ifndef DISABLE_TLS
 		TlsSocket::Init();
 #endif
-		Decoder::Init();
 	}
 
 	CreateGlobals();

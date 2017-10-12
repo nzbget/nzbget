@@ -92,19 +92,18 @@ uint32 ParCheckerMock::CalcFileCrc(const char* filename)
 	REQUIRE(infile);
 
 	CharBuffer buffer(1024 * 64);
-	uint32 downloadCrc = 0xFFFFFFFF;
+	Crc32 downloadCrc;
 
 	int cnt = buffer.Size();
 	while (cnt == buffer.Size())
 	{
 		cnt = (int)fread(buffer, 1, buffer.Size(), infile);
-		downloadCrc = Util::Crc32m(downloadCrc, (uchar*)(char*)buffer, cnt);
+		downloadCrc.Append((uchar*)(char*)buffer, cnt);
 	}
 
 	fclose(infile);
 
-	downloadCrc ^= 0xFFFFFFFF;
-	return downloadCrc;
+	return downloadCrc.Finish();
 }
 
 TEST_CASE("Par-checker: repair not needed", "[Par][ParChecker][Slow][TestData]")

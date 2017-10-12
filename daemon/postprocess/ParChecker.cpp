@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1399,7 +1399,7 @@ bool ParChecker::VerifySuccessDataFile(void* diskfile, void* sourcefile, uint32 
 	{
 		const Par2::FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
 		Par2::u32 blockCrc = entry->crc;
-		parCrc = i == 0 ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (uint32)blocksize);
+		parCrc = i == 0 ? blockCrc : Crc32::Combine(parCrc, blockCrc, (uint32)blocksize);
 	}
 	debug("Block-CRC: %x, filename: %s", parCrc, FileSystem::BaseFileName(sourceFile->GetTargetFile()->FileName().c_str()));
 
@@ -1477,7 +1477,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 			}
 			const Par2::FILEVERIFICATIONENTRY* entry = packet->VerificationEntry(i);
 			Par2::u32 blockCrc = entry->crc;
-			parCrc = blockStart == i ? blockCrc : Util::Crc32Combine(parCrc, blockCrc, (uint32)blocksize);
+			parCrc = blockStart == i ? blockCrc : Crc32::Combine(parCrc, blockCrc, (uint32)blocksize);
 		}
 		else
 		{
@@ -1537,7 +1537,7 @@ bool ParChecker::SmartCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, S
 
 		if (segment.GetOffset() >= start && segment.GetOffset() + segment.GetSize() <= end)
 		{
-			downloadCrc = !started ? segment.GetCrc() : Util::Crc32Combine(downloadCrc, segment.GetCrc(), (uint32)segment.GetSize());
+			downloadCrc = !started ? segment.GetCrc() : Crc32::Combine(downloadCrc, segment.GetCrc(), (uint32)segment.GetSize());
 			started = true;
 		}
 
@@ -1555,7 +1555,7 @@ bool ParChecker::SmartCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, S
 				return false;
 			}
 
-			downloadCrc = Util::Crc32Combine(downloadCrc, (uint32)partialCrc, (uint32)(end - segment.GetOffset() + 1));
+			downloadCrc = Crc32::Combine(downloadCrc, (uint32)partialCrc, (uint32)(end - segment.GetOffset() + 1));
 
 			break;
 		}
@@ -1576,20 +1576,18 @@ bool ParChecker::DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, ui
 	}
 
 	CharBuffer buffer(1024 * 64);
-	uint32 downloadCrc = 0xFFFFFFFF;
+	Crc32 downloadCrc;
 
 	int cnt = buffer.Size();
 	while (cnt == buffer.Size() && start < end)
 	{
 		int needBytes = end - start + 1 > buffer.Size() ? buffer.Size() : (int)(end - start + 1);
 		cnt = (int)file.Read(buffer, needBytes);
-		downloadCrc = Util::Crc32m(downloadCrc, (uchar*)(char*)buffer, cnt);
+		downloadCrc.Append((uchar*)(char*)buffer, cnt);
 		start += cnt;
 	}
 
-	downloadCrc ^= 0xFFFFFFFF;
-
-	*downloadCrcOut = downloadCrc;
+	*downloadCrcOut = downloadCrc.Finish();
 	return true;
 }
 
