@@ -272,7 +272,7 @@ char* Decoder::FindStreamEnd(char* buffer, int len)
 		{
 			return end + 1;
 		}
-		llen -= (int)(end - line);
+		llen -= (int)(end - line) + 1;
 		line = end + 1;
 	}
 
