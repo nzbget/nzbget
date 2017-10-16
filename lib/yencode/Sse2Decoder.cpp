@@ -61,7 +61,7 @@ size_t do_decode_sse2(const unsigned char* src, unsigned char* dest, size_t len,
 		// find source memory alignment
 		unsigned char* aSrc = (unsigned char*)(((uintptr_t)src + (sizeof(__m128i)-1)) & ~(sizeof(__m128i)-1));
 		
-		i = aSrc - src;
+		i = (unsigned long)(aSrc - src);
 		p += decode_scalar(src, dest, i, pState);
 	}
 	
@@ -77,7 +77,7 @@ size_t do_decode_sse2(const unsigned char* src, unsigned char* dest, size_t len,
 		size_t dLen = len - (sizeof(__m128i)+1);
 		dLen = ((dLen-i) + 0xf) & ~0xf;
 		unsigned char* dSrc = (unsigned char*)src + dLen + i;
-		long dI = -dLen;
+		long dI = -(long)dLen;
 		i += dLen;
 		
 		for(; dI; dI += sizeof(__m128i)) {

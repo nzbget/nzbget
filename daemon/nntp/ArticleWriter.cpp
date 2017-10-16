@@ -245,7 +245,7 @@ bool ArticleWriter::CreateOutputFile(int64 size)
 
 	// ensure the directory exist
 	BString<1024> destDir;
-	destDir.Set(m_outputFilename, FileSystem::BaseFileName(m_outputFilename) - m_outputFilename);
+	destDir.Set(m_outputFilename, (int)(FileSystem::BaseFileName(m_outputFilename) - m_outputFilename));
 	CString errmsg;
 
 	if (!FileSystem::ForceDirectories(destDir, errmsg))
@@ -505,7 +505,7 @@ void ArticleWriter::CompleteFileParts()
 		{
 			debug("Checking old dir for: %s", *m_outputFilename);
 			BString<1024> oldDestDir;
-			oldDestDir.Set(m_outputFilename, FileSystem::BaseFileName(m_outputFilename) - m_outputFilename);
+			oldDestDir.Set(m_outputFilename, (int)(FileSystem::BaseFileName(m_outputFilename) - m_outputFilename));
 			if (FileSystem::DirEmpty(oldDestDir))
 			{
 				debug("Deleting old dir: %s", *oldDestDir);

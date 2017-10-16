@@ -82,7 +82,7 @@ int Decoder::DecodeBuffer(char* buffer, int len)
 	char* line = (char*)m_lineBuf;
 	while (char* end = strchr(line, '\n'))
 	{
-		int llen = end - line + 1;
+		int llen = (int)(end - line + 1);
 
 		if (line[0] == '.' && line[1] == '\r')
 		{
@@ -101,7 +101,7 @@ int Decoder::DecodeBuffer(char* buffer, int len)
 			ProcessYenc(line, llen);
 			if (m_body)
 			{
-				outlen = DecodeYenc(end + 1, buffer, m_lineBuf.Length() - (end + 1 - m_lineBuf));
+				outlen = DecodeYenc(end + 1, buffer, m_lineBuf.Length() - (int)(end + 1 - m_lineBuf));
 				if (m_body)
 				{
 					m_lineBuf.SetLength(0);
@@ -121,7 +121,7 @@ int Decoder::DecodeBuffer(char* buffer, int len)
 
 	if (*line)
 	{
-		len = m_lineBuf.Length() - (line - m_lineBuf);
+		len = m_lineBuf.Length() - (int)(line - m_lineBuf);
 		memmove((char*)m_lineBuf, line, len);
 		m_lineBuf.SetLength(len);
 	}
@@ -272,7 +272,7 @@ char* Decoder::FindStreamEnd(char* buffer, int len)
 		{
 			return end + 1;
 		}
-		llen -= end - line;
+		llen -= (int)(end - line);
 		line = end + 1;
 	}
 
@@ -292,7 +292,7 @@ int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 	char* end = FindStreamEnd(buffer, len);
 	if (end)
 	{
-		len = end - buffer;
+		len = (int)(end - buffer);
 	}
 
 #ifdef SKIP_ARTICLE_DECODING
@@ -310,7 +310,7 @@ int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 		{
 			m_lineBuf.Append(&m_extraChar, 1);
 		}
-		m_lineBuf.Append(end, inpLen - (end - buffer));
+		m_lineBuf.Append(end, inpLen - (int)(end - buffer));
 		m_body = false;
 	}
 

@@ -40,7 +40,7 @@ namespace YEncode
 size_t decode_scalar(const unsigned char* src, unsigned char* dest, size_t len, char* state) {
 	unsigned char *es = (unsigned char*)src + len; // end source pointer
 	unsigned char *p = dest; // destination pointer
-	long i = -len; // input position
+	long i = -(long)len; // input position
 	unsigned char c; // input character
 
 	if (len < 1) return 0;

@@ -305,8 +305,8 @@ bool RarRenamer::SameArchiveName(const char* filename1, const char* filename2, b
 			return false;
 		}
 		BString<1024> name1, name2;
-		name1.Set(filename1, ext1 - filename1);
-		name2.Set(filename2, ext2 - filename2);
+		name1.Set(filename1, (int)(ext1 - filename1));
+		name2.Set(filename2, (int)(ext2 - filename2));
 		ext1 = strrchr(name1, '.');
 		ext2 = strrchr(name2, '.');
 		return ext1 && ext2 && strlen(ext1) == strlen(ext2) &&
