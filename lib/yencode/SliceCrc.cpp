@@ -206,4 +206,11 @@ uint32_t crc_slice_finish(crc_state *const s)
 	return ~s->crc0[0];
 }
 
+void init_crc_slice()
+{
+	crc_init = &crc_slice_init;
+	crc_incr = &crc_slice;
+	crc_finish = &crc_slice_finish;
+}
+
 }

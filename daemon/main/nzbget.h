@@ -406,7 +406,4 @@ template<class T> typename _Unique_if<T>::_Unknown_bound make_unique(size_t n) {
 }
 #endif
 
-/* Define to 1 to disable article decoding (for internal test purposes only). */
-//#define SKIP_ARTICLE_DECODING
-
 #endif /* NZBGET_H */

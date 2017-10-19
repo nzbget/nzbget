@@ -58,11 +58,11 @@ public:
 	bool GetEof() { return m_eof; }
 	const char* GetArticleFilename() { return m_articleFilename; }
 
-private:
+private: 
 	EFormat m_format = efUnknown;
 	bool m_begin;
 	bool m_part;
-	bool m_body;
+	bool m_body; 
 	bool m_end;
 	bool m_crc;
 	uint32 m_expectedCRC;
@@ -76,15 +76,11 @@ private:
 	char m_state;
 	CString m_articleFilename;
 	StringBuilder m_lineBuf;
-	char m_extraChar;
-	char m_lastChar1;
-	char m_lastChar2;
 	Crc32 m_crc32;
 
 	EFormat DetectFormat(const char* buffer, int len);
 	void ProcessYenc(char* buffer, int len);
 	int DecodeYenc(char* buffer, char* outbuf, int len);
-	char* FindStreamEnd(char* buffer, int len);
 	EStatus CheckYenc();
 	int DecodeUx(char* buffer, int len);
 	EStatus CheckUx();

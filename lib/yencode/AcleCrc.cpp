@@ -87,18 +87,14 @@ uint32_t crc_arm_finish(crc_state *const s)
 {
 	return ~s->crc0[0];
 }
-
-extern void (*crc_init_acle)(crc_state *const s);
-extern void (*crc_incr_acle)(crc_state *const s, const unsigned char *src, long len);
-extern uint32_t (*crc_finish_acle)(crc_state *const s);
 #endif
 
 void init_crc_acle()
 {
 #ifdef __ARM_FEATURE_CRC32
-	crc_init_acle = &crc_arm_init;
-	crc_incr_acle = &crc_arm;
-	crc_finish_acle = &crc_arm_finish;
+	crc_init = &crc_arm_init;
+	crc_incr = &crc_arm;
+	crc_finish = &crc_arm_finish;
 #endif
 }
 

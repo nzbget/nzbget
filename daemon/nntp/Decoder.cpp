@@ -51,9 +51,6 @@ void Decoder::Clear()
 	m_crcCheck = false;
 	m_lineBuf.Reserve(1024*8);
 	m_lineBuf.SetLength(0);
-	m_extraChar = '\0';
-	m_lastChar1 = '\0';
-	m_lastChar2 = '\0';
 }
 
 /* At the beginning of article the processing goes line by line to find '=ybegin'-marker.
@@ -230,104 +227,37 @@ void Decoder::ProcessYenc(char* buffer, int len)
 	}
 }
 
-// find end of yEnc-data or article data
-char* Decoder::FindStreamEnd(char* buffer, int len)
-{
-	// 0: previous characters are '\r\n' OR there is no previous character
-	if (m_state == 0 && len > 1 &&
-		((buffer[0] == '=' && buffer[1] == 'y') ||
-		 (buffer[0] == '.' && buffer[1] == '\r')))
-	{
-		return buffer;
-	}
-	// 1: previous character is '='
-	if (m_state == 1 && buffer[0] == 'y')
-	{
-		m_extraChar = '=';
-		return buffer;
-	}
-	// 2: previous character is '\r'
-	if (m_state == 2 && len > 2 && buffer[0] == '\n' &&
-		((buffer[1] == '=' && buffer[2] == 'y') ||
-		 (buffer[1] == '.' && buffer[2] == '\r')))
-	{
-		return buffer + 1;
-	}
-
-	// previous characters are '\n.'
-	if (m_lastChar2 == '\n' && m_lastChar1 == '.' && buffer[0] == '\r')
-	{
-		m_extraChar = '.';
-		return buffer;
-	}
-
-	char* last = buffer + len - 1;
-	char* line = buffer;
-	int llen = len;
-	while (char* end = (char*)memchr(line, '\n', llen))
-	{
-		if (end + 2 <= last &&
-			((end[1] == '=' && end[2] == 'y') ||
-			 (end[1] == '.' && end[2] == '\r')))
-		{
-			return end + 1;
-		}
-		llen -= (int)(end - line) + 1;
-		line = end + 1;
-	}
-
-	// save last two characters for future use
-	m_lastChar1 = buffer[len - 1];
-	if (len > 1)
-	{
-		m_lastChar2 = buffer[len - 2];
-	}
-
-	return  nullptr;
-}
-
 int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 {
-	int inpLen = len;
-	char* end = FindStreamEnd(buffer, len);
-	if (end)
-	{
-		len = (int)(end - buffer);
-	}
+	const unsigned char* src = (unsigned char*)buffer;
+	unsigned char* dst = (unsigned char*)outbuf;
 
-#ifdef SKIP_ARTICLE_DECODING
-	m_state = m_lastChar2 == '\r' && m_lastChar1 == '\n' ? 0 :
-		m_lastChar1 == '=' ? 1 : m_lastChar1 == '\r' ? 2 : 3;
-#else
-	len = (int)YEncode::decode((const uchar*)buffer, (uchar*)outbuf, len, &m_state);
-#endif
+	int endseq = YEncode::decode(&src, &dst, len, (YEncode::YencDecoderState*)&m_state);
+	int outlen = (int)((char*)dst - outbuf);
 
-	if (end)
+	// endseq:
+	//   0: no end sequence found
+	//   1: \r\n=y sequence found, src points to byte after 'y'
+	//   2: \r\n.\r\n sequence found, src points to byte after last '\n'
+	if (endseq != 0)
 	{
 		// switch back to line mode to process '=yend'- or eof- marker
 		m_lineBuf.SetLength(0);
-		if (m_extraChar)
-		{
-			m_lineBuf.Append(&m_extraChar, 1);
-		}
-		m_lineBuf.Append(end, inpLen - (int)(end - buffer));
+		m_lineBuf.Append(endseq == 1 ? "=y" : ".\r\n");
+		m_lineBuf.Append((const char*)src, len - (int)((const char*)src - buffer));
 		m_body = false;
 	}
 
 	if (m_crcCheck)
 	{
-		m_crc32.Append((uchar*)outbuf, (uint32)len);
+		m_crc32.Append((uchar*)outbuf, (uint32)outlen);
 	}
 
-	return len;
+	return outlen;
 }
 
 Decoder::EStatus Decoder::Check()
 {
-#ifdef SKIP_ARTICLE_DECODING
-	return dsFinished;
-#endif
-
 	switch (m_format)
 	{
 		case efYenc:

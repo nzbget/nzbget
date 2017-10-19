@@ -27,8 +27,19 @@ namespace YEncode
 {
 
 void init();
-extern size_t (*decode)(const unsigned char* inbuf, unsigned char* outbuf, size_t, char* state);
-size_t decode_scalar(const unsigned char* src, unsigned char* dest, size_t len, char* state);
+
+typedef enum : char {
+	YDEC_STATE_CRLF, // default
+	YDEC_STATE_EQ,
+	YDEC_STATE_CR,
+	YDEC_STATE_NONE,
+	YDEC_STATE_CRLFDT,
+	YDEC_STATE_CRLFDTCR,
+	YDEC_STATE_CRLFEQ // may actually be "\r\n.=" in raw decoder
+} YencDecoderState;
+
+extern int (*decode)(const unsigned char** src, unsigned char** dest, size_t len, YencDecoderState* state);
+extern int decode_scalar(const unsigned char** src, unsigned char** dest, size_t len, YencDecoderState* state);
 extern bool decode_simd;
 
 struct crc_state

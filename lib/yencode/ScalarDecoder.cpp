@@ -22,8 +22,7 @@
 
 #include "nzbget.h"
 
-namespace YEncode
-{
+#include "YEncode.h"
 
 // combine two 8-bit ints into a 16-bit one
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -32,55 +31,135 @@ namespace YEncode
 #define UINT16_PACK(a, b) (((a) << 8) | (b))
 #endif
 
-// state var: refers to the previous state - only used for incremental processing
-//   0: previous characters are `\r\n` OR there is no previous character
-//   1: previous character is `=`
-//   2: previous character is `\r`
-//   3: previous character is none of the above
-size_t decode_scalar(const unsigned char* src, unsigned char* dest, size_t len, char* state) {
-	unsigned char *es = (unsigned char*)src + len; // end source pointer
-	unsigned char *p = dest; // destination pointer
+namespace YEncode
+{
+
+// return values:
+// - 0: no end sequence found
+// - 1: \r\n=y sequence found, src points to byte after 'y'
+// - 2: \r\n.\r\n sequence found, src points to byte after last '\n'
+int decode_scalar(const unsigned char** src, unsigned char** dest, size_t len, YencDecoderState* state) {
+	const unsigned char *es = (*src) + len; // end source pointer
+	unsigned char *p = *dest; // destination pointer
 	long i = -(long)len; // input position
 	unsigned char c; // input character
-
-	if (len < 1) return 0;
-
-	if (state) switch (*state) {
-		case 1:
+	
+	if(len < 1) return 0;
+	
+#define YDEC_CHECK_END(s) if(i == 0) { \
+	*state = s; \
+	*src = es; \
+	*dest = p; \
+	return 0; \
+}
+	if(state) switch(*state) {
+		case YDEC_STATE_CRLFEQ: do_decode_endable_scalar_ceq:
+			if(es[i] == 'y') {
+				*state = YDEC_STATE_NONE;
+				*src = es+i+1;
+				*dest = p;
+				return 1;
+			} // else fall thru and escape
+		case YDEC_STATE_EQ:
 			c = es[i];
 			*p++ = c - 42 - 64;
 			i++;
-			if (c == '\r' && i < 0) {
-				*state = 2;
-				// fall through to case 2
-			}
-			else {
-				*state = 3;
-				break;
-			}
-		case 2:
-			if (es[i] != '\n') break;
+			if(c != '\r') break;
+			YDEC_CHECK_END(YDEC_STATE_CR)
+			// fall through
+		case YDEC_STATE_CR:
+			if(es[i] != '\n') break;
 			i++;
-			*state = 0; // now `\r\n`
-			if (i >= 0) return 0;
-		case 0:
-			// skip past first dot
-			if (es[i] == '.') i++;
-	}
-	else // treat as *state == 0
-		if (es[i] == '.') i++;
-
-	for (; i < -2; i++) {
+			YDEC_CHECK_END(YDEC_STATE_CRLF)
+		case YDEC_STATE_CRLF: do_decode_endable_scalar_c0:
+			if(es[i] == '.') {
+				i++;
+				YDEC_CHECK_END(YDEC_STATE_CRLFDT)
+				// fallthru
+			} else if(es[i] == '=') {
+				i++;
+				YDEC_CHECK_END(YDEC_STATE_CRLFEQ)
+				goto do_decode_endable_scalar_ceq;
+			} else
+				break;
+		case YDEC_STATE_CRLFDT:
+			if(es[i] == '\r') {
+				i++;
+				YDEC_CHECK_END(YDEC_STATE_CRLFDTCR)
+				// fallthru
+			} else if(es[i] == '=') { // check for dot-stuffed ending: \r\n.=y
+				i++;
+				YDEC_CHECK_END(YDEC_STATE_CRLFEQ)
+				goto do_decode_endable_scalar_ceq;
+			} else
+				break;
+		case YDEC_STATE_CRLFDTCR:
+			if(es[i] == '\n') {
+				*state = YDEC_STATE_CRLF;
+				*src = es + i + 1;
+				*dest = p;
+				return 2;
+			} else
+				break;
+		case YDEC_STATE_NONE: break; // silence compiler warning
+	} else // treat as YDEC_STATE_CRLF
+		goto do_decode_endable_scalar_c0;
+	
+	for(; i < -2; i++) {
 		c = es[i];
-		switch (c) {
-			case '\r':
-				// skip past \r\n. sequences
-				if (*(uint16_t*)(es + i + 1) == UINT16_PACK('\n', '.'))
-					i += 2;
-			case '\n':
+		switch(c) {
+			case '\r': {
+				uint16_t next = *(uint16_t*)(es + i + 1);
+				if(next == UINT16_PACK('\n', '.')) {
+					// skip past \r\n. sequences
+					i += 3;
+					YDEC_CHECK_END(YDEC_STATE_CRLFDT)
+					// check for end
+					if(es[i] == '\r') {
+						i++;
+						YDEC_CHECK_END(YDEC_STATE_CRLFDTCR)
+						if(es[i] == '\n') {
+							*src = es + i + 1;
+							*dest = p;
+							*state = YDEC_STATE_CRLF;
+							return 2;
+						} else i--;
+					} else if(es[i] == '=') {
+						i++;
+						YDEC_CHECK_END(YDEC_STATE_CRLFEQ)
+						if(es[i] == 'y') {
+							*src = es + i + 1;
+							*dest = p;
+							*state = YDEC_STATE_NONE;
+							return 1;
+						} else {
+							// escape char & continue
+							c = es[i];
+							*p++ = c - 42 - 64;
+							i -= (c == '\r');
+						}
+					} else i--;
+				}
+				else if(next == UINT16_PACK('\n', '=')) {
+					i += 3;
+					YDEC_CHECK_END(YDEC_STATE_CRLFEQ)
+					if(es[i] == 'y') {
+						// ended
+						*src = es + i + 1;
+						*dest = p;
+						*state = YDEC_STATE_NONE;
+						return 1;
+					} else {
+						// escape char & continue
+						c = es[i];
+						*p++ = c - 42 - 64;
+						i -= (c == '\r');
+					}
+				}
+			} case '\n':
 				continue;
 			case '=':
-				c = es[i + 1];
+				c = es[i+1];
 				*p++ = c - 42 - 64;
 				i += (c != '\r'); // if we have a \r, reprocess character to deal with \r\n. case
 				continue;
@@ -88,20 +167,22 @@ size_t decode_scalar(const unsigned char* src, unsigned char* dest, size_t len, 
 				*p++ = c - 42;
 		}
 	}
-	if (state) *state = 3;
-
-	if (i == -2) { // 2nd last char
+	if(state) *state = YDEC_STATE_NONE;
+	
+	if(i == -2) { // 2nd last char
 		c = es[i];
-		switch (c) {
+		switch(c) {
 			case '\r':
-				if (state && es[i + 1] == '\n') {
-					*state = 0;
-					return p - dest;
+				if(state && es[i+1] == '\n') {
+					*state = YDEC_STATE_CRLF;
+					*src = es;
+					*dest = p;
+					return 0;
 				}
 			case '\n':
 				break;
 			case '=':
-				c = es[i + 1];
+				c = es[i+1];
 				*p++ = c - 42 - 64;
 				i += (c != '\r');
 				break;
@@ -110,21 +191,27 @@ size_t decode_scalar(const unsigned char* src, unsigned char* dest, size_t len, 
 		}
 		i++;
 	}
-
+	
 	// do final char; we process this separately to prevent an overflow if the final char is '='
-	if (i == -1) {
+	if(i == -1) {
 		c = es[i];
-		if (c != '\n' && c != '\r' && c != '=') {
+		if(c != '\n' && c != '\r' && c != '=') {
 			*p++ = c - 42;
-		}
-		else if (state) {
-			if (c == '=') *state = 1;
-			else if (c == '\r') *state = 2;
-			else *state = 3;
+		} else if(state) {
+			if(c == '=') *state = YDEC_STATE_EQ;
+			else if(c == '\r') *state = YDEC_STATE_CR;
+			else *state = YDEC_STATE_NONE;
 		}
 	}
+#undef YDEC_CHECK_END
+	
+	*src = es;
+	*dest = p;
+	return 0;
+}
 
-	return p - dest;
+void init_decode_scalar() {
+	decode = decode_scalar;
 }
 
 }

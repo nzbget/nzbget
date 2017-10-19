@@ -280,6 +280,7 @@
     <ClCompile Include="lib\yencode\ScalarDecoder.cpp" />
     <ClCompile Include="lib\yencode\Sse2Decoder.cpp" />
     <ClCompile Include="lib\yencode\Ssse3Decoder.cpp" />
+    <ClCompile Include="lib\yencode\SliceCrc.cpp" />
     <ClCompile Include="lib\yencode\PclmulCrc.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -382,6 +383,7 @@
     <ClInclude Include="lib\par2\verificationhashtable.h" />
     <ClInclude Include="lib\par2\verificationpacket.h" />
     <ClInclude Include="lib\yencode\YEncode.h" />
+    <ClInclude Include="lib\yencode\SimdDecoder.cpp" />
     <ClInclude Include="windows\resources\resource.h" />
   </ItemGroup>
   <ItemGroup>

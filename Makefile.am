@@ -218,6 +218,7 @@ endif
 nzbget_SOURCES += \
 	lib/yencode/YEncode.h \
 	lib/yencode/SimdInit.cpp \
+	lib/yencode/SimdDecoder.cpp \
 	lib/yencode/ScalarDecoder.cpp \
 	lib/yencode/Sse2Decoder.cpp \
 	lib/yencode/Ssse3Decoder.cpp \

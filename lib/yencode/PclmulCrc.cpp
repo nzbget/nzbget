@@ -37,6 +37,8 @@
 
 #include "nzbget.h"
 
+#include "YEncode.h"
+
 #ifdef __PCLMUL__
 #include <immintrin.h>
 #endif
@@ -44,11 +46,6 @@
 namespace YEncode
 {
 #ifdef __PCLMUL__
-
-struct crc_state
-{
-	alignas(16) unsigned crc0[4 * 5];
-};
 
 void fold_1(__m128i *xmm_crc0, __m128i *xmm_crc1, __m128i *xmm_crc2, __m128i *xmm_crc3) {
 	const __m128i xmm_fold4 = _mm_set_epi32(
@@ -459,18 +456,15 @@ uint32_t crc_fold_512to32(crc_state *const s) {
     return ~crc;
     CRC_SAVE(s)
 }
-
-extern void (*crc_init_pclmul)(crc_state *const s);
-extern void (*crc_incr_pclmul)(crc_state *const s, const unsigned char *src, long len);
-extern uint32_t (*crc_finish_pclmul)(crc_state *const s);
 #endif
 
 void init_crc_pclmul()
 {
 #ifdef __PCLMUL__
-	crc_init_pclmul = &crc_fold_init;
-	crc_incr_pclmul = &crc_fold;
-	crc_finish_pclmul = &crc_fold_512to32;
+	crc_init = &crc_fold_init;
+	crc_incr = &crc_fold;
+	crc_finish = &crc_fold_512to32;
+	crc_simd = true;
 #endif
 }
 
