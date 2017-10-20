@@ -22,12 +22,6 @@
 
 #ifdef SIMD_DECODER
 
-#ifdef WIN32
-#define FORCE_INLINE __forceinline
-#else
-#define FORCE_INLINE __attribute__((always_inline)) inline
-#endif
-
 // combine two 8-bit ints into a 16-bit one
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define UINT16_PACK(a, b) ((a) | ((b) << 8))
@@ -49,7 +43,7 @@ static const unsigned char BitsSetTable256[256] =
 #undef B6
 };
 
-template<int width, typename Kernel>
+template<int width, void kernel(size_t&, const uint8_t*, unsigned char*&, unsigned char&, uint16_t&)>
 int do_decode_simd(const unsigned char** src, unsigned char** dest, size_t len, YencDecoderState* state) {
 	if(len <= width*2) return decode_scalar(src, dest, len, state);
 	
@@ -148,7 +142,7 @@ int do_decode_simd(const unsigned char** src, unsigned char** dest, size_t len, 
 		dLen = (dLen + (width-1)) & ~(width-1);
 		const uint8_t* dSrc = (const uint8_t*)(*src) + dLen;
 
-		Kernel::do_decode(dLen, dSrc, p, escFirst, nextMask);
+		kernel(dLen, dSrc, p, escFirst, nextMask);
 
 		if(escFirst) *pState = YDEC_STATE_EQ; // escape next character
 		else if(nextMask == 1) *pState = YDEC_STATE_CRLF; // next character is '.', where previous two were \r\n
@@ -205,9 +199,7 @@ alignas(32) __m64 unshufLUT[256];
 #endif
 
 template<bool use_ssse3>
-struct do_decode_sse {
-FORCE_INLINE
-static void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
+static inline void do_decode_sse(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
 	long dI = -(long)dLen;
 
 	for(; dI; dI += sizeof(__m128i)) {
@@ -423,7 +415,6 @@ static void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsi
 		}
 	}
 }
-};
 #endif
 
 
@@ -444,9 +435,7 @@ uint8_t eqFixLUT[256];
 alignas(32) uint8x8_t eqAddLUT[256];
 alignas(32) uint8x8_t unshufLUT[256];
 
-struct do_decode_neon {
-FORCE_INLINE
-static void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
+static inline void do_decode_neon(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
 	long dI = -(long)dLen;
 
 	for(; dI; dI += sizeof(uint8x16_t)) {
@@ -593,7 +582,6 @@ static void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsi
 		}
 	}
 }
-};
 #endif
 
 void decoder_init() {
