@@ -88,7 +88,7 @@ int Decoder::DecodeBuffer(char* buffer, int len)
 			return outlen;
 		}
 
-		if (m_format == efUnknown)
+		if (m_format == efUnknown && !m_rawMode)
 		{
 			m_format = DetectFormat(line, llen);
 		}
@@ -112,11 +112,15 @@ int Decoder::DecodeBuffer(char* buffer, int len)
 		{
 			outlen += DecodeUx(line, llen);
 		}
+		else if (m_rawMode)
+		{
+			outlen += llen;
+		}
 
 		line = end + 1;
 	}
 
-	if (*line)
+	if (*line && !m_rawMode)
 	{
 		len = m_lineBuf.Length() - (int)(line - m_lineBuf);
 		memmove((char*)m_lineBuf, line, len);

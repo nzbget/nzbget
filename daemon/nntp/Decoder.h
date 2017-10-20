@@ -49,6 +49,7 @@ public:
 	void Clear();
 	int DecodeBuffer(char* buffer, int len);
 	void SetCrcCheck(bool crcCheck) { m_crcCheck = crcCheck; }
+	void SetRawMode(bool rawMode) { m_rawMode = rawMode; }
 	EFormat GetFormat() { return m_format; }
 	int64 GetBeginPos() { return m_beginPos; }
 	int64 GetEndPos() { return m_endPos; }
@@ -74,6 +75,7 @@ private:
 	bool m_eof;
 	bool m_crcCheck;
 	char m_state;
+	bool m_rawMode = false;
 	CString m_articleFilename;
 	StringBuilder m_lineBuf;
 	Crc32 m_crc32;

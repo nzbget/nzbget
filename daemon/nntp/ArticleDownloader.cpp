@@ -329,11 +329,9 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		return status;
 	}
 
-	if (!g_Options->GetRawArticle())
-	{
-		m_decoder.Clear();
-		m_decoder.SetCrcCheck(g_Options->GetCrcCheck());
-	}
+	m_decoder.Clear();
+	m_decoder.SetCrcCheck(g_Options->GetCrcCheck());
+	m_decoder.SetRawMode(g_Options->GetRawArticle());
 
 	status = adRunning;
 	CharBuffer lineBuf(1024*4);
@@ -376,8 +374,6 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		{
 			AddServerData();
 		}
-
-		// TODO: add support for RawArticle-mode (g_Options->GetRawArticle())
 
 		// decode article data
 		len = m_decoder.DecodeBuffer(buffer, len);
