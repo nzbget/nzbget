@@ -25,7 +25,7 @@
 #ifdef WIN32
 #define FORCE_INLINE __forceinline
 #else
-#define FORCE_INLINE __attribute__((always_inline))
+#define FORCE_INLINE __attribute__((always_inline)) inline
 #endif
 
 // combine two 8-bit ints into a 16-bit one
@@ -207,7 +207,7 @@ alignas(32) __m64 unshufLUT[256];
 template<bool use_ssse3>
 struct do_decode_sse {
 FORCE_INLINE
-static inline void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
+static void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
 	long dI = -(long)dLen;
 
 	for(; dI; dI += sizeof(__m128i)) {
@@ -446,7 +446,7 @@ alignas(32) uint8x8_t unshufLUT[256];
 
 struct do_decode_neon {
 FORCE_INLINE
-static inline void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
+static void do_decode(size_t& dLen, const uint8_t* dSrc, unsigned char*& p, unsigned char& escFirst, uint16_t& nextMask) {
 	long dI = -(long)dLen;
 
 	for(; dI; dI += sizeof(uint8x16_t)) {

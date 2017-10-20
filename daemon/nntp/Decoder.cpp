@@ -244,7 +244,11 @@ int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 		// switch back to line mode to process '=yend'- or eof- marker
 		m_lineBuf.SetLength(0);
 		m_lineBuf.Append(endseq == 1 ? "=y" : ".\r\n");
-		m_lineBuf.Append((const char*)src, len - (int)((const char*)src - buffer));
+		int rem = len - (int)((const char*)src - buffer);
+		if (rem > 0)
+		{
+			m_lineBuf.Append((const char*)src, rem);
+		}
 		m_body = false;
 	}
 
