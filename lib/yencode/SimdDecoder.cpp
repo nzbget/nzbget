@@ -537,7 +537,7 @@ static inline void do_decode_neon(size_t& dLen, const uint8_t* dSrc, unsigned ch
 				);
 			}
 #ifdef __aarch64__
-			if(vget_lane_u64(vqmovn_u64(vreinterpretq_u64_u8(cmpB1)), 0))
+			if(vget_lane_u64(vreinterpret_u64_u32(vqmovn_u64(vreinterpretq_u64_u8(cmpB1))), 0))
 #else
 			uint32x4_t tmp1 = vreinterpretq_u32_u8(cmpB1);
 			uint32x2_t tmp2 = vorr_u32(vget_low_u32(tmp1), vget_high_u32(tmp1));
