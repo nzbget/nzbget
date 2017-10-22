@@ -595,6 +595,10 @@ bool NzbFile::ParseNzb(IUnknown* nzb)
 
 bool NzbFile::Parse()
 {
+#ifdef DISABLE_LIBXML2
+	error("Could not parse rss feed, program was compiled without libxml2 support");
+	return false;
+#else
 	xmlSAXHandler SAX_handler = {0};
 	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
 	SAX_handler.endElement = reinterpret_cast<endElementSAXFunc>(SAX_EndElement);
@@ -623,6 +627,7 @@ bool NzbFile::Parse()
 	ProcessFiles();
 
 	return true;
+#endif
 }
 
 void NzbFile::Parse_StartElement(const char *name, const char **atts)
@@ -805,7 +810,11 @@ void NzbFile::SAX_characters(NzbFile* file, const char * xmlstr, int len)
 
 void* NzbFile::SAX_getEntity(NzbFile* file, const char * name)
 {
+#ifdef DISABLE_LIBXML2
+	void* e = nullptr;
+#else
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
+#endif
 	if (!e)
 	{
 		file->m_nzbInfo->AddMessage(Message::mkWarning, "entity not found");

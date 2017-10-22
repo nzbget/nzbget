@@ -761,6 +761,7 @@ enable_maintainer_mode
 enable_dependency_tracking
 enable_cpp_check
 enable_largefile
+enable_libxml2
 with_libxml2_includes
 with_libxml2_libraries
 enable_curses
@@ -1437,6 +1438,8 @@ Optional Features:
                           speeds up one-time build
   --disable-cpp-check     disable check for C++14 compiler features
   --disable-largefile     omit support for large files
+  --disable-libxml2       do not use libxml2 (removes dependency from
+                          libxml2-library, only for development purposes)
   --disable-curses        do not use curses (removes dependency from
                           curses-library)
   --disable-parcheck      do not include par-check/-repair-support
@@ -6622,11 +6625,23 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use libxml2" >&5
+$as_echo_n "checking whether to use libxml2... " >&6; }
+# Check whether --enable-libxml2 was given.
+if test "${enable_libxml2+set}" = set; then :
+  enableval=$enable_libxml2; USELIBXML2=$enableval
+else
+  USELIBXML2=yes
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $USELIBXML2" >&5
+$as_echo "$USELIBXML2" >&6; }
+if test "$USELIBXML2" = "yes"; then
 
 # Check whether --with-libxml2_includes was given.
 if test "${with_libxml2_includes+set}" = set; then :
   withval=$with_libxml2_includes; CPPFLAGS="${CPPFLAGS} -I${withval}"
-	INCVAL="yes"
+		INCVAL="yes"
 else
   INCVAL="no"
 fi
@@ -6635,12 +6650,12 @@ fi
 # Check whether --with-libxml2_libraries was given.
 if test "${with_libxml2_libraries+set}" = set; then :
   withval=$with_libxml2_libraries; LDFLAGS="${LDFLAGS} -L${withval}"
-	LIBVAL="yes"
+		LIBVAL="yes"
 else
   LIBVAL="no"
 fi
 
-if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
 
 
 
@@ -6831,10 +6846,10 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	LIBS="${LIBS} $libxml2_LIBS"
-		CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"
+			CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"
 fi
-fi
-ac_fn_cxx_check_header_mongrel "$LINENO" "libxml/tree.h" "ac_cv_header_libxml_tree_h" "$ac_includes_default"
+	fi
+	ac_fn_cxx_check_header_mongrel "$LINENO" "libxml/tree.h" "ac_cv_header_libxml_tree_h" "$ac_includes_default"
 if test "x$ac_cv_header_libxml_tree_h" = xyes; then :
 
 else
@@ -6842,7 +6857,7 @@ else
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing xmlNewNode" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing xmlNewNode" >&5
 $as_echo_n "checking for library containing xmlNewNode... " >&6; }
 if ${ac_cv_search_xmlNewNode+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6900,6 +6915,11 @@ else
   as_fn_error $? "\"libxml2 library not found\"" "$LINENO" 5
 fi
 
+else
+
+$as_echo "#define DISABLE_LIBXML2 1" >>confdefs.h
+
+fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use curses" >&5

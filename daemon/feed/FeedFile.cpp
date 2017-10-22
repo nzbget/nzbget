@@ -360,6 +360,10 @@ bool FeedFile::ParseFeed(IUnknown* nzb)
 
 bool FeedFile::Parse()
 {
+#ifdef DISABLE_LIBXML2
+	error("Could not parse rss feed, program was compiled without libxml2 support");
+	return false;
+#else
 	xmlSAXHandler SAX_handler = {0};
 	SAX_handler.startElement = reinterpret_cast<startElementSAXFunc>(SAX_StartElement);
 	SAX_handler.endElement = reinterpret_cast<endElementSAXFunc>(SAX_EndElement);
@@ -378,6 +382,7 @@ bool FeedFile::Parse()
 	}
 
 	return true;
+#endif
 }
 
 void FeedFile::Parse_StartElement(const char *name, const char **atts)
@@ -566,7 +571,11 @@ void FeedFile::SAX_characters(FeedFile* file, const char * xmlstr, int len)
 
 void* FeedFile::SAX_getEntity(FeedFile* file, const char * name)
 {
+#ifdef DISABLE_LIBXML2
+	void* e = nullptr;
+#else
 	xmlEntityPtr e = xmlGetPredefinedEntity((xmlChar* )name);
+#endif
 	if (!e)
 	{
 		warn("entity not found");

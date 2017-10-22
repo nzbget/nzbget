@@ -237,26 +237,36 @@ AC_TRY_COMPILE(
 dnl 
 dnl checks for libxml2 includes and libraries.
 dnl
-AC_ARG_WITH(libxml2_includes,
-	[AS_HELP_STRING([--with-libxml2-includes=DIR], [libxml2 include directory])],
-	[CPPFLAGS="${CPPFLAGS} -I${withval}"]
-	[INCVAL="yes"],
-	[INCVAL="no"])
-AC_ARG_WITH(libxml2_libraries,
-	[AS_HELP_STRING([--with-libxml2-libraries=DIR], [libxml2 library directory])],
-	[LDFLAGS="${LDFLAGS} -L${withval}"]
-	[LIBVAL="yes"],
-	[LIBVAL="no"])
-if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
-	PKG_CHECK_MODULES(libxml2, libxml-2.0,
-		[LIBS="${LIBS} $libxml2_LIBS"]
-		[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"],
+AC_MSG_CHECKING(whether to use libxml2)
+AC_ARG_ENABLE(libxml2,
+	[AS_HELP_STRING([--disable-libxml2], [do not use libxml2 (removes dependency from libxml2-library, only for development purposes)])],
+	[USELIBXML2=$enableval],
+	[USELIBXML2=yes] )
+AC_MSG_RESULT($USELIBXML2)
+if test "$USELIBXML2" = "yes"; then
+	AC_ARG_WITH(libxml2_includes,
+		[AS_HELP_STRING([--with-libxml2-includes=DIR], [libxml2 include directory])],
+		[CPPFLAGS="${CPPFLAGS} -I${withval}"]
+		[INCVAL="yes"],
+		[INCVAL="no"])
+	AC_ARG_WITH(libxml2_libraries,
+		[AS_HELP_STRING([--with-libxml2-libraries=DIR], [libxml2 library directory])],
+		[LDFLAGS="${LDFLAGS} -L${withval}"]
+		[LIBVAL="yes"],
+		[LIBVAL="no"])
+	if test "$INCVAL" = "no" -o "$LIBVAL" = "no"; then
+		PKG_CHECK_MODULES(libxml2, libxml-2.0,
+			[LIBS="${LIBS} $libxml2_LIBS"]
+			[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"],
+			AC_MSG_ERROR("libxml2 library not found"))
+	fi
+	AC_CHECK_HEADER(libxml/tree.h,,
+		AC_MSG_ERROR("libxml2 header files not found"))
+	AC_SEARCH_LIBS([xmlNewNode], [xml2], ,
 		AC_MSG_ERROR("libxml2 library not found"))
+else
+	AC_DEFINE([DISABLE_LIBXML2],1,[Define to 1 to not use libxml2, only for development purposes])
 fi
-AC_CHECK_HEADER(libxml/tree.h,,
-	AC_MSG_ERROR("libxml2 header files not found"))
-AC_SEARCH_LIBS([xmlNewNode], [xml2], ,
-	AC_MSG_ERROR("libxml2 library not found"))
 
 
 dnl

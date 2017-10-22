@@ -13,6 +13,9 @@
 /* Define to 1 to disable gzip-support */
 #undef DISABLE_GZIP
 
+/* Define to 1 to not use libxml2, only for development purposes */
+#undef DISABLE_LIBXML2
+
 /* Define to 1 to disable par-verification and repair */
 #undef DISABLE_PARCHECK
 

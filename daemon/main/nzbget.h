@@ -175,10 +175,12 @@ using namespace MSXML;
 #include <pwd.h>
 #include <dirent.h>
 
+#ifndef DISABLE_LIBXML2
 #include <libxml/parser.h>
 #include <libxml/xmlreader.h>
 #include <libxml/xmlerror.h>
 #include <libxml/entities.h>
+#endif
 
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
