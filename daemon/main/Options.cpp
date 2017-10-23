@@ -420,7 +420,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_QUEUEDIR, "${MainDir}/queue");
 	SetOption(OPTION_NZBDIR, "${MainDir}/nzb");
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
-	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
+	SetOption(OPTION_LOGFILE, "${MainDir}/nzbget.log");
 	SetOption(OPTION_SCRIPTDIR, "${MainDir}/scripts");
 	SetOption(OPTION_REQUIREDDIR, "");
 	SetOption(OPTION_WRITELOG, "append");
