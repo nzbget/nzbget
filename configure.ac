@@ -559,7 +559,7 @@ case $host_cpu in
 		PCLMUL_CXXFLAGS="-msse4.1 -mpclmul"
 		USE_SIMD=yes
 		;;
-	arm)
+	arm*)
 		NEON_CXXFLAGS="-mfpu=neon"
 		ACLECRC_CXXFLAGS="-march=armv8-a+crc"
 		USE_SIMD=yes
