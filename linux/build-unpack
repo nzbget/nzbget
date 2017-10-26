@@ -121,7 +121,7 @@ for TARGET in $TARGETS; do
     fi
 
     case $TARGET in
-        mipsel|i?86|x86_64)
+        mipsel|i?86|x86_64|aarch64)
             ARCH=$TARGET
             ENDIAN=little
             ;;
@@ -201,6 +201,7 @@ for TARGET in $TARGETS; do
             STRIP=$TOOLPATH/$ARCH-$TOOLNAME-strip \
             CXXFLAGS=-O2 \
             LDFLAGS=-static \
+            LIBS=-lpthread \
             make -j $COREX $BUILDTARGET
     fi
 

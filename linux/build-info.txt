@@ -31,14 +31,14 @@ Building toolchains
     setup     - for extra files required for installer;
 
 4. Build buildroot-toolchain for one CPU-architecture (see below);
-	4.1. Download Buildroot distribution archive from http://buildroot.uclibc.org/download.html
-	     (currently using version "buildroot-2015.08.01");
-	4.2. Unpack the tarball into 'toolchain'-directory;
-	4.3. Rename the buildroot-directory according to the target CPU-architecture name;
-	     Be careful here, after the toolchain is built the directory cannot be renamed
-	     or moved, you will have to rebuild the toolchain if you want another name;
-	4.4. Run 'make nconfig';
-	4.5. Configure toolchain:
+    4.1. Download Buildroot distribution archive from http://buildroot.uclibc.org/download.html
+         (currently using version "buildroot-2015.08.01");
+    4.2. Unpack the tarball into 'toolchain'-directory;
+    4.3. Rename the buildroot-directory according to the target CPU-architecture name;
+         Be careful here, after the toolchain is built the directory cannot be renamed
+         or moved, you will have to rebuild the toolchain if you want another name;
+    4.4. Run 'make menuconfig';
+    4.5. Configure toolchain:
          - Target architecture:
              - choose your target architecture;
          - Build options:
@@ -47,7 +47,8 @@ Building toolchains
              - Kernel Headers (Manually specified Linux version);
              - (2.6.32) linux version;
              - Custom kernel headers series (2.6.x);
-             - uClibc C library Version (uClibc-ng);
+             - C library: glibc (for *86, arm*) or uClibc (for mips*, ppc*);
+             - uClibc library version (uClibc-ng);
              - Enable large file (files > 2 GB) support;
              - Enable IPv6 support;
              - Enable toolchain locale/i18n support;
@@ -61,15 +62,30 @@ Building toolchains
                   - JSON/XML: libxml2;
                   - Text and terminal handling: ncurses;
          - Save configuration and exit;
-	4.6. Do few extra manual adjustments:
-         - in the file '.config' in the buildroot directory activate define to
-           build 'ubacktrace';
+    4.6. Do few extra manual adjustments:
          - in 'packages/ncurses/ncurses.mk' add extra configure parameters to
-           option 'NCURSES_CONF_OPTS‘ (without quotation marks):
+           option 'NCURSES_CONF_OPTS‘ (with quotation marks):
            "--with-fallbacks=xterm xterm-color xterm-256color xterm-16color linux vt100 vt200";
          - in 'packages/openssl/openssl.mk' replace 'zlib-dynamic' with 'zlib';
-	4.7. Run 'make' to build the toolchain. It may take an hour or so depending
-	     on your hardware;
+         - in 'packages/glibc/glibc.mk' add extra configure parameter
+           '--enable-static-nss';
+    4.7. Run 'make' to build the toolchain. It may take an hour or less depending
+         on your hardware;
+    4.8. If C library "glibc" was chosen extra steps are needed to build proper
+         static libraries of OpenSSL in addition to already built dynamic
+         libraries (which are also required):
+         - delete directory 'output/build/openssl-x.x.x';
+         - in 'packages/openssl/openssl.mk' replace 
+           '$(if $(BR2_STATIC_LIBS),no-shared,shared)' with
+           '$(if $(BR2_STATIC_LIBS),no-shared,no-shared)'
+           and replace '$(if $(BR2_STATIC_LIBS),no-dso,dso)' with
+           '$(if $(BR2_STATIC_LIBS),no-dso,no-dso)';
+         - from root directory of toolchain run 'make' again;
+         - openssl will be rebuilt without shared libraries support;
+         - installation step of openssl fails with message:
+           "chmod: cannot access ‘../lib/engines/lib*.so’: No such file or directory";
+         - ignore the error, static libraries of openssl are already installed
+           and will be used by NZBGet;
 
 5. Now you should have a working toolchain for one CPU-architecture, let's
    test it.

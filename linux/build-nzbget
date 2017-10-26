@@ -247,14 +247,8 @@ ConstructArchParams()
         mipseb)
             ARCH=mips
             ;;
-        armhf)
-            ARCH=arm
-            ;;
         arm*)
             ARCH=arm
-            ;;
-        ppc500)
-            ARCH=powerpc
             ;;
         ppc*)
             ARCH=powerpc
@@ -264,7 +258,7 @@ ConstructArchParams()
     TOOLCHAIN_ROOT=$ROOT/toolchain/$TARGET$PLATSUFF
     TOOLPATH=$TOOLCHAIN_ROOT/output/host/usr/bin
     PATH=$TOOLPATH:$ROOTPATH
-    STAGING="$TOOLCHAIN_ROOT/output/staging/usr"
+    STAGING="$TOOLCHAIN_ROOT/output/staging"
     case $PLATFORM in
         linux)
             TOOLKIND=buildroot
@@ -290,11 +284,16 @@ ConfigureTarget()
         DEBUG="-g"
     fi
 
+    LUBACKTRACE=""
+    if [ -f "$STAGING/lib/libubacktrace.so.1" ] ; then
+	    LUBACKTRACE="-lubacktrace"
+    fi
+
     case "$TOOLKIND-$CONFIG" in
         buildroot-debug|buildroot-debug-strip)
             LDFLAGS="-static $STRIP" \
                 CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
-                LIBS="-lcrypto -ldl -lz -lubacktrace" \
+                LIBS="-lcrypto -ldl -lz $LUBACKTRACE" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
             ;;
         buildroot-release|buildroot-release-nostrip)
@@ -307,14 +306,14 @@ ConfigureTarget()
             CXX="$CROSSCLANG" \
                 LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH-$TOOLNAME -lc++ -lm --sysroot=$SYSROOT" \
                 CXXFLAGS="-g --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
-                PKG_CONFIG_LIBDIR="$STAGING/lib/pkgconfig" \
+                PKG_CONFIG_LIBDIR="$STAGING/usr/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
                 ;;
         crossclang-release|crossclang-release-nostrip)
             CXX="$CROSSCLANG" \
                 LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH-$TOOLNAME -lc++ -lm --sysroot=$SYSROOT" \
                 CXXFLAGS="-O2 $DEBUG --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
-                PKG_CONFIG_LIBDIR="$STAGING/lib/pkgconfig" \
+                PKG_CONFIG_LIBDIR="$STAGING/usr/lib/pkgconfig" \
                 ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
                 ;;
     esac
@@ -330,7 +329,7 @@ PrecompileHeaders()
         fi
 
         $ARCH-$TOOLNAME-g++ -std=c++14 -DHAVE_CONFIG_H \
-            -I. -I$STAGING/include -I$STAGING/include/libxml2 \
+            -I. -I$STAGING/usr/include -I$STAGING/usr/include/libxml2 \
             -g $OPTIM daemon/main/nzbget.h -o nzbget.h.gch
     fi
 }
