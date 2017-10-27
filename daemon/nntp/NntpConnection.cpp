@@ -227,10 +227,7 @@ bool NntpConnection::Disconnect()
 {
 	if (m_status == csConnected)
 	{
-		if (!m_broken)
-		{
-			Request("quit\r\n");
-		}
+		Request("quit\r\n");
 		m_activeGroup = nullptr;
 	}
 	return Connection::Disconnect();

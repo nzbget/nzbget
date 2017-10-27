@@ -41,7 +41,8 @@ public:
 		csConnected,
 		csDisconnected,
 		csListening,
-		csCancelled
+		csCancelled,
+		csBroken
 	};
 
 	enum EIPVersion
@@ -99,7 +100,6 @@ protected:
 	bool m_suppressErrors = true;
 	BString<100> m_remoteAddr;
 	int m_totalBytesRead = 0;
-	bool m_broken = false;
 	bool m_gracefull = false;
 
 	struct SockAddr

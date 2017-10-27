@@ -263,7 +263,6 @@ bool Connection::Bind()
 			return false;
 		}
 
-		m_broken = false;
 		m_socket = INVALID_SOCKET;
 		for (addr = addr_list; addr != nullptr; addr = addr->ai_next)
 		{
@@ -357,7 +356,7 @@ int Connection::WriteLine(const char* buffer)
 	int res = send(m_socket, buffer, strlen(buffer), 0);
 	if (res <= 0)
 	{
-		m_broken = true;
+		m_status = csBroken;
 	}
 
 	return res;
@@ -378,7 +377,7 @@ bool Connection::Send(const char* buffer, int size)
 		int res = send(m_socket, buffer + bytesSent, size-bytesSent, 0);
 		if (res <= 0)
 		{
-			m_broken = true;
+			m_status = csBroken;
 			return false;
 		}
 		bytesSent += res;
@@ -407,7 +406,7 @@ char* Connection::ReadLine(char* buffer, int size, int* bytesReadOut)
 			if (bufAvail < 0)
 			{
 				ReportError("Could not receive data on socket from %s", m_host, true);
-				m_broken = true;
+				m_status = csBroken;
 				break;
 			}
 			else if (bufAvail == 0)
@@ -553,7 +552,6 @@ bool Connection::DoConnect()
 	debug("Do connecting");
 
 	m_socket = INVALID_SOCKET;
-	m_broken = false;
 
 #ifndef WIN32
 	if (m_host && m_host[0] == '/')
