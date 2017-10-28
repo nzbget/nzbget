@@ -376,7 +376,7 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 
 	m_messages.emplace_back(++m_idMessageGen, kind, Util::CurrentTime(), text);
 
-	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetNzbLog())
+	if (g_Options->GetServerMode() && g_Options->GetNzbLog())
 	{
 		g_DiskState->AppendNzbMessage(m_id, kind, text);
 		m_messageCount++;

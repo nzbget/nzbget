@@ -64,7 +64,6 @@ void TestNzb(std::string testFilename)
 TEST_CASE("Nzb parser", "[NzbFile][TestData]")
 {
 	Options::CmdOptList cmdOpts;
-	cmdOpts.push_back("SaveQueue=no");
 	Options options(&cmdOpts, nullptr);
 
 	TestNzb("dotless");

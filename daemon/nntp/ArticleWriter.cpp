@@ -825,7 +825,7 @@ CachedSegmentData ArticleCache::Alloc(int size)
 		p = malloc(size);
 		if (p)
 		{
-			if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
+			if (!m_allocated && g_Options->GetServerMode() && g_Options->GetContinuePartial())
 			{
 				g_DiskState->WriteCacheFlag();
 			}
@@ -858,7 +858,7 @@ void ArticleCache::Free(CachedSegmentData* segment)
 
 		Guard guard(m_allocMutex);
 		m_allocated -= segment->m_size;
-		if (!m_allocated && g_Options->GetSaveQueue() && g_Options->GetServerMode() && g_Options->GetContinuePartial())
+		if (!m_allocated && g_Options->GetServerMode() && g_Options->GetContinuePartial())
 		{
 			g_DiskState->DeleteCacheFlag();
 		}

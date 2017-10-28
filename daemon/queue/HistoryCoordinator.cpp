@@ -87,7 +87,7 @@ void HistoryCoordinator::ServiceWork()
 
 void HistoryCoordinator::DeleteDiskFiles(NzbInfo* nzbInfo)
 {
-	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+	if (g_Options->GetServerMode())
 	{
 		// delete parked files
 		g_DiskState->DiscardFiles(nzbInfo);

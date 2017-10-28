@@ -58,7 +58,7 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 		return;
 	}
 
-	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+	if (g_Options->GetServerMode())
 	{
 		g_DiskState->SaveDownloadQueue(this, m_historyChanged);
 		m_stateChanged = true;
@@ -103,11 +103,11 @@ void QueueCoordinator::Load()
 	bool perfectServerMatch = true;
 	bool queueLoaded = false;
 
-	if (g_Options->GetServerMode() && g_Options->GetSaveQueue())
+	if (g_Options->GetServerMode())
 	{
 		statLoaded = g_StatMeter->Load(&perfectServerMatch);
 
-		if (g_Options->GetReloadQueue() && g_DiskState->DownloadQueueExists())
+		if (g_DiskState->DownloadQueueExists())
 		{
 			queueLoaded = g_DiskState->LoadDownloadQueue(downloadQueue, g_ServerPool->GetServers());
 		}
@@ -134,7 +134,7 @@ void QueueCoordinator::Load()
 		downloadQueue->Save();
 
 		// re-save file states into diskstate to update server ids
-		if (g_Options->GetServerMode() && g_Options->GetSaveQueue())
+		if (g_Options->GetServerMode())
 		{
 			for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 			{
@@ -333,7 +333,7 @@ NzbInfo* QueueCoordinator::AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, N
 		for (FileInfo* fileInfo: nzbInfo->GetFileList())
 		{
 			allPaused &= fileInfo->GetPaused();
-			if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+			if (g_Options->GetServerMode())
 			{
 				g_DiskState->DiscardFile(fileInfo->GetId(), true, false, false);
 			}
@@ -437,7 +437,7 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 	{
 		nzbInfo->UpdateDeletedStats(fileInfo);
 		nzbInfo->GetFileList()->Remove(fileInfo);
-		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+		if (g_Options->GetServerMode())
 		{
 			g_DiskState->DiscardFile(fileInfo->GetId(), true, false, false);
 		}
@@ -527,7 +527,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			return true;
 		}
 
-		if (fileInfo->GetArticles()->empty() && g_Options->GetSaveQueue() && g_Options->GetServerMode())
+		if (fileInfo->GetArticles()->empty() && g_Options->GetServerMode())
 		{
 			g_DiskState->LoadArticles(fileInfo);
 			LoadPartialState(fileInfo);
@@ -561,7 +561,7 @@ bool QueueCoordinator::GetNextFirstArticle(NzbInfo* nzbInfo, FileInfo* &fileInfo
 	{
 		if (!fileInfo1->GetFilenameConfirmed())
 		{
-			if (fileInfo1->GetArticles()->empty() && g_Options->GetSaveQueue() && g_Options->GetServerMode())
+			if (fileInfo1->GetArticles()->empty() && g_Options->GetServerMode())
 			{
 				g_DiskState->LoadArticles(fileInfo1);
 				LoadPartialState(fileInfo1);
@@ -794,7 +794,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 		fileInfo->GetSuccessArticles() > 0 || fileInfo->GetFailedArticles() > 0 ? CompletedFile::cfPartial :
 		CompletedFile::cfNone;
 
-	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+	if (g_Options->GetServerMode())
 	{
 		g_DiskState->DiscardFile(fileInfo->GetId(), fileStatus == CompletedFile::cfSuccess || (fileDeleted && !parking), true, false);
 		if (fileStatus == CompletedFile::cfPartial && (completed || parking))
@@ -862,7 +862,7 @@ void QueueCoordinator::DiscardTempFiles(FileInfo* fileInfo)
 
 void QueueCoordinator::SaveAllPartialState()
 {
-	if (!(g_Options->GetServerMode() && g_Options->GetSaveQueue()))
+	if (!g_Options->GetServerMode())
 	{
 		return;
 	}
@@ -923,7 +923,7 @@ void QueueCoordinator::LoadPartialState(FileInfo* fileInfo)
 
 void QueueCoordinator::SaveAllFileState()
 {
-	if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && m_downloadQueue.m_stateChanged)
+	if (g_Options->GetServerMode() && m_downloadQueue.m_stateChanged)
 	{
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 		g_DiskState->SaveAllFileInfos(downloadQueue);
@@ -1316,7 +1316,7 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 {
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		if (g_Options->GetSaveQueue() && g_Options->GetServerMode() && !fileInfo->GetArticles()->empty())
+		if (g_Options->GetServerMode() && !fileInfo->GetArticles()->empty())
 		{
 			// save new file name into disk state file
 			g_DiskState->SaveFile(fileInfo);
@@ -1391,7 +1391,7 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 			fileInfo->SetPartialChanged(false);
 			fileInfo->SetPartialState(FileInfo::psNone);
 
-			if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+			if (g_Options->GetServerMode())
 			{
 				// free up memory used by articles if possible
 				fileInfo->GetArticles()->clear();
@@ -1408,7 +1408,7 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 			}
 		}
 
-		if (g_Options->GetSaveQueue() && g_Options->GetServerMode() &&
+		if (g_Options->GetServerMode() &&
 			!fileInfo->GetArticles()->empty() && g_Options->GetContinuePartial() &&
 			fileInfo->GetActiveDownloads() == 0 && fileInfo->GetCachedArticles() == 0)
 		{

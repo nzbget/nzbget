@@ -52,7 +52,7 @@ void PrePostProcessor::Run()
 		usleep(20 * 1000);
 	}
 
-	if (g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetReloadQueue())
+	if (g_Options->GetServerMode())
 	{
 		SanitisePostQueue();
 	}

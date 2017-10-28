@@ -374,7 +374,7 @@ void NzbFile::ProcessFiles()
 
 	CalcHashes();
 
-	if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+	if (g_Options->GetServerMode())
 	{
 		for (FileInfo* fileInfo : m_nzbInfo->GetFileList())
 		{

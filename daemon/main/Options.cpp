@@ -70,9 +70,7 @@ static const char* OPTION_AUTHORIZEDIP			= "AuthorizedIP";
 static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
 static const char* OPTION_REMOTETIMEOUT			= "RemoteTimeout";
-static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_FLUSHQUEUE			= "FlushQueue";
-static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
 static const char* OPTION_RAWARTICLE			= "RawArticle";
@@ -172,6 +170,8 @@ static const char* OPTION_SCANSCRIPT			= "ScanScript";
 static const char* OPTION_QUEUESCRIPT			= "QueueScript";
 static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 static const char* OPTION_DECODE				= "Decode";
+static const char* OPTION_SAVEQUEUE				= "SaveQueue";
+static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -448,9 +448,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_ARTICLETIMEOUT, "60");
 	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_REMOTETIMEOUT, "90");
-	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_FLUSHQUEUE, "yes");
-	SetOption(OPTION_RELOADQUEUE, "yes");
 	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
 	SetOption(OPTION_RAWARTICLE, "no");
@@ -740,7 +738,6 @@ void Options::InitOptions()
 	m_nzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
 	m_appendCategoryDir		= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_continuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
-	m_saveQueue				= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_flushQueue			= (bool)ParseEnumValue(OPTION_FLUSHQUEUE, BoolCount, BoolNames, BoolValues);
 	m_dupeCheck				= (bool)ParseEnumValue(OPTION_DUPECHECK, BoolCount, BoolNames, BoolValues);
 	m_parRepair				= (bool)ParseEnumValue(OPTION_PARREPAIR, BoolCount, BoolNames, BoolValues);
@@ -748,7 +745,6 @@ void Options::InitOptions()
 	m_parRename				= (bool)ParseEnumValue(OPTION_PARRENAME, BoolCount, BoolNames, BoolValues);
 	m_rarRename				= (bool)ParseEnumValue(OPTION_RARRENAME, BoolCount, BoolNames, BoolValues);
 	m_directRename			= (bool)ParseEnumValue(OPTION_DIRECTRENAME, BoolCount, BoolNames, BoolValues);
-	m_reloadQueue			= (bool)ParseEnumValue(OPTION_RELOADQUEUE, BoolCount, BoolNames, BoolValues);
 	m_cursesNzbName			= (bool)ParseEnumValue(OPTION_CURSESNZBNAME, BoolCount, BoolNames, BoolValues);
 	m_cursesTime			= (bool)ParseEnumValue(OPTION_CURSESTIME, BoolCount, BoolNames, BoolValues);
 	m_cursesGroup			= (bool)ParseEnumValue(OPTION_CURSESGROUP, BoolCount, BoolNames, BoolValues);
@@ -1610,7 +1606,9 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		!strcasecmp(optname, OPTION_RELOADPOSTQUEUE) ||
 		!strcasecmp(optname, OPTION_PARCLEANUPQUEUE) ||
 		!strcasecmp(optname, OPTION_DELETECLEANUPDISK) ||
-		!strcasecmp(optname, OPTION_HISTORYCLEANUPDISK))
+		!strcasecmp(optname, OPTION_HISTORYCLEANUPDISK) ||
+		!strcasecmp(optname, OPTION_SAVEQUEUE) ||
+		!strcasecmp(optname, OPTION_RELOADQUEUE))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

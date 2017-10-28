@@ -87,7 +87,7 @@ void FeedCoordinator::Run()
 		usleep(20 * 1000);
 	}
 
-	if (g_Options->GetServerMode() && g_Options->GetSaveQueue() && g_Options->GetReloadQueue())
+	if (g_Options->GetServerMode())
 	{
 		Guard guard(m_downloadsMutex);
 		g_DiskState->LoadFeeds(&m_feeds, &m_feedHistory);
@@ -651,7 +651,7 @@ void FeedCoordinator::CheckSaveFeeds()
 	Guard guard(m_downloadsMutex);
 	if (m_save)
 	{
-		if (g_Options->GetSaveQueue() && g_Options->GetServerMode())
+		if (g_Options->GetServerMode())
 		{
 			g_DiskState->SaveFeeds(&m_feeds, &m_feedHistory);
 		}

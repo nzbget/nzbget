@@ -222,7 +222,6 @@ public:
 	int GetArticleInterval() { return m_articleInterval; }
 	int GetUrlRetries() { return m_urlRetries; }
 	int GetUrlInterval() { return m_urlInterval; }
-	bool GetSaveQueue() { return m_saveQueue; }
 	bool GetFlushQueue() { return m_flushQueue; }
 	bool GetDupeCheck() { return m_dupeCheck; }
 	const char* GetControlIp() { return m_controlIp; }
@@ -244,7 +243,6 @@ public:
 	const char* GetLockFile() { return m_lockFile; }
 	const char* GetDaemonUsername() { return m_daemonUsername; }
 	EOutputMode GetOutputMode() { return m_outputMode; }
-	bool GetReloadQueue() { return m_reloadQueue; }
 	int GetUrlConnections() { return m_urlConnections; }
 	int GetLogBufferSize() { return m_logBufferSize; }
 	EWriteLog GetWriteLog() { return m_writeLog; }
@@ -377,7 +375,6 @@ private:
 	int m_articleInterval = 0;
 	int m_urlRetries = 0;
 	int m_urlInterval = 0;
-	bool m_saveQueue = false;
 	bool m_flushQueue = false;
 	bool m_dupeCheck = false;
 	CString m_controlIp;
@@ -399,7 +396,6 @@ private:
 	CString m_lockFile;
 	CString m_daemonUsername;
 	EOutputMode m_outputMode = omLoggable;
-	bool m_reloadQueue = false;
 	int m_urlConnections = 0;
 	int m_logBufferSize = 0;
 	EWriteLog m_writeLog = wlAppend;
