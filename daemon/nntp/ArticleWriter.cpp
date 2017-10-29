@@ -152,17 +152,17 @@ bool ArticleWriter::Write(char* buffer, int len)
 		m_articlePtr += len;
 	}
 
+	if (m_articlePtr > m_articleSize)
+	{
+		// An attempt to write beyond article border is detected.
+		// That's an error condition (damaged article).
+		// We return 'false' since this isn't a fatal disk error and
+		// article size mismatch will be detected in decoder check anyway.
+		return true;
+	}
+
 	if (!g_Options->GetRawArticle() && m_articleData.GetData())
 	{
-		if (m_articlePtr > m_articleSize)
-		{
-#ifdef SKIP_ARTICLE_DECODING
-			m_articlePtr = m_articleSize;
-#else
-			detail("Decoding %s failed: article size mismatch", *m_infoName);
-			return false;
-#endif
-		}
 		memcpy(m_articleData.GetData() + m_articlePtr - len, buffer, len);
 		return true;
 	}

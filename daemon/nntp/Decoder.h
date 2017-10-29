@@ -72,6 +72,7 @@ private:
 	int64 m_endPos;
 	int64 m_size;
 	int64 m_endSize;
+	int64 m_outSize;
 	bool m_eof;
 	bool m_crcCheck;
 	char m_state;

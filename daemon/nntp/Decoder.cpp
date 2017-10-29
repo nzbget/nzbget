@@ -47,6 +47,7 @@ void Decoder::Clear()
 	m_endPos = 0;
 	m_size = 0;
 	m_endSize = 0;
+	m_outSize = 0;
 	m_state = 0;
 	m_crcCheck = false;
 	m_lineBuf.Reserve(1024*8);
@@ -261,6 +262,8 @@ int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 		m_crc32.Append((uchar*)outbuf, (uint32)outlen);
 	}
 
+	m_outSize += outlen;
+
 	return outlen;
 }
 
@@ -294,7 +297,7 @@ Decoder::EStatus Decoder::CheckYenc()
 	{
 		return dsArticleIncomplete;
 	}
-	else if (!m_part && m_size != m_endSize)
+	else if ((!m_part && m_size != m_endSize) || (m_endSize != m_outSize))
 	{
 		return dsInvalidSize;
 	}
