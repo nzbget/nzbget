@@ -278,7 +278,6 @@ public:
 	bool GetNzbCleanupDisk() { return m_nzbCleanupDisk; }
 	int GetParTimeLimit() { return m_parTimeLimit; }
 	int GetKeepHistory() { return m_keepHistory; }
-	bool GetAccurateRate() { return m_accurateRate; }
 	bool GetUnpack() { return m_unpack; }
 	bool GetDirectUnpack() { return m_directUnpack; }
 	bool GetUnpackCleanupDisk() { return m_unpackCleanupDisk; }
@@ -431,7 +430,6 @@ private:
 	bool m_nzbCleanupDisk = false;
 	int m_parTimeLimit = 0;
 	int m_keepHistory = 0;
-	bool m_accurateRate = false;
 	bool m_unpack = false;
 	bool m_directUnpack = false;
 	bool m_unpackCleanupDisk = false;

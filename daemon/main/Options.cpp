@@ -117,7 +117,6 @@ static const char* OPTION_SCRIPTPAUSEQUEUE		= "ScriptPauseQueue";
 static const char* OPTION_NZBCLEANUPDISK		= "NzbCleanupDisk";
 static const char* OPTION_PARTIMELIMIT			= "ParTimeLimit";
 static const char* OPTION_KEEPHISTORY			= "KeepHistory";
-static const char* OPTION_ACCURATERATE			= "AccurateRate";
 static const char* OPTION_UNPACK				= "Unpack";
 static const char* OPTION_DIRECTUNPACK			= "DirectUnpack";
 static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
@@ -172,6 +171,7 @@ static const char* OPTION_DECODE				= "Decode";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_TERMINATETIMEOUT		= "TerminateTimeout";
+static const char* OPTION_ACCURATERATE			= "AccurateRate";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -498,7 +498,6 @@ void Options::InitDefaults()
 	SetOption(OPTION_NZBCLEANUPDISK, "no");
 	SetOption(OPTION_PARTIMELIMIT, "0");
 	SetOption(OPTION_KEEPHISTORY, "7");
-	SetOption(OPTION_ACCURATERATE, "no");
 	SetOption(OPTION_UNPACK, "no");
 	SetOption(OPTION_DIRECTUNPACK, "no");
 	SetOption(OPTION_UNPACKCLEANUPDISK, "no");
@@ -755,7 +754,6 @@ void Options::InitOptions()
 	m_parPauseQueue			= (bool)ParseEnumValue(OPTION_PARPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_scriptPauseQueue		= (bool)ParseEnumValue(OPTION_SCRIPTPAUSEQUEUE, BoolCount, BoolNames, BoolValues);
 	m_nzbCleanupDisk		= (bool)ParseEnumValue(OPTION_NZBCLEANUPDISK, BoolCount, BoolNames, BoolValues);
-	m_accurateRate			= (bool)ParseEnumValue(OPTION_ACCURATERATE, BoolCount, BoolNames, BoolValues);
 	m_formAuth				= (bool)ParseEnumValue(OPTION_FORMAUTH, BoolCount, BoolNames, BoolValues);
 	m_secureControl			= (bool)ParseEnumValue(OPTION_SECURECONTROL, BoolCount, BoolNames, BoolValues);
 	m_unpack				= (bool)ParseEnumValue(OPTION_UNPACK, BoolCount, BoolNames, BoolValues);
@@ -1607,7 +1605,8 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		!strcasecmp(optname, OPTION_HISTORYCLEANUPDISK) ||
 		!strcasecmp(optname, OPTION_SAVEQUEUE) ||
 		!strcasecmp(optname, OPTION_RELOADQUEUE) ||
-		!strcasecmp(optname, OPTION_TERMINATETIMEOUT))
+		!strcasecmp(optname, OPTION_TERMINATETIMEOUT) ||
+		!strcasecmp(optname, OPTION_ACCURATERATE))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

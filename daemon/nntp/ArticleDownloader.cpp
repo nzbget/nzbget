@@ -370,7 +370,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 		g_StatMeter->AddSpeedReading(len);
 		time_t oldTime = m_lastUpdateTime;
 		SetLastUpdateTimeNow();
-		if (oldTime != m_lastUpdateTime || g_Options->GetAccurateRate())
+		if (oldTime != m_lastUpdateTime)
 		{
 			AddServerData();
 		}

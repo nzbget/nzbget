@@ -308,8 +308,6 @@ void StatMeter::AddSpeedReading(int bytes)
 	time_t curTime = Util::CurrentTime();
 	int nowSlot = (int)curTime / SPEEDMETER_SLOTSIZE;
 
-	Guard guard(g_Options->GetAccurateRate() ? &m_speedMutex : nullptr);
-
 	if (curTime != m_curSecTime)
 	{
 		m_curSecTime =	curTime;

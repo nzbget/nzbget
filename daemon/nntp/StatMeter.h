@@ -106,7 +106,6 @@ private:
 	int m_speedBytesIndex;
 	int m_curSecBytes;
 	time_t m_curSecTime;
-	Mutex m_speedMutex;
 
 	// time
 	int64 m_allBytes = 0;
