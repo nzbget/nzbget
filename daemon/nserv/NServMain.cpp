@@ -46,7 +46,8 @@ struct NServOpts
 	bool quit;
 	int latency;
 	int speed;
-	int cacheSize;
+	bool memCache;
+	bool paramError;
 
 	NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts);
 };
@@ -62,7 +63,7 @@ int NServMain(int argc, char* argv[])
 	Options::CmdOptList cmdOpts;
 	NServOpts opts(argc, argv, cmdOpts);
 
-	if (opts.dataDir.Empty())
+	if (opts.dataDir.Empty() || opts.paramError)
 	{
 		NServPrintUsage(argv[0]);
 		return 1;
@@ -112,13 +113,13 @@ int NServMain(int argc, char* argv[])
 	}
 
 	std::vector<std::unique_ptr<NntpServer>> instances;
-	NntpCache cache((int64)opts.cacheSize * 1024 * 1024);
+	NntpCache cache;
 
 	for (int i = 0; i < opts.instances; i++)
 	{
 		instances.emplace_back(std::make_unique<NntpServer>(i + 1, opts.bindAddress,
 			opts.firstPort + i, opts.secureCert, opts.secureKey, opts.dataDir, opts.cacheDir,
-			opts.latency, opts.speed, opts.cacheSize > -1 ? &cache : nullptr));
+			opts.latency, opts.speed, opts.memCache ? &cache : nullptr));
 		instances.back()->Start();
 	}
 
@@ -152,7 +153,7 @@ void NServPrintUsage(const char* com)
 		"    -d <data-dir>   - directory whose files will be served\n"
 		"  Optional switches:\n"
 		"    -c <cache-dir>  - directory to store encoded articles\n"
-		"    -m <MB>         - in-memory cache (needs filling)\n"
+		"    -m              - in-memory cache (unlimited, use with care)\n"
 		"    -l <log-file>   - write into log-file (disabled by default)\n"
 		"    -i <instances>  - number of server instances (default is 1)\n"
 		"    -b <address>    - ip address to bind to (default is 0.0.0.0)\n"
@@ -175,11 +176,12 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 	segmentSize = 500000;
 	quit = false;
 	latency = 0;
-	cacheSize = -1;
+	memCache = false;
 	speed = 0;
+	paramError = false;
 	int verbosity = 2;
 
-	char short_options[] = "b:c:d:l:p:i:m:s:v:w:r:z:q";
+	char short_options[] = "b:c:d:l:p:i:ms:v:w:r:z:q";
 
 	optind = 2;
 	while (true)
@@ -197,7 +199,7 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 				break;
 
 			case 'm':
-				cacheSize = atoi(optind > argc ? "-1" : argv[optind - 1]);
+				memCache = true;
 				break;
 
 			case 'l':
@@ -243,6 +245,11 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 				quit = true;
 				break;
 		}
+	}
+
+	if (optind < argc)
+	{
+		paramError = true;
 	}
 
 	if (logFile.Empty())

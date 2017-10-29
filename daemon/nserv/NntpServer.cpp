@@ -280,12 +280,11 @@ void NntpProcessor::SendSegment()
 	BString<1024> cacheFullFilename("%s/%s", *cacheFileDir, *cacheFileName);
 	BString<1024> cacheKey("%s/%s", *m_filename, *cacheFileName);
 
-	CString cachedBuffer;
 	const char* cachedData = nullptr;
 	int cachedSize;
 	if (m_cache)
 	{
-		m_cache->Find(cacheKey, cachedData, cachedBuffer, cachedSize);
+		m_cache->Find(cacheKey, cachedData, cachedSize);
 	}
 
 	DiskFile cacheFile;
@@ -420,36 +419,14 @@ void NntpProcessor::SendData(const char* buffer, int size)
 void NntpCache::Append(const char* key, const char* data, int len)
 {
 	Guard guard(m_lock);
-	Reserve(len);
 	if (!len)
 	{
 		len = strlen(data);
 	}
 	m_items.emplace(key, std::make_unique<CacheItem>(key, data, len));
-	m_size += len;
 }
 
-void NntpCache::Reserve(int64 required)
-{
-	if (m_limit == 0 || m_size + required < m_limit)
-	{
-		return;
-	}
-
-/*	while (m_size > 0 && m_size + required > m_limit)
-	{
-		CacheList::iterator pos = std::min_element(m_items.begin(), m_items.end(),
-			[](const std::unique_ptr<CacheItem>& a, const std::unique_ptr<CacheItem>& b)
-			{
-				return a->m_lastAccess < b->m_lastAccess;
-			});
-
-		m_size -= (*pos)->m_size;
-		m_items.erase(pos);
-	} */
-}
-
-bool NntpCache::Find(const char* key, const char*& data, CString& buffer, int& size)
+bool NntpCache::Find(const char* key, const char*& data, int& size)
 {
 	Guard guard(m_lock);
 
@@ -458,11 +435,6 @@ bool NntpCache::Find(const char* key, const char*& data, CString& buffer, int& s
 	{
 		data = (*pos).second->m_data;
 		size = (*pos).second->m_size;
-		if (m_limit > 0)
-		{
-			buffer = *(*pos).second->m_data;
-			data = buffer;
-		}
 		return true;
 	}
 

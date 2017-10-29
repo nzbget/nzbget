@@ -28,32 +28,25 @@
 class NntpCache
 {
 public:
-	NntpCache(int64 limit) : m_limit(limit) {}
 	void Append(const char* key, const char* data, int len = 0);
-	bool Find(const char* key, const char*& data, CString& buffer, int& size);
+	bool Find(const char* key, const char*& data, int& size);
 
 private:
 	class CacheItem
 	{
 	public:
 		CacheItem(const char* key, const char* data, int size) :
-			m_key(key), m_data(data), m_size(size), m_lastAccess(Util::CurrentTime()) {}
-		void Touch() { m_lastAccess = Util::CurrentTime(); }
+			m_key(key), m_data(data), m_size(size) {}
 
 		CString m_key;
 		CString m_data;
 		int m_size = 0;
-		time_t m_lastAccess;
 	};
 
 	typedef std::unordered_map<std::string, std::unique_ptr<CacheItem>> CacheMap;
 
 	CacheMap m_items;
-	int64 m_size = 0;
-	int64 m_limit = 0;
 	Mutex m_lock;
-
-	void Reserve(int64 required);
 };
 
 class NntpServer : public Thread
