@@ -262,7 +262,7 @@ void Log::AddMessage(Message::EKind kind, const char * text)
 
 	if (m_optInit && g_Options)
 	{
-		while (m_messages.size() > (uint32)g_Options->GetLogBufferSize())
+		while (m_messages.size() > (uint32)g_Options->GetLogBuffer())
 		{
 			m_messages.pop_front();
 		}

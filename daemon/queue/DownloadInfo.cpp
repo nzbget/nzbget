@@ -382,7 +382,7 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 		m_messageCount++;
 	}
 
-	while (m_messages.size() > (uint32)g_Options->GetLogBufferSize())
+	while (m_messages.size() > (uint32)g_Options->GetLogBuffer())
 	{
 		m_messages.pop_front();
 	}

@@ -242,7 +242,7 @@ public:
 	const char* GetDaemonUsername() { return m_daemonUsername; }
 	EOutputMode GetOutputMode() { return m_outputMode; }
 	int GetUrlConnections() { return m_urlConnections; }
-	int GetLogBufferSize() { return m_logBufferSize; }
+	int GetLogBuffer() { return m_logBuffer; }
 	EWriteLog GetWriteLog() { return m_writeLog; }
 	const char* GetLogFile() { return m_logFile; }
 	int GetRotateLog() { return m_rotateLog; }
@@ -392,7 +392,7 @@ private:
 	CString m_daemonUsername;
 	EOutputMode m_outputMode = omLoggable;
 	int m_urlConnections = 0;
-	int m_logBufferSize = 0;
+	int m_logBuffer = 0;
 	EWriteLog m_writeLog = wlAppend;
 	int m_rotateLog = 0;
 	CString m_logFile;

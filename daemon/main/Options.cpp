@@ -80,7 +80,7 @@ static const char* OPTION_URLRETRIES			= "UrlRetries";
 static const char* OPTION_URLINTERVAL			= "UrlInterval";
 static const char* OPTION_CONTINUEPARTIAL		= "ContinuePartial";
 static const char* OPTION_URLCONNECTIONS		= "UrlConnections";
-static const char* OPTION_LOGBUFFERSIZE			= "LogBufferSize";
+static const char* OPTION_LOGBUFFER				= "LogBuffer";
 static const char* OPTION_INFOTARGET			= "InfoTarget";
 static const char* OPTION_WARNINGTARGET			= "WarningTarget";
 static const char* OPTION_ERRORTARGET			= "ErrorTarget";
@@ -459,7 +459,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_URLINTERVAL, "10");
 	SetOption(OPTION_CONTINUEPARTIAL, "no");
 	SetOption(OPTION_URLCONNECTIONS, "4");
-	SetOption(OPTION_LOGBUFFERSIZE, "1000");
+	SetOption(OPTION_LOGBUFFER, "1000");
 	SetOption(OPTION_INFOTARGET, "both");
 	SetOption(OPTION_WARNINGTARGET, "both");
 	SetOption(OPTION_ERRORTARGET, "both");
@@ -705,7 +705,7 @@ void Options::InitOptions()
 	m_controlPort			= ParseIntValue(OPTION_CONTROLPORT, 10);
 	m_securePort			= ParseIntValue(OPTION_SECUREPORT, 10);
 	m_urlConnections		= ParseIntValue(OPTION_URLCONNECTIONS, 10);
-	m_logBufferSize			= ParseIntValue(OPTION_LOGBUFFERSIZE, 10);
+	m_logBuffer				= ParseIntValue(OPTION_LOGBUFFER, 10);
 	m_rotateLog				= ParseIntValue(OPTION_ROTATELOG, 10);
 	m_umask					= ParseIntValue(OPTION_UMASK, 8);
 	m_updateInterval		= ParseIntValue(OPTION_UPDATEINTERVAL, 10);
@@ -1736,6 +1736,11 @@ void Options::ConvertOldOption(CString& option, CString& value)
 	{
 		option = OPTION_RAWARTICLE;
 		value = !strcasecmp(value, "no") ? "yes" : "no";
+	}
+
+	if (!strcasecmp(option, "LogBufferSize"))
+	{
+		option = OPTION_LOGBUFFER;
 	}
 }
 
