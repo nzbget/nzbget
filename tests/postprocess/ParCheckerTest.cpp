@@ -123,7 +123,6 @@ TEST_CASE("Par-checker: repair possible", "[Par][ParChecker][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
-	cmdOpts.push_back("BrokenLog=no");
 	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
@@ -138,7 +137,6 @@ TEST_CASE("Par-checker: repair successful", "[Par][ParChecker][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
-	cmdOpts.push_back("BrokenLog=no");
 	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
@@ -153,7 +151,6 @@ TEST_CASE("Par-checker: repair failed", "[Par][ParChecker][Slow][TestData]")
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=no");
-	cmdOpts.push_back("BrokenLog=no");
 	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
@@ -188,7 +185,6 @@ TEST_CASE("Par-checker: quick verification repair successful", "[Par][ParChecker
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
-	cmdOpts.push_back("BrokenLog=no");
 	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
@@ -204,7 +200,6 @@ TEST_CASE("Par-checker: quick full verification repair successful", "[Par][ParCh
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
-	cmdOpts.push_back("BrokenLog=no");
 	Options options(&cmdOpts, nullptr);
 
 	ParCheckerMock parChecker;
@@ -223,7 +218,6 @@ TEST_CASE("Par-checker: ignoring extensions", "[Par][ParChecker][Slow][TestData]
 {
 	Options::CmdOptList cmdOpts;
 	cmdOpts.push_back("ParRepair=yes");
-	cmdOpts.push_back("BrokenLog=no");
 
 	ParChecker::EStatus expectedStatus;
 

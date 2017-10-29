@@ -535,18 +535,6 @@ void ArticleWriter::CompleteFileParts()
 			"%i of %i article downloads failed for \"%s\"",
 			m_fileInfo->GetMissedArticles() + m_fileInfo->GetFailedArticles(),
 			m_fileInfo->GetTotalArticles(), *infoFilename);
-
-		if (g_Options->GetBrokenLog())
-		{
-			BString<1024> brokenLogName("%s%c_brokenlog.txt", *nzbDestDir, PATH_SEPARATOR);
-			DiskFile file;
-			if (file.Open(brokenLogName, DiskFile::omAppend))
-			{
-				file.Print("%s (%i/%i)%s", *filename, m_fileInfo->GetSuccessArticles(),
-					m_fileInfo->GetTotalArticles(), LINE_ENDING);
-				file.Close();
-			}
-		}
 	}
 	else
 	{
@@ -726,57 +714,6 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 			{
 				nzbInfo->PrintMessage(Message::mkError, "Could not move file %s to %s: %s",
 					*oldFileName, *newFileName, *FileSystem::GetLastErrorMessage());
-			}
-		}
-	}
-
-	// move brokenlog.txt
-	if (g_Options->GetBrokenLog())
-	{
-		BString<1024> oldBrokenLogName("%s%c_brokenlog.txt", oldDestDir, PATH_SEPARATOR);
-		if (FileSystem::FileExists(oldBrokenLogName))
-		{
-			BString<1024> brokenLogName("%s%c_brokenlog.txt", nzbInfo->GetDestDir(), PATH_SEPARATOR);
-
-			detail("Moving file %s to %s", *oldBrokenLogName, *brokenLogName);
-			if (FileSystem::FileExists(brokenLogName))
-			{
-				// copy content to existing new file, then delete old file
-				DiskFile outfile;
-				if (outfile.Open(brokenLogName, DiskFile::omAppend))
-				{
-					DiskFile infile;
-					if (infile.Open(oldBrokenLogName, DiskFile::omRead))
-					{
-						CharBuffer buffer(1024 * 50);
-						int cnt = buffer.Size();
-						while (cnt == buffer.Size())
-						{
-							cnt = (int)infile.Read(buffer, buffer.Size());
-							outfile.Write(buffer, cnt);
-						}
-						infile.Close();
-						FileSystem::DeleteFile(oldBrokenLogName);
-					}
-					else
-					{
-						nzbInfo->PrintMessage(Message::mkError, "Could not open file %s", *oldBrokenLogName);
-					}
-					outfile.Close();
-				}
-				else
-				{
-					nzbInfo->PrintMessage(Message::mkError, "Could not open file %s", *brokenLogName);
-				}
-			}
-			else
-			{
-				// move to new destination
-				if (!FileSystem::MoveFile(oldBrokenLogName, brokenLogName))
-				{
-					nzbInfo->PrintMessage(Message::mkError, "Could not move file %s to %s: %s",
-						*oldBrokenLogName, *brokenLogName, *FileSystem::GetLastErrorMessage());
-				}
 			}
 		}
 	}

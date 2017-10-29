@@ -425,11 +425,6 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 			{
 				allStatus = status;
 			}
-
-			if (g_Options->GetBrokenLog())
-			{
-				WriteBrokenLog(status);
-			}
 		}
 	}
 
@@ -814,7 +809,7 @@ bool ParChecker::AddSplittedFragments()
 	DirBrowser dir(m_destDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, "_brokenlog.txt") && !IsParredFile(filename) && !IsProcessedFile(filename))
+		if (IsParredFile(filename) && !IsProcessedFile(filename))
 		{
 			for (Par2::Par2RepairerSourceFile *sourcefile : GetRepairer()->sourcefiles)
 			{
@@ -942,8 +937,7 @@ bool ParChecker::AddExtraFiles(bool onlyMissing, bool externalDir, const char* d
 	DirBrowser dir(directory);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, "_brokenlog.txt") &&
-			(externalDir || (!IsParredFile(filename) && !IsProcessedFile(filename))))
+		if (externalDir || (!IsParredFile(filename) && !IsProcessedFile(filename)))
 		{
 			BString<1024> fullfilename("%s%c%s", directory, PATH_SEPARATOR, filename);
 			extrafiles.emplace_back(*fullfilename, FileSystem::FileSize(fullfilename));
@@ -1188,47 +1182,6 @@ void ParChecker::Cancel()
 {
 	GetRepairer()->cancelled = true;
 	QueueChanged();
-}
-
-void ParChecker::WriteBrokenLog(EStatus status)
-{
-	BString<1024> brokenLogName("%s%c_brokenlog.txt", *m_destDir, PATH_SEPARATOR);
-
-	if (status != psRepairNotNeeded || FileSystem::FileExists(brokenLogName))
-	{
-		DiskFile file;
-		if (file.Open(brokenLogName, DiskFile::omAppend))
-		{
-			if (status == psFailed)
-			{
-				if (IsStopped())
-				{
-					file.Print("Repair cancelled for %s\n", *m_infoName);
-				}
-				else
-				{
-					file.Print("Repair failed for %s: %s\n", *m_infoName, *m_errMsg);
-				}
-			}
-			else if (status == psRepairPossible)
-			{
-				file.Print("Repair possible for %s\n", *m_infoName);
-			}
-			else if (status == psRepaired)
-			{
-				file.Print("Successfully repaired %s\n", *m_infoName);
-			}
-			else if (status == psRepairNotNeeded)
-			{
-				file.Print("Repair not needed for %s\n", *m_infoName);
-			}
-			file.Close();
-		}
-		else
-		{
-			PrintMessage(Message::mkError, "Could not open file %s", *brokenLogName);
-		}
-	}
 }
 
 void ParChecker::SaveSourceList()

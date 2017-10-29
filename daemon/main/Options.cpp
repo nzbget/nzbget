@@ -71,7 +71,6 @@ static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
 static const char* OPTION_REMOTETIMEOUT			= "RemoteTimeout";
 static const char* OPTION_FLUSHQUEUE			= "FlushQueue";
-static const char* OPTION_BROKENLOG				= "BrokenLog";
 static const char* OPTION_NZBLOG				= "NzbLog";
 static const char* OPTION_RAWARTICLE			= "RawArticle";
 static const char* OPTION_SKIPWRITE				= "SkipWrite";
@@ -172,6 +171,8 @@ static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
 static const char* OPTION_TERMINATETIMEOUT		= "TerminateTimeout";
 static const char* OPTION_ACCURATERATE			= "AccurateRate";
+static const char* OPTION_CREATEBROKENLOG		= "CreateBrokenLog";
+static const char* OPTION_BROKENLOG				= "BrokenLog";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -449,7 +450,6 @@ void Options::InitDefaults()
 	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_REMOTETIMEOUT, "90");
 	SetOption(OPTION_FLUSHQUEUE, "yes");
-	SetOption(OPTION_BROKENLOG, "yes");
 	SetOption(OPTION_NZBLOG, "yes");
 	SetOption(OPTION_RAWARTICLE, "no");
 	SetOption(OPTION_SKIPWRITE, "no");
@@ -731,7 +731,6 @@ void Options::InitOptions()
 	m_quotaStartDay			= ParseIntValue(OPTION_QUOTASTARTDAY, 10);
 	m_dailyQuota			= ParseIntValue(OPTION_DAILYQUOTA, 10);
 
-	m_brokenLog				= (bool)ParseEnumValue(OPTION_BROKENLOG, BoolCount, BoolNames, BoolValues);
 	m_nzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
 	m_appendCategoryDir		= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_continuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
@@ -1606,7 +1605,9 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		!strcasecmp(optname, OPTION_SAVEQUEUE) ||
 		!strcasecmp(optname, OPTION_RELOADQUEUE) ||
 		!strcasecmp(optname, OPTION_TERMINATETIMEOUT) ||
-		!strcasecmp(optname, OPTION_ACCURATERATE))
+		!strcasecmp(optname, OPTION_ACCURATERATE) ||
+		!strcasecmp(optname, OPTION_CREATEBROKENLOG) ||
+		!strcasecmp(optname, OPTION_BROKENLOG))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;
@@ -1724,11 +1725,6 @@ void Options::ConvertOldOption(CString& option, CString& value)
 	if (!strcasecmp(option, "RetryInterval"))
 	{
 		option = "ArticleInterval";
-	}
-
-	if (!strcasecmp(option, "CreateBrokenLog"))
-	{
-		option = "BrokenLog";
 	}
 
 	if (!strcasecmp(option, "DumpCore"))

@@ -426,12 +426,12 @@ void PrePostProcessor::DeleteCleanup(NzbInfo* nzbInfo)
 			}
 		}
 
-		// delete .out.tmp-files and _brokenlog.txt
+		// delete .out.tmp-files
 		DirBrowser dir(nzbInfo->GetDestDir());
 		while (const char* filename = dir.Next())
 		{
 			int len = strlen(filename);
-			if ((len > 8 && !strcmp(filename + len - 8, ".out.tmp")) || !strcmp(filename, "_brokenlog.txt"))
+			if (len > 8 && !strcmp(filename + len - 8, ".out.tmp"))
 			{
 				BString<1024> fullFilename("%s%c%s", nzbInfo->GetDestDir(), PATH_SEPARATOR, filename);
 				detail("Deleting file %s", filename);

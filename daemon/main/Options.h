@@ -203,7 +203,6 @@ public:
 	const char* GetConfigTemplate() { return m_configTemplate; }
 	const char* GetScriptDir() { return m_scriptDir; }
 	const char* GetRequiredDir() { return m_requiredDir; }
-	bool GetBrokenLog() const { return m_brokenLog; }
 	bool GetNzbLog() const { return m_nzbLog; }
 	EMessageTarget GetInfoTarget() const { return m_infoTarget; }
 	EMessageTarget GetWarningTarget() const { return m_warningTarget; }
@@ -361,7 +360,6 @@ private:
 	EMessageTarget m_detailTarget = mtScreen;
 	bool m_skipWrite = false;
 	bool m_rawArticle = false;
-	bool m_brokenLog = false;
 	bool m_nzbLog = false;
 	int m_articleTimeout = 0;
 	int m_urlTimeout = 0;

@@ -204,7 +204,6 @@ private:
 	bool AddDupeFiles();
 	bool AddExtraFiles(bool onlyMissing, bool externalDir, const char* directory);
 	bool IsProcessedFile(const char* filename);
-	void WriteBrokenLog(EStatus status);
 	void SaveSourceList();
 	void DeleteLeftovers();
 	void signal_filename(std::string str);
