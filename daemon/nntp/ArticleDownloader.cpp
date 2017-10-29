@@ -562,22 +562,6 @@ void ArticleDownloader::Stop()
 	debug("ArticleDownloader stopped successfully");
 }
 
-bool ArticleDownloader::Terminate()
-{
-	NntpConnection* connection = m_connection;
-	bool terminated = Kill();
-	if (terminated && connection)
-	{
-		debug("Terminating connection");
-		connection->SetSuppressErrors(true);
-		connection->Cancel();
-		connection->Disconnect();
-		g_StatMeter->AddServerData(connection->FetchTotalBytesRead(), connection->GetNewsServer()->GetId());
-		g_ServerPool->FreeConnection(connection, true);
-	}
-	return terminated;
-}
-
 void ArticleDownloader::FreeConnection(bool keepConnected)
 {
 	if (m_connection)

@@ -158,8 +158,7 @@ void UrlCoordinator::Stop()
 
 void UrlCoordinator::ResetHangingDownloads()
 {
-	const int timeout = g_Options->GetTerminateTimeout();
-	if (timeout == 0)
+	if (g_Options->GetUrlTimeout() == 0)
 	{
 		return;
 	}
@@ -167,32 +166,15 @@ void UrlCoordinator::ResetHangingDownloads()
 	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	time_t tm = Util::CurrentTime();
 
-	m_activeDownloads.erase(std::remove_if(m_activeDownloads.begin(), m_activeDownloads.end(),
-		[timeout, tm](UrlDownloader* urlDownloader)
+	for (UrlDownloader* urlDownloader: m_activeDownloads)
+	{
+		if (tm - urlDownloader->GetLastUpdateTime() > g_Options->GetUrlTimeout() + 10 &&
+			urlDownloader->GetStatus() == UrlDownloader::adRunning)
 		{
-			if (tm - urlDownloader->GetLastUpdateTime() > timeout &&
-				urlDownloader->GetStatus() == UrlDownloader::adRunning)
-			{
-				NzbInfo* nzbInfo = urlDownloader->GetNzbInfo();
-				debug("Terminating hanging download %s", urlDownloader->GetInfoName());
-				if (urlDownloader->Terminate())
-				{
-					error("Terminated hanging download %s", urlDownloader->GetInfoName());
-					nzbInfo->SetUrlStatus(NzbInfo::lsNone);
-				}
-				else
-				{
-					error("Could not terminate hanging download %s", urlDownloader->GetInfoName());
-				}
-
-				// it's not safe to destroy urlDownloader, because the state of object is unknown
-				delete urlDownloader;
-
-				return true;
-			}
-			return false;
-		}),
-		m_activeDownloads.end());
+			error("Cancelling hanging url download %s", urlDownloader->GetInfoName());
+			urlDownloader->Stop();
+		}
+	}
 }
 
 void UrlCoordinator::LogDebugInfo()

@@ -79,7 +79,6 @@ static const char* OPTION_ARTICLERETRIES		= "ArticleRetries";
 static const char* OPTION_ARTICLEINTERVAL		= "ArticleInterval";
 static const char* OPTION_URLRETRIES			= "UrlRetries";
 static const char* OPTION_URLINTERVAL			= "UrlInterval";
-static const char* OPTION_TERMINATETIMEOUT		= "TerminateTimeout";
 static const char* OPTION_CONTINUEPARTIAL		= "ContinuePartial";
 static const char* OPTION_URLCONNECTIONS		= "UrlConnections";
 static const char* OPTION_LOGBUFFERSIZE			= "LogBufferSize";
@@ -172,6 +171,7 @@ static const char* OPTION_FEEDSCRIPT			= "FeedScript";
 static const char* OPTION_DECODE				= "Decode";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
+static const char* OPTION_TERMINATETIMEOUT		= "TerminateTimeout";
 
 const char* BoolNames[] = { "yes", "no", "true", "false", "1", "0", "on", "off", "enable", "disable", "enabled", "disabled" };
 const int BoolValues[] = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -457,7 +457,6 @@ void Options::InitDefaults()
 	SetOption(OPTION_ARTICLEINTERVAL, "10");
 	SetOption(OPTION_URLRETRIES, "3");
 	SetOption(OPTION_URLINTERVAL, "10");
-	SetOption(OPTION_TERMINATETIMEOUT, "600");
 	SetOption(OPTION_CONTINUEPARTIAL, "no");
 	SetOption(OPTION_URLCONNECTIONS, "4");
 	SetOption(OPTION_LOGBUFFERSIZE, "1000");
@@ -699,7 +698,6 @@ void Options::InitOptions()
 	m_downloadRate			= ParseIntValue(OPTION_DOWNLOADRATE, 10) * 1024;
 	m_articleTimeout		= ParseIntValue(OPTION_ARTICLETIMEOUT, 10);
 	m_urlTimeout			= ParseIntValue(OPTION_URLTIMEOUT, 10);
-	m_terminateTimeout		= ParseIntValue(OPTION_TERMINATETIMEOUT, 10);
 	m_remoteTimeout			= ParseIntValue(OPTION_REMOTETIMEOUT, 10);
 	m_articleRetries		= ParseIntValue(OPTION_ARTICLERETRIES, 10);
 	m_articleInterval		= ParseIntValue(OPTION_ARTICLEINTERVAL, 10);
@@ -1608,7 +1606,8 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		!strcasecmp(optname, OPTION_DELETECLEANUPDISK) ||
 		!strcasecmp(optname, OPTION_HISTORYCLEANUPDISK) ||
 		!strcasecmp(optname, OPTION_SAVEQUEUE) ||
-		!strcasecmp(optname, OPTION_RELOADQUEUE))
+		!strcasecmp(optname, OPTION_RELOADQUEUE) ||
+		!strcasecmp(optname, OPTION_TERMINATETIMEOUT))
 	{
 		ConfigWarn("Option \"%s\" is obsolete, ignored", optname);
 		return true;

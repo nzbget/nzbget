@@ -50,7 +50,6 @@ public:
 	virtual void Stop();
 	EStatus Download();
 	EStatus DownloadWithRedirects(int maxRedirects);
-	bool Terminate();
 	void SetInfoName(const char* infoName) { m_infoName = infoName; }
 	const char* GetInfoName() { return m_infoName; }
 	void SetUrl(const char* url);

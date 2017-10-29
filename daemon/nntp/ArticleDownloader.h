@@ -66,7 +66,6 @@ public:
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 	virtual void Run();
 	virtual void Stop();
-	bool Terminate();
 	time_t GetLastUpdateTime() { return m_lastUpdateTime; }
 	void SetLastUpdateTimeNow();
 	const char* GetArticleFilename() { return m_articleFilename; }

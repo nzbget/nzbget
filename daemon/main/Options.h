@@ -212,7 +212,6 @@ public:
 	EMessageTarget GetDetailTarget() const { return m_detailTarget; }
 	int GetArticleTimeout() { return m_articleTimeout; }
 	int GetUrlTimeout() { return m_urlTimeout; }
-	int GetTerminateTimeout() { return m_terminateTimeout; }
 	int GetRemoteTimeout() { return m_remoteTimeout; }
 	bool GetRawArticle() { return m_rawArticle; };
 	bool GetSkipWrite() { return m_skipWrite; };
@@ -367,7 +366,6 @@ private:
 	bool m_nzbLog = false;
 	int m_articleTimeout = 0;
 	int m_urlTimeout = 0;
-	int m_terminateTimeout = 0;
 	int m_remoteTimeout = 0;
 	bool m_appendCategoryDir = false;
 	bool m_continuePartial = false;

@@ -183,8 +183,7 @@ void FeedCoordinator::Stop()
 
 void FeedCoordinator::ResetHangingDownloads()
 {
-	const int timeout = g_Options->GetTerminateTimeout();
-	if (timeout == 0)
+	if (g_Options->GetUrlTimeout() == 0)
 	{
 		return;
 	}
@@ -192,31 +191,15 @@ void FeedCoordinator::ResetHangingDownloads()
 	Guard guard(m_downloadsMutex);
 	time_t tm = Util::CurrentTime();
 
-	m_activeDownloads.erase(std::remove_if(m_activeDownloads.begin(), m_activeDownloads.end(),
-		[timeout, tm](FeedDownloader* feedDownloader)
+	for (FeedDownloader* feedDownloader: m_activeDownloads)
+	{
+		if (tm - feedDownloader->GetLastUpdateTime() > g_Options->GetUrlTimeout() + 10 &&
+			feedDownloader->GetStatus() == FeedDownloader::adRunning)
 		{
-			if (tm - feedDownloader->GetLastUpdateTime() > timeout &&
-				feedDownloader->GetStatus() == FeedDownloader::adRunning)
-			{
-				debug("Terminating hanging download %s", feedDownloader->GetInfoName());
-				if (feedDownloader->Terminate())
-				{
-					error("Terminated hanging download %s", feedDownloader->GetInfoName());
-					feedDownloader->GetFeedInfo()->SetStatus(FeedInfo::fsUndefined);
-				}
-				else
-				{
-					error("Could not terminate hanging download %s", feedDownloader->GetInfoName());
-				}
-
-				// it's not safe to destroy feedDownloader, because the state of object is unknown
-				delete feedDownloader;
-
-				return true;
-			}
-			return false;
-		}),
-		m_activeDownloads.end());
+			error("Cancelling hanging feed download %s", feedDownloader->GetInfoName());
+			feedDownloader->Stop();
+		}
+	}
 }
 
 void FeedCoordinator::LogDebugInfo()

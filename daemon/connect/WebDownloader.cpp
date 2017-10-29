@@ -650,21 +650,6 @@ void WebDownloader::Stop()
 	debug("WebDownloader stopped successfully");
 }
 
-bool WebDownloader::Terminate()
-{
-	std::unique_ptr<Connection> connection = std::move(m_connection);
-	bool terminated = Kill();
-	if (terminated && connection)
-	{
-		debug("Terminating connection");
-		connection->SetSuppressErrors(true);
-		connection->Cancel();
-		connection->Disconnect();
-		connection.reset();
-	}
-	return terminated;
-}
-
 void WebDownloader::FreeConnection()
 {
 	if (m_connection)
