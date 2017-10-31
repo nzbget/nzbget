@@ -218,10 +218,15 @@ using namespace MSXML;
 #include <unordered_map>
 #include <iterator>
 #include <algorithm>
-#include <iostream>
 #include <fstream>
 #include <memory>
 #include <functional>
+
+// NOTE: do not include <iostream> in "nzbget.h". <iostream> contains objects requiring
+// intialization, causing every unit in nzbget to have initialization routine. This in particular
+// is causing fatal problems in SIMD units which must not have static initialization because
+// they contain code with runtime CPU dispatching.
+//#include <iostream>
 
 #ifdef HAVE_LIBGNUTLS
 #ifdef WIN32

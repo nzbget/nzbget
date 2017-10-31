@@ -19,7 +19,7 @@
 
 
 #include "nzbget.h"
-
+#include <iostream>
 #include "catch.h"
 
 #include "FileSystem.h"
