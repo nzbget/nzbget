@@ -87,6 +87,7 @@ private:
 	EStatus CheckYenc();
 	int DecodeUx(char* buffer, int len);
 	EStatus CheckUx();
+	void ProcessRaw(char* buffer, int len);
 };
 
 #endif

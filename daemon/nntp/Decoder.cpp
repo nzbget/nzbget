@@ -62,6 +62,12 @@ void Decoder::Clear()
  */
 int Decoder::DecodeBuffer(char* buffer, int len)
 {
+	if (m_rawMode)
+	{
+		ProcessRaw(buffer, len);
+		return len;
+	}
+
 	int outlen = 0;
 
 	if (m_body && m_format == efYenc)
@@ -89,7 +95,7 @@ int Decoder::DecodeBuffer(char* buffer, int len)
 			return outlen;
 		}
 
-		if (m_format == efUnknown && !m_rawMode)
+		if (m_format == efUnknown)
 		{
 			m_format = DetectFormat(line, llen);
 		}
@@ -113,15 +119,11 @@ int Decoder::DecodeBuffer(char* buffer, int len)
 		{
 			outlen += DecodeUx(line, llen);
 		}
-		else if (m_rawMode)
-		{
-			outlen += llen;
-		}
 
 		line = end + 1;
 	}
 
-	if (*line && !m_rawMode)
+	if (*line)
 	{
 		len = m_lineBuf.Length() - (int)(line - m_lineBuf);
 		memmove((char*)m_lineBuf, line, len);
@@ -237,7 +239,7 @@ int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 	const unsigned char* src = (unsigned char*)buffer;
 	unsigned char* dst = (unsigned char*)outbuf;
 
-	int endseq = YEncode::decode(&src, &dst, len, (YEncode::YencDecoderState*)&m_state);
+	int endseq = YEncode::decode_scalar(&src, &dst, len, (YEncode::YencDecoderState*)&m_state);
 	int outlen = (int)((char*)dst - outbuf);
 
 	// endseq:
@@ -397,4 +399,51 @@ Decoder::EStatus Decoder::CheckUx()
 	}
 
 	return dsFinished;
+}
+
+void Decoder::ProcessRaw(char* buffer, int len)
+{
+	switch (m_state)
+	{
+		case 1:
+			m_eof = len >= 4 && buffer[0] == '\n' &&
+				buffer[1] == '.' && buffer[2] == '\r' && buffer[3] == '\n';
+			break;
+
+		case 2:
+			m_eof = len >= 3 && buffer[0] == '.' && buffer[1] == '\r' && buffer[2] == '\n';
+			break;
+
+		case 3:
+			m_eof = len >= 2 && buffer[0] == '\r' && buffer[1] == '\n';
+			break;
+
+		case 4:
+			m_eof = len >= 1 && buffer[0] == '\n';
+			break;
+	}
+
+	m_eof |= len >= 5 && strstr(buffer, "\r\n.\r\n");
+
+	if (len >= 4 && buffer[len-4] == '\r' && buffer[len-3] == '\n' &&
+		buffer[len-2] == '.' && buffer[len-1] == '\r')
+	{
+		m_state = 4;
+	}
+	else if (len >= 3 && buffer[len-3] == '\r' && buffer[len-2] == '\n' && buffer[len-1] == '.')
+	{
+		m_state = 3;
+	}
+	else if (len >= 2 && buffer[len-2] == '\r' && buffer[len-1] == '\n')
+	{
+		m_state = 2;
+	}
+	else if (len >= 1 && buffer[len-1] == '\r')
+	{
+		m_state = 1;
+	}
+	else
+	{
+		m_state = 0;
+	}
 }
