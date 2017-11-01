@@ -239,7 +239,7 @@ int Decoder::DecodeYenc(char* buffer, char* outbuf, int len)
 	const unsigned char* src = (unsigned char*)buffer;
 	unsigned char* dst = (unsigned char*)outbuf;
 
-	int endseq = YEncode::decode_scalar(&src, &dst, len, (YEncode::YencDecoderState*)&m_state);
+	int endseq = YEncode::decode(&src, &dst, len, (YEncode::YencDecoderState*)&m_state);
 	int outlen = (int)((char*)dst - outbuf);
 
 	// endseq:
