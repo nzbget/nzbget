@@ -30,13 +30,15 @@ Building toolchains
     output    - to store the results of build script;
     setup     - for extra files required for installer;
 
-4. Build buildroot-toolchain for one CPU-architecture (see below);
-    4.1. Download Buildroot distribution archive from http://buildroot.uclibc.org/download.html
-         (currently using version "buildroot-2015.08.01");
+4. Build buildroot-toolchain for one CPU-architecture:
+    4.1. Download Buildroot distribution archive 'buildroot-2015.08.01' from
+         http://buildroot.uclibc.org/download.html.
+         If you choose other version the instructions may not apply exactly;
     4.2. Unpack the tarball into 'toolchain'-directory;
-    4.3. Rename the buildroot-directory according to the target CPU-architecture name;
-         Be careful here, after the toolchain is built the directory cannot be renamed
-         or moved, you will have to rebuild the toolchain if you want another name;
+    4.3. Rename the buildroot-directory according to the target CPU-architecture name,
+         for example 'x86_64' or 'armhf'; Be careful here, after the toolchain is
+         built the directory cannot be renamed or moved, you will have to rebuild
+         the toolchain if you want another name;
     4.4. Run 'make menuconfig';
     4.5. Configure toolchain:
          - Target architecture:
@@ -47,7 +49,7 @@ Building toolchains
              - Kernel Headers (Manually specified Linux version);
              - (2.6.32) linux version;
              - Custom kernel headers series (2.6.x);
-             - C library: glibc (for *86, arm*) or uClibc (for mips*, ppc*);
+             - C library: glibc (for x86_64 and armhf) or uClibc (for all other architectures);
              - uClibc library version (uClibc-ng);
              - Enable large file (files > 2 GB) support;
              - Enable IPv6 support;
@@ -69,9 +71,23 @@ Building toolchains
          - in 'packages/openssl/openssl.mk' replace 'zlib-dynamic' with 'zlib';
          - in 'packages/glibc/glibc.mk' add extra configure parameter
            '--enable-static-nss';
+         - in directory 'packages/glibc/2.20' create new file with name 'allocatestack-pax.patch'
+           with the following content; the patch fixes incompatibility with hardened kernels:
+>>> START OF 'allocatestack-pax.patch' - this line marker is not part of the file >>>
+--- a/nptl/allocatestack.c	2014-09-07 10:09:09.000000000 +0200
++++ b/nptl/allocatestack.c	2017-11-02 18:02:47.165016000 +0100
+@@ -78,6 +78,7 @@
+ #ifndef STACK_ALIGN
+ # define STACK_ALIGN __alignof__ (long double)
+ #endif
++#define PF_X 0
+ 
+ /* Default value for minimal stack size after allocating thread
+    descriptor and guard.  */
+<<< END OF 'allocatestack-pax.patch' - this line marker is not part of the file <<<
     4.7. Run 'make' to build the toolchain. It may take an hour or less depending
          on your hardware;
-    4.8. If C library "glibc" was chosen extra steps are needed to build proper
+    4.8. If C library 'glibc' was chosen extra steps are needed to build proper
          static libraries of OpenSSL in addition to already built dynamic
          libraries (which are also required):
          - delete directory 'output/build/openssl-x.x.x';
