@@ -175,6 +175,17 @@ void crc_slice(crc_state *const s, const unsigned char *src, long len)
 	uint32_t crc = s->crc0[0];
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+	// process first 1-3 bytes until input is aligned to 4 bytes
+	if ((uintptr_t)src & 3 && len >= 4)
+	{
+		int unaligned = 4 - (uintptr_t)src % 4;
+		while (unaligned-- != 0)
+		{
+			crc = ((crc >> 8) & 0x00FFFFFF) ^ crc32_tab[0][(crc ^ *src++) & 0xFF];
+			len--;
+		}
+	}
+
 	const uint32_t* current = (const uint32_t*)src;
 
 	// process four bytes at once (Slicing-by-4)

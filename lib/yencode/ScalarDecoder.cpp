@@ -24,12 +24,6 @@
 
 #include "YEncode.h"
 
-// combine two 8-bit ints into a 16-bit one
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define UINT16_PACK(a, b) ((a) | ((b) << 8))
-#else
-#define UINT16_PACK(a, b) (((a) << 8) | (b))
-#endif
 
 namespace YEncode
 {
@@ -109,25 +103,43 @@ int decode_scalar(const unsigned char** src, unsigned char** dest, size_t len, Y
 		c = es[i];
 		switch(c) {
 			case '\r': {
-				uint16_t next = *(uint16_t*)(es + i + 1);
-				if(next == UINT16_PACK('\n', '.')) {
-					// skip past \r\n. sequences
-					i += 3;
-					YDEC_CHECK_END(YDEC_STATE_CRLFDT)
-					// check for end
-					if(es[i] == '\r') {
-						i++;
-						YDEC_CHECK_END(YDEC_STATE_CRLFDTCR)
-						if(es[i] == '\n') {
-							*src = es + i + 1;
-							*dest = p;
-							*state = YDEC_STATE_CRLF;
-							return 2;
+				if(es[i+1] == '\n') {
+					c = es[i+2];
+					if(c == '.') {
+						// skip past \r\n. sequences
+						i += 3;
+						YDEC_CHECK_END(YDEC_STATE_CRLFDT)
+						// check for end
+						if(es[i] == '\r') {
+							i++;
+							YDEC_CHECK_END(YDEC_STATE_CRLFDTCR)
+							if(es[i] == '\n') {
+								*src = es + i + 1;
+								*dest = p;
+								*state = YDEC_STATE_CRLF;
+								return 2;
+							} else i--;
+						} else if(es[i] == '=') {
+							i++;
+							YDEC_CHECK_END(YDEC_STATE_CRLFEQ)
+							if(es[i] == 'y') {
+								*src = es + i + 1;
+								*dest = p;
+								*state = YDEC_STATE_NONE;
+								return 1;
+							} else {
+								// escape char & continue
+								c = es[i];
+								*p++ = c - 42 - 64;
+								i -= (c == '\r');
+							}
 						} else i--;
-					} else if(es[i] == '=') {
-						i++;
+					}
+					else if(c == '=') {
+						i += 3;
 						YDEC_CHECK_END(YDEC_STATE_CRLFEQ)
 						if(es[i] == 'y') {
+							// ended
 							*src = es + i + 1;
 							*dest = p;
 							*state = YDEC_STATE_NONE;
@@ -138,22 +150,6 @@ int decode_scalar(const unsigned char** src, unsigned char** dest, size_t len, Y
 							*p++ = c - 42 - 64;
 							i -= (c == '\r');
 						}
-					} else i--;
-				}
-				else if(next == UINT16_PACK('\n', '=')) {
-					i += 3;
-					YDEC_CHECK_END(YDEC_STATE_CRLFEQ)
-					if(es[i] == 'y') {
-						// ended
-						*src = es + i + 1;
-						*dest = p;
-						*state = YDEC_STATE_NONE;
-						return 1;
-					} else {
-						// escape char & continue
-						c = es[i];
-						*p++ = c - 42 - 64;
-						i -= (c == '\r');
 					}
 				}
 			} case '\n':
