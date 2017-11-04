@@ -126,7 +126,7 @@ var Messages = (new function($)
 	{
 		if (maxMessages === null)
 		{
-			maxMessages = parseInt(Options.option('LogBufferSize'));
+			maxMessages = parseInt(Options.option('LogBuffer'));
 			initFilterButtons();
 		}
 
