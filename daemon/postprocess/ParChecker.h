@@ -219,6 +219,7 @@ private:
 		uint32* downloadCrc);
 	bool DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, uint32* downloadCrc);
 	void CheckEmptyFiles();
+	CString GetPacketCreator();
 
 	friend class Repairer;
 };

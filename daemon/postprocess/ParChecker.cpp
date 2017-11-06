@@ -106,6 +106,11 @@ private:
 	volatile bool m_working = false;
 };
 
+class RepairCreatorPacket : public Par2::CreatorPacket
+{
+	friend class ParChecker;
+};
+
 Par2::Result Repairer::PreProcess(const char *parFilename)
 {
 	BString<100> memParam("-m%i", g_Options->GetParBuffer());
@@ -459,6 +464,9 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 		return psFailed;
 	}
 
+	CString creator = GetPacketCreator();
+	info("Recovery files created by: %s", creator.Empty() ? "<unknown program>" : *creator);
+
 	m_stage = ptVerifyingSources;
 	res = GetRepairer()->Process(false);
 
@@ -575,7 +583,8 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* parFilename)
 		{
 			m_errMsg = Par2CmdLineErrStr[res];
 		}
-		PrintMessage(Message::mkError, "Repair failed for %s: %s", *m_infoName, *m_errMsg);
+		PrintMessage(Message::mkError, "Repair failed for %s: %s. Recovery files created by: %s",
+			*m_infoName, *m_errMsg, creator.Empty() ? "<unknown program>" : *creator);
 	}
 
 	Cleanup();
@@ -1542,6 +1551,24 @@ bool ParChecker::DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, ui
 
 	*downloadCrcOut = downloadCrc.Finish();
 	return true;
+}
+
+CString ParChecker::GetPacketCreator()
+{
+	Par2::CREATORPACKET* creatorpacket;
+	if (GetRepairer()->creatorpacket &&
+		(creatorpacket = (Par2::CREATORPACKET*)(((RepairCreatorPacket*)GetRepairer()->creatorpacket)->packetdata)))
+	{
+		int len = (int)(creatorpacket->header.length - sizeof(Par2::PACKET_HEADER));
+		BString<1024> creator;
+		if (len > 0)
+		{
+			creator.Set((const char*)creatorpacket->client, len);
+		}
+		return *creator;
+	}
+
+	return nullptr;
 }
 
 #endif
