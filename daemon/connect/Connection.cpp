@@ -22,6 +22,7 @@
 #include "nzbget.h"
 #include "Connection.h"
 #include "Log.h"
+#include "FileSystem.h"
 
 static const int CONNECTION_READBUFFER_SIZE = 1024;
 #ifndef HAVE_GETADDRINFO
@@ -78,6 +79,10 @@ void closesocket_gracefully(SOCKET socket)
 	// Now we know that our FIN is ACK-ed, safe to close
 	closesocket(socket);
 }
+
+#ifdef __linux__
+CString ResolveAndroidHost(const char* host);
+#endif
 
 void Connection::Init()
 {
@@ -593,6 +598,19 @@ bool Connection::DoConnect()
 		BString<100> portStr("%d", m_port);
 
 		int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
+		debug("getaddrinfo for %s: %i", *m_host, res);
+
+#ifdef __linux__
+		if (res != 0)
+		{
+			CString resolvedHost = ResolveAndroidHost(m_host);
+			if (!resolvedHost.Empty())
+			{
+				res = getaddrinfo(resolvedHost, portStr, &addr_hints, &addr_list);
+			}
+		}
+#endif
+
 		if (res != 0)
 		{
 			ReportError("Could not resolve hostname %s", m_host, true
@@ -1121,3 +1139,232 @@ int Connection::FetchTotalBytesRead()
 	m_totalBytesRead = 0;
 	return total;
 }
+
+
+#ifdef __linux__
+
+//******************************************************************************
+// Android resolver proxy from AOSP (reworked):
+// https://github.com/aosp-mirror/platform_bionic/blob/6c1d23f059986e4ee6f52c44a4944089aae9181d/libc/dns/net/gethnamaddr.c
+
+#define	MAXALIASES	35
+#define	MAXADDRS	35
+#define ALIGNBYTES (sizeof(uintptr_t) - 1)
+#define ALIGN(p) (((uintptr_t)(p) + ALIGNBYTES) &~ ALIGNBYTES)
+#define NETID_UNSET 0u
+
+// This should be synchronized to ResponseCode.h
+static const int DnsProxyQueryResult = 222;
+
+FILE* android_open_proxy()
+{
+	const char* cache_mode = getenv("ANDROID_DNS_MODE");
+	bool use_proxy = (cache_mode == nullptr || strcmp(cache_mode, "local") != 0);
+	if (!use_proxy) {
+		return nullptr;
+	}
+
+	int s = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+	if (s == -1) {
+		return nullptr;
+	}
+
+	const int one = 1;
+	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+
+	struct sockaddr_un proxy_addr;
+	memset(&proxy_addr, 0, sizeof(proxy_addr));
+	proxy_addr.sun_family = AF_UNIX;
+	strncpy(proxy_addr.sun_path, "/dev/socket/dnsproxyd", sizeof(proxy_addr.sun_path));
+
+	if (connect(s, (const struct sockaddr*) &proxy_addr, sizeof(proxy_addr)) != 0) {
+		close(s);
+		return nullptr;
+	}
+
+	return fdopen(s, "r+");
+}
+
+static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
+	char* hbuf, size_t hbuflen, int *he)
+{
+	uint32_t size;
+	char buf[4];
+	if (fread(buf, 1, sizeof(buf), proxy) != sizeof(buf)) return nullptr;
+
+	// This is reading serialized data from system/netd/server/DnsProxyListener.cpp
+	// and changes here need to be matched there.
+	int result_code = strtol(buf, nullptr, 10);
+	if (result_code != DnsProxyQueryResult) {
+		fread(&size, 1, sizeof(size), proxy);
+		*he = HOST_NOT_FOUND;
+		return nullptr;
+	}
+
+	if (fread(&size, 1, sizeof(size), proxy) != sizeof(size)) return nullptr;
+	size = ntohl(size);
+
+	memset(hp, 0, sizeof(*hp));
+	char *ptr = hbuf;
+	char *hbuf_end = hbuf + hbuflen;
+
+	if (ptr + size > hbuf_end) {
+		//goto nospc;
+		*he = NETDB_INTERNAL;
+		errno = ENOSPC;
+		return nullptr;
+	}
+	if (fread(ptr, 1, size, proxy) != size) return nullptr;
+	hp->h_name = ptr;
+	ptr += size;
+
+	char *aliases_ptrs[MAXALIASES];
+	char **aliases = &aliases_ptrs[0];
+
+	while (1) {
+		if (fread(&size, 1, sizeof(size), proxy) != sizeof(size)) return nullptr;
+		size = ntohl(size);
+
+		if (size == 0) {
+			*aliases = nullptr;
+			break;
+		}
+		if (ptr + size > hbuf_end) {
+		  //goto nospc;
+			*he = NETDB_INTERNAL;
+			errno = ENOSPC;
+			return nullptr;
+		}
+		if (fread(ptr, 1, size, proxy) != size) return nullptr;
+		if (aliases < &aliases_ptrs[MAXALIASES - 1]) {
+		  *aliases++ = ptr;
+		}
+		ptr += size;
+	}
+
+	// Fix alignment after variable-length data.
+	ptr = (char*)ALIGN(ptr);
+
+	int aliases_len = ((int)(aliases - aliases_ptrs) + 1) * sizeof(*hp->h_aliases);
+	if (ptr + aliases_len > hbuf_end) {
+		//goto nospc;
+		*he = NETDB_INTERNAL;
+		errno = ENOSPC;
+		return nullptr;
+	}
+	hp->h_aliases = (char**)ptr;
+	memcpy(ptr, aliases_ptrs, aliases_len);
+	ptr += aliases_len;
+
+	if (fread(&size, 1, sizeof(size), proxy) != sizeof(size)) return nullptr;
+	hp->h_addrtype = ntohl(size);
+
+	if (fread(&size, 1, sizeof(size), proxy) != sizeof(size)) return nullptr;
+	hp->h_length = ntohl(size);
+
+	char *addr_ptrs[MAXADDRS];
+	char **addr_p = &addr_ptrs[0];
+
+	while (1) {
+		if (fread(&size, 1, sizeof(size), proxy) != sizeof(size)) return nullptr;
+		size = ntohl(size);
+		if (size == 0) {
+			*addr_p = nullptr;
+			break;
+		}
+		if (ptr + size > hbuf_end) {
+		  //goto nospc;
+			*he = NETDB_INTERNAL;
+			errno = ENOSPC;
+			return nullptr;
+		}
+		if (fread(ptr, 1, size, proxy) != size) return nullptr;
+		if (addr_p < &addr_ptrs[MAXADDRS - 1]) {
+		  *addr_p++ = ptr;
+		}
+		ptr += size;
+	}
+
+	// Fix alignment after variable-length data.
+	ptr = (char*)ALIGN(ptr);
+
+	int addrs_len = ((int)(addr_p - addr_ptrs) + 1) * sizeof(*hp->h_addr_list);
+	if (ptr + addrs_len > hbuf_end) {
+		goto nospc;
+	}
+	hp->h_addr_list = (char**)ptr;
+	memcpy(ptr, addr_ptrs, addrs_len);
+	*he = NETDB_SUCCESS;
+	return hp;
+
+nospc:
+	*he = NETDB_INTERNAL;
+	errno = ENOSPC;
+	return nullptr;
+}
+
+// very similar in proxy-ness to android_getaddrinfo_proxy
+static struct hostent * android_gethostbyname_internal(const char *name, int af,
+	struct hostent *hp, char *hbuf, size_t hbuflen, int *errorp)
+{
+	FILE* proxy = android_open_proxy();
+	if (proxy == nullptr) {
+		return nullptr;
+	}
+
+	// This is writing to system/netd/server/DnsProxyListener.cpp and changes
+	// here need to be matched there.
+	if (fprintf(proxy, "gethostbyname %u %s %d",
+			NETID_UNSET,
+			name == nullptr ? "^" : name,
+			af) < 0) {
+		fclose(proxy);
+		return nullptr;
+	}
+
+	if (fputc(0, proxy) == EOF || fflush(proxy) != 0) {
+		fclose(proxy);
+		return nullptr;
+	}
+
+	struct hostent* result = android_read_hostent(proxy, hp, hbuf, hbuflen, errorp);
+	fclose(proxy);
+	return result;
+}
+
+CString ResolveAndroidHost(const char* host)
+{
+	debug("ResolveAndroidHost");
+
+	bool android = FileSystem::DirectoryExists("/data/dalvik-cache");
+	if (!android)
+	{
+		debug("Not android");
+		return nullptr;
+	}
+
+	int h_errnop = 0;
+	struct hostent hinfobuf;
+	char strbuf[1024];
+
+	struct hostent* hinfo = android_gethostbyname_internal(host, AF_INET, &hinfobuf, strbuf, sizeof(strbuf), &h_errnop);
+	if (hinfo == nullptr)
+	{
+		// trying IPv6
+		hinfo = android_gethostbyname_internal(host, AF_INET6, &hinfobuf, strbuf, sizeof(strbuf), &h_errnop);
+	}
+
+	if (hinfo == nullptr)
+	{
+		debug("android_gethostbyname_r failed");
+		return nullptr;
+	}
+
+	BString<1024> result;
+	inet_ntop(hinfo->h_addrtype, hinfo->h_addr_list[0], result, result.Capacity());
+
+	debug("android_gethostbyname_r returned %s", *result);
+	return *result;
+}
+
+#endif
