@@ -75,31 +75,55 @@ void Log::Filelog(const char* msg, ...)
 
 	if ((int)rawtime/86400 != (int)m_lastWritten/86400 && g_Options->GetWriteLog() == Options::wlRotate)
 	{
+		if (m_logFile)
+		{
+			m_logFile.reset();
+		}
 		RotateLog();
 	}
 
 	m_lastWritten = rawtime;
 
-	DiskFile file;
-	if (file.Open(m_logFilename, DiskFile::omAppend))
+	if (!m_logFile)
 	{
+		m_logFile = std::make_unique<DiskFile>();
+		if (!m_logFile->Open(m_logFilename, DiskFile::omAppend))
+		{
+			perror(m_logFilename);
+			m_logFile.reset();
+			return;
+		}
+	}
+
+	m_logFile->Seek(0, DiskFile::soEnd);
+
 #ifdef WIN32
-		uint64 processId = GetCurrentProcessId();
-		uint64 threadId = GetCurrentThreadId();
+	uint64 processId = GetCurrentProcessId();
+	uint64 threadId = GetCurrentThreadId();
 #else
-		uint64 processId = (uint64)getpid();
-		uint64 threadId = (uint64)pthread_self();
+	uint64 processId = (uint64)getpid();
+	uint64 threadId = (uint64)pthread_self();
 #endif
 #ifdef DEBUG
-		file.Print("%s\t%llu\t%llu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
+	m_logFile->Print("%s\t%llu\t%llu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
 #else
-		file.Print("%s\t%s%s", time, tmp2, LINE_ENDING);
+	m_logFile->Print("%s\t%s%s", time, tmp2, LINE_ENDING);
 #endif
-		file.Close();
-	}
-	else
+
+	m_logFile->Flush();
+}
+
+void Log::IntervalCheck()
+{
+	// Close log-file on idle (if last write into log was more than a second ago)
+	if (m_logFile)
 	{
-		perror(m_logFilename);
+		time_t curTime = Util::CurrentTime() + g_Options->GetTimeCorrection();
+		if (std::abs(curTime - m_lastWritten) > 1)
+		{
+			Guard guard(m_logMutex);
+			m_logFile.reset();
+		}
 	}
 }
 

@@ -257,6 +257,7 @@ void QueueCoordinator::Run()
 			}
 			resetCounter = 0;
 			g_StatMeter->IntervalCheck();
+			g_Log->IntervalCheck();
 			AdjustDownloadsLimit();
 		}
 	}

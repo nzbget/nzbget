@@ -70,6 +70,7 @@ typedef std::deque<Message> MessageList;
 typedef GuardedPtr<MessageList> GuardedMessageList;
 
 class Debuggable;
+class DiskFile;
 
 class Log
 {
@@ -83,6 +84,7 @@ public:
 	void RegisterDebuggable(Debuggable* debuggable);
 	void UnregisterDebuggable(Debuggable* debuggable);
 	void LogDebugInfo();
+	void IntervalCheck();
 
 private:
 	typedef std::list<Debuggable*> Debuggables;
@@ -92,6 +94,7 @@ private:
 	Debuggables m_debuggables;
 	Mutex m_debugMutex;
 	CString m_logFilename;
+	std::unique_ptr<DiskFile> m_logFile;
 	uint32 m_idGen = 0;
 	time_t m_lastWritten = 0;
 	bool m_optInit = false;
