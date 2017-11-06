@@ -493,7 +493,7 @@ std::unique_ptr<Connection> Connection::Accept()
 
 int Connection::TryRecv(char* buffer, int size)
 {
-	debug("Receiving data");
+	//debug("Receiving data");
 
 	memset(buffer, 0, size);
 
@@ -513,7 +513,7 @@ int Connection::TryRecv(char* buffer, int size)
 
 bool Connection::Recv(char * buffer, int size)
 {
-	debug("Receiving data (full buffer)");
+	//debug("Receiving data (full buffer)");
 
 	memset(buffer, 0, size);
 

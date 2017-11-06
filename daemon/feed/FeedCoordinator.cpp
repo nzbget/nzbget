@@ -630,10 +630,10 @@ bool FeedCoordinator::HasActiveDownloads()
 
 void FeedCoordinator::CheckSaveFeeds()
 {
-	debug("CheckSaveFeeds");
 	Guard guard(m_downloadsMutex);
 	if (m_save)
 	{
+		debug("CheckSaveFeeds: save");
 		if (g_Options->GetServerMode())
 		{
 			g_DiskState->SaveFeeds(&m_feeds, &m_feedHistory);
