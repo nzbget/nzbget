@@ -1151,7 +1151,6 @@ int Connection::FetchTotalBytesRead()
 #define	MAXADDRS	35
 #define ALIGNBYTES (sizeof(uintptr_t) - 1)
 #define ALIGN(p) (((uintptr_t)(p) + ALIGNBYTES) &~ ALIGNBYTES)
-#define NETID_UNSET 0u
 
 // This should be synchronized to ResponseCode.h
 static const int DnsProxyQueryResult = 222;
@@ -1314,8 +1313,8 @@ static struct hostent * android_gethostbyname_internal(const char *name, int af,
 
 	// This is writing to system/netd/server/DnsProxyListener.cpp and changes
 	// here need to be matched there.
-	if (fprintf(proxy, "gethostbyname %u %s %d",
-			NETID_UNSET,
+	if (fprintf(proxy, "gethostbyname %s %s %d",
+			"^",
 			name == nullptr ? "^" : name,
 			af) < 0) {
 		fclose(proxy);
