@@ -3317,8 +3317,14 @@ void TestServerXmlCommand::Execute()
 	bool ok = connection.Connect();
 	if (ok)
 	{
-		const char* response = connection.Request("ARTICLE <connection-test>\r\n");
-		ok = response && *response == '4';
+		// generate a unique non-existent message-id since we don't want a real article to be returned
+		BString<1024> id;
+		while (id.Length() < 30)
+		{
+			id.AppendFmt("%i", rand());
+		}
+		const char* response = connection.Request(BString<1024>("ARTICLE <%s@nzbget.net>\r\n", *id));
+		ok = response && (*response == '4' || *response == '2');
 	}
 
 	BString<1024> content(IsJson() ? JSON_RESPONSE_STR_BODY : XML_RESPONSE_STR_BODY,
