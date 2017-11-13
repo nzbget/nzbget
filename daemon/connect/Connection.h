@@ -33,6 +33,16 @@
 #include "TlsSocket.h"
 #endif
 
+/*
+ * Fix missing NETDB defines when using musl libc
+ */
+#if !defined(NETDB_INTERNAL)
+#  define NETDB_INTERNAL (-1)
+#endif
+#if !defined(NETDB_SUCCESS)
+#  define NETDB_SUCCESS (0)
+#endif
+
 class Connection
 {
 public:
