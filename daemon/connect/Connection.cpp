@@ -1184,8 +1184,7 @@ FILE* android_open_proxy()
 	return fdopen(s, "r+");
 }
 
-static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
-	char* hbuf, size_t hbuflen, int *he)
+static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp, char* hbuf, size_t hbuflen)
 {
 	uint32_t size;
 	char buf[4];
@@ -1196,7 +1195,6 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
 	int result_code = strtol(buf, nullptr, 10);
 	if (result_code != DnsProxyQueryResult) {
 		fread(&size, 1, sizeof(size), proxy);
-		*he = HOST_NOT_FOUND;
 		return nullptr;
 	}
 
@@ -1208,9 +1206,6 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
 	char *hbuf_end = hbuf + hbuflen;
 
 	if (ptr + size > hbuf_end) {
-		//goto nospc;
-		*he = NETDB_INTERNAL;
-		errno = ENOSPC;
 		return nullptr;
 	}
 	if (fread(ptr, 1, size, proxy) != size) return nullptr;
@@ -1229,9 +1224,6 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
 			break;
 		}
 		if (ptr + size > hbuf_end) {
-		  //goto nospc;
-			*he = NETDB_INTERNAL;
-			errno = ENOSPC;
 			return nullptr;
 		}
 		if (fread(ptr, 1, size, proxy) != size) return nullptr;
@@ -1246,9 +1238,6 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
 
 	int aliases_len = ((int)(aliases - aliases_ptrs) + 1) * sizeof(*hp->h_aliases);
 	if (ptr + aliases_len > hbuf_end) {
-		//goto nospc;
-		*he = NETDB_INTERNAL;
-		errno = ENOSPC;
 		return nullptr;
 	}
 	hp->h_aliases = (char**)ptr;
@@ -1272,9 +1261,6 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
 			break;
 		}
 		if (ptr + size > hbuf_end) {
-		  //goto nospc;
-			*he = NETDB_INTERNAL;
-			errno = ENOSPC;
 			return nullptr;
 		}
 		if (fread(ptr, 1, size, proxy) != size) return nullptr;
@@ -1289,22 +1275,16 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp,
 
 	int addrs_len = ((int)(addr_p - addr_ptrs) + 1) * sizeof(*hp->h_addr_list);
 	if (ptr + addrs_len > hbuf_end) {
-		goto nospc;
+		return nullptr;
 	}
 	hp->h_addr_list = (char**)ptr;
 	memcpy(ptr, addr_ptrs, addrs_len);
-	*he = NETDB_SUCCESS;
 	return hp;
-
-nospc:
-	*he = NETDB_INTERNAL;
-	errno = ENOSPC;
-	return nullptr;
 }
 
 // very similar in proxy-ness to android_getaddrinfo_proxy
 static struct hostent * android_gethostbyname_internal(const char *name, int af,
-	struct hostent *hp, char *hbuf, size_t hbuflen, int *errorp)
+	struct hostent *hp, char *hbuf, size_t hbuflen)
 {
 	FILE* proxy = android_open_proxy();
 	if (proxy == nullptr) {
@@ -1326,7 +1306,7 @@ static struct hostent * android_gethostbyname_internal(const char *name, int af,
 		return nullptr;
 	}
 
-	struct hostent* result = android_read_hostent(proxy, hp, hbuf, hbuflen, errorp);
+	struct hostent* result = android_read_hostent(proxy, hp, hbuf, hbuflen);
 	fclose(proxy);
 	return result;
 }
@@ -1342,15 +1322,14 @@ CString ResolveAndroidHost(const char* host)
 		return nullptr;
 	}
 
-	int h_errnop = 0;
 	struct hostent hinfobuf;
 	char strbuf[1024];
 
-	struct hostent* hinfo = android_gethostbyname_internal(host, AF_INET, &hinfobuf, strbuf, sizeof(strbuf), &h_errnop);
+	struct hostent* hinfo = android_gethostbyname_internal(host, AF_INET, &hinfobuf, strbuf, sizeof(strbuf));
 	if (hinfo == nullptr)
 	{
 		// trying IPv6
-		hinfo = android_gethostbyname_internal(host, AF_INET6, &hinfobuf, strbuf, sizeof(strbuf), &h_errnop);
+		hinfo = android_gethostbyname_internal(host, AF_INET6, &hinfobuf, strbuf, sizeof(strbuf));
 	}
 
 	if (hinfo == nullptr)
