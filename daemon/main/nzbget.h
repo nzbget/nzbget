@@ -254,6 +254,7 @@ typedef int pid_t;
 #include <openssl/sha.h>
 #include <openssl/pem.h>
 #include <openssl/x509v3.h>
+#include <openssl/comp.h>
 #endif /* HAVE_OPENSSL */
 
 #ifdef HAVE_REGEX_H

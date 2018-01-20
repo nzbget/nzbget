@@ -200,13 +200,15 @@ void TlsSocket::Final()
 #endif /* HAVE_LIBGNUTLS */
 
 #ifdef HAVE_OPENSSL
+#ifndef LIBRESSL_VERSION_NUMBER
 	FIPS_mode_set(0);
+#endif
 #ifdef NEED_CRYPTO_LOCKING
 	CRYPTO_set_locking_callback(nullptr);
 	CRYPTO_set_id_callback(nullptr);
 #endif
 	ERR_remove_state(0);
-#if	OPENSSL_VERSION_NUMBER >= 0x10002000L
+#if	OPENSSL_VERSION_NUMBER >= 0x10002000L && ! defined (LIBRESSL_VERSION_NUMBER)
 	SSL_COMP_free_compression_methods();
 #endif
 	//ENGINE_cleanup();
