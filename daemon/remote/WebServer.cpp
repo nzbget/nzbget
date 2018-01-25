@@ -466,7 +466,7 @@ void WebProcessor::SendBodyResponse(const char* body, int bodyLen, const char* c
 		"Access-Control-Max-Age: 86400\r\n"
 		"Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
 		"Set-Cookie: Auth-Type=%s\r\n"
-		"Set-Cookie: Auth-Token=%s\r\n"
+		"Set-Cookie: Auth-Token=%s; HttpOnly\r\n"
 		"Content-Length: %i\r\n"
 		"%s"					// Content-Type: xxx
 		"%s"					// Content-Encoding: gzip
