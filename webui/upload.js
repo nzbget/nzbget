@@ -360,7 +360,7 @@ var Upload = (new function($)
 			var filename = info.name + info.ext;
 			var addPaused = $('#AddDialog_Paused').is(':checked');
 			var dupeMode = $('#AddDialog_DupeForce').is(':checked') ? "FORCE" : "SCORE";
-			var params = info.password === '' ? [] : [{'*Unpack:password' : info.password}];
+			var params = info.password === '' ? [] : [{'*Unpack:Password' : info.password}];
 			RPC.call('append', [filename, base64str, category, priority, false, addPaused, info.dupekey, info.dupescore, dupeMode, params], fileCompleted, fileFailure);
 		};
 
@@ -412,7 +412,7 @@ var Upload = (new function($)
 		var priority = parseInt($('#AddDialog_Priority').val());
 		var addPaused = $('#AddDialog_Paused').is(':checked');
 		var dupeMode = $('#AddDialog_DupeForce').is(':checked') ? "FORCE" : "SCORE";
-		var params = urlInfo.password === '' ? [] : [{'*Unpack:password' : urlInfo.password}];
+		var params = urlInfo.password === '' ? [] : [{'*Unpack:Password' : urlInfo.password}];
 		RPC.call('append', [urlInfo.name, url, category, priority, false, addPaused, urlInfo.dupekey, urlInfo.dupescore, dupeMode, params], urlCompleted, urlFailure);
 	}
 
