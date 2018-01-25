@@ -60,10 +60,10 @@ void UnpackController::Run()
 		m_finalDir = m_postInfo->GetNzbInfo()->GetFinalDir();
 		m_name = m_postInfo->GetNzbInfo()->GetName();
 
-		NzbParameter* parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
+		NzbParameter* parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:");
 		unpack = !(parameter && !strcasecmp(parameter->GetValue(), "no"));
 
-		parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:Password", false);
+		parameter = m_postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:Password");
 		if (parameter)
 		{
 			m_password = parameter->GetValue();

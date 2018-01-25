@@ -55,7 +55,7 @@ void DirectUnpack::Run()
 		m_destDir = nzbInfo->GetDestDir();
 		m_finalDir = nzbInfo->BuildFinalDirName();
 
-		NzbParameter* parameter = nzbInfo->GetParameters()->Find("*Unpack:Password", false);
+		NzbParameter* parameter = nzbInfo->GetParameters()->Find("*Unpack:Password");
 		if (parameter)
 		{
 			m_password = parameter->GetValue();

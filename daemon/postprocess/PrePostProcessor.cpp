@@ -706,7 +706,7 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	}
 #endif
 
-	NzbParameter* unpackParameter = postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:", false);
+	NzbParameter* unpackParameter = postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:");
 	bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
 	bool unpack = wantUnpack && postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone &&
 		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone;
@@ -935,7 +935,7 @@ void PrePostProcessor::FileDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzb
 			DirectUnpack::IsArchiveFilename(fileInfo->GetFilename()) &&
 			CanRunMoreJobs(&allowPar))
 		{
-			NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:", false);
+			NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:");
 			bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
 			if (wantUnpack && nzbInfo->GetFailedArticles() == 0)
 			{

@@ -304,7 +304,7 @@ class NzbParameterList : public NzbParameterListBase
 {
 public:
 	void SetParameter(const char* name, const char* value);
-	NzbParameter* Find(const char* name, bool caseSensitive);
+	NzbParameter* Find(const char* name);
 	void CopyFrom(NzbParameterList* sourceParameters);
 };
 

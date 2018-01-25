@@ -40,7 +40,7 @@ void NzbParameterList::SetParameter(const char* name, const char* value)
 	iterator pos = std::find_if(begin(), end(),
 		[name](NzbParameter& parameter)
 		{
-			return !strcmp(parameter.GetName(), name);
+			return !strcasecmp(parameter.GetName(), name);
 		});
 
 	if (emptyVal && pos != end())
@@ -57,12 +57,11 @@ void NzbParameterList::SetParameter(const char* name, const char* value)
 	}
 }
 
-NzbParameter* NzbParameterList::Find(const char* name, bool caseSensitive)
+NzbParameter* NzbParameterList::Find(const char* name)
 {
 	for (NzbParameter& parameter : this)
 	{
-		if ((caseSensitive && !strcmp(parameter.GetName(), name)) ||
-			(!caseSensitive && !strcasecmp(parameter.GetName(), name)))
+		if (!strcasecmp(parameter.GetName(), name))
 		{
 			return &parameter;
 		}
