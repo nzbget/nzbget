@@ -31,8 +31,8 @@ bool DupeCoordinator::SameNameOrKey(const char* name1, const char* dupeKey1,
 	const char* name2, const char* dupeKey2)
 {
 	bool hasDupeKeys = !Util::EmptyStr(dupeKey1) && !Util::EmptyStr(dupeKey2);
-	return (hasDupeKeys && !strcmp(dupeKey1, dupeKey2)) ||
-		(!hasDupeKeys && !strcmp(name1, name2));
+	return (hasDupeKeys && !strcasecmp(dupeKey1, dupeKey2)) ||
+		(!hasDupeKeys && !strcasecmp(name1, name2));
 }
 
 /**
