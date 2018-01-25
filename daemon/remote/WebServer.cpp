@@ -283,10 +283,10 @@ bool WebProcessor::CheckCredentials()
 		}
 		else
 		{
-			warn("Request received on port %i from %s%s, but username or password invalid (%s:%s)",
+			warn("Request received on port %i from %s%s, but username (%s) or password invalid",
 				g_Options->GetControlPort(), m_connection->GetRemoteAddr(),
 				!m_forwardedFor.Empty() ? (char*)BString<1024>(" (forwarded for: %s)", *m_forwardedFor) : "",
-				m_authInfo, pw);
+				m_authInfo);
 			return false;
 		}
 	}
