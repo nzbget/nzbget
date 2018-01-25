@@ -371,7 +371,10 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 		}
 	}
 
-	parameters->SetParameter("*Unpack:", unpack ? "yes" : "no");
+	if (!parameters->Find("*Unpack:"))
+	{
+		parameters->SetParameter("*Unpack:", unpack ? "yes" : "no");
+	}
 
 	if (!Util::EmptyStr(extensions))
 	{
@@ -381,10 +384,12 @@ void Scanner::InitPPParameters(const char* category, NzbParameterList* parameter
 		{
 			for (ScriptConfig::Script& script : g_ScriptConfig->GetScripts())
 			{
+				BString<1024> paramName("%s:", scriptName);
 				if ((script.GetPostScript() || script.GetQueueScript()) &&
+					!parameters->Find(paramName) &&
 					FileSystem::SameFilename(scriptName, script.GetName()))
 				{
-					parameters->SetParameter(BString<1024>("%s:", scriptName), "yes");
+					parameters->SetParameter(paramName, "yes");
 				}
 			}
 		}
