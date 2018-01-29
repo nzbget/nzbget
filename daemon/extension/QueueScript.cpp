@@ -409,11 +409,10 @@ void QueueScriptCoordinator::CheckQueue()
 		return;
 	}
 
-	m_curItem.reset();
-
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 	Guard guard(m_queueMutex);
 
+	m_curItem.reset();
 	NzbInfo* curNzbInfo = nullptr;
 	Queue::iterator itCurItem;
 
