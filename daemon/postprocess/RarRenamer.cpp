@@ -202,7 +202,8 @@ void RarRenamer::MakeSets()
 	// find first volumes and create initial incomplete sets
 	for (RarVolume& volume : m_volumes)
 	{
-		if (!volume.GetFiles()->empty() && volume.GetVolumeNo() == 0)
+		if (!volume.GetFiles()->empty() && volume.GetVolumeNo() == 0 &&
+			!volume.GetFiles()->front().GetSplitBefore())
 		{
 			m_sets.push_back({&volume});
 		}
