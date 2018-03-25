@@ -389,7 +389,11 @@ webui_FILES = \
 	webui/img/favicon.ico \
 	webui/img/download-anim-green-2x.png \
 	webui/img/download-anim-orange-2x.png \
-	webui/img/transmit-reload-2x.gif
+	webui/img/transmit-reload-2x.gif \
+	webui/img/favicon-180x180-opaque.png \
+	webui/img/favicon-192x192.png \
+	webui/img/favicon-256x256.png \
+	webui/img/favicon-270x270.png
 
 scripts_FILES = \
 	scripts/EMail.py \
