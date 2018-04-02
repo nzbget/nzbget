@@ -100,11 +100,21 @@ class Nzbget:
 			self.remove_tempdir()
 
 	def remove_tempdir(self):
-		if os.path.exists(nzbget_maindir + '.old'):
-			shutil.rmtree(nzbget_maindir + '.old')
-		if os.path.exists(nzbget_maindir):
-			os.rename(nzbget_maindir, nzbget_maindir + '.old')
-			shutil.rmtree(nzbget_maindir + '.old')
+		attempt = 1
+		completed = False
+		while not completed:
+			try:
+				if os.path.exists(nzbget_maindir + '.old'):
+					shutil.rmtree(nzbget_maindir + '.old')
+				if os.path.exists(nzbget_maindir):
+					os.rename(nzbget_maindir, nzbget_maindir + '.old')
+					shutil.rmtree(nzbget_maindir + '.old')
+				completed = True
+			except:
+				if attempt > 20:
+					raise
+				attempt += 1
+				time.sleep(0.2)
 
 	def prepare_session(self):
 		self.remove_tempdir()
