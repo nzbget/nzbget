@@ -373,6 +373,7 @@ int ParChecker::StreamBuf::overflow(int ch)
 
 void ParChecker::Cleanup()
 {
+	Guard guard(m_repairerMutex);
 	m_repairer.reset();
 	m_queuedParFiles.clear();
 	m_processedFiles.clear();
@@ -598,7 +599,10 @@ int ParChecker::PreProcessPar()
 	{
 		Cleanup();
 
-		m_repairer = std::make_unique<Repairer>(this);
+		{
+			Guard guard(m_repairerMutex);
+			m_repairer = std::make_unique<Repairer>(this);
+		}
 
 		res = GetRepairer()->PreProcess(m_parFilename);
 		debug("ParChecker: PreProcess-result=%i", res);
@@ -1189,7 +1193,13 @@ void ParChecker::CheckEmptyFiles()
 
 void ParChecker::Cancel()
 {
-	GetRepairer()->cancelled = true;
+	{
+		Guard guard(m_repairerMutex);
+		if (m_repairer)
+		{
+			m_repairer->GetRepairer()->cancelled = true;
+		}
+	}
 	QueueChanged();
 }
 

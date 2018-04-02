@@ -186,6 +186,7 @@ private:
 	StreamBuf m_parErrStream{this, Message::mkError};
 	std::ostream m_parCout{&m_parOutStream};
 	std::ostream m_parCerr{&m_parErrStream};
+	Mutex m_repairerMutex;
 
 	// "m_repairer" should be of type "Par2::Par2Repairer", however to prevent the
 	// including of libpar2-headers into this header-file we use an empty abstract class.
