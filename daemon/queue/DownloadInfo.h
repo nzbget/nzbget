@@ -196,6 +196,8 @@ public:
 	void SetHash16k(const char* hash16k) { m_hash16k = hash16k; }
 	const char* GetParSetId() { return m_parSetId; }
 	void SetParSetId(const char* parSetId) { m_parSetId = parSetId; }
+	bool GetFlushLocked() { return m_flushLocked; }
+	void SetFlushLocked(bool flushLocked) { m_flushLocked = flushLocked; }
 
 	ServerStatList* GetServerStats() { return &m_serverStats; }
 
@@ -235,6 +237,7 @@ private:
 	uint32 m_crc = 0;
 	CString m_hash16k;
 	CString m_parSetId;
+	bool m_flushLocked = false;
 
 	static int m_idGen;
 	static int m_idMax;

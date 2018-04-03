@@ -582,10 +582,18 @@ void ArticleWriter::FlushCache()
 		ArticleCache::FlushGuard flushGuard = g_ArticleCache->GuardFlush();
 
 		std::vector<ArticleInfo*> cachedArticles;
-		cachedArticles.reserve(m_fileInfo->GetArticles()->size());
 
 		{
 			Guard contentGuard = g_ArticleCache->GuardContent();
+
+			if (m_fileInfo->GetFlushLocked())
+			{
+				return;
+			}
+
+			m_fileInfo->SetFlushLocked(true);
+
+			cachedArticles.reserve(m_fileInfo->GetArticles()->size());
 			for (ArticleInfo* pa : m_fileInfo->GetArticles())
 			{
 				if (pa->GetSegmentContent())
@@ -675,6 +683,7 @@ void ArticleWriter::FlushCache()
 		{
 			Guard contentGuard = g_ArticleCache->GuardContent();
 			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() - flushedArticles);
+			m_fileInfo->SetFlushLocked(false);
 		}
 	}
 

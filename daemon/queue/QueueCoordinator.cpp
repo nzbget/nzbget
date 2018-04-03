@@ -1323,7 +1323,18 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		if (fileInfo->GetParFile() && fileInfo->GetCompletedArticles() == 1 && fileInfo->GetActiveDownloads() == 0)
+		bool locked = false;
+		{
+			Guard contentGuard = g_ArticleCache->GuardContent();
+			locked = fileInfo->GetFlushLocked();
+			if (!locked)
+			{
+				fileInfo->SetFlushLocked(true);
+			}
+		}
+
+		if (fileInfo->GetParFile() && fileInfo->GetCompletedArticles() == 1 &&
+			fileInfo->GetActiveDownloads() == 0 && !locked)
 		{
 			// discard downloaded articles from partially downloaded par-files
 			discardedSize += fileInfo->GetSuccessSize();
@@ -1377,6 +1388,12 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 					articleInfo->DiscardSegment();
 				}
 			}
+		}
+
+		if (locked)
+		{
+			Guard contentGuard = g_ArticleCache->GuardContent();
+			fileInfo->SetFlushLocked(false);
 		}
 
 		if (g_Options->GetServerMode() &&
