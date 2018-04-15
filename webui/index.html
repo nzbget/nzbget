@@ -74,16 +74,16 @@
 
   <!-- favicons -->
   <link rel="shortcut icon" href="img/favicon.ico">
-  <!-- apple ios & safari -->
-  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon-180x180-opaque.png">
-  <link rel="mask-icon" href="img/safari-pinned-tab.svg" color="#41cc42">
+  <!-- apple ios -->
+  <script language="javascript" type="text/javascript">
+	// prevent Android browsers from using of icon designed for iOS
+	if (window.navigator.userAgent.match(/iPhone/i) || window.navigator.userAgent.match(/iPad/i))
+	{
+		document.write('<link rel="apple-touch-icon" href="img/favicon-256x256-opaque.png">');
+	}
+  </script>
   <!-- android -->
-  <meta name="theme-color" content="#41cc42">
-  <link rel="icon" type="image/png" sizes="192x192" href="img/favicon-192x192.png">
   <link rel="icon" type="image/png" sizes="256x256" href="img/favicon-256x256.png">
-  <!-- windows phone -->
-  <meta name="msapplication-square150x150logo" content="img/favicon-270x270.png">
-  <meta name="msapplication-TileColor" content="#41cc42">
 
 </head>
 
