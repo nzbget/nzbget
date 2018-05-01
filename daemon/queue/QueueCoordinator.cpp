@@ -1323,77 +1323,33 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 
 	for (FileInfo* fileInfo : nzbInfo->GetFileList())
 	{
-		bool locked = false;
-		{
-			Guard contentGuard = g_ArticleCache->GuardContent();
-			locked = fileInfo->GetFlushLocked();
-			if (!locked)
-			{
-				fileInfo->SetFlushLocked(true);
-			}
-		}
-
 		if (fileInfo->GetParFile() && fileInfo->GetCompletedArticles() == 1 &&
-			fileInfo->GetActiveDownloads() == 0 && !locked)
+			fileInfo->GetActiveDownloads() == 0)
 		{
-			// discard downloaded articles from partially downloaded par-files
-			discardedSize += fileInfo->GetSuccessSize();
-			discardedCount++;
-
-			nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() + fileInfo->GetSuccessSize() + fileInfo->GetFailedSize());
-			if (fileInfo->GetPaused())
+			bool locked = false;
 			{
-				nzbInfo->SetPausedSize(nzbInfo->GetPausedSize() + fileInfo->GetSuccessSize() + fileInfo->GetFailedSize());
-			}
-			nzbInfo->GetCurrentServerStats()->ListOp(fileInfo->GetServerStats(), ServerStatList::soSubtract);
-			fileInfo->GetServerStats()->clear();
-
-			nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetCurrentSuccessArticles() - fileInfo->GetSuccessArticles());
-			nzbInfo->SetCurrentSuccessSize(nzbInfo->GetCurrentSuccessSize() - fileInfo->GetSuccessSize());
-			nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() - fileInfo->GetSuccessSize());
-			fileInfo->SetSuccessSize(0);
-			fileInfo->SetSuccessArticles(0);
-
-			nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() - fileInfo->GetFailedArticles());
-			nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() - fileInfo->GetFailedSize());
-			nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() - fileInfo->GetFailedSize());
-			fileInfo->SetFailedSize(0);
-			fileInfo->SetFailedArticles(0);
-
-			fileInfo->SetCompletedArticles(0);
-			fileInfo->SetRemainingSize(fileInfo->GetSize() - fileInfo->GetMissedSize());
-
-			// discard temporary files
-			DiscardTempFiles(fileInfo);
-			g_DiskState->DiscardFile(fileInfo->GetId(), false, true, false);
-
-			fileInfo->SetOutputFilename(nullptr);
-			fileInfo->SetOutputInitialized(false);
-			fileInfo->SetCachedArticles(0);
-			fileInfo->SetPartialChanged(false);
-			fileInfo->SetPartialState(FileInfo::psNone);
-
-			if (g_Options->GetServerMode())
-			{
-				// free up memory used by articles if possible
-				fileInfo->GetArticles()->clear();
-			}
-			else
-			{
-				// reset article states if discarding isn't possible
-				for (ArticleInfo* articleInfo : fileInfo->GetArticles())
+				Guard contentGuard = g_ArticleCache->GuardContent();
+				locked = fileInfo->GetFlushLocked();
+				if (!locked)
 				{
-					articleInfo->SetStatus(ArticleInfo::aiUndefined);
-					articleInfo->SetResultFilename(nullptr);
-					articleInfo->DiscardSegment();
+					fileInfo->SetFlushLocked(true);
 				}
 			}
-		}
 
-		if (locked)
-		{
-			Guard contentGuard = g_ArticleCache->GuardContent();
-			fileInfo->SetFlushLocked(false);
+			if (!locked)
+			{
+				// discard downloaded articles from partially downloaded par-files
+				discardedSize += fileInfo->GetSuccessSize();
+				discardedCount++;
+
+				DiscardDownloadedArticles(nzbInfo, fileInfo);
+			}
+
+			if (!locked)
+			{
+				Guard contentGuard = g_ArticleCache->GuardContent();
+				fileInfo->SetFlushLocked(false);
+			}
 		}
 
 		if (g_Options->GetServerMode() &&
@@ -1412,5 +1368,57 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 	{
 		nzbInfo->PrintMessage(Message::mkDetail, "Discarded %s from %i files used for direct renaming",
 			*Util::FormatSize(discardedSize), discardedCount);
+	}
+}
+
+void QueueCoordinator::DiscardDownloadedArticles(NzbInfo* nzbInfo, FileInfo* fileInfo)
+{
+	nzbInfo->SetRemainingSize(nzbInfo->GetRemainingSize() + fileInfo->GetSuccessSize() + fileInfo->GetFailedSize());
+	if (fileInfo->GetPaused())
+	{
+		nzbInfo->SetPausedSize(nzbInfo->GetPausedSize() + fileInfo->GetSuccessSize() + fileInfo->GetFailedSize());
+	}
+	nzbInfo->GetCurrentServerStats()->ListOp(fileInfo->GetServerStats(), ServerStatList::soSubtract);
+	fileInfo->GetServerStats()->clear();
+
+	nzbInfo->SetCurrentSuccessArticles(nzbInfo->GetCurrentSuccessArticles() - fileInfo->GetSuccessArticles());
+	nzbInfo->SetCurrentSuccessSize(nzbInfo->GetCurrentSuccessSize() - fileInfo->GetSuccessSize());
+	nzbInfo->SetParCurrentSuccessSize(nzbInfo->GetParCurrentSuccessSize() - fileInfo->GetSuccessSize());
+	fileInfo->SetSuccessSize(0);
+	fileInfo->SetSuccessArticles(0);
+
+	nzbInfo->SetCurrentFailedArticles(nzbInfo->GetCurrentFailedArticles() - fileInfo->GetFailedArticles());
+	nzbInfo->SetCurrentFailedSize(nzbInfo->GetCurrentFailedSize() - fileInfo->GetFailedSize());
+	nzbInfo->SetParCurrentFailedSize(nzbInfo->GetParCurrentFailedSize() - fileInfo->GetFailedSize());
+	fileInfo->SetFailedSize(0);
+	fileInfo->SetFailedArticles(0);
+
+	fileInfo->SetCompletedArticles(0);
+	fileInfo->SetRemainingSize(fileInfo->GetSize() - fileInfo->GetMissedSize());
+
+	// discard temporary files
+	DiscardTempFiles(fileInfo);
+	g_DiskState->DiscardFile(fileInfo->GetId(), false, true, false);
+
+	fileInfo->SetOutputFilename(nullptr);
+	fileInfo->SetOutputInitialized(false);
+	fileInfo->SetCachedArticles(0);
+	fileInfo->SetPartialChanged(false);
+	fileInfo->SetPartialState(FileInfo::psNone);
+
+	if (g_Options->GetServerMode())
+	{
+		// free up memory used by articles if possible
+		fileInfo->GetArticles()->clear();
+	}
+	else
+	{
+		// reset article states if discarding isn't possible
+		for (ArticleInfo* articleInfo : fileInfo->GetArticles())
+		{
+			articleInfo->SetStatus(ArticleInfo::aiUndefined);
+			articleInfo->SetResultFilename(nullptr);
+			articleInfo->DiscardSegment();
+		}
 	}
 }

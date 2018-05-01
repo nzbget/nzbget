@@ -103,6 +103,7 @@ private:
 	void DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fileInfo, bool completed);
 	void DirectRenameCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
 	void DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo* nzbInfo);
+	void DiscardDownloadedArticles(NzbInfo* nzbInfo, FileInfo* fileInfo);
 	void CheckHealth(DownloadQueue* downloadQueue, FileInfo* fileInfo);
 	void ResetHangingDownloads();
 	void AdjustDownloadsLimit();
