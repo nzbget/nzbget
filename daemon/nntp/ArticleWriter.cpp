@@ -791,6 +791,7 @@ bool ArticleCache::Realloc(CachedSegmentData* segment, int newSize)
 	{
 		m_allocated += newSize - segment->m_size;
 		segment->m_size = newSize;
+		segment->m_data = (char*)p;
 	}
 
 	return p;
