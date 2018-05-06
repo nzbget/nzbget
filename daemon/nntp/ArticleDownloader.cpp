@@ -465,6 +465,11 @@ bool ArticleDownloader::Write(char* buffer, int len)
 				articleFileSize = m_decoder.GetSize();
 				articleOffset = m_decoder.GetBeginPos() - 1;
 				articleSize = (int)(m_decoder.GetEndPos() - m_decoder.GetBeginPos() + 1);
+				if (articleSize <= 0 || articleSize > 1024*1024*1024)
+				{
+					warn("Malformed article %s: size %i out of range", *m_infoName, articleSize);
+					return false;
+				}
 			}
 		}
 
