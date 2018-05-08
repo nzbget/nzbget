@@ -1114,7 +1114,10 @@ const char* Connection::GetRemoteAddr()
 			inet_ntop_t* inet_ntop = (inet_ntop_t*)GetProcAddress(module, "inet_ntop");
 			if (inet_ntop)
 			{
-				inet_ntop(((sockaddr_in*)&peerName)->sin_family, &((sockaddr_in*)&peerName)->sin_addr,
+				inet_ntop(((sockaddr_in*)&peerName)->sin_family,
+					((sockaddr_in*)&peerName)->sin_family == AF_INET6 ?
+					(void*)&((sockaddr_in6*)&peerName)->sin6_addr :
+					(void*)&((sockaddr_in*)&peerName)->sin_addr,
 					m_remoteAddr, m_remoteAddr.Capacity());
 			}
 			FreeLibrary(module);
@@ -1124,7 +1127,10 @@ const char* Connection::GetRemoteAddr()
 			m_remoteAddr = inet_ntoa(((sockaddr_in*)&peerName)->sin_addr);
 		}
 #else
-		inet_ntop(((sockaddr_in*)&peerName)->sin_family, &((sockaddr_in*)&peerName)->sin_addr,
+		inet_ntop(((sockaddr_in*)&peerName)->sin_family,
+			((sockaddr_in*)&peerName)->sin_family == AF_INET6 ?
+			(void*)&((sockaddr_in6*)&peerName)->sin6_addr :
+			(void*)&((sockaddr_in*)&peerName)->sin_addr,
 			m_remoteAddr, m_remoteAddr.Capacity());
 #endif
 		m_remoteAddr[m_remoteAddr.Capacity() - 1] = '\0';
