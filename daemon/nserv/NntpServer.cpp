@@ -148,6 +148,7 @@ void NntpProcessor::Run()
 	}
 #endif
 
+	info("[%i] Incoming connection from: %s", m_id, m_connection->GetHost() );
 	m_connection->WriteLine("200 Welcome (NServ)\r\n");
 
 	CharBuffer buf(1024);
