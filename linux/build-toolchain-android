@@ -1,0 +1,197 @@
+#!/bin/bash
+#
+#  This file is part of nzbget. See <http://nzbget.net>.
+#
+#  Copyright (C) 2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# This script builds cross-compiling toolchain, which can compile NZBGet for Android.
+# The toolchain itself runs on Linux.
+
+# Setup strict bash error handling
+set -o nounset
+set -o errexit
+
+# Uncomment next line for debuging
+#set -x
+
+
+# Android API level
+APILEVEL=21
+
+# Architecture
+ARCH=$1
+case "$ARCH" in
+    i686)
+        NDK_ARCH="x86"
+        NDK_TARGET="i686-linux-android"
+        OPENSSL_TARGET="android-x86"
+        ;;
+    x86_64)
+        NDK_ARCH="x86_64"
+        NDK_TARGET="x86_64-linux-android"
+        OPENSSL_TARGET="android64"
+        ;;
+    armhf)
+        NDK_ARCH="arm"
+        NDK_TARGET="arm-linux-androideabi"
+        OPENSSL_TARGET="android-armeabi"
+        ;;
+    aarch64)
+        NDK_ARCH="arm64"
+        NDK_TARGET="aarch64-linux-android"
+        OPENSSL_TARGET="android64-aarch64"
+        ;;
+    *)
+        echo "Usage: $0 (i686|x86_64|armhf|aarch64)"
+        exit 1
+        ;;
+esac
+
+echo "Creating toolchain for $ARCH"
+
+# Android NDK
+NDK_VERSION="r17"
+NDK_DIRNAME="android-ndk-$NDK_VERSION"
+NDK_ARCHIVE="$NDK_DIRNAME-linux-x86_64.zip"
+NDK_URL="https://dl.google.com/android/repository/$NDK_ARCHIVE"
+
+# Libxml
+LIBXML2_VERSION="2.9.4"
+LIBXML2_ARCHIVE="libxml2-$LIBXML2_VERSION.tar.gz"
+LIBXML2_URL="http://xmlsoft.org/sources/$LIBXML2_ARCHIVE"
+
+# OpenSSL
+OPENSSL_VERSION="1.1.0h"
+OPENSSL_ARCHIVE="openssl-$OPENSSL_VERSION.tar.gz"
+OPENSSL_URL="https://www.openssl.org/source/$OPENSSL_ARCHIVE"
+
+# NCurses
+NCURSES_VERSION="6.0"
+NCURSES_ARCHIVE="ncurses-$NCURSES_VERSION.tar.gz"
+NCURSES_URL="https://ftp.gnu.org/pub/gnu/ncurses/$NCURSES_ARCHIVE"
+
+### START OF THE SCRIPT
+
+ROOTDIR=`pwd`
+ROOTDIR="$ROOTDIR/$ARCH-ndk"
+
+rm -rf $ROOTDIR
+mkdir $ROOTDIR
+cd $ROOTDIR
+
+# Download all required tools and libraries
+cd ..
+mkdir -p downloads
+cd downloads
+if [ ! -d $NDK_DIRNAME -a ! -f $NDK_ARCHIVE ]; then
+    wget $NDK_URL
+fi
+if [ ! -f $LIBXML2_ARCHIVE ]; then
+    wget $LIBXML2_URL
+fi
+if [ ! -f $OPENSSL_ARCHIVE ]; then
+    wget $OPENSSL_URL
+fi
+if [ ! -f $NCURSES_ARCHIVE ]; then
+    wget $NCURSES_URL
+fi
+cd ..
+
+# Unpack NDK
+if [ ! -d ./$NDK_DIRNAME ]; then
+    echo "Unpacking NDK"
+    unzip ./downloads/$NDK_ARCHIVE
+fi
+
+# Create toolchain for target
+echo "Preparing standalone NDK toolchain"
+./$NDK_DIRNAME/build/tools/make_standalone_toolchain.py --arch $NDK_ARCH --api $APILEVEL --install-dir $ROOTDIR/output/host/usr
+
+cd $ROOTDIR
+
+# Configure toolchain
+export PATH=$PATH:$ROOTDIR/output/host/usr/bin
+export CC=$NDK_TARGET-clang
+export CXX=$NDK_TARGET-clang++
+export AS=$NDK_TARGET-clang
+export AR=$NDK_TARGET-ar
+export LD=$NDK_TARGET-ld
+export RANLIB=$NDK_TARGET-ranlib
+export CFLAGS="-fPIE -fPIC"
+export CXXFLAGS=$CFLAGS
+export LDFLAGS=""
+
+mkdir output/build
+ln -s host/usr/sysroot output/staging
+
+cd $ROOTDIR/output/build
+
+# Build OpenSSL (5 minutes)
+tar xf ../../../downloads/$OPENSSL_ARCHIVE
+cd openssl-$OPENSSL_VERSION
+./Configure --prefix=$ROOTDIR/output/staging/usr --sysroot=$ROOTDIR/output/staging no-shared no-dso no-hw no-zlib no-unit-test "$OPENSSL_TARGET"
+sed 's:-mandroid::' -i Makefile
+make -j2
+make install_sw
+cd ..
+
+# Build libxml2 (2 minutes)
+tar xf ../../../downloads/$LIBXML2_ARCHIVE
+cd libxml2-$LIBXML2_VERSION
+./configure --host=$NDK_TARGET -prefix=$ROOTDIR/output/staging/usr --disable-dependency-tracking --without-zlib --without-lzma --without-python --disable-shared
+sed 's:^PROGRAMS =.*:PROGRAMS = :' -i Makefile
+sed 's:^bin_PROGRAMS =.*:bin_PROGRAMS = :' -i Makefile
+sed 's:^SUBDIRS =.*:SUBDIRS = include .:' -i Makefile
+make -j2
+make install
+cd ..
+
+# Build NCurses (2 minutes)
+tar xf ../../../downloads/$NCURSES_ARCHIVE
+cd ncurses-$NCURSES_VERSION
+./configure --host=$NDK_TARGET -prefix=$ROOTDIR/output/staging/usr --disable-dependency-tracking --disable-largefile
+make -j2
+make install
+cd ..
+
+cd ..
+
+# Create missing package descriptions
+echo "prefix=$ROOTDIR/output/staging/usr
+
+Name: zlib
+Description: zlib
+Version: 1
+Libs: -L\${prefix}/lib -lz
+Cflags: -I\${prefix}/include
+" > $ROOTDIR/output/staging/usr/lib/pkgconfig/zlib.pc
+
+echo "prefix=$ROOTDIR/output/staging/usr
+
+Name: ncurses
+Description: ncurses
+Version: 5
+Libs: -L\${prefix}/lib -lncurses
+Cflags: -I\${prefix}/include
+" > $ROOTDIR/output/staging/usr/lib/pkgconfig/ncurses.pc
+
+# Remove "-L${prefix}/lib" and "-L${libdir}" from all packages to fix strange linker error
+find $ROOTDIR/output/staging/usr/lib/pkgconfig -type f -exec sed 's:-L\${prefix}/lib::' -i {} \;
+find $ROOTDIR/output/staging/usr/lib/pkgconfig -type f -exec sed 's:-L\${libdir}::' -i {} \;
+
+echo "Toolchain creation completed for $ARCH"
+
