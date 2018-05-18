@@ -2,7 +2,7 @@
 #
 #  This file is part of nzbget. See <http://nzbget.net>.
 #
-#  Copyright (C) 2015-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#  Copyright (C) 2015-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ set -o errexit
 # Uncomment next line for debuging
 #set -x
 
-ALLTARGETS="i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500 x86_64-bsd"
+ALLTARGETS="i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500 x86_64-bsd i686-ndk x86_64-ndk armhf-ndk aarch64-ndk"
 ROOT=`pwd`
 OUTPUTDIR=$ROOT/setup
 BUILDDIR=temp
@@ -111,31 +111,45 @@ for TARGET in $TARGETS; do
     if [[ $TARGET == *-bsd ]]; then
         TARGET="${TARGET%-bsd}"
         TOOLKIND=crossclang
-        TOOLNAME=pc-freebsd
-       	SYSROOT="$TOOLCHAIN_ROOT/sysroot"
-        PLATSUFF="-bsd"
+    elif [[ $TARGET == *-ndk ]]; then
+        TARGET="${TARGET%-ndk}"
+        TOOLKIND=ndk
     else
         TOOLKIND=buildroot
-        TOOLNAME=linux
-        PLATSUFF=""
     fi
 
+    ARCH=$TARGET
+    ENDIAN=little
     case $TARGET in
-        mipsel|i?86|x86_64|aarch64)
-            ARCH=$TARGET
-            ENDIAN=little
-            ;;
         mipseb)
             ARCH=mips
             ENDIAN=big
             ;;
         arm*)
             ARCH=arm
-            ENDIAN=little
             ;;
         ppc*)
             ARCH=powerpc
             ENDIAN=big
+            ;;
+    esac
+
+    case $TOOLKIND in
+        buildroot)
+            ARCH="$ARCH-linux"
+            PLATSUFF=""
+            ;;
+        ndk)
+            ARCH="$ARCH-linux-android"
+            if [ "$ARCH" == "arm-linux-android" ]; then
+                ARCH="arm-linux-androideabi"
+            fi
+            PLATSUFF="-ndk"
+            ;;
+        crossclang)
+            ARCH="$ARCH-pc-freebsd"
+               SYSROOT="$TOOLCHAIN_ROOT/sysroot"
+            PLATSUFF="-bsd"
             ;;
     esac
 
@@ -157,6 +171,10 @@ for TARGET in $TARGETS; do
                 sed 's:^DEFINES=:DEFINES=-DUSE_FALLOCATE :' -i makefile
             fi
             sed 's:setlocale://setlocale:' -i rar.cpp
+            if [ "$TOOLKIND" == "ndk" ] ; then
+                sed 's:^#if defined(_EMX) || defined (__VMS)$:#if defined(_EMX) || defined (__VMS) || defined (__ANDROID__):' -i consio.cpp
+                sed 's:^#define USE_LUTIMES$:#undef USE_LUTIMES:' -i os.hpp
+            fi
 
             EXEDIR=
             LICENSE=license.txt
@@ -173,7 +191,11 @@ for TARGET in $TARGETS; do
             cp makefile.linux_any_cpu_gcc_4.X makefile.machine
             sed 's:^CXX=g++:#CXX=g++:' -i makefile.machine
             sed 's:^CC=gcc:#CC=gcc:' -i makefile.machine
-            if [ "$TOOLKIND" == "crossclang" ] ; then
+            if [ "$TOOLKIND" == "ndk" ] ; then
+                sed 's:-DENV_UNIX:-DENV_UNIX -DANDROID_NDK:' -i makefile.machine
+                sed 's:LOCAL_LIBS=-lpthread:LOCAL_LIBS=:' -i makefile.machine
+            fi
+            if [ "$TOOLKIND" != "buildroot" ] ; then
                 sed 's:^PRE_COMPILED_HEADER=:#PRE_COMPILED_HEADER=:' -i makefile.machine
                 sed 's:^ALLFLAGS=${OPTFLAGS} -pipe -s:ALLFLAGS=${OPTFLAGS} -pipe ${CPPFLAGS}:' -i makefile.machine
             fi
@@ -189,23 +211,34 @@ for TARGET in $TARGETS; do
 
     make clean
 
-    if [ "$TOOLKIND" == "crossclang" ] ; then
-        CXX="$CROSSCLANG" \
-            CC="$CROSSCLANG" \
-            LDFLAGS="-static -fuse-ld=lld -lc++ -lm -lpthread --sysroot=$SYSROOT" \
-            CXXFLAGS="-O2 --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
-            CPPFLAGS="-O2 --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
-            STRIP=strip \
-            make -j $COREX $BUILDTARGET
-    else
-        CXX=$TOOLPATH/$ARCH-$TOOLNAME-g++ \
-            CC=$TOOLPATH/$ARCH-$TOOLNAME-gcc \
-            STRIP=$TOOLPATH/$ARCH-$TOOLNAME-strip \
-            CXXFLAGS=-O2 \
-            LDFLAGS=-static \
-            LIBS=-lpthread \
-            make -j $COREX $BUILDTARGET
-    fi
+    case $TOOLKIND in
+        buildroot)
+            CXX=$TOOLPATH/$ARCH-g++ \
+                CC=$TOOLPATH/$ARCH-gcc \
+                STRIP=$TOOLPATH/$ARCH-strip \
+                CXXFLAGS=-O2 \
+                LDFLAGS=-static \
+                LIBS=-lpthread \
+                make -j $COREX $BUILDTARGET
+            ;;
+        ndk)
+            CXX=$TOOLPATH/$ARCH-clang++ \
+                CC=$TOOLPATH/$ARCH-clang \
+                STRIP=$TOOLPATH/$ARCH-strip \
+                CXXFLAGS=-O2 \
+                LDFLAGS="-static -static-libstdc++" \
+                make -j $COREX $BUILDTARGET
+            ;;
+        crossclang)
+            CXX="$CROSSCLANG" \
+                CC="$CROSSCLANG" \
+                LDFLAGS="-static -fuse-ld=lld -lc++ -lm -lpthread --sysroot=$SYSROOT" \
+                CXXFLAGS="-O2 --target=$ARCH --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
+                CPPFLAGS="-O2 --target=$ARCH --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
+                STRIP=strip \
+                make -j $COREX $BUILDTARGET
+            ;;
+    esac
 
     cp $EXEDIR$EXENAME ../../setup/$EXENAME-$TARGET$PLATSUFF
     cp $LICENSE ../../setup/license-$UNPACKER.txt
