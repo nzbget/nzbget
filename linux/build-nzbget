@@ -2,7 +2,7 @@
 #
 #  This file is part of nzbget
 #
-#  Copyright (C) 2015-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+#  Copyright (C) 2015-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ set -o errexit
 # Uncomment next line for debuging
 #set -x
 
-ALLTARGETS="dist i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500 x86_64-bsd"
+ALLTARGETS="dist i686 x86_64 armel armhf mipsel mipseb ppc6xx ppc500 x86_64-bsd i686-ndk armhf-ndk"
 ROOT=`pwd`
 ROOTPATH=$PATH
 OUTPUTDIR=$ROOT/output
@@ -133,6 +133,8 @@ ParseCommandLine()
     do
         if [[ $TARGET == *-bsd ]]; then
             PLATFORM="freebsd"
+        elif [[ $TARGET == *-ndk ]]; then
+            PLATFORM="android"
         else
             PLATFORM="linux"
         fi
@@ -180,9 +182,9 @@ UpdateFromRepository()
         touch Makefile.in configure config.h.in
 
         echo "Updating root certificates"
-		cd ../setup
-		curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem
-	    cd $BUILDDIR
+        cd ../setup
+        curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem
+        cd $BUILDDIR
     fi
 }
 
@@ -235,6 +237,8 @@ ConstructSuffix()
 
     if [ $PLATFORM == "freebsd" ]; then
         PLATSUFF="-bsd"
+    elif [ $PLATFORM == "android" ]; then
+        PLATSUFF="-ndk"
     else
         PLATSUFF=""
     fi
@@ -262,12 +266,19 @@ ConstructArchParams()
     case $PLATFORM in
         linux)
             TOOLKIND=buildroot
-            TOOLNAME=linux
+            ARCH=$ARCH-linux
+        ;;
+        android)
+            TOOLKIND=ndk
+            ARCH=$ARCH-linux-android
+            if [ "$ARCH" == "arm-linux-android" ]; then
+                ARCH="arm-linux-androideabi"
+            fi
         ;;
         freebsd)
             TOOLKIND=crossclang
-            TOOLNAME=pc-freebsd
-           	SYSROOT="$TOOLCHAIN_ROOT/sysroot"
+            ARCH=$ARCH-pc-freebsd
+            SYSROOT="$TOOLCHAIN_ROOT/sysroot"
         ;;
     esac
 }
@@ -286,7 +297,7 @@ ConfigureTarget()
 
     LUBACKTRACE=""
     if [ -f "$STAGING/lib/libubacktrace.so.1" ] ; then
-	    LUBACKTRACE="-lubacktrace"
+        LUBACKTRACE="-lubacktrace"
     fi
 
     case "$TOOLKIND-$CONFIG" in
@@ -294,27 +305,41 @@ ConfigureTarget()
             LDFLAGS="-static $STRIP" \
                 CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
                 LIBS="-lcrypto -ldl -lz $LUBACKTRACE" \
-                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
+                ./configure --disable-dependency-tracking --host=$ARCH --enable-debug
             ;;
         buildroot-release|buildroot-release-nostrip)
             LDFLAGS="-static $STRIP" \
                 CXXFLAGS="-std=c++14 -O2 $DEBUG" \
                 LIBS="-lcrypto -ldl -lz" \
-                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME
+                ./configure --disable-dependency-tracking --host=$ARCH
+            ;;
+        ndk-debug|ndk-debug-strip)
+            LDFLAGS="-static -static-libstdc++ $STRIP" \
+                CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
+                CXX="$ARCH-clang++" \
+                PKG_CONFIG_LIBDIR="$STAGING/usr/lib/pkgconfig" \
+                ./configure --disable-dependency-tracking --disable-largefile --host=$ARCH --enable-debug
+            ;;
+        ndk-release|ndk-release-nostrip)
+            LDFLAGS="-static -static-libstdc++ $STRIP" \
+                CXXFLAGS="-std=c++14 -O2 $DEBUG" \
+                CXX="$ARCH-clang++" \
+                PKG_CONFIG_LIBDIR="$STAGING/usr/lib/pkgconfig" \
+                ./configure --disable-dependency-tracking --disable-largefile --host=$ARCH
             ;;
         crossclang-debug|crossclang-debug-strip)
             CXX="$CROSSCLANG" \
-                LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH-$TOOLNAME -lc++ -lm --sysroot=$SYSROOT" \
-                CXXFLAGS="-g --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
+                LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH -lc++ -lm --sysroot=$SYSROOT" \
+                CXXFLAGS="-g --target=$ARCH --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
                 PKG_CONFIG_LIBDIR="$STAGING/usr/lib/pkgconfig" \
-                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
+                ./configure --disable-dependency-tracking --host=$ARCH --enable-debug
                 ;;
         crossclang-release|crossclang-release-nostrip)
             CXX="$CROSSCLANG" \
-                LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH-$TOOLNAME -lc++ -lm --sysroot=$SYSROOT" \
-                CXXFLAGS="-O2 $DEBUG --target=$ARCH-$TOOLNAME --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
+                LDFLAGS="-static $STRIP -fuse-ld=lld --target=$ARCH -lc++ -lm --sysroot=$SYSROOT" \
+                CXXFLAGS="-O2 $DEBUG --target=$ARCH --sysroot=$SYSROOT -I$SYSROOT/usr/include/c++/v1" \
                 PKG_CONFIG_LIBDIR="$STAGING/usr/lib/pkgconfig" \
-                ./configure --disable-dependency-tracking --host=$ARCH-$TOOLNAME --enable-debug
+                ./configure --disable-dependency-tracking --host=$ARCH --enable-debug
                 ;;
     esac
 }
@@ -322,13 +347,14 @@ ConfigureTarget()
 PrecompileHeaders()
 {
     rm -f nzbget.h.gch
-    if [ $PCH == "yes" -a $TOOLKIND != "crossclang" ]; then
+
+    if [ $PCH == "yes" -a $TOOLKIND == "buildroot" ]; then
         OPTIM=""
         if [ $CONFIG == "release" -o $CONFIG == "release-nostrip" ]; then
             OPTIM="-O2"
         fi
 
-        $ARCH-$TOOLNAME-g++ -std=c++14 -DHAVE_CONFIG_H \
+        $ARCH-g++ -std=c++14 -DHAVE_CONFIG_H \
             -I. -I$STAGING/usr/include -I$STAGING/usr/include/libxml2 \
             -g $OPTIM daemon/main/nzbget.h -o nzbget.h.gch
     fi
@@ -521,6 +547,9 @@ FilterTargets()
         if [[ $TARGET == *-bsd ]]; then
             PLAT="freebsd"
             TARGET="${TARGET%-bsd}"
+        elif [[ $TARGET == *-ndk ]]; then
+            PLAT="android"
+            TARGET="${TARGET%-ndk}"
         else
             PLAT="linux"
         fi
