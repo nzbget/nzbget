@@ -346,17 +346,26 @@ ConfigureTarget()
 
 PrecompileHeaders()
 {
-    rm -f nzbget.h.gch
+    rm -f nzbget.h.*
+
+    OPTIM=""
+    if [ $CONFIG == "release" -o $CONFIG == "release-nostrip" ]; then
+        OPTIM="-O2"
+    fi
 
     if [ $PCH == "yes" -a $TOOLKIND == "buildroot" ]; then
-        OPTIM=""
-        if [ $CONFIG == "release" -o $CONFIG == "release-nostrip" ]; then
-            OPTIM="-O2"
-        fi
-
         $ARCH-g++ -std=c++14 -DHAVE_CONFIG_H \
             -I. -I$STAGING/usr/include -I$STAGING/usr/include/libxml2 \
             -g $OPTIM daemon/main/nzbget.h -o nzbget.h.gch
+    fi
+
+    if [ $PCH == "yes" -a $TOOLKIND == "ndk" ]; then
+        $ARCH-clang++ -std=c++14 -DHAVE_CONFIG_H \
+            -I. -I$STAGING/usr/include -I$STAGING/usr/include/libxml2 \
+            -g $OPTIM -x c++-header daemon/main/nzbget.h -o nzbget.h.pch
+        CXXFLAGS=`sed -n 's:^CXXFLAGS =.\(.*\):\1:p' Makefile`
+        sed 's:^CXXFLAGS = :CXXFLAGS = -include-pch nzbget.h.pch :' -i Makefile
+        sed "s: CXXFLAGS+=: CXXFLAGS=$CXXFLAGS :" -i Makefile
     fi
 }
 
