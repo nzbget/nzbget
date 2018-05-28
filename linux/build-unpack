@@ -156,6 +156,7 @@ for TARGET in $TARGETS; do
             if [ "$PLATSUFF" != "-bsd" ]; then
                 sed 's:^DEFINES=:DEFINES=-DUSE_FALLOCATE :' -i makefile
             fi
+            sed 's:setlocale://setlocale:' -i rar.cpp
 
             EXEDIR=
             LICENSE=license.txt
