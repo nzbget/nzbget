@@ -307,6 +307,7 @@ LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM l
 			return 0;
 
 		case UM_QUIT:
+		case WM_ENDSESSION:
 			ExitProc();
 			return 0;
 
