@@ -177,6 +177,7 @@ for TARGET in $TARGETS; do
                 sed 's:^PRE_COMPILED_HEADER=:#PRE_COMPILED_HEADER=:' -i makefile.machine
                 sed 's:^ALLFLAGS=${OPTFLAGS} -pipe -s:ALLFLAGS=${OPTFLAGS} -pipe ${CPPFLAGS}:' -i makefile.machine
             fi
+            sed 's:setlocale(LC_ALL,"")://setlocale(LC_ALL,""):' -i CPP/myWindows/mySplitCommandLine.cpp
 
             EXEDIR=bin/
             LICENSE=DOC/License.txt
