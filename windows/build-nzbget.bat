@@ -227,6 +227,8 @@ if errorlevel 1 goto BUILD_FAILED
 %SED% -e "s|WriteBuffer=.*|WriteBuffer=1024|" -i %CONFFILE%
 %SED% -e "s|CertStore=.*|CertStore=${AppDir}\\cacert.pem|" -i %CONFFILE%
 %SED% -e "s|CertCheck=.*|CertCheck=yes|" -i %CONFFILE%
+%SED% -e "s|DirectRename=.*|DirectRename=yes|" -i %CONFFILE%
+%SED% -e "s|DirectUnpack=.*|DirectUnpack=yes|" -i %CONFFILE%
 rem Hide certain options from web-interface settings page
 %SED% -e "s|WebDir=.*|# WebDir=${AppDir}\\webui|" -i %CONFFILE%
 %SED% -e "s|LockFile=.*|# LockFile=|" -i %CONFFILE%

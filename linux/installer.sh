@@ -341,6 +341,8 @@ ConfigureLinux()
             sed 's:^WriteBuffer=.*:WriteBuffer=1024:' -i nzbget.conf
             Info "  Increasing par repair buffer (ParBuffer=100)"
             sed 's:^ParBuffer=.*:ParBuffer=100:' -i nzbget.conf
+            Info "  Activating direct rename (DirectRename=yes)"
+            sed 's:^DirectRename=.*:DirectRename=yes:' -i nzbget.conf
         elif test $TOTALFREE -gt 25000 -o $MEMFREE -gt 25000 -o $MEMCACHED -gt 25000; then
             Info "  Increasing write buffer (WriteBuffer=256)"
             sed 's:^WriteBuffer=.*:WriteBuffer=256:' -i nzbget.conf
@@ -368,6 +370,8 @@ ConfigureLinux()
             sed 's:^ScriptPauseQueue=.*:ScriptPauseQueue=yes:' -i nzbget.conf
         else
             Info "  Simultaneous download and post-processing is on"
+            Info "  Activating direct unpack (DirectUnpack=yes)"
+            sed 's:^DirectUnpack=.*:DirectUnpack=yes:' -i nzbget.conf
         fi
     fi
 }
@@ -384,6 +388,10 @@ ConfigureFreeBSD()
     sed -i '' 's:^WriteBuffer=.*:WriteBuffer=1024:' nzbget.conf
     Info "  Increasing par repair buffer (ParBuffer=100)"
     sed -i '' 's:^ParBuffer=.*:ParBuffer=100:' nzbget.conf
+    Info "  Activating direct rename (DirectRename=yes)"
+    sed -i '' 's:^DirectRename=.*:DirectRename=yes:' nzbget.conf
+    Info "  Activating direct unpack (DirectUnpack=yes)"
+    sed -i '' 's:^DirectUnpack=.*:DirectUnpack=yes:' nzbget.conf
 }
 
 Configure()
