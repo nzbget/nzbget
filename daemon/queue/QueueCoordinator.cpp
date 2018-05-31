@@ -401,11 +401,6 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 {
 	debug("CheckDupeFileInfos");
 
-	if (!g_Options->GetDupeCheck() || nzbInfo->GetDupeMode() == dmForce)
-	{
-		return;
-	}
-
 	RawFileList dupeList;
 
 	int index1 = 0;
@@ -422,9 +417,19 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 				(fileInfo->GetSize() < fileInfo2->GetSize() ||
 				 (fileInfo->GetSize() == fileInfo2->GetSize() && index2 < index1)))
 			{
-				warn("File \"%s\" appears twice in collection, adding only the biggest file", fileInfo->GetFilename());
-				dupe = true;
-				break;
+				// If more than two files have same filename we don't filter them out since that
+				// naming might be intentional and correct filenames must be read from article bodies.
+				int dupeCount = std::count_if(nzbInfo->GetFileList()->begin(), nzbInfo->GetFileList()->end(),
+					[fileInfo2](std::unique_ptr<FileInfo>& fileInfo3)
+					{
+						return !strcmp(fileInfo3->GetFilename(), fileInfo2->GetFilename());
+					});
+				if (dupeCount == 2)
+				{
+					warn("File \"%s\" appears twice in collection, adding only the biggest file", fileInfo->GetFilename());
+					dupe = true;
+					break;
+				}
 			}
 		}
 		if (dupe)
