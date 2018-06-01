@@ -80,6 +80,7 @@ public:
 	const char* GetRemoteAddr();
 	bool GetGracefull() { return m_gracefull; }
 	void SetGracefull(bool gracefull) { m_gracefull = gracefull; }
+	void SetForceClose(bool forceClose) { m_forceClose = forceClose; }
 #ifndef DISABLE_TLS
 	bool StartTls(bool isClient, const char* certFile, const char* keyFile);
 #endif
@@ -101,6 +102,7 @@ protected:
 	BString<100> m_remoteAddr;
 	int m_totalBytesRead = 0;
 	bool m_gracefull = false;
+	bool m_forceClose = false;
 
 	struct SockAddr
 	{

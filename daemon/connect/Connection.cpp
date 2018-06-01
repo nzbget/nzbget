@@ -906,10 +906,9 @@ void Connection::Cancel()
 	debug("Cancelling connection");
 	if (m_socket != INVALID_SOCKET)
 	{
-		EStatus status = m_status;
 		m_status = csCancelled;
 
-		if (status == csListening)
+		if (m_forceClose)
 		{
 			SOCKET socket = m_socket;
 			m_socket = INVALID_SOCKET;

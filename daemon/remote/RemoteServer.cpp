@@ -125,6 +125,7 @@ void RemoteServer::Stop()
 	if (m_connection)
 	{
 		m_connection->SetSuppressErrors(true);
+		m_connection->SetForceClose(true);
 		m_connection->Cancel();
 
 		debug("Stopping RequestProcessors");
@@ -164,6 +165,9 @@ void RequestProcessor::Run()
 void RequestProcessor::Stop()
 {
 	Thread::Stop();
+#ifdef WIN32
+	m_connection->SetForceClose(true);
+#endif
 	m_connection->Cancel();
 }
 
