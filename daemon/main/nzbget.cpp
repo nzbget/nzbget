@@ -537,6 +537,25 @@ void NZBGet::StopRemoteServer()
 
 	if (m_remoteServer && m_remoteServer->IsRunning())
 	{
+		m_remoteServer->ForceStop();
+	}
+
+	if (m_remoteSecureServer && m_remoteSecureServer->IsRunning())
+	{
+		m_remoteSecureServer->ForceStop();
+	}
+
+	maxWaitMSec = 5000;
+	while (((m_remoteServer && m_remoteServer->IsRunning()) ||
+		(m_remoteSecureServer && m_remoteSecureServer->IsRunning())) &&
+		maxWaitMSec > 0)
+	{
+		usleep(100 * 1000);
+		maxWaitMSec -= 100;
+	}
+
+	if (m_remoteServer && m_remoteServer->IsRunning())
+	{
 		debug("Killing RemoteServer");
 		m_remoteServer->Kill();
 	}

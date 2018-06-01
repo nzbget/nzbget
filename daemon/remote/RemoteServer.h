@@ -34,6 +34,7 @@ public:
 	RemoteServer(bool tls) : m_tls(tls) {}
 	virtual void Run();
 	virtual void Stop();
+	void ForceStop();
 	void Update(Subject* caller, void* aspect);
 
 private:

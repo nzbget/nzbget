@@ -139,6 +139,18 @@ void RemoteServer::Stop()
 	debug("RemoteServer stop end");
 }
 
+void RemoteServer::ForceStop()
+{
+	debug("Killing RequestProcessors");
+	Guard guard(m_processorsMutex);
+	for (RequestProcessor* requestProcessor : m_activeProcessors)
+	{
+		requestProcessor->Kill();
+	}
+	m_activeProcessors.clear();
+	debug("RequestProcessors are killed");
+}
+
 void RemoteServer::Update(Subject* caller, void* aspect)
 {
 	debug("Notification from RequestProcessor received");
