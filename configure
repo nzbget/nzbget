@@ -8368,11 +8368,11 @@ case $host_cpu in
 		;;
 	arm*)
 		NEON_CXXFLAGS="-mfpu=neon"
-		ACLECRC_CXXFLAGS="-march=armv8-a+crc"
+		ACLECRC_CXXFLAGS="-march=armv8-a+crc -fpermissive"
 		USE_SIMD=yes
 		;;
 	aarch64)
-		ACLECRC_CXXFLAGS="-march=armv8-a+crc"
+		ACLECRC_CXXFLAGS="-march=armv8-a+crc -fpermissive"
 		USE_SIMD=yes
 		;;
 esac
