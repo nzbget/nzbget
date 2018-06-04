@@ -95,6 +95,7 @@ void init_crc_acle()
 	crc_init = &crc_arm_init;
 	crc_incr = &crc_arm;
 	crc_finish = &crc_arm_finish;
+	crc_simd = true;
 #endif
 }
 
