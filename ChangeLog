@@ -1,6 +1,118 @@
 nzbget-20.0:
-  - please see repository change log at
-    https://github.com/nzbget/nzbget/commits/develop
+  - massive performance optimisations in downloader:
+        - improved yEnc decoder;
+        - improved CRC32 calculation;
+        - processing data in one pass;
+        - SIMD implementation of decoder and CRC functions on x86 and ARM CPUs;
+          SIMD code relies on node-yencode library by Anime Tosho
+          (https://github.com/animetosho/node-yencode);
+        - overall performance improvement up to +500% on x86 and +250% on ARM
+          (better speed or less CPU usage);
+  - using glibc instead of uClibc in universal installer builds for Linux:
+        - this significantly improves performance;
+        - compatibility with Android and other systems is hopefully also improved;
+        - in universal installer glibc is used on x86 and ARM;
+        - uClibc is still used on MIPS and PPC;
+  - performance optimisations in web-interface:
+        - reduced number of requests when loading webui by combining all
+          javascript-files into one and all css-files into one;
+        - reduced load time by calling multiple API-methods simultaneously;
+        - extensive use of browser caching for static files significantly
+          reduces the amount of data transferred on webui initialisation;
+        - extensive use of browser caching for API requests reduces the amount
+          of data transferred during webui status updates, especially when
+          nzbget is in idle state and there are no changes in download queue or
+          history;
+        - avoid work in browser on status updates if there are no changes in
+          download queue or history;
+        - support for keep alive connections significantly reduces overhead for
+          establishing connections on webui status updates, especially when
+          connecting to nzbget via TLS/SSL (avoiding TLS handshakes);
+  - a number of performance optimisations for large download queue with
+    thousands of items:
+        - much faster loading of queue from disk greatly improves program start
+          up time;
+        - improved queue management for faster download speed;
+  - now offering 64 bit binaries for Windows:
+        - installer includes 32 and 64 bit nzbget binaries;
+        - when updating from older versions the 64 bit binary is installed
+          automatically, although into the old location to keep all your
+          shortcuts intact;
+        - using word "windows" instead of "win32" in the setup file name;
+  - automatic update check:
+        - new option "UpdateCheck" to check for stable or testing versions (or
+          disable);
+        - when a new version is found a notification is shown;
+        - the update check is enabled by default for stable versions;
+  - significantly improved logging performance, especially in debug builds;
+  - par-check prints par2 creator application to help identify creator app
+    issues;
+  - added support for Unix domain sockets (POSIX only);
+  - better error handling when fetching rss feeds;
+  - updated POSIX build files to newer autotools version:
+        - compatibility with newer autotools;
+        - compatibility with newer platforms such as aarch64;
+  - better username/password validation when testing connection on settings
+    page;
+  - improved rar-renamer to better handle certain cases;
+  - new option "SkipWrite" for easier speed tests;
+  - support for redirect codes 303, 307 and 308 in web-client for fetching of
+    rss feeds and nzb-files;
+  - installer for FreeBSD is now built using Clang instead of GCC; this fixes
+    incompatibility with FreeBSD 11;
+  - universal Linux installer can now be used on FreeBSD (via Linux
+    compatibility mode);
+  - updated unrar to v5.50;
+  - more robust news server connection test;
+  - enhancements in NServ:
+        - memory cache to reduce disk load during speed tests - new command line
+          switch "-m";
+        - speed control - new command line switches "-w" and "-r";
+        - show IP address of incoming connection;
+  - changed default location of log-file;
+  - better handling of broken connections;
+  - removed obsolete or less useful options "SaveQueue", "ReloadQueue",
+    "TerminateTimeout", "AccurateRate", "BrokenLog";
+  - renamed option "LogBufferSize" to "LogBuffer";
+  - passwords of failed login attempts are no longer printed to log to improve
+    security;
+  - cookies in web interface are now saved with "httpOnly" attribute to improve
+    security;
+  - titles and duplicate keys in duplicate check are now case insensitive;
+  - added LibreSSL support;
+  - web interface now has a better icon for favorites or home screen of mobile
+    devices;
+  - improved duplicate detection for obfuscated downloads having files with
+    same subjects;
+  - direct rename and direct unpack are now active by default on new
+    installations, except for slow Linux systems;
+  - added advice for letsencrypt in option descriptions;
+  - fixed incorrect renaming in rar-renamer which could cause some downloads to
+    fail;
+  - fixed race condition in queue script coordinator which could cause crashes;
+  - fixed: post-processing parameters were sometimes case sensitive causing
+    issues;
+  - fixed DNS resolving issues on Android;
+  - fixed: backup servers not used on certain article decoding errors;
+  - fixed: when direct rename was active certain downloads with damaged
+    par2-files become paused at near completion and required manual resuming;
+  - fixed: crash when flushing article cache after direct rename;
+  - fixed: deleting active par-job may crash the program;
+  - fixed: functional tests may fail on Windows due to locked files;
+  - fixed: unpack using password file doesn't work on Windows;
+  - fixed: compiler error when building using GnuTLS;
+  - fixed: Linux installer failure on android emulator;
+  - fixed: options formatted as password fields when they shouldn't;
+  - fixed: slightly off article statistics after direct rename;
+  - fixed: NServ terminated if client interrupted connection;
+  - fixed: example pp-scripts may not work properly if nzbget password or
+    username contained special characters;
+  - fix in functional tests to not rely on sizes of externally generated files;
+  - fixed: option AuthorizedIP did not work with IPv6 addresses;
+  - fixed crash on certain malformed articles;
+  - fixed crash which could happen on Windows when reloading or terminating the
+    program;
+  - fixed logging of IPv6 addresses.
 
 nzbget-19.1:
   - proper handling of changing category (and destination path) during direct
@@ -14,66 +126,67 @@ nzbget-19.1:
 
 nzbget-19.0:
   - unpack during downloading:
-    - downloaded files can now be unpacked as soon as every archive part is
-      downloaded;
-    - new option "DirectUnpack" to activate direct unpacking;
-    - direct unpack works even with obfuscated downloads; option "DirectRename"
-      (see below) must be active for that;
-    - option "ReorderFiles" (see below) should be also active for optimal file
-      download order;
-    - direct unpack works for rar-archives; 7-zip archives and simply splitted
-      files are processed by default unpack module;
-    - direct unpack obviously works only for healthy download; if download is
-      damaged the direct unpack cancels and the download is unpacked during
-        post-processing stage after files are repaired;
-    - direct unpack reduces the time needed to complete download and
+        - downloaded files can now be unpacked as soon as every archive part is
+          downloaded;
+        - new option "DirectUnpack" to activate direct unpacking;
+        - direct unpack works even with obfuscated downloads; option
+         "DirectRename" (see below) must be active for that;
+        - option "ReorderFiles" (see below) should be also active for optimal
+          file download order;
+        - direct unpack works for rar-archives; 7-zip archives and simply
+          splitted files are processed by default unpack module;
+        - direct unpack obviously works only for healthy download; if download
+          is damaged the direct unpack cancels and the download is unpacked
+          during post-processing stage after files are repaired;
+        - direct unpack reduces the time needed to complete download and
       post-processing;
-    - it also allows to start watching of video files during download (requires
-      compatible video player software);
+        - it also allows to start watching of video files during download
+          (requires compatible video player software);
   - renaming of obfuscated file names during downloading:
-    - correct file names for obfuscated downloads are now determined during
-      download stage (instead of post-processing stage);
-    - downloaded files are saved into disk directly with correct names;
-    - direct renaming uses par2-files to restore correct file names;
-    - new option "DirectRename" to activate direct renaming;
-    - new queue-event NZB_NAMED, sent after the inner files are renamed;
+        - correct file names for obfuscated downloads are now determined during
+          download stage (instead of post-processing stage);
+        - downloaded files are saved into disk directly with correct names;
+        - direct renaming uses par2-files to restore correct file names;
+        - new option "DirectRename" to activate direct renaming;
+        - new queue-event NZB_NAMED, sent after the inner files are renamed;
   - automatic reordering of files:
-    - inner files within nzb reordered to ensure download of files in archive
-      parts order;
-    - the files are reordered when nzb is added to queue;
-    - if direct renaming is active (option "DirectRename") the files are
+        - inner files within nzb reordered to ensure download of files in
+          archive parts order;
+        - the files are reordered when nzb is added to queue;
+        - if direct renaming is active (option "DirectRename") the files are
       reordered again after the correct names becomes known;
-    - new option "ReorderFiles";
-    - new command "GroupSortFiles" in api-method "editqueue";
-    - new subcommand "SF" of remote command "-E/--edit";
+        - new option "ReorderFiles";
+        - new command "GroupSortFiles" in api-method "editqueue";
+        - new subcommand "SF" of remote command "-E/--edit";
   - new option "FileNaming" to control how to name obfuscated files (before they
     get renamed by par-rename, rar-rename or direct-rename);
   - TLS certificate verification:
-    - when connecting to a news server (for downloading) or a web server (for
-      fetching of rss feeds and nzb-files) the authenticity of the server is
-      validated using server security certificate. If the check fails that means
-      the connection cannot be trusted and must be closed with an error message
-      explaining the security issue;
-    - new options "CertCheck" and "CertStore";
-    - official NZBGet packages come with activated certificate check;
-    - when updating from an older NZBGet version the option CertCheck will be
-      automatically activated when the settings is saved (switch to Settings
-      page in web-interface and click "Save all changed");
+        - when connecting to a news server (for downloading) or a web server
+         (for fetching of rss feeds and nzb-files) the authenticity of the
+          server is validated using server security certificate. If the check
+          fails that means the connection cannot be trusted and must be closed
+          with an error message explaining the security issue;
+        - new options "CertCheck" and "CertStore";
+        - official NZBGet packages come with activated certificate check;
+        - when updating from an older NZBGet version the option CertCheck will
+          be automatically activated when the settings is saved (switch to
+          Settings page in web-interface and click "Save all changed");
   - authentication via form in web-interface as alternative to HTTP
     authentication:
-    - that must help with password tools having issues with HTTP authentication
-      dialog;
-    - new option "FormAuth";
+        - that must help with password tools having issues with HTTP
+          authentication dialog;
+        - new option "FormAuth";
   - drop-downs (context menus) for priority, category and status columns:
-    - quicker changing of priority and category;
-    - easier access to actions via drop-down (context menu) in status column;
+        - quicker changing of priority and category;
+        - easier access to actions via drop-down (context menu) in status
+          column;
   - extensions scripts can now be executed from settings page:
-    - script authors define custom buttons;
-    - when clicked the script is executed in a special mode and obtain extra
-      parameters;
-    - example script "Email.py" extended with button "Send test e-mail";
+        - script authors define custom buttons;
+        - when clicked the script is executed in a special mode and obtain extra
+          parameters;
+        - example script "Email.py" extended with button "Send test e-mail";
   - on Windows NZBGet can now associate itself with nzb-files:
-    - use option in Windows installer to register NZBGet for nzb-files;
+        - use option in Windows installer to register NZBGet for nzb-files;
   - unrar shipped within Linux package is now compiled with "fallocate" option
     to improve compatibility with media players when watching videos during
     downloading and unpacking;
@@ -87,9 +200,6 @@ nzbget-19.0:
   - save changes before performing actions in history dialog;
   - proper exit code on client command success or failure.
   - added host name to all error messages regarding connection issues;
-  - improved continuos integration with Travis CI:
-    - added gcc 4.8 to test matrix;
-    - installing unrar into test system to allow unit tests requiring unrar;
   - new button "Volume Statistics" in section "News Servers" of settings page;
     shows the same volume data as in global statistics dialog;
   - new option "ServerX.Notes" for user comments on news servers;
@@ -100,9 +210,9 @@ nzbget-19.0:
   - updated unrar to v5.40;
   - clear script execution log before executing script;
   - added support for crash dumps on Windows:
-    - renamed option "DumpCore" to "CrashDump";
-    - new option "CrashTrace" to make it possible to disable default printing off
-      call stack in order to produce more relevant crash dumps;
+        - renamed option "DumpCore" to "CrashDump";
+        - new option "CrashTrace" to make it possible to disable default
+          printing off call stack in order to produce more relevant crash dumps;
   - fixed: startup scheduler tasks can be executed again;
   - fixed: "fatal" messages when compiling from sources.
   - fixed: per-nzb download statistics could be wrong if the program was
