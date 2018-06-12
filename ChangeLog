@@ -1,3 +1,7 @@
+nzbget-21.0:
+  - please see repository change log at
+    https://github.com/nzbget/nzbget/commits/develop
+
 nzbget-20.0:
   - massive performance optimisations in downloader:
         - improved yEnc decoder;
