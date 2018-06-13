@@ -6005,6 +6005,32 @@ fi
 
 
 
+ac_fn_cxx_check_func "$LINENO" "lockf" "ac_cv_func_lockf"
+if test "x$ac_cv_func_lockf" = xyes; then :
+  ac_fn_cxx_check_decl "$LINENO" "lockf" "ac_cv_have_decl_lockf" "#include <unistd.h>
+"
+if test "x$ac_cv_have_decl_lockf" = xyes; then :
+
+$as_echo "#define HAVE_LOCKF 1" >>confdefs.h
+
+fi
+
+fi
+
+ac_fn_cxx_check_func "$LINENO" "pthread_cancel" "ac_cv_func_pthread_cancel"
+if test "x$ac_cv_func_pthread_cancel" = xyes; then :
+  ac_fn_cxx_check_decl "$LINENO" "pthread_cancel" "ac_cv_have_decl_pthread_cancel" "#include <pthread.h>
+"
+if test "x$ac_cv_have_decl_pthread_cancel" = xyes; then :
+
+$as_echo "#define HAVE_PTHREAD_CANCEL 1" >>confdefs.h
+
+fi
+
+fi
+
+
+
 ac_fn_cxx_check_func "$LINENO" "getopt_long" "ac_cv_func_getopt_long"
 if test "x$ac_cv_func_getopt_long" = xyes; then :
 

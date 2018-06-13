@@ -86,6 +86,9 @@
 /* Define to 1 to use GnuTLS library for TLS/SSL-support. */
 #undef HAVE_LIBGNUTLS
 
+/* Define to 1 if lockf is supported */
+#undef HAVE_LOCKF
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -100,6 +103,9 @@
 
 /* Define to 1 to use OpenSSL library for TLS/SSL-support and decryption. */
 #undef HAVE_OPENSSL
+
+/* Define to 1 if pthread_cancel is supported */
+#undef HAVE_PTHREAD_CANCEL
 
 /* Define to 1 if you have the <regex.h> header file. */
 #undef HAVE_REGEX_H

@@ -932,7 +932,12 @@ void NZBGet::Daemonize()
 			error("Starting daemon failed: could not create lock-file %s", m_options->GetLockFile());
 			exit(1);
 		}
+
+#ifdef HAVE_LOCKF
 		if (lockf(lfp, F_TLOCK, 0) < 0)
+#else
+		if (flock(lfp, LOCK_EX) < 0)
+#endif
 		{
 			error("Starting daemon failed: could not acquire lock on lock-file %s", m_options->GetLockFile());
 			exit(1);

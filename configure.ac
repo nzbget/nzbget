@@ -78,6 +78,19 @@ AC_SEARCH_LIBS([hstrerror], [resolv])
 
 
 dnl
+dnl Android NDK restrictions
+dnl
+AC_CHECK_FUNC(lockf,
+	[AC_CHECK_DECL(lockf,
+		[AC_DEFINE([HAVE_LOCKF], 1, [Define to 1 if lockf is supported])],,
+		[#include <unistd.h>])])
+AC_CHECK_FUNC(pthread_cancel,
+	[AC_CHECK_DECL(pthread_cancel,
+		[AC_DEFINE([HAVE_PTHREAD_CANCEL], 1, [Define to 1 if pthread_cancel is supported])],,
+		[#include <pthread.h>])])
+
+
+dnl
 dnl Getopt
 dnl
 AC_CHECK_FUNC(getopt_long,

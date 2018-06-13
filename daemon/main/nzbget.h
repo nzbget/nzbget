@@ -169,6 +169,7 @@ using namespace MSXML;
 #include <sys/statvfs.h>
 #include <sys/wait.h>
 #include <sys/un.h>
+#include <sys/file.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdint.h>
