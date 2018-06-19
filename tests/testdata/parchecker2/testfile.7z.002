@@ -1,0 +1,868 @@
+rmediate destination directory
+    names now include unique numbers to avoid several downloads with same
+    name to use the same directory and interfere with each other;
+  - when option "UnpackCleanupDisk" is active all archive files are now
+    deleted from download directory without relying on output printed by
+    unrar; this solves issues with non-ascii-characters in archive file
+    names on some platforms and especially in combination with rar5;
+  - improved handling of non-ascii characters in file names on windows;
+  - added support for rar5-format when checking signatures of archives
+    with non-standard file extensions;
+  - small restructure in settings order:
+        - combined sections "REMOTE CONTROL" and "PERMISSIONS" into one
+          section with name "SECURITY";
+        - moved sections "CATEGORIES" and "RSS FEEDS" higher in the
+          section list;
+  - improved par-check: if main par2-file is corrupted and can not be
+    loaded other par2-files are downloaded and then used as replacement
+    for main par2-file;
+  - if unpack did not find archive files the par-check is not requested
+    anymore if par-rename was already done;
+  - better handling of obfuscated nzb-files containing multiple files
+    with same names; removed option "StrictParName" which was not working
+    good with obfuscated files; if more par-files are required for repair
+    the files with strict names are tried first and then other par-files;
+  - added new scheduler commands "ActivateServer", "DeactivateServer" and
+    "FetchFeed"; combined options "TaskX.DownloadRate" and "TaskX.Process"
+    into one option "TaskX.Param", also used by new commands;
+  - added status filter buttons to history page;
+  - if unpack fails with write error (usually because of not enough space
+    on disk) this is shown as status "Unpack: space" in web-interface;
+    this unpack-status is handled as "success" by duplicate handling
+    (no download of other duplicate); also added new unpack-status "wrong
+    password" (only for rar5-archives); env.var. NZBPP_UNPACKSTATUS has
+    two new possible values: 3 (write error) and 4 (wrong password);
+    updated pp-script "EMail.py" to support new unpack-statuses;
+  - fixed a potential seg. fault in a commonly used function;
+  - added new option "TimeCorrection" to adjust conversion from system
+    time to local time (solves issues with scheduler when using a
+    binary compiled for other platform);
+  - NZBIDs are now generated with more care avoiding numbering holes
+    possible in previous versions;
+  - fixed: invalid "Offset" passed to RPC-method "editqueue" or command
+    line action "-E/--edit" could crash the program;
+  - fixed: crash after downloading of an URL (happen only on certain systems);
+  - fixed: restoring of settings didn't work for multi-sections (servers,
+    categories, etc.) if they were empty;
+  - fixed: choosing local files didn't work in Opera;
+  - fixed: certain characters printed by pp-scripts could crash the
+    program;
+  - fixed: malformed nzb-file could cause a memory leak;
+  - fixed: when a duplicate file was detected in collection it was
+    automatically deleted (if option DupeCheck is active) but the
+    total size of collection was not updated;
+  - when deleting individual files the total count of files in collection
+    was not updated;
+  - fixed: when multiple nzb-files were added via URL (rss including) at
+    the same time the info about category and priority could get lost for
+    some of files;
+  - fixed: if unpack fails the created destination directory was not
+    automatically removed (only if option "InterDir" was active);
+  - fixed scrolling to the top of page happening by clicking on items in
+    downloads/history lists and on action-buttons in edit-download and
+    history dialogs;
+  - fixed potential buffer overflow in remote client;
+  - improved error reporting when creation of temporary output file fails;
+  - fixed: when deleting download, if all remaining queued files are
+    par2-files the disk cleanup should not be performed, but it was
+    sometimes;
+  - fixed a potential problem in incorrect using of one library function.
+
+nzbget-11.0:
+  - reworked concept of post-processing scripts:
+        - multiple scripts can be assigned to each nzb-file;
+        - all assigned scripts are executed after the nzb-file is
+          downloaded and internally processed (unpack, repair);
+        - option <PostProcess> is obsolete;
+        - new option <ScriptDir> sets directory where all pp-scripts must
+          be stored;
+        - new option <DefScript> sets the default list of pp-scripts to
+          be assigned to nzb-file when it's added to queue;
+        - new option <CategoryX.DefScript> to set the default list of
+          pp-scripts on a category basis;
+        - the execution order of pp-scripts can be set using new option
+          <ScriptOrder>;
+        - there are no separate configuration files for pp-scripts;
+        - configuration options and pp-parameters are defined in the
+          pp-scripts;
+        - script configuration options are saved in nzbget configuration
+          file (nzbget.conf);
+        - changed parameters list of RPC-methods <loadconfig> and
+          <saveconfig>;
+        - new RPC-method <configtemplates> returns configuration
+          descriptions for the program and for all pp-scripts;
+        - configuration of all scripts can be done in web-interface;
+        - the pp-scripts assigned to a particular nzb-file can be viewed
+          and changed in web-interface on page <pp-parameters> in the
+          edit download dialog;
+        - option <PostPauseQueue> renamed to <ScriptPauseQueue> (the old
+          name is still recognized);
+        - new option <ConfigTemplate> to define the location of template
+          configuration file (in previous versions it must be always
+          stored in <WebDir>);
+        - history dialog shows status of every script;
+  - the old example post-processing script replaced with two new scripts:
+        - EMail.py - sends E-Mail notification;
+        - Logger.py - saves the full post-processing log of the job into
+          file _postprocesslog.txt;
+        - both pp-scripts are written in python and work on Windows too
+          (in addition to Linux, Mac, etc.);
+  - added possibility to set post-processing parameters for history items:
+        - pp-parameters can now be viewed and changed in history dialog
+          in web-interface;
+        - useful before post-processing again;
+        - new action <HistorySetParameter> in RPC-method <editqueue>;
+        - new action <O> in remote command <--edit/-E> for history items
+          (subcommand <H>);
+  - added new feature <split download> which creates new download from
+    selected files of source download;
+        - new command <Split> in web-interface in edit download dialog
+          on page <Files>;
+        - new action <S> in remote command <--edit/-E>;
+        - new action <FileSplit> in JSON-/XML-RPC method <editqueue>;
+  - added support for manual par-check:
+        - if option <ParCheck> is set to <Manual> and a damaged download
+          is detected the program downloads all par2-files but doesn't
+          perform par-check; the user must perform par-check/repair
+          manually then (possibly on another, faster computer);
+        - old values <yes/no> of option <ParCheck> renamed to <Force>
+          and <Auto> respectively;
+        - when set to <Force> all par2-files are always downloaded;
+        - removed option <LoadPars> since its functionality is now
+          covered by option <ParCheck>;
+        - result of par-check can now have new value <Manual repair
+          necessary>;
+        - field <ParStatus> in RPC-method <history> can have new value
+          <MANUAL>;
+        - parameter <NZBPP_PARSTATUS> for pp-script can have new value
+          <4 = manual repair necessary>;
+  - when download is resumed in web-interface the option <ParCheck=Force>
+    is respected and all par2-files are resumed (not only main par2-file);
+  - automatic deletion of backup-source files after successful par-repair;
+    important when repairing renamed rar-files since this could cause
+    failure during unpack;
+  - par-checker and renamer now add messages into the log of pp-item
+    (like unpack- and pp-scripts-messages); these message now appear in
+    the log created by scripts Logger.py and EMail.py;
+  - when a nzb-file is added via web-interface or via remote call the
+    file is now put into incoming nzb-directory (option "NzbDir") and
+    then scanned; this has two advantages over the old behavior when the
+    file was parsed directly in memory:
+        - the file serves as a backup for troubleshootings;
+        - the file is processed by nzbprocess-script (if defined in
+          option "NzbProcess") making the pre-processing much easier;
+  - new env-var parameters are passed to NzbProcess-script: NZBNP_NZBNAME,
+    NZBNP_CATEGORY, NZBNP_PRIORITY, NZBNP_TOP, NZBNP_PAUSED;
+  - new commands for use in NzbProcess-scripts: "[NZB] TOP=1" to add nzb
+    to the top of queue and "[NZB] PAUSED=1" to add nzb-file in paused state;
+  - reworked post-processor queue:
+        - only one job is created for each nzb-file; no more separate
+          jobs are created for par-collections within one nzb-file;
+        - option <AllowReProcess> removed; a post-processing script is
+          called only once per nzb-file, this behavior cannot be altered
+          anymore;
+        - with a new feature <Split> individual par-collections can be
+          processed separately in a more effective way than before
+  - improved unicode (utf8) support:
+        - non-ascii characters are now correctly transferred via JSON-RPC;
+        - correct displaying of nzb-names and paths in web-interface;
+        - it is now possible to use non-ascii characters on settings page
+          for option values (such as paths or category names);
+        - improved unicode support in XML-RPC and JSON-RPC;
+  - if username and password are defined for a news-server the
+    authentication is now forced (in previous versions the authentication
+    was performed only if requested by server); needed for servers
+    supporting both anonymous (restricted) and authorized (full access)
+    accounts;
+  - added option <ExtCleanupDisk> to automatically delete unwanted files
+    (with specified extensions or names) after successful par-check or unpack;
+  - improvement in JSON-/XML-RPC:
+        - all ID fields including NZBID are now persistent and remain
+          their values after restart;
+        - this allows for third-party software to identify nzb-files by
+          ID;
+        - method <history> now returns ID of NZB-file in the field
+          <NZBID>;
+        - in versions up to 0.8.0 the field <NZBID> was used to identify
+          history items in the edit-commands <HistoryDelete>,
+          <HistoryReturn>, <HistoryProcess>; since version 9 field <ID>
+          is used for this purpose; in versions 9-10 field <NZBID> still
+          existed and had the same value as field <ID> for compatibility
+          with version 0.8.0; the compatibility is not provided anymore;
+          this change was needed to provide a consistent using of field
+          <NZBID> across all RPC-methods;
+  - added support for rar-files with non-standard extensions (such as
+    .001, etc.);
+  - added functions to backup and restore settings from web-interface;
+    when restoring it's possible to choose what sections to restore
+    (for example only news servers settings or only settings of a
+    certain pp-script) or restore the whole configuration;
+  - new option "ControlUsername" to define login user name (if you don't
+    like default username "nzbget");
+  - if a communication error occurs in web-interface, it retries multiple
+    times before giving up with an error message;
+  - the maximum number of download threads are now managed automatically
+    taking into account the number of allowed connections to news servers;
+    removed option <ThreadLimit>;
+  - pp-scripts terminated with unknown status are now considered failed
+    (status=FAILURE instead of status=UNKNOWN);
+  - new parameter (env. var) <NZBPP_NZBID> is passed to pp_scripts and
+    contains an internal ID of NZB-file;
+  - improved thread synchronisation to avoid (short-time) lockings of
+    the program during creation of destination files;
+  - more detailed error message if a directory could not be created
+    (<DstDir>, <NzbDir>, etc.); the message includes error text reported
+    by OS such as <permission denied> or similar;
+  - when unpacking the unpack start time is now measured after receiving
+    of unrar copyright message; this provides better unpack time
+    estimation in a case when user uses unpack-script to do some things
+    before executing unrar (for example sending Wake-On-Lan message to
+    the destination NAS); it works with unrar only, it's not possible
+    with 7-Zip because it buffers printed messages;
+  - when the program is reloaded, a message with version number is
+    printed like on start;
+  - configuration can now be saved in web-interface even if there were
+    no changes made but if obsolete or invalid options were detected in
+    the config file; the saving removes invalid entries from config file;
+  - option <ControlPassword> can now be set to en empty value to disable
+    authentication; useful if nzbget works behind other web-server with
+    its own authentication;
+  - when deleting downloads via web-interface a proper hint regarding
+    deleting of already downloaded files from disk depending on option
+    <DeleteCleanupDisk> is displayed;
+  - if a news-server returns empty or bad article (this may be caused
+    by errors on the news server), the program tries again from the same
+    or other servers (in previous versions the article was marked as
+    failed without other download attempts);
+  - when a nzb-file whose name ends with ".queued" is added via web-
+    interface the ".queued"-part is automatically removed;
+  - small improvement in multithread synchronization of download queue;
+  - added link to catalog of pp-scripts to web-interface;
+  - updated forum URL in about dialog in web-interface;
+  - small correction in a log-message: removed <Request:> from message
+    <Request: Queue collection...>;
+  - removed option "ProcessLogKind"; scripts should use prefixes ([INFO],
+    [DETAIL], etc); messages printed without prefixes are added as [INFO];
+  - removed option "AppendNzbDir"; if it was disabled that caused problems 
+    in par-checker and unpacker; the option is now assumed always active;
+  - removed option "RenameBroken"; it caused problems in par-checker
+    (the option existed since early program versions before the par-check
+    was added);
+  - configure-script now defines "SIGCHLD_HANDLER" by default on all
+    systems including BSD; this eliminates the need of configure-
+    parameter "--enable-sigchld-handler" on 64-Bit BSD; the trade-off:
+    32-Bit BSD now requires "--disable-sigchld-handler";
+  - improved configure-script: defining of symbol "FILE_OFFSET_BITS=64",
+    required on some systems, is not necessary anymore;
+  - fixed: in the option "NzbAddedProcess" the env-var parameter with
+    nzb-name was passed in "NZBNA_NAME", should be "NZBNA_NZBNAME";
+    the old parameter name "NZBNA_NAME" is still supported for
+    compatibility;
+  - fixed: download time in statistics were incorrect if the computer
+    was put into standby (thanks Frank Kuypers for the patch);
+  - fixed: when option <InterDir> was active and the download after
+    unpack contained rar-file with the same name as one of original
+    files (sometimes happen with included subtitles) the original
+    rar-file was kept with name <.rar_duplicate1> even if the option
+    <UnpackCleanupDisk> was active;
+  - fixed: failed to read download queue from disk if post-processing
+    queue was not empty;
+  - fixed: when a duplicate file was detected during download the
+    program could hang;
+  - fixed: symbol <DISABLE_TLS> must be defined in project settings;
+    defining it in <win32.h> didn't work properly (Windows only);
+  - fixed: crash when adding malformed nzb-files with certain
+    structure (Windows only);
+  - fixed: by deleting of a partially downloaded nzb-file from queue,
+    when the option <DeleteCleanupDisk> was active, the file
+    <_brokenlog.txt> was not deleted preventing the directory from
+    automatic deletion;
+  - fixed: if an error occurs when a RPC-client or web-browser
+    communicates with nzbget the program could crash;
+  - fixed: if the last file of collection was detected as duplicate
+    after the download of the first article the file was deleted from
+    queue (that's OK) but the post-processing was not triggered
+    (that's a bug);
+  - fixed: support for splitted files (.001, .002, etc.) were broken.
+
+nzbget-10.2:
+  - fixed potential segfault which could happen with file paths longer
+    than 1024 characters;
+  - fixed: when options <DirectWrite> and <ContinuePartial> were both
+    active, a restart or reload of the program during download may cause
+    damaged files in the active download;
+  - increased width of speed indication ui-element to avoid layout
+    breaking on some linux-browsers;
+  - fixed a race condition in unpacker which could lead to a segfault
+    (although the chances were low because the code wasn't executed often).
+
+nzbget-10.1:
+  - fixed: articles with decoding errors (incomplete or damaged posts)
+    caused infinite retry-loop in downloader.
+
+nzbget-10.0:
+  - added built-in unpack:
+        - rar and 7-zip formats are supported (via external Unrar and
+          7-Zip executables);
+        - new options <Unpack>, <UnpackPauseQueue>, <UnpackCleanupDisk>,
+          <UnrarCmd>, <SevenZipCmd>;
+        - web-interface now shows progress and estimated time during
+          unpack (rar only; for 7-Zip progress is not available due to 
+          limitations of 7-Zip);
+        - when built-in unpack is enabled, the post-processing script is
+          called after unpack and possibly par-check/repair (if needed);
+        - for nzb-files containing multiple collections (par-sets) the
+          post-processing script is called only once, after the last
+          par-set;
+        - new parameter <NZBPP_UNPACKSTATUS> passed to post-processing
+          script;
+        - if the option <AllowReProcess> is enabled the post-processing-
+          script is called after each par-set (as in previous versions);
+        - example post-processing script updated: removed unrar-code, 
+          added check for unpack status;
+        - new field <UnpackStatus> in result of RPC-method <history>;
+        - history-dialog in web-interface shows three status: par-status,
+          unpack-status, script-status;
+        - with two built-in special post-processing parameters <*Unpack:>
+          and <*Unpack:Password> the unpack can be disabled for individual
+          nzb-file or the password can be set;
+        - built-in special post-processing parameters can be set via web-
+          interface on page <PP-Parameters> (when built-in unpack is
+          enabled);
+  - added support for HTTPS to the built-in web-server (web-interface and 
+    XML/JSON-RPC):
+        - new options <SecureControl>, <SecurePort>, <SecureCert> and 
+          <SecureKey>;
+        - module <TLS.c/h> completely rewritten with support for server-
+          side sockets, newer versions of GnuTLS, proper thread lockings
+          in OpenSSL;
+  - improved the automatic par-scan (option <ParScan=auto>) to 
+    significantly reduce the verify-time in some common cases with renamed
+    rar-files:
+        - the extra files are scanned in an optimized order;
+        - the scan stops when all missings files are found;
+  - added fast renaming of intentionally misnamed (rar-) files:
+        - the new renaming algorithm doesn't require full par-scan and 
+          restores original filenames in just a few seconds, even on very
+          slow computers (NAS, media players, etc.);
+        - the fast renaming is performed automatically when requested by
+          the built-in unpacker (option <Unpack> must be active);
+  - added new option <InterDir> to put intermediate files during download
+    into a separate directory (instead of storing them directly in 
+    destination directory (option <DestDir>):
+        - when nzb-file is completely (successfully) downloaded, repaired 
+          (if neccessary) and unpacked the files are moved to destination 
+          directory (option <DestDir> or <CategoryX.DestDir>);
+        - intermediate directory can significantly improve unpack 
+           performance if it is located on a separate physical hard drive;
+  - added new option <ServerX.Cipher> to manually select cipher for 
+    encrypted communication with news server:
+        - manually choosing a faster cipher (such as <RC4>) can 
+          significantly improve performance (if CPU is a limiting factor);
+  - major improvements in news-server/connection management (main and fill
+    servers):
+        - if download of article fails, the program tries all servers of 
+          the same level before trying higher level servers;
+        - this ensures that fill servers are used only if all main servers
+          fail;
+        - this makes the configuring of multiple servers much easier than
+          before: in most cases the simple configuration of level 0 for 
+          all main servers and level 1 for all fill servers suffices;
+        - in previous versions the level was increased immediately after
+          the first tried server of the level failed; to make sure all 
+          main servers were tried before downloading from fill servers it
+          was required to create complex server configurations with 
+          duplicates; these configurations were still not as effective as
+          now;
+        - do not reconnect on <article/group not found> errors since this
+          doesn't help but unnecessary increases CPU load and network 
+          traffic;
+        - removed option <RetryOnCrcError>; it's not required anymore; 
+        - new option <ServerX.Group> allows more flexible configuration 
+          of news servers when using multiple accounts on the same server;
+          with this option it's also possible to imitate the old server 
+          management behavior regarding levels;
+  - news servers configuration is now less error-prone:
+        - the option <ServerX.Level> is not required to start from <0> and
+          when several news servers are configured the Levels can be any
+          integers - the program sorts the servers and corrects the Levels
+          to 0,1,2,etc. automatically if needed;
+        - when option <ServerX.Connections> is set to <0> the server is 
+          ignored (in previous version such a server could cause hanging
+          when the program was trying to go to the next level);
+        - if no news servers are defined (or all definitions are invalid) 
+          a warning is printed to inform that the download is not 
+          possible;
+  - categories can now have their own destination directories; new option
+    <CategoryX.DestDir>;
+  - new feature <Pause for X Minutes> in web-interface; new XML-/JSON-RPC
+    method <scheduleresume>;
+  - improved the handling of hanging connections: if a connection hangs 
+    longer than defined by option <ConnectionTimeout> the program tries to
+    gracefully close connection first (this is new); if it still hangs 
+    after <TerminateTimeout> the download thread is terminated as a last 
+    resort (as in previous versions);
+  - added automatic speed meter recalibration to recover after possible
+    synchronization errors which can occur when the option <AccurateRate>
+    is not active; this makes the default (less accurate but fast) speed
+    meter almost as good as the accurate one; important when speed 
+    throttling is active;
+  - when the par-checked requests more par-files, they get an extra 
+    priority and are downloaded before other files regardless of their 
+    priorities; this is needed to avoid hanging of par-checker-job if a 
+    file with a higher priority gets added to queue during par-check;
+  - when post-processing-parameters are passed to the post-processing 
+    script a second version of each parameter with a normalized parameter-
+    name is passed in addition to the original parameter name; in the 
+    normalized name the special characters <*> and <:> are replaced with
+    <_> and all characters are passed in upper case; this is important for
+    internal post-processing-parameters (*Unpack:=yes/no) which include
+    special characters;
+  - warning <Non-nzbget request received> now is not printed when the 
+    connection was aborted before the request signature was read;
+  - changed formatting of remaining time for post-processing to short 
+    format (as used for remaining download time);
+  - added link to article <Performance tips> to settings tab on web-
+    interface;
+  - removed hint <Post-processing script may have moved files elsewhere> 
+    from history dialog since it caused more questions than helped;
+  - changed default value for option <ServerX.JoinGroup> to <no>; most 
+    news servers nowadays do not require joining the group and many 
+    servers do not keep headers for many groups making the join-command
+    fail even if the articles still can be successfully downloaded;
+  - small change in example post-processing script: message <Deleting 
+    source ts-files> are now printed only if ts-files really existed;
+  - improved configure-script:
+        - libs which are added via pkgconfig are now put into LIBS instead
+          of LDFLAGS - improves compatibility with newer Linux linkers;
+        - OpenSSL libs/includes are now added using pkgconfig to better 
+          handle dependencies;
+        - additional check for libcrypto (part of OpenSSL) ensures the 
+          library is added to linker command even if pkgconfig is not 
+          used;
+  - adding of local files via web-interface now works in IE10;
+  - if an obsolete option is found in the config file a warning is printed
+    instead of an error and the program is not paused anymore;
+  - fixed: the reported line numbers for configuration errors were 
+    sometimes inaccurate;
+  - fixed warning <file glyphicons-halflings.png not found>;
+  - fixed: some XML-/JSON-RPC methods may return negative values for file
+    sizes between 2-4GB; this had also influence on web-interface.
+  - fixed: if an external program (unrar, pp-script, etc.) could not be
+    started, the execute-function has returned code 255 although the code
+    -1 were expected in this case; this could break designed post-
+    processing flow;
+  - fixed: some characters with codes below 32 were not properly encoded
+    in JSON-RPC; sometimes output from unrar contained such characters 
+    and could break web-interface;
+  - fixed: special characters (quotation marks, etc.) in unpack password
+    and in configuration options were not displayed properly and could be
+    discarded on saving;
+
+nzbget-9.1:
+  - added full par-scan feature needed to par-check/repair files which
+    were renamed after creation of par-files:
+  - new option <ParScan> to activate full par-scan (always or automatic);
+    the automatic full par-scan activates if missing files are detected
+    during par-check, this avoids unnecessary full scan for normal
+    (not renamed) par sets;
+  - improved the post-processing script to better handle renamed rar-files;
+  - replaced a browser error message when trying to add local files in
+    IE9 with a better message dialog;
+
+nzbget-9.0:
+  - changed version naming scheme by removing the leading zero: current
+    version is now called 9.0 instead of 0.9.0 (it's really the 9th major
+    version of the program);
+  - added built-in web-interface:
+        - completely new designed and written from scratch;
+        - doesn't require a separate web-server;
+        - doesn't require PHP;
+        - 100% Javascript application; the built-in web-server hosts only
+          static files; the javascript app communicates with NZBGet via
+          JSON-RPC;
+        - very efficient usage of server resources (CPU and memory);
+        - easy installation. Since neither a separate web-server nor PHP
+          are needed the installation of new web-interface is very easy.
+          Actually it is performed automatically when you "make install"
+          or "ipkg install nzbget";
+        - modern look: better layout, popup dialogs, nice animations,
+          hi-def icons;
+        - built-in phone-theme (activates automatically);
+        - combined view for "currently downloading", "queued", "currently
+          processing" and "queued for processing";
+        - renaming of nzb-files;
+        - multiselect with multiedit or merge of downloads;
+        - fast paging in the lists (downloads, history, messages);
+        - search box for filtering in the lists (downloads, history, messages)
+          and in settings;
+        - adding nzb-files to download queue was improved in several ways:
+            - add multiple files at once. The "select files dialog" allows
+              to select multiple files;
+            - add files using drag and drop. Just drop the files from your
+              file manager directly into the web-browser;
+            - add files via URLs. Put the URL and NZBGet downloads the
+              nzb-file and adds it to download queue automatically;
+            - the priority of nzb-file can now be set when adding local-files
+              or URLs;
+  - the history can be cleared completely or selected items can be removed;
+  - file mode is now nzb-file related;
+  - added the ability to queue URLs:
+        - the program automatically downloads nzb-files from given URLs
+          and put them to download queue.
+        - when multiple URLs are added in a short time, they are put
+          into a special URL-queue.
+        - the number of simultaneous URL-downloads are controlled via
+          new option UrlConnections.
+        - with the new option ReloadUrlQueue can be controlled if the URL-queue
+          should be reloaded after the program is restarted (if the URL-queue
+          was not empty).
+        - new switch <-U> for remote-command <--append/-A> to queue an URL.
+        - new subcommand <-U> in the remote command <--list/-L> prints the
+          current URL-queue.
+        - if URL-download fails, the URL is moved into history.
+        - with subcommand <-R> of command <--edit> the failed URL can be
+          returned to URL-queue for redownload.
+        - the remote command <--list/-L> for history can now print the infos
+          for URL history items.
+        - new XML/JSON-RPC command <appendurl> to add an URL or multiple
+          URLs for download.
+        - new XML/JSON-RPC command <urlqueue> returns the items from the
+          URL-queue.
+        - the XML/JSON-RPC command <history> was extended to provide
+          infos about URL history items.
+        - the URL-queue obeys the pause-state of download queue.
+        - the URL-downloads support HTTP and HTTPS protocols;
+  - added new field <name> to nzb-info-object.
+        - it is initially set to the cleaned up name of the nzb-file.
+        - the renaming of the group changes this field.
+        - all RPC-methods related to nzb-object return the new field, the
+          old field <NZBNicename> is now deprecated.
+        - the option <MergeNZB> now checks the <name>-field instead of
+          <nzbfilename> (the latter is not changed when the nzb is renamed).
+        - new env-var-parameter <NZBPP_NZBNAME> for post-processing script;
+  - added options <GN> and <FN> for remote command <--edit/-E>. With these
+    options the name of group or file can be used in edit-command instead
+    of file ID;
+  - added support for regular expressions (POSIX ERE Syntax) in remote
+    commands <--list/-L> and <--edit/-E> using new subcommands <GR> and <FR>;
+  - improved performance of RPC-command <listgroups>;
+  - added new command <FileReorder> to RPC-method <editqueue> to set the
+    order of individual files in the group;
+  - added gzip-support to built-in web-server (including RPC);
+  - added processing of http-request <OPTIONS> in RPC-server for better
+    support of cross domain requests;
+  - renamed example configuration file and postprocessing script to make
+    the installation easier;
+  - improved the automatic installation (<make install>) to install all
+    necessary files (not only the binary as it was before);
+  - improved handling of configuration errors: the program now does not
+    terminate on errors but rather logs all of them and uses default option values;
+  - added new XML/JSON-RPC methods <config>, <loadconfig> and <saveconfig>;
+  - with active option <AllowReProcess> the NZB considered completed even if
+    there are paused non-par-files (the paused non-par-files are treated the
+    same way as paused par-files): as a result the reprocessable script is called;
+  - added subcommand <W> to remote command <-S/--scan> to scan synchronously
+    (wait until scan completed);
+  - added parameter <SyncMode> to XML/JSON-RPC method <scan>;
+  - the command <Scan> in web-interface now waits for completing of scan
+    before reporting the status;
+  - added remote command <--reload/-O> and JSON/XML-RPC method <reload> to
+    reload configuration from disk and reintialize the program; the reload
+    can be performed from web-interface;
+  - JSON/XML-RPC method <append> extended with parameter <priority>;
+  - categories available in web-interface are now configured in program
+    configuration file (nzbget.conf) and can be managed via web-interface
+    on settings page;
+  - updated descriptions in example configuration file;
+  - changes in configuration file:
+        - renamed options <ServerIP>, <ServerPort> and <ServerPassword> to
+          <ControlIP>, <ControlPort> and <ControlPassword> to avoid confusion
+          with news-server options <ServerX.Host>, <ServerX.Port> and
+          <ServerX.Password>;
+        - the old option names are still recognized and are automatically
+          renamed when the configuration is saved from web-interface;
+        - also renamed option <$MAINDIR> to <MainDir>;
+  - extended remote command <--append/-A> with optional parameters:
+        - <T> - adds the file/URL to the top of queue;
+        - <P> - pauses added files;
+        - <C category-name> - sets category for added nzb-file/URL;
+        - <N nzb-name> - sets nzb filename for added URL;
+        - the old switches <--category/-K> and <--top/-T> are deprecated
+          but still supported for compatibility;
+  - renamed subcommand <K> of command <--edit/-E> to <C> (the old
+    subcommand is still supported for compatibility);
+  - added new option <NzbAddedProcess> to setup a script called after
+    a nzb-file is added to queue;
+  - added debug messages for speed meter;
+  - improved the startup script <nzbgetd> so it can be directly used in
+    </etc/init.d> without modifications;
+  - fixed: after renaming of a group, the new name was not displayed
+    by remote commands <-L G> and <-C in curses mode>;
+  - fixed incompatibility with OpenSLL 1.0 (thanks to OpenWRT team
+    for the patch);
+  - fixed: RPC-method <log(0, IdFrom)> could return wrong results if
+    the log was filtered with options <XXXTarget>;
+  - fixed: free disk space calculated incorrectly on some OSes;
+  - fixed: unrar failure was not always properly detected causing the
+    post-processing to delete not yet unpacked rar-files;
+  - fixed compilation error on recent linux versions;
+  - fixed compilation error on older systems;
+
+nzbget-0.8.0:
+  - added priorities; new action <I> for remote command <--edit/-E> to set
+    priorities for groups or individual files; new actions <SetGroupPriority>
+    and <SetFilePriority> of RPC-command <editqueue>; remote command
+    <--list/-L> prints priorities and indicates files or groups being
+    downloaded; ncurses-frontend prints priorities and indicates files or
+    groups being download; new command <PRIORITY> to set priority of nzb-file
+    from nzbprocess-script; RPC-commands <listgroups> and <listfiles> return
+    priorities and indicate files or groups being downloaded;
+  - added renaming of groups; new subcommand <N> for command <--edit/-E>; new
+    action <SetName> for RPC-method <editqueue>;
+  - added new option <AccurateRate>, which enables syncronisation in speed
+    meter; that makes the indicated speed more accurate by eliminating
+    measurement errors possible due thread conflicts; thanks to anonymous
+    nzbget user for the patch;
+  - improved the parsing of filename from article subject;
+  - option <DirectWrite> now efficiently works on Windows with NTFS partitions;
+  - added URL-based-authentication as alternative to HTTP-header authentication
+    for XML- and JSON-RPC;
+  - fixed: nzb-files containing umlauts and other special characters could not
+    be parsed - replaced XML-Reader with SAX-Parser - only on POSIX (not on 
+    Windows);
+  - fixed incorrect displaying of group sizes bigger than 4GB on many 64-bit
+    OSes;
+  - fixed a bug causing error on decoding of input data in JSON-RPC;
+  - fixed a compilation error on some windows versions;
+  - fixed: par-repair could fail when the filenames were not correctly parsed
+    from article subjects;
+  - fixed a compatibility issue with OpenBSD (and possibly other BSD based
+    systems); added the automatic configuring of required signal handling logic
+    to better support BSD without breaking the compatibility with certain Linux
+    systems;
+  - corrected the address of Free Software Foundation in copyright notice.
+
+nzbget-0.7.0:
+  - added history: new option <KeepHistory>, new remote subcommand <H> for
+    commands <L> (list history entries) and <E> (delete history entries,
+    return history item, postprocess history item), new RPC-command <History>
+    and subcommands <HistoryDelete>, <HistoryReturn>, <HistoryProcess> for
+    command <EditQueue>;
+  - added support for JSON-P (extension of JSON-RPC);
+  - changed the result code returning status <ERROR> for postprocessing script
+    from <1> to <94> (needed to show the proper script status in history);
+  - improved the detection of new files in incoming nzb directory: now the
+    scanner does not rely on system datum, but tracks the changing of file
+    sizes during a last few (<NzbDirFileAge>) seconds instead;
+  - improvements in example postprocessing script: 1) if download contains
+    only par2-files the script do not delete them during cleanup;
+    2) if download contains only nzb-files the script moves them to incoming
+    nzb-directory for further download;
+  - improved formatting of groups and added time info in curses output mode;
+  - added second pause register, which is independent of main pause-state and
+    therfore is intended for usage from external scripts;
+    that allows to pause download without interfering with options
+    <ParPauseQueue> and <PostPauseQueue> and scheduler tasks <PauseDownload>
+    and <UnpauseDownload> - they all work with first (default) pause register;
+    new subcommand <D2> for commands <--pause/-P> and <--unpause/-U>;
+    new RPC-command <pausedownload2> and <resumedownload2>;
+    existing RPC-commands <pause> und <resume> renamed to <pausedownload> and
+    <resumedownload>;
+    new field <Download2Paused> in result struct for RPC-command <status>;
+    existing fields <ServerPaused> and <ParJobCount> renamed to 
+    <DownloadPaused> and <PostJobCount>;
+    old RPC-commands and fields still exist for compatibility;
+    the status output of command <--list/-L> indicates the state of second
+    pause register;
+    key <P> in curses-frontend can unpause second pause-register;
+  - nzbprocess-script (option <NZBProcess>) can now set category and
+    post-processing parameters for nzb-file;
+  - redesigned server pool and par-checker to avoid using of semaphores
+    (which are very platform specific);
+  - added subcommand <S> to remote commands <--pause/-P> and <--unpause/-U> to
+    pause/unpause the scanning of incoming nzb-directory;
+  - added commands <PauseScan> and <UnpauseScan> for scheduler option 
+    <TaskX.Command>;
+  - added remote commands <PauseScan> and <ResumeScan> for XML-/JSON-RPC;
+  - command <pause post-processing> now not only pauses the post-processing
+    queue but also pauses the current post-processing job (par-job or 
+    script-job);
+    however the script-job can be paused only after the next line printed to
+    screen;
+  - improved error reporting while parsing nzb-files;
+  - added field <NZBID> to NZBInfo; the field is now returned by XML-/JSON-RPC
+    methods <listfiles>, <listgroups> and <postqueue>;
+  - improvements in configure script;
+  - added support for platforms without IPv6 (they do not have <getaddrinfo>);
+  - debug-messages generated on early stages during initializing are now
+    printed to screen/log-file;
+  - messages about obsolete options are now printed to screen/log-file;
+  - imporved example postprocessing script: added support for external
+    configuration file, postprocessing parameters and configuration via
+    web-interface;
+  - option <TaskX.Process> now can contain parameters which must be passed
+    to the script;
+  - added pausing/resuming for post-processor queue; 
+    added new modifier <O> to remote commands <--pause/-P> and <--unpause/-U>;
+    added new commands <postpause> and <postresume> to XML-/JSON-RPC;
+    extended output of remote command <--list/-L> to indicate paused state
+    of post-processor queue; extended command <status> of XML-/JSON-RPC
+    with field <PostPause>;
+  - changed the command line syntax for requesting of post-processor queue
+    from <-O> to <-L O> for consistency with other post-queue related
+    commands (<-P O>, <-U O> and <-E O>);
+  - improved example post-processing script: added support for delayed
+    par-check (try unrar first, par-repair if unrar failed);
+  - added modifier <O> to command <-E/--edit> for editing of
+    post-processor-queue;
+    following subcommands are supported: <+/-offset>, <T>, <B>, <D>;
+    subcommand <D> supports deletion of queued post-jobs and active job as well;
+    deletion of active job means the cancelling of par-check/repair or
+    terminating of post-processing-script (including child processes of the 
+    script);
+    updated remote-server to support new edit-subcommands in XML/JSON-RPC;
+  - extended the syntax of option <TaskX.Time> in two ways: 
+    1) it now accepts multiple comma-separated values;
+    2) an asterix as hours-part means <every hour>;
+  - added svn revision number to version string (commands <-v> and <-V>,
+    startup log entry);
+    svn revision is automatically read from svn-repository on each build;
+  - added estimated remaining time and better distinguishing of server state
+    in command <--list/-L>;
+  - added new return code (93) for post-processing script to indicate
+    successful processing; that results in cleaning up of download queue
+    if option <ParCleanupQueue> is active;
+  - added readonly options <AppBin>, <ConfigFile> and <Version> for usage
+    in processing scripts (options are available as environment variables
+    <NZBOP_APPBIN>, <NZBOP_CONFIGFILE> and <NZBOP_VERSION>);
+  - renamed ParStatus constant <FAILED> to <FAILURE> for a consistence with
+    ScriptStatus constant <FAILURE>, that also affects the results of
+    RPC-command <history>;
+  - added a new return code <95/POSTPROCESS_NONE> for post-processing scripts
+    for cases when pp-script skips all post-processing work (typically upon
+    a user's request via a pp-parameter);
+    modified the example post-processing script to return the new code
+    instead of a error code when a pp-parameter <PostProcess> was set to <no>;
+  - added field <PostTime> to result of RPC-Command <listfiles> and fields
+    <MinPostTime> and <MaxPostTime> for command <listgroups>;
+  - in <curses> and <colored> output-modes the download speed is now printed
+    with one decimal digit when the speed is lower than 10 KB/s;
+  - improvement in example post-processing script: added check for existence
+    of <unrar> and command <wc>;
+  - added shell batch file for windows (nzbget-shell.bat);
+    thanks to orbisvicis (orbisvicis@users.sourceforge.net) for the script;
+  - added debian style init script (nzbgetd);
+    thanks to orbisvicis (orbisvicis@users.sourceforge.net) for the script;
+  - added the returning of a proper HTTP error code if the authorization was
+    failed on RPC-calls;
+    thanks to jdembski (jdembski@users.sourceforge.net) for the patch;
+  - changed the sleep-time during the throttling of bandwidth from 200ms to
+    10ms in order to achieve better uniformity;
+  - modified example postprocessing script to not use the command <dirname>,
+    which is not always available; 
+    thanks to Ger Teunis for the patch;
+  - improved example post-processing script: added the check for existence
+    of destination directory to return a proper ERROR-code (important for
+    reprocessing of history items);
+  - by saving the queue to disk now using relative paths for the list of
+    compeled files to reduce the file's size;
+  - eliminated few compiler warnings on GCC;
+  - fixed: when option <DaemonUserName> was specified and nzbget was
+    started as root, the lockfile was not removed;
+  - fixed: nothing was downloaded when the option <Retries> was set to <0>;
+  - fixed: base64 decoding function used by RPC-method <append> sometimes
+    failed, in particular when called from Ruby-language;
+  - fixed: JSON-RPC-commands failed, if parameters were placed before method
+    name in the request;
+  - fixed: RPC-method <append> did not work properly on Posix systems
+    (it worked only on Windows);
+  - fixed compilation error when using native curses library on OpenSolaris;
+  - fixed linking error on OpenSolaris when using GnuTLS;
+  - fixed: option <ContinuePartial> did not work;
+  - fixed: seg. fault in service mode on program start (Windows only);
+  - fixed: environment block was not passed correctly to child process,
+    what could result in seg faults (windows only);
+  - fixed: returning the postprocessing exit code <92 - par-check all 
+    collections> when there were no par-files results in endless calling
+    of postprocessing script;
+  - fixed compatibility issues with OS/2.
+
+nzbget-0.6.0:
+  - added scheduler; new options <TaskX.Time>, <TaskX.WeekDays>,
+    <TaskX.Command>, <TaskX.DownloadRate> and <TaskX.Process>;
+  - added support for postprocess-parameters; new subcommand <O> of remote
+    command <E> to add/modify pp-parameter for group (nzb-file); new
+    XML-/JSON-RPC-subcommand <GroupSetParameter> of method <editqueue> for
+    the same purpose; updated example configuration file and example
+    postprocess-script to indicate new method of passing arguments via
+    environment variables;
+  - added subcommands <F>, <G> and <S> to command line switch <-L/--list>,
+    which prints list of files, groups or only status info respectively;
+    extended binary communication protocol to transfer nzb-infos in addition
+    to file-infos;
+  - added new subcommand <M> to edit-command <E> for merging of two (or more)
+    groups (useful after adding pars from a separate nzb-file);
+  - added option <MergeNzb> to automatically merge nzb-files with the same
+    filename (useful by adding pars from a different source);
+  - added script-processing of files in incoming directory to allow automatic
+    unpacking and queueing of compressed nzb-files; new option <NzbProcess>;
+  - added the printing of post-process-parameters for groups in command
+    <--list G>;
+  - added the printing of nzbget version into the log-file on start;
+  - added option <DeleteCleanupDisk> to automatically delete already downloaded
+    files from disk if nzb-file was deleted from queue (the download was
+    cancelled);
+  - added option <ParTimeLimit> to define the max time allowed for par-repair;
+  - added command <--scan/-S> to execute the scan of nzb-directory on remote
+    server;
+  - changed the method to pass arguments to postprocess/nzbprocess: now using
+    environment variables (old method is still supported for compatibility with
+    existing scripts);
+  - added the passing of nzbget-options to postprocess/nzbprocess scripts as
+    environment variables;
+  - extended the communication between nzbget and post-process-script: 
+    collections are now detected even if parcheck is disabled;
+  - added support for delayed par-check/repair: post-process-script can request
+    par-check/repair using special exit codes to repair current collection or
+    all collections;
+  - implemented the normalizing of option names and values in option list; the
+    command <-p> also prints normalized names and values now; that makes the
+    parsing of output of command <-p> for external scripts easier;
+  - replaced option <PostLogKind> with new option <ProcessLogKind> which is now
+    used by all scripts (PostProcess, NzbProcess, TaskX.Process);
+  - improved entering to paused state on connection errors (do not retry failed
+    downloads if pause was activated);
+  - improved error reporting on decoding failures;
+  - improved compatibility of yenc-decoder;
+  - improved the speed of deleting of groups from download queue (by avoiding
+    the saving of queue after the deleting of each individual file);
+  - updated configure-script for better compatibility with FreeBSD;
+  - cleaning up of download queue (option <ParCleanupQueue>) and deletion of
+    source nzb-file (option <NzbCleanupDisk>) after par-repair now works also
+    if par-repair was cancelled (option <ParTimeLimit>); since required
+    par-files were already downloaded the repair in an external tool is
+    possible;
+  - added workaround to avoid hangs in child processes (by starting of
+    postprocess or nzbprocess), observed on uClibC based systems;
+  - fixed: TLS/SSL didn't work in standalone mode;
+  - fixed compatibility issues with Mac OS X;
+  - fixed: not all necessary par2-files were unpaused on first request for
+    par-blocks (although harmless, because additional files were unpaused
+    later anyway);
+  - fixed small memory leak appeared if process-script could not be started;
+  - fixed: configure-script could not detect the right syntax for function
+    <ctime_r> on OpenSolaris.
+  - fixed: files downloaded with disabled decoder (option decode=no) sometimes
+    were malformed and could not be decoded;
+  - fixed: empty string parameters did not always work in XML-RPC.
+
+nzbget-0.5.1:
+  - improved the check of server responses to prevent unnecessary retrying
+    if the article does not exist on server;
+  - fixed: seg.fault in standalone mode if used without specifying the
+    category (e.g. without switch <-K>);
+  - fixed: download speed indicator could report not-null values in
+    standby-mode (when paused);
+  - fixed: parameter <category> in JSON/XML-RPC was not properly decoded by
+    server, makin

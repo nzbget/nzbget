@@ -414,6 +414,14 @@ testdata_FILES = \
 	tests/testdata/parchecker/testfile.vol00+1.PAR2 \
 	tests/testdata/parchecker/testfile.vol01+2.PAR2 \
 	tests/testdata/parchecker/testfile.vol03+3.PAR2 \
+	tests/testdata/parchecker2/crc.txt \
+	tests/testdata/parchecker2/testfile.7z.001 \
+	tests/testdata/parchecker2/testfile.7z.002 \
+	tests/testdata/parchecker2/testfile.7z.003 \
+	tests/testdata/parchecker2/testfile.7z.par2 \
+	tests/testdata/parchecker2/testfile.7z.vol0+1.PAR2 \
+	tests/testdata/parchecker2/testfile.7z.vol1+2.PAR2 \
+	tests/testdata/parchecker2/testfile.7z.vol3+3.PAR2 \
 	tests/testdata/rarrenamer/testfile3.part01.rar \
 	tests/testdata/rarrenamer/testfile3.part02.rar \
 	tests/testdata/rarrenamer/testfile3.part03.rar \

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ public:
 	virtual void Run();
 	virtual void Stop();
 	static void StartJob(PostInfo* postInfo);
+	static bool HasCompletedArchiveFiles(NzbInfo* nzbInfo);
 
 protected:
 	virtual bool ReadLine(char* buf, int bufSize, FILE* stream);

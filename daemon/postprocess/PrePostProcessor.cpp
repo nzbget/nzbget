@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -718,6 +718,21 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		RenameController::StartJob(postInfo, RenameController::jkRar);
 		return;
 	}
+
+#ifndef DISABLE_PARCHECK
+	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
+		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
+		g_Options->GetParCheck() == Options::pcAuto &&
+		!UnpackController::HasCompletedArchiveFiles(postInfo->GetNzbInfo()) &&
+		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
+	{
+		postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
+			"Requesting par-check for collection %s without archive files",
+			postInfo->GetNzbInfo()->GetName());
+		postInfo->SetRequestParCheck(true);
+		return;
+	}
+#endif
 
 	bool parFailed = postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psFailure ||
 		postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psRepairPossible ||

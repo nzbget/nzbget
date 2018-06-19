@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -928,4 +928,24 @@ void UnpackController::SetProgressLabel(const char* progressLabel)
 {
 	GuardedDownloadQueue guard = DownloadQueue::Guard();
 	m_postInfo->SetProgressLabel(progressLabel);
+}
+
+bool UnpackController::HasCompletedArchiveFiles(NzbInfo* nzbInfo)
+{
+	RegEx regExRar(".*\\.rar$");
+	RegEx regExSevenZip(".*\\.7z$");
+	RegEx regExSevenZipMulti(".*\\.7z\\.[0-9]+$");
+
+	for (CompletedFile& completedFile: nzbInfo->GetCompletedFiles())
+	{
+		const char* filename = completedFile.GetFilename();
+		if (regExRar.Match(filename) ||
+			regExSevenZip.Match(filename) ||
+			regExSevenZipMulti.Match(filename))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

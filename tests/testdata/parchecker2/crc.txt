@@ -1,0 +1,4 @@
+testfile.7z.001 2c4f3383
+testfile.7z.002 153f2b08
+testfile.7z.003 f4c85a77
+testfile.nfo 0f294d41

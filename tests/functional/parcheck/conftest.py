@@ -21,6 +21,8 @@ def prepare_testdata(request):
 	testdata_dir = nzbget_srcdir + '/tests/testdata'
 	if not os.path.exists(nserv_datadir + '/parchecker'):
 		shutil.copytree(testdata_dir +'/parchecker', nserv_datadir + '/parchecker')
+	if not os.path.exists(nserv_datadir + '/parchecker2'):
+		shutil.copytree(testdata_dir +'/parchecker2', nserv_datadir + '/parchecker2')
 
 	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '3000', '-q']):
 		pytest.exit('Test file generation failed')
