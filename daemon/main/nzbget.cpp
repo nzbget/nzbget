@@ -225,11 +225,12 @@ private:
 	bool m_daemonized = false;
 
 	void Init();
+	void Final();
 	void BootConfig();
 	void CreateGlobals();
 	void Cleanup();
 	void PrintOptions();
-	bool ProcessDirect();
+	void ProcessDirect();
 	void ProcessClientRequest();
 	void ProcessWebGet();
 	void ProcessSigVerify();
@@ -318,6 +319,17 @@ void NZBGet::Init()
 	}
 
 	InstallErrorHandler();
+}
+
+void NZBGet::Final()
+{
+	if (!m_reloading)
+	{
+#ifndef DISABLE_TLS
+		TlsSocket::Final();
+#endif
+		Connection::Final();
+	}
 }
 
 void NZBGet::CreateGlobals()
@@ -453,41 +465,35 @@ void NZBGet::Cleanup()
 #endif
 }
 
-bool NZBGet::ProcessDirect()
+void NZBGet::ProcessDirect()
 {
 #ifdef DEBUG
 	if (m_commandLineParser->GetTestBacktrace())
 	{
-		TestSegFault();
+		TestSegFault(); // never returns
 	}
 #endif
 
 	if (m_commandLineParser->GetWebGet())
 	{
-		ProcessWebGet();
-		return true;
+		ProcessWebGet(); // never returns
 	}
 
 	if (m_commandLineParser->GetSigVerify())
 	{
-		ProcessSigVerify();
-		return true;
+		ProcessSigVerify(); // never returns
 	}
 
 	// client request
 	if (m_commandLineParser->GetClientOperation() != CommandLineParser::opClientNoOperation)
 	{
-		ProcessClientRequest();
-		return true;
+		ProcessClientRequest(); // never returns
 	}
 
 	if (m_commandLineParser->GetPrintOptions())
 	{
-		PrintOptions();
-		return true;
+		PrintOptions(); // never returns
 	}
-
-	return false;
 }
 
 void NZBGet::StartRemoteServer()
@@ -700,10 +706,7 @@ void NZBGet::Run(bool reload)
 
 	Init();
 
-	if (ProcessDirect())
-	{
-		return;
-	}
+	ProcessDirect();
 
 	StartRemoteServer();
 	StartFrontend();
@@ -722,6 +725,8 @@ void NZBGet::Run(bool reload)
 
 	StopRemoteServer();
 	StopFrontend();
+
+	Final();
 }
 
 void NZBGet::ProcessClientRequest()
@@ -900,6 +905,7 @@ void NZBGet::PrintOptions()
 	{
 		printf("%s = \"%s\"\n", optEntry.GetName(), optEntry.GetValue());
 	}
+	exit(0);
 }
 
 #ifndef WIN32

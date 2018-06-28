@@ -31,16 +31,6 @@ std::unique_ptr<Mutex> Connection::m_getHostByNameMutex;
 #endif
 #endif
 
-class ConnectionFinalizer
-{
-public:
-	~ConnectionFinalizer()
-	{
-		Connection::Final();
-	}
-};
-
-std::unique_ptr<ConnectionFinalizer> m_connectionFinalizer;
 
 void closesocket_gracefully(SOCKET socket)
 {
@@ -109,8 +99,6 @@ void Connection::Init()
 	m_getHostByNameMutex = std::make_unique<Mutex>();
 #endif
 #endif
-
-	m_connectionFinalizer = std::make_unique<ConnectionFinalizer>();
 }
 
 void Connection::Final()

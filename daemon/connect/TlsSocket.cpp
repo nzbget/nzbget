@@ -28,16 +28,6 @@
 #include "Util.h"
 #include "FileSystem.h"
 
-class TlsSocketFinalizer
-{
-public:
-	~TlsSocketFinalizer()
-	{
-		TlsSocket::Final();
-	}
-};
-
-std::unique_ptr<TlsSocketFinalizer> m_tlsSocketFinalizer;
 CString TlsSocket::m_certStore;
 
 #ifdef HAVE_LIBGNUTLS
@@ -189,8 +179,6 @@ void TlsSocket::Init()
 	OpenSSL_add_all_algorithms();
 
 #endif /* HAVE_OPENSSL */
-
-	m_tlsSocketFinalizer = std::make_unique<TlsSocketFinalizer>();
 }
 
 void TlsSocket::Final()

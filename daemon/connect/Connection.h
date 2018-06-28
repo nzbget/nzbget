@@ -56,6 +56,7 @@ public:
 	Connection(SOCKET socket, bool tls);
 	virtual ~Connection();
 	static void Init();
+	static void Final();
 	virtual bool Connect();
 	virtual bool Disconnect();
 	bool Bind();
@@ -150,10 +151,6 @@ protected:
 	int send(SOCKET s, const char* buf, int len, int flags);
 	void CloseTls();
 #endif
-
-private:
-	static void Final();
-	friend class ConnectionFinalizer;
 };
 
 #endif

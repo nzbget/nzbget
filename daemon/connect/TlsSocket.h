@@ -34,6 +34,7 @@ public:
 	virtual ~TlsSocket();
 	static void Init();
 	static void InitOptions(const char* certStore) { m_certStore = certStore; }
+	static void Final();
 	bool Start();
 	void Close();
 	int Send(const char* buffer, int size);
@@ -62,9 +63,6 @@ private:
 
 	void ReportError(const char* errMsg, bool suppressable = true);
 	bool ValidateCert();
-
-	static void Final();
-	friend class TlsSocketFinalizer;
 };
 
 #endif
