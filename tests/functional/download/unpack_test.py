@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 import pytest
-from conftest import create_test_file
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -53,6 +52,24 @@ def prepare_testdata(request):
 
 	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '3000', '-q']):
 		pytest.exit('Test file generation failed')
+
+
+def create_test_file(bigdir, sevenzip_bin, sizemb, partmb):
+	print('Preparing test file (' + str(sizemb) + 'MB)')
+
+	if not os.path.exists(bigdir):
+		os.makedirs(bigdir)
+
+	f = open(bigdir + '/' + str(sizemb) + 'mb.dat', 'wb')
+	for n in xrange(sizemb / partmb):
+		print('Writing block %i from %i' % (n + 1, sizemb / partmb))
+		f.write(os.urandom(partmb * 1024 * 1024))
+	f.close()
+
+	if 0 != subprocess.call([sevenzip_bin, 'a', bigdir + '/' + str(sizemb) + 'mb.7z', '-mx=0', '-v' + str(partmb) + 'm', bigdir + '/' + str(sizemb) + 'mb.dat']):
+		pytest.exit('Test file generation failed')
+
+	os.remove(bigdir + '/' + str(sizemb) + 'mb.dat')
 
 
 def test_unpack_repair(nserv, nzbget):
