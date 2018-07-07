@@ -29,6 +29,7 @@
 #include "DownloadInfo.h"
 #include "Scanner.h"
 #include "StatMeter.h"
+#include "UrlCoordinator.h"
 
 extern void ExitProc();
 extern void Reload();
@@ -430,9 +431,7 @@ void DownloadBinCommand::Execute()
 		nzbInfo->SetDupeScore(dupeScore);
 		nzbInfo->SetDupeMode((EDupeMode)dupeMode);
 
-		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
-		downloadQueue->GetQueue()->Add(std::move(nzbInfo), addTop);
-		downloadQueue->Save();
+		g_UrlCoordinator->AddUrlToQueue(std::move(nzbInfo), addTop);
 
 		ok = true;
 	}

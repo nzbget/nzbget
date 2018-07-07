@@ -39,6 +39,7 @@ public:
 	void Update(Subject* caller, void* aspect);
 
 	// Editing the queue
+	void AddUrlToQueue(std::unique_ptr<NzbInfo> nzbInfo, bool addFirst);
 	bool HasMoreJobs() { return m_hasMoreJobs; }
 	bool DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool avoidHistory);
 

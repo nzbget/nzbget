@@ -207,7 +207,8 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		// nzb-files having success-duplicates in recent history (with different content) are added to history for backup
 		for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 		{
-			if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
+			if ((historyInfo->GetKind() == HistoryInfo::hkNzb ||
+				 historyInfo->GetKind() == HistoryInfo::hkUrl) &&
 				historyInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
 				SameNameOrKey(historyInfo->GetNzbInfo()->GetName(), historyInfo->GetNzbInfo()->GetDupeKey(),
 					nzbInfo->GetName(), nzbInfo->GetDupeKey()) &&
@@ -263,7 +264,8 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		{
 			NzbInfo* queuedNzbInfo = (*it++).get();
 			if (queuedNzbInfo != nzbInfo &&
-				queuedNzbInfo->GetKind() == NzbInfo::nkNzb &&
+				(queuedNzbInfo->GetKind() == NzbInfo::nkNzb ||
+				 (queuedNzbInfo->GetKind() == NzbInfo::nkUrl && nzbInfo->GetKind() == NzbInfo::nkUrl)) &&
 				queuedNzbInfo->GetDupeMode() != dmForce &&
 				SameNameOrKey(queuedNzbInfo->GetName(), queuedNzbInfo->GetDupeKey(),
 					nzbInfo->GetName(), nzbInfo->GetDupeKey()))
@@ -377,7 +379,8 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 	HistoryInfo* historyDupe = nullptr;
 	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
-		if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
+		if ((historyInfo->GetKind() == HistoryInfo::hkNzb ||
+			 historyInfo->GetKind() == HistoryInfo::hkUrl) &&
 			historyInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
 			historyInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsDupe &&
 			historyInfo->GetNzbInfo()->CalcHealth() >= historyInfo->GetNzbInfo()->CalcCriticalHealth(true) &&

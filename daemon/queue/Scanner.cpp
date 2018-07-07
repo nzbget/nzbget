@@ -458,7 +458,14 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 	{
 		addedNzb = g_QueueCoordinator->AddNzbFileToQueue(std::move(nzbInfo), std::move(urlInfo), addTop);
 	}
-	else if (!urlInfo)
+	else if (urlInfo)
+	{
+		for (Message& message : nzbInfo->GuardCachedMessages())
+		{
+			urlInfo->AddMessage(message.GetKind(), message.GetText());
+		}
+	}
+	else
 	{
 		nzbInfo->SetDeleteStatus(NzbInfo::dsScan);
 		addedNzb = g_QueueCoordinator->AddNzbFileToQueue(std::move(nzbInfo), std::move(urlInfo), addTop);

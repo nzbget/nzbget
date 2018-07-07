@@ -336,31 +336,11 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 	g_QueueScriptCoordinator->EnqueueScript(nzbInfo, QueueScriptCoordinator::qeUrlCompleted);
 
-	std::unique_ptr<NzbInfo> oldNzbInfo;
-
 	{
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-		// delete URL from queue
-		oldNzbInfo = downloadQueue->GetQueue()->Remove(nzbInfo);
-
-		// add failed URL to history
-		if (g_Options->GetKeepHistory() > 0 &&
-			nzbInfo->GetUrlStatus() != NzbInfo::lsFinished &&
-			!nzbInfo->GetAvoidHistory())
-		{
-			std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
-			historyInfo->SetTime(Util::CurrentTime());
-			downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
-			downloadQueue->HistoryChanged();
-		}
-
-		downloadQueue->Save();
-	}
-
-	if (oldNzbInfo)
-	{
-		g_DiskState->DiscardFiles(oldNzbInfo.get());
+		DownloadQueue::Aspect aspect = {DownloadQueue::eaUrlFailed, downloadQueue, nzbInfo, nullptr};
+		downloadQueue->Notify(&aspect);
 	}
 }
 
@@ -387,19 +367,27 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 	nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
 	nzbInfo->SetUrlStatus(NzbInfo::lsNone);
 
-	std::unique_ptr<NzbInfo> oldNzbInfo = downloadQueue->GetQueue()->Remove(nzbInfo);
-
-	if (g_Options->GetKeepHistory() > 0 && !avoidHistory)
-	{
-		std::unique_ptr<HistoryInfo> historyInfo = std::make_unique<HistoryInfo>(std::move(oldNzbInfo));
-		historyInfo->SetTime(Util::CurrentTime());
-		downloadQueue->GetHistory()->Add(std::move(historyInfo), true);
-		downloadQueue->HistoryChanged();
-	}
-	else
-	{
-		g_DiskState->DiscardFiles(oldNzbInfo.get());
-	}
+	DownloadQueue::Aspect deletedAspect = {DownloadQueue::eaUrlDeleted, downloadQueue, nzbInfo, nullptr};
+	downloadQueue->Notify(&deletedAspect);
 
 	return true;
+}
+
+void UrlCoordinator::AddUrlToQueue(std::unique_ptr<NzbInfo> nzbInfo, bool addFirst)
+{
+	debug("Adding URL to queue");
+										
+	NzbInfo* addedNzb = nzbInfo.get();
+
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+	DownloadQueue::Aspect foundAspect = {DownloadQueue::eaUrlFound, downloadQueue, addedNzb, nullptr};
+	downloadQueue->Notify(&foundAspect);
+
+	downloadQueue->GetQueue()->Add(std::move(nzbInfo), addFirst);
+
+	DownloadQueue::Aspect addedAspect = {DownloadQueue::eaUrlAdded, downloadQueue, addedNzb, nullptr};
+	downloadQueue->Notify(&addedAspect);
+
+	downloadQueue->Save();
 }

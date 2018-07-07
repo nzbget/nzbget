@@ -34,6 +34,7 @@
 #include "ScriptConfig.h"
 #include "QueueScript.h"
 #include "CommandScript.h"
+#include "UrlCoordinator.h"
 
 extern void ExitProc();
 extern void Reload();
@@ -2256,11 +2257,7 @@ void DownloadXmlCommand::Execute()
 
 		info("Queue %s", *nzbInfo->MakeNiceUrlName(nzbContent, nzbFilename));
 
-		{
-			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
-			downloadQueue->GetQueue()->Add(std::move(nzbInfo), addTop);
-			downloadQueue->Save();
-		}
+		g_UrlCoordinator->AddUrlToQueue(std::move(nzbInfo), addTop);
 
 		if (v13)
 		{

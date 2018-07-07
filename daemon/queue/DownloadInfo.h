@@ -918,7 +918,11 @@ public:
 		eaNzbNamed,
 		eaFileCompleted,
 		eaFileDeleted,
-		eaUrlCompleted
+		eaUrlFound,
+		eaUrlAdded,
+		eaUrlDeleted,
+		eaUrlCompleted,
+		eaUrlFailed
 	};
 
 	struct Aspect

@@ -29,6 +29,7 @@
 #include "FeedScript.h"
 #include "DiskState.h"
 #include "DupeCoordinator.h"
+#include "UrlCoordinator.h"
 
 std::unique_ptr<RegEx>& FeedCoordinator::FilterHelper::GetRegEx(int id)
 {
@@ -308,12 +309,10 @@ void FeedCoordinator::FeedCompleted(FeedDownloader* feedDownloader)
 				m_save = true;
 			}
 
-			GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 			for (std::unique_ptr<NzbInfo>& nzbInfo : addedNzbs)
 			{
-				downloadQueue->GetQueue()->Add(std::move(nzbInfo));
+				g_UrlCoordinator->AddUrlToQueue(std::move(nzbInfo), false);
 			}
-			downloadQueue->Save();
 		}
 		feedInfo->SetStatus(FeedInfo::fsFinished);
 	}

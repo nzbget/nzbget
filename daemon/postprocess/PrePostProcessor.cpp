@@ -197,11 +197,13 @@ void PrePostProcessor::DownloadQueueUpdate(void* aspect)
 	}
 
 	DownloadQueue::Aspect* queueAspect = (DownloadQueue::Aspect*)aspect;
-	if (queueAspect->action == DownloadQueue::eaNzbFound)
+	if (queueAspect->action == DownloadQueue::eaNzbFound ||
+		queueAspect->action == DownloadQueue::eaUrlFound)
 	{
 		NzbFound(queueAspect->downloadQueue, queueAspect->nzbInfo);
 	}
-	else if (queueAspect->action == DownloadQueue::eaNzbAdded)
+	else if (queueAspect->action == DownloadQueue::eaNzbAdded ||
+		queueAspect->action == DownloadQueue::eaUrlAdded)
 	{
 		NzbAdded(queueAspect->downloadQueue, queueAspect->nzbInfo);
 	}
@@ -219,6 +221,14 @@ void PrePostProcessor::DownloadQueueUpdate(void* aspect)
 		queueAspect->nzbInfo->PrintMessage(Message::mkInfo,
 			"Collection %s deleted from queue", queueAspect->nzbInfo->GetName());
 		NzbDeleted(queueAspect->downloadQueue, queueAspect->nzbInfo);
+	}
+	else if (queueAspect->action == DownloadQueue::eaUrlDeleted)
+	{
+		NzbDeleted(queueAspect->downloadQueue, queueAspect->nzbInfo);
+	}
+	else if (queueAspect->action == DownloadQueue::eaUrlFailed)
+	{
+		NzbCompleted(queueAspect->downloadQueue, queueAspect->nzbInfo, true);
 	}
 	else if ((queueAspect->action == DownloadQueue::eaFileCompleted ||
 		queueAspect->action == DownloadQueue::eaFileDeleted))

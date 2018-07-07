@@ -496,6 +496,9 @@ bool NzbInfo::IsDupeSuccess()
 		m_parStatus == NzbInfo::psFailure ||
 		m_unpackStatus == NzbInfo::usFailure ||
 		m_unpackStatus == NzbInfo::usPassword ||
+		m_urlStatus == NzbInfo::lsFailed ||
+		m_urlStatus == NzbInfo::lsScanSkipped ||
+		m_urlStatus == NzbInfo::lsScanFailed ||
 		(m_parStatus == NzbInfo::psSkipped &&
 		 m_unpackStatus == NzbInfo::usSkipped &&
 		 CalcHealth() < CalcCriticalHealth(true)));
