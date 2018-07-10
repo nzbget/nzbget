@@ -454,6 +454,9 @@ std::unique_ptr<NzbInfo> FeedCoordinator::CreateNzbInfo(FeedInfo* feedInfo, Feed
 	nzbInfo->SetDupeKey(feedItemInfo.GetDupeKey());
 	nzbInfo->SetDupeScore(feedItemInfo.GetDupeScore());
 	nzbInfo->SetDupeMode(feedItemInfo.GetDupeMode());
+	nzbInfo->SetSize(feedItemInfo.GetSize());
+	nzbInfo->SetMinTime(feedItemInfo.GetTime());
+	nzbInfo->SetMaxTime(feedItemInfo.GetTime());
 
 	return nzbInfo;
 }
