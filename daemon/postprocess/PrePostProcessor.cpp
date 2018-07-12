@@ -381,6 +381,7 @@ void PrePostProcessor::NzbDeleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo
 
 void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbInfo, bool saveQueue)
 {
+	bool downloadDupe = nzbInfo->GetDupeHint() == NzbInfo::dhRedownloadAuto;
 	bool addToHistory = g_Options->GetKeepHistory() > 0 && !nzbInfo->GetAvoidHistory();
 	if (addToHistory)
 	{
@@ -394,7 +395,8 @@ void PrePostProcessor::NzbCompleted(DownloadQueue* downloadQueue, NzbInfo* nzbIn
 		(nzbInfo->GetDeleteStatus() == NzbInfo::dsNone ||
 		 nzbInfo->GetDeleteStatus() == NzbInfo::dsHealth ||
 		 nzbInfo->GetDeleteStatus() == NzbInfo::dsBad ||
-		 nzbInfo->GetDeleteStatus() == NzbInfo::dsScan))
+		 nzbInfo->GetDeleteStatus() == NzbInfo::dsScan ||
+		 (nzbInfo->GetDeleteStatus() == NzbInfo::dsCopy && downloadDupe)))
 	{
 		g_DupeCoordinator->NzbCompleted(downloadQueue, nzbInfo);
 		needSave = true;

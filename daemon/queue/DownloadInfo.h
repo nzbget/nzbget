@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -446,6 +446,13 @@ public:
 		nkUrl
 	};
 
+	enum EDupeHint
+	{
+		dhNone,
+		dhRedownloadManual,
+		dhRedownloadAuto
+	};
+
 	int GetId() { return m_id; }
 	void SetId(int id);
 	static void ResetGenId(bool max);
@@ -580,6 +587,8 @@ public:
 	void SetDupeScore(int dupeScore) { m_dupeScore = dupeScore; }
 	EDupeMode GetDupeMode() { return m_dupeMode; }
 	void SetDupeMode(EDupeMode dupeMode) { m_dupeMode = dupeMode; }
+	EDupeHint GetDupeHint() { return m_dupeHint; }
+	void SetDupeHint(EDupeHint dupeHint) { m_dupeHint = dupeHint; }
 	uint32 GetFullContentHash() { return m_fullContentHash; }
 	void SetFullContentHash(uint32 fullContentHash) { m_fullContentHash = fullContentHash; }
 	uint32 GetFilteredContentHash() { return m_filteredContentHash; }
@@ -698,6 +707,7 @@ private:
 	CString m_dupeKey = "";
 	int m_dupeScore = 0;
 	EDupeMode m_dupeMode = dmScore;
+	EDupeHint m_dupeHint = dhNone;
 	uint32 m_fullContentHash = 0;
 	uint32 m_filteredContentHash = 0;
 	FileList m_fileList;

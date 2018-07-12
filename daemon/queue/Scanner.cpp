@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -438,6 +438,7 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 		nzbInfo->SetUrl(urlInfo->GetUrl());
 		nzbInfo->SetUrlStatus(urlInfo->GetUrlStatus());
 		nzbInfo->SetFeedId(urlInfo->GetFeedId());
+		nzbInfo->SetDupeHint(urlInfo->GetDupeHint());
 	}
 
 	if (nzbFile.GetPassword())

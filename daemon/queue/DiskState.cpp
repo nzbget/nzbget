@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include "FileSystem.h"
 
 static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
-const int DISKSTATE_QUEUE_VERSION = 60;
+const int DISKSTATE_QUEUE_VERSION = 61;
 const int DISKSTATE_FILE_VERSION = 5;
 const int DISKSTATE_STATS_VERSION = 3;
 const int DISKSTATE_FEEDS_VERSION = 3;
@@ -464,7 +464,7 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile)
 	outfile.PrintLine("%i,%i,%i", nzbInfo->GetTotalArticles(), nzbInfo->GetSuccessArticles(), nzbInfo->GetFailedArticles());
 
 	outfile.PrintLine("%s", nzbInfo->GetDupeKey());
-	outfile.PrintLine("%i,%i", (int)nzbInfo->GetDupeMode(), nzbInfo->GetDupeScore());
+	outfile.PrintLine("%i,%i,%i", (int)nzbInfo->GetDupeMode(), nzbInfo->GetDupeScore(), (int)nzbInfo->GetDupeHint());
 
 	Util::SplitInt64(nzbInfo->GetDownloadedSize(), &High1, &Low1);
 	outfile.PrintLine("%u,%u,%i,%i,%i,%i,%i", High1, Low1, nzbInfo->GetDownloadSec(), nzbInfo->GetPostTotalSec(),
@@ -690,10 +690,19 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	nzbInfo->SetDupeKey(buf);
 
-	int dupeMode, dupeScore;
-	if (infile.ScanLine("%i,%i", &dupeMode, &dupeScore) != 2) goto error;
+	int dupeMode, dupeScore, dupeHint;
+	dupeHint = 0; //clang requires initialization in a separate line (due to goto statements)
+	if (formatVersion >= 61)
+	{
+		if (infile.ScanLine("%i,%i,%i", &dupeMode, &dupeScore, &dupeHint) != 3) goto error;
+	}
+	else
+	{
+		if (infile.ScanLine("%i,%i", &dupeMode, &dupeScore) != 2) goto error;
+	}
 	nzbInfo->SetDupeMode((EDupeMode)dupeMode);
 	nzbInfo->SetDupeScore(dupeScore);
+	nzbInfo->SetDupeMode((EDupeMode)dupeHint);
 
 	if (formatVersion >= 48)
 	{

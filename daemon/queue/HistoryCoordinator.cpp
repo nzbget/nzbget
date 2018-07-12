@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -182,6 +182,8 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	{
 		nzbInfo->SetDirectRenameStatus(NzbInfo::tsFailure);
 	}
+
+	nzbInfo->SetDupeHint(NzbInfo::dhNone);
 
 	nzbInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", nzbInfo->GetName());
 }
@@ -433,6 +435,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 		historyInfo->DiscardNzbInfo();
 		nzbInfo->SetUrlStatus(NzbInfo::lsNone);
 		nzbInfo->SetDeleteStatus(NzbInfo::dsNone);
+		nzbInfo->SetDupeHint(nzbInfo->GetDupeHint() == NzbInfo::dhNone ? NzbInfo::dhRedownloadManual : nzbInfo->GetDupeHint());
 		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
 		downloadQueue->GetHistory()->erase(itHistory);
 		return;

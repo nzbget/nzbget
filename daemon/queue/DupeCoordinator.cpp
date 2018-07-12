@@ -202,6 +202,12 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		}
 	}
 
+	if (!sameContent && nzbInfo->GetDupeHint() != NzbInfo::dhNone)
+	{
+		// dupe check when "download again" URLs: checking same content only
+		return;
+	}
+
 	if (!sameContent && !good && nzbInfo->GetDupeMode() == dmScore)
 	{
 		// nzb-files having success-duplicates in recent history (with different content) are added to history for backup
@@ -238,7 +244,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 				sameContent ? "exactly same content" : good ? "good status" : "success status");
 		}
 
-		if (nzbInfo->GetFeedId())
+		if (nzbInfo->GetFeedId() && nzbInfo->GetDupeHint() == NzbInfo::dhNone)
 		{
 			warn("%s", *message);
 			// Flag saying QueueCoordinator to skip nzb-file
@@ -398,6 +404,7 @@ void DupeCoordinator::ReturnBestDupe(DownloadQueue* downloadQueue, NzbInfo* nzbI
 	if (historyDupe)
 	{
 		info("Found duplicate %s for %s", historyDupe->GetNzbInfo()->GetName(), nzbName);
+		historyDupe->GetNzbInfo()->SetDupeHint(NzbInfo::dhRedownloadAuto);
 		g_HistoryCoordinator->Redownload(downloadQueue, historyDupe);
 	}
 }
