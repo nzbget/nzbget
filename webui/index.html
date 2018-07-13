@@ -24,7 +24,6 @@
 	<meta charset="utf-8">
 	<title>NZBGet</title>
 	<meta name="description" content="NZBGet web-interface">
-	<meta name="author" content="Andrey Prygunkov (hugbug@users.sourceforge.net)">
 
 	<!-- Mobile settings -->
 	<meta name="viewport" content="initial-scale=1.0, user-scalable=yes" />
@@ -97,7 +96,7 @@
 		<div class="container-fluid navbar-container" id="NavbarContainer">
 
 			<!-- LOGO -->
-			<div id="Logo" data-toggle="modal" href="#InfoDialog"><i class="img-logo"></i></div>
+			<div id="Logo" onclick="$('#DownloadsTabLink').click()"><i class="img-logo"></i></div>
 
 			<!-- PLAY/PAUSE-BUTTON -->
 			<div id="PlayBlock">
@@ -539,6 +538,7 @@
 						<div class="span3">
 							<ul class="nav nav-list" id="ConfigNav">
 							<li class="config-static"><a href="#Config-Info">INFO</a></li>
+							<li class="config-static"><a href="#Config-About">ABOUT NZBGET</a></li>
 							<li class="config-static"><a href="#Config-System">SYSTEM</a></li>
 							</ul>
 						</div>
@@ -595,6 +595,49 @@
 									<p>
 									This can be done in section <em><strong>SYSTEM</strong></em>.
 									</p>
+								</div>
+
+								<div id="ConfigAbout">
+									<p>For info on NZBGet poject please visit <a href="http://nzbget.net">NZBGet Home Page</a>. Among other things the developers of third-party apps find there complete docs about RPC interface.</p>
+									<p>Should you need help, have suggestions or want to share your improvements - <a href="http://nzbget.net/forum">NZBGet Forum</a> is a place to do that.</p>
+
+									<h4>Copyright</h4>
+									<p>This program is free software; you can redistribute it and/or modify
+									it under the terms of the GNU General Public License as published by
+									the Free Software Foundation; either version 2 of the License, or
+									(at your option) any later version.</p>
+							
+									<p>The complete content of license is provided in file COPYING within distribution and also available <a href="http://www.gnu.org/licenses/gpl-2.0.html">online</a>.</p>
+							
+									<p>Additional exemption: compiling, linking, and/or using OpenSSL is allowed.</p>
+														
+									<h4>Par2</h4>
+									<p>NZBGet uses <a href="http://parchive.sourceforge.net">Par2</a> by Peter Brian Clements with library interface by Francois Lesueur.</p>
+									<p>Par2 is licensed under the <a href="http://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt">GPL license</a>.</p>
+							
+									<h4>Catch</h4>
+									<p>NZBGet uses C++ testing framework <a href="https://github.com/philsquared/Catch">Catch</a>  by Two Blue Cubes Ltd.</p>
+									<p>Catch is licensed under the <a href="http://www.boost.org/LICENSE_1_0.txt">Boost Software License</a>.</p>
+							
+									<h4>jQuery</h4>
+									<p>NZBGet web-interface uses <a href="http://jquery.com">jQuery</a>. The jQuery Project is run by a distributed group of volunteers that all want to see jQuery become the best JavaScript tool possible.</p>
+									<p>jQuery is licensed under the <a href="http://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt">MIT</a> and <a href="http://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt">GPL</a> licenses.</p>
+							
+									<h4>Bootstrap</h4>
+									<p>NZBGet web-interface uses <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>. Designed and built with all the love in the world @twitter by @mdo and @fat.</p>
+									<p>Bootstrap code is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>.</p>
+							
+									<h4>Raphaël</h4>
+									<p>NZBGet web-interface makes use of <a href="http://raphaeljs.com">Raphaël</a> built by Dmitry Baranovskiy.</p>
+									<p>Raphaël code is licensed under the <a href="http://raphaeljs.com/license.html">MIT license</a>.</p>
+							
+									<h4>Elycharts</h4>
+									<p>For charts NZBGet relies on <a href="http://elycharts.com">Elycharts</a> by Void Labs s.n.c.</p>
+									<p>Elycharts code is licensed under the <a href="http://creativecommons.org/licenses/MIT/">MIT license</a>.</p>
+							
+									<h4>iconSweets</h4>
+									<p>NZBGet web-interface includes selected icons from collections <a href="http://www.iconsweets.com/">iconSweets</a> and <a href="http://www.iconsweets2.com/">iconSweets2</a> by <a href="http://yummygum.com">Yummygum</a>.</p>
+									<p>The icons are generally licensed under a custom license but used in NZBGet with author's permission.</p>
 								</div>
 
 								<div>
@@ -678,68 +721,6 @@
 				</div>
 			</div>
 		</div>
-
-	</div>
-</div>
-
-<!-- *** INFO ************************************************************ -->
-
-<div class="modal no-footer hide" id="InfoDialog">
-	<div class="modal-header">
-	<a class="close" href='#' data-dismiss="modal"><i class="icon-close"></i></a>
-	<h3>NZBGet <span id="version">version</h3>
-	</div>
-	<div class="modal-body">
-		<h1>Information about NZBGet</h1>
-		<h2>Authors</h2>
-		<p>NZBGet is developed and maintained by Andrey Prygunkov (<a href="mailto:hugbug@users.sourceforge.net">hugbug@users.sourceforge.net</a>).</p>
-
-		<p>The original project was initially created by Sven Henkel (sidddy@users.sourceforge.net) in 2004 and later developed by Bo Cordes Petersen (placebodk@users.sourceforge.net) until 2005. In 2007 the abandoned project was overtaken by Andrey Prygunkov. Since then the program has been completely rewritten.</p>
-
-		<h2>Copyright</h2>
-		<p>This program is free software; you can redistribute it and/or modify
-		it under the terms of the GNU General Public License as published by
-		the Free Software Foundation; either version 2 of the License, or
-		(at your option) any later version.</p>
-
-		<p>The complete content of license is provided in file COPYING within distribution and also available <a href="http://www.gnu.org/licenses/gpl-2.0.html">online</a>.</p>
-
-		<p>Additional exemption: compiling, linking, and/or using OpenSSL is allowed.</p>
-
-		<h2>Contact</h2>
-		<p>For more info please visit <a href="http://nzbget.net">NZBGet Home Page</a>. Among other things the developers of third-party apps find there complete docs about RPC interface.</p>
-		<p>Should you need help, have suggestions or want to share your improvements - <a href="http://nzbget.net/forum">NZBGet Forum</a> is a place to do that.</p>
-		<p>If you use NZBGet on a media player, router, NAS or other non-PC device the best place to get help is probably forums specialized on your device.</p>
-
-		<h1>Information about included libraries</h1>
-
-		<h2>Par2</h2>
-		<p>NZBGet uses <a href="http://parchive.sourceforge.net">Par2</a> by Peter Brian Clements with library interface by Francois Lesueur.</p>
-		<p>Par2 is licensed under the <a href="http://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt">GPL license</a>.</p>
-
-		<h2>Catch</h2>
-		<p>NZBGet uses C++ testing framework <a href="https://github.com/philsquared/Catch">Catch</a>  by Two Blue Cubes Ltd.</p>
-		<p>Catch is licensed under the <a href="http://www.boost.org/LICENSE_1_0.txt">Boost Software License</a>.</p>
-
-		<h2>jQuery</h2>
-		<p>NZBGet web-interface uses <a href="http://jquery.com">jQuery</a>. The jQuery Project is run by a distributed group of volunteers that all want to see jQuery become the best JavaScript tool possible.</p>
-		<p>jQuery is licensed under the <a href="http://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt">MIT</a> and <a href="http://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt">GPL</a> licenses.</p>
-
-		<h2>Bootstrap</h2>
-		<p>NZBGet web-interface uses <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>. Designed and built with all the love in the world @twitter by @mdo and @fat.</p>
-		<p>Bootstrap code is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>.</p>
-
-		<h2>Raphaël</h2>
-		<p>NZBGet web-interface makes use of <a href="http://raphaeljs.com">Raphaël</a> built by Dmitry Baranovskiy.</p>
-		<p>Raphaël code is licensed under the <a href="http://raphaeljs.com/license.html">MIT license</a>.</p>
-
-		<h2>Elycharts</h2>
-		<p>For charts NZBGet relies on <a href="http://elycharts.com">Elycharts</a> by Void Labs s.n.c.</p>
-		<p>Elycharts code is licensed under the <a href="http://creativecommons.org/licenses/MIT/">MIT license</a>.</p>
-
-		<h2>iconSweets</h2>
-		<p>NZBGet web-interface includes selected icons from collections <a href="http://www.iconsweets.com/">iconSweets</a> and <a href="http://www.iconsweets2.com/">iconSweets2</a> by <a href="http://yummygum.com">Yummygum</a>.</p>
-		<p>The icons are generally licensed under a custom license but used in NZBGet with author's permission.</p>
 
 	</div>
 </div>

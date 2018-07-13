@@ -504,6 +504,7 @@ var Config = (new function($)
 	var $ConfigTabBadgeEmpty;
 	var $ConfigContent;
 	var $ConfigInfo;
+	var $ConfigAbout;
 	var $ConfigTitle;
 	var $ConfigTable;
 	var $ViewButton;
@@ -533,6 +534,7 @@ var Config = (new function($)
 		$ConfigTabBadgeEmpty = $('#ConfigTabBadgeEmpty');
 		$ConfigContent = $('#ConfigContent');
 		$ConfigInfo = $('#ConfigInfo');
+		$ConfigAbout = $('#ConfigAbout');
 		$ConfigTitle = $('#ConfigTitle');
 		$ViewButton = $('#Config_ViewButton');
 		$LeaveConfigDialog = $('#LeaveConfigDialog');
@@ -1208,9 +1210,10 @@ var Config = (new function($)
 		$('li', $ConfigNav).removeClass('active');
 		link.closest('li').addClass('active');
 		$ConfigContent.removeClass('search');
-		Util.show($ViewButton, sectionId !== 'Config-Info');
+		Util.show($ViewButton, sectionId !== 'Config-Info' && sectionId !== 'Config-About');
 
 		$ConfigInfo.hide();
+		$ConfigAbout.hide();
 
 		if (sectionId === 'Search')
 		{
@@ -1225,6 +1228,14 @@ var Config = (new function($)
 			$ConfigInfo.show();
 			$ConfigData.children().hide();
 			$ConfigTitle.text('INFO: SETTINGS');
+			return;
+		}
+
+		if (sectionId === 'Config-About')
+		{
+			$ConfigAbout.show();
+			$ConfigData.children().hide();
+			$ConfigTitle.text('ABOUT NZBGET');
 			return;
 		}
 
