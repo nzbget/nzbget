@@ -384,10 +384,13 @@ void UrlCoordinator::AddUrlToQueue(std::unique_ptr<NzbInfo> nzbInfo, bool addFir
 	DownloadQueue::Aspect foundAspect = {DownloadQueue::eaUrlFound, downloadQueue, addedNzb, nullptr};
 	downloadQueue->Notify(&foundAspect);
 
-	downloadQueue->GetQueue()->Add(std::move(nzbInfo), addFirst);
+	if (addedNzb->GetDeleteStatus() != NzbInfo::dsManual)
+	{
+		downloadQueue->GetQueue()->Add(std::move(nzbInfo), addFirst);
 
-	DownloadQueue::Aspect addedAspect = {DownloadQueue::eaUrlAdded, downloadQueue, addedNzb, nullptr};
-	downloadQueue->Notify(&addedAspect);
+		DownloadQueue::Aspect addedAspect = {DownloadQueue::eaUrlAdded, downloadQueue, addedNzb, nullptr};
+		downloadQueue->Notify(&addedAspect);
+	}
 
 	downloadQueue->Save();
 }
