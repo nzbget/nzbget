@@ -475,7 +475,8 @@ void DupeCoordinator::HistoryCleanup(DownloadQueue* downloadQueue, HistoryInfo* 
 	{
 		HistoryInfo* historyInfo = (*it).get();
 
-		if (historyInfo->GetKind() == HistoryInfo::hkNzb &&
+		if ((historyInfo->GetKind() == HistoryInfo::hkNzb ||
+			 historyInfo->GetKind() == HistoryInfo::hkUrl) &&
 			historyInfo->GetNzbInfo()->GetDupeMode() != dmForce &&
 			historyInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsDupe &&
 			historyInfo != markHistoryInfo &&
