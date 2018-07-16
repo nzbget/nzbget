@@ -640,6 +640,8 @@ void PrePostProcessor::CheckPostQueue()
 
 void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo, bool allowPar)
 {
+	NzbInfo* nzbInfo = postInfo->GetNzbInfo();
+
 	if (!postInfo->GetStartTime())
 	{
 		postInfo->SetStartTime(Util::CurrentTime());
@@ -649,8 +651,8 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	postInfo->SetFileProgress(0);
 	postInfo->SetProgressLabel("");
 
-	if (postInfo->GetNzbInfo()->GetParRenameStatus() == NzbInfo::rsNone &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
+	if (nzbInfo->GetParRenameStatus() == NzbInfo::rsNone &&
+		nzbInfo->GetDeleteStatus() == NzbInfo::dsNone &&
 		g_Options->GetParRename())
 	{
 		EnterStage(downloadQueue, postInfo, PostInfo::ptParRenaming);
@@ -659,10 +661,10 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	}
 
 #ifndef DISABLE_PARCHECK
-	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psNone &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone)
+	if (nzbInfo->GetParStatus() == NzbInfo::psNone &&
+		nzbInfo->GetDeleteStatus() == NzbInfo::dsNone)
 	{
-		if (ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
+		if (ParParser::FindMainPars(nzbInfo->GetDestDir(), nullptr))
 		{
 			if (!allowPar)
 			{
@@ -676,54 +678,54 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		}
 		else
 		{
-			postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
-				"Nothing to par-check for %s", postInfo->GetNzbInfo()->GetName());
-			postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psSkipped);
+			nzbInfo->PrintMessage(Message::mkInfo,
+				"Nothing to par-check for %s", nzbInfo->GetName());
+			nzbInfo->SetParStatus(NzbInfo::psSkipped);
 		}
 		return;
 	}
 	
-	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
+	if (nzbInfo->GetParStatus() == NzbInfo::psSkipped &&
 		((g_Options->GetParScan() != Options::psDupe &&
-		  postInfo->GetNzbInfo()->CalcHealth() < postInfo->GetNzbInfo()->CalcCriticalHealth(false) &&
-		  postInfo->GetNzbInfo()->CalcCriticalHealth(false) < 1000) ||
-		  postInfo->GetNzbInfo()->CalcHealth() == 0) &&
-		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
+		  nzbInfo->CalcHealth() < nzbInfo->CalcCriticalHealth(false) &&
+		  nzbInfo->CalcCriticalHealth(false) < 1000) ||
+		  nzbInfo->CalcHealth() == 0) &&
+		ParParser::FindMainPars(nzbInfo->GetDestDir(), nullptr))
 	{
-		if (postInfo->GetNzbInfo()->CalcHealth() == 0)
+		if (nzbInfo->CalcHealth() == 0)
 		{
-			postInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
-				"Skipping par-check for %s due to health 0%%", postInfo->GetNzbInfo()->GetName());
+			nzbInfo->PrintMessage(Message::mkWarning,
+				"Skipping par-check for %s due to health 0%%", nzbInfo->GetName());
 		}
 		else
 		{
-			postInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
+			nzbInfo->PrintMessage(Message::mkWarning,
 				"Skipping par-check for %s due to health %.1f%% below critical %.1f%%",
-				postInfo->GetNzbInfo()->GetName(),
-				postInfo->GetNzbInfo()->CalcHealth() / 10.0, postInfo->GetNzbInfo()->CalcCriticalHealth(false) / 10.0);
+				nzbInfo->GetName(),
+				nzbInfo->CalcHealth() / 10.0, nzbInfo->CalcCriticalHealth(false) / 10.0);
 		}
-		postInfo->GetNzbInfo()->SetParStatus(NzbInfo::psFailure);
+		nzbInfo->SetParStatus(NzbInfo::psFailure);
 		return;
 	}
 	
-	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
-		postInfo->GetNzbInfo()->GetFailedSize() - postInfo->GetNzbInfo()->GetParFailedSize() > 0 &&
-		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
+	if (nzbInfo->GetParStatus() == NzbInfo::psSkipped &&
+		nzbInfo->GetFailedSize() - nzbInfo->GetParFailedSize() > 0 &&
+		ParParser::FindMainPars(nzbInfo->GetDestDir(), nullptr))
 	{
-		postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
+		nzbInfo->PrintMessage(Message::mkInfo,
 			"Collection %s with health %.1f%% needs par-check",
-			postInfo->GetNzbInfo()->GetName(), postInfo->GetNzbInfo()->CalcHealth() / 10.0);
+			nzbInfo->GetName(), nzbInfo->CalcHealth() / 10.0);
 		postInfo->SetRequestParCheck(true);
 		return;
 	}
 #endif
 
-	NzbParameter* unpackParameter = postInfo->GetNzbInfo()->GetParameters()->Find("*Unpack:");
+	NzbParameter* unpackParameter = nzbInfo->GetParameters()->Find("*Unpack:");
 	bool wantUnpack = !(unpackParameter && !strcasecmp(unpackParameter->GetValue(), "no"));
-	bool unpack = wantUnpack && postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone;
+	bool unpack = wantUnpack && nzbInfo->GetUnpackStatus() == NzbInfo::usNone &&
+		nzbInfo->GetDeleteStatus() == NzbInfo::dsNone;
 
-	if (postInfo->GetNzbInfo()->GetRarRenameStatus() == NzbInfo::rsNone &&
+	if (nzbInfo->GetRarRenameStatus() == NzbInfo::rsNone &&
 		unpack && g_Options->GetRarRename())
 	{
 		EnterStage(downloadQueue, postInfo, PostInfo::ptRarRenaming);
@@ -732,57 +734,57 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 	}
 
 #ifndef DISABLE_PARCHECK
-	if (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
+	if (nzbInfo->GetParStatus() == NzbInfo::psSkipped &&
+		nzbInfo->GetDeleteStatus() == NzbInfo::dsNone &&
 		g_Options->GetParCheck() == Options::pcAuto &&
-		!UnpackController::HasCompletedArchiveFiles(postInfo->GetNzbInfo()) &&
-		ParParser::FindMainPars(postInfo->GetNzbInfo()->GetDestDir(), nullptr))
+		!UnpackController::HasCompletedArchiveFiles(nzbInfo) &&
+		ParParser::FindMainPars(nzbInfo->GetDestDir(), nullptr))
 	{
-		postInfo->GetNzbInfo()->PrintMessage(Message::mkInfo,
+		nzbInfo->PrintMessage(Message::mkInfo,
 			"Requesting par-check for collection %s without archive files",
-			postInfo->GetNzbInfo()->GetName());
+			nzbInfo->GetName());
 		postInfo->SetRequestParCheck(true);
 		return;
 	}
 #endif
 
-	bool parFailed = postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psFailure ||
-		postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psRepairPossible ||
-		postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psManual;
+	bool parFailed = nzbInfo->GetParStatus() == NzbInfo::psFailure ||
+		nzbInfo->GetParStatus() == NzbInfo::psRepairPossible ||
+		nzbInfo->GetParStatus() == NzbInfo::psManual;
 
 	bool cleanup = !unpack && wantUnpack &&
-		postInfo->GetNzbInfo()->GetCleanupStatus() == NzbInfo::csNone &&
+		nzbInfo->GetCleanupStatus() == NzbInfo::csNone &&
 		!Util::EmptyStr(g_Options->GetExtCleanupDisk()) &&
-		((postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSuccess &&
-		  postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usFailure &&
-		  postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usSpace &&
-		  postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usPassword) ||
-		 (postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSuccess &&
-		  postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psFailure) ||
-		 ((postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usNone ||
-		   postInfo->GetNzbInfo()->GetUnpackStatus() == NzbInfo::usSkipped) &&
-		  (postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psNone ||
-		   postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psSkipped) &&
-		  postInfo->GetNzbInfo()->CalcHealth() == 1000));
+		((nzbInfo->GetParStatus() == NzbInfo::psSuccess &&
+		  nzbInfo->GetUnpackStatus() != NzbInfo::usFailure &&
+		  nzbInfo->GetUnpackStatus() != NzbInfo::usSpace &&
+		  nzbInfo->GetUnpackStatus() != NzbInfo::usPassword) ||
+		 (nzbInfo->GetUnpackStatus() == NzbInfo::usSuccess &&
+		  nzbInfo->GetParStatus() != NzbInfo::psFailure) ||
+		 ((nzbInfo->GetUnpackStatus() == NzbInfo::usNone ||
+		   nzbInfo->GetUnpackStatus() == NzbInfo::usSkipped) &&
+		  (nzbInfo->GetParStatus() == NzbInfo::psNone ||
+		   nzbInfo->GetParStatus() == NzbInfo::psSkipped) &&
+		  nzbInfo->CalcHealth() == 1000));
 
 	bool moveInter = !unpack &&
-		postInfo->GetNzbInfo()->GetMoveStatus() == NzbInfo::msNone &&
-		postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usFailure &&
-		postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usSpace &&
-		postInfo->GetNzbInfo()->GetUnpackStatus() != NzbInfo::usPassword &&
-		postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psFailure &&
-		postInfo->GetNzbInfo()->GetParStatus() != NzbInfo::psManual &&
-		postInfo->GetNzbInfo()->GetDeleteStatus() == NzbInfo::dsNone &&
+		nzbInfo->GetMoveStatus() == NzbInfo::msNone &&
+		nzbInfo->GetUnpackStatus() != NzbInfo::usFailure &&
+		nzbInfo->GetUnpackStatus() != NzbInfo::usSpace &&
+		nzbInfo->GetUnpackStatus() != NzbInfo::usPassword &&
+		nzbInfo->GetParStatus() != NzbInfo::psFailure &&
+		nzbInfo->GetParStatus() != NzbInfo::psManual &&
+		nzbInfo->GetDeleteStatus() == NzbInfo::dsNone &&
 		!Util::EmptyStr(g_Options->GetInterDir()) &&
-		!strncmp(postInfo->GetNzbInfo()->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
-		postInfo->GetNzbInfo()->GetDestDir()[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
+		!strncmp(nzbInfo->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
+		nzbInfo->GetDestDir()[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
 
 	if (unpack && parFailed)
 	{
-		postInfo->GetNzbInfo()->PrintMessage(Message::mkWarning,
-			"Skipping unpack for %s due to %s", postInfo->GetNzbInfo()->GetName(),
-			postInfo->GetNzbInfo()->GetParStatus() == NzbInfo::psManual ? "required par-repair" : "par-failure");
-		postInfo->GetNzbInfo()->SetUnpackStatus(NzbInfo::usSkipped);
+		nzbInfo->PrintMessage(Message::mkWarning,
+			"Skipping unpack for %s due to %s", nzbInfo->GetName(),
+			nzbInfo->GetParStatus() == NzbInfo::psManual ? "required par-repair" : "par-failure");
+		nzbInfo->SetUnpackStatus(NzbInfo::usSkipped);
 		unpack = false;
 	}
 
