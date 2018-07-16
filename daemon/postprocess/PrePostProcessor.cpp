@@ -775,6 +775,11 @@ void PrePostProcessor::StartJob(DownloadQueue* downloadQueue, PostInfo* postInfo
 		nzbInfo->GetParStatus() != NzbInfo::psFailure &&
 		nzbInfo->GetParStatus() != NzbInfo::psManual &&
 		nzbInfo->GetDeleteStatus() == NzbInfo::dsNone &&
+		!(((nzbInfo->GetUnpackStatus() == NzbInfo::usNone ||
+		   nzbInfo->GetUnpackStatus() == NzbInfo::usSkipped) &&
+		  (nzbInfo->GetParStatus() == NzbInfo::psNone ||
+		   nzbInfo->GetParStatus() == NzbInfo::psSkipped) &&
+		  nzbInfo->CalcHealth() < 1000)) &&
 		!Util::EmptyStr(g_Options->GetInterDir()) &&
 		!strncmp(nzbInfo->GetDestDir(), g_Options->GetInterDir(), strlen(g_Options->GetInterDir())) &&
 		nzbInfo->GetDestDir()[strlen(g_Options->GetInterDir())] == PATH_SEPARATOR;
