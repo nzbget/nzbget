@@ -631,6 +631,10 @@ const char* NzbInfo::MakeTextStatus(bool ignoreScriptStatus)
 		{
 			status = "DELETED/DUPE";
 		}
+		else if (m_deleteStatus == NzbInfo::dsGood)
+		{
+			status = "DELETED/GOOD";
+		}
 		else
 		{
 			const char* urlStatusName[] = { "FAILURE/INTERNAL_ERROR", "FAILURE/INTERNAL_ERROR", "FAILURE/INTERNAL_ERROR",

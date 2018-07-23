@@ -364,7 +364,7 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 
 	info("Deleting URL %s", nzbInfo->GetName());
 
-	nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
+	nzbInfo->SetDeleteStatus(nzbInfo->GetDeleteStatus() == NzbInfo::dsNone ? NzbInfo::dsManual : nzbInfo->GetDeleteStatus());
 	nzbInfo->SetUrlStatus(NzbInfo::lsNone);
 
 	DownloadQueue::Aspect deletedAspect = {DownloadQueue::eaUrlDeleted, downloadQueue, nzbInfo, nullptr};
