@@ -1460,7 +1460,8 @@ void DiskState::CleanupQueueDir(DownloadQueue* downloadQueue)
 
 	for (HistoryInfo* historyInfo : downloadQueue->GetHistory())
 	{
-		if (historyInfo->GetKind() == HistoryInfo::hkNzb)
+		if (historyInfo->GetKind() == HistoryInfo::hkNzb ||
+			historyInfo->GetKind() == HistoryInfo::hkUrl)
 		{
 			NzbInfo* nzbInfo = historyInfo->GetNzbInfo();
 			nzbIdList.push_back(nzbInfo->GetId());
