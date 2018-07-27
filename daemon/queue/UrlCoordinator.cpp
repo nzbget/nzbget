@@ -283,7 +283,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 		if (nzbInfo->GetDeleting())
 		{
-			nzbInfo->SetDeleteStatus(NzbInfo::dsManual);
+			nzbInfo->SetDeleteStatus(nzbInfo->GetDeleteStatus() == NzbInfo::dsNone ? NzbInfo::dsManual : nzbInfo->GetDeleteStatus());
 			nzbInfo->SetUrlStatus(NzbInfo::lsNone);
 			nzbInfo->SetDeleting(false);
 		}
