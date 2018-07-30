@@ -893,7 +893,7 @@ bool XmlCommand::NextParamAsInt(int* value)
 		}
 		*value = atoi(param + 1);
 		m_requestPtr = param + 1;
-		while (strchr("-+0123456789&", *m_requestPtr))
+		while (*m_requestPtr && strchr("-+0123456789&", *m_requestPtr))
 		{
 			m_requestPtr++;
 		}
