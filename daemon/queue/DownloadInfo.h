@@ -624,7 +624,7 @@ public:
 	void LeavePostProcess();
 	bool IsDupeSuccess();
 	const char* MakeTextStatus(bool ignoreScriptStatus);
-	void AddMessage(Message::EKind kind, const char* text);
+	void AddMessage(Message::EKind kind, const char* text, bool print = true);
 	void PrintMessage(Message::EKind kind, const char* format, ...) PRINTF_SYNTAX(3);
 	int GetMessageCount() { return m_messageCount; }
 	void SetMessageCount(int messageCount) { m_messageCount = messageCount; }

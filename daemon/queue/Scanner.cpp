@@ -463,7 +463,7 @@ bool Scanner::AddFileToQueue(const char* filename, const char* nzbName, const ch
 	{
 		for (Message& message : nzbInfo->GuardCachedMessages())
 		{
-			urlInfo->AddMessage(message.GetKind(), message.GetText());
+			urlInfo->AddMessage(message.GetKind(), message.GetText(), false);
 		}
 	}
 	else

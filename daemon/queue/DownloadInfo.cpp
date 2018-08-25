@@ -346,10 +346,12 @@ void NzbInfo::UpdateMinMaxTime()
 	}
 }
 
-void NzbInfo::AddMessage(Message::EKind kind, const char * text)
+void NzbInfo::AddMessage(Message::EKind kind, const char * text, bool print)
 {
-	switch (kind)
+	if (print)
 	{
+		switch (kind)
+		{
 		case Message::mkDetail:
 			detail("%s", text);
 			break;
@@ -369,6 +371,7 @@ void NzbInfo::AddMessage(Message::EKind kind, const char * text)
 		case Message::mkDebug:
 			debug("%s", text);
 			break;
+		}
 	}
 
 	Guard guard(m_logMutex);
