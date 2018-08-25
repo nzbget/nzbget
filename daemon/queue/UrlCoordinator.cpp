@@ -277,8 +277,6 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 		// remove downloader from downloader list
 		m_activeDownloads.erase(std::find(m_activeDownloads.begin(), m_activeDownloads.end(), urlDownloader));
 
-		nzbInfo->SetActiveDownloads(0);
-
 		retry = urlDownloader->GetStatus() == WebDownloader::adRetry && !nzbInfo->GetDeleting();
 
 		if (nzbInfo->GetDeleting())
@@ -309,6 +307,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 	if (retry)
 	{
+		nzbInfo->SetActiveDownloads(0);
 		return;
 	}
 
@@ -324,7 +323,7 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 		if (addStatus == Scanner::asSuccess)
 		{
-			// if scanner has successfully added nzb-file to queue, our pNZBInfo is
+			// if scanner has successfully added nzb-file to queue, our nzbInfo is
 			// already removed from queue and destroyed
 			return;
 		}
@@ -338,6 +337,8 @@ void UrlCoordinator::UrlCompleted(UrlDownloader* urlDownloader)
 
 	{
 		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+		nzbInfo->SetActiveDownloads(0);
 
 		DownloadQueue::Aspect aspect = {DownloadQueue::eaUrlFailed, downloadQueue, nzbInfo, nullptr};
 		downloadQueue->Notify(&aspect);
@@ -360,6 +361,8 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 				return true;
 			}
 		}
+
+		return false;
 	}
 
 	info("Deleting URL %s", nzbInfo->GetName());

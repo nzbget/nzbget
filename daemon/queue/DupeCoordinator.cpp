@@ -270,6 +270,7 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		{
 			NzbInfo* queuedNzbInfo = (*it++).get();
 			if (queuedNzbInfo != nzbInfo &&
+				queuedNzbInfo->GetDeleteStatus() == NzbInfo::dsNone &&
 				(queuedNzbInfo->GetKind() == NzbInfo::nkNzb ||
 				 (queuedNzbInfo->GetKind() == NzbInfo::nkUrl && nzbInfo->GetKind() == NzbInfo::nkUrl)) &&
 				queuedNzbInfo->GetDupeMode() != dmForce &&
@@ -294,9 +295,13 @@ void DupeCoordinator::NzbFound(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 					// the existing queue item is moved to history as dupe-backup
 					info("Moving collection %s with lower duplicate score to history", queuedNzbInfo->GetName());
 					queuedNzbInfo->SetDeleteStatus(NzbInfo::dsDupe);
+					int oldSize = downloadQueue->GetQueue()->size();
 					downloadQueue->EditEntry(queuedNzbInfo->GetId(),
 						DownloadQueue::eaGroupDelete, nullptr);
+					int newSize = downloadQueue->GetQueue()->size();
+					index += oldSize == newSize ? 1 : 0;
 					it = downloadQueue->GetQueue()->begin() + index;
+					index--;
 				}
 			}
 		}
