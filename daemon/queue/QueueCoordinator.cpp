@@ -177,7 +177,7 @@ void QueueCoordinator::Run()
 	AdjustDownloadsLimit();
 	bool wasStandBy = true;
 	bool articeDownloadsRunning = false;
-	int resetCounter = 0;
+	time_t lastReset = 0;
 	g_StatMeter->IntervalCheck();
 
 	while (!IsStopped())
@@ -245,8 +245,8 @@ void QueueCoordinator::Run()
 
 		Util::SetStandByMode(standBy);
 
-		resetCounter += sleepInterval;
-		if (resetCounter >= 1000)
+		time_t currentTime = Util::CurrentTime();
+		if (lastReset != currentTime)
 		{
 			// this code should not be called too often, once per second is OK
 			g_ServerPool->CloseUnusedConnections();
@@ -255,10 +255,10 @@ void QueueCoordinator::Run()
 			{
 				SaveAllPartialState();
 			}
-			resetCounter = 0;
 			g_StatMeter->IntervalCheck();
 			g_Log->IntervalCheck();
 			AdjustDownloadsLimit();
+			lastReset = currentTime;
 		}
 	}
 
