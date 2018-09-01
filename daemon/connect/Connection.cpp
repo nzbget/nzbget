@@ -31,6 +31,12 @@ std::unique_ptr<Mutex> Connection::m_getHostByNameMutex;
 #endif
 #endif
 
+#if defined(__linux__) && !defined(__ANDROID__)
+// Activate DNS resolving workaround for Android:
+//  - this is only necessary in general Linux build if we want it to run on Android.
+//  - the workaround isn't needed when targeting specifically Android using Android NDK.
+#define ANDROID_RESOLVE
+#endif
 
 void closesocket_gracefully(SOCKET socket)
 {
@@ -70,7 +76,7 @@ void closesocket_gracefully(SOCKET socket)
 	closesocket(socket);
 }
 
-#ifdef __linux__
+#ifdef ANDROID_RESOLVE
 CString ResolveAndroidHost(const char* host);
 #endif
 
@@ -588,7 +594,7 @@ bool Connection::DoConnect()
 		int res = getaddrinfo(m_host, portStr, &addr_hints, &addr_list);
 		debug("getaddrinfo for %s: %i", *m_host, res);
 
-#ifdef __linux__
+#ifdef ANDROID_RESOLVE
 		if (res != 0)
 		{
 			CString resolvedHost = ResolveAndroidHost(m_host);
@@ -1134,7 +1140,7 @@ int Connection::FetchTotalBytesRead()
 }
 
 
-#ifdef __linux__
+#ifdef ANDROID_RESOLVE
 
 //******************************************************************************
 // Android resolver proxy from AOSP (reworked):
