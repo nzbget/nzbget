@@ -91,13 +91,14 @@ import os
 import sys
 import datetime
 import smtplib
-from urllib2 import quote
 
 from email.mime.text import MIMEText
-try:
-	from xmlrpclib import ServerProxy # python 2
-except ImportError:
-	from xmlrpc.client import ServerProxy # python 3
+try: # python 2
+	from urllib2 import quote
+	from xmlrpclib import ServerProxy
+except ImportError: # python 3
+	from urllib.parse import quote
+	from xmlrpc.client import ServerProxy
 
 # Exit codes used by NZBGet
 POSTPROCESS_SUCCESS=93
