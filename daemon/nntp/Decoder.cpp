@@ -207,6 +207,7 @@ void Decoder::ProcessYenc(char* buffer, int len)
 		{
 			pb += 7; //=strlen(" begin=")
 			m_beginPos = (int64)atoll(pb);
+			if (!m_beginPos) m_beginPos = 1;
 		}
 		pb = strstr(buffer, " end=");
 		if (pb)
@@ -275,7 +276,7 @@ Decoder::EStatus Decoder::Check()
 	{
 		case efYenc:
 			return CheckYenc();
-			 
+
 		case efUx:
 			return CheckUx();
 
