@@ -36,12 +36,13 @@
 import os
 import sys
 import datetime
-from urllib2 import quote # python 2/3
 
 try:
 	from xmlrpclib import ServerProxy # python 2
+	from urllib2 import quote
 except ImportError:
 	from xmlrpc.client import ServerProxy # python 3
+	from urllib.parse import quote
 
 # Exit codes used by NZBGet
 POSTPROCESS_SUCCESS=93
