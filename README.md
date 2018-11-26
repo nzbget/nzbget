@@ -1,6 +1,8 @@
 # NZBGet #
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](http://www.gnu.org/licenses/)
 [![Build Status](https://img.shields.io/travis/nzbget/nzbget/develop.svg)](https://travis-ci.org/nzbget/nzbget)
+[![Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/nzbget/nzbget.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/nzbget/nzbget/context:cpp)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/nzbget/nzbget.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/nzbget/nzbget/alerts)
 
 NZBGet is a binary downloader, which downloads files from Usenet
 based on information given in nzb-files. 
