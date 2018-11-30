@@ -93,6 +93,7 @@ import datetime
 import smtplib
 
 from email.mime.text import MIMEText
+from email.header import Header
 try: # python 2
 	from urllib2 import quote
 	from xmlrpclib import ServerProxy
@@ -255,8 +256,9 @@ if (os.environ.get('NZBPO_NZBLOG') == 'Always' or \
 			text += '\n%s\t%s\t%s' % (entry['Kind'], datetime.datetime.fromtimestamp(int(entry['Time'])), entry['Text'])
 
 # Create message
-msg = MIMEText(text)
-msg['Subject'] = subject
+print('[DETAIL] Creating Email')
+msg = MIMEText(text.encode('utf-8'), 'plain', 'utf-8')
+msg['Subject'] = Header(subject, 'utf-8')
 msg['From'] = os.environ['NZBPO_FROM']
 msg['To'] = os.environ['NZBPO_TO']
 msg['Date'] = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
