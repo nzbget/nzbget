@@ -74,8 +74,8 @@ protected:
 private:
 	typedef vector<Thread*> Threads;
 
-	Par2::CommandLine commandLine;
 	ParChecker* m_owner;
+	Par2::CommandLine commandLine;
 	Threads m_threads;
 	bool m_parallel;
 	Mutex progresslock;

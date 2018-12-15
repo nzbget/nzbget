@@ -45,12 +45,12 @@ protected:
 	virtual void PrintError(const char* errMsg);
 
 private:
+	SOCKET m_socket;
 	bool m_isClient;
 	CString m_host;
 	CString m_certFile;
 	CString m_keyFile;
 	CString m_cipher;
-	SOCKET m_socket;
 	bool m_suppressErrors = false;
 	bool m_initialized = false;
 	bool m_connected = false;

@@ -72,6 +72,7 @@ private:
 	int m_id;
 	CString m_name;
 	CString m_url;
+	bool m_backlog;
 	int m_interval;
 	CString m_filter;
 	uint32 m_filterHash;
@@ -87,7 +88,6 @@ private:
 	CString m_outputFilename;
 	bool m_fetch = false;
 	bool m_force = false;
-	bool m_backlog;
 };
 
 typedef std::deque<std::unique_ptr<FeedInfo>> Feeds;

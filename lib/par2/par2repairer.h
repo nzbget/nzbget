@@ -141,6 +141,9 @@ protected:
   virtual bool RepairData(u32 inputindex, size_t blocklength) { return false; }
 
 protected:
+  std::ostream&             cout;
+  std::ostream&             cerr;
+
   ParHeaders* headers;                                 // Headers
   bool alreadyloaded;                                // Already loaded ?
   CommandLine::NoiseLevel   noiselevel;              // OnScreen display
@@ -196,9 +199,6 @@ protected:
   u64                       totalsize;               // Total data size
 
   bool                      cancelled;               // repair cancelled
-
-  std::ostream&             cout;
-  std::ostream&             cerr;
 };
 
 } // end namespace Par2

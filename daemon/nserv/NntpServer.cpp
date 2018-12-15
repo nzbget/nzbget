@@ -40,12 +40,12 @@ private:
 	int m_id;
 	int m_serverId;
 	std::unique_ptr<Connection> m_connection;
-	int m_latency;
-	int m_speed;
 	const char* m_dataDir;
 	const char* m_cacheDir;
 	const char* m_secureCert;
 	const char* m_secureKey;
+	int m_latency;
+	int m_speed;
 	const char* m_messageid;
 	CString m_filename;
 	int m_part;
