@@ -584,11 +584,13 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 	args.emplace_back(nullptr);
 	char* const* argdata = (char* const*)args.data();
 
+#ifdef DEBUG
 	debug("Starting  process: %s", script);
 	for (const char* arg : m_args)
 	{
 		debug("arg: %s", arg);
 	}
+#endif
 
 	debug("forking");
 	pid_t pid = fork();

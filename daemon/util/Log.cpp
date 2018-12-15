@@ -97,6 +97,7 @@ void Log::Filelog(const char* msg, ...)
 
 	m_logFile->Seek(0, DiskFile::soEnd);
 
+#ifdef DEBUG
 #ifdef WIN32
 	uint64 processId = GetCurrentProcessId();
 	uint64 threadId = GetCurrentThreadId();
@@ -104,7 +105,6 @@ void Log::Filelog(const char* msg, ...)
 	uint64 processId = (uint64)getpid();
 	uint64 threadId = (uint64)pthread_self();
 #endif
-#ifdef DEBUG
 	m_logFile->Print("%s\t%" PRIu64 "\t%" PRIu64 "\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
 #else
 	m_logFile->Print("%s\t%s%s", time, tmp2, LINE_ENDING);

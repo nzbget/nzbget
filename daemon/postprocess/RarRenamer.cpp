@@ -273,6 +273,7 @@ void RarRenamer::MakeSets()
 		}),
 		m_sets.end());
 
+#ifdef DEBUG
 	// debug log
 	for (RarVolumeSet& set : m_sets)
 	{
@@ -282,6 +283,7 @@ void RarRenamer::MakeSets()
 			debug("   %s", FileSystem::BaseFileName(volume->GetFilename()));
 		}
 	}
+#endif
 }
 
 bool RarRenamer::SameArchiveName(const char* filename1, const char* filename2, bool newNaming)
