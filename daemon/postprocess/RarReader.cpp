@@ -290,7 +290,7 @@ RarVolume::RarBlock RarVolume::ReadRar3Block(DiskFile& file)
 	}
 
 	static int num = 0;
-	debug("%i) %llu, %i, %i, %i, %u, %llu", ++num, (long long)block.crc, (int)block.type, (int)block.flags, (int)size, (int)block.addsize, (long long)block.trailsize);
+	debug("%i) %u, %i, %i, %i, %" PRIu64 ", %" PRIu64, ++num, block.crc, block.type, block.flags, size, block.addsize, block.trailsize);
 
 	return block;
 }
@@ -451,7 +451,7 @@ RarVolume::RarBlock RarVolume::ReadRar5Block(DiskFile& file)
 	block.trailsize += datasize;
 
 	static int num = 0;
-	debug("%i) %llu, %i, %i, %i, %u, %llu", ++num, (long long)block.crc, (int)block.type, (int)block.flags, (int)size, (int)block.addsize, (long long)block.trailsize);
+	debug("%i) %u, %i, %i, %i, %" PRIu64 ", %" PRIu64, ++num, block.crc, block.type, block.flags, size, block.addsize, block.trailsize);
 
 	return block;
 }
@@ -527,7 +527,7 @@ bool RarVolume::ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile
 		}
 	}
 
-	debug("%llu, %i, %s", (long long)block.trailsize, (int)namelen, (const char*)name);
+	debug("%" PRIu64 ", %" PRIu64 ", %s", block.trailsize, namelen, (const char*)name);
 
 	return true;
 }
@@ -540,9 +540,9 @@ void RarVolume::LogDebugInfo()
 
 	for (RarFile& file : m_files)
 	{
-		debug("  time:%i, size:%lli, attr:%i, split-before:%i, split-after:%i, [%s]",
-			(int)file.m_time, (long long)file.m_size, (int)file.m_attr,
-			(int)file.m_splitBefore, (int)file.m_splitAfter, *file.m_filename);
+		debug("  time:%i, size:%" PRIi64 ", attr:%i, split-before:%i, split-after:%i, [%s]",
+			file.m_time, file.m_size, file.m_attr,
+			file.m_splitBefore, file.m_splitAfter, *file.m_filename);
 	}
 }
 

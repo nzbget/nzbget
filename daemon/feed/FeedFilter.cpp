@@ -51,7 +51,7 @@ bool FeedFilter::Term::MatchValue(const char* strValue, int64 intValue)
 
 	if (m_command < fcEqual && !strValue)
 	{
-		intBuf.Format("%lld", intValue);
+		intBuf.Format("%" PRId64, intValue);
 		strValue = intBuf;
 	}
 

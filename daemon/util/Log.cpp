@@ -105,7 +105,7 @@ void Log::Filelog(const char* msg, ...)
 	uint64 threadId = (uint64)pthread_self();
 #endif
 #ifdef DEBUG
-	m_logFile->Print("%s\t%llu\t%llu\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
+	m_logFile->Print("%s\t%" PRIu64 "\t%" PRIu64 "\t%s%s", time, processId, threadId, tmp2, LINE_ENDING);
 #else
 	m_logFile->Print("%s\t%s%s", time, tmp2, LINE_ENDING);
 #endif
