@@ -812,7 +812,8 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 		char *names = trailingData + textLen + idLength;
 		for (CString& name : nameList)
 		{
-			int len = strlen(name);
+			// "len" must be less or equal than: "buffer size" - "already used buffer" - "ending \0"
+			size_t len = strnlen(name, length - (names - trailingData) - 1);
 			strncpy(names, name, len + 1);
 			names += len + 1;
 		}
