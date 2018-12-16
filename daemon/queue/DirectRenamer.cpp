@@ -523,12 +523,12 @@ void RenameContentAnalyzer::Reset()
 void RenameContentAnalyzer::Append(const void* buffer, int len)
 {
 #ifndef DISABLE_PARCHECK
-	if (m_dataSize < sizeof(m_signature))
+	if ((size_t)m_dataSize < sizeof(m_signature))
 	{
 		memcpy(m_signature + m_dataSize, buffer, std::min((size_t)len, sizeof(m_signature) - m_dataSize));
 	}
 
-	if (m_dataSize >= sizeof(m_signature) && (*(Par2::MAGIC*)m_signature) == Par2::packet_magic)
+	if ((size_t)m_dataSize >= sizeof(m_signature) && (*(Par2::MAGIC*)m_signature) == Par2::packet_magic)
 	{
 		m_parFile = true;
 		m_parSetId = ((Par2::PACKET_HEADER*)m_signature)->setid.print().c_str();

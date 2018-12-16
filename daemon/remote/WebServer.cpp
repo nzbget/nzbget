@@ -53,7 +53,7 @@ void WebProcessor::Init()
 
 	for (int j = uaControl; j <= uaAdd; j++)
 	{
-		for (int i = 0; i < sizeof(m_serverAuthToken[j]) - 1; i++)
+		for (size_t i = 0; i < sizeof(m_serverAuthToken[j]) - 1; i++)
 		{
 			int ch = rand() % (10 + 26 + 26);
 			if (0 <= ch && ch < 10)

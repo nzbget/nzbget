@@ -1395,7 +1395,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 		int64 blockEnd = blockStart + blocksize < fileSize - 1 ? blockStart + blocksize : fileSize - 1;
 		bool blockOK = false;
 		bool blockEndFound = false;
-		Par2::u64 curOffset = 0;
+		int64 curOffset = 0;
 		for (Segment& segment : segments)
 		{
 			if (!blockOK && segment.GetSuccess() && segment.GetOffset() <= blockStart &&

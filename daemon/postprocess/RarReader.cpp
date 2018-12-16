@@ -173,7 +173,7 @@ bool RarVolume::Skip(DiskFile& file, RarBlock* block, int64 size)
 	uint8 buf[256];
 	while (size > 0)
 	{
-		int64 len = size <= sizeof(buf) ? size : sizeof(buf);
+		int64 len = size <= (int64)sizeof(buf) ? size : (int64)sizeof(buf);
 		if (!Read(file, block, buf, len)) return false;
 		size -= len;
 	}

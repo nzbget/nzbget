@@ -348,7 +348,7 @@ bool RarRenamer::IsSetProperlyNamed(RarVolumeSet& set)
 			{
 				setPartLen = partNo.Length();
 			}
-			bool ok = atoi(partNo) == volume->GetVolumeNo() + 1 &&
+			bool ok = (uint)atoi(partNo) == volume->GetVolumeNo() + 1 &&
 				partNo.Length() == setPartLen &&
 				!strncmp(setBasename, filename, regExPart.GetMatchStart(1));
 			if (!ok)
