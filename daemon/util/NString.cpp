@@ -281,7 +281,7 @@ WString::WString(const char* utfstr)
 	m_data = (wchar_t*)malloc((strlen(utfstr) * 2 + 1) * sizeof(wchar_t));
 
 	wchar_t* out = m_data;
-	unsigned int codepoint;
+	unsigned int codepoint = 0;
 	while (*utfstr != 0)
 	{
 		unsigned char ch = (unsigned char)*utfstr;
