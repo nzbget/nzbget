@@ -22,30 +22,15 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-class Mutex
-{
-public:
-	Mutex();
-	Mutex(const Mutex&) = delete;
-	~Mutex();
-	void Lock();
-	void Unlock();
-
-private:
-#ifdef WIN32
-	CRITICAL_SECTION m_mutexObj;
-#else
-	pthread_mutex_t m_mutexObj;
-#endif
-};
+typedef std::mutex Mutex;
 
 class Guard
 {
 public:
 	Guard() : m_mutex(nullptr) {}
-	Guard(Mutex& mutex) : m_mutex(&mutex) { if (m_mutex) m_mutex->Lock(); }
-	Guard(Mutex* mutex) : m_mutex(mutex) { if (m_mutex) m_mutex->Lock(); }
-	Guard(std::unique_ptr<Mutex>& mutex) : m_mutex(mutex.get()) { if (m_mutex) m_mutex->Lock(); }
+	Guard(Mutex& mutex) : m_mutex(&mutex) { if (m_mutex) m_mutex->lock(); }
+	Guard(Mutex* mutex) : m_mutex(mutex) { if (m_mutex) m_mutex->lock(); }
+	Guard(std::unique_ptr<Mutex>& mutex) : m_mutex(mutex.get()) { if (m_mutex) m_mutex->lock(); }
 	Guard(Guard&& other) : m_mutex(other.m_mutex) { other.m_mutex = nullptr; }
 	Guard(const Guard&) = delete;
 	~Guard() { Unlock(); }
@@ -55,14 +40,14 @@ public:
 private:
 	Mutex* m_mutex;
 
-	void Unlock() { if (m_mutex) { m_mutex->Unlock(); m_mutex = nullptr; } }
+	void Unlock() { if (m_mutex) { m_mutex->unlock(); m_mutex = nullptr; } }
 };
 
 template<typename T>
 class GuardedPtr
 {
 public:
-	GuardedPtr(T* ptr, Mutex* mutex) : m_ptr(ptr), m_mutex(mutex) { if (m_mutex) m_mutex->Lock(); }
+	GuardedPtr(T* ptr, Mutex* mutex) : m_ptr(ptr), m_mutex(mutex) { if (m_mutex) m_mutex->lock(); }
 	GuardedPtr(GuardedPtr&& other) : m_ptr(other.m_ptr), m_mutex(other.m_mutex) { other.m_mutex = nullptr; }
 	GuardedPtr(const GuardedPtr& other) = delete;
 	~GuardedPtr() { Unlock(); }
@@ -77,7 +62,7 @@ private:
 	T* m_ptr;
 	Mutex* m_mutex;
 
-	void Unlock() { if (m_mutex) { m_mutex->Unlock(); m_mutex = nullptr; } }
+	void Unlock() { if (m_mutex) { m_mutex->unlock(); m_mutex = nullptr; } }
 };
 
 class Thread

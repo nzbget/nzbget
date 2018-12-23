@@ -25,52 +25,6 @@
 int Thread::m_threadCount = 1; // take the main program thread into account
 std::unique_ptr<Mutex> Thread::m_threadMutex;
 
-
-Mutex::Mutex()
-{
-#ifdef WIN32
-	InitializeCriticalSection(&m_mutexObj);
-#else
-	pthread_mutex_init(&m_mutexObj, nullptr);
-#endif
-}
-
-Mutex::~Mutex()
-{
-#ifdef WIN32
-	DeleteCriticalSection(&m_mutexObj);
-#else
-	pthread_mutex_destroy(&m_mutexObj);
-#endif
-}
-
-void Mutex::Lock()
-{
-#ifdef WIN32
-	EnterCriticalSection(&m_mutexObj);
-#ifdef DEBUG
-	// CriticalSections on Windows can be locked many times from the same thread,
-	// but we do not want this and must treat such situations as errors and detect them.
-	if (m_mutexObj.RecursionCount > 1)
-	{
-		error("Internal program error: inconsistent thread-lock detected");
-	}
-#endif
-#else
-	pthread_mutex_lock(&m_mutexObj);
-#endif
-}
-
-void Mutex::Unlock()
-{
-#ifdef WIN32
-	LeaveCriticalSection(&m_mutexObj);
-#else
-	pthread_mutex_unlock(&m_mutexObj);
-#endif
-}
-
-
 void Thread::Init()
 {
 	debug("Initializing global thread data");
