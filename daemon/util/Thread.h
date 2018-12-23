@@ -23,25 +23,8 @@
 #define THREAD_H
 
 typedef std::mutex Mutex;
-
-class Guard
-{
-public:
-	Guard() : m_mutex(nullptr) {}
-	Guard(Mutex& mutex) : m_mutex(&mutex) { if (m_mutex) m_mutex->lock(); }
-	Guard(Mutex* mutex) : m_mutex(mutex) { if (m_mutex) m_mutex->lock(); }
-	Guard(std::unique_ptr<Mutex>& mutex) : m_mutex(mutex.get()) { if (m_mutex) m_mutex->lock(); }
-	Guard(Guard&& other) : m_mutex(other.m_mutex) { other.m_mutex = nullptr; }
-	Guard(const Guard&) = delete;
-	~Guard() { Unlock(); }
-	Guard& operator=(Guard&& other) { m_mutex = other.m_mutex; other.m_mutex = nullptr; return *this; }
-	operator bool() { return m_mutex; }
-
-private:
-	Mutex* m_mutex;
-
-	void Unlock() { if (m_mutex) { m_mutex->unlock(); m_mutex = nullptr; } }
-};
+typedef std::lock_guard<std::mutex> Guard;
+typedef std::unique_lock<std::mutex> UniqueLock;
 
 template<typename T>
 class GuardedPtr
