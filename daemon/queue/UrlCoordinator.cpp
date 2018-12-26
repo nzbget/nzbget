@@ -82,8 +82,6 @@ void UrlCoordinator::Run()
 		usleep(20 * 1000);
 	}
 
-	int resetCounter = 0;
-
 	while (!IsStopped())
 	{
 		bool downloadStarted = false;
@@ -105,15 +103,13 @@ void UrlCoordinator::Run()
 			}
 		}
 
-		int sleepInterval = downloadStarted ? 0 : 100;
-		usleep(sleepInterval * 1000);
-
-		resetCounter += sleepInterval;
-		if (resetCounter >= 1000)
+		if (!downloadStarted && !IsStopped())
 		{
 			// this code should not be called too often, once per second is OK
 			ResetHangingDownloads();
-			resetCounter = 0;
+
+			UniqueLock lk(m_pauseMutex);
+			m_pauseCV.wait_for(lk, std::chrono::seconds(1), [&]{ return IsStopped() || m_hasMoreJobs; });
 		}
 	}
 
@@ -154,6 +150,9 @@ void UrlCoordinator::Stop()
 		urlDownloader->Stop();
 	}
 	debug("UrlDownloads are notified");
+
+	// Resume Run() to exit it
+	m_pauseCV.notify_all();
 }
 
 void UrlCoordinator::ResetHangingDownloads()
@@ -379,7 +378,7 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 void UrlCoordinator::AddUrlToQueue(std::unique_ptr<NzbInfo> nzbInfo, bool addFirst)
 {
 	debug("Adding URL to queue");
-										
+
 	NzbInfo* addedNzb = nzbInfo.get();
 
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
@@ -396,4 +395,7 @@ void UrlCoordinator::AddUrlToQueue(std::unique_ptr<NzbInfo> nzbInfo, bool addFir
 	}
 
 	downloadQueue->Save();
+
+	m_hasMoreJobs = true;
+	m_pauseCV.notify_all();
 }

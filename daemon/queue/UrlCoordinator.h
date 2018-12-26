@@ -50,8 +50,9 @@ private:
 	typedef std::list<UrlDownloader*> ActiveDownloads;
 
 	ActiveDownloads m_activeDownloads;
-	bool m_hasMoreJobs = true;
-	bool m_force;
+	std::atomic_bool m_hasMoreJobs{true};
+	Mutex m_pauseMutex;
+	std::condition_variable m_pauseCV;
 
 	NzbInfo* GetNextUrl(DownloadQueue* downloadQueue);
 	void StartUrlDownload(NzbInfo* nzbInfo);
