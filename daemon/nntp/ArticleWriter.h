@@ -95,6 +95,7 @@ public:
 	};
 
 	virtual void Run();
+	virtual void Stop();
 	CachedSegmentData Alloc(int size);
 	bool Realloc(CachedSegmentData* segment, int newSize);
 	void Free(CachedSegmentData* segment);
@@ -111,6 +112,8 @@ private:
 	Mutex m_flushMutex;
 	Mutex m_contentMutex;
 	FileInfo* m_fileInfo = nullptr;
+	Mutex m_pauseMutex;
+	std::condition_variable m_pauseCV;
 
 	bool CheckFlush(bool flushEverything);
 };

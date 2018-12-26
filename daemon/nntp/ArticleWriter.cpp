@@ -828,12 +828,25 @@ void ArticleCache::Run()
 			justFlushed = CheckFlush(m_allocated >= fillThreshold);
 			resetCounter = 0;
 		}
+		else if (!m_allocated && !IsStopped())
+		{
+			std::unique_lock<std::mutex> lk(m_pauseMutex);
+			m_pauseCV.wait_for(lk, std::chrono::seconds(1), [&]{ return IsStopped() || m_allocated > 0; });
+		}
 		else
 		{
 			usleep(5 * 1000);
 			resetCounter += 5;
 		}
 	}
+}
+
+void ArticleCache::Stop()
+{
+	Thread::Stop();
+
+	// Resume Run() to exit it
+	m_pauseCV.notify_all();
 }
 
 bool ArticleCache::CheckFlush(bool flushEverything)
