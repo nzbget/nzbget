@@ -94,61 +94,54 @@ void FeedCoordinator::Run()
 		g_DiskState->LoadFeeds(&m_feeds, &m_feedHistory);
 	}
 
-	int sleepInterval = 100;
-	int updateCounter = 0;
-	int cleanupCounter = 60000;
-
+	int loopCounter = 0;
 	while (!IsStopped())
 	{
-		usleep(sleepInterval * 1000);
-
-		updateCounter += sleepInterval;
-		if (updateCounter >= 1000)
+		// this code should not be called too often, once per second is OK
+		if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
 		{
-			// this code should not be called too often, once per second is OK
+			Guard guard(m_downloadsMutex);
 
-			if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
+			time_t current = Util::CurrentTime();
+			if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
 			{
-				Guard guard(m_downloadsMutex);
-
-				time_t current = Util::CurrentTime();
-				if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
+				m_force = false;
+				// check feed list and update feeds
+				for (FeedInfo* feedInfo : &m_feeds)
 				{
-					m_force = false;
-					// check feed list and update feeds
-					for (FeedInfo* feedInfo : &m_feeds)
+					if (((feedInfo->GetInterval() > 0 &&
+						 (feedInfo->GetNextUpdate() == 0 ||
+						  current >= feedInfo->GetNextUpdate() ||
+						  current < feedInfo->GetNextUpdate() - feedInfo->GetInterval() * 60)) ||
+						feedInfo->GetFetch()) &&
+						feedInfo->GetStatus() != FeedInfo::fsRunning)
 					{
-						if (((feedInfo->GetInterval() > 0 &&
-							 (feedInfo->GetNextUpdate() == 0 ||
-							  current >= feedInfo->GetNextUpdate() ||
-							  current < feedInfo->GetNextUpdate() - feedInfo->GetInterval() * 60)) ||
-							feedInfo->GetFetch()) &&
-							feedInfo->GetStatus() != FeedInfo::fsRunning)
-						{
-							StartFeedDownload(feedInfo, feedInfo->GetFetch());
-						}
-						else if (feedInfo->GetFetch())
-						{
-							m_force = true;
-						}
+						StartFeedDownload(feedInfo, feedInfo->GetFetch());
+					}
+					else if (feedInfo->GetFetch())
+					{
+						m_force = true;
 					}
 				}
 			}
-
-			CheckSaveFeeds();
-			ResetHangingDownloads();
-			updateCounter = 0;
 		}
 
-		cleanupCounter += sleepInterval;
-		if (cleanupCounter >= 60000)
+		CheckSaveFeeds();
+		ResetHangingDownloads();
+
+		if (loopCounter >= 60)
 		{
 			// clean up feed history once a minute
 			CleanupHistory();
 			CleanupCache();
 			CheckSaveFeeds();
-			cleanupCounter = 0;
+			loopCounter = 0;
 		}
+
+		UniqueLock lk(m_pauseMutex);
+		m_pauseCV.wait_for(lk, std::chrono::seconds(1), [&]{ return IsStopped(); });
+
+		loopCounter++;
 	}
 
 	// waiting for downloads
@@ -180,6 +173,9 @@ void FeedCoordinator::Stop()
 		feedDownloader->Stop();
 	}
 	debug("UrlDownloads are notified");
+
+	// Resume Run() to exit it
+	m_pauseCV.notify_all();
 }
 
 void FeedCoordinator::ResetHangingDownloads()
