@@ -65,7 +65,7 @@ int TestMain(int argc, char * argv[])
 void TestCleanup()
 {
 	// If tests were run (via "TestMain") the Catch-framework does clean up automatically.
-	// Hoeweve if no tests were run the global objects remain alive and causing memory leak
+	// However, if no tests were run, the global objects remain alive and causing memory leak
 	// detection reports. Therefore we clean up the Catch-framework when we don't run any tests.
 	Catch::cleanUp();
 }
