@@ -275,6 +275,16 @@ typedef int pid_t;
 #endif
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
+#else
+#ifndef PRId64
+#define PRId64 "lld"
+#endif
+#ifndef PRIi64
+#define PRIi64 "lli"
+#endif
+#ifndef PRIu64
+#define PRIu64 "llu"
+#endif
 #endif
 #endif /* NOT DISABLE_PARCHECK */
 

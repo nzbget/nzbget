@@ -404,12 +404,12 @@ void XmlRpcProcessor::Dispatch()
 		int valueLen = 0;
 		if (const char* methodPtr = WebUtil::JsonFindField(m_request, "method", &valueLen))
 		{
-			valueLen = valueLen >= sizeof(methodName) ? sizeof(methodName) - 1 : valueLen;
+			valueLen = valueLen >= (int)sizeof(methodName) ? (int)sizeof(methodName) - 1 : valueLen;
 			methodName.Set(methodPtr + 1, valueLen - 2);
 		}
 		if (const char* requestIdPtr = WebUtil::JsonFindField(m_request, "id", &valueLen))
 		{
-			valueLen = valueLen >= sizeof(requestId) ? sizeof(requestId) - 1 : valueLen;
+			valueLen = valueLen >= (int)sizeof(requestId) ? (int)sizeof(requestId) - 1 : valueLen;
 			requestId.Set(requestIdPtr, valueLen);
 		}
 	}

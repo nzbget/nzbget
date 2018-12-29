@@ -273,6 +273,7 @@ void RarRenamer::MakeSets()
 		}),
 		m_sets.end());
 
+#ifdef DEBUG
 	// debug log
 	for (RarVolumeSet& set : m_sets)
 	{
@@ -282,6 +283,7 @@ void RarRenamer::MakeSets()
 			debug("   %s", FileSystem::BaseFileName(volume->GetFilename()));
 		}
 	}
+#endif
 }
 
 bool RarRenamer::SameArchiveName(const char* filename1, const char* filename2, bool newNaming)
@@ -346,7 +348,7 @@ bool RarRenamer::IsSetProperlyNamed(RarVolumeSet& set)
 			{
 				setPartLen = partNo.Length();
 			}
-			bool ok = atoi(partNo) == volume->GetVolumeNo() + 1 &&
+			bool ok = (uint)atoi(partNo) == volume->GetVolumeNo() + 1 &&
 				partNo.Length() == setPartLen &&
 				!strncmp(setBasename, filename, regExPart.GetMatchStart(1));
 			if (!ok)

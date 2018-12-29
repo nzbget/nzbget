@@ -138,28 +138,28 @@ void ServerVolume::LogDebugInfo()
 
 	for (int i = 0; i < 60; i++)
 	{
-		msg.AppendFmt("[%i]=%lli ", i, m_bytesPerSeconds[i]);
+		msg.AppendFmt("[%i]=%" PRIi64 " ", i, m_bytesPerSeconds[i]);
 	}
 	info("Secs: %s", *msg);
 
 	msg.Clear();
 	for (int i = 0; i < 60; i++)
 	{
-		msg.AppendFmt("[%i]=%lli ", i, m_bytesPerMinutes[i]);
+		msg.AppendFmt("[%i]=%" PRIi64 " ", i, m_bytesPerMinutes[i]);
 	}
 	info("Mins: %s", *msg);
 
 	msg.Clear();
 	for (int i = 0; i < 24; i++)
 	{
-		msg.AppendFmt("[%i]=%lli ", i, m_bytesPerHours[i]);
+		msg.AppendFmt("[%i]=%" PRIi64 " ", i, m_bytesPerHours[i]);
 	}
 	info("Hours: %s", *msg);
 
 	msg.Clear();
 	for (int i = 0; i < (int)m_bytesPerDays.size(); i++)
 	{
-		msg.AppendFmt("[%i]=%lli ", m_firstDay + i, m_bytesPerDays[i]);
+		msg.AppendFmt("[%i]=%" PRIi64 " ", m_firstDay + i, m_bytesPerDays[i]);
 	}
 	info("Days: %s", *msg);
 }
@@ -380,9 +380,9 @@ void StatMeter::LogDebugInfo()
 	int timeDiff = (int)Util::CurrentTime() - m_speedStartTime * SPEEDMETER_SLOTSIZE;
 	info("      Speed: %i", speed);
 	info("      SpeedStartTime: %i", m_speedStartTime);
-	info("      SpeedTotalBytes: %lli", m_speedTotalBytes);
+	info("      SpeedTotalBytes: %" PRIi64, m_speedTotalBytes);
 	info("      SpeedBytesIndex: %i", m_speedBytesIndex);
-	info("      AllBytes: %lli", m_allBytes);
+	info("      AllBytes: %" PRIi64, m_allBytes);
 	info("      Time: %i", (int)Util::CurrentTime());
 	info("      TimeDiff: %i", timeDiff);
 	for (int i=0; i < SPEEDMETER_SLOTS; i++)

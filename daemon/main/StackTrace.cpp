@@ -282,7 +282,7 @@ public:
 	void DoSegFault()
 	{
 		char* N = nullptr;
-		strcpy(N, "");
+		*N = '\0';
 	}
 };
 

@@ -230,16 +230,14 @@ inline bool ReedSolomon<g>::Compute(CommandLine::NoiseLevel noiselevel)
 
   // Allocate the left hand matrix
 
-  leftmatrix = new G[outcount * incount];
-  memset(leftmatrix, 0, outcount * incount * sizeof(G));
+  leftmatrix = new G[outcount * incount]();
 
   // Allocate the right hand matrix only if we are recovering
 
   G *rightmatrix = 0;
   if (datamissing > 0)
   {
-    rightmatrix = new G[outcount * outcount];
-    memset(rightmatrix, 0, outcount *outcount * sizeof(G));
+    rightmatrix = new G[outcount * outcount]();
   }
 
   // Fill in the two matrices:

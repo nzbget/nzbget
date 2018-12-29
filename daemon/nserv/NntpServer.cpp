@@ -40,12 +40,12 @@ private:
 	int m_id;
 	int m_serverId;
 	std::unique_ptr<Connection> m_connection;
-	int m_latency;
-	int m_speed;
 	const char* m_dataDir;
 	const char* m_cacheDir;
 	const char* m_secureCert;
 	const char* m_secureKey;
+	int m_latency;
+	int m_speed;
 	const char* m_messageid;
 	CString m_filename;
 	int m_part;
@@ -268,7 +268,7 @@ bool NntpProcessor::ServerInList(const char* servList)
 
 void NntpProcessor::SendSegment()
 {
-	detail("[%i] Sending segment %s (%i=%lli:%i)", m_id, *m_filename, m_part, (long long)m_offset, m_size);
+	detail("[%i] Sending segment %s (%i=%" PRIi64 ":%i)", m_id, *m_filename, m_part, m_offset, m_size);
 
 	if (m_speed > 0)
 	{
@@ -277,7 +277,7 @@ void NntpProcessor::SendSegment()
 
 	BString<1024> fullFilename("%s/%s", m_dataDir, *m_filename);
 	BString<1024> cacheFileDir("%s/%s", m_cacheDir, *m_filename);
-	BString<1024> cacheFileName("%i=%lli-%i", m_part, (long long)m_offset, m_size);
+	BString<1024> cacheFileName("%i=%" PRIi64 "-%i", m_part, m_offset, m_size);
 	BString<1024> cacheFullFilename("%s/%s", *cacheFileDir, *cacheFileName);
 	BString<1024> cacheKey("%s/%s", *m_filename, *cacheFileName);
 

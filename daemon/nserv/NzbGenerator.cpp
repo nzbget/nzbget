@@ -118,11 +118,11 @@ void NzbGenerator::AppendFile(DiskFile& outfile, const char* filename, const cha
 	for (int segno = 1; segno <= segmentCount; segno++)
 	{
 		int segSize = (int)(segOffset + m_segmentSize < fileSize ? m_segmentSize : fileSize - segOffset);
-		outfile.Print("<segment bytes=\"%i\" number=\"%i\">%s%s%s?%i=%lli:%i</segment>\n",
-			m_segmentSize, segno, 
+		outfile.Print("<segment bytes=\"%i\" number=\"%i\">%s%s%s?%i=%" PRIi64 ":%i</segment>\n",
+			m_segmentSize, segno,
 			relativePath ? relativePath : "",
 			relativePath ? "/" : "",
-			FileSystem::BaseFileName(filename), segno, (long long)segOffset, (int)segSize);
+			FileSystem::BaseFileName(filename), segno, segOffset, segSize);
 		segOffset += segSize;
 	}
 

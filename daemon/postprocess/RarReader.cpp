@@ -173,7 +173,7 @@ bool RarVolume::Skip(DiskFile& file, RarBlock* block, int64 size)
 	uint8 buf[256];
 	while (size > 0)
 	{
-		int64 len = size <= sizeof(buf) ? size : sizeof(buf);
+		int64 len = size <= (int64)sizeof(buf) ? size : (int64)sizeof(buf);
 		if (!Read(file, block, buf, len)) return false;
 		size -= len;
 	}
@@ -289,8 +289,10 @@ RarVolume::RarBlock RarVolume::ReadRar3Block(DiskFile& file)
 		block.trailsize = blocksize - sizeof(buf) - 4;
 	}
 
+#ifdef DEBUG
 	static int num = 0;
-	debug("%i) %llu, %i, %i, %i, %u, %llu", ++num, (long long)block.crc, (int)block.type, (int)block.flags, (int)size, (int)block.addsize, (long long)block.trailsize);
+	debug("%i) %u, %i, %i, %i, %" PRIu64 ", %" PRIu64, ++num, block.crc, block.type, block.flags, size, block.addsize, block.trailsize);
+#endif
 
 	return block;
 }
@@ -450,8 +452,10 @@ RarVolume::RarBlock RarVolume::ReadRar5Block(DiskFile& file)
 	if ((block.flags & RAR5_BLOCK_DATAAREA) && !ReadV(file, &block, &datasize)) return {0};
 	block.trailsize += datasize;
 
+#ifdef DEBUG
 	static int num = 0;
-	debug("%i) %llu, %i, %i, %i, %u, %llu", ++num, (long long)block.crc, (int)block.type, (int)block.flags, (int)size, (int)block.addsize, (long long)block.trailsize);
+	debug("%i) %u, %i, %i, %i, %" PRIu64 ", %" PRIu64, ++num, block.crc, block.type, block.flags, size, block.addsize, block.trailsize);
+#endif
 
 	return block;
 }
@@ -527,23 +531,25 @@ bool RarVolume::ReadRar5File(DiskFile& file, RarBlock& block, RarFile& innerFile
 		}
 	}
 
-	debug("%llu, %i, %s", (long long)block.trailsize, (int)namelen, (const char*)name);
+	debug("%" PRIu64 ", %" PRIu64 ", %s", block.trailsize, namelen, (const char*)name);
 
 	return true;
 }
 
 void RarVolume::LogDebugInfo()
 {
+#ifdef DEBUG
 	debug("Volume: version:%i, multi:%i, vol-no:%i, new-naming:%i, has-next:%i, encrypted:%i, file-count:%i, [%s]",
 		(int)m_version, (int)m_multiVolume, m_volumeNo, (int)m_newNaming, (int)m_hasNextVolume,
 		(int)m_encrypted, (int)m_files.size(), FileSystem::BaseFileName(m_filename));
 
 	for (RarFile& file : m_files)
 	{
-		debug("  time:%i, size:%lli, attr:%i, split-before:%i, split-after:%i, [%s]",
-			(int)file.m_time, (long long)file.m_size, (int)file.m_attr,
-			(int)file.m_splitBefore, (int)file.m_splitAfter, *file.m_filename);
+		debug("  time:%i, size:%" PRIi64 ", attr:%i, split-before:%i, split-after:%i, [%s]",
+			file.m_time, file.m_size, file.m_attr,
+			file.m_splitBefore, file.m_splitAfter, *file.m_filename);
 	}
+#endif
 }
 
 bool RarVolume::DecryptRar3Prepare(const uint8 salt[8])

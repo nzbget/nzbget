@@ -65,13 +65,13 @@ private:
 	int m_id;
 	CString m_host;
 	int m_port;
-	int m_latency;
-	int m_speed;
-	CString m_dataDir;
-	CString m_cacheDir;
 	CString m_secureCert;
 	CString m_secureKey;
 	std::unique_ptr<Connection> m_connection;
+	CString m_dataDir;
+	CString m_cacheDir;
+	int m_latency;
+	int m_speed;
 	NntpCache* m_cache;
 };
 

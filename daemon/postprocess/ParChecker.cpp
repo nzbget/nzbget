@@ -74,8 +74,8 @@ protected:
 private:
 	typedef vector<Thread*> Threads;
 
-	Par2::CommandLine commandLine;
 	ParChecker* m_owner;
+	Par2::CommandLine commandLine;
 	Threads m_threads;
 	bool m_parallel;
 	Mutex progresslock;
@@ -1395,7 +1395,7 @@ bool ParChecker::VerifyPartialDataFile(void* diskfile, void* sourcefile, Segment
 		int64 blockEnd = blockStart + blocksize < fileSize - 1 ? blockStart + blocksize : fileSize - 1;
 		bool blockOK = false;
 		bool blockEndFound = false;
-		Par2::u64 curOffset = 0;
+		int64 curOffset = 0;
 		for (Segment& segment : segments)
 		{
 			if (!blockOK && segment.GetSuccess() && segment.GetOffset() <= blockStart &&

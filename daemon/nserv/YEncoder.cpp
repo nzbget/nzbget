@@ -64,8 +64,8 @@ void YEncoder::WriteSegment()
 	StringBuilder outbuf;
 	outbuf.Reserve(std::max(2048, std::min((int)(m_size * 1.1), 16 * 1024 * 1024)));
 
-	outbuf.Append(CString::FormatStr("=ybegin part=%i line=128 size=%lli name=%s\r\n", m_part, (long long)m_fileSize, FileSystem::BaseFileName(m_filename)));
-	outbuf.Append(CString::FormatStr("=ypart begin=%lli end=%lli\r\n", (long long)(m_offset + 1), (long long)(m_offset + m_size)));
+	outbuf.Append(CString::FormatStr("=ybegin part=%i line=128 size=%" PRIi64 " name=%s\r\n", m_part, m_fileSize, FileSystem::BaseFileName(m_filename)));
+	outbuf.Append(CString::FormatStr("=ypart begin=%" PRIi64 " end=%" PRIi64 "\r\n", m_offset + 1, m_offset + m_size));
 
 	Crc32 crc;
 	CharBuffer inbuf(std::min(m_size, 16 * 1024 * 1024));

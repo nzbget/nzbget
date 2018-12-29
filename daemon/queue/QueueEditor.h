@@ -33,9 +33,9 @@ private:
 	class EditItem
 	{
 	public:
-		int m_offset;
 		FileInfo* m_fileInfo;
 		NzbInfo* m_nzbInfo;
+		int m_offset;
 
 		EditItem(FileInfo* fileInfo, NzbInfo* nzbInfo, int offset) :
 			m_fileInfo(fileInfo), m_nzbInfo(nzbInfo), m_offset(offset) {}

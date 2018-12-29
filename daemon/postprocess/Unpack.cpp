@@ -874,8 +874,10 @@ void UnpackController::AddMessage(Message::EKind kind, const char* text)
 
 	if (m_unpacker == upUnrar && !strncmp(text, "Unrar: Extracting from ", 23))
 	{
+#ifdef DEBUG
 		const char *filename = text + 23;
 		debug("Filename: %s", filename);
+#endif
 		SetProgressLabel(text + 7);
 	}
 

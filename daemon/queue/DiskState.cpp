@@ -117,8 +117,8 @@ public:
 private:
 	BString<1024> m_destFilename;
 	BString<1024> m_tempFilename;
-	bool m_transactional;
 	int m_formatVersion;
+	bool m_transactional;
 	int m_fileVersion;
 	StateDiskFile m_file;
 

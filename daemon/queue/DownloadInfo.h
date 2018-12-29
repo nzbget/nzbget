@@ -895,7 +895,7 @@ public:
 	};
 
 	HistoryInfo(std::unique_ptr<NzbInfo> nzbInfo) : m_info(nzbInfo.release()),
-		m_kind(nzbInfo->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl) {}
+		m_kind(GetNzbInfo()->GetKind() == NzbInfo::nkNzb ? hkNzb : hkUrl) {}
 	HistoryInfo(std::unique_ptr<DupInfo> dupInfo) : m_info(dupInfo.release()), m_kind(hkDup) {}
 	~HistoryInfo();
 	EKind GetKind() { return m_kind; }
@@ -908,8 +908,8 @@ public:
 	const char* GetName();
 
 private:
-	EKind m_kind;
 	void* m_info;
+	EKind m_kind;
 	time_t m_time = 0;
 };
 

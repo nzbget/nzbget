@@ -47,7 +47,7 @@ TEST_CASE("BString", "[NString][Quick]")
 	REQUIRE(!strcmp(str2, "0123456789 Hi, Worl"));
 
 	BString<20> str3;
-	strncpy(str3, "Hello, 0123456789 world", str3.Capacity());
+	memcpy(str3, "Hello, 0123456789 world", str3.Capacity());
 	str3[str3.Capacity()] = '\0';
 	REQUIRE(!strcmp(str3, "Hello, 0123456789 w"));
 
