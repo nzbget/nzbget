@@ -80,11 +80,7 @@ private:
 	std::atomic_bool m_running{false};
 	std::atomic_bool m_stopped{false};
 	bool m_autoDestroy = false;
-#ifdef WIN32
-	static void __cdecl thread_handler(void* object);
-#else
-	static void *thread_handler(void* object);
-#endif
+	void thread_handler();
 };
 
 #endif
