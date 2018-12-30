@@ -260,7 +260,6 @@ void NZBGet::Init()
 
 	if (!m_reloading)
 	{
-		Thread::Init();
 		Connection::Init();
 #ifndef DISABLE_TLS
 		TlsSocket::Init();

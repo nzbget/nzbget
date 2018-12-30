@@ -23,14 +23,7 @@
 #include "Thread.h"
 
 int Thread::m_threadCount = 1; // take the main program thread into account
-std::unique_ptr<Mutex> Thread::m_threadMutex;
-
-void Thread::Init()
-{
-	debug("Initializing global thread data");
-
-	m_threadMutex = std::make_unique<Mutex>();
-}
+Mutex Thread::m_threadMutex;
 
 Thread::Thread()
 {

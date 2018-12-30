@@ -71,7 +71,6 @@ public:
 	Thread();
 	Thread(const Thread&) = delete;
 	virtual ~Thread();
-	static void Init();
 
 	virtual void Start();
 	virtual void Stop();
@@ -88,7 +87,7 @@ protected:
 	virtual void Run() {}; // Virtual function - override in derivatives
 
 private:
-	static std::unique_ptr<Mutex> m_threadMutex;
+	static Mutex m_threadMutex;
 	static int m_threadCount;
 #ifdef WIN32
 	HANDLE m_threadObj = 0;
