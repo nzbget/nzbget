@@ -22,7 +22,7 @@
 #include "Log.h"
 #include "Thread.h"
 
-int Thread::m_threadCount = 1; // take the main program thread into account
+std::atomic_int Thread::m_threadCount(1); // take the main program thread into account
 Mutex Thread::m_threadMutex;
 
 Thread::Thread()
@@ -82,8 +82,6 @@ bool Thread::Kill()
 {
 	debug("Killing Thread");
 
-	Guard guard(m_threadMutex);
-
 #ifdef WIN32
 	bool terminated = TerminateThread(m_threadObj, 0) != 0;
 #else
@@ -99,6 +97,7 @@ bool Thread::Kill()
 	{
 		m_threadCount--;
 	}
+
 	return terminated;
 }
 
@@ -108,10 +107,7 @@ void __cdecl Thread::thread_handler(void* object)
 void* Thread::thread_handler(void* object)
 #endif
 {
-	{
-		Guard guard(m_threadMutex);
-		m_threadCount++;
-	}
+	m_threadCount++;
 
 	debug("Entering Thread-func");
 
@@ -131,10 +127,7 @@ void* Thread::thread_handler(void* object)
 		thread->m_running = false;
 	}
 
-	{
-		Guard guard(m_threadMutex);
-		m_threadCount--;
-	}
+	m_threadCount--;
 
 #ifndef WIN32
 	return nullptr;
@@ -143,6 +136,5 @@ void* Thread::thread_handler(void* object)
 
 int Thread::GetThreadCount()
 {
-	Guard guard(m_threadMutex);
 	return m_threadCount;
 }

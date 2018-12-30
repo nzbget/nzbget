@@ -71,16 +71,15 @@ protected:
 
 private:
 	static Mutex m_threadMutex;
-	static int m_threadCount;
+	static std::atomic_int m_threadCount;
 #ifdef WIN32
 	HANDLE m_threadObj = 0;
 #else
 	pthread_t m_threadObj = 0;
 #endif
-	bool m_running = false;
-	bool m_stopped = false;
+	std::atomic_bool m_running{false};
+	std::atomic_bool m_stopped{false};
 	bool m_autoDestroy = false;
-
 #ifdef WIN32
 	static void __cdecl thread_handler(void* object);
 #else

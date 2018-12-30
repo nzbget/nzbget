@@ -223,6 +223,7 @@ using namespace MSXML;
 #include <memory>
 #include <functional>
 #include <mutex>
+#include <atomic>
 
 // NOTE: do not include <iostream> in "nzbget.h". <iostream> contains objects requiring
 // intialization, causing every unit in nzbget to have initialization routine. This in particular
