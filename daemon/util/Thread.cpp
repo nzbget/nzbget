@@ -42,7 +42,7 @@ void Thread::Start()
 	m_running = true;
 
 	// NOTE: "m_threadMutex" ensures that "t" lives until the very end of the function
-	Guard guard (m_threadMutex);
+	Guard guard(m_threadMutex);
 
 	// start the new thread
 	std::thread t([&]{
