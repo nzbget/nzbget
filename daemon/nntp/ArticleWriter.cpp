@@ -75,7 +75,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 		{
 			bool outputInitialized;
 			{
-				Guard guard = m_fileInfo->GuardOutputFile();
+				UniqueLock guard = m_fileInfo->GuardOutputFile();
 				outputInitialized = m_fileInfo->GetOutputInitialized();
 				if (!g_Options->GetDirectWrite())
 				{
@@ -93,7 +93,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 
 		if (g_Options->GetDirectWrite())
 		{
-			Guard guard = m_fileInfo->GuardOutputFile();
+			UniqueLock guard = m_fileInfo->GuardOutputFile();
 			if (!m_fileInfo->GetOutputInitialized())
 			{
 				if (!CreateOutputFile(fileSize))
@@ -207,7 +207,7 @@ void ArticleWriter::Finish(bool success)
 			{
 				g_ArticleCache->Realloc(&m_articleData, m_articlePtr);
 			}
-			Guard contentGuard = g_ArticleCache->GuardContent();
+			UniqueLock contentGuard = g_ArticleCache->GuardContent();
 			m_articleInfo->AttachSegment(std::make_unique<CachedSegmentData>(std::move(m_articleData)), m_articleOffset, m_articlePtr);
 			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() + 1);
 		}
@@ -275,7 +275,7 @@ void ArticleWriter::BuildOutputFilename()
 
 	if (g_Options->GetDirectWrite() || m_fileInfo->GetForceDirectWrite())
 	{
-		Guard guard = m_fileInfo->GuardOutputFile();
+		UniqueLock guard = m_fileInfo->GuardOutputFile();
 
 		if (m_fileInfo->GetOutputFilename())
 		{
@@ -584,7 +584,7 @@ void ArticleWriter::FlushCache()
 		std::vector<ArticleInfo*> cachedArticles;
 
 		{
-			Guard contentGuard = g_ArticleCache->GuardContent();
+			UniqueLock contentGuard = g_ArticleCache->GuardContent();
 
 			if (m_fileInfo->GetFlushLocked())
 			{
@@ -681,7 +681,7 @@ void ArticleWriter::FlushCache()
 		outfile.Close();
 
 		{
-			Guard contentGuard = g_ArticleCache->GuardContent();
+			UniqueLock contentGuard = g_ArticleCache->GuardContent();
 			m_fileInfo->SetCachedArticles(m_fileInfo->GetCachedArticles() - flushedArticles);
 			m_fileInfo->SetFlushLocked(false);
 		}
@@ -741,7 +741,7 @@ bool ArticleWriter::MoveCompletedFiles(NzbInfo* nzbInfo, const char* oldDestDir)
 
 			if (fileInfo->GetActiveDownloads() > 0)
 			{
-				Guard guard = fileInfo->GuardOutputFile();
+				UniqueLock guard = fileInfo->GuardOutputFile();
 				pendingWrites = fileInfo->GetOutputInitialized() && !Util::EmptyStr(fileInfo->GetOutputFilename());
 			}
 			else
@@ -878,7 +878,7 @@ bool ArticleCache::CheckFlush(bool flushEverything)
 	return false;
 }
 
-ArticleCache::FlushGuard::FlushGuard(Mutex& mutex) : m_guard(&mutex)
+ArticleCache::FlushGuard::FlushGuard(Mutex& mutex) : m_guard(mutex)
 {
 	g_ArticleCache->m_flushing = true;
 }

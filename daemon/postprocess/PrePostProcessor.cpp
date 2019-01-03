@@ -59,13 +59,25 @@ void PrePostProcessor::Run()
 
 	while (!IsStopped())
 	{
-		if (!g_Options->GetTempPausePostprocess() && m_queuedJobs)
+		if (g_Options->GetTempPausePostprocess())
+		{
+			// Postprocess is paused: just wait and loop
+			usleep(200 * 1000);
+			continue;
+		}
+
+		if (m_queuedJobs)
 		{
 			// check post-queue every 200 msec
 			CheckPostQueue();
+			usleep(200 * 1000);
 		}
-
-		usleep(200 * 1000);
+		else
+		{
+			// Wait until we get the stop signal or more jobs in the queue
+			UniqueLock lk(m_pauseMutex);
+			m_pauseCV.wait(lk, [&]{ return IsStopped() || m_queuedJobs; });
+		}
 	}
 
 	WaitJobs();
@@ -159,6 +171,9 @@ void PrePostProcessor::Stop()
 			((DirectUnpack*)nzbInfo->GetUnpackThread())->Stop(downloadQueue, nzbInfo);
 		}
 	}
+
+	// Trigger the stop signal
+	m_pauseCV.notify_all();
 }
 
 /**
@@ -341,6 +356,9 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 		}
 
 		downloadQueue->Save();
+
+		// We have more jobs in the queue, notify Run()
+		m_pauseCV.notify_all();
 	}
 	else
 	{

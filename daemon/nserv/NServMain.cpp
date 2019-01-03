@@ -83,7 +83,6 @@ int NServMain(int argc, char* argv[])
 	Options options(&cmdOpts, nullptr);
 
 	log.InitOptions();
-	Thread::Init();
 	Connection::Init();
 #ifndef DISABLE_TLS
 	TlsSocket::Init();
