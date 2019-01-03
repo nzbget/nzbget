@@ -797,7 +797,7 @@ bool RemoteClient::RequestServerEditQueue(DownloadQueue::EEditAction action, int
 
 	if (textLen > 0)
 	{
-		strcpy(trailingData, text);
+		strncpy(trailingData, text, textLen);
 	}
 
 	int32* ids = (int32*)(trailingData + textLen);
