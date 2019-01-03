@@ -209,6 +209,7 @@ using namespace MSXML;
 #include <stdarg.h>
 #include <time.h>
 #include <ctype.h>
+#include <inttypes.h>
 
 #include <string>
 #include <vector>
@@ -278,19 +279,6 @@ typedef int pid_t;
 #include <cassert>
 #ifdef HAVE_MEMORY_H
 # include <memory.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#else
-#ifndef PRId64
-#define PRId64 "lld"
-#endif
-#ifndef PRIi64
-#define PRIi64 "lli"
-#endif
-#ifndef PRIu64
-#define PRIu64 "llu"
-#endif
 #endif
 #endif /* NOT DISABLE_PARCHECK */
 
@@ -397,6 +385,16 @@ typedef signed int int32;
 typedef unsigned int uint32;
 typedef signed long long int64;
 typedef unsigned long long uint64;
+#endif
+
+#ifndef PRId64
+#define PRId64 "lld"
+#endif
+#ifndef PRIi64
+#define PRIi64 "lli"
+#endif
+#ifndef PRIu64
+#define PRIu64 "llu"
 #endif
 
 typedef unsigned char uchar;
