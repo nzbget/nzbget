@@ -226,7 +226,6 @@ using namespace MSXML;
 #include <mutex>
 #include <atomic>
 #include <thread>
-#include <future>
 #include <condition_variable>
 #include <chrono>
 

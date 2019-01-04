@@ -223,7 +223,9 @@ private:
 
 	bool m_reloading = false;
 	bool m_daemonized = false;
-	std::promise<void> m_stopSignal;
+	bool m_stopped = false;
+	Mutex m_stopMutex;
+	std::condition_variable m_stopCV;
 
 	void Init();
 	void Final();
@@ -653,7 +655,6 @@ void NZBGet::DoMainLoop()
 	}
 
 	// enter main program-loop
-	int stopSignalReceived = false;
 	while (m_queueCoordinator->IsRunning() ||
 		m_urlCoordinator->IsRunning() ||
 		m_prePostProcessor->IsRunning() ||
@@ -697,12 +698,11 @@ void NZBGet::DoMainLoop()
 		}
 		usleep(100 * 1000);
 
-		if (m_options->GetServerMode() && !stopSignalReceived)
+		if (m_options->GetServerMode() && !m_stopped)
 		{
 			// wait for stop signal
-			std::future<void> futureStop = m_stopSignal.get_future();
-			futureStop.wait();
-			stopSignalReceived = true;
+			UniqueLock lock(m_stopMutex);
+			m_stopCV.wait(lock);
 		}
 	}
 
@@ -908,7 +908,8 @@ void NZBGet::Stop(bool reload)
 	}
 
 	// trigger stop/reload signal
-	m_stopSignal.set_value();
+	m_stopped = true;
+	m_stopCV.notify_all();
 }
 
 void NZBGet::PrintOptions()
