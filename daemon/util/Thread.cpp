@@ -74,7 +74,7 @@ void Mutex::Unlock()
 ConditionVar::ConditionVar()
 {
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
+	InitializeConditionVariable(&m_condObj);
 #else
 	pthread_cond_init(&m_condObj, nullptr);
 #endif
@@ -83,7 +83,6 @@ ConditionVar::ConditionVar()
 ConditionVar::~ConditionVar()
 {
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
 #else
 	pthread_cond_destroy(&m_condObj);
 #endif
@@ -92,7 +91,7 @@ ConditionVar::~ConditionVar()
 void ConditionVar::Wait(Mutex& mutex)
 {
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
+	SleepConditionVariableCS(&m_condObj, &mutex.m_mutexObj, INFINITE);
 #else
 	pthread_cond_wait(&m_condObj, &mutex.m_mutexObj);
 #endif
@@ -125,7 +124,7 @@ timespec ConditionVar::UntilTime(int msec)
 void ConditionVar::WaitFor(Mutex& mutex, int msec)
 {
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
+	SleepConditionVariableCS(&m_condObj, &mutex.m_mutexObj, msec);
 #else
 	timespec ts = UntilTime(msec);
 	pthread_cond_timedwait(&m_condObj, &mutex.m_mutexObj, &ts);
@@ -135,7 +134,15 @@ void ConditionVar::WaitFor(Mutex& mutex, int msec)
 void ConditionVar::WaitFor(Mutex& mutex, int msec, WaitFunc pred)
 {
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
+	int startticks = GetTickCount();
+	BOOL rc = TRUE;
+	while (rc && !pred())
+	{
+		int nowticks = GetTickCount();
+		int remaining = msec - (nowticks - startticks);
+		rc = remaining <= 0 ? FALSE :
+			SleepConditionVariableCS(&m_condObj, &mutex.m_mutexObj, remaining);
+	}
 #else
 	timespec ts = UntilTime(msec);
 	int rc = 0;
@@ -149,7 +156,7 @@ void ConditionVar::WaitFor(Mutex& mutex, int msec, WaitFunc pred)
 void ConditionVar::NotifyOne()
 {
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
+	WakeConditionVariable(&m_condObj);
 #else
 	pthread_cond_signal(&m_condObj);
 #endif
@@ -158,7 +165,7 @@ void ConditionVar::NotifyOne()
 void ConditionVar::NotifyAll()
 {
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
+	WakeAllConditionVariable(&m_condObj);
 #else
 	pthread_cond_broadcast(&m_condObj);
 #endif

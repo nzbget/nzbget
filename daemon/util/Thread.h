@@ -98,7 +98,7 @@ public:
 
 private:
 #ifdef WIN32
-	//TODO: implement ConditionVar on Windows
+	CONDITION_VARIABLE m_condObj;
 #else
 	timespec UntilTime(int msec);
 	pthread_cond_t m_condObj;
