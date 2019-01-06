@@ -44,8 +44,8 @@ protected:
 private:
 	int m_queuedJobs = 0;
 	RawNzbList m_activeJobs;
-	std::mutex m_pauseMutex;
-	std::condition_variable m_pauseCV;
+	Mutex m_pauseMutex;
+	ConditionVar m_pauseCond;
 
 	void CheckPostQueue();
 	void CheckRequestPar(DownloadQueue* downloadQueue);

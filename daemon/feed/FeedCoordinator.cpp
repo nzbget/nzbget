@@ -94,7 +94,7 @@ void FeedCoordinator::Run()
 		g_DiskState->LoadFeeds(&m_feeds, &m_feedHistory);
 	}
 
-	int loopCounter = 0;
+	time_t lastCleanup = 0;
 	while (!IsStopped())
 	{
 			// this code should not be called too often, once per second is OK
@@ -129,19 +129,17 @@ void FeedCoordinator::Run()
 			CheckSaveFeeds();
 			ResetHangingDownloads();
 
-		if (loopCounter >= 60)
+		if (abs(Util::CurrentTime() - lastCleanup) >= 60)
 		{
 			// clean up feed history once a minute
 			CleanupHistory();
 			CleanupCache();
 			CheckSaveFeeds();
-			loopCounter = 0;
+			lastCleanup = Util::CurrentTime();
 		}
 
-		std::unique_lock<std::mutex> lock(m_pauseMutex);
-		m_pauseCV.wait_for(lock, std::chrono::seconds(1), [&]{ return IsStopped(); });
-
-		loopCounter++;
+		Guard guard(m_pauseMutex);
+		m_pauseCond.WaitFor(m_pauseMutex, 1000, [&]{ return IsStopped(); });
 	}
 
 	// waiting for downloads
@@ -175,7 +173,7 @@ void FeedCoordinator::Stop()
 	debug("UrlDownloads are notified");
 
 	// Resume Run() to exit it
-	m_pauseCV.notify_all();
+	m_pauseCond.NotifyAll();
 }
 
 void FeedCoordinator::ResetHangingDownloads()

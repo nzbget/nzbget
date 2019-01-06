@@ -224,8 +224,8 @@ private:
 	bool m_reloading = false;
 	bool m_daemonized = false;
 	bool m_stopped = false;
-	std::mutex m_stopMutex;
-	std::condition_variable m_stopCV;
+	Mutex m_stopMutex;
+	ConditionVar m_stopCond;
 
 	void Init();
 	void Final();
@@ -702,8 +702,8 @@ void NZBGet::DoMainLoop()
 		if (m_options->GetServerMode() && !m_stopped)
 		{
 			// wait for stop signal
-			std::unique_lock<std::mutex> lock(m_stopMutex);
-			m_stopCV.wait(lock);
+			Guard guard(m_stopMutex);
+			m_stopCond.Wait(m_stopMutex);
 		}
 	}
 
@@ -910,7 +910,7 @@ void NZBGet::Stop(bool reload)
 
 	// trigger stop/reload signal
 	m_stopped = true;
-	m_stopCV.notify_all();
+	m_stopCond.NotifyAll();
 }
 
 void NZBGet::PrintOptions()
