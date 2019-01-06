@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ compiled */
 
 // WINDOWS INCLUDES
 
-// Using "WIN32_LEAN_AND_MEAN" to disable including on many unneeded headers
+// Using "WIN32_LEAN_AND_MEAN" to disable including of many unneeded headers
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
@@ -147,6 +147,9 @@ using namespace MSXML;
 #ifdef _DEBUG
 #include <crtdbg.h>
 #endif
+
+#include <mutex>
+#include <condition_variable>
 
 #else
 

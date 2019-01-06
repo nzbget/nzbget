@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,8 +33,9 @@ public:
 
 private:
 #ifdef WIN32
-	CRITICAL_SECTION m_mutexObj;
+	std::mutex m_mutexObj;
 #else
+	// We don't use std::mutex on POSIX due to compatibility issues with certain compilers/targets
 	pthread_mutex_t m_mutexObj;
 #endif
 
@@ -98,8 +99,9 @@ public:
 
 private:
 #ifdef WIN32
-	CONDITION_VARIABLE m_condObj;
+	std::condition_variable m_condObj;
 #else
+	// We don't use std::condition_variable on POSIX due to compatibility issues with certain compilers/targets
 	timespec UntilTime(int msec);
 	pthread_cond_t m_condObj;
 #endif

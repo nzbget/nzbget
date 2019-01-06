@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ std::unique_ptr<Mutex> Thread::m_threadMutex;
 Mutex::Mutex()
 {
 #ifdef WIN32
-	InitializeCriticalSection(&m_mutexObj);
 #else
 	pthread_mutex_init(&m_mutexObj, nullptr);
 #endif
@@ -38,7 +37,6 @@ Mutex::Mutex()
 Mutex::~Mutex()
 {
 #ifdef WIN32
-	DeleteCriticalSection(&m_mutexObj);
 #else
 	pthread_mutex_destroy(&m_mutexObj);
 #endif
@@ -47,15 +45,7 @@ Mutex::~Mutex()
 void Mutex::Lock()
 {
 #ifdef WIN32
-	EnterCriticalSection(&m_mutexObj);
-#ifdef DEBUG
-	// CriticalSections on Windows can be locked many times from the same thread,
-	// but we do not want this and must treat such situations as errors and detect them.
-	if (m_mutexObj.RecursionCount > 1)
-	{
-		error("Internal program error: inconsistent thread-lock detected");
-	}
-#endif
+	m_mutexObj.lock();
 #else
 	pthread_mutex_lock(&m_mutexObj);
 #endif
@@ -64,7 +54,7 @@ void Mutex::Lock()
 void Mutex::Unlock()
 {
 #ifdef WIN32
-	LeaveCriticalSection(&m_mutexObj);
+	m_mutexObj.unlock();
 #else
 	pthread_mutex_unlock(&m_mutexObj);
 #endif
@@ -74,7 +64,6 @@ void Mutex::Unlock()
 ConditionVar::ConditionVar()
 {
 #ifdef WIN32
-	InitializeConditionVariable(&m_condObj);
 #else
 	pthread_cond_init(&m_condObj, nullptr);
 #endif
@@ -91,7 +80,9 @@ ConditionVar::~ConditionVar()
 void ConditionVar::Wait(Mutex& mutex)
 {
 #ifdef WIN32
-	SleepConditionVariableCS(&m_condObj, &mutex.m_mutexObj, INFINITE);
+	std::unique_lock<std::mutex> lock(mutex.m_mutexObj, std::adopt_lock);
+	m_condObj.wait(lock);
+	lock.release();
 #else
 	pthread_cond_wait(&m_condObj, &mutex.m_mutexObj);
 #endif
@@ -124,7 +115,9 @@ timespec ConditionVar::UntilTime(int msec)
 void ConditionVar::WaitFor(Mutex& mutex, int msec)
 {
 #ifdef WIN32
-	SleepConditionVariableCS(&m_condObj, &mutex.m_mutexObj, msec);
+	std::unique_lock<std::mutex> lock(mutex.m_mutexObj, std::adopt_lock);
+	m_condObj.wait_for(lock, std::chrono::milliseconds(msec));
+	lock.release();
 #else
 	timespec ts = UntilTime(msec);
 	pthread_cond_timedwait(&m_condObj, &mutex.m_mutexObj, &ts);
@@ -134,15 +127,9 @@ void ConditionVar::WaitFor(Mutex& mutex, int msec)
 void ConditionVar::WaitFor(Mutex& mutex, int msec, WaitFunc pred)
 {
 #ifdef WIN32
-	int startticks = GetTickCount();
-	BOOL rc = TRUE;
-	while (rc && !pred())
-	{
-		int nowticks = GetTickCount();
-		int remaining = msec - (nowticks - startticks);
-		rc = remaining <= 0 ? FALSE :
-			SleepConditionVariableCS(&m_condObj, &mutex.m_mutexObj, remaining);
-	}
+	std::unique_lock<std::mutex> lock(mutex.m_mutexObj, std::adopt_lock);
+	m_condObj.wait_for(lock, std::chrono::milliseconds(msec), pred);
+	lock.release();
 #else
 	timespec ts = UntilTime(msec);
 	int rc = 0;
@@ -156,7 +143,7 @@ void ConditionVar::WaitFor(Mutex& mutex, int msec, WaitFunc pred)
 void ConditionVar::NotifyOne()
 {
 #ifdef WIN32
-	WakeConditionVariable(&m_condObj);
+	m_condObj.notify_one();
 #else
 	pthread_cond_signal(&m_condObj);
 #endif
@@ -165,7 +152,7 @@ void ConditionVar::NotifyOne()
 void ConditionVar::NotifyAll()
 {
 #ifdef WIN32
-	WakeAllConditionVariable(&m_condObj);
+	m_condObj.notify_all();
 #else
 	pthread_cond_broadcast(&m_condObj);
 #endif
@@ -264,7 +251,7 @@ void* Thread::thread_handler(void* object)
 {
 	{
 		Guard guard(m_threadMutex);
-	m_threadCount++;
+		m_threadCount++;
 	}
 
 	debug("Entering Thread-func");
@@ -287,7 +274,7 @@ void* Thread::thread_handler(void* object)
 
 	{
 		Guard guard(m_threadMutex);
-	m_threadCount--;
+		m_threadCount--;
 	}
 
 #ifndef WIN32
