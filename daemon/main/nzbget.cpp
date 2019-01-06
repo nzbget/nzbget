@@ -224,7 +224,7 @@ private:
 	bool m_reloading = false;
 	bool m_daemonized = false;
 	bool m_stopped = false;
-	Mutex m_stopMutex;
+	std::mutex m_stopMutex;
 	std::condition_variable m_stopCV;
 
 	void Init();
@@ -263,6 +263,7 @@ void NZBGet::Init()
 
 	if (!m_reloading)
 	{
+		Thread::Init();
 		Connection::Init();
 #ifndef DISABLE_TLS
 		TlsSocket::Init();
@@ -701,7 +702,7 @@ void NZBGet::DoMainLoop()
 		if (m_options->GetServerMode() && !m_stopped)
 		{
 			// wait for stop signal
-			UniqueLock lock(m_stopMutex);
+			std::unique_lock<std::mutex> lock(m_stopMutex);
 			m_stopCV.wait(lock);
 		}
 	}

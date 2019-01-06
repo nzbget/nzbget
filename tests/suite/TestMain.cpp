@@ -33,6 +33,7 @@ int TestMain(int argc, char * argv[])
 {
 	TestUtil::Init(argv[0]);
 	Log log;
+	Thread::Init();
 
 	if (argc == 1)
 	{

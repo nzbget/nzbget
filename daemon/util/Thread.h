@@ -22,15 +22,47 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-typedef std::mutex Mutex;
-typedef std::lock_guard<std::mutex> Guard;
-typedef std::unique_lock<std::mutex> UniqueLock;
+class Mutex
+{
+public:
+	Mutex();
+	Mutex(const Mutex&) = delete;
+	~Mutex();
+	void Lock();
+	void Unlock();
+
+private:
+#ifdef WIN32
+	CRITICAL_SECTION m_mutexObj;
+#else
+	pthread_mutex_t m_mutexObj;
+#endif
+};
+
+class Guard
+{
+public:
+	Guard() : m_mutex(nullptr) {}
+	Guard(Mutex& mutex) : m_mutex(&mutex) { if (m_mutex) m_mutex->Lock(); }
+	Guard(Mutex* mutex) : m_mutex(mutex) { if (m_mutex) m_mutex->Lock(); }
+	Guard(std::unique_ptr<Mutex>& mutex) : m_mutex(mutex.get()) { if (m_mutex) m_mutex->Lock(); }
+	Guard(Guard&& other) : m_mutex(other.m_mutex) { other.m_mutex = nullptr; }
+	Guard(const Guard&) = delete;
+	~Guard() { Unlock(); }
+	Guard& operator=(Guard&& other) { m_mutex = other.m_mutex; other.m_mutex = nullptr; return *this; }
+	operator bool() { return m_mutex; }
+
+private:
+	Mutex* m_mutex;
+
+	void Unlock() { if (m_mutex) { m_mutex->Unlock(); m_mutex = nullptr; } }
+};
 
 template<typename T>
 class GuardedPtr
 {
 public:
-	GuardedPtr(T* ptr, Mutex* mutex) : m_ptr(ptr), m_mutex(mutex) { if (m_mutex) m_mutex->lock(); }
+	GuardedPtr(T* ptr, Mutex* mutex) : m_ptr(ptr), m_mutex(mutex) { if (m_mutex) m_mutex->Lock(); }
 	GuardedPtr(GuardedPtr&& other) : m_ptr(other.m_ptr), m_mutex(other.m_mutex) { other.m_mutex = nullptr; }
 	GuardedPtr(const GuardedPtr& other) = delete;
 	~GuardedPtr() { Unlock(); }
@@ -45,7 +77,7 @@ private:
 	T* m_ptr;
 	Mutex* m_mutex;
 
-	void Unlock() { if (m_mutex) { m_mutex->unlock(); m_mutex = nullptr; } }
+	void Unlock() { if (m_mutex) { m_mutex->Unlock(); m_mutex = nullptr; } }
 };
 
 class Thread
@@ -54,6 +86,7 @@ public:
 	Thread();
 	Thread(const Thread&) = delete;
 	virtual ~Thread();
+	static void Init();
 
 	virtual void Start();
 	virtual void Stop();
@@ -70,13 +103,22 @@ protected:
 	virtual void Run() {}; // Virtual function - override in derivatives
 
 private:
-	static Mutex m_threadMutex;
-	static std::atomic_int m_threadCount;
-	std::thread::native_handle_type m_threadObj = 0;
-	std::atomic_bool m_running{false};
-	std::atomic_bool m_stopped{false};
+	static std::unique_ptr<Mutex> m_threadMutex;
+	static int m_threadCount;
+#ifdef WIN32
+	HANDLE m_threadObj = 0;
+#else
+	pthread_t m_threadObj = 0;
+#endif
+	bool m_running = false;
+	bool m_stopped = false;
 	bool m_autoDestroy = false;
-	void thread_handler();
+
+#ifdef WIN32
+	static void __cdecl thread_handler(void* object);
+#else
+	static void *thread_handler(void* object);
+#endif
 };
 
 #endif

@@ -1333,7 +1333,7 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 		{
 			bool locked = false;
 			{
-				UniqueLock contentGuard = g_ArticleCache->GuardContent();
+				Guard contentGuard = g_ArticleCache->GuardContent();
 				locked = fileInfo->GetFlushLocked();
 				if (!locked)
 				{
@@ -1352,7 +1352,7 @@ void QueueCoordinator::DiscardDirectRename(DownloadQueue* downloadQueue, NzbInfo
 
 			if (!locked)
 			{
-				UniqueLock contentGuard = g_ArticleCache->GuardContent();
+				Guard contentGuard = g_ArticleCache->GuardContent();
 				fileInfo->SetFlushLocked(false);
 			}
 		}

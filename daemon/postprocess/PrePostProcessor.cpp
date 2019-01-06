@@ -75,8 +75,8 @@ void PrePostProcessor::Run()
 		else
 		{
 			// Wait until we get the stop signal or more jobs in the queue
-			UniqueLock lk(m_pauseMutex);
-			m_pauseCV.wait(lk, [&]{ return IsStopped() || m_queuedJobs; });
+			std::unique_lock<std::mutex> lock(m_pauseMutex);
+			m_pauseCV.wait(lock, [&]{ return IsStopped() || m_queuedJobs; });
 		}
 	}
 

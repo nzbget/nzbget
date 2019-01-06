@@ -171,7 +171,7 @@ public:
 	void SetCompletedArticles(int completedArticles) { m_completedArticles = completedArticles; }
 	bool GetParFile() { return m_parFile; }
 	void SetParFile(bool parFile) { m_parFile = parFile; }
-	UniqueLock GuardOutputFile() { return UniqueLock(*m_outputFileMutex); }
+	Guard GuardOutputFile() { return Guard(m_outputFileMutex); }
 	const char* GetOutputFilename() { return m_outputFilename; }
 	void SetOutputFilename(const char* outputFilename) { m_outputFilename = outputFilename; }
 	bool GetOutputInitialized() { return m_outputInitialized; }

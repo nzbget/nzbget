@@ -42,9 +42,9 @@ protected:
 	virtual void Update(Subject* caller, void* aspect) { DownloadQueueUpdate(aspect); }
 
 private:
-	std::atomic_int m_queuedJobs{0};
+	int m_queuedJobs = 0;
 	RawNzbList m_activeJobs;
-	Mutex m_pauseMutex;
+	std::mutex m_pauseMutex;
 	std::condition_variable m_pauseCV;
 
 	void CheckPostQueue();

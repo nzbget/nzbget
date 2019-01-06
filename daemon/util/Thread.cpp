@@ -22,8 +22,61 @@
 #include "Log.h"
 #include "Thread.h"
 
-std::atomic_int Thread::m_threadCount(1); // take the main program thread into account
-Mutex Thread::m_threadMutex;
+int Thread::m_threadCount = 1; // take the main program thread into account
+std::unique_ptr<Mutex> Thread::m_threadMutex;
+
+
+Mutex::Mutex()
+{
+#ifdef WIN32
+	InitializeCriticalSection(&m_mutexObj);
+#else
+	pthread_mutex_init(&m_mutexObj, nullptr);
+#endif
+}
+
+Mutex::~Mutex()
+{
+#ifdef WIN32
+	DeleteCriticalSection(&m_mutexObj);
+#else
+	pthread_mutex_destroy(&m_mutexObj);
+#endif
+}
+
+void Mutex::Lock()
+{
+#ifdef WIN32
+	EnterCriticalSection(&m_mutexObj);
+#ifdef DEBUG
+	// CriticalSections on Windows can be locked many times from the same thread,
+	// but we do not want this and must treat such situations as errors and detect them.
+	if (m_mutexObj.RecursionCount > 1)
+	{
+		error("Internal program error: inconsistent thread-lock detected");
+	}
+#endif
+#else
+	pthread_mutex_lock(&m_mutexObj);
+#endif
+}
+
+void Mutex::Unlock()
+{
+#ifdef WIN32
+	LeaveCriticalSection(&m_mutexObj);
+#else
+	pthread_mutex_unlock(&m_mutexObj);
+#endif
+}
+
+
+void Thread::Init()
+{
+	debug("Initializing global thread data");
+
+	m_threadMutex = std::make_unique<Mutex>();
+}
 
 Thread::Thread()
 {
@@ -41,23 +94,27 @@ void Thread::Start()
 
 	m_running = true;
 
-	// NOTE: "m_threadMutex" ensures that "t" lives until the very end of the function
+	// NOTE: we must guarantee, that in a time we set m_running
+	// to value returned from pthread_create, the thread-object still exists.
+	// This is not obvious!
+	// pthread_create could wait long enough before returning result
+	// back to allow the started thread to complete its job and terminate.
+	// We lock mutex m_threadMutex on calling pthread_create; the started thread
+	// then also try to lock the mutex (see thread_handler) and therefore
+	// must wait until we unlock it
 	Guard guard(m_threadMutex);
 
-	// start the new thread
-	std::thread t([&]{
-		{
-			// trying to lock "m_threadMutex", this will wait until function "Start()" is completed
-			// and "t" is detached.
-			Guard guard(m_threadMutex);
-		}
-
-		thread_handler();
-	});
-
-	// save the native handle to be able to cancel (Kill) the thread and then detach
-	m_threadObj = t.native_handle();
-	t.detach();
+#ifdef WIN32
+	m_threadObj = (HANDLE)_beginthread(Thread::thread_handler, 0, (void*)this);
+	m_running = m_threadObj != 0;
+#else
+	pthread_attr_t m_attr;
+	pthread_attr_init(&m_attr);
+	pthread_attr_setdetachstate(&m_attr, PTHREAD_CREATE_DETACHED);
+	pthread_attr_setinheritsched(&m_attr, PTHREAD_INHERIT_SCHED);
+	m_running = !pthread_create(&m_threadObj, &m_attr, Thread::thread_handler, (void *) this);
+	pthread_attr_destroy(&m_attr);
+#endif
 }
 
 void Thread::Stop()
@@ -78,6 +135,8 @@ bool Thread::Kill()
 {
 	debug("Killing Thread");
 
+	Guard guard(m_threadMutex);
+
 #ifdef WIN32
 	bool terminated = TerminateThread(m_threadObj, 0) != 0;
 #else
@@ -93,32 +152,50 @@ bool Thread::Kill()
 	{
 		m_threadCount--;
 	}
-
 	return terminated;
 }
 
-void Thread::thread_handler()
+#ifdef WIN32
+void __cdecl Thread::thread_handler(void* object)
+#else
+void* Thread::thread_handler(void* object)
+#endif
 {
+	{
+		Guard guard(m_threadMutex);
 	m_threadCount++;
+	}
 
 	debug("Entering Thread-func");
 
-	Run();
+	Thread* thread = (Thread*)object;
+
+	thread->Run();
 
 	debug("Thread-func exited");
 
-	m_running = false;
-
-	m_threadCount--;
-
-	if (m_autoDestroy)
+	if (thread->m_autoDestroy)
 	{
 		debug("Autodestroying Thread-object");
-		delete this;
+		delete thread;
 	}
+	else
+	{
+		thread->m_running = false;
+	}
+
+	{
+		Guard guard(m_threadMutex);
+	m_threadCount--;
+	}
+
+#ifndef WIN32
+	return nullptr;
+#endif
 }
 
 int Thread::GetThreadCount()
 {
+	Guard guard(m_threadMutex);
 	return m_threadCount;
 }

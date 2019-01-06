@@ -97,37 +97,37 @@ void FeedCoordinator::Run()
 	int loopCounter = 0;
 	while (!IsStopped())
 	{
-		// this code should not be called too often, once per second is OK
-		if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
-		{
-			Guard guard(m_downloadsMutex);
-
-			time_t current = Util::CurrentTime();
-			if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
+			// this code should not be called too often, once per second is OK
+			if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
 			{
-				m_force = false;
-				// check feed list and update feeds
-				for (FeedInfo* feedInfo : &m_feeds)
+				Guard guard(m_downloadsMutex);
+
+				time_t current = Util::CurrentTime();
+				if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
 				{
-					if (((feedInfo->GetInterval() > 0 &&
-						 (feedInfo->GetNextUpdate() == 0 ||
-						  current >= feedInfo->GetNextUpdate() ||
-						  current < feedInfo->GetNextUpdate() - feedInfo->GetInterval() * 60)) ||
-						feedInfo->GetFetch()) &&
-						feedInfo->GetStatus() != FeedInfo::fsRunning)
+					m_force = false;
+					// check feed list and update feeds
+					for (FeedInfo* feedInfo : &m_feeds)
 					{
-						StartFeedDownload(feedInfo, feedInfo->GetFetch());
-					}
-					else if (feedInfo->GetFetch())
-					{
-						m_force = true;
+						if (((feedInfo->GetInterval() > 0 &&
+							 (feedInfo->GetNextUpdate() == 0 ||
+							  current >= feedInfo->GetNextUpdate() ||
+							  current < feedInfo->GetNextUpdate() - feedInfo->GetInterval() * 60)) ||
+							feedInfo->GetFetch()) &&
+							feedInfo->GetStatus() != FeedInfo::fsRunning)
+						{
+							StartFeedDownload(feedInfo, feedInfo->GetFetch());
+						}
+						else if (feedInfo->GetFetch())
+						{
+							m_force = true;
+						}
 					}
 				}
 			}
-		}
 
-		CheckSaveFeeds();
-		ResetHangingDownloads();
+			CheckSaveFeeds();
+			ResetHangingDownloads();
 
 		if (loopCounter >= 60)
 		{
@@ -138,8 +138,8 @@ void FeedCoordinator::Run()
 			loopCounter = 0;
 		}
 
-		UniqueLock lk(m_pauseMutex);
-		m_pauseCV.wait_for(lk, std::chrono::seconds(1), [&]{ return IsStopped(); });
+		std::unique_lock<std::mutex> lock(m_pauseMutex);
+		m_pauseCV.wait_for(lock, std::chrono::seconds(1), [&]{ return IsStopped(); });
 
 		loopCounter++;
 	}

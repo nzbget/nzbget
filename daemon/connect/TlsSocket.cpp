@@ -59,13 +59,13 @@ static int gcry_mutex_destroy(void **lock)
 
 static int gcry_mutex_lock(void **lock)
 {
-	((Mutex*)*lock)->lock();
+	((Mutex*)*lock)->Lock();
 	return 0;
 }
 
 static int gcry_mutex_unlock(void **lock)
 {
-	((Mutex*)*lock)->unlock();
+	((Mutex*)*lock)->Unlock();
 	return 0;
 }
 
@@ -99,11 +99,11 @@ static void openssl_locking(int mode, int n, const char* file, int line)
 	Mutex* mutex = g_OpenSSLMutexes[n].get();
 	if (mode & CRYPTO_LOCK)
 	{
-		mutex->lock();
+		mutex->Lock();
 	}
 	else
 	{
-		mutex->unlock();
+		mutex->Unlock();
 	}
 }
 
@@ -123,11 +123,11 @@ static void openssl_dynlock_lock(int mode, struct CRYPTO_dynlock_value *l, const
 	Mutex* mutex = (Mutex*)l;
 	if (mode & CRYPTO_LOCK)
 	{
-		mutex->lock();
+		mutex->Lock();
 	}
 	else
 	{
-		mutex->unlock();
+		mutex->Unlock();
 	}
 }
 

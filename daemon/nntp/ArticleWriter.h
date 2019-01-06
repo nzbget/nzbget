@@ -89,7 +89,7 @@ public:
 		FlushGuard(FlushGuard&& other) = default;
 		~FlushGuard();
 	private:
-		UniqueLock m_guard;
+		Guard m_guard;
 		FlushGuard(Mutex& mutex);
 		friend class ArticleCache;
 	};
@@ -99,7 +99,7 @@ public:
 	bool Realloc(CachedSegmentData* segment, int newSize);
 	void Free(CachedSegmentData* segment);
 	FlushGuard GuardFlush() { return FlushGuard(m_flushMutex); }
-	UniqueLock GuardContent() { return UniqueLock(m_contentMutex); }
+	Guard GuardContent() { return Guard(m_contentMutex); }
 	bool GetFlushing() { return m_flushing; }
 	size_t GetAllocated() { return m_allocated; }
 	bool FileBusy(FileInfo* fileInfo) { return fileInfo == m_fileInfo; }
