@@ -37,6 +37,8 @@ private:
 #else
 	pthread_mutex_t m_mutexObj;
 #endif
+
+	friend class ConditionVar;
 };
 
 class Guard
@@ -78,6 +80,29 @@ private:
 	Mutex* m_mutex;
 
 	void Unlock() { if (m_mutex) { m_mutex->Unlock(); m_mutex = nullptr; } }
+};
+
+class ConditionVar
+{
+public:
+	typedef std::function<bool()> WaitFunc;
+
+	ConditionVar();
+	~ConditionVar();
+	void Wait(Mutex& mutex);
+	void Wait(Mutex& mutex, WaitFunc pred);
+	void WaitFor(Mutex& mutex, int msec);
+	void WaitFor(Mutex& mutex, int msec, WaitFunc pred);
+	void NotifyOne();
+	void NotifyAll();
+
+private:
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	timespec UntilTime(int msec);
+	pthread_cond_t m_condObj;
+#endif
 };
 
 class Thread

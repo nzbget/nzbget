@@ -71,6 +71,100 @@ void Mutex::Unlock()
 }
 
 
+ConditionVar::ConditionVar()
+{
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	pthread_cond_init(&m_condObj, nullptr);
+#endif
+}
+
+ConditionVar::~ConditionVar()
+{
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	pthread_cond_destroy(&m_condObj);
+#endif
+}
+
+void ConditionVar::Wait(Mutex& mutex)
+{
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	pthread_cond_wait(&m_condObj, &mutex.m_mutexObj);
+#endif
+}
+
+void ConditionVar::Wait(Mutex& mutex, WaitFunc pred)
+{
+	while (!pred())
+	{
+		Wait(mutex);
+	}
+}
+
+#ifndef WIN32
+timespec ConditionVar::UntilTime(int msec)
+{
+	timeval tm;
+	gettimeofday(&tm, nullptr);
+
+	timespec ts;
+	ts.tv_sec = tm.tv_sec + msec / 1000;
+	ts.tv_nsec = tm.tv_usec * 1000 + 1000 * 1000 * (msec % 1000);
+	ts.tv_sec += ts.tv_nsec / (1000 * 1000 * 1000);
+	ts.tv_nsec %= 1000 * 1000 * 1000;
+
+	return ts;
+}
+#endif
+
+void ConditionVar::WaitFor(Mutex& mutex, int msec)
+{
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	timespec ts = UntilTime(msec);
+	pthread_cond_timedwait(&m_condObj, &mutex.m_mutexObj, &ts);
+#endif
+}
+
+void ConditionVar::WaitFor(Mutex& mutex, int msec, WaitFunc pred)
+{
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	timespec ts = UntilTime(msec);
+	int rc = 0;
+	while (rc == 0 && !pred())
+	{
+		rc = pthread_cond_timedwait(&m_condObj, &mutex.m_mutexObj, &ts);
+	}
+#endif
+}
+
+void ConditionVar::NotifyOne()
+{
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	pthread_cond_signal(&m_condObj);
+#endif
+}
+
+void ConditionVar::NotifyAll()
+{
+#ifdef WIN32
+	//TODO: implement ConditionVar on Windows
+#else
+	pthread_cond_broadcast(&m_condObj);
+#endif
+}
+
+
 void Thread::Init()
 {
 	debug("Initializing global thread data");
