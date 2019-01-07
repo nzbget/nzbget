@@ -304,13 +304,13 @@ ConfigureTarget()
         buildroot-debug|buildroot-debug-strip)
             LDFLAGS="-static $STRIP" \
                 CXXFLAGS="-std=c++14 -g -fasynchronous-unwind-tables" \
-                LIBS="-lcrypto -ldl -lz $LUBACKTRACE" \
+                LIBS="-lcrypto -ldl -lz -Wl,--whole-archive -lpthread -Wl,--no-whole-archive $LUBACKTRACE" \
                 ./configure --disable-dependency-tracking --host=$ARCH --enable-debug
             ;;
         buildroot-release|buildroot-release-nostrip)
             LDFLAGS="-static $STRIP" \
                 CXXFLAGS="-std=c++14 -O2 $DEBUG" \
-                LIBS="-lcrypto -ldl -lz" \
+                LIBS="-lcrypto -ldl -lz -Wl,--whole-archive -lpthread -Wl,--no-whole-archive" \
                 ./configure --disable-dependency-tracking --host=$ARCH
             ;;
         ndk-debug|ndk-debug-strip)
