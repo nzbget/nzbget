@@ -49,27 +49,23 @@ void Thread::Start()
 
 	m_running = true;
 
-	// NOTE: we must guarantee, that in a time we set m_running
-	// to value returned from pthread_create, the thread-object still exists.
-	// This is not obvious!
-	// pthread_create could wait long enough before returning result
-	// back to allow the started thread to complete its job and terminate.
-	// We lock mutex m_threadMutex on calling pthread_create; the started thread
-	// then also try to lock the mutex (see thread_handler) and therefore
-	// must wait until we unlock it
+	// NOTE: "m_threadMutex" ensures that "t" lives until the very end of the function
 	Guard guard(m_threadMutex);
 
-#ifdef WIN32
-	m_threadObj = (HANDLE)_beginthread(Thread::thread_handler, 0, (void*)this);
-	m_running = m_threadObj != 0;
-#else
-	pthread_attr_t m_attr;
-	pthread_attr_init(&m_attr);
-	pthread_attr_setdetachstate(&m_attr, PTHREAD_CREATE_DETACHED);
-	pthread_attr_setinheritsched(&m_attr, PTHREAD_INHERIT_SCHED);
-	m_running = !pthread_create(&m_threadObj, &m_attr, Thread::thread_handler, (void *) this);
-	pthread_attr_destroy(&m_attr);
-#endif
+	// start the new thread
+	std::thread t([&]{
+		{
+			// trying to lock "m_threadMutex", this will wait until function "Start()" is completed
+			// and "t" is detached.
+			Guard guard(m_threadMutex);
+		}
+
+		thread_handler();
+	});
+
+	// save the native handle to be able to cancel (Kill) the thread and then detach
+	m_threadObj = t.native_handle();
+	t.detach();
 }
 
 void Thread::Stop()
@@ -110,43 +106,25 @@ bool Thread::Kill()
 	return terminated;
 }
 
-#ifdef WIN32
-void __cdecl Thread::thread_handler(void* object)
-#else
-void* Thread::thread_handler(void* object)
-#endif
+void Thread::thread_handler()
 {
-	{
-		Guard guard(m_threadMutex);
-		m_threadCount++;
-	}
+	m_threadCount++;
 
 	debug("Entering Thread-func");
 
-	Thread* thread = (Thread*)object;
-
-	thread->Run();
+	Run();
 
 	debug("Thread-func exited");
 
-	if (thread->m_autoDestroy)
+	m_running = false;
+
+	m_threadCount--;
+
+	if (m_autoDestroy)
 	{
 		debug("Autodestroying Thread-object");
-		delete thread;
+		delete this;
 	}
-	else
-	{
-		thread->m_running = false;
-	}
-
-	{
-		Guard guard(m_threadMutex);
-		m_threadCount--;
-	}
-
-#ifndef WIN32
-	return nullptr;
-#endif
 }
 
 int Thread::GetThreadCount()

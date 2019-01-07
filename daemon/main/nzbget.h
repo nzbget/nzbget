@@ -223,6 +223,7 @@ using namespace MSXML;
 #include <fstream>
 #include <memory>
 #include <functional>
+#include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>

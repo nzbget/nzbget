@@ -126,20 +126,12 @@ protected:
 private:
 	static std::unique_ptr<Mutex> m_threadMutex;
 	static int m_threadCount;
-#ifdef WIN32
-	HANDLE m_threadObj = 0;
-#else
-	pthread_t m_threadObj = 0;
-#endif
+	std::thread::native_handle_type m_threadObj = 0;
 	bool m_running = false;
 	bool m_stopped = false;
 	bool m_autoDestroy = false;
 
-#ifdef WIN32
-	static void __cdecl thread_handler(void* object);
-#else
-	static void *thread_handler(void* object);
-#endif
+	void thread_handler();
 };
 
 #endif
