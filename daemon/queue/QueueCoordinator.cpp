@@ -419,7 +419,7 @@ void QueueCoordinator::CheckDupeFileInfos(NzbInfo* nzbInfo)
 			{
 				// If more than two files have same filename we don't filter them out since that
 				// naming might be intentional and correct filenames must be read from article bodies.
-				int dupeCount = std::count_if(nzbInfo->GetFileList()->begin(), nzbInfo->GetFileList()->end(),
+				int dupeCount = (int)std::count_if(nzbInfo->GetFileList()->begin(), nzbInfo->GetFileList()->end(),
 					[fileInfo2](std::unique_ptr<FileInfo>& fileInfo3)
 					{
 						return !strcmp(fileInfo3->GetFilename(), fileInfo2->GetFilename());
