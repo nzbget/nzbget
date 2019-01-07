@@ -25,19 +25,13 @@
 class Mutex
 {
 public:
-	Mutex();
+	Mutex() {};
 	Mutex(const Mutex&) = delete;
-	~Mutex();
-	void Lock();
-	void Unlock();
+	void Lock() { m_mutexObj.lock(); }
+	void Unlock() { m_mutexObj.unlock(); }
 
 private:
-#ifdef WIN32
 	std::mutex m_mutexObj;
-#else
-	// We don't use std::mutex on POSIX due to compatibility issues with certain compilers/targets
-	pthread_mutex_t m_mutexObj;
-#endif
 
 	friend class ConditionVar;
 };
@@ -86,25 +80,25 @@ private:
 class ConditionVar
 {
 public:
-	typedef std::function<bool()> WaitFunc;
-
-	ConditionVar();
-	~ConditionVar();
-	void Wait(Mutex& mutex);
-	void Wait(Mutex& mutex, WaitFunc pred);
-	void WaitFor(Mutex& mutex, int msec);
-	void WaitFor(Mutex& mutex, int msec, WaitFunc pred);
-	void NotifyOne();
-	void NotifyAll();
+	ConditionVar() {}
+	ConditionVar(const ConditionVar& other) = delete;
+	void Wait(Mutex& mutex) { Lock l(mutex); m_condObj.wait(l.ulock); }
+	template <typename Pred> void Wait(Mutex& mutex, Pred pred) { Lock l(mutex); m_condObj.wait(l.ulock, pred); }
+	void WaitFor(Mutex& mutex, int msec) { Lock l(mutex); m_condObj.wait_for(l.ulock, std::chrono::milliseconds(msec)); }
+	template <typename Pred> void WaitFor(Mutex& mutex, int msec, Pred pred)
+		{ Lock l(mutex); m_condObj.wait_for(l.ulock, std::chrono::milliseconds(msec), pred); }
+	void NotifyOne() { m_condObj.notify_one(); }
+	void NotifyAll() { m_condObj.notify_all(); }
 
 private:
-#ifdef WIN32
 	std::condition_variable m_condObj;
-#else
-	// We don't use std::condition_variable on POSIX due to compatibility issues with certain compilers/targets
-	timespec UntilTime(int msec);
-	pthread_cond_t m_condObj;
-#endif
+
+	struct Lock
+	{
+		Lock(Mutex& mutex) : ulock(mutex.m_mutexObj, std::adopt_lock) {}
+		~Lock() { ulock.release(); }
+		std::unique_lock<std::mutex> ulock;
+	};
 };
 
 class Thread
