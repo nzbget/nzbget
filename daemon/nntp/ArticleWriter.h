@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -95,6 +95,7 @@ public:
 	};
 
 	virtual void Run();
+	virtual void Stop();
 	CachedSegmentData Alloc(int size);
 	bool Realloc(CachedSegmentData* segment, int newSize);
 	void Free(CachedSegmentData* segment);
@@ -111,6 +112,7 @@ private:
 	Mutex m_flushMutex;
 	Mutex m_contentMutex;
 	FileInfo* m_fileInfo = nullptr;
+	ConditionVar m_allocCond;
 
 	bool CheckFlush(bool flushEverything);
 };
