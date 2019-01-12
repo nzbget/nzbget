@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -335,7 +335,12 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 
 			formatVersion = stateFile.GetFileVersion();
 
-			if (formatVersion < 47)
+			if (formatVersion <= 0)
+			{
+				error("Failed to read queue: diskstate file is corrupted");
+				goto error;
+			}
+			else if (formatVersion < 47)
 			{
 				error("Failed to read queue and history data. Only queue and history from NZBGet v13 or newer can be converted by this NZBGet version. "
 					"Old queue and history data still can be converted using NZBGet v16 as an intermediate version.");
