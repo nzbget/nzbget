@@ -45,11 +45,9 @@ int64 StateDiskFile::PrintLine(const char* format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	CString str;
-	str.FormatV(format, ap);
+	BString<1024> str;
+	int len = str.FormatV(format, ap);
 	va_end(ap);
-
-	int len = str.Length();
 
 	// replacing terminating <NULL> with <LF>
 	str[len++] = '\n';
