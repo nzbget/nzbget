@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,8 +46,8 @@ public:
 	void Append(const char* str, int len = 0);
 	void AppendFmt(const char* format, ...) PRINTF_SYNTAX(2);
 	void AppendFmtV(const char* format, va_list ap);
-	void Format(const char* format, ...) PRINTF_SYNTAX(2);
-	void FormatV(const char* format, va_list ap);
+	int Format(const char* format, ...) PRINTF_SYNTAX(2);
+	int FormatV(const char* format, va_list ap);
 
 protected:
 	char m_data[size];
@@ -83,8 +83,8 @@ public:
 	void Append(const char* str, int len = 0);
 	void AppendFmt(const char* format, ...) PRINTF_SYNTAX(2);
 	void AppendFmtV(const char* format, va_list ap);
-	void Format(const char* format, ...) PRINTF_SYNTAX(2);
-	void FormatV(const char* format, va_list ap);
+	int Format(const char* format, ...) PRINTF_SYNTAX(2);
+	int FormatV(const char* format, va_list ap);
 	int Find(const char* str, int pos = 0);
 	void Replace(int pos, int len, const char* str, int strLen = 0);
 	void Replace(const char* from, const char* to);

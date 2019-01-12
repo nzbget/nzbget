@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,18 +76,21 @@ void BString<size>::AppendFmtV(const char* format, va_list ap)
 }
 
 template <int size>
-void BString<size>::Format(const char* format, ...)
+int BString<size>::Format(const char* format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	FormatV(format, ap);
+	int len = FormatV(format, ap);
 	va_end(ap);
+	return len;
 }
 
 template <int size>
-void BString<size>::FormatV(const char* format, va_list ap)
+int BString<size>::FormatV(const char* format, va_list ap)
 {
-	vsnprintf(m_data, size, format, ap);
+	// ensure result isn't negative (in case of bad argument)
+	int len = std::max(vsnprintf(m_data, size, format, ap), 0);
+	return len;
 }
 
 bool CString::operator==(const CString& other)
@@ -159,26 +162,28 @@ void CString::AppendFmtV(const char* format, va_list ap)
 	va_end(ap2);
 }
 
-void CString::Format(const char* format, ...)
+int CString::Format(const char* format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	FormatV(format, ap);
+	int len = FormatV(format, ap);
 	va_end(ap);
+	return len;
 }
 
-void CString::FormatV(const char* format, va_list ap)
+int CString::FormatV(const char* format, va_list ap)
 {
 	va_list ap2;
 	va_copy(ap2, ap);
 
-	int newLen = vsnprintf(nullptr, 0, format, ap);
-	if (newLen < 0) return; // bad argument
+	// "std::max" to ensure result isn't negative (in case of bad argument)
+	int newLen = std::max(vsnprintf(nullptr, 0, format, ap), 0);
 
 	m_data = (char*)realloc(m_data, newLen + 1);
-	vsnprintf(m_data, newLen + 1, format, ap2);
+	newLen = vsnprintf(m_data, newLen + 1, format, ap2);
 
 	va_end(ap2);
+	return newLen;
 }
 
 int CString::Find(const char* str, int pos)
