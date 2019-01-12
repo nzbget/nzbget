@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 	if (g_Options->GetServerMode())
 	{
 		g_DiskState->SaveDownloadQueue(this, m_historyChanged);
+		m_saveTime = Util::CurrentTime();
 		m_stateChanged = true;
 	}
 
@@ -251,7 +252,8 @@ void QueueCoordinator::Run()
 			// this code should not be called too often, once per second is OK
 			g_ServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
-			if (!standBy)
+			if (!standBy &&
+				(g_Options->GetContinuePartial() || abs(m_downloadQueue.m_saveTime - currentTime) > 1))
 			{
 				SaveAllPartialState();
 			}
