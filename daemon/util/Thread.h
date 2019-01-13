@@ -82,22 +82,21 @@ class ConditionVar
 public:
 	ConditionVar() {}
 	ConditionVar(const ConditionVar& other) = delete;
-	void Wait(Mutex& mutex) { Lock l(mutex); m_condObj.wait(l.ulock); }
-	template <typename Pred> void Wait(Mutex& mutex, Pred pred) { Lock l(mutex); m_condObj.wait(l.ulock, pred); }
-	void WaitFor(Mutex& mutex, int msec) { Lock l(mutex); m_condObj.wait_for(l.ulock, std::chrono::milliseconds(msec)); }
+	void Wait(Mutex& mutex) { Lock l(mutex); m_condObj.wait(l); }
+	template <typename Pred> void Wait(Mutex& mutex, Pred pred) { Lock l(mutex); m_condObj.wait(l, pred); }
+	void WaitFor(Mutex& mutex, int msec) { Lock l(mutex); m_condObj.wait_for(l, std::chrono::milliseconds(msec)); }
 	template <typename Pred> void WaitFor(Mutex& mutex, int msec, Pred pred)
-		{ Lock l(mutex); m_condObj.wait_for(l.ulock, std::chrono::milliseconds(msec), pred); }
+		{ Lock l(mutex); m_condObj.wait_for(l, std::chrono::milliseconds(msec), pred); }
 	void NotifyOne() { m_condObj.notify_one(); }
 	void NotifyAll() { m_condObj.notify_all(); }
 
 private:
 	std::condition_variable m_condObj;
 
-	struct Lock
+	struct Lock : public std::unique_lock<std::mutex>
 	{
-		Lock(Mutex& mutex) : ulock(mutex.m_mutexObj, std::adopt_lock) {}
-		~Lock() { ulock.release(); }
-		std::unique_lock<std::mutex> ulock;
+		Lock(Mutex& mutex) : std::unique_lock<std::mutex>(mutex.m_mutexObj, std::adopt_lock) {}
+		~Lock() { release(); }
 	};
 };
 
