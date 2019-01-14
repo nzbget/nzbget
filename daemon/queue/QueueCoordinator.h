@@ -67,13 +67,13 @@ private:
 			EEditAction action, const char* args);
 		virtual void HistoryChanged() { m_historyChanged = true; }
 		virtual void Save();
+		virtual void SaveChanged();
 	private:
 		QueueCoordinator* m_owner;
 		bool m_massEdit = false;
 		bool m_wantSave = false;
 		bool m_historyChanged = false;
 		bool m_stateChanged = false;
-		time_t m_saveTime = 0;
 		friend class QueueCoordinator;
 	};
 
@@ -109,6 +109,7 @@ private:
 	void ResetHangingDownloads();
 	void AdjustDownloadsLimit();
 	void Load();
+	void SaveQueueIfChanged();
 	void SaveAllPartialState();
 	void SavePartialState(FileInfo* fileInfo);
 	void LoadPartialState(FileInfo* fileInfo);

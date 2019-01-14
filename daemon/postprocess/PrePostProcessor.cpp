@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -355,7 +355,8 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 			((DirectUnpack*)nzbInfo->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbInfo);
 		}
 
-		downloadQueue->Save();
+		nzbInfo->SetChanged(true);
+		downloadQueue->SaveChanged();
 
 		// We have more jobs in the queue, notify Run()
 		m_pauseCond.NotifyAll();

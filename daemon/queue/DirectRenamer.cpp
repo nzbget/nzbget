@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2017-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -208,7 +208,8 @@ void DirectRenamer::ArticleDownloaded(DownloadQueue* downloadQueue, FileInfo* fi
 			fileInfo->SetPaused(false);
 		}
 
-		downloadQueue->Save();
+		nzbInfo->SetChanged(true);
+		downloadQueue->SaveChanged();
 	}
 
 	if (fileInfo->GetParFile())
@@ -258,7 +259,8 @@ void DirectRenamer::CheckState(DownloadQueue* downloadQueue, NzbInfo* nzbInfo)
 		// all first articles downloaded
 		UnpausePars(nzbInfo);
 		nzbInfo->SetWaitingPar(true);
-		downloadQueue->Save();
+		nzbInfo->SetChanged(true);
+		downloadQueue->SaveChanged();
 	}
 
 	if (nzbInfo->GetWaitingPar() && !nzbInfo->GetLoadingPar())

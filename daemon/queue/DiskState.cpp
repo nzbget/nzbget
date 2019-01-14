@@ -311,6 +311,10 @@ bool DiskState::SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory
 		}
 	}
 
+	// progress-file isn't needed after saving of full queue data
+	StateFile progressStateFile("progress", DISKSTATE_QUEUE_VERSION, true);
+	progressStateFile.Discard();
+
 	return ok;
 }
 
@@ -354,6 +358,26 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 		}
 	}
 
+	{
+		StateFile stateFile("progress", DISKSTATE_QUEUE_VERSION, true);
+		if (stateFile.FileExists())
+		{
+			StateDiskFile* infile = stateFile.BeginRead();
+			if (!infile)
+			{
+				return false;
+			}
+
+			if (stateFile.GetFileVersion() <= 0)
+			{
+				error("Failed to read queue: diskstate file is corrupted");
+				goto error;
+			}
+
+			if (!LoadProgress(downloadQueue->GetQueue(), servers, *infile, stateFile.GetFileVersion())) goto error;
+		}
+	}
+
 	if (formatVersion == 0 || formatVersion >= 57)
 	{
 		StateFile stateFile("history", DISKSTATE_QUEUE_VERSION, true);
@@ -364,6 +388,13 @@ bool DiskState::LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers
 			{
 				return false;
 			}
+
+			if (stateFile.GetFileVersion() <= 0)
+			{
+				error("Failed to read queue: diskstate file is corrupted");
+				goto error;
+			}
+
 			if (!LoadHistory(downloadQueue->GetHistory(), servers, *infile, stateFile.GetFileVersion())) goto error;
 		}
 	}
@@ -387,6 +418,42 @@ error:
 	FileInfo::ResetGenId(true);
 
 	CalcFileStats(downloadQueue, formatVersion);
+
+	return ok;
+}
+
+bool DiskState::SaveDownloadProgress(DownloadQueue* downloadQueue)
+{
+	int count = 0;
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	{
+		count += nzbInfo->GetChanged() ? 1 : 0;
+	}
+
+	debug("Saving queue progress to disk");
+
+	bool ok = true;
+
+	{
+		StateFile stateFile("progress", DISKSTATE_QUEUE_VERSION, true);
+		if (count > 0)
+		{
+			StateDiskFile* outfile = stateFile.BeginWrite();
+			if (!outfile)
+			{
+				return false;
+			}
+
+			SaveProgress(downloadQueue->GetQueue(), *outfile, count);
+
+			// now rename to dest file name
+			ok = stateFile.FinishWrite();
+		}
+		else
+		{
+			stateFile.Discard();
+		}
+	}
 
 	return ok;
 }
@@ -420,6 +487,50 @@ bool DiskState::LoadQueue(NzbList* queue, Servers* servers, StateDiskFile& infil
 
 error:
 	error("Error reading nzb list from disk");
+	return false;
+}
+
+void DiskState::SaveProgress(NzbList* queue, StateDiskFile& outfile, int changedCount)
+{
+	debug("Saving nzb progress to disk");
+
+	outfile.PrintLine("%i", changedCount);
+	for (NzbInfo* nzbInfo : queue)
+	{
+		if (nzbInfo->GetChanged())
+		{
+			outfile.PrintLine("%i", nzbInfo->GetId());
+			SaveNzbInfo(nzbInfo, outfile);
+		}
+	}
+}
+
+bool DiskState::LoadProgress(NzbList* queue, Servers* servers, StateDiskFile& infile, int formatVersion)
+{
+	debug("Loading nzb progress from disk");
+
+	// load nzb-infos
+	int size;
+	if (infile.ScanLine("%i", &size) != 1) goto error;
+	for (int i = 0; i < size; i++)
+	{
+		int id;
+		if (infile.ScanLine("%i", &id) != 1) goto error;
+
+		NzbInfo* nzbInfo = queue->Find(id);
+		if (!nzbInfo)
+		{
+			error("NZB with id %i could not be found", id);
+			goto error;
+		}
+
+		if (!LoadNzbInfo(nzbInfo, servers, infile, formatVersion)) goto error;
+	}
+
+	return true;
+
+error:
+	error("Error reading nzb progress from disk");
 	return false;
 }
 
@@ -719,6 +830,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 		nzbInfo->SetUnpackSec(unpackSec);
 	}
 
+	nzbInfo->GetCompletedFiles()->clear();
 	if (infile.ScanLine("%i", &fileCount) != 1) goto error;
 	for (int i = 0; i < fileCount; i++)
 	{
@@ -776,6 +888,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 			Util::EmptyStr(parSetId) ? nullptr : parSetId);
 	}
 
+	nzbInfo->GetParameters()->clear();
 	int parameterCount;
 	if (infile.ScanLine("%i", &parameterCount) != 1) goto error;
 	for (int i = 0; i < parameterCount; i++)
@@ -791,6 +904,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 		}
 	}
 
+	nzbInfo->GetScriptStatuses()->clear();
 	int scriptCount;
 	if (infile.ScanLine("%i", &scriptCount) != 1) goto error;
 	for (int i = 0; i < scriptCount; i++)
@@ -820,6 +934,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 		}
 	}
 
+	nzbInfo->GetFileList()->clear();
 	if (infile.ScanLine("%i", &fileCount) != 1) goto error;
 	for (int i = 0; i < fileCount; i++)
 	{

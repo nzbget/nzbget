@@ -61,7 +61,6 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 	if (g_Options->GetServerMode())
 	{
 		g_DiskState->SaveDownloadQueue(this, m_historyChanged);
-		m_saveTime = Util::CurrentTime();
 		m_stateChanged = true;
 	}
 
@@ -72,6 +71,15 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 
 	m_wantSave = false;
 	m_historyChanged = false;
+}
+
+void QueueCoordinator::CoordinatorDownloadQueue::SaveChanged()
+{
+	if (g_Options->GetServerMode())
+	{
+		g_DiskState->SaveDownloadProgress(this);
+		m_stateChanged = true;
+	}
 }
 
 QueueCoordinator::QueueCoordinator()
@@ -252,8 +260,7 @@ void QueueCoordinator::Run()
 			// this code should not be called too often, once per second is OK
 			g_ServerPool->CloseUnusedConnections();
 			ResetHangingDownloads();
-			if (!standBy &&
-				(g_Options->GetContinuePartial() || abs(m_downloadQueue.m_saveTime - currentTime) > 1))
+			if (!standBy)
 			{
 				SaveAllPartialState();
 			}
@@ -266,6 +273,7 @@ void QueueCoordinator::Run()
 
 	WaitJobs();
 	SaveAllPartialState();
+	SaveQueueIfChanged();
 	SaveAllFileState();
 
 	debug("Exiting QueueCoordinator-loop");
@@ -770,7 +778,8 @@ void QueueCoordinator::DeleteDownloader(DownloadQueue* downloadQueue,
 	if (deleteFileObj)
 	{
 		DeleteFileInfo(downloadQueue, fileInfo, fileCompleted);
-		downloadQueue->Save();
+		nzbInfo->SetChanged(true);
+		downloadQueue->SaveChanged();
 	}
 }
 
@@ -868,31 +877,43 @@ void QueueCoordinator::DiscardTempFiles(FileInfo* fileInfo)
 	}
 }
 
-void QueueCoordinator::SaveAllPartialState()
+void QueueCoordinator::SaveQueueIfChanged()
 {
 	if (!g_Options->GetServerMode())
 	{
 		return;
 	}
 
-	bool hasUnsavedData = false;
+	bool hasChanges = false;
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
 	{
-		if (g_Options->GetContinuePartial())
-		{
-			for (FileInfo* fileInfo : nzbInfo->GetFileList())
-			{
-				SavePartialState(fileInfo);
-			}
-		}
-		hasUnsavedData |= nzbInfo->GetChanged();
+		hasChanges |= nzbInfo->GetChanged();
 	}
 
-	if (hasUnsavedData)
+	if (hasChanges)
 	{
 		downloadQueue->Save();
 	}
+}
+
+void QueueCoordinator::SaveAllPartialState()
+{
+	if (!g_Options->GetServerMode() || !g_Options->GetContinuePartial())
+	{
+		return;
+	}
+
+	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+	{
+		for (FileInfo* fileInfo : nzbInfo->GetFileList())
+		{
+			SavePartialState(fileInfo);
+		}
+	}
+
+	downloadQueue->SaveChanged();
 }
 
 void QueueCoordinator::SavePartialState(FileInfo* fileInfo)
@@ -1317,7 +1338,8 @@ void QueueCoordinator::DirectRenameCompleted(DownloadQueue* downloadQueue, NzbIn
 		downloadQueue->EditEntry(nzbInfo->GetId(), DownloadQueue::eaGroupSortFiles, nullptr);
 	}
 
-	downloadQueue->Save();
+	nzbInfo->SetChanged(true);
+	downloadQueue->SaveChanged();
 
 	DownloadQueue::Aspect namedAspect = { DownloadQueue::eaNzbNamed, downloadQueue, nzbInfo, nullptr };
 	downloadQueue->Notify(&namedAspect);

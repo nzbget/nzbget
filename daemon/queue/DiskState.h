@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ public:
 	bool DownloadQueueExists();
 	bool SaveDownloadQueue(DownloadQueue* downloadQueue, bool saveHistory);
 	bool LoadDownloadQueue(DownloadQueue* downloadQueue, Servers* servers);
+	bool SaveDownloadProgress(DownloadQueue* downloadQueue);
 	bool SaveFile(FileInfo* fileInfo);
 	bool LoadFile(FileInfo* fileInfo, bool fileSummary, bool articles);
 	bool SaveAllFileInfos(DownloadQueue* downloadQueue);
@@ -63,6 +64,8 @@ private:
 	bool LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFile& infile, int formatVersion, bool completed);
 	void SaveQueue(NzbList* queue, StateDiskFile& outfile);
 	bool LoadQueue(NzbList* queue, Servers* servers, StateDiskFile& infile, int formatVersion);
+	void SaveProgress(NzbList* queue, StateDiskFile& outfile, int changedCount);
+	bool LoadProgress(NzbList* queue, Servers* servers, StateDiskFile& infile, int formatVersion);
 	void SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile);
 	bool LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& infile, int formatVersion);
 	void SaveDupInfo(DupInfo* dupInfo, StateDiskFile& outfile);
