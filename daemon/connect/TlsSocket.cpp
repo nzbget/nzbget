@@ -195,7 +195,9 @@ void TlsSocket::Final()
 	CRYPTO_set_locking_callback(nullptr);
 	CRYPTO_set_id_callback(nullptr);
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	ERR_remove_state(0);
+#endif
 #if	OPENSSL_VERSION_NUMBER >= 0x10002000L && ! defined (LIBRESSL_VERSION_NUMBER)
 	SSL_COMP_free_compression_methods();
 #endif
@@ -214,7 +216,9 @@ TlsSocket::~TlsSocket()
 	Close();
 
 #ifdef HAVE_OPENSSL
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	ERR_remove_state(0);
+#endif
 #endif
 }
 
@@ -559,7 +563,7 @@ bool TlsSocket::ValidateCert()
 	// hostname verification
 	if (!m_host.Empty() && X509_check_host(cert, m_host, m_host.Length(), 0, nullptr) != 1)
 	{
-		char* certHost = nullptr;
+		const unsigned char* certHost = nullptr;
         // Find the position of the CN field in the Subject field of the certificate
         int common_name_loc = X509_NAME_get_index_by_NID(X509_get_subject_name(cert), NID_commonName, -1);
         if (common_name_loc >= 0)
@@ -572,7 +576,11 @@ bool TlsSocket::ValidateCert()
 				ASN1_STRING* common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
 				if (common_name_asn1 != nullptr)
 				{
-					certHost = (char*)ASN1_STRING_data(common_name_asn1);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+					certHost = ASN1_STRING_get0_data(common_name_asn1);
+#else
+					certHost = ASN1_STRING_data(common_name_asn1);
+#endif
 				}
 			}
         }
