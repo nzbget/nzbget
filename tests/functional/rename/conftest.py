@@ -82,8 +82,40 @@ def prepare_testdata(request):
 		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part02.rar', nserv_datadir + '/rar3ignoreext/testfile3-2.cbr')
 		shutil.copyfile(testdata_dir + '/rarrenamer/testfile3.part03.rar', nserv_datadir + '/rar3ignoreext/testfile3-3.cbr')
 
+	if not os.path.exists(nserv_datadir + '/parjoin1.nzb'):
+		os.makedirs(nserv_datadir + '/parjoin1')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.dat', nserv_datadir + '/parjoin1/testfile.dat')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.nfo', nserv_datadir + '/parjoin1/testfile.nfo')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.par2', nserv_datadir + '/parjoin1/testfile.par2')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.vol00+1.PAR2', nserv_datadir + '/parjoin1/testfile.vol00+1.PAR2')
+		split_test_file(nserv_datadir + '/parjoin1', 'testfile.dat', 50244);
+
+	if not os.path.exists(nserv_datadir + '/parjoin2.nzb'):
+		os.makedirs(nserv_datadir + '/parjoin2')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.dat', nserv_datadir + '/parjoin2/testfile.dat')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.nfo', nserv_datadir + '/parjoin2/testfile.nfo')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.par2', nserv_datadir + '/parjoin2/testfile.par2')
+		shutil.copyfile(testdata_dir + '/parchecker/testfile.vol00+1.PAR2', nserv_datadir + '/parjoin2/testfile.vol00+1.PAR2')
+		split_test_file(nserv_datadir + '/parjoin2', 'testfile.dat', 50244);
+		os.rename(nserv_datadir + '/parjoin2/testfile.dat.001', nserv_datadir + '/parjoin2/renamed.001')
+		os.rename(nserv_datadir + '/parjoin2/testfile.dat.002', nserv_datadir + '/parjoin2/renamed.002')
+		os.rename(nserv_datadir + '/parjoin2/testfile.dat.003', nserv_datadir + '/parjoin2/renamed.003')
+
 	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '3000', '-q']):
 		pytest.exit('Test file generation failed')
+
+	if not os.path.exists(nserv_datadir + '/parjoin3.nzb'):
+		os.makedirs(nserv_datadir + '/parjoin3')
+		create_test_file(nserv_datadir + '/parjoin3', None, 20, 1)
+		os.chdir(nserv_datadir + '/parjoin3')
+		if 0 != subprocess.call([par2_bin, 'c', '-b100', 'parrename.par2', '*']):
+			pytest.exit('Test file generation failed')
+		split_test_file(nserv_datadir + '/parjoin3', '20mb.dat', 7*1024*1024);
+		os.rename(nserv_datadir + '/parjoin3/20mb.dat.001', nserv_datadir + '/parjoin3/renamed.001')
+		os.rename(nserv_datadir + '/parjoin3/20mb.dat.002', nserv_datadir + '/parjoin3/renamed.002')
+		os.rename(nserv_datadir + '/parjoin3/20mb.dat.003', nserv_datadir + '/parjoin3/renamed.003')
+		if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '100000', '-q']):
+			pytest.exit('Test file generation failed')
 
 	if not os.path.exists(nserv_datadir + '/rarrename3sm'):
 		os.makedirs(nserv_datadir + '/rarrename3sm')
@@ -93,8 +125,8 @@ def prepare_testdata(request):
 		os.chdir(nserv_datadir + '/rarrename3sm')
 		if 0 != subprocess.call([par2_bin, 'c', '-b100', 'parrename.par2', '*']):
 			pytest.exit('Test file generation failed')
-	if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '500', '-q']):
-		pytest.exit('Test file generation failed')
+		if 0 != subprocess.call([nzbget_bin, '--nserv', '-d', nserv_datadir, '-v', '2', '-z', '500', '-q']):
+			pytest.exit('Test file generation failed')
 
 	if not os.path.exists(nserv_datadir + '/obfuscated1.nzb'):
 		create_test_file(nserv_datadir + '/obfuscated1', sevenzip_bin, 5, 1)
@@ -163,7 +195,29 @@ def create_test_file(bigdir, sevenzip_bin, sizemb, partmb):
 		f.write(os.urandom(partmb * 1024 * 1024))
 	f.close()
 
-	if 0 != subprocess.call([sevenzip_bin, 'a', bigdir + '/' + str(sizemb) + 'mb.7z', '-mx=0', '-v' + str(partmb) + 'm', bigdir + '/' + str(sizemb) + 'mb.dat']):
-		pytest.exit('Test file generation failed')
+	if sevenzip_bin != None:
+		if 0 != subprocess.call([sevenzip_bin, 'a', bigdir + '/' + str(sizemb) + 'mb.7z', '-mx=0', '-v' + str(partmb) + 'm', bigdir + '/' + str(sizemb) + 'mb.dat']):
+			pytest.exit('Test file generation failed')
 
-	os.remove(bigdir + '/' + str(sizemb) + 'mb.dat')
+		os.remove(bigdir + '/' + str(sizemb) + 'mb.dat')
+
+def split_test_file(filedir, filename, partsize):
+	print('Splitting test file ' + filename)
+
+	inp = open(filedir + '/' + filename, 'rb')
+	inp.seek(0,2) # move the cursor to the end of the file
+	size = inp.tell()	
+	inp.seek(0,0) # move the cursor to the start of the file
+
+	written = 0
+	part = 1
+	while (written < size):
+		block = inp.read(partsize)
+		written += partsize
+		f = open(filedir + '/' + filename + '.' + str(part).zfill(3), 'wb')
+		f.write(block)
+		f.close()
+		part += 1
+	inp.close()
+
+	os.remove(filedir + '/' + filename)

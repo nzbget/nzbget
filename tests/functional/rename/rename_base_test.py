@@ -84,3 +84,15 @@ def test_rename_obf1ch(nserv, nzbget):
 def test_rename_obf2(nserv, nzbget):
 	hist = nzbget.download_nzb('obfuscated2.nzb', unpack=True)
 	assert hist['Status'] == 'SUCCESS/UNPACK'
+
+def test_parjoin_1(nserv, nzbget):
+	hist = nzbget.download_nzb('parjoin1.nzb', unpack=True)
+	assert hist['Status'] == 'SUCCESS/PAR'
+
+def test_parjoin_2(nserv, nzbget):
+	hist = nzbget.download_nzb('parjoin2.nzb', unpack=True)
+	assert hist['Status'] == 'SUCCESS/PAR'
+
+def test_parjoin_3(nserv, nzbget):
+	hist = nzbget.download_nzb('parjoin3.nzb', unpack=True)
+	assert hist['Status'] == 'SUCCESS/PAR'
