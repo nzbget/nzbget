@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -131,7 +131,8 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* downloadQueue, NzbInfo* nzb
 	{
 		nzbInfo->UpdateCompletedStats(fileInfo);
 		nzbInfo->GetCompletedFiles()->emplace_back(fileInfo->GetId(), fileInfo->GetFilename(),
-			CompletedFile::cfNone, 0, fileInfo->GetParFile(), fileInfo->GetHash16k(), fileInfo->GetParSetId());
+			fileInfo->GetOrigname(), CompletedFile::cfNone, 0, fileInfo->GetParFile(),
+			fileInfo->GetHash16k(), fileInfo->GetParSetId());
 	}
 
 	// Cleaning up parked files if par-check was successful or unpack was successful or

@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -838,10 +838,10 @@ void FileInfo::SetActiveDownloads(int activeDownloads)
 }
 
 
-CompletedFile::CompletedFile(int id, const char* filename, EStatus status, uint32 crc,
-	bool parFile, const char* hash16k, const char* parSetId) :
-	m_id(id), m_filename(filename), m_status(status), m_crc(crc), m_parFile(parFile),
-	m_hash16k(hash16k), m_parSetId(parSetId)
+CompletedFile::CompletedFile(int id, const char* filename, const char* origname, EStatus status,
+	uint32 crc, bool parFile, const char* hash16k, const char* parSetId) :
+	m_id(id), m_filename(filename), m_origname(origname), m_status(status),
+	m_crc(crc), m_parFile(parFile), m_hash16k(hash16k), m_parSetId(parSetId)
 {
 	if (FileInfo::m_idMax < m_id)
 	{

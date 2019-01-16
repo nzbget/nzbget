@@ -831,7 +831,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 			fileInfo->GetId(),
 			completed && fileInfo->GetOutputFilename() ?
 			FileSystem::BaseFileName(fileInfo->GetOutputFilename()) : fileInfo->GetFilename(),
-			fileStatus,
+			fileInfo->GetOrigname(), fileStatus,
 			fileStatus == CompletedFile::cfSuccess ? fileInfo->GetCrc() : 0,
 			fileInfo->GetParFile(), fileInfo->GetHash16k(), fileInfo->GetParSetId());
 	}

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2016-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -213,6 +213,10 @@ void RenameController::RegisterRenamedFile(const char* oldFilename, const char* 
 	{
 		if (!strcasecmp(completedFile.GetFilename(), oldFilename))
 		{
+			if (Util::EmptyStr(completedFile.GetOrigname()))
+			{
+				completedFile.SetOrigname(completedFile.GetFilename());
+			}
 			completedFile.SetFilename(newFilename);
 			break;
 		}

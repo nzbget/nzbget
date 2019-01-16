@@ -140,6 +140,8 @@ public:
 	void SetSubject(const char* subject) { m_subject = subject; }
 	const char* GetFilename() { return m_filename; }
 	void SetFilename(const char* filename) { m_filename = filename; }
+	void SetOrigname(const char* origname) { m_origname = origname; }
+	const char* GetOrigname() { return m_origname; }
 	void MakeValidFilename();
 	bool GetFilenameConfirmed() { return m_filenameConfirmed; }
 	void SetFilenameConfirmed(bool filenameConfirmed) { m_filenameConfirmed = filenameConfirmed; }
@@ -209,6 +211,7 @@ private:
 	ServerStatList m_serverStats;
 	CString m_subject;
 	CString m_filename;
+	CString m_origname;
 	int64 m_size = 0;
 	int64 m_remainingSize = 0;
 	int64 m_successSize = 0;
@@ -259,11 +262,13 @@ public:
 		cfFailure
 	};
 
-	CompletedFile(int id, const char* filename, EStatus status, uint32 crc, 
-		bool parFile, const char* hash16k, const char* parSetId);
+	CompletedFile(int id, const char* filename, const char* oldname, EStatus status,
+		uint32 crc, bool parFile, const char* hash16k, const char* parSetId);
 	int GetId() { return m_id; }
 	void SetFilename(const char* filename) { m_filename = filename; }
 	const char* GetFilename() { return m_filename; }
+	void SetOrigname(const char* origname) { m_origname = origname; }
+	const char* GetOrigname() { return m_origname; }
 	bool GetParFile() { return m_parFile; }
 	EStatus GetStatus() { return m_status; }
 	uint32 GetCrc() { return m_crc; }
@@ -275,6 +280,7 @@ public:
 private:
 	int m_id;
 	CString m_filename;
+	CString m_origname;
 	EStatus m_status;
 	uint32 m_crc;
 	bool m_parFile;

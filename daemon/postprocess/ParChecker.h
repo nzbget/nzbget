@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -132,6 +132,7 @@ protected:
 	virtual void RegisterParredFile(const char* filename) {}
 	virtual bool IsParredFile(const char* filename) { return false; }
 	virtual EFileStatus FindFileCrc(const char* filename, uint32* crc, SegmentList* segments) { return fsUnknown; }
+	virtual const char* FindFileOrigname(const char* filename) { return nullptr; }
 	virtual void RequestDupeSources(DupeSourceList* dupeSourceList) {}
 	virtual void StatDupeSources(DupeSourceList* dupeSourceList) {}
 	EStage GetStage() { return m_stage; }
@@ -221,6 +222,7 @@ private:
 	bool DumbCalcFileRangeCrc(DiskFile& file, int64 start, int64 end, uint32* downloadCrc);
 	void CheckEmptyFiles();
 	CString GetPacketCreator();
+	bool MaybeSplittedFragement(const char* filename1, const char* filename2);
 
 	friend class Repairer;
 };

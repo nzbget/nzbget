@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,6 +112,19 @@ ParChecker::EFileStatus RepairController::PostParChecker::FindFileCrc(const char
 		completedFile->GetStatus() == CompletedFile::cfPartial && segments->size() > 0 &&
 			!m_postInfo->GetNzbInfo()->GetReprocess()? ParChecker::fsPartial :
 		ParChecker::fsUnknown;
+}
+
+const char* RepairController::PostParChecker::FindFileOrigname(const char* filename)
+{
+	for (CompletedFile& completedFile : m_postInfo->GetNzbInfo()->GetCompletedFiles())
+	{
+		if (!strcasecmp(completedFile.GetFilename(), filename))
+		{
+			return completedFile.GetOrigname();
+		}
+	}
+
+	return nullptr;
 }
 
 void RepairController::PostParChecker::RequestDupeSources(DupeSourceList* dupeSourceList)

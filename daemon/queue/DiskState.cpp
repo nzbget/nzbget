@@ -882,7 +882,7 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 			}
 		}
 
-		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName,
+		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName, nullptr,
 			(CompletedFile::EStatus)status, crc, (bool)parFile,
 			Util::EmptyStr(hash16k) ? nullptr : hash16k,
 			Util::EmptyStr(parSetId) ? nullptr : parSetId);

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -822,29 +822,25 @@ bool ParChecker::AddSplittedFragments()
 	DirBrowser dir(m_destDir);
 	while (const char* filename = dir.Next())
 	{
-		if (IsParredFile(filename) && !IsProcessedFile(filename))
+		if (!IsParredFile(filename) && !IsProcessedFile(filename))
 		{
 			for (Par2::Par2RepairerSourceFile *sourcefile : GetRepairer()->sourcefiles)
 			{
 				std::string target = sourcefile->TargetFileName();
-				const char* filename2 = target.c_str();
-				const char* basename2 = FileSystem::BaseFileName(filename2);
-				int baseLen = strlen(basename2);
+				const char* current = FileSystem::BaseFileName(target.c_str());
 
-				if (!strncasecmp(filename, basename2, baseLen))
+				// if file was renamed by par-renamer we also check the original filename
+				const char* original = FindFileOrigname(current);
+
+				if (MaybeSplittedFragement(filename, current) ||
+					(!Util::EmptyStr(original) && strcasecmp(original, current) &&
+					MaybeSplittedFragement(filename, original)))
 				{
-					const char* p = filename + baseLen;
-					if (*p == '.')
-					{
-						for (p++; *p && strchr("0123456789", *p); p++) ;
-						if (!*p)
-						{
-							debug("Found splitted fragment %s", filename);
-							BString<1024> fullfilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
-							Par2::CommandLine::ExtraFile extrafile(*fullfilename, FileSystem::FileSize(fullfilename));
-							extrafiles.push_back(extrafile);
-						}
-					}
+					detail("Found splitted fragment %s", filename);
+					BString<1024> fullfilename("%s%c%s", *m_destDir, PATH_SEPARATOR, filename);
+					Par2::CommandLine::ExtraFile extrafile(*fullfilename, FileSystem::FileSize(fullfilename));
+					extrafiles.push_back(extrafile);
+					break;
 				}
 			}
 		}
@@ -863,6 +859,40 @@ bool ParChecker::AddSplittedFragments()
 	}
 
 	return fragmentsAdded;
+}
+
+bool ParChecker::MaybeSplittedFragement(const char* filename1, const char* filename2)
+{
+	// check if name is same but the first name has additional numerical extension
+	int len = strlen(filename2);
+	if (!strncasecmp(filename1, filename2, len))
+	{
+		const char* p = filename1 + len;
+		if (*p == '.')
+		{
+			for (p++; *p && strchr("0123456789", *p); p++) ;
+			if (!*p)
+			{
+				return true;
+			}
+		}
+	}
+
+	// check if same name (without extension) and extensions are numerical and exactly 3 characters long
+	const char* ext1 = strrchr(filename1, '.');
+	const char* ext2 = strrchr(filename2, '.');
+	if (ext1 && ext2 && (strlen(ext1) == 4) && (strlen(ext2) == 4) &&
+		!strncasecmp(filename1, filename2, ext1 - filename1))
+	{
+		for (ext1++; *ext1 && strchr("0123456789", *ext1); ext1++) ;
+		for (ext2++; *ext2 && strchr("0123456789", *ext2); ext2++) ;
+		if (!*ext1 && !*ext2)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool ParChecker::AddMissingFiles()
