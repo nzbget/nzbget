@@ -27,8 +27,8 @@
 #include "FileSystem.h"
 
 static const char* FORMATVERSION_SIGNATURE = "nzbget diskstate file version ";
-const int DISKSTATE_QUEUE_VERSION = 61;
-const int DISKSTATE_FILE_VERSION = 5;
+const int DISKSTATE_QUEUE_VERSION = 62;
+const int DISKSTATE_FILE_VERSION = 6;
 const int DISKSTATE_STATS_VERSION = 3;
 const int DISKSTATE_FEEDS_VERSION = 3;
 
@@ -587,11 +587,12 @@ void DiskState::SaveNzbInfo(NzbInfo* nzbInfo, StateDiskFile& outfile)
 	outfile.PrintLine("%i", (int)nzbInfo->GetCompletedFiles()->size());
 	for (CompletedFile& completedFile : nzbInfo->GetCompletedFiles())
 	{
-		outfile.PrintLine("%i,%i,%u,%i,%s,%s,%s", completedFile.GetId(), (int)completedFile.GetStatus(),
+		outfile.PrintLine("%i,%i,%u,%i,%s,%s", completedFile.GetId(), (int)completedFile.GetStatus(),
 			completedFile.GetCrc(), (int)completedFile.GetParFile(),
 			completedFile.GetHash16k() ? completedFile.GetHash16k() : "",
-			completedFile.GetParSetId() ? completedFile.GetParSetId() : "",
-			completedFile.GetFilename());
+			completedFile.GetParSetId() ? completedFile.GetParSetId() : "");
+		outfile.PrintLine("%s", completedFile.GetFilename());
+		outfile.PrintLine("%s", completedFile.GetOrigname() ? completedFile.GetOrigname() : "");
 	}
 
 	outfile.PrintLine("%i", (int)nzbInfo->GetParameters()->size());
@@ -843,6 +844,8 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 		int parFile = 0;
 		char* hash16k = nullptr;
 		char* parSetId = nullptr;
+		char filenameBuf[1024];
+		char origName[1024];
 
 		if (formatVersion >= 49)
 		{
@@ -880,9 +883,16 @@ bool DiskState::LoadNzbInfo(NzbInfo* nzbInfo, Servers* servers, StateDiskFile& i
 			{
 				fileName++;
 			}
+			if (formatVersion >= 62)
+			{
+				if (!infile.ReadLine(filenameBuf, sizeof(filenameBuf))) goto error;
+				fileName = filenameBuf;
+				if (!infile.ReadLine(origName, sizeof(origName))) goto error;
+			}
 		}
 
-		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName, nullptr,
+		nzbInfo->GetCompletedFiles()->emplace_back(id, fileName,
+			Util::EmptyStr(origName) ? nullptr : origName,
 			(CompletedFile::EStatus)status, crc, (bool)parFile,
 			Util::EmptyStr(hash16k) ? nullptr : hash16k,
 			Util::EmptyStr(parSetId) ? nullptr : parSetId);
@@ -1027,6 +1037,7 @@ bool DiskState::SaveFileInfo(FileInfo* fileInfo, StateDiskFile& outfile, bool ar
 {
 	outfile.PrintLine("%s", fileInfo->GetSubject());
 	outfile.PrintLine("%s", fileInfo->GetFilename());
+	outfile.PrintLine("%s", fileInfo->GetOrigname() ? fileInfo->GetOrigname() : "");
 
 	outfile.PrintLine("%i,%i", (int)fileInfo->GetFilenameConfirmed(), (int)fileInfo->GetTime());
 
@@ -1089,6 +1100,12 @@ bool DiskState::LoadFileInfo(FileInfo* fileInfo, StateDiskFile& infile, int form
 
 	if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 	if (fileSummary) fileInfo->SetFilename(buf);
+
+	if (formatVersion >= 6)
+	{
+		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+		if (fileSummary) fileInfo->SetOrigname(Util::EmptyStr(buf) ? nullptr : buf);
+	}
 
 	if (formatVersion >= 5)
 	{
