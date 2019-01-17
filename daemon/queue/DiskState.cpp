@@ -1199,7 +1199,8 @@ bool DiskState::SaveFileState(FileInfo* fileInfo, StateDiskFile& outfile, bool c
 	outfile.PrintLine("%u,%u,%u,%u,%u,%u", High1, Low1, High2, Low2, High3, Low3);
 
 	outfile.PrintLine("%s", fileInfo->GetFilename());
-	outfile.PrintLine("%s", fileInfo->GetHash16k());
+	outfile.PrintLine("%s", fileInfo->GetHash16k() ? fileInfo->GetHash16k() : "");
+	outfile.PrintLine("%s", fileInfo->GetParSetId() ? fileInfo->GetParSetId() : "");
 	outfile.PrintLine("%i", (int)fileInfo->GetParFile());
 
 	SaveServerStats(fileInfo->GetServerStats(), outfile);
@@ -1258,6 +1259,11 @@ bool DiskState::LoadFileState(FileInfo* fileInfo, Servers* servers, StateDiskFil
 	{
 		if (!infile.ReadLine(buf, sizeof(buf))) goto error;
 		fileInfo->SetHash16k(*buf ? buf : nullptr);
+		if (formatVersion >= 6)
+		{
+			if (!infile.ReadLine(buf, sizeof(buf))) goto error;
+			fileInfo->SetParSetId(*buf ? buf : nullptr);
+		}
 		int parFile = 0;
 		if (infile.ScanLine("%i", &parFile) != 1) goto error;
 		fileInfo->SetParFile((bool)parFile);
