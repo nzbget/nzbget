@@ -1,7 +1,6 @@
 import pytest
 import subprocess
 import os
-import sys
 import time
 import shutil
 import base64
@@ -22,11 +21,11 @@ nzbget_bin = nzbget_srcdir + '/nzbget' + exe_ext
 nserv_datadir = nzbget_srcdir + '/tests/testdata/nserv.temp'
 
 sevenzip_bin = distutils.spawn.find_executable('7z')
-if sevenzip_bin == None:
+if sevenzip_bin is None:
 	sevenzip_bin = nzbget_srcdir + '/7z' + exe_ext
 
 par2_bin = distutils.spawn.find_executable('par2')
-if par2_bin == None:
+if par2_bin is None:
 	par2_bin = nzbget_srcdir + '/par2' + exe_ext
 
 has_failures = False
@@ -110,7 +109,7 @@ class Nzbget:
 					os.rename(nzbget_maindir, nzbget_maindir + '.old')
 					shutil.rmtree(nzbget_maindir + '.old')
 				completed = True
-			except:
+			except Exception:
 				if attempt > 20:
 					raise
 				attempt += 1
@@ -165,16 +164,16 @@ class Nzbget:
 		for x in range(0, 3):
 			try:
 				stat = self.api.status()
-			except:
+			except Exception:
 				time.sleep(0.5)
 
-		if stat == None:
+		if stat is None:
 			raise Exception('Could not start nzbget')
 		print('Started')
 
 	def append_nzb(self, nzb_name, nzb_content, unpack = None, dupekey = '', dupescore = 0, dupemode = 'FORCE', params = None):
 		nzbcontent64 = base64.standard_b64encode(nzb_content)
-		if params == None:
+		if params is None:
 			params = []
 		if unpack == True:
 			params.append(('*unpack:', 'yes'))

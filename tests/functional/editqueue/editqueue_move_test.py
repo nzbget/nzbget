@@ -1,7 +1,6 @@
 nzbget_options = ['SaveQueue=no']
 
 import os
-import time
 
 nzbget = None
 

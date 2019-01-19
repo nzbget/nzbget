@@ -1,8 +1,6 @@
 import os
 import shutil
 import subprocess
-import random
-import array
 import pytest
 
 
@@ -58,8 +56,8 @@ def create_test_file(bigdir, sevenzip_bin, sizemb, partmb):
 		os.makedirs(bigdir)
 
 	f = open(bigdir + '/' + str(sizemb) + 'mb.dat', 'wb')
-	for n in xrange(sizemb / partmb):
-		print('Writing block %i from %i' % (n + 1, sizemb / partmb))
+	for n in xrange(sizemb // partmb):
+		print('Writing block %i from %i' % (n + 1, sizemb // partmb))
 		f.write(os.urandom(partmb * 1024 * 1024))
 	f.close()
 

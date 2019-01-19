@@ -10,7 +10,6 @@ def prepare_testdata(request):
 
 	nserv_datadir = pytest.config.getini('nserv_datadir')
 	nzbget_bin = pytest.config.getini('nzbget_bin')
-	sevenzip_bin = pytest.config.getini('sevenzip_bin')
 
 	if not os.path.exists(nserv_datadir):
 		print('Creating nserv datadir')
