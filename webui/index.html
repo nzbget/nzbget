@@ -78,7 +78,7 @@
 	// prevent Android browsers from using of icon designed for iOS
 	if (window.navigator.userAgent.match(/iPhone/i) || window.navigator.userAgent.match(/iPad/i))
 	{
-		document.write('<link rel="apple-touch-icon" href="img/favicon-256x256-opaque.png">');
+		document.write('<link rel="apple-touch-icon" href="img/favicon-256x256-opaque.png">');  // lgtm [js/eval-like-call]
 	}
   </script>
   <!-- android -->
