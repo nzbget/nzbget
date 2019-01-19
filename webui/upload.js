@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -194,7 +194,6 @@ var Upload = (new function($)
 
 	function addFiles(selectedFiles)
 	{
-		var list = '';
 		for (var i = 0; i<selectedFiles.length; i++)
 		{
 			var file = selectedFiles[i];
@@ -223,7 +222,6 @@ var Upload = (new function($)
 	
 	this.renameClick = function(no)
 	{
-		var file = files[no];
 		var info = infos[no];
 		AddParamDialog.showModal(info, function() {
 			$('#AddDialog_File' + no).html(Util.formatNZBName(info.name + info.ext));

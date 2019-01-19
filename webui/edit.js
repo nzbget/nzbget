@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -131,12 +131,9 @@ var DownloadsEditDialog = (new function($)
 
 		curGroup = group;
 
-		var status = DownloadsUI.buildStatus(group);
-		var age = Util.formatAge(group.MinPostTime + UISettings.timeZoneCorrection*60*60);
 		var size = Util.formatSizeMB(group.FileSizeMB, group.FileSizeLo);
 		var remaining = Util.formatSizeMB(group.RemainingSizeMB-group.PausedSizeMB, group.RemainingSizeLo-group.PausedSizeLo);
 		var pausedSize = Util.formatSizeMB(group.PausedSizeMB, group.PausedSizeLo);
-		var estimated = group.Status === 'PAUSED' ? '' : (Status.status.DownloadRate > 0 ? Util.formatTimeHMS((group.RemainingSizeMB-group.PausedSizeMB)*1024/(Status.status.DownloadRate/1024)) : '');
 		var completion = group.SuccessArticles + group.FailedArticles > 0 ? Util.round0(group.SuccessArticles * 100.0 / (group.SuccessArticles +  group.FailedArticles)) + '%' : '--';
 		if (group.FailedArticles > 0 && completion === '100%')
 		{
@@ -1468,7 +1465,7 @@ var DownloadsSplitDialog = (new function($)
 
 /*** EDIT HISTORY DIALOG *************************************************************************/
 
-var HistoryEditDialog = (new function()
+var HistoryEditDialog = (new function($)
 {
 	'use strict'
 
@@ -1620,7 +1617,6 @@ var HistoryEditDialog = (new function()
 			{
 				completion = '99.9%';
 			}
-			var time = Util.formatTimeHMS(hist.DownloadTimeSec + hist.PostTotalTimeSec);
 
 			var table = '';
 			table += '<tr><td><a href="#" id="HistoryEdit_TimeStats" data-tab="HistoryEdit_TimeStatsTab" title="Size and time statistics">Total '+

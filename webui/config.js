@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ var Options = (new function($)
 
 	// Properties (public)
 	this.options;
-	this.postParamConfig;
+	this.postParamConfig = [];
 	this.categories = [];
 	this.restricted = false;
 
@@ -138,7 +138,7 @@ var Options = (new function($)
 
 		readWebSettings(config);
 
-		var serverConfig = readConfigTemplate(serverTemplateData[0].Template, undefined, HIDDEN_SECTIONS, '', '');
+		var serverConfig = readConfigTemplate(serverTemplateData[0].Template, undefined, HIDDEN_SECTIONS, '');
 		mergeValues(serverConfig.sections, serverValues);
 		config.push(serverConfig);
 
@@ -148,7 +148,7 @@ var Options = (new function($)
 			var scriptName = serverTemplateData[i].Name;
 			var scriptConfig = readConfigTemplate(serverTemplateData[i].Template, undefined, HIDDEN_SECTIONS, scriptName + ':');
 			scriptConfig.scriptName = scriptName;
-			scriptConfig.id = scriptName.replace(/ |\/|\\|[\.|$|\:|\*]/g, '_');
+			scriptConfig.id = Util.makeId(scriptName);
 			scriptConfig.name = scriptName.substr(0, scriptName.lastIndexOf('.')) || scriptName; // remove file extension
 			scriptConfig.name = scriptConfig.name.replace(/\\/, ' \\ ').replace(/\//, ' / ');
 			scriptConfig.shortName = shortScriptName(scriptName);
@@ -186,7 +186,7 @@ var Options = (new function($)
 			webValues.push({Name: optname, Value: value.toString()});
 		}
 
-		var webConfig = readConfigTemplate(webTemplate, undefined, '', '', '');
+		var webConfig = readConfigTemplate(webTemplate, undefined, '', '');
 		mergeValues(webConfig.sections, webValues);
 		config.push(webConfig);
 	}
@@ -216,7 +216,7 @@ var Options = (new function($)
 			{
 				var section = {};
 				section.name = line.substr(4, line.length - 8).trim();
-				section.id = (nameprefix + section.name).replace(/ |\/|\\|[\.|$|\:|\*]/g, '_');
+				section.id = Util.makeId(nameprefix + section.name);
 				section.options = [];
 				description = '';
 				section.hidden = !(hiddensections === undefined || (hiddensections.indexOf(section.name) == -1)) ||
@@ -253,7 +253,7 @@ var Options = (new function($)
 					// bad template file; create default section.
 					section = {};
 					section.name = 'OPTIONS';
-					section.id = (nameprefix + section.name).replace(/ |\/|[\.|$|\:|\*]/g, '_');
+					section.id = Util.makeId(nameprefix + section.name);
 					section.options = [];
 					description = '';
 					config.sections.push(section);
@@ -457,7 +457,7 @@ var Options = (new function($)
 			if (data[i].PostScript || data[i].QueueScript)
 			{
 				var scriptName = data[i].Name;
-				var sectionId = (scriptName + ':').replace(/ |\/|[\.|$|\:|\*]/g, '_');
+				var sectionId = Util.makeId(scriptName + ':');
 				var option = {};
 				option.name = scriptName + ':';
 				option.caption = shortScriptName(scriptName);
@@ -513,7 +513,6 @@ var Config = (new function($)
 
 	// State
 	var config = null;
-	var values;
 	var filterText = '';
 	var lastSection;
 	var reloadTime;
@@ -770,7 +769,7 @@ var Config = (new function($)
 			value = option.defvalue;
 		}
 
-		option.formId = (option.name.indexOf(':') == -1 ? 'S_' : '') + option.name.replace(/ |\/|\\|[\.|$|\:|\*]/g, '_');
+		option.formId = (option.name.indexOf(':') == -1 ? 'S_' : '') + Util.makeId(option.name);
 
 		var caption = option.caption;
 		if (section.multi)
@@ -960,7 +959,6 @@ var Config = (new function($)
 
 		if (!hasmore)
 		{
-			var nextid = hasoptions ? multiid + 1 : 1;
 			html += '<div class="' + section.id + '">';
 			html += '<button type="button" class="btn config-add ' + section.id + ' multiset" onclick="Config.addSet(\'' + setname + '\',\'' + section.id +
 			  '\')">Add ' + (hasoptions ? 'another ' : '') + setname + '</button>';
@@ -1161,7 +1159,6 @@ var Config = (new function($)
 
 	this.switchClick = function(control)
 	{
-		var state = $(control).val().toLowerCase();
 		$('.btn', $(control).parent()).removeClass('btn-primary');
 		$(control).addClass('btn-primary');
 
@@ -2668,7 +2665,6 @@ var RestoreSettingsDialog = (new function($)
 	{
 		e.preventDefault();
 
-		var	 selectedSections = [];
 		var checkedRows = $SectionTable.fasttable('checkedRows');
 		var checkedCount = $SectionTable.fasttable('checkedCount');
 		if (checkedCount === 0)
@@ -3002,7 +2998,6 @@ var UpdateDialog = (new function($)
 		e.preventDefault();
 		var kind = $(this).attr('data-kind');
 		var script = PackageInfo['install-script'];
-		var info = PackageInfo['install-' + kind + '-info'];
 
 		if (!script)
 		{
@@ -3138,7 +3133,6 @@ var ExecScriptDialog = (new function($)
 	var $ExecScriptDialog_Status;
 
 	// State
-	var logReceived = false;
 	var visible = false;
 
 	this.init = function()

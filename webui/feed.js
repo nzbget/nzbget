@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -410,7 +410,6 @@ var FeedFilterDialog = (new function($)
 	var $Splitter;
 	var $FilterInput;
 	var $FilterBlock;
-	var $FilterLines;
 	var $FilterNumbers;
 	var $PreviewBlock;
 	var $ModalBody;
@@ -454,7 +453,6 @@ var FeedFilterDialog = (new function($)
 		$('#FeedFilterDialog_Save').click(save);
 		$FilterInput = $('#FeedFilterDialog_FilterInput');
 		$FilterBlock = $('#FeedFilterDialog_FilterBlock');
-		$FilterLines = $('#FeedFilterDialog_FilterLines');
 		$FilterNumbers = $('#FeedFilterDialog_FilterNumbers');
 		$PreviewBlock = $('#FeedFilterDialog_PreviewBlock');
 		$ModalBody = $('.modal-body', $FeedFilterDialog);
@@ -896,7 +894,7 @@ var FeedFilterDialog = (new function($)
 		var lines = tarea.value.split("\n");
 
 		// calculate start/end
-		var startPos = 0, endPos = tarea.value.length;
+		var startPos = 0;
 		for (var x = 0; x < lines.length; x++)
 		{
 			if (x == lineNum)

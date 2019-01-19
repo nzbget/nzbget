@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -200,7 +200,6 @@
 			return this.each(function()
 			{
 				var $this = $(this);
-				var data = $this.data('fasttable');
 
 				// Namespacing FTW
 				$(window).unbind('.fasttable');
@@ -738,7 +737,6 @@
 	function toggleCheck(data, id)
 	{
 		var checkedRows = data.checkedRows;
-		var index = checkedRows[id];
 		if (checkedRows[id])
 		{
 			checkedRows[id] = undefined;
@@ -820,7 +818,6 @@
 
 	function validateChecks(data)
 	{
-		var filteredContent = data.filteredContent;
 		var checkedRows = data.checkedRows;
 		data.checkedRows = {}
 		data.checkedCount = 0;
@@ -1262,8 +1259,8 @@ function FastSearcher()
 	'use strict';
 
 	this.source;
-	this.len;
-	this.p;
+	this.len = 0;
+	this.p = 0;
 
 	this.initLexer = function(source)
 	{
@@ -1511,7 +1508,7 @@ function FastSearcher()
 		return value;
 	}
 
-	this.nameMap;
+	this.nameMap = undefined;
 	this.buildNameMap = function(data)
 	{
 		this.nameMap = {};

@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -654,7 +654,7 @@ var HistoryUI = (new function($)
 
 /*** HISTORY ACTION MENU *************************************************************************/
 
-var HistoryActionsMenu = (new function()
+var HistoryActionsMenu = (new function($)
 {
 	'use strict'
 

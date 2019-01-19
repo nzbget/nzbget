@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,6 @@ var Util = (new function($)
 
 	this.formatTimeLeft = function(sec)
 	{
-		var hms = '';
 		var days = Math.floor(sec / 86400);
 		var hours = Math.floor((sec % 86400) / 3600);
 		var minutes = Math.floor((sec / 60) % 60);
@@ -342,6 +341,11 @@ var Util = (new function($)
 	    return text.substring(text.length - substr.length, text.length) === substr;
 	}
 
+	this.makeId = function(text)
+	{
+		return text.replace(/ |\/|\\|\.|\$|\:|\*/g, '_');
+	}
+
 }(jQuery));
 
 
@@ -379,7 +383,6 @@ var TabDialog = (new function($)
 		var dialog = this;
 		var body = $('.modal-body', dialog);
 		var footer = $('.modal-footer', dialog);
-		var header = $('.modal-header', dialog);
 		dialog.css({margin: '', left: '', top: '', bottom: '', right: '', width: '', height: ''});
 		body.css({position: '', height: '', left: '', right: '', top: '', bottom: '', 'max-height': ''});
 		footer.css({position: '', left: '', right: '', bottom: ''});
@@ -400,7 +403,6 @@ var TabDialog = (new function($)
 		var header = $('.modal-header', dialog);
 
 		var oldBodyHeight = body.height();
-		var oldWinHeight = dialog.height();
 		var windowWidth = $(window).width();
 		var windowHeight = $(window).height();
 		var oldTabWidth = fromTab.width();
@@ -530,8 +532,8 @@ var RPC = (new function($)
 	'use strict';
 
 	// Properties
-	this.rpcUrl;
-	this.defaultFailureCallback;
+	this.rpcUrl = '';
+	this.defaultFailureCallback = undefined;
 	this.connectErrorMessage = 'Cannot establish connection';
 	this.safeMethods = [];
 	this.etags = {};

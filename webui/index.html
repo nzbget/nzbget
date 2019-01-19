@@ -2,7 +2,7 @@
 <!--
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -320,7 +320,7 @@
 						<th width="102px">Status</th>
 						<th class="dropafter-cell" id="DownloadsTable_Name"><a href="#" onclick="Downloads.sort('name', event)">Name</a></th>
 						<th id="DownloadsTable_Category"><a href="#" onclick="Downloads.sort('category', event)">Category</a></th>
-						<th class="dropafter-cell" width="30px" class="text-right"><a href="#" onclick="Downloads.sort('age', event)">Age</a></th>
+						<th class="dropafter-cell text-right" width="30px"><a href="#" onclick="Downloads.sort('age', event)">Age</a></th>
 						<th width="120px"><div style="float:left; position:relative; width:50%; text-align:left;"><a href="#"onclick="Downloads.sort('size', event)">Size</a></div><div style="float:right; position:relative; width:50%; text-align:right;"><a href="#" onclick="Downloads.sort('left', event)">Left</a></div></th>
 						<th width="60px" class="text-right">Est. Time</th>
 					</tr>
@@ -2934,10 +2934,6 @@
 
 <div id="Notif_Edit_Select" data-duration="2000" class="alert alert-error alert-center alert-center-small hide">
     <strong>Please select records first</strong>
-</div>
-
-<div id="Notif_History_Deleted" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">
-    <strong>Deleted</strong>
 </div>
 
 <div id="Notif_History_Cleared" data-duration="1000" class="alert alert-inverse alert-center alert-center-small hide">

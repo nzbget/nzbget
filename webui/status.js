@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,19 +38,14 @@ var Status = (new function($)
 	var $CHPauseDownload;
 	var $CHPausePostProcess;
 	var $CHPauseScan;
-	var $StatusPausing;
-	var $StatusPaused;
-	var $StatusLeft;
 	var $StatusSpeed;
 	var $StatusSpeedIcon;
 	var $StatusTimeIcon;
 	var $StatusTime;
-	var $StatusURLs;
 	var $PlayBlock;
 	var $PlayButton;
 	var $PauseButton;
 	var $PlayAnimation;
-	var $StatDialog;
 	var $ScheduledPauseDialog;
 	var $PauseForInput;
 	var $PauseForPreview;
@@ -79,15 +74,11 @@ var Status = (new function($)
 		$PlayButton = $('#PlayButton');
 		$PauseButton = $('#PauseButton');
 		$PlayAnimation = $('#PlayAnimation');
-		$StatusPausing = $('#StatusPausing');
-		$StatusPaused = $('#StatusPaused');
-		$StatusLeft = $('#StatusLeft');
 		$StatusSpeed = $('#StatusSpeed');
 		$StatusSpeedIcon = $('#StatusSpeedIcon');
 		$StatusTimeIcon = $('#StatusTimeIcon');
 		$StatusTime = $('#StatusTime');
-		$StatusURLs = $('#StatusURLs');
-		$ScheduledPauseDialog = $('#ScheduledPauseDialog')
+		$ScheduledPauseDialog = $('#ScheduledPauseDialog');
 		$PauseForInput = $('#PauseForInput');
 		$PauseForPreview = $('#PauseForPreview');
 
@@ -367,7 +358,7 @@ var Status = (new function($)
 		var parsedTime = parsable.match(/(\d+):?(\d+)?/) || [];
 		var primaryValue = parsedTime[1];
 		var secondaryValue = parsedTime[2];
-		var is12H = (indicator === 'am' || indicator === 'pm')
+		var is12H = (indicator === 'am' || indicator === 'pm');
 
 		if (indicator === undefined && secondaryValue === undefined)
 		{
@@ -532,7 +523,6 @@ var StatDialog = (new function($)
 	var $StatDialog_ArticleCache;
 	var $StatDialog_QueueScripts;
 	var $StatDialog_ChartBlock;
-	var $StatDialog_Server;
 	var $StatRangeDialog;
 	var $StatRangeDialog_PeriodInput;
 	var $StatDialog_Tooltip;
@@ -581,7 +571,6 @@ var StatDialog = (new function($)
 		$StatDialog_ArticleCache = $('#StatDialog_ArticleCache');
 		$StatDialog_QueueScripts = $('#StatDialog_QueueScripts');
 		$StatDialog_ChartBlock = $('#StatDialog_ChartBlock');
-		$StatDialog_Server = $('#StatDialog_Server');
 		$StatRangeDialog = $('#StatRangeDialog');
 		$StatRangeDialog_PeriodInput = $('#StatRangeDialog_PeriodInput');
 		$StatDialog_Tooltip = $('#StatDialog_Tooltip');
@@ -942,10 +931,8 @@ var StatDialog = (new function($)
 			var monDataLo = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 			// aggregate daily volumes into months
-			var len = servervolumes[serverNo].BytesPerDays.length;
 			var daySlot = servervolumes[serverNo].DaySlot;
 			var slotDelta = servervolumes[0].FirstDay - servervolumes[serverNo].FirstDay;
-			var startDate = new Date(monStartDate.getTime());
 			var day = 0;
 			for (var i = monStartIndex; i <= monEndIndex; i++, day++)
 			{
@@ -1209,10 +1196,8 @@ var StatDialog = (new function($)
 		monthListInitialized = true;
 
 		var firstDay = servervolumes[0].FirstDay;
-		var lastDay = firstDay + servervolumes[0].BytesPerDays.length - 1;
 		var curDay = firstDay + servervolumes[0].DaySlot;
 		var firstDt = dayToDate(firstDay);
-		var lastDt = dayToDate(lastDay);
 		var curDt = dayToDate(curDay);
 
 		var menu = $('#StatDialog_MonthMenu');

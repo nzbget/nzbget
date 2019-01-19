@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget. See <http://nzbget.net>.
  *
- * Copyright (C) 2012-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@ var Downloads = (new function($)
 	var notification = null;
 	var updateTabInfo;
 	var groups;
-	var urls;
 	var nameColumnWidth = null;
 	var cached = false;
 	var lastDownloadRate;
@@ -397,7 +396,6 @@ var Downloads = (new function($)
 	{
 		var checkedRows = $DownloadsTable.fasttable('checkedRows');
 
-		var hasIDs = false;
 		var checkedEditIDs = [];
 		for (var i = 0; i < groups.length; i++)
 		{
@@ -896,7 +894,7 @@ var DownloadsUI = (new function($)
 
 	this.buildPriority = function(group)
 	{
-		var priority = group.MaxPriority
+		var priority = group.MaxPriority;
 		var text;
 
 		if (priority >= 900) text = ' <div class="icon-circle-red" title="Force priority"></div>';
@@ -1122,7 +1120,7 @@ var DownloadsUI = (new function($)
 			var deletePark = $('#DownloadsDeleteConfirmDialog_DeletePark', dialog).is(':checked');
 			var deleteDirect = $('#DownloadsDeleteConfirmDialog_DeleteDirect', dialog).is(':checked');
 			var deleteDupe = $('#DownloadsDeleteConfirmDialog_DeleteDupe', dialog).is(':checked');
-			var deleteFinal = $('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).is(':checked');
+			//var deleteFinal = $('#DownloadsDeleteConfirmDialog_DeleteFinal', dialog).is(':checked');
 			var command = deletePark ? "GroupParkDelete" : (deleteDirect ? 'GroupDelete' : (deleteDupe ? 'GroupDupeDelete' : 'GroupFinalDelete'));
 			actionCallback(command);
 		}
@@ -1140,7 +1138,7 @@ var DownloadsUI = (new function($)
 
 /*** DOWNLOADS ACTION MENU *************************************************************************/
 
-var DownloadsActionsMenu = (new function()
+var DownloadsActionsMenu = (new function($)
 {
 	'use strict'
 
