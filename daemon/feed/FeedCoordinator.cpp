@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,37 +97,37 @@ void FeedCoordinator::Run()
 	time_t lastCleanup = 0;
 	while (!IsStopped())
 	{
-			// this code should not be called too often, once per second is OK
-			if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
-			{
-				Guard guard(m_downloadsMutex);
+		// this code should not be called too often, once per second is OK
+		if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
+		{
+			Guard guard(m_downloadsMutex);
 
-				time_t current = Util::CurrentTime();
-				if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
+			time_t current = Util::CurrentTime();
+			if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
+			{
+				m_force = false;
+				// check feed list and update feeds
+				for (FeedInfo* feedInfo : &m_feeds)
 				{
-					m_force = false;
-					// check feed list and update feeds
-					for (FeedInfo* feedInfo : &m_feeds)
+					if (((feedInfo->GetInterval() > 0 &&
+						 (feedInfo->GetNextUpdate() == 0 ||
+						  current >= feedInfo->GetNextUpdate() ||
+						  current < feedInfo->GetNextUpdate() - feedInfo->GetInterval() * 60)) ||
+						feedInfo->GetFetch()) &&
+						feedInfo->GetStatus() != FeedInfo::fsRunning)
 					{
-						if (((feedInfo->GetInterval() > 0 &&
-							 (feedInfo->GetNextUpdate() == 0 ||
-							  current >= feedInfo->GetNextUpdate() ||
-							  current < feedInfo->GetNextUpdate() - feedInfo->GetInterval() * 60)) ||
-							feedInfo->GetFetch()) &&
-							feedInfo->GetStatus() != FeedInfo::fsRunning)
-						{
-							StartFeedDownload(feedInfo, feedInfo->GetFetch());
-						}
-						else if (feedInfo->GetFetch())
-						{
-							m_force = true;
-						}
+						StartFeedDownload(feedInfo, feedInfo->GetFetch());
+					}
+					else if (feedInfo->GetFetch())
+					{
+						m_force = true;
 					}
 				}
 			}
+		}
 
-			CheckSaveFeeds();
-			ResetHangingDownloads();
+		CheckSaveFeeds();
+		ResetHangingDownloads();
 
 		if (abs(Util::CurrentTime() - lastCleanup) >= 60)
 		{
