@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1906,10 +1906,10 @@ void Options::MergeOldScriptOption(OptEntries* optEntries, const char* optname, 
 		{
 			for (OptEntry& opt : optEntries)
 			{
-				const char* optname = opt.GetName();
-				if (!strncasecmp(optname, "category", 8))
+				const char* catoptname = opt.GetName();
+				if (!strncasecmp(catoptname, "category", 8))
 				{
-					char* p = (char*)optname + 8;
+					char* p = (char*)catoptname + 8;
 					while (*p >= '0' && *p <= '9') p++;
 					if (p && (!strcasecmp(p, ".extensions")))
 					{

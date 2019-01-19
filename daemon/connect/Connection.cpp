@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -145,7 +145,7 @@ Connection::~Connection()
 {
 	debug("Destroying Connection");
 
-	Disconnect();
+	Connection::Disconnect();
 }
 
 void Connection::SetSuppressErrors(bool suppressErrors)

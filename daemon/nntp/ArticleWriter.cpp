@@ -126,11 +126,11 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 	if (!m_articleData.GetData())
 	{
 		bool directWrite = (g_Options->GetDirectWrite() || m_fileInfo->GetForceDirectWrite()) && m_format == Decoder::efYenc;
-		const char* filename = directWrite ? m_outputFilename : m_tempFilename;
-		if (!m_outFile.Open(filename, directWrite ? DiskFile::omReadWrite : DiskFile::omWrite))
+		const char* outFilename = directWrite ? m_outputFilename : m_tempFilename;
+		if (!m_outFile.Open(outFilename, directWrite ? DiskFile::omReadWrite : DiskFile::omWrite))
 		{
 			m_fileInfo->GetNzbInfo()->PrintMessage(Message::mkError,
-				"Could not %s file %s: %s", directWrite ? "open" : "create", filename,
+				"Could not %s file %s: %s", directWrite ? "open" : "create", outFilename,
 				*FileSystem::GetLastErrorMessage());
 			return false;
 		}

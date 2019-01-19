@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -915,25 +915,18 @@ void CommandLineParser::ParseFileIdList(int argc, const char* argv[], int optind
 			}
 
 			int editQueueIdCount = 0;
-			if (editQueueIdTo != 0)
+			if (editQueueIdFrom < editQueueIdTo)
 			{
-				if (editQueueIdFrom < editQueueIdTo)
-				{
-					editQueueIdCount = editQueueIdTo - editQueueIdFrom + 1;
-				}
-				else
-				{
-					editQueueIdCount = editQueueIdFrom - editQueueIdTo + 1;
-				}
+				editQueueIdCount = editQueueIdTo - editQueueIdFrom + 1;
 			}
 			else
 			{
-				editQueueIdCount = 1;
+				editQueueIdCount = editQueueIdFrom - editQueueIdTo + 1;
 			}
 
 			for (int i = 0; i < editQueueIdCount; i++)
 			{
-				if (editQueueIdFrom < editQueueIdTo || editQueueIdTo == 0)
+				if (editQueueIdFrom < editQueueIdTo)
 				{
 					m_editQueueIdList.push_back(editQueueIdFrom + i);
 				}

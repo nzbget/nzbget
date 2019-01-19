@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -497,7 +497,7 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 			}
 
 			printf("-----------------------------------\n");
-			printf("Groups: %i\n", downloadQueue->GetQueue()->size());
+			printf("Groups: %i\n", (int)downloadQueue->GetQueue()->size());
 			if (pattern)
 			{
 				printf("Matches: %i\n", matches);

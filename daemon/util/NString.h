@@ -150,6 +150,7 @@ public:
 	CharBuffer(int size) : m_size(size) { m_data = (char*)malloc(size); }
 	CharBuffer(CharBuffer& other) : m_data(other.m_data), m_size(other.m_size) { other.m_data = nullptr; other.m_size = 0; }
 	~CharBuffer() { free(m_data); }
+	CharBuffer& operator=(CharBuffer&& other) = delete;
 	int Size() { return m_size; }
 	void Reserve(int size) { m_data = (char*)realloc(m_data, size); m_size = size; }
 	void Clear() { free(m_data); m_data = nullptr; m_size = 0; }
