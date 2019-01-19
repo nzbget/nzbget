@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ class UrlDownloader;
 class UrlCoordinator : public Thread, public Observer, public Debuggable
 {
 public:
+	UrlCoordinator();
 	virtual ~UrlCoordinator();
 	virtual void Run();
 	virtual void Stop();
@@ -49,15 +50,26 @@ protected:
 private:
 	typedef std::list<UrlDownloader*> ActiveDownloads;
 
+	class DownloadQueueObserver: public Observer
+	{
+	public:
+		UrlCoordinator* m_owner;
+		virtual void Update(Subject* caller, void* aspect) { m_owner->DownloadQueueUpdate(caller, aspect); }
+	};
+
 	ActiveDownloads m_activeDownloads;
 	bool m_hasMoreJobs = true;
 	bool m_force;
+	Mutex m_pauseMutex;
+	ConditionVar m_pauseCond;
+	DownloadQueueObserver m_downloadQueueObserver;
 
 	NzbInfo* GetNextUrl(DownloadQueue* downloadQueue);
 	void StartUrlDownload(NzbInfo* nzbInfo);
 	void UrlCompleted(UrlDownloader* urlDownloader);
 	void ResetHangingDownloads();
 	void WaitJobs();
+	void DownloadQueueUpdate(Subject* caller, void* aspect);
 };
 
 extern UrlCoordinator* g_UrlCoordinator;
