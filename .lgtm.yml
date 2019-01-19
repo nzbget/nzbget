@@ -1,4 +1,17 @@
+# Configuration file for integration with http://lgtm.com
+
 path_classifiers:
   library:
+    # exclude these directories from default alerts report:
     - lib
     - webui/lib
+
+extraction:
+  cpp:
+    configure:
+      command:
+        # compile with tests to activate scanning of C++ sources for tests
+        - ./configure --enable-tests
+
+queries:
+  - exclude: js/incomplete-sanitization  # this one gives false positives only and nothing useful
