@@ -18,7 +18,6 @@ def prepare_queue(nzbget_instance):
 	nzbget.api.pausedownload()
 
 	nzbget_srcdir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-	testdata_dir = nzbget_srcdir + '/tests/testdata'
 	fullfilename = nzbget_srcdir + '/tests/testdata/nzbfile/plain.nzb'
 	in_file = open(fullfilename, 'r')
 	nzb_content = in_file.read()
