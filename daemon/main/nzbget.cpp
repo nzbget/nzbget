@@ -703,7 +703,7 @@ void NZBGet::DoMainLoop()
 		{
 			// wait for stop signal
 			Guard guard(m_stopMutex);
-			m_stopCond.Wait(m_stopMutex);
+			m_stopCond.Wait(m_stopMutex, [&]{ return m_stopped; });
 		}
 	}
 
@@ -909,6 +909,7 @@ void NZBGet::Stop(bool reload)
 	}
 
 	// trigger stop/reload signal
+	Guard guard(m_stopMutex);
 	m_stopped = true;
 	m_stopCond.NotifyAll();
 }
