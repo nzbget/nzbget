@@ -165,14 +165,17 @@ void FeedCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping UrlDownloads");
-	Guard guard(m_downloadsMutex);
-	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
-		feedDownloader->Stop();
+		Guard guard(m_downloadsMutex);
+		for (FeedDownloader* feedDownloader : m_activeDownloads)
+		{
+			feedDownloader->Stop();
+		}
 	}
 	debug("UrlDownloads are notified");
 
 	// Resume Run() to exit it
+	Guard guard(m_waitMutex);
 	m_waitCond.NotifyAll();
 }
 

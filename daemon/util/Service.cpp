@@ -84,7 +84,7 @@ void ServiceCoordinator::Run()
 		if (waitInterval > 0)
 		{
 			Guard guard(m_waitMutex);
-			m_waitCond.WaitFor(m_waitMutex, waitInterval * 1000, [&] { return m_workenUp; });
+			m_waitCond.WaitFor(m_waitMutex, waitInterval * 1000, [&] { return m_workenUp || IsStopped(); });
 			m_workenUp = false;
 		}
 	}
@@ -98,7 +98,6 @@ void ServiceCoordinator::Stop()
 	
 	// Resume Run() to exit it
 	Guard guard(m_waitMutex);
-	m_workenUp = true;
 	m_waitCond.NotifyAll();
 }
 

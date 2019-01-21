@@ -76,7 +76,7 @@ void PrePostProcessor::Run()
 		{
 			// Wait until we get the stop signal or more jobs in the queue
 			Guard guard(m_waitMutex);
-			m_waitCond.Wait(m_waitMutex, [&]{ return IsStopped() || m_queuedJobs; });
+			m_waitCond.Wait(m_waitMutex, [&]{ return m_queuedJobs || IsStopped(); });
 		}
 	}
 
@@ -154,25 +154,29 @@ void PrePostProcessor::WaitJobs()
 void PrePostProcessor::Stop()
 {
 	Thread::Stop();
-	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
 
-	for (NzbInfo* postJob : m_activeJobs)
 	{
-		if (postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread())
+		GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
+
+		for (NzbInfo* postJob : m_activeJobs)
 		{
-			postJob->GetPostInfo()->GetPostThread()->Stop();
+			if (postJob->GetPostInfo() && postJob->GetPostInfo()->GetPostThread())
+			{
+				postJob->GetPostInfo()->GetPostThread()->Stop();
+			}
+		}
+
+		for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
+		{
+			if (nzbInfo->GetUnpackThread())
+			{
+				((DirectUnpack*)nzbInfo->GetUnpackThread())->Stop(downloadQueue, nzbInfo);
+			}
 		}
 	}
 
-	for (NzbInfo* nzbInfo : downloadQueue->GetQueue())
-	{
-		if (nzbInfo->GetUnpackThread())
-		{
-			((DirectUnpack*)nzbInfo->GetUnpackThread())->Stop(downloadQueue, nzbInfo);
-		}
-	}
-
-	// Trigger the stop signal
+	// Resume Run() to exit it
+	Guard guard(m_waitMutex);
 	m_waitCond.NotifyAll();
 }
 
@@ -339,7 +343,6 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 		nzbInfo->PrintMessage(Message::mkInfo, "Queueing %s for post-processing", nzbInfo->GetName());
 
 		nzbInfo->EnterPostProcess();
-		m_queuedJobs++;
 
 		if (nzbInfo->GetParStatus() == NzbInfo::psNone &&
 			g_Options->GetParCheck() != Options::pcAlways &&
@@ -359,6 +362,8 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 		downloadQueue->SaveChanged();
 
 		// We have more jobs in the queue, notify Run()
+		Guard guard(m_waitMutex);
+		m_queuedJobs++;
 		m_waitCond.NotifyAll();
 	}
 	else
@@ -851,6 +856,7 @@ void PrePostProcessor::JobCompleted(DownloadQueue* downloadQueue, PostInfo* post
 		NzbCompleted(downloadQueue, nzbInfo, false);
 	}
 
+	Guard guard(m_waitMutex);
 	m_queuedJobs--;
 }
 

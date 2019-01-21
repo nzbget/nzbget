@@ -158,14 +158,17 @@ void UrlCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping UrlDownloads");
-	GuardedDownloadQueue guard = DownloadQueue::Guard();
-	for (UrlDownloader* urlDownloader : m_activeDownloads)
 	{
-		urlDownloader->Stop();
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		for (UrlDownloader* urlDownloader : m_activeDownloads)
+		{
+			urlDownloader->Stop();
+		}
 	}
 	debug("UrlDownloads are notified");
 
 	// Resume Run() to exit it
+	Guard guard(m_waitMutex);
 	m_waitCond.NotifyAll();
 }
 
