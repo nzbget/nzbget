@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,60 +73,72 @@ void Scanner::QueueData::SetNzbId(int nzbId)
 
 void Scanner::InitOptions()
 {
-	m_nzbDirInterval = g_Options->GetNzbDirInterval() * 1000;
+	m_nzbDirInterval = 1;
 	m_scanScript = ScanScriptController::HasScripts();
+}
+
+int Scanner::ServiceInterval()
+{
+	return m_requestedNzbDirScan ? Service::Now :
+		g_Options->GetNzbDirInterval() <= 0 ? Service::Sleep :
+		// g_Options->GetPauseScan() ? Service::Sleep :   // for that to work we need to react on changing of pause-state
+		m_nzbDirInterval;
 }
 
 void Scanner::ServiceWork()
 {
+	debug("Scanner service work");
+
 	if (!DownloadQueue::IsLoaded())
 	{
 		return;
 	}
 
+	m_nzbDirInterval = g_Options->GetNzbDirInterval();
+
+	if (g_Options->GetPauseScan() && !m_requestedNzbDirScan)
+	{
+		return;
+	}
+
+	debug("Scanner service work: doing work");
+
 	Guard guard(m_scanMutex);
 
-	if (m_requestedNzbDirScan ||
-		(!g_Options->GetPauseScan() && g_Options->GetNzbDirInterval() > 0 &&
-		 m_nzbDirInterval >= g_Options->GetNzbDirInterval() * 1000))
+	// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
+	bool checkStat = !m_requestedNzbDirScan;
+	m_requestedNzbDirScan = false;
+	m_scanning = true;
+	CheckIncomingNzbs(g_Options->GetNzbDir(), "", checkStat);
+	if (!checkStat && m_scanScript)
 	{
-		// check nzbdir every g_pOptions->GetNzbDirInterval() seconds or if requested
-		bool checkStat = !m_requestedNzbDirScan;
-		m_requestedNzbDirScan = false;
-		m_scanning = true;
+		// if immediate scan requested, we need second scan to process files extracted by scan-scripts
 		CheckIncomingNzbs(g_Options->GetNzbDir(), "", checkStat);
-		if (!checkStat && m_scanScript)
-		{
-			// if immediate scan requested, we need second scan to process files extracted by scan-scripts
-			CheckIncomingNzbs(g_Options->GetNzbDir(), "", checkStat);
-		}
-		m_scanning = false;
-		m_nzbDirInterval = 0;
-
-		// if NzbDirFileAge is less than NzbDirInterval (that can happen if NzbDirInterval
-		// is set for rare scans like once per hour) we make 4 scans:
-		//   - one additional scan is neccessary to check sizes of detected files;
-		//   - another scan is required to check files which were extracted by scan-scripts;
-		//   - third scan is needed to check sizes of extracted files.
-		if (g_Options->GetNzbDirInterval() > 0 && g_Options->GetNzbDirFileAge() < g_Options->GetNzbDirInterval())
-		{
-			int maxPass = m_scanScript ? 3 : 1;
-			if (m_pass < maxPass)
-			{
-				// scheduling another scan of incoming directory in NzbDirFileAge seconds.
-				m_nzbDirInterval = (g_Options->GetNzbDirInterval() - g_Options->GetNzbDirFileAge()) * 1000;
-				m_pass++;
-			}
-			else
-			{
-				m_pass = 0;
-			}
-		}
-
-		DropOldFiles();
-		m_queueList.clear();
 	}
-	m_nzbDirInterval += 200;
+	m_scanning = false;
+
+	// if NzbDirFileAge is less than NzbDirInterval (that can happen if NzbDirInterval
+	// is set for rare scans like once per hour) we make 4 scans:
+	//   - one additional scan is neccessary to check sizes of detected files;
+	//   - another scan is required to check files which were extracted by scan-scripts;
+	//   - third scan is needed to check sizes of extracted files.
+	if (g_Options->GetNzbDirInterval() > 0 && g_Options->GetNzbDirFileAge() < g_Options->GetNzbDirInterval())
+	{
+		int maxPass = m_scanScript ? 3 : 1;
+		if (m_pass < maxPass)
+		{
+			// scheduling another scan of incoming directory in NzbDirFileAge seconds.
+			m_nzbDirInterval = g_Options->GetNzbDirFileAge();
+			m_pass++;
+		}
+		else
+		{
+			m_pass = 0;
+		}
+	}
+
+	DropOldFiles();
+	m_queueList.clear();
 }
 
 /**
@@ -486,6 +498,7 @@ void Scanner::ScanNzbDir(bool syncMode)
 		Guard guard(m_scanMutex);
 		m_scanning = true;
 		m_requestedNzbDirScan = true;
+		WakeUp();
 	}
 
 	while (syncMode && (m_scanning || m_requestedNzbDirScan))
@@ -495,7 +508,7 @@ void Scanner::ScanNzbDir(bool syncMode)
 }
 
 Scanner::EAddStatus Scanner::AddExternalFile(const char* nzbName, const char* category,
-	int priority, const char* dupeKey, int dupeScore,  EDupeMode dupeMode,
+	int priority, const char* dupeKey, int dupeScore, EDupeMode dupeMode,
 	NzbParameterList* parameters, bool addTop, bool addPaused, NzbInfo* urlInfo,
 	const char* fileName, const char* buffer, int bufSize, int* nzbId)
 {

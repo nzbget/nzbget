@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,18 +26,23 @@
 #include "Util.h"
 #include "FileSystem.h"
 
+int DiskService::ServiceInterval()
+{
+	return m_waitingRequiredDir ? 1 :
+		g_Options->GetDiskSpace() <= 0 ? Service::Sleep :
+		// g_StatMeter->GetStandBy() ? Service::Sleep :  // for that to work we need to react on changing of idle-state
+		1;
+}
+
 void DiskService::ServiceWork()
 {
-	m_interval++;
-	if (m_interval == 5)
+	debug("Disk service work");
+
+	if (!g_Options->GetPauseDownload() &&
+		g_Options->GetDiskSpace() > 0 && !g_StatMeter->GetStandBy())
 	{
-		if (!g_Options->GetPauseDownload() &&
-			g_Options->GetDiskSpace() > 0 && !g_StatMeter->GetStandBy())
-		{
-			// check free disk space every 1 second
-			CheckDiskSpace();
-		}
-		m_interval = 0;
+		// check free disk space every 1 second
+		CheckDiskSpace();
 	}
 
 	if (m_waitingRequiredDir)
@@ -48,6 +53,8 @@ void DiskService::ServiceWork()
 
 void DiskService::CheckDiskSpace()
 {
+	debug("Disk service work: check disk space");
+
 	int64 freeSpace = FileSystem::FreeDiskSize(g_Options->GetDestDir());
 	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 	{
@@ -68,6 +75,8 @@ void DiskService::CheckDiskSpace()
 
 void DiskService::CheckRequiredDir()
 {
+	debug("Disk service work: check required dir");
+
 	if (!Util::EmptyStr(g_Options->GetRequiredDir()))
 	{
 		bool allExist = true;

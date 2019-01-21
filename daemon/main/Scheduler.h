@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2008-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ public:
 	void AddTask(std::unique_ptr<Task> task);
 
 protected:
-	virtual int ServiceInterval() { return 1000; }
+	virtual int ServiceInterval() { return m_serviceInterval; }
 	virtual void ServiceWork();
 
 private:
@@ -84,6 +84,7 @@ private:
 	bool m_serverChanged;
 	ServerStatusList m_serverStatusList;
 	bool m_firstChecked = false;
+	int m_serviceInterval = 1;
 
 	void ExecuteTask(Task* task);
 	void CheckTasks();
@@ -93,6 +94,7 @@ private:
 	void FetchFeed(const char* feedList);
 	void CheckScheduledResume();
 	void FirstCheck();
+	void ScheduleNextWork();
 };
 
 #endif

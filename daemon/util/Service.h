@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,12 +28,16 @@ class Service
 public:
 	Service();
 
+	static const int Now = 0;
+	static const int Sleep = -1;
+
 protected:
 	virtual int ServiceInterval() = 0;
 	virtual void ServiceWork() = 0;
+	void WakeUp();
 
 private:
-	int m_lastTick = 0;
+	time_t m_lastWork = 0;
 
 	friend class ServiceCoordinator;
 };
@@ -46,11 +50,16 @@ public:
 	ServiceCoordinator();
 	virtual ~ServiceCoordinator();
 	virtual void Run();
+	virtual void Stop();
 
 private:
 	ServiceList m_services;
+	Mutex m_waitMutex;
+	ConditionVar m_waitCond;
+	bool m_workenUp = false;
 
 	void RegisterService(Service* service);
+	void WakeUp();
 
 	friend class Service;
 };

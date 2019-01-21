@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2008-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,12 +51,32 @@ void Scheduler::FirstCheck()
 	CheckTasks();
 }
 
+void Scheduler::ScheduleNextWork()
+{
+	// Ideally we should calculate wait time until next scheduler task or until resume time.
+	// The first isn't trivial and the second requires watching/reaction on changed scheduled resume time.
+	// We do it simpler instead: check once per minute, when seconds are changing from 59 to 00.
+
+	time_t curTime = Util::CurrentTime();
+	tm sched;
+	gmtime_r(&curTime, &sched);
+	sched.tm_min++;
+	sched.tm_sec = 0;
+	time_t nextMinute = Util::Timegm(&sched);
+
+	m_serviceInterval = nextMinute - curTime;
+}
+
 void Scheduler::ServiceWork()
 {
+	debug("Scheduler service work");
+
 	if (!DownloadQueue::IsLoaded())
 	{
 		return;
 	}
+
+	debug("Scheduler service work: doing work");
 
 	if (!m_firstChecked)
 	{
@@ -68,6 +88,7 @@ void Scheduler::ServiceWork()
 	m_executeProcess = true;
 	CheckTasks();
 	CheckScheduledResume();
+	ScheduleNextWork();
 }
 
 void Scheduler::CheckTasks()

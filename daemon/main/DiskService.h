@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2015-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2015-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,11 +26,10 @@
 class DiskService : public Service
 {
 protected:
-	virtual int ServiceInterval() { return 200; }
+	virtual int ServiceInterval();
 	virtual void ServiceWork();
 
 private:
-	int m_interval = 0;
 	bool m_waitingRequiredDir = true;
 	bool m_waitingReported = false;
 
