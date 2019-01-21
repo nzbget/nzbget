@@ -117,8 +117,8 @@ void UrlCoordinator::Run()
 
 		if (!m_hasMoreJobs && !IsStopped())
 		{
-			Guard guard(m_pauseMutex);
-			m_pauseCond.Wait(m_pauseMutex, [&] { return m_hasMoreJobs || IsStopped(); });
+			Guard guard(m_waitMutex);
+			m_waitCond.Wait(m_waitMutex, [&] { return m_hasMoreJobs || IsStopped(); });
 		}
 		else
 		{
@@ -166,7 +166,7 @@ void UrlCoordinator::Stop()
 	debug("UrlDownloads are notified");
 
 	// Resume Run() to exit it
-	m_pauseCond.NotifyAll();
+	m_waitCond.NotifyAll();
 }
 
 void UrlCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
@@ -177,9 +177,9 @@ void UrlCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
 	if (queueAspect->action == DownloadQueue::eaUrlAdded)
 	{
 		// Resume Run()
-		Guard guard(m_pauseMutex);
+		Guard guard(m_waitMutex);
 		m_hasMoreJobs = true;
-		m_pauseCond.NotifyAll();
+		m_waitCond.NotifyAll();
 	}
 }
 

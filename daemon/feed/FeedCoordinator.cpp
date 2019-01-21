@@ -138,8 +138,8 @@ void FeedCoordinator::Run()
 			lastCleanup = Util::CurrentTime();
 		}
 
-		Guard guard(m_pauseMutex);
-		m_pauseCond.WaitFor(m_pauseMutex, 1000, [&]{ return IsStopped(); });
+		Guard guard(m_waitMutex);
+		m_waitCond.WaitFor(m_waitMutex, 1000, [&]{ return IsStopped(); });
 	}
 
 	// waiting for downloads
@@ -173,7 +173,7 @@ void FeedCoordinator::Stop()
 	debug("UrlDownloads are notified");
 
 	// Resume Run() to exit it
-	m_pauseCond.NotifyAll();
+	m_waitCond.NotifyAll();
 }
 
 void FeedCoordinator::ResetHangingDownloads()

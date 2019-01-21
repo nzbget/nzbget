@@ -60,8 +60,8 @@ private:
 	ActiveDownloads m_activeDownloads;
 	bool m_hasMoreJobs = true;
 	bool m_force;
-	Mutex m_pauseMutex;
-	ConditionVar m_pauseCond;
+	Mutex m_waitMutex;
+	ConditionVar m_waitCond;
 	DownloadQueueObserver m_downloadQueueObserver;
 
 	NzbInfo* GetNextUrl(DownloadQueue* downloadQueue);

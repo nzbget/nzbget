@@ -75,8 +75,8 @@ void PrePostProcessor::Run()
 		else
 		{
 			// Wait until we get the stop signal or more jobs in the queue
-			Guard guard(m_pauseMutex);
-			m_pauseCond.Wait(m_pauseMutex, [&]{ return IsStopped() || m_queuedJobs; });
+			Guard guard(m_waitMutex);
+			m_waitCond.Wait(m_waitMutex, [&]{ return IsStopped() || m_queuedJobs; });
 		}
 	}
 
@@ -173,7 +173,7 @@ void PrePostProcessor::Stop()
 	}
 
 	// Trigger the stop signal
-	m_pauseCond.NotifyAll();
+	m_waitCond.NotifyAll();
 }
 
 /**
@@ -359,7 +359,7 @@ void PrePostProcessor::NzbDownloaded(DownloadQueue* downloadQueue, NzbInfo* nzbI
 		downloadQueue->SaveChanged();
 
 		// We have more jobs in the queue, notify Run()
-		m_pauseCond.NotifyAll();
+		m_waitCond.NotifyAll();
 	}
 	else
 	{

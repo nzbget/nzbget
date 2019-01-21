@@ -109,8 +109,8 @@ private:
 	bool m_force = false;
 	bool m_save = false;
 	FeedCache m_feedCache;
-	Mutex m_pauseMutex;
-	ConditionVar m_pauseCond;
+	Mutex m_waitMutex;
+	ConditionVar m_waitCond;
 
 	void StartFeedDownload(FeedInfo* feedInfo, bool force);
 	void FeedCompleted(FeedDownloader* feedDownloader);

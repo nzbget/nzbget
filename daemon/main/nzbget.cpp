@@ -224,8 +224,8 @@ private:
 	bool m_reloading = false;
 	bool m_daemonized = false;
 	bool m_stopped = false;
-	Mutex m_stopMutex;
-	ConditionVar m_stopCond;
+	Mutex m_waitMutex;
+	ConditionVar m_waitCond;
 
 	void Init();
 	void Final();
@@ -702,8 +702,8 @@ void NZBGet::DoMainLoop()
 		if (m_options->GetServerMode() && !m_stopped)
 		{
 			// wait for stop signal
-			Guard guard(m_stopMutex);
-			m_stopCond.Wait(m_stopMutex, [&]{ return m_stopped; });
+			Guard guard(m_waitMutex);
+			m_waitCond.Wait(m_waitMutex, [&]{ return m_stopped; });
 		}
 	}
 
@@ -909,9 +909,9 @@ void NZBGet::Stop(bool reload)
 	}
 
 	// trigger stop/reload signal
-	Guard guard(m_stopMutex);
+	Guard guard(m_waitMutex);
 	m_stopped = true;
-	m_stopCond.NotifyAll();
+	m_waitCond.NotifyAll();
 }
 
 void NZBGet::PrintOptions()
