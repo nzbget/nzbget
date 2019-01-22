@@ -71,6 +71,9 @@ void QueueCoordinator::CoordinatorDownloadQueue::Save()
 
 	m_wantSave = false;
 	m_historyChanged = false;
+
+	// queue has changed, time to wake up if in standby
+	m_owner->WakeUp();
 }
 
 void QueueCoordinator::CoordinatorDownloadQueue::SaveChanged()
@@ -244,18 +247,20 @@ void QueueCoordinator::Run()
 		}
 
 		// sleep longer in StandBy
-		int sleepInterval = downloadStarted ? 0 : standBy ? 100 : 5;
-		usleep(sleepInterval * 1000);
-
-		if (!standBy)
+		if (standBy)
 		{
+			Util::SetStandByMode(standBy);
+			Guard guard(m_waitMutex);
+			m_waitCond.WaitFor(m_waitMutex, 500, [&]{ return m_hasMoreJobs || IsStopped(); });
+		}
+		else
+		{
+			int sleepInterval = downloadStarted ? 0 : 5;
+			usleep(sleepInterval * 1000);
 			g_StatMeter->AddSpeedReading(0);
 		}
 
-		Util::SetStandByMode(standBy);
-
-		time_t currentTime = Util::CurrentTime();
-		if (lastReset != currentTime)
+		if (lastReset != Util::CurrentTime())
 		{
 			// this code should not be called too often, once per second is OK
 			g_ServerPool->CloseUnusedConnections();
@@ -267,7 +272,8 @@ void QueueCoordinator::Run()
 			g_StatMeter->IntervalCheck();
 			g_Log->IntervalCheck();
 			AdjustDownloadsLimit();
-			lastReset = currentTime;
+			Util::SetStandByMode(standBy);
+			lastReset = Util::CurrentTime();
 		}
 	}
 
@@ -277,6 +283,15 @@ void QueueCoordinator::Run()
 	SaveAllFileState();
 
 	debug("Exiting QueueCoordinator-loop");
+}
+
+void QueueCoordinator::WakeUp()
+{
+	debug("Waking up QueueCoordinator");
+	// Resume Run()
+	Guard guard(m_waitMutex);
+	m_hasMoreJobs = true;
+	m_waitCond.NotifyAll();
 }
 
 void QueueCoordinator::WaitJobs()
@@ -465,12 +480,18 @@ void QueueCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping ArticleDownloads");
-	GuardedDownloadQueue guard = DownloadQueue::Guard();
-	for (ArticleDownloader* articleDownloader : m_activeDownloads)
 	{
-		articleDownloader->Stop();
+		GuardedDownloadQueue guard = DownloadQueue::Guard();
+		for (ArticleDownloader* articleDownloader : m_activeDownloads)
+		{
+			articleDownloader->Stop();
+		}
 	}
 	debug("ArticleDownloads are notified");
+
+	// Resume Run() to exit it
+	Guard guard(m_waitMutex);
+	m_waitCond.NotifyAll();
 }
 
 /*
