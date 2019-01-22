@@ -22,6 +22,7 @@
 #include "nzbget.h"
 #include "QueueCoordinator.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "ServerPool.h"
 #include "ArticleDownloader.h"
 #include "ArticleWriter.h"
@@ -211,7 +212,7 @@ void QueueCoordinator::Run()
 				downloadsChecked = true;
 				m_hasMoreJobs = hasMoreArticles || articeDownloadsRunning;
 				if (hasMoreArticles && !IsStopped() && (int)m_activeDownloads.size() < m_downloadsLimit &&
-					(!g_Options->GetTempPauseDownload() || fileInfo->GetExtraPriority()))
+					(!g_WorkState->GetTempPauseDownload() || fileInfo->GetExtraPriority()))
 				{
 					StartArticleDownload(fileInfo, articleInfo, connection);
 					articeDownloadsRunning = true;
@@ -526,7 +527,7 @@ bool QueueCoordinator::GetNextArticle(DownloadQueue* downloadQueue, FileInfo* &f
 			bool nzbPaused = nzbInfo->GetFileList()->size() - nzbInfo->GetPausedFileCount() <= 0;
 
 			if ((!fileInfo || nzbHigherPriority) && !nzbPaused &&
-				(!(g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) || nzbInfo->GetForcePriority()))
+				(!(g_WorkState->GetPauseDownload() || g_WorkState->GetQuotaReached()) || nzbInfo->GetForcePriority()))
 			{
 				for (FileInfo* fileInfo1 : nzbInfo->GetFileList())
 				{
@@ -1022,9 +1023,9 @@ void QueueCoordinator::LogDebugInfo()
 	downloadQueue->CalcRemainingSize(&remaining, &remainingForced);
 	info("     Remaining: %.1f MB, Forced: %.1f MB", remaining / 1024.0 / 1024.0, remainingForced / 1024.0 / 1024.0);
 	info("     Download: %s, Post-process: %s, Scan: %s",
-		 (g_Options->GetPauseDownload() ? "paused" : g_Options->GetTempPauseDownload() ? "temp-paused" : "active"),
-		 (g_Options->GetPausePostProcess() ? "paused" : "active"),
-		 (g_Options->GetPauseScan() ? "paused" : "active"));
+		 (g_WorkState->GetPauseDownload() ? "paused" : g_WorkState->GetTempPauseDownload() ? "temp-paused" : "active"),
+		 (g_WorkState->GetPausePostProcess() ? "paused" : "active"),
+		 (g_WorkState->GetPauseScan() ? "paused" : "active"));
 
 	info("   ---------- QueueCoordinator");
 	info("    Active Downloads: %i, Limit: %i", (int)m_activeDownloads.size(), m_downloadsLimit);

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "Log.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "FeedCoordinator.h"
 #include "StatMeter.h"
 #include "WinConsole.h"
@@ -29,14 +30,11 @@
 #include "Util.h"
 #include "resource.h"
 
-extern Options* g_Options;
 extern char* (*g_Arguments)[];
 extern int g_ArgumentCount;
 extern void ExitProc();
 extern void Reload();
 extern WinConsole* g_WinConsole;
-extern FeedCoordinator* g_FeedCoordinator;
-extern StatMeter* g_StatMeter;
 
 #define UM_TRAYICON (WM_USER + 1)
 #define UM_QUIT (WM_USER + 2)
@@ -290,10 +288,10 @@ LRESULT WinConsole::TrayWndProc(HWND hwndWin, UINT uMsg, WPARAM wParam, LPARAM l
 		case UM_TRAYICON:
 			if (lParam == WM_LBUTTONUP && !m_doubleClick)
 			{
-				g_Options->SetPauseDownload(!g_Options->GetPauseDownload());
-				g_Options->SetPausePostProcess(g_Options->GetPauseDownload());
-				g_Options->SetPauseScan(g_Options->GetPauseDownload());
-				g_Options->SetResumeTime(0);
+				g_WorkState->SetPauseDownload(!g_WorkState->GetPauseDownload());
+				g_WorkState->SetPausePostProcess(g_WorkState->GetPauseDownload());
+				g_WorkState->SetPauseScan(g_WorkState->GetPauseDownload());
+				g_WorkState->SetResumeTime(0);
 				UpdateTrayIcon();
 			}
 			else if (lParam == WM_LBUTTONDBLCLK && m_doubleClick)
@@ -761,7 +759,7 @@ void WinConsole::UpdateTrayIcon()
 	strncpy(oldTip, m_iconData->szTip, sizeof(m_iconData->szTip));
 	oldTip[200-1] = '\0';
 
-	if (g_Options->GetPauseDownload())
+	if (g_WorkState->GetPauseDownload())
 	{
 		m_iconData->hIcon = m_pausedIcon;
 		strncpy(m_iconData->szTip, "NZBGet - paused", sizeof(m_iconData->szTip));
@@ -956,8 +954,8 @@ void WinConsole::ResetFactoryDefaults()
 	BString<1024> path;
 	CString errmsg;
 
-	g_Options->SetPauseDownload(true);
-	g_Options->SetPausePostProcess(true);
+	g_WorkState->SetPauseDownload(true);
+	g_WorkState->SetPausePostProcess(true);
 
 	char commonAppDataPath[MAX_PATH];
 	SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, commonAppDataPath);

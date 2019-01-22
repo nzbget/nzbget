@@ -203,6 +203,7 @@
     <ClCompile Include="daemon\main\Maintenance.cpp" />
     <ClCompile Include="daemon\main\nzbget.cpp" />
     <ClCompile Include="daemon\main\Options.cpp" />
+    <ClCompile Include="daemon\main\WorkState.cpp" />
     <ClCompile Include="daemon\main\Scheduler.cpp" />
     <ClCompile Include="daemon\main\StackTrace.cpp" />
     <ClCompile Include="daemon\nntp\ArticleDownloader.cpp" />
@@ -308,6 +309,7 @@
     <ClInclude Include="daemon\main\Maintenance.h" />
     <ClInclude Include="daemon\main\nzbget.h" />
     <ClInclude Include="daemon\main\Options.h" />
+    <ClInclude Include="daemon\main\WorkState.h" />
     <ClInclude Include="daemon\main\Scheduler.h" />
     <ClInclude Include="daemon\main\StackTrace.h" />
     <ClInclude Include="daemon\nntp\ArticleDownloader.h" />

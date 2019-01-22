@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "Log.h"
 #include "NzbFile.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "CommandLineParser.h"
 #include "ScriptConfig.h"
 #include "Thread.h"
@@ -71,6 +72,7 @@ void RunMain();
 // Globals
 Log* g_Log;
 Options* g_Options;
+WorkState* g_WorkState;
 ServerPool* g_ServerPool;
 QueueCoordinator* g_QueueCoordinator;
 UrlCoordinator* g_UrlCoordinator;
@@ -193,6 +195,7 @@ private:
 	// globals
 	std::unique_ptr<Log> m_log;
 	std::unique_ptr<Options> m_options;
+	std::unique_ptr<WorkState> m_workState;
 	std::unique_ptr<ServerPool> m_serverPool;
 	std::unique_ptr<QueueCoordinator> m_queueCoordinator;
 	std::unique_ptr<UrlCoordinator> m_urlCoordinator;
@@ -390,6 +393,9 @@ void NZBGet::CreateGlobals()
 	m_commandScriptLog = std::make_unique<CommandScriptLog>();
 	g_CommandScriptLog = m_commandScriptLog.get();
 
+	m_workState = std::make_unique<WorkState>();
+	g_WorkState = m_workState.get();
+
 	m_scheduler = std::make_unique<Scheduler>();
 
 	m_diskService = std::make_unique<DiskService>();
@@ -415,7 +421,8 @@ void NZBGet::BootConfig()
 		m_commandLineParser->GetNoConfig(), (Options::CmdOptList*)m_commandLineParser->GetOptionList(), this);
 	m_options->SetRemoteClientMode(m_commandLineParser->GetRemoteClientMode());
 	m_options->SetServerMode(m_commandLineParser->GetServerMode());
-	m_options->SetPauseDownload(m_commandLineParser->GetPauseDownload());
+	m_workState->SetPauseDownload(m_commandLineParser->GetPauseDownload());
+	m_workState->SetSpeedLimit(g_Options->GetDownloadRate());
 
 	m_log->InitOptions();
 
@@ -427,9 +434,9 @@ void NZBGet::BootConfig()
 		m_commandLineParser->GetClientOperation() == CommandLineParser::opClientNoOperation)
 	{
 		info("Pausing all activities due to errors in configuration");
-		m_options->SetPauseDownload(true);
-		m_options->SetPausePostProcess(true);
-		m_options->SetPauseScan(true);
+		m_workState->SetPauseDownload(true);
+		m_workState->SetPausePostProcess(true);
+		m_workState->SetPauseScan(true);
 	}
 
 	m_serverPool->SetTimeout(m_options->GetArticleTimeout());

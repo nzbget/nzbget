@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "FeedCoordinator.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "WebDownloader.h"
 #include "Util.h"
 #include "FileSystem.h"
@@ -98,7 +99,7 @@ void FeedCoordinator::Run()
 	while (!IsStopped())
 	{
 		// this code should not be called too often, once per second is OK
-		if (!g_Options->GetPauseDownload() || m_force || g_Options->GetUrlForce())
+		if (!g_WorkState->GetPauseDownload() || m_force || g_Options->GetUrlForce())
 		{
 			Guard guard(m_downloadsMutex);
 

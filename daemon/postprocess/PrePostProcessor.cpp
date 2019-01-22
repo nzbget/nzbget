@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "PrePostProcessor.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "Log.h"
 #include "HistoryCoordinator.h"
 #include "DupeCoordinator.h"
@@ -59,7 +60,7 @@ void PrePostProcessor::Run()
 
 	while (!IsStopped())
 	{
-		if (g_Options->GetTempPausePostprocess())
+		if (g_WorkState->GetTempPausePostprocess())
 		{
 			// Postprocess is paused: just wait and loop
 			usleep(200 * 1000);
@@ -610,7 +611,7 @@ NzbInfo* PrePostProcessor::PickNextJob(DownloadQueue* downloadQueue, bool allowP
 			!g_QueueScriptCoordinator->HasJob(nzbInfo1->GetId(), nullptr) &&
 			nzbInfo1->GetDirectUnpackStatus() != NzbInfo::nsRunning &&
 			(!nzbInfo || nzbInfo1->GetPriority() > nzbInfo->GetPriority()) &&
-			(!g_Options->GetPausePostProcess() || nzbInfo1->GetForcePriority()) &&
+			(!g_WorkState->GetPausePostProcess() || nzbInfo1->GetForcePriority()) &&
 			(allowPar || !nzbInfo1->GetPostInfo()->GetNeedParCheck()) &&
 			(std::find(m_activeJobs.begin(), m_activeJobs.end(), nzbInfo1) == m_activeJobs.end()) &&
 			nzbInfo1->IsDownloadCompleted(true))
@@ -644,7 +645,7 @@ void PrePostProcessor::CheckPostQueue()
 
 		PostInfo* postInfo = postJob->GetPostInfo();
 		if (postInfo->GetStage() == PostInfo::ptQueued &&
-			(!g_Options->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
+			(!g_WorkState->GetPausePostProcess() || postInfo->GetNzbInfo()->GetForcePriority()))
 		{
 			StartJob(downloadQueue, postInfo, allowPar);
 			CheckRequestPar(downloadQueue);
@@ -892,16 +893,16 @@ void PrePostProcessor::UpdatePauseState()
 		}
 	}
 
-	if (needPause && !g_Options->GetTempPauseDownload())
+	if (needPause && !g_WorkState->GetTempPauseDownload())
 	{
 		info("Pausing download before post-processing");
 	}
-	else if (!needPause && g_Options->GetTempPauseDownload())
+	else if (!needPause && g_WorkState->GetTempPauseDownload())
 	{
 		info("Unpausing download after post-processing");
 	}
 
-	g_Options->SetTempPauseDownload(needPause);
+	g_WorkState->SetTempPauseDownload(needPause);
 }
 
 bool PrePostProcessor::EditList(DownloadQueue* downloadQueue, IdList* idList,

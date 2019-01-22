@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -300,6 +300,7 @@ public:
 	bool GetDirectRename() { return m_directRename; }
 	bool GetReorderFiles() { return m_reorderFiles; }
 	EFileNaming GetFileNaming() { return m_fileNaming; }
+	int GetDownloadRate() const { return m_downloadRate; }
 
 	Categories* GetCategories() { return &m_categories; }
 	Category* FindCategory(const char* name, bool searchAliases) { return m_categories.FindCategory(name, searchAliases); }
@@ -311,24 +312,6 @@ public:
 	bool GetDaemonMode() { return m_daemonMode; }
 	void SetRemoteClientMode(bool remoteClientMode) { m_remoteClientMode = remoteClientMode; }
 	bool GetRemoteClientMode() { return m_remoteClientMode; }
-	void SetPauseDownload(bool pauseDownload) { m_pauseDownload = pauseDownload; }
-	bool GetPauseDownload() const { return m_pauseDownload; }
-	void SetPausePostProcess(bool pausePostProcess) { m_pausePostProcess = pausePostProcess; }
-	bool GetPausePostProcess() const { return m_pausePostProcess; }
-	void SetPauseScan(bool pauseScan) { m_pauseScan = pauseScan; }
-	bool GetPauseScan() const { return m_pauseScan; }
-	void SetTempPauseDownload(bool tempPauseDownload) { m_tempPauseDownload = tempPauseDownload; }
-	bool GetTempPauseDownload() const { return m_tempPauseDownload; }
-	bool GetTempPausePostprocess() const { return m_tempPausePostprocess; }
-	void SetTempPausePostprocess(bool tempPausePostprocess) { m_tempPausePostprocess = tempPausePostprocess; }
-	void SetDownloadRate(int rate) { m_downloadRate = rate; }
-	int GetDownloadRate() const { return m_downloadRate; }
-	void SetResumeTime(time_t resumeTime) { m_resumeTime = resumeTime; }
-	time_t GetResumeTime() const { return m_resumeTime; }
-	void SetLocalTimeOffset(int localTimeOffset) { m_localTimeOffset = localTimeOffset; }
-	int GetLocalTimeOffset() { return m_localTimeOffset; }
-	void SetQuotaReached(bool quotaReached) { m_quotaReached = quotaReached; }
-	bool GetQuotaReached() { return m_quotaReached; }
 
 private:
 	OptEntries m_optEntries;
@@ -450,20 +433,12 @@ private:
 	int m_dailyQuota = 0;
 	bool m_reorderFiles = false;
 	EFileNaming m_fileNaming = nfArticle;
+	int m_downloadRate = 0;
 
-	// Current state
+	// Application mode
 	bool m_serverMode = false;
 	bool m_daemonMode = false;
 	bool m_remoteClientMode = false;
-	bool m_pauseDownload = false;
-	bool m_pausePostProcess = false;
-	bool m_pauseScan = false;
-	bool m_tempPauseDownload = true;
-	bool m_tempPausePostprocess = true;
-	int m_downloadRate = 0;
-	time_t m_resumeTime = 0;
-	int m_localTimeOffset = 0;
-	bool m_quotaReached = false;
 
 	void Init(const char* exeName, const char* configFilename, bool noConfig,
 		CmdOptList* commandLineOptions, bool noDiskAccess, Extender* extender);

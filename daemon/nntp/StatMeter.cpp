@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "StatMeter.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "ServerPool.h"
 #include "DiskState.h"
 #include "Util.h"
@@ -57,8 +58,8 @@ void ServerVolume::CalcSlots(time_t locCurTime)
 void ServerVolume::AddData(int bytes)
 {
 	time_t curTime = Util::CurrentTime();
-	time_t locCurTime = curTime + g_Options->GetLocalTimeOffset();
-	time_t locDataTime = m_dataTime + g_Options->GetLocalTimeOffset();
+	time_t locCurTime = curTime + g_WorkState->GetLocalTimeOffset();
+	time_t locDataTime = m_dataTime + g_WorkState->GetLocalTimeOffset();
 
 	int lastMinSlot = m_minSlot;
 	int lastHourSlot = m_hourSlot;
@@ -188,10 +189,10 @@ void StatMeter::AdjustTimeOffset()
 	tmSplittedTime.tm_isdst = -1;
 	time_t locTime = mktime(&tmSplittedTime);
 	time_t localTimeDelta = utcTime - locTime;
-	g_Options->SetLocalTimeOffset((int)localTimeDelta + g_Options->GetTimeCorrection());
+	g_WorkState->SetLocalTimeOffset((int)localTimeDelta + g_Options->GetTimeCorrection());
 	m_lastTimeOffset = utcTime;
 
-	debug("UTC delta: %i (%i+%i)", g_Options->GetLocalTimeOffset(), (int)localTimeDelta, g_Options->GetTimeCorrection());
+	debug("UTC delta: %i (%i+%i)", g_WorkState->GetLocalTimeOffset(), (int)localTimeDelta, g_Options->GetTimeCorrection());
 }
 
 /*
@@ -446,7 +447,7 @@ bool StatMeter::Load(bool* perfectServerMatch)
 
 	for (ServerVolume& serverVolume : m_serverVolumes)
 	{
-		serverVolume.CalcSlots(serverVolume.GetDataTime() + g_Options->GetLocalTimeOffset());
+		serverVolume.CalcSlots(serverVolume.GetDataTime() + g_WorkState->GetLocalTimeOffset());
 	}
 
 	return ok;
@@ -465,20 +466,20 @@ void StatMeter::CheckQuota()
 	bool monthlyQuotaReached = g_Options->GetMonthlyQuota() > 0 && monthBytes >= (int64)g_Options->GetMonthlyQuota() * 1024 * 1024;
 	bool dailyQuotaReached = g_Options->GetDailyQuota() > 0 && dayBytes >= (int64)g_Options->GetDailyQuota() * 1024 * 1024;
 
-	if (monthlyQuotaReached && !g_Options->GetQuotaReached())
+	if (monthlyQuotaReached && !g_WorkState->GetQuotaReached())
 	{
 		warn("Monthly quota reached at %s", *Util::FormatSize(monthBytes));
 	}
-	else if (dailyQuotaReached && !g_Options->GetQuotaReached())
+	else if (dailyQuotaReached && !g_WorkState->GetQuotaReached())
 	{
 		warn("Daily quota reached at %s", *Util::FormatSize(dayBytes));
 	}
-	else if (!monthlyQuotaReached && !dailyQuotaReached && g_Options->GetQuotaReached())
+	else if (!monthlyQuotaReached && !dailyQuotaReached && g_WorkState->GetQuotaReached())
 	{
 		info("Quota lifted");
 	}
 
-	g_Options->SetQuotaReached(monthlyQuotaReached || dailyQuotaReached);
+	g_WorkState->SetQuotaReached(monthlyQuotaReached || dailyQuotaReached);
 }
 
 void StatMeter::CalcQuotaUsage(int64& monthBytes, int64& dayBytes)
@@ -487,7 +488,7 @@ void StatMeter::CalcQuotaUsage(int64& monthBytes, int64& dayBytes)
 
 	ServerVolume totalVolume = m_serverVolumes[0];
 
-	time_t locTime = Util::CurrentTime() + g_Options->GetLocalTimeOffset();
+	time_t locTime = Util::CurrentTime() + g_WorkState->GetLocalTimeOffset();
 	int daySlot = (int)(locTime / 86400) - totalVolume.GetFirstDay();
 
 	dayBytes = 0;
@@ -515,7 +516,7 @@ int StatMeter::CalcMonthSlots(ServerVolume& volume)
 {
 	int elapsedDays;
 
-	time_t locCurTime = Util::CurrentTime() + g_Options->GetLocalTimeOffset();
+	time_t locCurTime = Util::CurrentTime() + g_WorkState->GetLocalTimeOffset();
 	tm dayparts;
 	gmtime_r(&locCurTime, &dayparts);
 

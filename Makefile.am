@@ -1,7 +1,7 @@
 #
 #  This file is part of nzbget. See <http://nzbget.net>.
 #
-# Copyright (C) 2008-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,6 +68,8 @@ nzbget_SOURCES = \
 	daemon/main/nzbget.h \
 	daemon/main/Options.cpp \
 	daemon/main/Options.h \
+	daemon/main/WorkState.cpp \
+	daemon/main/WorkState.h \
 	daemon/main/Scheduler.cpp \
 	daemon/main/Scheduler.h \
 	daemon/main/StackTrace.cpp \

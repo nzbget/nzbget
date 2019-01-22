@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "UrlCoordinator.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "WebDownloader.h"
 #include "Util.h"
 #include "FileSystem.h"
@@ -99,7 +100,7 @@ void UrlCoordinator::Run()
 			if ((int)m_activeDownloads.size() < g_Options->GetUrlConnections())
 			{
 				nzbInfo = GetNextUrl(downloadQueue);
-				if (nzbInfo && (!g_Options->GetPauseDownload() || g_Options->GetUrlForce()))
+				if (nzbInfo && (!g_WorkState->GetPauseDownload() || g_Options->GetUrlForce()))
 				{
 					StartUrlDownload(nzbInfo);
 					downloadStarted = true;

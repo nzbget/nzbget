@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "BinRpc.h"
 #include "Log.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "QueueEditor.h"
 #include "Util.h"
 #include "FileSystem.h"
@@ -313,20 +314,20 @@ void PauseUnpauseBinCommand::Execute()
 		return;
 	}
 
-	g_Options->SetResumeTime(0);
+	g_WorkState->SetResumeTime(0);
 
 	switch (ntohl(PauseUnpauseRequest.m_action))
 	{
 		case rpDownload:
-			g_Options->SetPauseDownload(ntohl(PauseUnpauseRequest.m_pause));
+			g_WorkState->SetPauseDownload(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 
 		case rpPostProcess:
-			g_Options->SetPausePostProcess(ntohl(PauseUnpauseRequest.m_pause));
+			g_WorkState->SetPausePostProcess(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 
 		case rpScan:
-			g_Options->SetPauseScan(ntohl(PauseUnpauseRequest.m_pause));
+			g_WorkState->SetPauseScan(ntohl(PauseUnpauseRequest.m_pause));
 			break;
 	}
 
@@ -341,7 +342,7 @@ void SetDownloadRateBinCommand::Execute()
 		return;
 	}
 
-	g_Options->SetDownloadRate(ntohl(SetDownloadRequest.m_downloadRate));
+	g_WorkState->SetSpeedLimit(ntohl(SetDownloadRequest.m_downloadRate));
 	SendBoolResponse(true, "Rate-Command completed successfully");
 }
 
@@ -674,10 +675,10 @@ void ListBinCommand::Execute()
 		Util::SplitInt64(remainingSize, &sizeHi, &sizeLo);
 		ListResponse.m_remainingSizeHi = htonl(sizeHi);
 		ListResponse.m_remainingSizeLo = htonl(sizeLo);
-		ListResponse.m_downloadLimit = htonl(g_Options->GetDownloadRate());
-		ListResponse.m_downloadPaused = htonl(g_Options->GetPauseDownload());
-		ListResponse.m_postPaused = htonl(g_Options->GetPausePostProcess());
-		ListResponse.m_scanPaused = htonl(g_Options->GetPauseScan());
+		ListResponse.m_downloadRate = htonl(g_WorkState->GetSpeedLimit());
+		ListResponse.m_downloadPaused = htonl(g_WorkState->GetPauseDownload());
+		ListResponse.m_postPaused = htonl(g_WorkState->GetPausePostProcess());
+		ListResponse.m_scanPaused = htonl(g_WorkState->GetPauseScan());
 		ListResponse.m_threadCount = htonl(Thread::GetThreadCount() - 1); // not counting itself
 		ListResponse.m_postJobCount = htonl(postJobCount);
 

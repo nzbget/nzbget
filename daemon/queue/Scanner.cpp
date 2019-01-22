@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "Scanner.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "Log.h"
 #include "QueueCoordinator.h"
 #include "HistoryCoordinator.h"
@@ -96,7 +97,7 @@ void Scanner::ServiceWork()
 
 	m_nzbDirInterval = g_Options->GetNzbDirInterval();
 
-	if (g_Options->GetPauseScan() && !m_requestedNzbDirScan)
+	if (g_WorkState->GetPauseScan() && !m_requestedNzbDirScan)
 	{
 		return;
 	}

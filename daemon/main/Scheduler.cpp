@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "Scheduler.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "Log.h"
 #include "NewsServer.h"
 #include "ServerPool.h"
@@ -121,8 +122,8 @@ void Scheduler::CheckTasks()
 				}
 			}
 
-			time_t localCurrent = current + g_Options->GetLocalTimeOffset();
-			time_t localLastCheck = m_lastCheck + g_Options->GetLocalTimeOffset();
+			time_t localCurrent = current + g_WorkState->GetLocalTimeOffset();
+			time_t localLastCheck = m_lastCheck + g_WorkState->GetLocalTimeOffset();
 
 			tm tmCurrent;
 			gmtime_r(&localCurrent, &tmCurrent);
@@ -194,26 +195,26 @@ void Scheduler::ExecuteTask(Task* task)
 		case scDownloadRate:
 			if (!task->m_param.Empty())
 			{
-				g_Options->SetDownloadRate(atoi(task->m_param) * 1024);
+				g_WorkState->SetSpeedLimit(atoi(task->m_param) * 1024);
 				m_downloadRateChanged = true;
 			}
 			break;
 
 		case scPauseDownload:
 		case scUnpauseDownload:
-			g_Options->SetPauseDownload(task->m_command == scPauseDownload);
+			g_WorkState->SetPauseDownload(task->m_command == scPauseDownload);
 			m_pauseDownloadChanged = true;
 			break;
 
 		case scPausePostProcess:
 		case scUnpausePostProcess:
-			g_Options->SetPausePostProcess(task->m_command == scPausePostProcess);
+			g_WorkState->SetPausePostProcess(task->m_command == scPausePostProcess);
 			m_pausePostProcessChanged = true;
 			break;
 
 		case scPauseScan:
 		case scUnpauseScan:
-			g_Options->SetPauseScan(task->m_command == scPauseScan);
+			g_WorkState->SetPauseScan(task->m_command == scPauseScan);
 			m_pauseScanChanged = true;
 			break;
 
@@ -252,19 +253,19 @@ void Scheduler::PrintLog()
 {
 	if (m_downloadRateChanged)
 	{
-		info("Scheduler: setting download rate to %i KB/s", g_Options->GetDownloadRate() / 1024);
+		info("Scheduler: setting download rate to %i KB/s", g_WorkState->GetSpeedLimit() / 1024);
 	}
 	if (m_pauseDownloadChanged)
 	{
-		info("Scheduler: %s download", g_Options->GetPauseDownload() ? "pausing" : "unpausing");
+		info("Scheduler: %s download", g_WorkState->GetPauseDownload() ? "pausing" : "unpausing");
 	}
 	if (m_pausePostProcessChanged)
 	{
-		info("Scheduler: %s post-processing", g_Options->GetPausePostProcess() ? "pausing" : "unpausing");
+		info("Scheduler: %s post-processing", g_WorkState->GetPausePostProcess() ? "pausing" : "unpausing");
 	}
 	if (m_pauseScanChanged)
 	{
-		info("Scheduler: %s scan", g_Options->GetPauseScan() ? "pausing" : "unpausing");
+		info("Scheduler: %s scan", g_WorkState->GetPauseScan() ? "pausing" : "unpausing");
 	}
 	if (m_serverChanged)
 	{
@@ -331,14 +332,14 @@ void Scheduler::FetchFeed(const char* feedList)
 
 void Scheduler::CheckScheduledResume()
 {
-	time_t resumeTime = g_Options->GetResumeTime();
+	time_t resumeTime = g_WorkState->GetResumeTime();
 	time_t currentTime = Util::CurrentTime();
 	if (resumeTime > 0 && currentTime >= resumeTime)
 	{
 		info("Autoresume");
-		g_Options->SetResumeTime(0);
-		g_Options->SetPauseDownload(false);
-		g_Options->SetPausePostProcess(false);
-		g_Options->SetPauseScan(false);
+		g_WorkState->SetResumeTime(0);
+		g_WorkState->SetPauseDownload(false);
+		g_WorkState->SetPausePostProcess(false);
+		g_WorkState->SetPauseScan(false);
 	}
 }

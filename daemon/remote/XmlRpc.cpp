@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "XmlRpc.h"
 #include "Log.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "Scanner.h"
 #include "FeedCoordinator.h"
 #include "ServerPool.h"
@@ -1102,20 +1103,20 @@ void PauseUnpauseXmlCommand::Execute()
 {
 	bool ok = true;
 
-	g_Options->SetResumeTime(0);
+	g_WorkState->SetResumeTime(0);
 
 	switch (m_pauseAction)
 	{
 		case paDownload:
-			g_Options->SetPauseDownload(m_pause);
+			g_WorkState->SetPauseDownload(m_pause);
 			break;
 
 		case paPostProcess:
-			g_Options->SetPausePostProcess(m_pause);
+			g_WorkState->SetPausePostProcess(m_pause);
 			break;
 
 		case paScan:
-			g_Options->SetPauseScan(m_pause);
+			g_WorkState->SetPauseScan(m_pause);
 			break;
 
 		default:
@@ -1137,7 +1138,7 @@ void ScheduleResumeXmlCommand::Execute()
 
 	time_t curTime = Util::CurrentTime();
 
-	g_Options->SetResumeTime(curTime + seconds);
+	g_WorkState->SetResumeTime(curTime + seconds);
 
 	BuildBoolResponse(true);
 }
@@ -1179,7 +1180,7 @@ void SetDownloadRateXmlCommand::Execute()
 		return;
 	}
 
-	g_Options->SetDownloadRate(rate * 1024);
+	g_WorkState->SetSpeedLimit(rate * 1024);
 	BuildBoolResponse(true);
 }
 
@@ -1322,11 +1323,11 @@ void StatusXmlCommand::Execute()
 	int articleCacheMBytes = (int)(articleCache / 1024 / 1024);
 
 	int downloadRate = (int)(g_StatMeter->CalcCurrentDownloadSpeed());
-	int downloadLimit = (int)(g_Options->GetDownloadRate());
-	bool downloadPaused = g_Options->GetPauseDownload();
-	bool postPaused = g_Options->GetPausePostProcess();
-	bool scanPaused = g_Options->GetPauseScan();
-	bool quotaReached = g_Options->GetQuotaReached();
+	int downloadLimit = (int)(g_WorkState->GetSpeedLimit());
+	bool downloadPaused = g_WorkState->GetPauseDownload();
+	bool postPaused = g_WorkState->GetPausePostProcess();
+	bool scanPaused = g_WorkState->GetPauseScan();
+	bool quotaReached = g_WorkState->GetQuotaReached();
 	int threadCount = Thread::GetThreadCount() - 1; // not counting itself
 
 	uint32 downloadedSizeHi, downloadedSizeLo;
@@ -1354,7 +1355,7 @@ void StatusXmlCommand::Execute()
 	int freeDiskSpaceMB = (int)(freeDiskSpace / 1024 / 1024);
 
 	int serverTime = (int)Util::CurrentTime();
-	int resumeTime = (int)g_Options->GetResumeTime();
+	int resumeTime = (int)g_WorkState->GetResumeTime();
 	bool feedActive = g_FeedCoordinator->HasActiveDownloads();
 	int queuedScripts = g_QueueScriptCoordinator->GetQueueSize();
 

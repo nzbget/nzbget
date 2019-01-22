@@ -21,6 +21,7 @@
 #include "nzbget.h"
 #include "DiskService.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "StatMeter.h"
 #include "Log.h"
 #include "Util.h"
@@ -38,7 +39,7 @@ void DiskService::ServiceWork()
 {
 	debug("Disk service work");
 
-	if (!g_Options->GetPauseDownload() &&
+	if (!g_WorkState->GetPauseDownload() &&
 		g_Options->GetDiskSpace() > 0 && !g_StatMeter->GetStandBy())
 	{
 		// check free disk space every 1 second
@@ -59,7 +60,7 @@ void DiskService::CheckDiskSpace()
 	if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 	{
 		warn("Low disk space on %s. Pausing download", g_Options->GetDestDir());
-		g_Options->SetPauseDownload(true);
+		g_WorkState->SetPauseDownload(true);
 	}
 
 	if (!Util::EmptyStr(g_Options->GetInterDir()))
@@ -68,7 +69,7 @@ void DiskService::CheckDiskSpace()
 		if (freeSpace > -1 && freeSpace / 1024 / 1024 < g_Options->GetDiskSpace())
 		{
 			warn("Low disk space on %s. Pausing download", g_Options->GetInterDir());
-			g_Options->SetPauseDownload(true);
+			g_WorkState->SetPauseDownload(true);
 		}
 	}
 }
@@ -106,7 +107,7 @@ void DiskService::CheckRequiredDir()
 		info("All required directories available");
 	}
 
-	g_Options->SetTempPauseDownload(false);
-	g_Options->SetTempPausePostprocess(false);
+	g_WorkState->SetTempPauseDownload(false);
+	g_WorkState->SetTempPausePostprocess(false);
 	m_waitingRequiredDir = false;
 }

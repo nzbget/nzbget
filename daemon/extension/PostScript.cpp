@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "Log.h"
 #include "Util.h"
 #include "Options.h"
+#include "WorkState.h"
 
 static const int POSTPROCESS_PARCHECK = 92;
 static const int POSTPROCESS_SUCCESS = 93;
@@ -272,14 +273,14 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 		m_postInfo->SetProgressLabel(text);
 	}
 
-	if (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority())
+	if (g_WorkState->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority())
 	{
 		time_t stageTime = m_postInfo->GetStageTime();
 		time_t startTime = m_postInfo->GetStartTime();
 		time_t waitTime = Util::CurrentTime();
 
 		// wait until Post-processor is unpaused
-		while (g_Options->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
+		while (g_WorkState->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
 		{
 			usleep(100 * 1000);
 

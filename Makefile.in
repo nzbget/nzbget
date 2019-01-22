@@ -17,7 +17,7 @@
 #
 #  This file is part of nzbget. See <http://nzbget.net>.
 #
-# Copyright (C) 2008-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -232,7 +232,8 @@ am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
 	daemon/main/DiskService.h daemon/main/Maintenance.cpp \
 	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
 	daemon/main/nzbget.h daemon/main/Options.cpp \
-	daemon/main/Options.h daemon/main/Scheduler.cpp \
+	daemon/main/Options.h daemon/main/WorkState.cpp \
+	daemon/main/WorkState.h daemon/main/Scheduler.cpp \
 	daemon/main/Scheduler.h daemon/main/StackTrace.cpp \
 	daemon/main/StackTrace.h daemon/nntp/ArticleDownloader.cpp \
 	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
@@ -387,7 +388,8 @@ am_nzbget_OBJECTS = daemon/connect/Connection.$(OBJEXT) \
 	daemon/main/CommandLineParser.$(OBJEXT) \
 	daemon/main/DiskService.$(OBJEXT) \
 	daemon/main/Maintenance.$(OBJEXT) daemon/main/nzbget.$(OBJEXT) \
-	daemon/main/Options.$(OBJEXT) daemon/main/Scheduler.$(OBJEXT) \
+	daemon/main/Options.$(OBJEXT) daemon/main/WorkState.$(OBJEXT) \
+	daemon/main/Scheduler.$(OBJEXT) \
 	daemon/main/StackTrace.$(OBJEXT) \
 	daemon/nntp/ArticleDownloader.$(OBJEXT) \
 	daemon/nntp/ArticleWriter.$(OBJEXT) \
@@ -720,7 +722,8 @@ nzbget_SOURCES = daemon/connect/Connection.cpp \
 	daemon/main/DiskService.h daemon/main/Maintenance.cpp \
 	daemon/main/Maintenance.h daemon/main/nzbget.cpp \
 	daemon/main/nzbget.h daemon/main/Options.cpp \
-	daemon/main/Options.h daemon/main/Scheduler.cpp \
+	daemon/main/Options.h daemon/main/WorkState.cpp \
+	daemon/main/WorkState.h daemon/main/Scheduler.cpp \
 	daemon/main/Scheduler.h daemon/main/StackTrace.cpp \
 	daemon/main/StackTrace.h daemon/nntp/ArticleDownloader.cpp \
 	daemon/nntp/ArticleDownloader.h daemon/nntp/ArticleWriter.cpp \
@@ -1158,6 +1161,8 @@ daemon/main/nzbget.$(OBJEXT): daemon/main/$(am__dirstamp) \
 	daemon/main/$(DEPDIR)/$(am__dirstamp)
 daemon/main/Options.$(OBJEXT): daemon/main/$(am__dirstamp) \
 	daemon/main/$(DEPDIR)/$(am__dirstamp)
+daemon/main/WorkState.$(OBJEXT): daemon/main/$(am__dirstamp) \
+	daemon/main/$(DEPDIR)/$(am__dirstamp)
 daemon/main/Scheduler.$(OBJEXT): daemon/main/$(am__dirstamp) \
 	daemon/main/$(DEPDIR)/$(am__dirstamp)
 daemon/main/StackTrace.$(OBJEXT): daemon/main/$(am__dirstamp) \
@@ -1553,6 +1558,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@daemon/main/$(DEPDIR)/Options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@daemon/main/$(DEPDIR)/Scheduler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@daemon/main/$(DEPDIR)/StackTrace.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@daemon/main/$(DEPDIR)/WorkState.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@daemon/main/$(DEPDIR)/nzbget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@daemon/nntp/$(DEPDIR)/ArticleDownloader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@daemon/nntp/$(DEPDIR)/ArticleWriter.Po@am__quote@

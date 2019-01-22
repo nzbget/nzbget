@@ -2,7 +2,7 @@
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "Decoder.h"
 #include "Log.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "ServerPool.h"
 #include "StatMeter.h"
 #include "Util.h"
@@ -102,8 +103,8 @@ void ArticleDownloader::Run()
 		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
 
-		if (IsStopped() || ((g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) && !force) ||
-			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
+		if (IsStopped() || ((g_WorkState->GetPauseDownload() || g_WorkState->GetQuotaReached()) && !force) ||
+			(g_WorkState->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
 			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
 			status = adRetry;
@@ -194,8 +195,8 @@ void ArticleDownloader::Run()
 			break;
 		}
 
-		if (IsStopped() || ((g_Options->GetPauseDownload() || g_Options->GetQuotaReached()) && !force) ||
-			(g_Options->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
+		if (IsStopped() || ((g_WorkState->GetPauseDownload() || g_WorkState->GetQuotaReached()) && !force) ||
+			(g_WorkState->GetTempPauseDownload() && !m_fileInfo->GetExtraPriority()) ||
 			serverConfigGeneration != g_ServerPool->GetGeneration())
 		{
 			status = adRetry;
@@ -339,9 +340,9 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 	while (!IsStopped() && !m_decoder.GetEof())
 	{
 		// throttle the bandwidth
-		while (!IsStopped() && (g_Options->GetDownloadRate() > 0.0f) &&
-			(g_StatMeter->CalcCurrentDownloadSpeed() > g_Options->GetDownloadRate() ||
-			g_StatMeter->CalcMomentaryDownloadSpeed() > g_Options->GetDownloadRate()))
+		while (!IsStopped() && (g_WorkState->GetSpeedLimit() > 0.0f) &&
+			(g_StatMeter->CalcCurrentDownloadSpeed() > g_WorkState->GetSpeedLimit() ||
+			g_StatMeter->CalcMomentaryDownloadSpeed() > g_WorkState->GetSpeedLimit()))
 		{
 			SetLastUpdateTimeNow();
 			usleep(10 * 1000);

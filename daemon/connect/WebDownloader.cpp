@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2012-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "WebDownloader.h"
 #include "Log.h"
 #include "Options.h"
+#include "WorkState.h"
 #include "Util.h"
 #include "FileSystem.h"
 
@@ -72,19 +73,19 @@ void WebDownloader::Run()
 
 		if ((((Status == adFailed) && (remainedDownloadRetries > 1)) ||
 			((Status == adConnectError) && (remainedConnectRetries > 1)))
-			&& !IsStopped() && !(!m_force && g_Options->GetPauseDownload()))
+			&& !IsStopped() && !(!m_force && g_WorkState->GetPauseDownload()))
 		{
 			detail("Waiting %i sec to retry", g_Options->GetUrlInterval());
 			int msec = 0;
 			while (!IsStopped() && (msec < g_Options->GetUrlInterval() * 1000) &&
-				!(!m_force && g_Options->GetPauseDownload()))
+				!(!m_force && g_WorkState->GetPauseDownload()))
 			{
 				usleep(100 * 1000);
 				msec += 100;
 			}
 		}
 
-		if (IsStopped() || (!m_force && g_Options->GetPauseDownload()))
+		if (IsStopped() || (!m_force && g_WorkState->GetPauseDownload()))
 		{
 			Status = adRetry;
 			break;
