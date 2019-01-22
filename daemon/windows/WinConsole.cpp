@@ -60,7 +60,7 @@ BOOL WINAPI WinConsole::ConsoleCtrlHandler(DWORD dwCtrlType)
 			ExitProc();
 			while (g_WinConsole)
 			{
-				usleep(20 * 1000);
+				Util::Sleep(20);
 			}
 			return TRUE;
 
@@ -196,7 +196,7 @@ void WinConsole::Run()
 		}
 		else
 		{
-			usleep(20 * 1000);
+			Util::Sleep(20);
 			counter += 20;
 			if (counter >= 200)
 			{
@@ -971,7 +971,7 @@ void WinConsole::ResetFactoryDefaults()
 		while (retry > 0 && FileSystem::DirectoryExists(path) &&
 			!FileSystem::DeleteDirectoryWithContent(path, errmsg))
 		{
-			usleep(200 * 1000);
+			Util::Sleep(200);
 			retry--;
 		}
 

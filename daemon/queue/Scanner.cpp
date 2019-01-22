@@ -504,7 +504,7 @@ void Scanner::ScanNzbDir(bool syncMode)
 
 	while (syncMode && (m_scanning || m_requestedNzbDirScan))
 	{
-		usleep(100 * 1000);
+		Util::Sleep(100);
 	}
 }
 

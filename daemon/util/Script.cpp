@@ -66,7 +66,7 @@ void ChildWatchDog::Run()
 	time_t start = Util::CurrentTime();
 	while (!IsStopped() && (Util::CurrentTime() - start) < WAIT_SECONDS)
 	{
-		usleep(10 * 1000);
+		Util::Sleep(10);
 	}
 
 	if (!IsStopped())
@@ -394,7 +394,7 @@ int ScriptController::Execute()
 	}
 	while (watchDog.IsRunning())
 	{
-		usleep(5 * 1000);
+		Util::Sleep(5);
 	}
 #endif
 
@@ -741,7 +741,7 @@ void ScriptController::TerminateAll()
 				time_t curtime = Util::CurrentTime();
 				while (!script->m_completed && std::abs(curtime - Util::CurrentTime()) <= 10)
 				{
-					usleep(100 * 1000);
+					Util::Sleep(100);
 				}
 			}
 			script->Terminate();

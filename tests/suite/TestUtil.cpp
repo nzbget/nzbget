@@ -22,6 +22,7 @@
 #include <iostream>
 #include "catch.h"
 
+#include "Util.h"
 #include "FileSystem.h"
 #include "TestUtil.h"
 
@@ -93,7 +94,7 @@ void TestUtil::PrepareWorkingDir(const std::string templateDir)
 	FileSystem::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
 	while (FileSystem::DirectoryExists(workDir.c_str()) && retries > 0)
 	{
-		usleep(1000 * 100);
+		Util::Sleep(100);
 		retries--;
 		FileSystem::DeleteDirectoryWithContent(workDir.c_str(), errmsg);
 	}

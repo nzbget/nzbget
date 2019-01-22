@@ -34,7 +34,7 @@ void NServFrontend::Run()
 	while (!IsStopped())
 	{
 		Update();
-		usleep(100 * 1000);
+		Util::Sleep(100);
 	}
 	// Printing the last messages
 	Update();

@@ -42,14 +42,6 @@ const char* Par2CmdLineErrStr[] = { "OK",
 	"internal error occurred",
 	"out of memory" };
 
-// Sleep interval for synchronisation (microseconds)
-#ifdef WIN32
-// Windows doesn't allow sleep intervals less than one millisecond
-#define SYNC_SLEEP_INTERVAL 1000
-#else
-#define SYNC_SLEEP_INTERVAL 100
-#endif
-
 class RepairThread;
 
 class Repairer : public Par2::Par2Repairer, public ParChecker::AbstractRepairer
@@ -83,6 +75,7 @@ private:
 	virtual void BeginRepair();
 	virtual void EndRepair();
 	void RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t blocklength);
+	static void SyncSleep();
 
 	friend class ParChecker;
 	friend class RepairThread;
@@ -253,7 +246,7 @@ bool Repairer::RepairData(Par2::u32 inputindex, size_t blocklength)
 
 		if (!jobAdded)
 		{
-			usleep(SYNC_SLEEP_INTERVAL);
+			SyncSleep();
 		}
 	}
 
@@ -268,7 +261,7 @@ bool Repairer::RepairData(Par2::u32 inputindex, size_t blocklength)
 			if (repairThread->IsWorking())
 			{
 				working = true;
-				usleep(SYNC_SLEEP_INTERVAL);
+				SyncSleep();
 				break;
 			}
 		}
@@ -305,6 +298,17 @@ void Repairer::RepairBlock(Par2::u32 inputindex, Par2::u32 outputindex, size_t b
 	}
 }
 
+// Sleep for synchronisation
+void Repairer::SyncSleep()
+{
+#ifdef WIN32
+	// Windows doesn't allow sleep intervals less than one millisecond
+	Sleep(1);
+#else
+	usleep(100);
+#endif
+}
+
 void RepairThread::Run()
 {
 	while (!IsStopped())
@@ -316,7 +320,7 @@ void RepairThread::Run()
 		}
 		else
 		{
-			usleep(SYNC_SLEEP_INTERVAL);
+			Repairer::SyncSleep();
 		}
 	}
 }
@@ -690,7 +694,7 @@ bool ParChecker::LoadMainParBak()
 					Guard guard(m_queuedParFilesMutex);
 					queuedParFilesChanged = m_queuedParFilesChanged;
 				}
-				usleep(100 * 1000);
+				Util::Sleep(100);
 			}
 		}
 	}
@@ -756,7 +760,7 @@ int ParChecker::ProcessMorePars()
 						Guard guard(m_queuedParFilesMutex);
 						queuedParFilesChanged = m_queuedParFilesChanged;
 					}
-					usleep(100 * 1000);
+					Util::Sleep(100);
 				}
 			}
 		}

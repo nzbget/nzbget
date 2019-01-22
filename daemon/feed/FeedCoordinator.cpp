@@ -86,7 +86,7 @@ void FeedCoordinator::Run()
 
 	while (!DownloadQueue::IsLoaded())
 	{
-		usleep(20 * 1000);
+		Util::Sleep(20);
 	}
 
 	if (g_Options->GetServerMode())
@@ -153,7 +153,7 @@ void FeedCoordinator::Run()
 			completed = m_activeDownloads.size() == 0;
 		}
 		CheckSaveFeeds();
-		usleep(100 * 1000);
+		Util::Sleep(100);
 		ResetHangingDownloads();
 	}
 	debug("FeedCoordinator: Downloads are completed");
@@ -525,7 +525,7 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 		// wait until the download in a separate thread completes
 		while (feedInfo->GetStatus() == FeedInfo::fsRunning)
 		{
-			usleep(100 * 1000);
+			Util::Sleep(100);
 		}
 
 		// now can process the feed

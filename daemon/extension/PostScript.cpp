@@ -282,7 +282,7 @@ void PostScriptController::AddMessage(Message::EKind kind, const char* text)
 		// wait until Post-processor is unpaused
 		while (g_WorkState->GetPausePostProcess() && !m_postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
 		{
-			usleep(100 * 1000);
+			Util::Sleep(100);
 
 			// update time stamps
 

@@ -86,7 +86,7 @@ void UrlCoordinator::Run()
 
 	while (!DownloadQueue::IsLoaded())
 	{
-		usleep(20 * 1000);
+		Util::Sleep(20);
 	}
 
 	while (!IsStopped())
@@ -124,7 +124,7 @@ void UrlCoordinator::Run()
 		else
 		{
 			int sleepInterval = downloadStarted ? 0 : 100;
-			usleep(sleepInterval * 1000);
+			Util::Sleep(sleepInterval);
 		}
 	}
 
@@ -147,7 +147,7 @@ void UrlCoordinator::WaitJobs()
 				break;
 			}
 		}
-		usleep(100 * 1000);
+		Util::Sleep(100);
 		ResetHangingDownloads();
 	}
 

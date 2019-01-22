@@ -79,7 +79,7 @@ void RemoteServer::Run()
 				break;
 			}
 			m_connection.reset();
-			usleep(500 * 1000);
+			Util::Sleep(500);
 			continue;
 		}
 
@@ -112,7 +112,7 @@ void RemoteServer::Run()
 			Guard guard(m_processorsMutex);
 			completed = m_activeProcessors.size() == 0;
 		}
-		usleep(100 * 1000);
+		Util::Sleep(100);
 	}
 	debug("RemoteServer: request processor are completed");
 

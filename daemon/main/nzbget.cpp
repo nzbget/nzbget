@@ -547,7 +547,7 @@ void NZBGet::StopRemoteServer()
 		(m_remoteSecureServer && m_remoteSecureServer->IsRunning())) &&
 		maxWaitMSec > 0)
 	{
-		usleep(100 * 1000);
+		Util::Sleep(100);
 		maxWaitMSec -= 100;
 	}
 
@@ -566,7 +566,7 @@ void NZBGet::StopRemoteServer()
 		(m_remoteSecureServer && m_remoteSecureServer->IsRunning())) &&
 		maxWaitMSec > 0)
 	{
-		usleep(100 * 1000);
+		Util::Sleep(100);
 		maxWaitMSec -= 100;
 	}
 
@@ -624,7 +624,7 @@ void NZBGet::StopFrontend()
 		}
 		while (m_frontend->IsRunning())
 		{
-			usleep(50 * 1000);
+			Util::Sleep(50);
 		}
 		debug("Frontend stopped");
 	}
@@ -704,7 +704,7 @@ void NZBGet::DoMainLoop()
 				m_serviceCoordinator->Stop();
 			}
 		}
-		usleep(100 * 1000);
+		Util::Sleep(100);
 
 		if (m_options->GetServerMode() && !m_stopped)
 		{

@@ -98,7 +98,7 @@ void ArticleDownloader::Run()
 		while (!m_connection && !(IsStopped() || serverConfigGeneration != g_ServerPool->GetGeneration()))
 		{
 			m_connection = g_ServerPool->GetConnection(level, wantServer, &failedServers);
-			usleep(5 * 1000);
+			Util::Sleep(5);
 		}
 		SetLastUpdateTimeNow();
 		SetStatus(adRunning);
@@ -345,7 +345,7 @@ ArticleDownloader::EStatus ArticleDownloader::Download()
 			g_StatMeter->CalcMomentaryDownloadSpeed() > g_WorkState->GetSpeedLimit()))
 		{
 			SetLastUpdateTimeNow();
-			usleep(10 * 1000);
+			Util::Sleep(10);
 		}
 
 		char* buffer;

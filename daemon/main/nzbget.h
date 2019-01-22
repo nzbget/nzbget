@@ -304,7 +304,6 @@ typedef int pid_t;
 #define S_ISDIR(mode) __S_ISTYPE((mode), _S_IFDIR)
 #define S_ISREG(mode) __S_ISTYPE((mode), _S_IFREG)
 #define S_DIRMODE nullptr
-#define usleep(usec) Sleep((usec) / 1000)
 #define socklen_t int
 #define SHUT_WR 0x01
 #define SHUT_RDWR 0x02

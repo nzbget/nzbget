@@ -75,12 +75,12 @@ TEST_CASE("Direct-unpack simple", "[Rar][DirectUnpack][Unrar][Slow][TestData]")
 			((DirectUnpack*)nzbPtr->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbPtr);
 			break;
 		}
-		usleep(50*1000);
+		Util::Sleep(50);
 	}
 
 	while (nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsRunning)
 	{
-		usleep(20 * 1000);
+		Util::Sleep(20);
 	}
 
 	REQUIRE(nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsSuccess);
@@ -130,12 +130,12 @@ TEST_CASE("Direct-unpack two archives", "[Rar][DirectUnpack][Unrar][Slow][TestDa
 			((DirectUnpack*)nzbPtr->GetUnpackThread())->NzbDownloaded(downloadQueue, nzbPtr);
 			break;
 		}
-		usleep(50 * 1000);
+		Util::Sleep(50);
 	}
 
 	while (nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsRunning)
 	{
-		usleep(20 * 1000);
+		Util::Sleep(20);
 	}
 
 	REQUIRE(nzbPtr->GetDirectUnpackStatus() == NzbInfo::nsSuccess);

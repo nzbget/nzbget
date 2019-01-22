@@ -68,7 +68,7 @@ Maintenance::~Maintenance()
 	{
 		while (m_updateScriptController)
 		{
-			usleep(20*1000);
+			Util::Sleep(20);
 		}
 	}
 }

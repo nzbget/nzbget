@@ -124,7 +124,7 @@ int NServMain(int argc, char* argv[])
 	}
 
 	info("Press Ctrl+C to quit");
-	while (getchar()) usleep(1000*200);
+	while (getchar()) Util::Sleep(200);
 
 	for (std::unique_ptr<NntpServer>& serv: instances)
 	{
@@ -140,7 +140,7 @@ int NServMain(int argc, char* argv[])
 		{
 			hasRunning |= serv->IsRunning();
 		}
-		usleep(50 * 1000);
+		Util::Sleep(50);
 	} while (hasRunning);
 
 	return 0;

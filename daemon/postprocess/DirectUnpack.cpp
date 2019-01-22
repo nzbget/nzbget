@@ -105,7 +105,7 @@ void DirectUnpack::Run()
 			{
 				break;
 			}
-			usleep(100 * 1000);
+			Util::Sleep(100);
 		}
 	}
 

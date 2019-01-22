@@ -80,7 +80,7 @@ void WebDownloader::Run()
 			while (!IsStopped() && (msec < g_Options->GetUrlInterval() * 1000) &&
 				!(!m_force && g_WorkState->GetPauseDownload()))
 			{
-				usleep(100 * 1000);
+				Util::Sleep(100);
 				msec += 100;
 			}
 		}

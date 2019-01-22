@@ -80,7 +80,7 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 		curTime + timeoutSec > Util::CurrentTime() &&
 		curTime >= Util::CurrentTime())					// in a case clock was changed
 	{
-		usleep(200 * 1000);
+		Util::Sleep(200);
 	}
 
 	if (unrar.IsRunning())
@@ -91,7 +91,7 @@ bool RarLister::FindLargestFile(DupeMatcher* owner, const char* directory,
 	// wait until terminated or killed
 	while (unrar.IsRunning())
 	{
-		usleep(200 * 1000);
+		Util::Sleep(200);
 	}
 
 	*maxSize = unrar.m_maxSize;

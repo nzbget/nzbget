@@ -113,7 +113,7 @@ bool ArticleWriter::Start(Decoder::EFormat format, const char* filename, int64 f
 
 		while (!m_articleData.GetData() && g_ArticleCache->GetFlushing())
 		{
-			usleep(5 * 1000);
+			Util::Sleep(5);
 			m_articleData = g_ArticleCache->Alloc(m_articleSize);
 		}
 
@@ -841,7 +841,7 @@ void ArticleCache::Run()
 		}
 		else
 		{
-			usleep(5 * 1000);
+			Util::Sleep(5);
 			resetCounter += 5;
 		}
 	}

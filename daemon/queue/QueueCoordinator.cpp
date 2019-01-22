@@ -257,7 +257,7 @@ void QueueCoordinator::Run()
 		else
 		{
 			int sleepInterval = downloadStarted ? 0 : 5;
-			usleep(sleepInterval * 1000);
+			Util::Sleep(sleepInterval);
 			g_StatMeter->AddSpeedReading(0);
 		}
 
@@ -309,7 +309,7 @@ void QueueCoordinator::WaitJobs()
 				break;
 			}
 		}
-		usleep(100 * 1000);
+		Util::Sleep(100);
 		ResetHangingDownloads();
 	}
 
@@ -809,7 +809,7 @@ void QueueCoordinator::DeleteFileInfo(DownloadQueue* downloadQueue, FileInfo* fi
 {
 	while (g_ArticleCache->FileBusy(fileInfo))
 	{
-		usleep(5*1000);
+		Util::Sleep(5);
 	}
 
 	NzbInfo* nzbInfo = fileInfo->GetNzbInfo();

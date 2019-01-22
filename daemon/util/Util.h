@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ class Util
 {
 public:
 	static bool MatchFileExt(const char* filename, const char* extensionList, const char* listSeparator);
-	static int64 GetCurrentTicks();
 
 	/*
 	* Split command line into arguments.
@@ -65,6 +64,8 @@ public:
 	static void SetStandByMode(bool standBy);
 
 	static time_t CurrentTime();
+	static int64 CurrentTicks();
+	static void Sleep(int milliseconds);
 
 	/* cross platform version of GNU timegm, which is similar to mktime but takes an UTC time as parameter */
 	static time_t Timegm(tm const *t);

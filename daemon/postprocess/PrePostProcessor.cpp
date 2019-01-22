@@ -50,7 +50,7 @@ void PrePostProcessor::Run()
 
 	while (!DownloadQueue::IsLoaded())
 	{
-		usleep(20 * 1000);
+		Util::Sleep(20);
 	}
 
 	if (g_Options->GetServerMode())
@@ -63,7 +63,7 @@ void PrePostProcessor::Run()
 		if (g_WorkState->GetTempPausePostprocess())
 		{
 			// Postprocess is paused: just wait and loop
-			usleep(200 * 1000);
+			Util::Sleep(200);
 			continue;
 		}
 
@@ -71,7 +71,7 @@ void PrePostProcessor::Run()
 		{
 			// check post-queue every 200 msec
 			CheckPostQueue();
-			usleep(200 * 1000);
+			Util::Sleep(200);
 		}
 		else
 		{
@@ -102,7 +102,7 @@ void PrePostProcessor::WaitJobs()
 			}
 		}
 		CheckPostQueue();
-		usleep(200 * 1000);
+		Util::Sleep(200);
 	}
 
 	// kill remaining post-processing jobs; not safe but we can't wait any longer
@@ -137,7 +137,7 @@ void PrePostProcessor::WaitJobs()
 				break;
 			}
 		}
-		usleep(200 * 1000);
+		Util::Sleep(200);
 	}
 
 	// disconnect remaining direct unpack jobs

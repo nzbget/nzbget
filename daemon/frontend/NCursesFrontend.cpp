@@ -213,7 +213,7 @@ void NCursesFrontend::Run()
 			m_dataUpdatePos = m_updateInterval;
 		}
 
-		usleep(10 * 1000);
+		Util::Sleep(10);
 		m_dataUpdatePos -= 10;
 	}
 

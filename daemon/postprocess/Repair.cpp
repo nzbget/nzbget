@@ -544,7 +544,7 @@ void RepairController::CheckPauseState(PostInfo* postInfo)
 		// wait until Post-processor is unpaused
 		while (g_WorkState->GetPausePostProcess() && !postInfo->GetNzbInfo()->GetForcePriority() && !IsStopped())
 		{
-			usleep(50 * 1000);
+			Util::Sleep(50);
 
 			// update time stamps
 

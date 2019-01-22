@@ -103,7 +103,7 @@ void NntpServer::Run()
 				break;
 			}
 			m_connection.reset();
-			usleep(500 * 1000);
+			Util::Sleep(500);
 			continue;
 		}
 		
@@ -216,7 +216,7 @@ void NntpProcessor::ServArticle()
 
 	if (m_latency)
 	{
-		usleep(1000 * m_latency);
+		Util::Sleep(m_latency);
 	}
 
 	bool ok = false;
@@ -272,7 +272,7 @@ void NntpProcessor::SendSegment()
 
 	if (m_speed > 0)
 	{
-		m_start = Util::GetCurrentTicks();
+		m_start = Util::CurrentTicks();
 	}
 
 	BString<1024> fullFilename("%s/%s", m_dataDir, *m_filename);
@@ -383,7 +383,7 @@ void NntpProcessor::SendData(const char* buffer, int size)
 		return;
 	}
 
-	int64 expectedTime = (int64)1000 * size / (m_speed * 1024) - (Util::GetCurrentTicks() - m_start) / 1000;
+	int64 expectedTime = (int64)1000 * size / (m_speed * 1024) - (Util::CurrentTicks() - m_start) / 1000;
 
 	int chunkNum = 21;
 	int chunkSize = size;
@@ -407,10 +407,10 @@ void NntpProcessor::SendData(const char* buffer, int size)
 		}
 		
 		m_connection->Send(buffer + sent, len);
-		int64 now = Util::GetCurrentTicks();
+		int64 now = Util::CurrentTicks();
 		if (now + pause * 1000 < m_start + expectedTime * 1000)
 		{
-			usleep(pause * 1000);
+			Util::Sleep(pause);
 		}
 		sent += len;
 	}

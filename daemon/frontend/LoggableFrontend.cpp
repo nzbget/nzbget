@@ -20,6 +20,7 @@
 
 
 #include "nzbget.h"
+#include "Util.h"
 #include "LoggableFrontend.h"
 #include "Log.h"
 
@@ -30,7 +31,7 @@ void LoggableFrontend::Run()
 	while (!IsStopped())
 	{
 		Update();
-		usleep(m_updateInterval * 1000);
+		Util::Sleep(m_updateInterval);
 	}
 	// Printing the last messages
 	Update();
