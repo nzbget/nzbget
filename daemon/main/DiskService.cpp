@@ -27,11 +27,22 @@
 #include "Util.h"
 #include "FileSystem.h"
 
+DiskService::DiskService()
+{
+	g_WorkState->Attach(this);
+}
+
+void DiskService::Update(Subject* caller, void* aspect)
+{
+	WakeUp();
+}
+
 int DiskService::ServiceInterval()
 {
 	return m_waitingRequiredDir ? 1 :
 		g_Options->GetDiskSpace() <= 0 ? Service::Sleep :
-		// g_StatMeter->GetStandBy() ? Service::Sleep :  // for that to work we need to react on changing of idle-state
+		// notifications from 'WorkState' are not 100% reliable due to race conditions
+		!g_WorkState->GetDownloading() ? 10 :
 		1;
 }
 
@@ -39,8 +50,6 @@ void DiskService::ServiceWork()
 {
 	debug("Disk service work");
 
-	if (!g_WorkState->GetPauseDownload() &&
-		g_Options->GetDiskSpace() > 0 && !g_StatMeter->GetStandBy())
 	if (g_Options->GetDiskSpace() > 0 && g_WorkState->GetDownloading())
 	{
 		// check free disk space every 1 second

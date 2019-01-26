@@ -22,12 +22,17 @@
 #define DISKSERVICE_H
 
 #include "Service.h"
+#include "Observer.h"
 
-class DiskService : public Service
+class DiskService : public Service, public Observer
 {
+public:
+	DiskService();
+
 protected:
 	virtual int ServiceInterval();
 	virtual void ServiceWork();
+	virtual void Update(Subject* caller, void* aspect);
 
 private:
 	bool m_waitingRequiredDir = true;
