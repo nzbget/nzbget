@@ -41,7 +41,7 @@ public:
 	virtual ~QueueCoordinator();
 	virtual void Run();
 	virtual void Stop();
-	void Update(Subject* Caller, void* Aspect);
+	void Update(Subject* caller, void* aspect);
 
 	// editing queue
 	NzbInfo* AddNzbFileToQueue(std::unique_ptr<NzbInfo> nzbInfo, NzbInfo* urlInfo, bool addFirst);

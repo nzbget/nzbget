@@ -91,6 +91,7 @@ QueueCoordinator::QueueCoordinator()
 	debug("Creating QueueCoordinator");
 
 	CoordinatorDownloadQueue::Init(&m_downloadQueue);
+	g_WorkState->Attach(this);
 }
 
 QueueCoordinator::~QueueCoordinator()
@@ -192,6 +193,7 @@ void QueueCoordinator::Run()
 	bool articeDownloadsRunning = false;
 	time_t lastReset = 0;
 	g_StatMeter->IntervalCheck();
+	int waitInterval = 100;
 
 	while (!IsStopped())
 	{
@@ -251,15 +253,19 @@ void QueueCoordinator::Run()
 		// sleep longer in StandBy
 		if (standBy)
 		{
-			Util::SetStandByMode(standBy);
+			Util::SetStandByMode(true);
 			Guard guard(m_waitMutex);
-			m_waitCond.WaitFor(m_waitMutex, 500, [&]{ return m_hasMoreJobs || IsStopped(); });
+			// sleeping max. 2 seconds; can't sleep much longer because we can't rely on
+			// notifications from 'WorkState' and we also have periodical work to do here
+			waitInterval = std::min(waitInterval * 2, 2000);
+			m_waitCond.WaitFor(m_waitMutex, waitInterval, [&]{ return m_hasMoreJobs || IsStopped(); });
 		}
 		else
 		{
 			int sleepInterval = downloadStarted ? 0 : 5;
 			Util::Sleep(sleepInterval);
 			g_StatMeter->AddSpeedReading(0);
+			waitInterval = 100;
 		}
 
 		if (lastReset != Util::CurrentTime())
@@ -274,7 +280,7 @@ void QueueCoordinator::Run()
 			g_StatMeter->IntervalCheck();
 			g_Log->IntervalCheck();
 			AdjustDownloadsLimit();
-			Util::SetStandByMode(standBy);
+			Util::SetStandByMode(false);
 			lastReset = Util::CurrentTime();
 		}
 	}
@@ -652,11 +658,18 @@ void QueueCoordinator::StartArticleDownload(FileInfo* fileInfo, ArticleInfo* art
 	articleDownloader->Start();
 }
 
-void QueueCoordinator::Update(Subject* Caller, void* Aspect)
+void QueueCoordinator::Update(Subject* caller, void* aspect)
 {
+	if (caller == g_WorkState)
+	{
+		debug("Notification from WorkState received");
+		WakeUp();
+		return;
+	}
+
 	debug("Notification from ArticleDownloader received");
 
-	ArticleDownloader* articleDownloader = (ArticleDownloader*)Caller;
+	ArticleDownloader* articleDownloader = (ArticleDownloader*)caller;
 	if ((articleDownloader->GetStatus() == ArticleDownloader::adFinished) ||
 		(articleDownloader->GetStatus() == ArticleDownloader::adFailed) ||
 		(articleDownloader->GetStatus() == ArticleDownloader::adRetry))
