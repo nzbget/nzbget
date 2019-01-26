@@ -424,6 +424,8 @@ void HistoryCoordinator::MoveToQueue(DownloadQueue* downloadQueue, HistoryList::
 		// start postprocessing
 		debug("Restarting postprocessing for %s", *nicename);
 		g_PrePostProcessor->NzbDownloaded(downloadQueue, nzbInfo);
+		DownloadQueue::Aspect aspect = {DownloadQueue::eaNzbReturned, downloadQueue, nzbInfo, nullptr};
+		downloadQueue->Notify(&aspect);
 	}
 }
 
@@ -439,6 +441,10 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 		nzbInfo->SetDupeHint(nzbInfo->GetDupeHint() == NzbInfo::dhNone ? NzbInfo::dhRedownloadManual : nzbInfo->GetDupeHint());
 		downloadQueue->GetQueue()->Add(std::unique_ptr<NzbInfo>(nzbInfo), true);
 		downloadQueue->GetHistory()->erase(itHistory);
+
+		DownloadQueue::Aspect aspect = {DownloadQueue::eaUrlReturned, downloadQueue, nzbInfo, nullptr};
+		downloadQueue->Notify(&aspect);
+
 		return;
 	}
 
@@ -526,6 +532,9 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* downloadQueue, History
 	MoveToQueue(downloadQueue, itHistory, historyInfo, false);
 
 	g_PrePostProcessor->NzbAdded(downloadQueue, nzbInfo);
+
+	DownloadQueue::Aspect aspect = {DownloadQueue::eaNzbReturned, downloadQueue, nzbInfo, nullptr};
+	downloadQueue->Notify(&aspect);
 }
 
 void HistoryCoordinator::HistoryReturn(DownloadQueue* downloadQueue, HistoryList::iterator itHistory,

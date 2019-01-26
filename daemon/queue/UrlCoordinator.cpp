@@ -178,7 +178,8 @@ void UrlCoordinator::DownloadQueueUpdate(Subject* caller, void* aspect)
 	debug("Notification from download queue received");
 
 	DownloadQueue::Aspect* queueAspect = (DownloadQueue::Aspect*)aspect;
-	if (queueAspect->action == DownloadQueue::eaUrlAdded)
+	if (queueAspect->action == DownloadQueue::eaUrlAdded ||
+		queueAspect->action == DownloadQueue::eaUrlReturned)
 	{
 		// Resume Run()
 		Guard guard(m_waitMutex);
