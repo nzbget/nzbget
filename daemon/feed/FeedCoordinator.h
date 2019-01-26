@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget. See <http://nzbget.net>.
  *
- *  Copyright (C) 2013-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,6 +67,13 @@ private:
 		virtual void Update(Subject* caller, void* aspect) { m_owner->DownloadQueueUpdate(caller, aspect); }
 	};
 
+	class WorkStateObserver: public Observer
+	{
+	public:
+		FeedCoordinator* m_owner;
+		virtual void Update(Subject* caller, void* aspect) { m_owner->WorkStateUpdate(caller, aspect); }
+	};
+
 	class FeedCacheItem
 	{
 	public:
@@ -106,11 +113,12 @@ private:
 	FeedHistory m_feedHistory;
 	Mutex m_downloadsMutex;
 	DownloadQueueObserver m_downloadQueueObserver;
+	WorkStateObserver m_workStateObserver;
 	bool m_force = false;
 	bool m_save = false;
 	FeedCache m_feedCache;
-	Mutex m_waitMutex;
 	ConditionVar m_waitCond;
+	bool m_wokenUp = false;
 
 	void StartFeedDownload(FeedInfo* feedInfo, bool force);
 	void FeedCompleted(FeedDownloader* feedDownloader);
@@ -124,6 +132,7 @@ private:
 	void CheckSaveFeeds();
 	std::unique_ptr<FeedFile> parseFeed(FeedInfo* feedInfo);
 	void SchedulerNextUpdate(FeedInfo* feedInfo, bool success);
+	void WorkStateUpdate(Subject* caller, void* aspect);
 };
 
 extern FeedCoordinator* g_FeedCoordinator;

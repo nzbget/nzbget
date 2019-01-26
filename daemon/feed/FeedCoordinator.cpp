@@ -67,6 +67,9 @@ FeedCoordinator::FeedCoordinator()
 
 	m_downloadQueueObserver.m_owner = this;
 	DownloadQueue::Guard()->Attach(&m_downloadQueueObserver);
+
+	m_workStateObserver.m_owner = this;
+	g_WorkState->Attach(&m_workStateObserver);
 }
 
 FeedCoordinator::~FeedCoordinator()
@@ -130,7 +133,7 @@ void FeedCoordinator::Run()
 		CheckSaveFeeds();
 		ResetHangingDownloads();
 
-		if (abs(Util::CurrentTime() - lastCleanup) >= 60)
+		if (std::abs(Util::CurrentTime() - lastCleanup) >= 60)
 		{
 			// clean up feed history once a minute
 			CleanupHistory();
@@ -139,8 +142,25 @@ void FeedCoordinator::Run()
 			lastCleanup = Util::CurrentTime();
 		}
 
-		Guard guard(m_waitMutex);
-		m_waitCond.WaitFor(m_waitMutex, 1000, [&]{ return IsStopped(); });
+		Guard guard(m_downloadsMutex);
+		if (m_force)
+		{
+			// don't sleep too long if there active feeds scheduled for redownload
+			m_waitCond.WaitFor(m_downloadsMutex, 1000, [&]{ return IsStopped(); });
+		}
+		else
+		{
+			// no active jobs, we can sleep longer:
+			//  - if option "UrlForce" is active or if the feed list is empty we need to wake up
+			//    only when a new feed preview is requested. We could wait indefinitely for that
+			//    but we need to do some job every now and then and therefore we sleep only 60 seconds.
+			//  - if option "UrlForce" is disabled we need also to wake up when state "DownloadPaused"
+			//    is changed. We detect this via notification from 'WorkState'. However such
+			//    notifications are not 100% reliable due to possible race conditions. Therefore
+			//    we sleep for max. 5 seconds.
+			int waitInterval = g_Options->GetUrlForce() || m_feeds.empty() ? 60000 : 5000;
+			m_waitCond.WaitFor(m_downloadsMutex, waitInterval, [&]{ return m_force || IsStopped(); });
+		}
 	}
 
 	// waiting for downloads
@@ -166,17 +186,20 @@ void FeedCoordinator::Stop()
 	Thread::Stop();
 
 	debug("Stopping UrlDownloads");
+	Guard guard(m_downloadsMutex);
+	for (FeedDownloader* feedDownloader : m_activeDownloads)
 	{
-		Guard guard(m_downloadsMutex);
-		for (FeedDownloader* feedDownloader : m_activeDownloads)
-		{
-			feedDownloader->Stop();
-		}
+		feedDownloader->Stop();
 	}
 	debug("UrlDownloads are notified");
 
 	// Resume Run() to exit it
-	Guard guard(m_waitMutex);
+	m_waitCond.NotifyAll();
+}
+
+void FeedCoordinator::WorkStateUpdate(Subject* caller, void* aspect)
+{
+	m_force = true;
 	m_waitCond.NotifyAll();
 }
 
@@ -520,6 +543,9 @@ std::shared_ptr<FeedItemList> FeedCoordinator::PreviewFeed(int id,
 			}
 
 			StartFeedDownload(feedInfo.get(), true);
+
+			m_force = true;
+			m_waitCond.NotifyAll();
 		}
 
 		// wait until the download in a separate thread completes
@@ -584,6 +610,8 @@ void FeedCoordinator::FetchFeed(int id)
 			m_force = true;
 		}
 	}
+
+	m_waitCond.NotifyAll();
 }
 
 std::unique_ptr<FeedFile> FeedCoordinator::parseFeed(FeedInfo* feedInfo)
