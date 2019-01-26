@@ -764,7 +764,7 @@ void WinConsole::UpdateTrayIcon()
 		m_iconData->hIcon = m_pausedIcon;
 		strncpy(m_iconData->szTip, "NZBGet - paused", sizeof(m_iconData->szTip));
 	}
-	else if (!g_StatMeter->GetStandBy())
+	else if (g_WorkState->GetDownloading())
 	{
 		m_iconData->hIcon = m_workingIcon;
 		BString<100> tip("NZBGet - downloading at %s", *Util::FormatSpeed(g_StatMeter->CalcCurrentDownloadSpeed()));

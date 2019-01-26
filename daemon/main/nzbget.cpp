@@ -345,6 +345,9 @@ void NZBGet::CreateGlobals()
 	g_WinConsole = m_winConsole.get();
 #endif
 
+	m_workState = std::make_unique<WorkState>();
+	g_WorkState = m_workState.get();
+
 	m_serviceCoordinator = std::make_unique<ServiceCoordinator>();
 	g_ServiceCoordinator = m_serviceCoordinator.get();
 
@@ -392,9 +395,6 @@ void NZBGet::CreateGlobals()
 
 	m_commandScriptLog = std::make_unique<CommandScriptLog>();
 	g_CommandScriptLog = m_commandScriptLog.get();
-
-	m_workState = std::make_unique<WorkState>();
-	g_WorkState = m_workState.get();
 
 	m_scheduler = std::make_unique<Scheduler>();
 

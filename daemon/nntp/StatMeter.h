@@ -84,7 +84,6 @@ public:
 	void AddServerData(int bytes, int serverId);
 	void CalcTotalStat(int* upTimeSec, int* dnTimeSec, int64* allBytes, bool* standBy);
 	void CalcQuotaUsage(int64& monthBytes, int64& dayBytes);
-	bool GetStandBy() { return m_standBy; }
 	void IntervalCheck();
 	void EnterLeaveStandBy(bool enter);
 	GuardedServerVolumes GuardServerVolumes();

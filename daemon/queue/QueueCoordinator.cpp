@@ -240,6 +240,7 @@ void QueueCoordinator::Run()
 		if (standBy != wasStandBy)
 		{
 			g_StatMeter->EnterLeaveStandBy(standBy);
+			g_WorkState->SetDownloading(!standBy);
 			wasStandBy = standBy;
 			if (standBy)
 			{
