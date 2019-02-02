@@ -250,14 +250,22 @@ NSString* TMP_DIR = @"${AppSupDir}/tmp";
 	_browserUrl = [NSString stringWithFormat:@"http://@%@:%@", ip, port];
 }
 
+-(NSString *)urlEncode:(NSString*)str {
+	return (NSString *)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(NULL,
+		(CFStringRef)str,
+		NULL,
+		(CFStringRef)@"!*'\"();:@&=+$,/?%#[]% ",
+		kCFStringEncodingUTF8));
+}
+
 - (void)initRpcUrl {
 	NSString* ip = [self valueForOption:@"ControlIP"];
 	if ([ip isEqualToString:@"0.0.0.0"]) {
 		ip = @"127.0.0.1";
 	}
 	NSString* port = [self valueForOption:@"ControlPort"];
-	NSString* username = [self valueForOption:@"ControlUsername"];
-	NSString* password = [self valueForOption:@"ControlPassword"];
+	NSString* username = [self urlEncode:[self valueForOption:@"ControlUsername"]];
+	NSString* password = [self urlEncode:[self valueForOption:@"ControlPassword"]];
 	NSString* RpcUrl = [NSString stringWithFormat:@"http://%@:%@/%@:%@/jsonrpc/", ip, port, username, password];
 	[RPC setRpcUrl:RpcUrl];
 }
