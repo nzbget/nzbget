@@ -204,7 +204,9 @@ void TlsSocket::Final()
 	//ENGINE_cleanup();
 	CONF_modules_free();
 	CONF_modules_unload(1);
+#ifndef OPENSSL_NO_COMP
 	COMP_zlib_cleanup();
+#endif
 	ERR_free_strings();
 	EVP_cleanup();
 	CRYPTO_cleanup_all_ex_data();
