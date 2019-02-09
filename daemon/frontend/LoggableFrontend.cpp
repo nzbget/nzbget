@@ -31,7 +31,7 @@ void LoggableFrontend::Run()
 	while (!IsStopped())
 	{
 		Update();
-		Util::Sleep(m_updateInterval);
+		Wait(m_updateInterval);
 	}
 	// Printing the last messages
 	Update();

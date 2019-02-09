@@ -660,6 +660,7 @@ void WinConsole::LoadPrefs()
 void WinConsole::ApplyPrefs()
 {
 	ShowWindow(GetConsoleWindow(), m_showConsole ? SW_SHOW : SW_HIDE);
+	g_WorkState->SetPauseFrontend(!m_showConsole);
 	if (m_showTrayIcon)
 	{
 		UpdateTrayIcon();

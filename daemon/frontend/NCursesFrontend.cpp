@@ -215,7 +215,7 @@ void NCursesFrontend::Run()
 
 		// update more often (sleep shorter) if need faster reaction on user input
 		int sleepInterval = m_inputMode == normal ? 100 : 10;
-		Util::Sleep(sleepInterval);
+		Wait(sleepInterval);
 		m_dataUpdatePos -= sleepInterval;
 	}
 

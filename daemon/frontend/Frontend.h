@@ -27,6 +27,7 @@
 #include "DownloadInfo.h"
 #include "MessageBase.h"
 #include "QueueEditor.h"
+#include "Observer.h"
 
 class Frontend : public Thread
 {
@@ -51,7 +52,10 @@ protected:
 	int m_dnTimeSec = 0;
 	int64 m_allBytes = 0;
 	bool m_standBy = false;
+	Mutex m_waitMutex;
+	ConditionVar m_waitCond;
 
+	virtual void Stop();
 	bool PrepareData();
 	void FreeData();
 	GuardedMessageList GuardMessages();
@@ -63,12 +67,22 @@ protected:
 	bool RequestSetDownloadRate(int rate);
 	bool ServerEditQueue(DownloadQueue::EEditAction action, int offset, int entry);
 	bool RequestEditQueue(DownloadQueue::EEditAction action, int offset, int id);
+	void Wait(int milliseconds);
 
 private:
+	class WorkStateObserver : public Observer
+	{
+	public:
+		Frontend* m_owner;
+		virtual void Update(Subject* caller, void* aspect) { m_owner->WorkStateUpdate(caller, aspect); }
+	};
+
 	MessageList m_remoteMessages;
+	WorkStateObserver m_workStateObserver;
 
 	bool RequestMessages();
 	bool RequestFileList();
+	void WorkStateUpdate(Subject* caller, void* aspect);
 };
 
 #endif

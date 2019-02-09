@@ -34,7 +34,22 @@ Frontend::Frontend()
 {
 	debug("Creating Frontend");
 
+	m_workStateObserver.m_owner = this;
+	g_WorkState->Attach(&m_workStateObserver);
+
 	m_updateInterval = g_Options->GetUpdateInterval();
+}
+
+void Frontend::Stop()
+{
+	Thread::Stop();
+
+	m_waitCond.NotifyAll();
+}
+
+void Frontend::WorkStateUpdate(Subject* caller, void* aspect)
+{
+	m_waitCond.NotifyAll();
 }
 
 bool Frontend::PrepareData()
@@ -307,4 +322,17 @@ bool Frontend::RequestEditQueue(DownloadQueue::EEditAction action, int offset, i
 	client.SetVerbose(false);
 	IdList ids = { id };
 	return client.RequestServerEditQueue(action, offset, nullptr, &ids, nullptr, rmId);
+}
+
+void Frontend::Wait(int milliseconds)
+{
+	if (g_WorkState->GetPauseFrontend())
+	{
+		Guard guard(m_waitMutex);
+		m_waitCond.WaitFor(m_waitMutex, 2000);
+	}
+	else
+	{
+		Util::Sleep(milliseconds);
+	}
 }
