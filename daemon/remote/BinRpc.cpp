@@ -675,7 +675,7 @@ void ListBinCommand::Execute()
 		Util::SplitInt64(remainingSize, &sizeHi, &sizeLo);
 		ListResponse.m_remainingSizeHi = htonl(sizeHi);
 		ListResponse.m_remainingSizeLo = htonl(sizeLo);
-		ListResponse.m_downloadRate = htonl(g_WorkState->GetSpeedLimit());
+		ListResponse.m_downloadLimit = htonl(g_WorkState->GetSpeedLimit());
 		ListResponse.m_downloadPaused = htonl(g_WorkState->GetPauseDownload());
 		ListResponse.m_postPaused = htonl(g_WorkState->GetPausePostProcess());
 		ListResponse.m_scanPaused = htonl(g_WorkState->GetPauseScan());

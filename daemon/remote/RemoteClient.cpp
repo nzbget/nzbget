@@ -541,9 +541,9 @@ bool RemoteClient::RequestServerList(bool files, bool groups, const char* patter
 	int averageSpeed = (int)(ntohl(ListResponse.m_downloadTimeSec) > 0 ? allBytes / ntohl(ListResponse.m_downloadTimeSec) : 0);
 	printf("Session download rate: %s\n", *Util::FormatSpeed(averageSpeed));
 
-	if (ntohl(ListResponse.m_downloadRate) > 0)
+	if (ntohl(ListResponse.m_downloadLimit) > 0)
 	{
-		printf("Speed limit: %s\n", *Util::FormatSpeed(ntohl(ListResponse.m_downloadRate)));
+		printf("Speed limit: %s\n", *Util::FormatSpeed(ntohl(ListResponse.m_downloadLimit)));
 	}
 
 	int sec = ntohl(ListResponse.m_upTimeSec);
