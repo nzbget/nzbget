@@ -3,7 +3,7 @@
 rem
 rem  This file is part of nzbget
 rem
-rem  Copyright (C) 2013-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
+rem  Copyright (C) 2013-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
 rem
 rem  This program is free software; you can redistribute it and/or modify
 rem  it under the terms of the GNU General Public License as published by
@@ -241,6 +241,8 @@ xcopy /E scripts ..\distrib\NZBGet\scripts
 if errorlevel 1 goto BUILD_FAILED
 
 copy ..\..\image\* ..\distrib\NZBGet
+copy ..\..\image\32\* ..\distrib\NZBGet\32
+copy ..\..\image\64\* ..\distrib\NZBGet\64
 if errorlevel 1 goto BUILD_FAILED
 
 del /S ..\distrib\NZBGet\_*.*
