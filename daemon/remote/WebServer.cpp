@@ -301,9 +301,10 @@ bool WebProcessor::IsAuthorizedIp(const char* remoteAddr)
 	// split option AuthorizedIP into tokens and check each token
 	bool authorized = false;
 	Tokenizer tok(g_Options->GetAuthorizedIp(), ",;");
-	while (const char* iP = tok.Next())
+	while (const char* ip = tok.Next())
 	{
-		if (!strcmp(iP, remoteIp))
+		WildMask mask(ip);
+		if (mask.Match(remoteIp))
 		{
 			authorized = true;
 			break;

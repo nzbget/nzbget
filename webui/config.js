@@ -829,7 +829,6 @@ var Config = (new function($)
 		else if (option.caption.toLowerCase().indexOf('password') > -1 &&
 			option.name.toLowerCase() !== '*unpack:password')
 		{
-			console.log(option.caption);
 			option.type = 'password';
 			html += '<div class="password-field input-append">' +
 				'<input type="password" id="' + option.formId + '" value="' + Util.textToAttr(value) + '" class="editsmall">'+
@@ -878,6 +877,11 @@ var Config = (new function($)
 			htmldescr = htmldescr.replace(exp, '<a class="option" href="#" onclick="Config.scrollToOption(event, this)">$1</a>');
 
 			htmldescr = htmldescr.replace(/&/g, '&amp;');
+
+			// add extra new line after Examples not ended with dot
+			htmldescr = htmldescr.replace(/Example:.*/g, function (match) {
+				return match + (Util.endsWith(match, '.') ? '' : '\n');
+			});
 
 			// replace URLs
 			exp = /(http:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
