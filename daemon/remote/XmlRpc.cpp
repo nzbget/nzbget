@@ -561,9 +561,7 @@ void XmlRpcProcessor::BuildResponse(const char* response, const char* callbackFu
 void XmlRpcProcessor::BuildErrorResponse(int errCode, const char* errText)
 {
 	ErrorXmlCommand command(errCode, errText);
-	command.SetRequest(m_request);
 	command.SetProtocol(m_protocol);
-	command.PrepareParams();
 	command.Execute();
 	BuildResponse(command.GetResponse(), "", command.GetFault(), nullptr);
 }
