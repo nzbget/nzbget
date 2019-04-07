@@ -642,8 +642,6 @@ void Options::CheckDir(CString& dir, const char* optionName,
 
 		FileSystem::NormalizePathSeparators((char*)usedir2);
 		dir = usedir2;
-
-		usedir2[usedir2.Length() - 1] = '\0';
 		SetOption(optionName, usedir2);
 	}
 
