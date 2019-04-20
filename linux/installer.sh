@@ -92,6 +92,7 @@ PrintHelp()
     PrintArch "x86_64"   "    x86_64   - x86, 64 Bit"
     PrintArch "armel"    "    armel    - ARMv5/v6 (ARM9 and ARM11 families)"
     PrintArch "armhf"    "    armhf    - ARMv7/v8 (Cortex family)"
+    PrintArch "aarch64"  "    aarch64  - ARMv8, 64 Bit"
     PrintArch "mipsel"   "    mipsel   - MIPS (little endian)"
     PrintArch "mipseb"   "    mipseb   - MIPS (big endian)"
     PrintArch "ppc6xx"   "    ppc6xx   - PowerPC 6xx (603e series)"
@@ -188,8 +189,11 @@ DetectArch()
             armv5*|armv6*|armel)
                 ARCH=armel
                 ;;
-            armv7*|armv8*|aarch64)
+            armv7*|armv8*)
                 ARCH=armhf
+                ;;
+            aarch64)
+                ARCH=aarch64
                 ;;
             ppc)
                 ARCH=ppcx
