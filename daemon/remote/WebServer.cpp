@@ -129,7 +129,10 @@ void WebProcessor::ParseHeaders()
 {
 	// reading http header
 	char buffer[1024];
+	m_httpHeader = CString();
+	int lHttpHeader = g_Options->GetControlHttpHeaderLen();
 	m_contentLen = 0;
+
 	while (char* p = m_connection->ReadLine(buffer, sizeof(buffer), nullptr))
 	{
 		if (char* pe = strrchr(p, '\r')) *pe = '\0';
@@ -189,6 +192,11 @@ void WebProcessor::ParseHeaders()
 		{
 			m_keepAlive = true;
 		}
+		else if (lHttpHeader > 0 &&
+				!strncasecmp(p, (char*)g_Options->GetControlHttpHeader(), lHttpHeader))
+		{
+			m_httpHeader = p + lHttpHeader + 2;
+		}
 		else if (*p == '\0')
 		{
 			break;
@@ -242,7 +250,7 @@ void WebProcessor::ParseUrl()
 
 bool WebProcessor::CheckCredentials()
 {
-	if (!Util::EmptyStr(g_Options->GetControlPassword()) &&
+	if ((!Util::EmptyStr(g_Options->GetControlHttpHeader()) || !Util::EmptyStr(g_Options->GetControlPassword())) &&
 		!(!Util::EmptyStr(g_Options->GetAuthorizedIp()) && IsAuthorizedIp(m_connection->GetRemoteAddr())))
 	{
 		if (Util::EmptyStr(m_authInfo))
@@ -263,7 +271,13 @@ bool WebProcessor::CheckCredentials()
 		char* pw = strchr(m_authInfo, ':');
 		if (pw) *pw++ = '\0';
 
-		if ((Util::EmptyStr(g_Options->GetControlUsername()) ||
+		if (!Util::EmptyStr(g_Options->GetControlHttpHeader()) &&
+				m_httpHeader.Length() > 0 &&
+				!strcmp(m_httpHeader, g_Options->GetControlUsername()))
+		{
+			m_userAccess = uaControl;
+		}
+		else if ((Util::EmptyStr(g_Options->GetControlUsername()) ||
 			 !strcmp(m_authInfo, g_Options->GetControlUsername())) &&
 			pw && !strcmp(pw, g_Options->GetControlPassword()))
 		{

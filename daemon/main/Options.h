@@ -224,6 +224,8 @@ public:
 	bool GetDupeCheck() { return m_dupeCheck; }
 	const char* GetControlIp() { return m_controlIp; }
 	const char* GetControlUsername() { return m_controlUsername; }
+	const char* GetControlHttpHeader() { return m_controlHttpHeader; }
+	int GetControlHttpHeaderLen() { return m_controlHttpHeader.Length(); }
 	const char* GetControlPassword() { return m_controlPassword; }
 	const char* GetRestrictedUsername() { return m_restrictedUsername; }
 	const char* GetRestrictedPassword() { return m_restrictedPassword; }
@@ -357,6 +359,7 @@ private:
 	bool m_dupeCheck = false;
 	CString m_controlIp;
 	CString m_controlUsername;
+	CString m_controlHttpHeader;
 	CString m_controlPassword;
 	CString m_restrictedUsername;
 	CString m_restrictedPassword;

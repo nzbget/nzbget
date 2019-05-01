@@ -54,6 +54,7 @@ static const char* OPTION_DOWNLOADRATE			= "DownloadRate";
 static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
 static const char* OPTION_CONTROLUSERNAME		= "ControlUsername";
+static const char* OPTION_CONTROLHTTPHEADER     = "ControlHttpHeader";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
 static const char* OPTION_RESTRICTEDUSERNAME	= "RestrictedUsername";
 static const char* OPTION_RESTRICTEDPASSWORD	= "RestrictedPassword";
@@ -432,6 +433,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_DOWNLOADRATE, "0");
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
 	SetOption(OPTION_CONTROLUSERNAME, "nzbget");
+	SetOption(OPTION_CONTROLHTTPHEADER, "");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
 	SetOption(OPTION_RESTRICTEDUSERNAME, "");
 	SetOption(OPTION_RESTRICTEDPASSWORD, "");
@@ -672,6 +674,7 @@ void Options::InitOptions()
 	m_extensions			= GetOption(OPTION_EXTENSIONS);
 	m_controlIp				= GetOption(OPTION_CONTROLIP);
 	m_controlUsername		= GetOption(OPTION_CONTROLUSERNAME);
+	m_controlHttpHeader     = GetOption(OPTION_CONTROLHTTPHEADER);
 	m_controlPassword		= GetOption(OPTION_CONTROLPASSWORD);
 	m_restrictedUsername	= GetOption(OPTION_RESTRICTEDUSERNAME);
 	m_restrictedPassword	= GetOption(OPTION_RESTRICTEDPASSWORD);

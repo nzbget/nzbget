@@ -52,6 +52,7 @@ private:
 	Connection* m_connection = nullptr;
 	CString m_request;
 	CString m_url;
+	CString m_httpHeader;
 	EHttpMethod m_httpMethod;
 	EUserAccess m_userAccess;
 	bool m_rpcRequest;
