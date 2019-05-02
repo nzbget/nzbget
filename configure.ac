@@ -1,7 +1,7 @@
 #
 #  This file is part of nzbget. See <http://nzbget.net>.
 #
-# Copyright (C) 2008-2018 Andrey Prygunkov <hugbug@users.sourceforge.net>
+# Copyright (C) 2008-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.65)
-AC_INIT(nzbget, 21.0-testing, hugbug@users.sourceforge.net)
+AC_INIT(nzbget, 21.0, hugbug@users.sourceforge.net)
 AC_CONFIG_AUX_DIR(posix)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign subdir-objects])
