@@ -1,6 +1,63 @@
 nzbget-21.0:
-  - please see repository change log at
-    https://github.com/nzbget/nzbget/commits/develop
+  - reworked duplicate handling to support URLs, especially when using RSS
+    feeds:
+      - queue items added via URLs (to be fetched by nzbget) are no longer
+        immediately fetched;
+      - instead url-items are handled by duplicate check similar to nzb-items
+        and may be placed into history as duplicate backups;
+      - if an url-item needs to be downloaded as backup for a failed other item
+        the nzb-file is fetched via provided URL;
+      - this greatly reduces the number of nzbs fetched from indexers when using
+        RSS feeds and duplicate handling;
+  - improved support for Android devices:
+    - now providing a separate installer package for Android;
+    - the package contains binaries built using Android NDK;
+    - this improves compatibility with Android, in particular with Android 8,
+      where general Linux installer version of NZBGet didn't work anymore due
+      to security changes in Android;
+    - android installer app is updated to use the new android installer package
+      instead of general Linux package;
+  - thoroughly optimised the program to reduce power consumption in idle state:
+    - number of CPU wake ups in idle state has been reduced from hundreds times
+      per second to about only one per second;
+  - optimisations for large queues with thousands of items:
+    - speed up saving of queue state and reduced number of queue state savings;
+    - improved queue state format to reduce amount of state data saved during
+      downloading;
+    - in tests download speed for very large queue (16000 items) has been
+      increased from 45 MB/s to 300 MB/s (comparing to 400 MB/s with small
+      queue); 
+  - added native support for aarch64 architecture (ARM 64 Bit CPU) in Linux and
+    Android installers;
+  - force par-check for nzbs without archives;
+  - added functional tests for unpack CRC error;
+  - click on nzbget logo in web-interface now switches to downloads tab instead
+    of showing "About dialog" which has been moved into settings;
+  - improved handling of files splitted via par2;
+  - added python 3 compatibility to EMail.py script;
+  - added python 3 compatibility to Logger.py script;
+  - proper UTF-8 encoding of email content in EMail.py script;
+  - improved error reporting for queue disk state corruption;
+  - updated unrar to 5.7 and 7-zip to 19.0;
+  - Windows installer now includes unrar in 32 bit and 64 bit variants;
+  - allowing wildcards in option AuthorizedIP;
+  - removed suggestion of RC4 cipher;
+  - better description of option UMask;
+  - integrated LGTM code analyser tool into project;
+  - fixed: failed downloads not having any par2- or archive- files were moved to
+    DestDir instead of remaining in InterDir;
+  - fixed crash when using FIPS version of OpenSSL;
+  - fixed compatibility issue with OpenSSL compiled without compression support;
+  - fixed deprecated OpenSSL calls;
+  - fixed potential crash in built-in web-server;
+  - fixed: statistics for session download time and speed may be way off on high
+    load;
+  - fixed many compilation warnings in GCC;
+  - fixed: macOS menubar widget could not connect if password contained special
+    characters;
+  - fixed: remote clients not displaying current download speed;
+  - fixed: remote server could crash when feed with invalid api request;
+  - fixed trimming of relative paths in config.
 
 nzbget-20.0:
   - massive performance optimisations in downloader:
