@@ -253,7 +253,6 @@ void QueueCoordinator::Run()
 		// sleep longer in StandBy
 		if (standBy)
 		{
-			Util::SetStandByMode(true);
 			Guard guard(m_waitMutex);
 			// sleeping max. 2 seconds; can't sleep much longer because we can't rely on
 			// notifications from 'WorkState' and we also have periodical work to do here
@@ -280,7 +279,7 @@ void QueueCoordinator::Run()
 			g_StatMeter->IntervalCheck();
 			g_Log->IntervalCheck();
 			AdjustDownloadsLimit();
-			Util::SetStandByMode(false);
+			Util::SetStandByMode(standBy);
 			lastReset = Util::CurrentTime();
 		}
 	}
