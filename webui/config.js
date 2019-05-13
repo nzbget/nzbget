@@ -1236,7 +1236,7 @@ var Config = (new function($)
 		{
 			$ConfigAbout.show();
 			$ConfigData.children().hide();
-			$ConfigTitle.text('ABOUT NZBGET');
+			$ConfigTitle.text('NZBGET ' + Options.option('version'));
 			return;
 		}
 
