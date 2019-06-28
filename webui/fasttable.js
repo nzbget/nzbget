@@ -683,7 +683,7 @@
 	function itemCheckClick(data, event)
 	{
 		var checkmark = $(event.target).hasClass('check');
-		if (data.dragging || (!checkmark && !data.config.rowSelect))
+		if (data.dragging || (!checkmark && !data.config.rowSelect))
 		{
 			return;
 		}
@@ -712,7 +712,7 @@
 	function titleCheckClick(data, event)
 	{
 		var checkmark = $(event.target).hasClass('check');
-		if (data.dragging || (!checkmark && !data.config.rowSelect))
+		if (data.dragging || (!checkmark && !data.config.rowSelect))
 		{
 			return;
 		}
