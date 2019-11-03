@@ -408,7 +408,7 @@ bool UrlCoordinator::DeleteQueueEntry(DownloadQueue* downloadQueue, NzbInfo* nzb
 void UrlCoordinator::AddUrlToQueue(std::unique_ptr<NzbInfo> nzbInfo, bool addFirst)
 {
 	debug("Adding URL to queue");
-										
+
 	NzbInfo* addedNzb = nzbInfo.get();
 
 	GuardedDownloadQueue downloadQueue = DownloadQueue::Guard();
@@ -427,3 +427,18 @@ void UrlCoordinator::AddUrlToQueue(std::unique_ptr<NzbInfo> nzbInfo, bool addFir
 	downloadQueue->Save();
 }
 
+#ifdef HAVE_LIBCURL
+// Helper function to handle body download writes. This is
+// here so we can call a class member function from C.
+size_t UrlDownloader::curl_body_callback(char *data, size_t size, size_t nmemb, void *f) {
+	// Recreate the class
+	return static_cast<UrlDownloader*>(f)->CurlBodyCallback(data, size, nmemb);
+}
+
+// Helper function to handle header lines. This is here
+// so we can call a class member function from C.
+size_t UrlDownloader::curl_header_callback(char *data, size_t size, size_t nmemb, void *f) {
+	// Recreate the class
+	return static_cast<UrlDownloader*>(f)->CurlHeaderCallback(data, size, nmemb);
+}
+#endif // HAVE_LIBCURL

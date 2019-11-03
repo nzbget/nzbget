@@ -64,6 +64,13 @@ public:
 
 	void LogDebugInfo();
 
+#ifdef HAVE_LIBCURL
+	static size_t curl_body_callback(char *data, size_t size, size_t nmemb, void *f);
+	static size_t curl_header_callback(char *data, size_t size, size_t nmemb, void *f);
+	size_t CurlBodyCallback(char *data, size_t size, size_t nmemb);
+	size_t CurlHeaderCallback(char *data, size_t size, size_t nmemb);
+#endif
+
 protected:
 	virtual void ProcessHeader(const char* line);
 

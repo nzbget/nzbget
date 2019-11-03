@@ -281,6 +281,12 @@ else
 	AC_DEFINE([DISABLE_LIBXML2],1,[Define to 1 to not use libxml2, only for development purposes])
 fi
 
+m4_include([libcurl.m4])
+LIBCURL_CHECK_CONFIG(["no"],
+                     [],
+                     [LIBS="${LIBS} $LIBCURL"]
+                     [CPPFLAGS="${CPPFLAGS} ${LIBCURL_CPPFLAGS}"],
+                     [])
 
 dnl
 dnl Use curses. Deafult: yes

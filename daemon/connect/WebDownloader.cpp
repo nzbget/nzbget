@@ -25,6 +25,9 @@
 #include "WorkState.h"
 #include "Util.h"
 #include "FileSystem.h"
+#ifdef HAVE_LIBCURL
+#include <curl/curl.h>
+#endif
 
 WebDownloader::WebDownloader()
 {
@@ -137,6 +140,190 @@ WebDownloader::EStatus WebDownloader::Download()
 {
 	EStatus Status = adRunning;
 
+#ifdef HAVE_LIBCURL
+	static char errorBuffer[CURL_ERROR_SIZE];
+	CURLcode code;
+	CURL* conn;
+
+	conn = curl_easy_init();
+
+	if (conn == NULL) {
+		error("Failed to init CURL connection");
+		return adFatalError;
+	}
+
+	// From here on in we can't just bail out, the
+	// curl control structure needs to be freed.
+
+	code = curl_easy_setopt(conn, CURLOPT_ERRORBUFFER, errorBuffer);
+	if (code != CURLE_OK) {
+		error("Failed to set CURL error buffer [%d]", code);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	code = curl_easy_setopt(conn, CURLOPT_URL, (char *)m_url);
+	if (code != CURLE_OK) {
+		error("Failed to set URL: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// Handler functions to capture body and header data
+	code = curl_easy_setopt(conn, CURLOPT_WRITEFUNCTION, curl_body_callback);
+	if (code != CURLE_OK) {
+		error("Failed to set body data handler function: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	code = curl_easy_setopt(conn, CURLOPT_WRITEDATA, this);
+	if (code != CURLE_OK) {
+		error("Failed to set body data handler data: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	code = curl_easy_setopt(conn, CURLOPT_HEADERFUNCTION, curl_header_callback);
+	if (code != CURLE_OK) {
+		error("Failed to set header data handler function: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	code = curl_easy_setopt(conn, CURLOPT_HEADERDATA, this);
+	if (code != CURLE_OK) {
+		error("Failed to set header data handler data: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// We are explicitly not following redirects
+	code = curl_easy_setopt(conn, CURLOPT_FOLLOWLOCATION, 0L);
+	if (code != CURLE_OK) {
+		error("Failed to disable redirect handling: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// libcurl does not have a transfer timeout in the classic sense. We
+	// are using the slow speed detection, and bail out if
+	// transfer speed is below 10 bytes/s for the time
+	// specified with UrlTimeout in the config
+	code = curl_easy_setopt(conn, CURLOPT_LOW_SPEED_TIME, g_Options->GetUrlTimeout());
+	if (code != CURLE_OK) {
+		error("Failed to set low speed time: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	code = curl_easy_setopt(conn, CURLOPT_LOW_SPEED_LIMIT, 10L);
+	if (code != CURLE_OK) {
+		error("Failed to set low speed time: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// SSL host name verification and cert validation
+	code = curl_easy_setopt(conn, CURLOPT_SSL_VERIFYHOST, g_Options->GetCertCheck() ? 2 : 0);
+	if (code != CURLE_OK) {
+		error("Failed to set SSL host name verification: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	code = curl_easy_setopt(conn, CURLOPT_SSL_VERIFYPEER, g_Options->GetCertCheck() ? 1 : 0);
+	if (code != CURLE_OK) {
+		error("Failed to set SSL peer verification: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// SSL Certificate location. This can either be a file or a
+	// directory.
+	if (FileSystem::DirectoryExists(g_Options->GetCertStore())) {
+		code = curl_easy_setopt(conn, CURLOPT_CAPATH, g_Options->GetCertStore());
+	} else if (FileSystem::FileExists(g_Options->GetCertStore())) {
+		code = curl_easy_setopt(conn, CURLOPT_CAINFO, g_Options->GetCertStore());
+	} else {
+		// Option not set, pretend all is fine.
+		code = CURLE_OK;
+	}
+	if (code != CURLE_OK) {
+		error("Failed to set SSL CA location: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// User agent
+	code = curl_easy_setopt(conn, CURLOPT_USERAGENT, (char *)BString<1024>("nzbget/%s %s", Util::VersionRevision(), curl_version()));
+	if (code != CURLE_OK) {
+		error("Failed to set user agent: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// Perform the request
+	code = curl_easy_perform(conn);
+	if (code != CURLE_OK) {
+		// Deal with connect error specifically
+		if (code == CURLE_COULDNT_CONNECT) {
+			error("Could not connect to host");
+			Status = adConnectError;
+		} else {
+			error("Download error: %s", errorBuffer);
+			Status = adFatalError;
+		}
+		goto curl_out;
+	}
+
+	// Check the response code
+	long response_code;
+	char* location;
+	code = curl_easy_getinfo(conn, CURLINFO_RESPONSE_CODE, &response_code);
+	if (code != CURLE_OK) {
+		error("Could not retrieve response code: %s", errorBuffer);
+		Status = adFatalError;
+		goto curl_out;
+	}
+
+	// Check for redirects
+	if ((response_code / 100) == 3) {
+		// Redirect. The URL we get from curl is
+		// always absolute.
+		code = curl_easy_getinfo(conn, CURLINFO_REDIRECT_URL, &location);
+		if ((code != CURLE_OK) || !location) {
+			error("Could not get redirect url: %s", errorBuffer);
+			Status = adFatalError;
+			goto curl_out;
+		}
+		SetUrl(location);
+		Status = adRedirect;
+		goto curl_out;
+	}
+
+	// Not found
+	if (response_code == 404) {
+		// Not found
+		Status = adNotFound;
+		goto curl_out;
+	}
+
+	// Any other errors
+	if (response_code >= 400) {
+		info("Error code downloading file: %ld", response_code);
+		Status = adFailed;
+		goto curl_out;
+	}
+
+	Status = adFinished;
+
+curl_out:
+	m_outFile.Close();
+	curl_easy_cleanup(conn);
+
+	return Status;
+#else // HAVE_LIBCURL
 	URL url(m_url);
 
 	Status = CreateConnection(&url);
@@ -174,6 +361,7 @@ WebDownloader::EStatus WebDownloader::Download()
 	}
 
 	FreeConnection();
+#endif // HAVE_LIBCURL
 
 	if (Status != adFinished)
 	{
@@ -464,6 +652,15 @@ WebDownloader::EStatus WebDownloader::CheckResponse(const char* response)
 
 void WebDownloader::ProcessHeader(const char* line)
 {
+#ifdef HAVE_LIBCURL
+	// When using libcurl the only important header
+	// is Content-Disposition, everything else is handled
+	// by libcurl
+	if (!strncasecmp(line, "Content-Disposition: ", 21))
+	{
+		ParseFilename(line);
+	}
+#else // HAVE_LIBCURL
 	if (!strncasecmp(line, "Content-Length: ", 16))
 	{
 		m_contentLen = atoi(line + 16);
@@ -482,6 +679,7 @@ void WebDownloader::ProcessHeader(const char* line)
 		ParseRedirect(line + 10);
 		m_redirected = true;
 	}
+#endif // HAVE_LIBCURL
 }
 
 void WebDownloader::ParseFilename(const char* contentDisposition)
@@ -664,3 +862,40 @@ void WebDownloader::FreeConnection()
 		m_connection.reset();
 	}
 }
+
+#ifdef HAVE_LIBCURL
+// Helper function to handle body download writes. This is
+// here so we can call a class member function from C.
+size_t WebDownloader::curl_body_callback(char *data, size_t size, size_t nmemb, void *f) {
+	// Recreate the class
+	return static_cast<WebDownloader*>(f)->CurlBodyCallback(data, size, nmemb);
+}
+
+// Helper function to handle header lines. This is here
+// so we can call a class member function from C.
+size_t WebDownloader::curl_header_callback(char *data, size_t size, size_t nmemb, void *f) {
+	// Recreate the class
+	return static_cast<WebDownloader*>(f)->CurlHeaderCallback(data, size, nmemb);
+}
+
+size_t WebDownloader::CurlBodyCallback(char* data, size_t size, size_t nmemb) {
+	info("WebDownloader::CurlBodyCallback(%ld)", (size * nmemb));
+	if (!m_outFile.Active() && !PrepareFile())
+	{
+		return 0;
+	}
+
+	return m_outFile.Write(data, (size * nmemb));
+}
+
+size_t WebDownloader::CurlHeaderCallback(char* data, size_t size, size_t nmemb) {
+	info("WebDownloader::CurlHeaderCallback(%ld)", (size * nmemb));
+	// The data that curl gives us is not necessarily NULL terminated. Create a temporary container
+	CString header = CString(data, size * nmemb);
+
+	ProcessHeader((char *)header);
+
+	// Curl expects this to signal successful handling
+	return size * nmemb;
+}
+#endif

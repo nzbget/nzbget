@@ -722,3 +722,19 @@ void FeedCoordinator::CleanupCache()
 			return false;
 		});
 }
+
+#ifdef HAVE_LIBCURL
+// Helper function to handle body download writes. This is
+// here so we can call a class member function from C.
+size_t FeedDownloader::curl_body_callback(char *data, size_t size, size_t nmemb, void *f) {
+	// Recreate the class
+	return static_cast<FeedDownloader*>(f)->CurlBodyCallback(data, size, nmemb);
+}
+
+// Helper function to handle header lines. This is here
+// so we can call a class member function from C.
+size_t FeedDownloader::curl_header_callback(char *data, size_t size, size_t nmemb, void *f) {
+	// Recreate the class
+	return static_cast<FeedDownloader*>(f)->CurlHeaderCallback(data, size, nmemb);
+}
+#endif // HAVE_LIBCURL

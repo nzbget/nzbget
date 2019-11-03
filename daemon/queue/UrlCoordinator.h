@@ -80,6 +80,10 @@ public:
 	void SetNzbInfo(NzbInfo* nzbInfo) { m_nzbInfo = nzbInfo; }
 	NzbInfo* GetNzbInfo() { return m_nzbInfo; }
 	const char* GetCategory() { return m_category; }
+#ifdef HAVE_LIBCURL
+	static size_t curl_body_callback(char *data, size_t size, size_t nmemb, void *f);
+	static size_t curl_header_callback(char *data, size_t size, size_t nmemb, void *f);
+#endif // HAVE_LIBCURL
 
 protected:
 	virtual void ProcessHeader(const char* line);

@@ -65,6 +65,9 @@
 #ifndef DISABLE_NSERV
 #include "NServMain.h"
 #endif
+#ifdef HAVE_LIBCURL
+#include <curl/curl.h>
+#endif
 
 // Prototypes
 void RunMain();
@@ -88,7 +91,7 @@ ArticleCache* g_ArticleCache;
 QueueScriptCoordinator* g_QueueScriptCoordinator;
 ServiceCoordinator* g_ServiceCoordinator;
 ScriptConfig* g_ScriptConfig;
-CommandScriptLog* g_CommandScriptLog; 
+CommandScriptLog* g_CommandScriptLog;
 #ifdef WIN32
 WinConsole* g_WinConsole;
 #endif
@@ -133,6 +136,13 @@ int main(int argc, char *argv[], char *argp[])
 
 #ifdef ENABLE_TESTS
 	TestCleanup();
+#endif
+
+#ifdef HAVE_LIBCURL
+	if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0) {
+		printf("ERROR: Could not initialize curl\n");
+		return 1;
+	}
 #endif
 
 	if (argc > 1 && (!strcmp(argv[1], "--nserv")))

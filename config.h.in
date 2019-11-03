@@ -83,6 +83,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 to use libcurl for HTTP downloads. */
+#undef HAVE_LIBCURL
+
 /* Define to 1 to use GnuTLS library for TLS/SSL-support. */
 #undef HAVE_LIBGNUTLS
 
