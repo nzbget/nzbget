@@ -322,7 +322,6 @@ curl_out:
 	m_outFile.Close();
 	curl_easy_cleanup(conn);
 
-	return Status;
 #else // HAVE_LIBCURL
 	URL url(m_url);
 
