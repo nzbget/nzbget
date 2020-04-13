@@ -162,7 +162,7 @@ void NServPrintUsage(const char* com)
 		"    -v <verbose>    - verbosity level 0..3 (default is 2)\n"
 		"    -w <msec>       - response latency (in milliseconds)\n"
 		"    -r <KB/s>       - speed throttling (in kilobytes per second)\n"
-		"    -z <seg-size>   - generate nzbs for all files in data-dir (size in bytes)\n"
+		"    -z [seg-size]   - generate nzbs for all files in data-dir (optional: seg-size in bytes, default is 500000)\n"
 		"    -q              - quit after generating nzbs (in combination with -z)\n"
 		, FileSystem::BaseFileName(com));
 }
@@ -239,6 +239,7 @@ NServOpts::NServOpts(int argc, char* argv[], Options::CmdOptList& cmdOpts)
 			case 'z':
 				generateNzb = true;
 				segmentSize = atoi(optind > argc ? "500000" : argv[optind - 1]);
+				segmentSize = segmentSize <= 1000 ? 500000 : segmentSize; // Must be a positive number, and not too small
 				break;
 
 			case 'q':
