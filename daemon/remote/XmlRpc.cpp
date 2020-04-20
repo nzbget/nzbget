@@ -2238,7 +2238,7 @@ void DownloadXmlCommand::Execute()
 		}
 	}
 
-	if (!strncasecmp(nzbContent, "http://", 6) || !strncasecmp(nzbContent, "https://", 7))
+	if (!strncasecmp(nzbContent, "http://", 7) || !strncasecmp(nzbContent, "https://", 8))
 	{
 		// add url
 		std::unique_ptr<NzbInfo> nzbInfo = std::make_unique<NzbInfo>();
