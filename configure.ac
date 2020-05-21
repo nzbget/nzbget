@@ -223,18 +223,6 @@ AC_DEFINE_UNQUOTED(SOCKLEN_T, $SOCKLEN_T, [Determine what socket length (socklen
 
 
 dnl
-dnl Dir-browser's snapshot
-dnl
-AC_MSG_CHECKING(whether dir-browser snapshot workaround is needed)
-if test "$target_vendor" == "apple"; then
-	AC_MSG_RESULT([[yes]])
-	AC_DEFINE([DIRBROWSER_SNAPSHOT], 1, [Define to 1 if deleting of files during reading of directory is not properly supported by OS])
-else
-	AC_MSG_RESULT([[no]])
-fi
-
-
-dnl
 dnl check cpu cores via sysconf
 dnl
 AC_MSG_CHECKING(for cpu cores via sysconf)

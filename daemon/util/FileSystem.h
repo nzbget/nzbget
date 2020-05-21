@@ -84,11 +84,7 @@ public:
 class DirBrowser
 {
 public:
-#ifdef DIRBROWSER_SNAPSHOT
 	DirBrowser(const char* path, bool snapshot = true);
-#else
-	DirBrowser(const char* path);
-#endif
 	~DirBrowser();
 	const char* Next();
 
@@ -103,12 +99,10 @@ private:
 	struct dirent* m_findData;
 #endif
 
-#ifdef DIRBROWSER_SNAPSHOT
 	bool m_snapshot;
 	typedef std::deque<CString> FileList;
 	FileList m_snapshotFiles;
 	FileList::iterator m_snapshotIter;
-#endif
 
 	const char* InternNext();
 };

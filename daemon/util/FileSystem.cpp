@@ -1020,52 +1020,9 @@ CString FileSystem::WidePathToUtfPath(const wchar_t* wpath)
 #endif
 
 
-#ifdef WIN32
-DirBrowser::DirBrowser(const char* path)
-{
-	BString<1024> mask("%s%c*.*", path, PATH_SEPARATOR);
-	m_file = FindFirstFileW(FileSystem::UtfPathToWidePath(mask), &m_findData);
-	m_first = true;
-}
-
-DirBrowser::~DirBrowser()
-{
-	if (m_file != INVALID_HANDLE_VALUE)
-	{
-		FindClose(m_file);
-	}
-}
-
-const char* DirBrowser::InternNext()
-{
-	bool ok = false;
-	if (m_first)
-	{
-		ok = m_file != INVALID_HANDLE_VALUE;
-		m_first = false;
-	}
-	else
-	{
-		ok = FindNextFileW(m_file, &m_findData) != 0;
-	}
-	if (ok)
-	{
-		m_filename = FileSystem::WidePathToUtfPath(m_findData.cFileName);
-		return m_filename;
-	}
-	return nullptr;
-}
-
-#else
-
-#ifdef DIRBROWSER_SNAPSHOT
 DirBrowser::DirBrowser(const char* path, bool snapshot) :
 	m_snapshot(snapshot)
-#else
-DirBrowser::DirBrowser(const char* path)
-#endif
 {
-#ifdef DIRBROWSER_SNAPSHOT
 	if (m_snapshot)
 	{
 		DirBrowser dir(path, false);
@@ -1076,35 +1033,57 @@ DirBrowser::DirBrowser(const char* path)
 		m_snapshotIter = m_snapshotFiles.begin();
 	}
 	else
-#endif
 	{
+#ifdef WIN32
+		BString<1024> mask("%s%c*.*", path, PATH_SEPARATOR);
+		m_file = FindFirstFileW(FileSystem::UtfPathToWidePath(mask), &m_findData);
+		m_first = true;
+#else
 		m_dir = opendir(path);
+#endif
 	}
 }
 
 DirBrowser::~DirBrowser()
 {
-#ifdef DIRBROWSER_SNAPSHOT
-	if (!m_snapshot)
-#endif
+#ifdef WIN32
+	if (m_file != INVALID_HANDLE_VALUE)
 	{
-		if (m_dir)
-		{
-			closedir(m_dir);
-		}
+		FindClose(m_file);
 	}
+#else
+	if (m_dir)
+	{
+		closedir(m_dir);
+	}
+#endif
 }
 
 const char* DirBrowser::InternNext()
 {
-#ifdef DIRBROWSER_SNAPSHOT
 	if (m_snapshot)
 	{
 		return m_snapshotIter == m_snapshotFiles.end() ? nullptr : **m_snapshotIter++;
 	}
 	else
-#endif
 	{
+#ifdef WIN32
+		bool ok = false;
+		if (m_first)
+		{
+			ok = m_file != INVALID_HANDLE_VALUE;
+			m_first = false;
+		}
+		else
+		{
+			ok = FindNextFileW(m_file, &m_findData) != 0;
+		}
+		if (ok)
+		{
+			m_filename = FileSystem::WidePathToUtfPath(m_findData.cFileName);
+			return m_filename;
+		}
+#else
 		if (m_dir)
 		{
 			m_findData = readdir(m_dir);
@@ -1113,10 +1092,10 @@ const char* DirBrowser::InternNext()
 				return m_findData->d_name;
 			}
 		}
+#endif
 		return nullptr;
 	}
 }
-#endif
 
 const char* DirBrowser::Next()
 {
