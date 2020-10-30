@@ -92,7 +92,7 @@ void EnvironmentStrings::InitFromCurrentProcess()
 		// This is to avoid the passing of env vars after program update (when NZBGet is
 		// started from a script which was started by a previous instance of NZBGet).
 		// Format: NZBXX_YYYY (XX are any two characters, YYYY are any number of any characters).
-		if (!(!strncmp(var, "NZB", 3) && strlen(var) > 5 && var[5] == '_'))
+		if (!(strncmp(var, "NZB", 3) && strlen(var) > 5 && var[5] == '_'))
 		{
 			Append(var);
 		}
