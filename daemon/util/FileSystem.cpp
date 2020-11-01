@@ -304,10 +304,29 @@ bool FileSystem::AllocateFile(const char* filename, int64 size, bool sparse, CSt
 			errmsg = GetLastErrorMessage();
 			return false;
 		}
-		char c = '0';
-		fwrite(&c, 1, size, file);
+
+		// write zeros in 16K chunks
+		CharBuffer zeros(16 * 1024);
+		memset(zeros, 0, zeros.Size());
+		for (int64 remaining = size; remaining > 0;)
+		{
+			int64 needbytes = std::min(remaining, (int64)zeros.Size());
+			int64 written = fwrite(zeros, 1, needbytes, file);
+			if (written != needbytes)
+			{
+				errmsg = GetLastErrorMessage();
+				fclose(file);
+				return false;
+			}
+			remaining -= written;
+		}
 		fclose(file);
+
 		ok = FileSize(filename) == size;
+		if (!ok)
+		{
+			errmsg = "created file has wrong size";
+		}
 	}
 #endif
 	return ok;
