@@ -172,7 +172,7 @@ void NntpProcessor::Run()
 		}
 		else if (!strncasecmp(line, "GROUP ", 6))
 		{
-			m_connection->WriteLine(CString::FormatStr("211 0 0 0 %s\r\n", line + 7));
+			m_connection->WriteLine(CString::FormatStr("211 0 0 0 %s\r\n", line + 6));
 		}
 		else if (!strncasecmp(line, "AUTHINFO ", 9))
 		{
