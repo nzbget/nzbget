@@ -660,6 +660,10 @@ void NzbFile::Parse_StartElement(const char *name, const char **atts)
 				m_fileInfo->SetTime(atoi(attrvalue));
 			}
 		}
+		if (!strcmp("", m_fileInfo->GetSubject())) {
+			m_nzbInfo->AddMessage(Message::mkWarning, "Malformed nzb-file, <file> without attribute \"subject\"");
+			return;
+		}	
 	}
 	else if (!strcmp("segment", name))
 	{
@@ -718,7 +722,9 @@ void NzbFile::Parse_EndElement(const char *name)
 	if (!strcmp("file", name))
 	{
 		// Close the file element, add the new file to file-list
-		AddFileInfo(std::move(m_fileInfo));
+		if (strcmp("", m_fileInfo->GetSubject())){
+			AddFileInfo(std::move(m_fileInfo));
+		}
 		m_article = nullptr;
 	}
 	else if (!strcmp("group", name))
