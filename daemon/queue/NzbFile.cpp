@@ -117,6 +117,12 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 {
 	// Example subject: some garbage "title" yEnc (10/99)
 
+	if (!fileInfo->GetSubject())
+	{
+		// Malformed file element without subject. We generate subject using internal element id.
+		fileInfo->SetSubject(CString::FormatStr("%d", fileInfo->GetId()));
+	}
+
 	// strip the "yEnc (10/99)"-suffix
 	BString<1024> subject = fileInfo->GetSubject();
 	char* end = subject + strlen(subject) - 1;
