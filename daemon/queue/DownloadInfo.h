@@ -209,9 +209,9 @@ private:
 	ArticleList m_articles;
 	Groups m_groups;
 	ServerStatList m_serverStats;
-	CString m_subject;
-	CString m_filename;
-	CString m_origname;
+	CString m_subject = "";
+	CString m_filename = "";
+	CString m_origname = "";
 	int64 m_size = 0;
 	int64 m_remainingSize = 0;
 	int64 m_successSize = 0;
