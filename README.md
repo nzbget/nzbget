@@ -11,14 +11,9 @@
 NZBGet is a binary downloader, which downloads files from Usenet
 based on information given in nzb-files. 
 
-NZBGet is written in C++ and is known for its extraordinary performance and efficiency.
+NZBGet is written in C++ and is known for its performance and efficiency.
 
-NZBGet can be run on almost every device - classic PCs, NAS, media players, SAT-receivers, WLAN-routers, etc.
-The download area provides precompiled binaries
-for Windows, macOS, Linux (compatible with many CPUs and platform variants), FreeBSD and Android. For other platforms
+NZBGet can run on almost any device - classic PC, NAS, media player, SAT-receiver, WLAN-router, etc.
+The download area provides precompiled binaries for Windows, macOS, Linux (compatible with
+many CPUs and platform variants), FreeBSD and Android. For other platforms
 the program can be compiled from sources.
-
-- [Home page (nzbget.net)](http://nzbget.net) - learn more about NZBGet;
-- [Downloads](http://nzbget.net/download) - get compiled binaries and sources;
-- [Documentation](http://nzbget.net/documentation) - installation manuals, HOW-TOs, API;
-- [Forum](http://forum.nzbget.net) - get support, share your ideas, scripts, add-ons.
