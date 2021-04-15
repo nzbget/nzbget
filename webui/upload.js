@@ -172,13 +172,9 @@ var Upload = (new function($)
 	{
 		var inp = $('#AddDialog_Input');
 
-		// Reset file input control; needed for IE10 but produce problems with opera (the old non-webkit one).
-		if ($.browser.msie)
-		{
-			inp.wrap('<form>').closest('form').get(0).reset();
-			inp.unwrap();
-		}
-		
+		// Reset file input control
+		inp.val('');		
+
 		inp.click();
 	}
 
