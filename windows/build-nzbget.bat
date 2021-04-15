@@ -93,7 +93,7 @@ if errorlevel 1 goto BUILD_FAILED
 rem Update ca root certificates
 echo Updating root certificates
 cd image
-%CURL% --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem
+%CURL% --remote-name --time-cond cacert.pem https://curl.se/ca/cacert.pem
 if errorlevel 1 goto BUILD_FAILED
 cd ..
 
