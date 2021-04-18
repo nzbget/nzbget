@@ -91,7 +91,7 @@ public:
 private:
 #ifdef WIN32
 	WIN32_FIND_DATAW m_findData;
-	HANDLE m_file;
+	HANDLE m_file = INVALID_HANDLE_VALUE;
 	bool m_first;
 	CString m_filename;
 #else
