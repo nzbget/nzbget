@@ -1443,7 +1443,7 @@ void LogXmlCommand::Execute()
 
 		AppendCondResponse(",\n", IsJson() && index++ > 0);
 		AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-			message.GetId(), messageType[message.GetKind()], message.GetTime(),
+			message.GetId(), messageType[message.GetKind()], (int)message.GetTime(),
 			*EncodeStr(message.GetText()));
 	}
 
@@ -1550,7 +1550,7 @@ void ListFilesXmlCommand::Execute()
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LIST_ITEM : XML_LIST_ITEM,
 					fileInfo->GetId(), fileSizeLo, fileSizeHi, remainingSizeLo, remainingSizeHi,
-					fileInfo->GetTime(), BoolToStr(fileInfo->GetFilenameConfirmed()),
+					(int)fileInfo->GetTime(), BoolToStr(fileInfo->GetFilenameConfirmed()),
 					BoolToStr(fileInfo->GetPaused()), fileInfo->GetNzbInfo()->GetId(),
 					*xmlNzbNicename, *xmlNzbNicename, *EncodeStr(fileInfo->GetNzbInfo()->GetFilename()),
 					*EncodeStr(fileInfo->GetSubject()), *EncodeStr(fileInfo->GetFilename()),
@@ -1748,14 +1748,14 @@ void NzbInfoXmlCommand::AppendNzbInfoFields(NzbInfo* nzbInfo)
 			deleteStatusName[nzbInfo->GetDeleteStatus()], markStatusName[nzbInfo->GetMarkStatus()],
 			urlStatusName[nzbInfo->GetUrlStatus()],
 			fileSizeLo, fileSizeHi, fileSizeMB, nzbInfo->GetFileCount(),
-			nzbInfo->GetMinTime(), nzbInfo->GetMaxTime(),
+			(int)nzbInfo->GetMinTime(), (int)nzbInfo->GetMaxTime(),
 			nzbInfo->GetTotalArticles(), nzbInfo->GetCurrentSuccessArticles(), nzbInfo->GetCurrentFailedArticles(),
 			nzbInfo->CalcHealth(), nzbInfo->CalcCriticalHealth(false),
 			*EncodeStr(nzbInfo->GetDupeKey()), nzbInfo->GetDupeScore(), dupeModeName[nzbInfo->GetDupeMode()],
 			BoolToStr(nzbInfo->GetDeleteStatus() != NzbInfo::dsNone),
 			downloadedSizeLo, downloadedSizeHi, downloadedSizeMB, nzbInfo->GetDownloadSec(),
-			nzbInfo->GetPostTotalSec() + (nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ?
-				Util::CurrentTime() - nzbInfo->GetPostInfo()->GetStartTime() : 0),
+			(int)(nzbInfo->GetPostTotalSec() + (nzbInfo->GetPostInfo() && nzbInfo->GetPostInfo()->GetStartTime() ?
+				Util::CurrentTime() - nzbInfo->GetPostInfo()->GetStartTime() : 0)),
 			nzbInfo->GetParSec(), nzbInfo->GetRepairSec(), nzbInfo->GetUnpackSec(), messageCount, nzbInfo->GetExtraParBlocks());
 
 	// Post-processing parameters
@@ -1856,8 +1856,8 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 		AppendFmtResponse(itemStart, *EncodeStr(postInfo->GetProgressLabel()),
 			postInfo->GetStageProgress(),
-			postInfo->GetStageTime() ? curTime - postInfo->GetStageTime() : 0,
-			postInfo->GetStartTime() ? curTime - postInfo->GetStartTime() : 0);
+			(int)(postInfo->GetStageTime() ? curTime - postInfo->GetStageTime() : 0),
+			(int)(postInfo->GetStartTime() ? curTime - postInfo->GetStartTime() : 0));
 	}
 	else
 	{
@@ -1884,7 +1884,7 @@ void NzbInfoXmlCommand::AppendPostInfoFields(PostInfo* postInfo, int logEntries,
 
 				AppendCondResponse(",\n", IsJson() && index++ > 0);
 				AppendFmtResponse(IsJson() ? JSON_LOG_ITEM : XML_LOG_ITEM,
-					message.GetId(), messageType[message.GetKind()], message.GetTime(),
+					message.GetId(), messageType[message.GetKind()], (int)message.GetTime(),
 					*EncodeStr(message.GetText()));
 			}
 		}
@@ -2502,7 +2502,7 @@ void HistoryXmlCommand::Execute()
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_ITEM_START : XML_HISTORY_ITEM_START,
 				historyInfo->GetId(), *EncodeStr(historyInfo->GetName()), nzbInfo->GetParkedFileCount(),
-				BoolToStr(nzbInfo->GetCompletedFiles()->size()), historyInfo->GetTime(), status);
+				BoolToStr(nzbInfo->GetCompletedFiles()->size()), (int)historyInfo->GetTime(), status);
 		}
 		else if (historyInfo->GetKind() == HistoryInfo::hkDup)
 		{
@@ -2514,7 +2514,7 @@ void HistoryXmlCommand::Execute()
 
 			AppendFmtResponse(IsJson() ? JSON_HISTORY_DUP_ITEM : XML_HISTORY_DUP_ITEM,
 				historyInfo->GetId(), historyInfo->GetId(), "DUP", *EncodeStr(historyInfo->GetName()),
-				historyInfo->GetTime(), fileSizeLo, fileSizeHi, fileSizeMB,
+				(int)historyInfo->GetTime(), fileSizeLo, fileSizeHi, fileSizeMB,
 				*EncodeStr(dupInfo->GetDupeKey()), dupInfo->GetDupeScore(),
 				dupeModeName[dupInfo->GetDupeMode()], dupStatusName[dupInfo->GetStatus()],
 				status);
@@ -2893,7 +2893,7 @@ void ViewFeedXmlCommand::Execute()
 				*EncodeStr(feedItemInfo.GetTitle()), *EncodeStr(feedItemInfo.GetFilename()),
 				*EncodeStr(feedItemInfo.GetUrl()), sizeLo, sizeHi, sizeMB,
 				*EncodeStr(feedItemInfo.GetCategory()), *EncodeStr(feedItemInfo.GetAddCategory()),
-				BoolToStr(feedItemInfo.GetPauseNzb()), feedItemInfo.GetPriority(), feedItemInfo.GetTime(),
+				BoolToStr(feedItemInfo.GetPauseNzb()), feedItemInfo.GetPriority(), (int)feedItemInfo.GetTime(),
 				matchStatusType[feedItemInfo.GetMatchStatus()], feedItemInfo.GetMatchRule(),
 				*EncodeStr(feedItemInfo.GetDupeKey()), feedItemInfo.GetDupeScore(),
 				dupeModeType[feedItemInfo.GetDupeMode()], statusType[feedItemInfo.GetStatus()]);
