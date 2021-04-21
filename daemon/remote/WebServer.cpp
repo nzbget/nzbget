@@ -222,18 +222,11 @@ void WebProcessor::ParseUrl()
 	if (pauth1 && pauth1 < pauth2)
 	{
 		char* pstart = m_url + 1;
-		int len = 0;
-		char* pend = strchr(pstart + 1, '/');
-		if (pend)
-		{
-			len = (int)(pend - pstart < (int)sizeof(m_authInfo) - 1 ? pend - pstart : (int)sizeof(m_authInfo) - 1);
-		}
-		else
-		{
-			len = strlen(pstart);
-		}
+		char* pend = pauth2;
+		int len = std::min((int)(pend - pstart), (int)sizeof(m_authInfo) - 1);
 		strncpy(m_authInfo, pstart, len);
 		m_authInfo[len] = '\0';
+		WebUtil::UrlDecode(m_authInfo);
 		m_url = CString(pend);
 	}
 
