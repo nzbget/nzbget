@@ -176,8 +176,9 @@ CreateShortCut "$SMPROGRAMS\NZBGet\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 ; Add control panel entry for Uninstall
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "DisplayName" "NZBGet"
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
-WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "Publisher" "Andrey Prygunkov"
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "InstallLocation" "$INSTDIR"
+WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "Publisher" "nzbget.net"
+WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "DisplayIcon" "$\"$INSTDIR\nzbget.exe$\",0"
 
 ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
 IntFmt $0 "0x%08X" $0
