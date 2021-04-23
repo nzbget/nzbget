@@ -136,9 +136,10 @@ protected:
 #endif
 #endif
 
-	void ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno = 0,
-		const char* herrMsg = nullptr);
+	void ReportError(const char* msgPrefix, const char* msgArg, bool printErrCode, int errCode = 0,
+		const char* errMsg = nullptr);
 	virtual void PrintError(const char* errMsg);
+	int GetLastNetworkError();
 	bool DoConnect();
 	bool DoDisconnect();
 	bool InitSocketOpts(SOCKET socket);

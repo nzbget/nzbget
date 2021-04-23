@@ -209,6 +209,8 @@ bool Connection::Bind()
 		return true;
 	}
 
+	int errcode = 0;
+
 #ifndef WIN32
 	if (m_host && m_host[0] == '/')
 	{
@@ -280,6 +282,7 @@ bool Connection::Bind()
 					break;
 				}
 				// Connection failed
+				errcode = GetLastNetworkError();
 				closesocket(m_socket);
 				m_socket = INVALID_SOCKET;
 			}
@@ -320,6 +323,7 @@ bool Connection::Bind()
 		if (res == -1)
 		{
 			// Connection failed
+			errcode = GetLastNetworkError();
 			closesocket(m_socket);
 			m_socket = INVALID_SOCKET;
 		}
@@ -328,7 +332,7 @@ bool Connection::Bind()
 
 	if (m_socket == INVALID_SOCKET)
 	{
-		ReportError("Binding socket failed for %s", m_host, true);
+		ReportError("Binding socket failed for %s", m_host, true, errcode);
 		return false;
 	}
 
@@ -785,18 +789,15 @@ bool Connection::ConnectWithTimeout(void* address, int address_len)
 	ret = connect(m_socket, (struct sockaddr*)address, address_len);
 	if (ret < 0)
 	{
+		int err = GetLastNetworkError();
 #ifdef WIN32
-		int err = WSAGetLastError();
 		if (err != WSAEWOULDBLOCK)
-		{
-			return false;
-		}
 #else
-		if (errno != EINPROGRESS)
+		if (err != EINPROGRESS)
+#endif
 		{
 			return false;
 		}
-#endif
 	}
 
 	//connect succeeded right away?
@@ -916,7 +917,16 @@ void Connection::Cancel()
 	}
 }
 
-void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool PrintErrCode, int herrno, const char* herrMsg)
+int Connection::GetLastNetworkError()
+{
+#ifdef WIN32
+	return WSAGetLastError();
+#else
+	return errno;
+#endif
+}
+
+void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool printErrCode, int errCode, const char* errMsg)
 {
 #ifndef DISABLE_TLS
 	if (m_tlsError)
@@ -929,34 +939,34 @@ void Connection::ReportError(const char* msgPrefix, const char* msgArg, bool Pri
 
 	BString<1024> errPrefix(msgPrefix, msgArg);
 
-	if (PrintErrCode)
+	if (printErrCode)
 	{
-#ifdef WIN32
-		int ErrCode = WSAGetLastError();
-		char errMsg[1024];
-		errMsg[0] = '\0';
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, ErrCode, 0, errMsg, 1024, nullptr);
-		errMsg[1024-1] = '\0';
-#else
-		const char* errMsg = herrMsg;
-		int ErrCode = herrno;
-		if (herrno == 0)
+		BString<1024> printErrMsg;
+		if (errCode == 0)
 		{
-			ErrCode = errno;
-			errMsg = strerror(ErrCode);
+			errCode = GetLastNetworkError();
 		}
-		else if (!herrMsg)
+		if (errMsg)
 		{
-			errMsg = hstrerror(ErrCode);
-		}
-#endif
-		if (m_suppressErrors)
-		{
-			debug("%s: ErrNo %i, %s", *errPrefix, ErrCode, errMsg);
+			printErrMsg = errMsg;
 		}
 		else
 		{
-			PrintError(BString<1024>("%s: ErrNo %i, %s", *errPrefix, ErrCode, errMsg));
+#ifdef WIN32
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, errCode, 0, printErrMsg, printErrMsg.Capacity(), nullptr);
+			printErrMsg[1024-1] = '\0';
+#else
+			printErrMsg = strerror(errCode);
+#endif
+		}
+
+		if (m_suppressErrors)
+		{
+			debug("%s: Error %i - %s", *errPrefix, errCode, (const char*)printErrMsg);
+		}
+		else
+		{
+			PrintError(BString<1024>("%s: Error %i - %s", *errPrefix, errCode, (const char*)printErrMsg));
 		}
 	}
 	else
@@ -1074,7 +1084,7 @@ in_addr_t Connection::ResolveHostAddr(const char* host)
 #endif
 		if (err)
 		{
-			ReportError("Could not resolve hostname %s", host, true, h_errnop);
+			ReportError("Could not resolve hostname %s", host, true, h_errnop, hstrerror(h_errnop));
 			return INADDR_NONE;
 		}
 
