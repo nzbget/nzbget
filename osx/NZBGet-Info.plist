@@ -24,8 +24,6 @@
 	<string>10.7</string>
 	<key>LSUIElement</key>
 	<true/>
-	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2007-2019 Andrey Prygunkov</string>
 	<key>NSMainNibFile</key>
 	<string>MainApp</string>
 	<key>NSAppTransportSecurity</key>
