@@ -1,6 +1,31 @@
 nzbget-21.1:
-  - please see repository change log at
-    https://github.com/nzbget/nzbget/commits/develop
+  - fixed crash on systems with 64-bit time;
+  - corrected icon in Windows "uninstall program" list;
+  - allow special characters in URL for username and password;
+  - improved reporting for binding errors on Windows;
+  - fixed unicode space characters in javascript files, which could cause issues
+    with nginx proxy;
+  - fixed negative values for "FileSizeLo" in json-rpc;
+  - corrected url detection in rpc-method "append";
+  - added support for new error messages in unrar 5.80;
+  - now always using snapshots when reading directory contents:
+    - in previous versions snapshots were used on macOS only;
+    - now they are used on all OSes;
+    - this solves issue with leftovers during directory cleanup, which could
+      happen on certain OSes when working with network drives;
+  - fixed file allocating on file systems where sparse files are not supported:
+    - the issue could happen when InterDir was located on a network drive;
+  - fixed crash caused by malformed nzb files;
+  - fixed GROUP command in nserv;
+  - updated url of the global certificate storage file in the build scripts;
+  - fixed: file selector in WebKit based browsers doesn't allow to choose the
+    same file again;
+  - removed outdated links from web interface;
+  - fixed PC sleep mode not working (Windows only);
+  - set "SameSite" attribute for cookies;
+  - corrected typo in about dialog of web interface;
+  - updated license text: changed address of Free Software Foundation and minor
+    formatting changes.
 
 nzbget-21.0:
   - reworked duplicate handling to support URLs, especially when using RSS
