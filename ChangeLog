@@ -1,3 +1,7 @@
+nzbget-21.2-testing:
+  - please see repository change log at
+    https://github.com/nzbget/nzbget/commits/develop
+
 nzbget-21.1:
   - fixed crash on systems with 64-bit time;
   - corrected icon in Windows "uninstall program" list;
