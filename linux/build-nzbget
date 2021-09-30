@@ -184,6 +184,8 @@ UpdateFromRepository()
         echo "Updating root certificates"
         cd ../setup
         curl --remote-name --time-cond cacert.pem https://curl.se/ca/cacert.pem
+        # remove expired DST Root CA X3 certificate
+        sed '/^DST Root CA X3$/,/^-----END CERTIFICATE-----$/d;' -i cacert.pem
         cd $BUILDDIR
     fi
 }

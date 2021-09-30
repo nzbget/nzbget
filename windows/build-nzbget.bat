@@ -95,6 +95,8 @@ echo Updating root certificates
 cd image
 %CURL% --remote-name --time-cond cacert.pem https://curl.se/ca/cacert.pem
 if errorlevel 1 goto BUILD_FAILED
+rem remove expired DST Root CA X3 certificate
+%SED% -e "/^DST Root CA X3$/,/^-----END CERTIFICATE-----$/d;" -i cacert.pem
 cd ..
 
 cd tmp\nzbget-%VERSION%
