@@ -1117,7 +1117,7 @@ table.table-hidecheck tbody > tr > td:first-child {
 /* BEGIN: Progress bars */
 .progress-block {
 	position: relative;
-	width: 120px;
+	width: calc(8.5rem);
 }
 
 .progress {
