@@ -143,7 +143,7 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 
 	if (TryQuotes)
 	{
-		// try to use the filename in quatation marks
+		// try to use the filename in quotation marks
 		char* p = subject;
 		char* start = strchr(p, '\"');
 		if (start)
@@ -166,7 +166,7 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 	}
 
 	// tokenize subject, considering spaces as separators and quotation
-	// marks as non separatable token delimiters.
+	// marks as non separable token delimiters.
 	// then take the last token containing dot (".") as a filename
 
 	typedef std::vector<CString> TokenList;
