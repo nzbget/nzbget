@@ -150,18 +150,34 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 		{
 			start++;
 			char* end = strchr(start + 1, '\"');
-			if (end)
+			if (!end)
 			{
-				int len = (int)(end - start);
-				char* point = strchr(start + 1, '.');
-				if (point && point < end)
-				{
-					BString<1024> filename;
-					filename.Set(start, len);
-					fileInfo->SetFilename(filename);
-					return;
-				}
-			}
+                // one group deliberately generates a malformed subject
+                // e.g. "[PRiVATE]-[WtFnZb]-[24]-[12/filename.ext] - &quot;&quot; yEnc ("...
+                const char * sig = "[PRiVATE]-[WtFnZb]-[";
+                while ( *sig != '\0' && *p == *sig ) { ++p; ++sig; }
+                if ( *sig == '\0')
+                {
+                    start = strchr(p,'/');
+                    if (start)
+                    {
+                        ++start;
+                        end = strchr(start,']');
+                    }
+                }
+            }
+            if (start && end)
+            {
+                int len = (int)(end - start);
+                char* point = strchr(start + 1, '.');
+                if (point && point < end)
+                {
+                    BString<1024> filename;
+                    filename.Set(start, len);
+                    fileInfo->SetFilename(filename);
+                    return;
+                }
+            }
 		}
 	}
 
