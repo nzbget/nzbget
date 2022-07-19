@@ -743,7 +743,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			// if the name from article seems to be obfuscated
 			bool useFilenameFromArticle = g_Options->GetFileNaming() == Options::nfArticle ||
 				(g_Options->GetFileNaming() == Options::nfAuto &&
-				 !Util::AlphaNum(articleDownloader->GetArticleFilename()) &&
+				 !Util::IsObfuscated(articleDownloader->GetArticleFilename()) &&
 				 !nzbInfo->GetManyDupeFiles());
 			if (useFilenameFromArticle)
 			{

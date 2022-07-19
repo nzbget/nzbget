@@ -50,6 +50,7 @@ public:
 	static std::vector<CString> SplitStr(const char* str, const char* separators);
 	static bool EndsWith(const char* str, const char* suffix, bool caseSensitive);
 	static bool AlphaNum(const char* str);
+    static bool IsObfuscated(const char* str);
 
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
 	static char* ReduceStr(char* str, const char* from, const char* to);

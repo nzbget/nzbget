@@ -121,6 +121,7 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 	{
 		// Malformed file element without subject. We generate subject using internal element id.
 		fileInfo->SetSubject(CString::FormatStr("%d", fileInfo->GetId()));
+        return;
 	}
 
 	// strip the "yEnc (10/99)"-suffix
@@ -143,30 +144,15 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 
 	if (TryQuotes)
 	{
-		// try to use the filename in quotation marks
-		char* p = subject;
-		char* start = strchr(p, '\"');
-		if (start)
-		{
-			start++;
-			char* end = strchr(start + 1, '\"');
-			if (!end)
-			{
-                // one group deliberately generates a malformed subject
-                // e.g. "[PRiVATE]-[WtFnZb]-[24]-[12/filename.ext] - &quot;&quot; yEnc ("...
-                const char * sig = "[PRiVATE]-[WtFnZb]-[";
-                while ( *sig != '\0' && *p == *sig ) { ++p; ++sig; }
-                if ( *sig == '\0')
-                {
-                    start = strchr(p,'/');
-                    if (start)
-                    {
-                        ++start;
-                        end = strchr(start,']');
-                    }
-                }
-            }
-            if (start && end)
+        // first, try to use the filename in quotation marks
+        char* p = subject;
+        char* start = strchr(p, '\"');
+        if (start)
+        {
+            start++;
+            char* end = strchr(start + 1, '\"');
+            /* found a non-empty quoted string */
+            if ( end )
             {
                 int len = (int)(end - start);
                 char* point = strchr(start + 1, '.');
@@ -178,8 +164,63 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
                     return;
                 }
             }
-		}
-	}
+        }
+        // second, sometimes we encounter deliberately malformed subjects
+        // e.g. ...[PRiVATE]-[WtFnZb]-[24]-[12/filename.ext] - "" yEnc (...
+        //   or ...[PRiVATE]-[WtFnZb]-[00101.mpls]-[163/591] - "" yEnc (...
+        const char * const signature = "[PRiVATE]-[WtFnZb]-[";
+        p = strstr( subject, signature );
+        if ( p )
+        {
+            p += strlen( signature );
+            // remember the spot of the final open bracket. at the end
+            //  of the signature, so we don't scan backwards too far
+            char * sigEnd = p - 1;
+
+            p = strchr( p, '.' );
+            // if there's no period at all, assume it's not a filename
+            if ( p )
+            {
+                // scan forward to find the end of the filename, even if
+                // we picked up an earlier period used as a separator
+                end = strchr( p, ']' );
+                if ( end )
+                {
+                    int depth = 0;
+                    // scan backwards for the start of the filename
+                    for ( start = NULL; p >= sigEnd && start == NULL; --p )
+                    {
+                        switch ( *p )
+                        {
+                            // yes, they sometimes nest square brackets,
+                            // just to make things more interesting...
+                        case ']':
+                            ++depth;
+                            break;
+
+                        case '[':
+                            if ( depth > 0 ) --depth;
+                            else start = p + 1;
+                            break;
+
+                        case '/':
+                            start = p + 1;
+                            break;
+                        }
+                    }
+
+                    if ( start )
+                    {
+                        BString<1024> filename;
+                        filename.Set( start, (end - start) );
+                        fileInfo->SetFilename( filename );
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
 
 	// tokenize subject, considering spaces as separators and quotation
 	// marks as non separable token delimiters.
@@ -257,31 +298,46 @@ void NzbFile::ParseSubject(FileInfo* fileInfo, bool TryQuotes)
 
 bool NzbFile::HasDuplicateFilenames()
 {
-	for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
+    // It's Ok if just two files to have the same filename, this is
+    // a frequent occurrence from posting-errors to repost bad files
+    int count = m_nzbInfo->GetFileList()->size();
+    if ( count <= 2 ) return false;
+
+    int percent;
+    int totaldupes = 0;
+    for (FileList::iterator it = m_nzbInfo->GetFileList()->begin(); it != m_nzbInfo->GetFileList()->end(); it++)
 	{
-		FileInfo* fileInfo1 = (*it).get();
-		int dupe = 1;
+        FileInfo* fileInfo1 = (*it).get();
+		int dupes = 0;
 		for (FileList::iterator it2 = it + 1; it2 != m_nzbInfo->GetFileList()->end(); it2++)
 		{
 			FileInfo* fileInfo2 = (*it2).get();
 			if (!strcmp(fileInfo1->GetFilename(), fileInfo2->GetFilename()) &&
 				strcmp(fileInfo1->GetSubject(), fileInfo2->GetSubject()))
 			{
-				dupe++;
+				++dupes;
 			}
 		}
 
-		// If more than two files have the same parsed filename but different subjects,
-		// this means, that the parsing was not correct.
-		// in this case we take subjects as filenames to prevent
+		// If more than 5% of the files have the same parsed filename but
+        // different subjects, this implies that the parsing was incorrect.
+		// In this case, we take subjects as filenames to prevent
 		// false "duplicate files"-alarm.
-		// It's Ok for just two files to have the same filename, this is
-		// an often case by posting-errors to repost bad files
-		if (dupe > 2 || (dupe == 2 && m_nzbInfo->GetFileList()->size() == 2))
+        percent = (dupes * 100)/count;
+		if ( percent > 5 )
 		{
+            warn( "more than %d%% of the files appear to have the name \'%s\' - trying alternate names",
+                  percent, fileInfo1->GetFilename() );
 			return true;
 		}
+        totaldupes += dupes;
 	}
+    percent = (totaldupes * 100)/count;
+    if ( percent > 25 )
+    {
+        warn( "more than %d%% of the files appear to have duplicate names - trying alternate names", percent );
+        return true;
+    }
 
 	return false;
 }
