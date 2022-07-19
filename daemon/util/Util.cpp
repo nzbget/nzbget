@@ -473,6 +473,38 @@ bool Util::AlphaNum(const char* str)
 	return true;
 }
 
+/*
+ * like AlphaNum, but also ignores any extension and explicitly
+ * checks for the format 'abc.xyz.<string of hex digits>.ext'
+ * for which AlphaNum returns false.
+ */
+bool Util::IsObfuscated(const char* str)
+{
+    const char * p;
+
+    if (strncmp( str, "abc.xyz.", 8 ) == 0)
+    {
+        /* validate that the leading 'abc.xyz.' is followed by a series
+         * of hexadecimal chars, up to the extension/end of string */
+        for ( p = str + 8; *p != '\0' && *p != '.' ; ++p )
+        {
+            if ( !((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'F') || (*p >= 'a' && *p <= 'f')) )
+            {
+                return false;
+            }
+        }
+    }
+    else for ( p = str; *p != '\0'; ++p )
+    {
+        if ( !((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z')) )
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c
  */
