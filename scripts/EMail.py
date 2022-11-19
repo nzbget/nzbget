@@ -207,9 +207,9 @@ if os.environ.get('NZBPO_STATISTICS') == 'yes' and not test_mode:
 		text += '\nAverage download speed: %.2f' % (avespeed) + unit
 
 	def format_time_sec(sec):
-		Hour = sec/3600
-		Min = (sec - (sec/3600)*3600)/60
-		Sec = (sec - (sec/3600)*3600)%60
+		Hour = sec / 3600
+		Min = (sec % 3600) / 60
+		Sec = (sec % 60)
 		return '%d:%02d:%02d' % (Hour,Min,Sec)
 
 	# add times
