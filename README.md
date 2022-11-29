@@ -1,4 +1,4 @@
-_Note:_ this repo is a fork of the original github project nzbget/nzbget originally written by @hugbug. He deserves all the credit for this software. Since he has archived the project, I've combined my changes (surgical fixes to accomodate the intentially-malformed 'wtf' NZB headers, which result in the infamous 'abc.xyz' file names) and merged several pull requests from the original repo. - Paul 2022.11.28
+_Note:_ this repo is a fork of the original github project nzbget/nzbget originally written by @hugbug. He deserves all the credit for this software. Since he has now archived the project, I've combined my changes (surgical fixes to accomodate the intentially-malformed 'wtf' NZB headers, which result in the infamous 'abc.xyz' file names) and merged several pull requests from the original repo. - Paul 2022.11.28
 
 # NZBGet #
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](http://www.gnu.org/licenses/)
