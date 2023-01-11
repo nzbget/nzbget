@@ -140,7 +140,7 @@ static const char* OPTION_QUOTASTARTDAY			= "QuotaStartDay";
 static const char* OPTION_DAILYQUOTA			= "DailyQuota";
 static const char* OPTION_REORDERFILES			= "ReorderFiles";
 static const char* OPTION_UPDATECHECK			= "UpdateCheck";
-static const char* OPTION_CONNECTIONREADBUFFER		= "ConnectionReadBuffer";
+static const char* OPTION_ARTICLEREADCHUNKSIZE		= "ArticleReadChunkSize";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -526,7 +526,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_DAILYQUOTA, "0");
 	SetOption(OPTION_REORDERFILES, "no");
 	SetOption(OPTION_UPDATECHECK, "none");
-	SetOption(OPTION_CONNECTIONREADBUFFER, "4");
+	SetOption(OPTION_ARTICLEREADCHUNKSIZE, "4");
 }
 
 void Options::InitOptFile()
@@ -730,7 +730,7 @@ void Options::InitOptions()
 	m_monthlyQuota			= ParseIntValue(OPTION_MONTHLYQUOTA, 10);
 	m_quotaStartDay			= ParseIntValue(OPTION_QUOTASTARTDAY, 10);
 	m_dailyQuota			= ParseIntValue(OPTION_DAILYQUOTA, 10);
-	m_connectionReadBuffer		= ParseIntValue(OPTION_CONNECTIONREADBUFFER, 10) * 1024;
+	m_articleReadChunkSize		= ParseIntValue(OPTION_ARTICLEREADCHUNKSIZE, 10) * 1024;
 
 	m_nzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
 	m_appendCategoryDir		= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
