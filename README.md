@@ -1,3 +1,5 @@
+_Note:_ this repo is a fork of the original github project nzbget/nzbget originally written by @hugbug. He deserves all the credit for this software. Since he has now archived the project, I've combined my changes (surgical fixes to accomodate the intentially-malformed 'wtf' NZB headers, which result in the infamous 'abc.xyz' file names) and merged several pull requests from the original repo. - Paul 2022.11.28
+
 # NZBGet #
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](http://www.gnu.org/licenses/)
 [![Build Status](https://img.shields.io/travis/nzbget/nzbget/develop.svg)](https://travis-ci.org/nzbget/nzbget)
@@ -7,6 +9,8 @@
 
 [![Total downloads](https://img.shields.io/github/downloads/nzbget/nzbget/total.svg)](https://github.com/nzbget/nzbget/releases)
 [![Downloads (latest release)](https://img.shields.io/github/downloads/nzbget/nzbget/latest/total.svg?label=latest%20release)](https://github.com/nzbget/nzbget/releases/latest)
+
+
 
 NZBGet is a binary downloader, which downloads files from Usenet
 based on information given in nzb-files. 
