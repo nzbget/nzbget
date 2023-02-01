@@ -35,6 +35,16 @@ autom4te.cache/
 .dirstamp
 *.o-*
 
+Makefile.in
+aclocal.m4
+config.h.in
+configure
+posix/config.guess
+posix/config.sub
+posix/depcomp
+posix/install-sh
+posix/missing
+
 # Visual Studio User-specific files
 *.suo
 *.user
