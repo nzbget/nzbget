@@ -24,26 +24,25 @@
 *.out
 
 # GNU Autotools
+*.o-*
 .deps/
+.dirstamp
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+config.guess
 config.h
+config.h.in
 config.h.in~
 config.log
 config.status
-Makefile
-stamp-h1
-autom4te.cache/
-.dirstamp
-*.o-*
-
-Makefile.in
-aclocal.m4
-config.h.in
+config.sub
 configure
-posix/config.guess
-posix/config.sub
-posix/depcomp
-posix/install-sh
-posix/missing
+depcomp
+install-sh
+missing
+stamp-h1
 
 # Visual Studio User-specific files
 *.suo
@@ -58,7 +57,6 @@ ipch/
 *.sdf
 *.cachefile
 *.ilk
-*.pch
 *.pdb
 *.pgc
 *.pgd
