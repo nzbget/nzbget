@@ -20,8 +20,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.65)
-AC_INIT(nzbget, 21.2-testing, hugbug@users.sourceforge.net)
+AC_PREREQ([2.65])
+AC_INIT(nzbget, m4_esyscmd_s(git describe --tags --match "v*.*" --dirty) )
 AC_CONFIG_AUX_DIR(posix)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -271,7 +271,7 @@ fi
 
 
 dnl
-dnl Use curses. Deafult: yes
+dnl Use curses. default: yes
 dnl
 AC_MSG_CHECKING(whether to use curses)
 AC_ARG_ENABLE(curses,
@@ -326,7 +326,7 @@ fi
 
 
 dnl
-dnl Use par-checking. Deafult: yes.
+dnl Use par-checking. default: yes.
 dnl
 AC_MSG_CHECKING(whether to include code for par-checking)
 AC_ARG_ENABLE(parcheck,
@@ -351,7 +351,7 @@ fi
 
 
 dnl
-dnl Use TLS/SSL. Deafult: yes
+dnl Use TLS/SSL. default: yes
 dnl
 AC_MSG_CHECKING(whether to use TLS/SSL)
 AC_ARG_ENABLE(tls,
@@ -683,7 +683,7 @@ fi
 
 
 dnl
-dnl Enable test suite. Deafult: no.
+dnl Enable test suite. Default: no.
 dnl
 AC_MSG_CHECKING(whether to enable unit and integration tests)
 AC_ARG_ENABLE(tests,
