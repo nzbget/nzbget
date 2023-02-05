@@ -169,8 +169,7 @@ nzbget_SOURCES = \
 	daemon/nserv/NzbGenerator.h \
 	daemon/nserv/NzbGenerator.cpp \
 	daemon/nserv/YEncoder.h \
-	daemon/nserv/YEncoder.cpp \
-	code_revision.cpp
+	daemon/nserv/YEncoder.cpp
 
 if WITH_PAR2
 nzbget_SOURCES += \
@@ -485,45 +484,6 @@ install-conf:
 
 uninstall-conf:
 	rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf"
-
-# Determining git revision:
-# 1) If directory ".git" exists we take revision from git describe.
-#    File is recreated only if revision number was changed.
-# 2) If directory ".git" doesn't exists we keep and reuse file "code_revision.cpp",
-#    which was possibly created early.
-# 3) If neither directory ".git" nor file "code_revision.cpp" are available
-#    we create new file "code_revision.cpp" with revision number of (unknown).
-code_revision.cpp: FORCE
-	@ if test -d ./.git ; then \
-        V=`git describe --tags --match "v*.*" --dirty` ; \
-		H=`test -f ./code_revision.cpp && head -n 1 code_revision.cpp`; \
-		if test "/* $$V */" != "$$H" ; then \
-			( \
-			echo "/* $$V */" ;\
-			echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
-			echo "#include \"nzbget.h\"" ;\
-			echo "const char* code_revision(void)" ;\
-			echo "{" ;\
-			echo "	const char* revision = \"$$V\";" ;\
-			echo "	return revision;" ;\
-			echo "}" ;\
-			) > code_revision.cpp ; \
-		fi \
-	elif test -f ./code_revision.cpp ; then \
-		test "ok, reuse existing file"; \
-	else \
-		( \
-		echo "/*  */" ;\
-		echo "/* This file is automatically regenerated on each build. Do not edit it. */" ;\
-		echo "#include \"nzbget.h\"" ;\
-		echo "const char* code_revision(void)" ;\
-		echo "{" ;\
-		echo "	const char* revision = \"(unknown)\";" ;\
-		echo "	return revision;" ;\
-		echo "}" ;\
-		) > code_revision.cpp ; \
-	fi
-FORCE:
 
 # Ignore "code_revision.cpp" in distcleancheck
 distcleancheck_listfiles = \
