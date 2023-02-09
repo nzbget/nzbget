@@ -296,7 +296,7 @@ windows_FILES = \
 	nzbget.vcxproj \
 	windows/nzbget-command-shell.bat  \
 	windows/install-update.bat  \
-	windows/README-WINDOWS.txt  \
+	windows/README.md  \
 	windows/package-info.json  \
 	windows/resources/mainicon.ico \
 	windows/resources/nzbget.rc \
@@ -343,7 +343,7 @@ linux_FILES = \
 	linux/installer.sh \
 	linux/install-update.sh \
 	linux/package-info.json \
-	linux/build-info.txt \
+	linux/README.md \
 	linux/build-nzbget \
 	linux/build-unpack \
 	linux/build-toolchain-android \
