@@ -109,7 +109,7 @@ BEGIN
     CONTROL         "Show in tray (near clock)",IDC_PREF_TRAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,25,94,10
     CONTROL         "Show Web-Interface on start",IDC_PREF_WEBUI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,49,108,10
     LTEXT           "Only Windows-specific options are located here. For all other options see Settings page in Web-Interface.",IDC_STATIC,22,128,214,17
-    LTEXT           "NZBGet can also run as Windows service. See README-WINDOWS.txt for details.",IDC_STATIC,21,107,207,16
+    LTEXT           "NZBGet can also run as Windows service. See README.md for details.",IDC_STATIC,21,107,207,16
     CONTROL         "Single click pauses/resumes, double click does nothing",IDC_PREF_TRAYPAUSE,
                     "Button",BS_AUTORADIOBUTTON,13,78,207,10
     CONTROL         "Double click opens web-interface, single click does nothing",IDC_PREF_TRAYWEBUI,
