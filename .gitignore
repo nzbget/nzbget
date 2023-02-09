@@ -81,3 +81,4 @@ code_revision.cpp
 *.pyc
 pytest.ini
 .cache
+nzbget-v*.tar.gz
