@@ -82,9 +82,9 @@ public:
 	* Returns program version and revision number as string formatted like "0.7.0-r295".
 	* If revision number is not available only version is returned ("0.7.0").
 	*/
-	static const char* VersionRevision() { return VersionRevisionBuf; };
+	static const char * VersionRevision() { return VersionRevisionString; };
 
-	static char VersionRevisionBuf[100];
+	static const char * VersionRevisionString;
 
 	static void Init();
 

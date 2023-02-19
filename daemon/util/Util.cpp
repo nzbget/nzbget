@@ -106,14 +106,15 @@ int getopt(int argc, char *argv[], char *optstring)
 #endif
 
 
-char Util::VersionRevisionBuf[100];
+const char * Util::VersionRevisionString = VERSION;
 
 void Util::Init()
 {
-	snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s", VERSION);
+    if ( VersionRevisionString[0] == 'v') {
+        ++VersionRevisionString;
+    }
 
-
-	// init static vars there
+    // init static vars there
 	CurrentTicks();
 }
 
