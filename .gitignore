@@ -82,3 +82,4 @@ code_revision.cpp
 pytest.ini
 .cache
 nzbget-v*.tar.gz
+/confdefs.h

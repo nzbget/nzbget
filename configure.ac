@@ -20,8 +20,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.65])
-AC_INIT(nzbget, m4_esyscmd_s(git describe --tags --match "v*.*" --dirty) )
+AC_PREREQ([2.71])
+AC_INIT( nzbget, m4_esyscmd_s(git describe --tags --match "v*.*" --dirty) )
+AC_USE_SYSTEM_EXTENSIONS
 AC_CONFIG_AUX_DIR(posix)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -31,27 +32,27 @@ AM_MAINTAINER_MODE
 
 m4_include([posix/ax_cxx_compile_stdcxx.m4])
 
-
-dnl
-dnl Check for programs.
-dnl
+#
+# Check for programs.
+#
 AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
 AC_PATH_PROG(TAR, tar, $FALSE)
 AC_PATH_PROG(MAKE, make, $FALSE)
-AC_PROG_INSTALL
 
-
-dnl
-dnl Do all tests with c++ compiler.
-dnl
+#
+# Do all tests with c++ compiler.
+#
 AC_LANG(C++)
 
-dnl
-dnl Determine compiler switches to support C++14 standard.
-dnl
+#
+# Determine compiler switches to support C++14 standard.
+#
 AC_MSG_CHECKING(whether to test compiler features)
 AC_ARG_ENABLE(cpp-check,
-	[AS_HELP_STRING([--disable-cpp-check], [disable check for C++14 compiler features])],
+	[AS_HELP_STRING([--disable-cpp-check],[disable check for C++14 compiler features])],
 	[ ENABLECPPCHECK=$enableval ],
 	[ ENABLECPPCHECK=yes] )
 AC_MSG_RESULT($ENABLECPPCHECK)
@@ -62,24 +63,47 @@ if test "$ENABLECPPCHECK" = "yes"; then
 	fi
 fi
 
-dnl
-dnl Checks for header files.
-dnl
+#
+# Checks for header files.
+#
 AC_CHECK_HEADERS(sys/prctl.h regex.h endian.h getopt.h)
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h netdb.h netinet/in.h stdint.h sys/file.h sys/socket.h sys/statvfs.h sys/time.h unistd.h])
 
+# Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+AC_TYPE_UID_T
+AC_C_INLINE
+AC_TYPE_INT16_T
+AC_TYPE_INT64_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_UINT8_T
 
-dnl
-dnl Check for libs
-dnl
+#
+# Check for libs
+#
 AC_SEARCH_LIBS([pthread_create], [pthread])
 AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([inet_addr], [nsl])
 AC_SEARCH_LIBS([hstrerror], [resolv])
 
+# Checks for library functions.
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_FUNC_REALLOC
+AC_FUNC_STRERROR_R
+AC_FUNC_STRNLEN
+AC_CHECK_FUNCS([bzero dup2 fdatasync floor getcwd gethostbyname gettimeofday inet_ntoa memchr memmove memset mkdir pow regcomp rmdir select socket strcasecmp strchr strdup strerror strncasecmp strpbrk strrchr strspn strstr strtol strtoul])
 
-dnl
-dnl Android NDK restrictions
-dnl
+#
+# Android NDK restrictions
+#
 AC_CHECK_FUNC(lockf,
 	[AC_CHECK_DECL(lockf,
 		[AC_DEFINE([HAVE_LOCKF], 1, [Define to 1 if lockf is supported])],,
@@ -89,43 +113,48 @@ AC_CHECK_FUNC(pthread_cancel,
 		[AC_DEFINE([HAVE_PTHREAD_CANCEL], 1, [Define to 1 if pthread_cancel is supported])],,
 		[#include <pthread.h>])])
 
-
-dnl
-dnl Getopt
-dnl
+#
+# Getopt
+#
 AC_CHECK_FUNC(getopt_long,
 	[AC_DEFINE([HAVE_GETOPT_LONG], 1, [Define to 1 if getopt_long is supported])],)
 
 
-dnl
-dnl fsync
-dnl
+#
+# fsync
+#
 AC_CHECK_FUNC(fdatasync,
 	[AC_DEFINE([HAVE_FDATASYNC], 1, [Define to 1 if fdatasync is supported])],)
 AC_CHECK_DECL(F_FULLFSYNC,
 	[AC_DEFINE([HAVE_FULLFSYNC], 1, [Define to 1 if F_FULLFSYNC is supported])],,[#include <fcntl.h>])
 
-dnl
-dnl use 64-Bits for file sizes
-dnl
+#
+# use 64-Bits for file sizes
+#
 AC_SYS_LARGEFILE
 
 
-dnl
-dnl check ctime_r
-dnl
+#
+# check ctime_r
+#
 AC_MSG_CHECKING(for ctime_r)
-AC_TRY_COMPILE(
-	[#include <time.h>],
-	[ time_t clock; char buf[26];	ctime_r(&clock, buf, 26); ],
+
+#          AC_COMPILE_IFELSE(
+#            [AC_LANG_PROGRAM([[includes]],
+#               [[function-body]])],
+#            [action-if-true],
+#            [action-if-false])
+
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <time.h>]],
+                                    [[ time_t clock; char buf[26];	ctime_r(&clock, buf, 26); ]]
+                                    )],
 	AC_MSG_RESULT([[yes, and it takes 3 arguments]])
 	FOUND="yes"
 	AC_DEFINE([HAVE_CTIME_R_3], 1, [Define to 1 if ctime_r takes 3 arguments]),
 	FOUND="no")
 if test "$FOUND" = "no"; then
-AC_TRY_COMPILE(
-	[#include <time.h>],
-	[ time_t clock; char buf[26];	ctime_r(&clock, buf); ],
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <time.h>]],
+                                	  [[ time_t clock; char buf[26];	ctime_r(&clock, buf); ]])],
 	AC_MSG_RESULT([[yes, and it takes 2 arguments]])
 	FOUND="yes"
 	AC_DEFINE([HAVE_CTIME_R_2], 1, [Define to 1 if ctime_r takes 2 arguments]),
@@ -137,9 +166,9 @@ if test "$FOUND" = "no"; then
 fi
 
 
-dnl
-dnl check getaddrinfo
-dnl
+#
+# check getaddrinfo
+#
 AC_CHECK_FUNC(getaddrinfo,
 	FOUND="yes"
 	[AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if getaddrinfo is supported])]
@@ -147,26 +176,24 @@ AC_CHECK_FUNC(getaddrinfo,
 	FOUND="no")
 
 
-dnl
-dnl check gethostbyname_r, if getaddrinfo is not available
-dnl
+#
+# check gethostbyname_r, if getaddrinfo is not available
+#
 if test "$FOUND" = "no"; then
 	AC_MSG_CHECKING(for gethostbyname_r)
 	
-	AC_TRY_COMPILE(
-		[#include <netdb.h>],
-		[	char* szHost; struct hostent hinfobuf; char* strbuf; int h_errnop;
-			struct hostent* hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &h_errnop); ],
+	AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <netdb.h>]],
+          [[	char* szHost; struct hostent hinfobuf; char* strbuf; int h_errnop;
+		      struct hostent* hinfo = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &h_errnop); ]])],
 		AC_MSG_RESULT([[yes, and it takes 5 arguments]])
 		FOUND="yes"
 		AC_DEFINE([HAVE_GETHOSTBYNAME_R_5], 1, [Define to 1 if gethostbyname_r takes 5 arguments]),
 		FOUND="no")
 	
 	if test "$FOUND" = "no"; then
-	AC_TRY_COMPILE(
-		[#include <netdb.h>],
-		[	char* szHost; struct hostent* hinfo; struct hostent hinfobuf; char* strbuf; int h_errnop;
-			int err = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &hinfo, &h_errnop); ],
+	AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <netdb.h>]],
+    		  [[	char* szHost; struct hostent* hinfo; struct hostent hinfobuf; char* strbuf; int h_errnop;
+			        int err = gethostbyname_r(szHost, &hinfobuf, strbuf, 1024, &hinfo, &h_errnop); ]])],
 		AC_MSG_RESULT([[yes, and it takes 6 arguments]])
 		FOUND="yes"
 		AC_DEFINE([HAVE_GETHOSTBYNAME_R_6], 1, [Define to 1 if gethostbyname_r takes 6 arguments]),
@@ -174,10 +201,9 @@ if test "$FOUND" = "no"; then
 	fi
 	
 	if test "$FOUND" = "no"; then
-	AC_TRY_COMPILE(
-		[#include <netdb.h>],
-		[	char* szHost; struct hostent hinfo; struct hostent_data hinfobuf; 
-			int err = gethostbyname_r(szHost, &hinfo, &hinfobuf); ],
+	AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <netdb.h>]],
+		      [[	char* szHost; struct hostent hinfo; struct hostent_data hinfobuf;
+			        int err = gethostbyname_r(szHost, &hinfo, &hinfobuf); ]])],
 		AC_MSG_RESULT([[yes, and it takes 3 arguments]])
 		FOUND="yes"
 		AC_DEFINE([HAVE_GETHOSTBYNAME_R_3], 1, [Define to 1 if gethostbyname_r takes 3 arguments]),
@@ -192,52 +218,65 @@ if test "$FOUND" = "no"; then
 fi
 
 
-dnl
-dnl Determine what socket length (socklen_t) data type is
-dnl
+#
+# Determine what socket length (socklen_t) data type is
+#
 AC_MSG_CHECKING([for type of socket length (socklen_t)])
-AC_TRY_COMPILE([
-#include <stddef.h>
-#include <sys/types.h>
-#include <sys/socket.h>],[
-(void)getsockopt (1, 1, 1, NULL, (socklen_t*)NULL)],[
-  AC_MSG_RESULT(socklen_t)
-  SOCKLEN_T=socklen_t],[
-  AC_TRY_COMPILE([
-#include <stddef.h>
-#include <sys/types.h>
-#include <sys/socket.h>],[
-(void)getsockopt (1, 1, 1, NULL, (size_t*)NULL)],[
-	AC_MSG_RESULT(size_t)
-	SOCKLEN_T=size_t],[
-	AC_TRY_COMPILE([
-#include <stddef.h>
-#include <sys/types.h>
-#include <sys/socket.h>],[
-(void)getsockopt (1, 1, 1, NULL, (int*)NULL)],[
-	AC_MSG_RESULT(int)
-	SOCKLEN_T=int],[
-	AC_MSG_WARN(could not determine)
-	SOCKLEN_T=int])])])
+AC_COMPILE_IFELSE(
+  [ AC_LANG_PROGRAM( [[
+                        #include <stddef.h>
+                        #include <sys/types.h>
+                        #include <sys/socket.h>
+                     ]],
+                     [[ (void)getsockopt (1, 1, 1, NULL, (socklen_t*)NULL)]]
+  )],
+  [ AC_MSG_RESULT(socklen_t)
+    SOCKLEN_T=socklen_t ],
+  [ AC_COMPILE_IFELSE(
+    [ AC_LANG_PROGRAM( [[
+                          #include <stddef.h>
+                          #include <sys/types.h>
+                          #include <sys/socket.h>
+                       ]],
+                       [[ (void)getsockopt (1, 1, 1, NULL, (size_t*)NULL) ]]
+    )],
+    [	AC_MSG_RESULT(size_t)
+	    SOCKLEN_T=size_t ],
+	  [ AC_COMPILE_IFELSE(
+        [ AC_LANG_PROGRAM( [[
+                              #include <stddef.h>
+                              #include <sys/types.h>
+                              #include <sys/socket.h>
+                           ]],
+                           [[ (void)getsockopt (1, 1, 1, NULL, (int*)NULL) ]]
+        )],
+        [ AC_MSG_RESULT(int)
+          SOCKLEN_T=int ],
+        [ AC_MSG_ERROR( [could not determine] )
+          SOCKLEN_T=int ]
+      )]
+    )]
+)
 AC_DEFINE_UNQUOTED(SOCKLEN_T, $SOCKLEN_T, [Determine what socket length (socklen_t) data type is])
 
 
-dnl
-dnl check cpu cores via sysconf
-dnl
+#
+# check cpu cores via sysconf
+#
 AC_MSG_CHECKING(for cpu cores via sysconf)
-AC_TRY_COMPILE(
-	[#include <unistd.h>],
-	[ int a = _SC_NPROCESSORS_ONLN; ],
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[ #include <unistd.h> ]],
+	                                  [[ int a = _SC_NPROCESSORS_ONLN; ]] )],
 	FOUND="yes"
 	AC_MSG_RESULT([[yes]])
 	AC_DEFINE([HAVE_SC_NPROCESSORS_ONLN], 1, [Define to 1 if _SC_NPROCESSORS_ONLN is present in unistd.h]),
-	FOUND="no")
+
+	FOUND="no"
+)
 
 
-dnl 
-dnl checks for libxml2 includes and libraries.
-dnl
+#
+# checks for libxml2 includes and libraries.
+#
 AC_MSG_CHECKING(whether to use libxml2)
 AC_ARG_ENABLE(libxml2,
 	[AS_HELP_STRING([--disable-libxml2], [do not use libxml2 (removes dependency from libxml2-library, only for development purposes)])],
@@ -261,7 +300,7 @@ if test "$USELIBXML2" = "yes"; then
 			[CPPFLAGS="${CPPFLAGS} $libxml2_CFLAGS"],
 			AC_MSG_ERROR("libxml2 library not found"))
 	fi
-	AC_CHECK_HEADER(libxml/tree.h,,
+	AC_CHECK_HEADER(libxml/tree.h, ,
 		AC_MSG_ERROR("libxml2 header files not found"))
 	AC_SEARCH_LIBS([xmlNewNode], [xml2], ,
 		AC_MSG_ERROR("libxml2 library not found"))
@@ -270,9 +309,9 @@ else
 fi
 
 
-dnl
-dnl Use curses. default: yes
-dnl
+#
+# Use curses. default: yes
+#
 AC_MSG_CHECKING(whether to use curses)
 AC_ARG_ENABLE(curses,
 	[AS_HELP_STRING([--disable-curses], [do not use curses (removes dependency from curses-library)])],
@@ -314,20 +353,20 @@ if test "$USECURSES" = "yes"; then
 			FOUND=no)
 	fi
 	if test "$FOUND" = "no"; then
-		AC_MSG_ERROR([Couldn't find curses headers (ncurses.h or curses.h)])
+		AC_MSG_ERROR([Unable to find curses headers (ncurses.h or curses.h)])
 	fi
 	AC_SEARCH_LIBS([refresh], [ncurses curses],, 
-		AC_ERROR([Couldn't find curses library]))
+		AC_MSG_ERROR([Unable to find curses library]))
 	AC_SEARCH_LIBS([nodelay], [ncurses curses tinfo],, 
-		AC_ERROR([Couldn't find curses library]))
+		AC_MSG_ERROR([Unable to find curses library]))
 else
 	AC_DEFINE([DISABLE_CURSES],1,[Define to 1 to not use curses])
 fi
 
 
-dnl
-dnl Use par-checking. default: yes.
-dnl
+#
+# Use par-checking. default: yes.
+#
 AC_MSG_CHECKING(whether to include code for par-checking)
 AC_ARG_ENABLE(parcheck,
 	[AS_HELP_STRING([--disable-parcheck], [do not include par-check/-repair-support])],
@@ -350,9 +389,9 @@ else
 fi
 
 
-dnl
-dnl Use TLS/SSL. default: yes
-dnl
+#
+# Use TLS/SSL. default: yes
+#
 AC_MSG_CHECKING(whether to use TLS/SSL)
 AC_ARG_ENABLE(tls,
 	[AS_HELP_STRING([--disable-tls], [do not use TLS/SSL (removes dependency from TLS/SSL-libraries)])],
@@ -389,7 +428,7 @@ if test "$USETLS" = "yes"; then
 			TLSHEADERS=yes,
 			FOUND=no)
 		if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-			AC_MSG_ERROR([Couldn't find OpenSSL headers (ssl.h)])
+			AC_MSG_ERROR([Unable to find OpenSSL headers (ssl.h)])
 		fi
 		if test "$FOUND" = "yes"; then
 			AC_SEARCH_LIBS([ASN1_OBJECT_free], [crypto],
@@ -398,7 +437,7 @@ if test "$USETLS" = "yes"; then
 					FOUND=no),
 				FOUND=no)
 			if test "$FOUND" = "no" -a "$TLSLIB" = "OpenSSL"; then
-				AC_MSG_ERROR([Couldn't find OpenSSL library])
+				AC_MSG_ERROR([Unable to find OpenSSL library])
 			fi
 			if test "$FOUND" = "yes"; then
 				TLSLIB="OpenSSL"
@@ -431,7 +470,7 @@ if test "$USETLS" = "yes"; then
 			TLSHEADERS=yes,
 			FOUND=no)
 		if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
-			AC_MSG_ERROR([Couldn't find GnuTLS headers (gnutls.h)])
+			AC_MSG_ERROR([Unable to find GnuTLS headers (gnutls.h)])
 		fi
 		if test "$FOUND" = "yes"; then
 			AC_SEARCH_LIBS([gnutls_global_init], [gnutls],
@@ -440,16 +479,22 @@ if test "$USETLS" = "yes"; then
 			if test "$FOUND" = "yes"; then
 				dnl gcrypt is optional
 				AC_MSG_CHECKING([whether gcrypt is needed])
-				AC_TRY_COMPILE(
-					[#include <gnutls/gnutls.h>]
-					[#if GNUTLS_VERSION_NUMBER <= 0x020b00]
-					[compile error]
-					[#endif],
-					[int a;],
-					AC_MSG_RESULT([no])
-					GCRYPT=no,
-					AC_MSG_RESULT([yes])
-					GCRYPT=yes)
+				AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[
+				                                        #include <gnutls/gnutls.h>
+				                                     ]],
+				                                     [[
+				                                        #if GNUTLS_VERSION_NUMBER <= 0x020b00
+					                                      [compile error]
+					                                      #endif
+                                      					int a;
+                                      			 ]]
+                                          )],
+					[ AC_MSG_RESULT([no])
+					GCRYPT=no ],
+
+					[ AC_MSG_RESULT([yes])
+					GCRYPT=yes ]
+        )
 				if test "$GCRYPT" = "yes"; then
 					AC_CHECK_HEADER([gcrypt.h],
 						AC_SEARCH_LIBS([gcry_control], [gnutls gcrypt],
@@ -459,7 +504,7 @@ if test "$USETLS" = "yes"; then
 				fi
 			fi
 			if test "$FOUND" = "no" -a "$TLSLIB" = "GnuTLS"; then
-				AC_MSG_ERROR([Couldn't find GnuTLS library])
+				AC_MSG_ERROR([Unable to find GnuTLS library])
 			fi
 			if test "$FOUND" = "yes"; then
 				TLSLIB="GnuTLS"
@@ -487,13 +532,13 @@ if test "$USETLS" = "yes"; then
 				FOUND=yes,
 				FOUND=no)
 			if test "$FOUND" = "no"; then
-				AC_MSG_ERROR([Couldn't find Nettle headers (sha.h)])
+				AC_MSG_ERROR([Unable to find Nettle headers (sha.h)])
 			fi
 			AC_SEARCH_LIBS([nettle_pbkdf2_hmac_sha256], [nettle],
 				FOUND=yes,
 				FOUND=no)
 			if test "$FOUND" = "no"; then
-				AC_MSG_ERROR([Couldn't find Nettle library, required when using GnuTLS])
+				AC_MSG_ERROR([Unable to find Nettle library, required when using GnuTLS])
 			fi
 			if test "$FOUND" = "yes"; then
 				AC_DEFINE([HAVE_NETTLE],1,[Define to 1 to use Nettle library for decryption.])
@@ -503,9 +548,9 @@ if test "$USETLS" = "yes"; then
 
 	if test "$TLSLIB" = ""; then
 		if test "$TLSHEADERS" = ""; then
-			AC_MSG_ERROR([Couldn't find neither OpenSSL nor GnuTLS headers (ssl.h or gnutls.h)])
+			AC_MSG_ERROR([Unable to find either OpenSSL or GnuTLS headers (ssl.h or gnutls.h)])
 		else
-			AC_MSG_ERROR([Couldn't find neither OpenSSL nor GnuTLS library])
+			AC_MSG_ERROR([Unable to find either OpenSSL or GnuTLS libraries])
 		fi
 	fi
 else
@@ -513,9 +558,9 @@ else
 fi
 
 
-dnl 
-dnl checks for zlib includes and libraries.
-dnl
+#
+# checks for zlib includes and libraries.
+#
 AC_MSG_CHECKING(whether to use gzip)
 AC_ARG_ENABLE(gzip,
 	[AS_HELP_STRING([--disable-gzip], [disable gzip-compression/decompression (removes dependency from zlib-library)])],
@@ -548,9 +593,9 @@ else
 fi
 
 
-dnl
-dnl Determine if CPU supports SIMD instructions
-dnl
+#
+# Determine if CPU supports SIMD instructions
+#
 AC_MSG_CHECKING(whether to use SIMD-optimized routines)
 USE_SIMD=no
 case $host_cpu in
@@ -578,12 +623,12 @@ AC_SUBST([NEON_CXXFLAGS])
 AC_SUBST([ACLECRC_CXXFLAGS])
 
 
-dnl 
-dnl Some Linux systems require an empty signal handler for SIGCHLD
-dnl in order for exit codes to be correctly delivered to parent process.
-dnl Some 32-Bit BSD systems however may not function properly if the handler is installed.
-dnl The default behavior is to install the handler.
-dnl
+#
+# Some Linux systems require an empty signal handler for SIGCHLD
+# in order for exit codes to be correctly delivered to parent process.
+# Some 32-Bit BSD systems however may not function properly if the handler is installed.
+# The default behavior is to install the handler.
+#
 AC_MSG_CHECKING(whether to use an empty SIGCHLD handler)
 AC_ARG_ENABLE(sigchld-handler,
 	[AS_HELP_STRING([--disable-sigchld-handler], [do not use sigchld-handler (the disabling may be neccessary on 32-Bit BSD)])],
@@ -595,9 +640,9 @@ if test "$SIGCHLDHANDLER" = "yes"; then
 fi
 
 
-dnl 
-dnl Debugging. Default: no
-dnl 
+#
+# Debugging. Default: no
+#
 AC_MSG_CHECKING(whether to include all debugging code)
 AC_ARG_ENABLE(debug,
 	[AS_HELP_STRING([--enable-debug], [enable debugging])],
@@ -608,83 +653,107 @@ AC_MSG_RESULT($ENABLEDEBUG)
 
 if test "$ENABLEDEBUG" = "yes"; then
 
-dnl
-dnl Begin of debugging code
-dnl
+#
+# Begin of debugging code
+#
 
 AC_DEFINE([DEBUG],1,Define to 1 to include debug-code)
 
 
-dnl
-dnl check for __FUNCTION__ or __func__ macro
-dnl
+#
+# check for __FUNCTION__ or __func__ macro
+#
 AC_MSG_CHECKING(for macro returning current function name)
-AC_TRY_COMPILE(
-	[#include <stdio.h>], [printf("%s\n", __FUNCTION__);],
-	AC_MSG_RESULT(__FUNCTION__)
-	FUNCTION_MACRO_NAME=__FUNCTION__,
-AC_TRY_COMPILE([#include <stdio.h>], [printf("%s\n", __func__);],
-	AC_MSG_RESULT(__func__)
-	FUNCTION_MACRO_NAME=__func__,
-	AC_MSG_RESULT(none)))
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[
+                                        #include <stdio.h>
+                                     ]],
+                                     [[ printf("%s\n", __FUNCTION__); ]] )],
+	[ AC_MSG_RESULT(__FUNCTION__)
+	  FUNCTION_MACRO_NAME=__FUNCTION__ ],
+  [ AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[
+                                            #include <stdio.h>
+                                         ]],
+                                         [[ printf("%s\n", __func__); ]]
+                                       )],
+      [ AC_MSG_RESULT(__func__)
+      FUNCTION_MACRO_NAME=__func__ ],
+      [ AC_MSG_RESULT(none) ]
+  )]
+)
 if test "$FUNCTION_MACRO_NAME" != ""; then
 	AC_DEFINE_UNQUOTED(FUNCTION_MACRO_NAME, $FUNCTION_MACRO_NAME, [Define to the name of macro which returns the name of function being compiled])
 fi
 
 
-dnl 
-dnl variadic macros
-dnl 
+#
+# variadic macros
+#
 AC_MSG_CHECKING(for variadic macros)
-AC_TRY_COMPILE(
-	[ #define macro(...)   macrofunc(__VA_ARGS__) ]
-	[ int macrofunc(int a, int b) { return a + b; } ],
-	[ int a=macro(1, 2); ],
-	AC_MSG_RESULT([yes])
-	AC_DEFINE([HAVE_VARIADIC_MACROS], 1, Define to 1 if variadic macros are supported),
-	AC_MSG_RESULT([no]))
+AC_COMPILE_IFELSE(
+  [ AC_LANG_PROGRAM( [[
+                        #define macro(...)   macrofunc(__VA_ARGS__)
+                     ]],
+                     [[
+                        int macrofunc(int a, int b) { return a + b; }
+                        int a=macro(1, 2);
+                     ]]
+                )],
+
+  [ AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_VARIADIC_MACROS], 1, Define to 1 if variadic macros are supported) ],
+
+  [ AC_MSG_RESULT([no]) ]
+)
 
 
-dnl
-dnl Backtracing on segmentation faults
-dnl
+#
+# Backtracing on segmentation faults
+#
 AC_MSG_CHECKING(for backtrace)
-AC_TRY_COMPILE(
-	[#include <execinfo.h>]
-	[#include <stdio.h>]
-	[#include <stdlib.h>],
-	[ void *array[100];	size_t size; char **strings; ]
-	[ size = backtrace(array, 100); ]
-	[ strings = backtrace_symbols(array, size); ],
-	FOUND=yes
-	AC_MSG_RESULT([[yes]])
-	AC_DEFINE([HAVE_BACKTRACE], 1, [Define to 1 to create stacktrace on segmentation faults]),
-	FOUND=no
-	AC_MSG_RESULT([[no]]))
+AC_COMPILE_IFELSE(
+  [ AC_LANG_PROGRAM( [[
+                        #include <execinfo.h>
+                        #include <stdio.h>
+                        #include <stdlib.h>
+                     ]],
+                     [[
+                        void *array[100];	size_t size; char **strings;
+                        size = backtrace(array, 100);
+                        strings = backtrace_symbols(array, size);
+                     ]]
+  )],
 
+	[ FOUND=yes
+  	AC_MSG_RESULT([[yes]])
+  	AC_DEFINE([HAVE_BACKTRACE], 1, [Define to 1 to create stacktrace on segmentation faults]) ],
 
-dnl
-dnl "rdynamic" linker flag
-dnl
+	[ FOUND=no
+	  AC_MSG_RESULT([[no]]) ]
+)
+
+#
+# "rdynamic" linker flag
+#
 AC_MSG_CHECKING(for rdynamic linker flag)
 	old_LDFLAGS="$LDFLAGS"
 	LDFLAGS="$LDFLAGS -rdynamic"
-	AC_TRY_LINK([], [],
-		AC_MSG_RESULT([[yes]]),
-		AC_MSG_RESULT([[no]])
-		[LDFLAGS="$old_LDFLAGS"])
-		
-dnl
-dnl End of debugging code
-dnl
+	AC_LINK_IFELSE(
+              [AC_LANG_PROGRAM( [[ ]], [[ ]] )],
+              AC_MSG_RESULT([[yes]]),
+              [ AC_MSG_RESULT([[no]])
+                LDFLAGS="$old_LDFLAGS" ] )
+
+#
+# End of debugging code
+#
 else
 AC_DEFINE([NDEBUG],1,Define to 1 to exclude debug-code)
 fi
 
 
-dnl
-dnl Enable test suite. Default: no.
-dnl
+#
+# Enable test suite. Default: no.
+#
 AC_MSG_CHECKING(whether to enable unit and integration tests)
 AC_ARG_ENABLE(tests,
 	[AS_HELP_STRING([--enable-tests], [enable unit and integration tests])],
