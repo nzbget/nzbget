@@ -27,8 +27,8 @@
 *.o-*
 .deps/
 .dirstamp
-Makefile
-Makefile.in
+configure.mk
+configure.mk.in
 aclocal.m4
 autom4te.cache/
 config.guess
@@ -83,3 +83,5 @@ pytest.ini
 .cache
 nzbget-v*.tar.gz
 /confdefs.h
+/Makefile.bootstrap
+/Makefile.in

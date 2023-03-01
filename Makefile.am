@@ -485,7 +485,6 @@ install-conf:
 uninstall-conf:
 	rm -f "$(DESTDIR)$(sysconfdir)/nzbget.conf"
 
-# Ignore "code_revision.cpp" in distcleancheck
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
 	sh '{}' ';'
@@ -499,3 +498,4 @@ dist-hook:
 	find $(distdir)/lib -type f -print -exec chmod -x {} \;
 	find $(distdir)/tests -type f -print -exec chmod -x {} \;
 
+include rebuild.mk
