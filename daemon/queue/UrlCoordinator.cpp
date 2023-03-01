@@ -84,6 +84,8 @@ void UrlCoordinator::Run()
 {
 	debug("Entering UrlCoordinator-loop");
 
+	time_t lastReset = 0;
+
 	while (!DownloadQueue::IsLoaded())
 	{
 		Util::Sleep(20);
@@ -91,7 +93,6 @@ void UrlCoordinator::Run()
 
 	while (!IsStopped())
 	{
-		time_t lastReset = 0;
 		bool downloadStarted = false;
 
 		{
