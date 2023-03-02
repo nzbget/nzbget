@@ -1203,7 +1203,7 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp, ch
 	// and changes here need to be matched there.
 	int result_code = strtol(buf, nullptr, 10);
 	if (result_code != DnsProxyQueryResult) {
-		fread(&size, 1, sizeof(size), proxy);
+		size = fread(&size, 1, sizeof(size), proxy);
 		return nullptr;
 	}
 
