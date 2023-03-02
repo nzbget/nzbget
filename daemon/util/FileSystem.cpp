@@ -29,16 +29,21 @@ const char* RESERVED_DEVICE_NAMES[] = { "CON", "PRN", "AUX", "NUL",
 CString FileSystem::GetLastErrorMessage()
 {
 	BString<1024> msg;
-	strerror_r(errno, msg, msg.Capacity());
 
+    if ( errno != 0 )
+    {
 #ifdef WIN32
-	if (!errno)
-	{
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 			msg, 1024, nullptr);
-	}
+#else
+        if ( strerror_r(errno, msg, msg.Capacity()) != 0 )
+        {
+            msg = "an error occurred while reporting an error...";
+        }
+
 #endif
+    }
 
 	return *msg;
 }
@@ -190,8 +195,7 @@ CString FileSystem::GetCurrentDirectory()
 	return WidePathToUtfPath(unistr);
 #else
 	char str[1024];
-	getcwd(str, 1024);
-	return str;
+	return getcwd( str, sizeof(str) );
 #endif
 }
 
@@ -255,7 +259,7 @@ bool FileSystem::SaveBufferIntoFile(const char* filename, const char* buffer, in
 bool FileSystem::AllocateFile(const char* filename, int64 size, bool sparse, CString& errmsg)
 {
 	errmsg.Clear();
-	bool ok = false;
+
 #ifdef WIN32
 	HANDLE hFile = CreateFileW(UtfPathToWidePath(filename), GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_NEW, 0, nullptr);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -277,59 +281,79 @@ bool FileSystem::AllocateFile(const char* filename, int64 size, bool sparse, CSt
 	SetFilePointerEx(hFile, size64, nullptr, FILE_END);
 	SetEndOfFile(hFile);
 	CloseHandle(hFile);
-	ok = true;
+
 #else
 	// create file
 	FILE* file = fopen(filename, FOPEN_AB);
-	if (!file)
+	if ( file == NULL )
 	{
 		errmsg = GetLastErrorMessage();
 		return false;
 	}
+
+    if ( posix_fallocate( fileno( file ), 0, size ) != 0 ) {
+        errmsg = GetLastErrorMessage();
+        fclose(file);
+        return false;
+    }
 	fclose(file);
 
-	// there are no reliable function to expand file on POSIX, so we must try different approaches,
-	// starting with the fastest one and hoping it will work
-	// 1) set file size using function "truncate" (this is fast, if it works)
-	truncate(filename, size);
-	// check if it worked
-	ok = FileSize(filename) == size;
-	if (!ok)
-	{
-		// 2) truncate did not work, expanding the file by writing to it (that's slow)
-		truncate(filename, 0);
-		file = fopen(filename, FOPEN_AB);
-		if (!file)
-		{
-			errmsg = GetLastErrorMessage();
-			return false;
-		}
+    // check if it worked
+    if ( FileSize(filename) != size )
+    {
+        // there are no reliable function to expand file on POSIX, so we must try different
+        // approaches, starting with the fastest one, and hoping it will work
+        // 1) set file size using function "truncate" (this is fast, if it works)
+        if ( truncate(filename, size) == -1 )
+        {
+            errmsg = GetLastErrorMessage();
+            return false;
+        }
 
-		// write zeros in 16K chunks
-		CharBuffer zeros(16 * 1024);
-		memset(zeros, 0, zeros.Size());
-		for (int64 remaining = size; remaining > 0;)
-		{
-			int64 needbytes = std::min(remaining, (int64)zeros.Size());
-			int64 written = fwrite(zeros, 1, needbytes, file);
-			if (written != needbytes)
-			{
-				errmsg = GetLastErrorMessage();
-				fclose(file);
-				return false;
-			}
-			remaining -= written;
-		}
-		fclose(file);
+        // check if truncate() worked
+        if ( FileSize(filename) != size )
+        {
+            // 2) truncate to size did not work, expanding the file by writing to it (that's slow)
+            if ( truncate(filename, 0) == -1 )
+            {
+                errmsg = GetLastErrorMessage();
+                return false;
+            }
 
-		ok = FileSize(filename) == size;
-		if (!ok)
-		{
-			errmsg = "created file has wrong size";
-		}
-	}
+            file = fopen(filename, FOPEN_AB);
+            if (!file)
+            {
+                errmsg = GetLastErrorMessage();
+                return false;
+            }
+
+            // write zeros in 16K chunks
+            CharBuffer zeros(16 * 1024);
+            memset(zeros, 0, zeros.Size());
+            int64 remaining = size;
+            while ( remaining > 0 )
+            {
+                int64 needbytes = std::min(remaining, (int64) zeros.Size());
+                int64 written = fwrite(zeros, 1, needbytes, file);
+                if (written != needbytes) {
+                    errmsg = GetLastErrorMessage();
+                    fclose(file);
+                    return false;
+                }
+                remaining -= written;
+            }
+
+            fclose(file);
+
+            if ( FileSize(filename) != size )
+            {
+                errmsg = "created file has wrong size";
+                return false;
+            }
+        }
+    }
 #endif
-	return ok;
+	return true;
 }
 
 bool FileSystem::TruncateFile(const char* filename, int size)
@@ -776,21 +800,13 @@ CString FileSystem::ExpandFileName(const char* filename)
 #else
 	CString result;
 	result.Reserve(1024 - 1);
-	if (filename[0] != '\0' && filename[0] != '/')
-	{
-		char curDir[MAX_PATH + 1];
-		getcwd(curDir, sizeof(curDir) - 1); // 1 char reserved for adding backslash
-		int offset = 0;
-		if (filename[0] == '.' && filename[1] == '/')
-		{
-			offset += 2;
-		}
-		result.Format("%s/%s", curDir, filename + offset);
-	}
-	else
-	{
-		result = filename;
-	}
+    char * absPath = realpath( filename, NULL );
+    if ( absPath != NULL )
+    {
+        result = absPath;
+        free( absPath );
+    }
+
 	return result;
 #endif
 }
