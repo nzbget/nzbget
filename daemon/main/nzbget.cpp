@@ -943,12 +943,55 @@ void NZBGet::Daemonize()
 	// obtain a new process group
 	setsid();
 
-	// handle standart I/O
+	// redirect standard I/O
 	int d = open("/dev/null", O_RDWR);
 	dup2(d, 0);
 	dup2(d, 1);
 	dup2(d, 2);
 	close(d);
+
+    struct passwd *pw = getpwnam(m_options->GetDaemonUsername());
+    if ( pw != NULL )
+    {
+        /* retrieve what this process is permitted to do */
+        cap_t caps = cap_get_proc();
+
+        if ( caps != NULL )
+        {
+            cap_flag_value_t canSetGID;
+            if ( cap_get_flag( caps, CAP_SETGID, CAP_PERMITTED, &canSetGID ) == -1 )
+            {
+                canSetGID = CAP_CLEAR;
+            }
+            if ( canSetGID == CAP_SET ) {
+                // Set aux groups to null.
+                setgroups(0, (const gid_t *) 0);
+                // Set primary group.
+                if ( setgid( pw->pw_gid ) == -1 )
+                {
+                    error("Starting daemon failed: setting group ID");
+                }
+                // Try setting aux groups correctly - not critical if this fails.
+                initgroups(m_options->GetDaemonUsername(), pw->pw_gid);
+            }
+
+            cap_flag_value_t canSetUID;
+            if ( cap_get_flag( caps, CAP_SETUID, CAP_PERMITTED, &canSetUID ) == -1 )
+            {
+                canSetUID = CAP_CLEAR;
+            }
+            if ( canSetUID == CAP_SET )
+            {
+                // Finally, set uid.
+                if ( setuid(pw->pw_uid) == -1 )
+                {
+                    error("Starting daemon failed: setting group ID");
+                }
+            }
+
+            cap_free( caps );
+        }
+    }
 
 	// set up lock-file
 	int lfp = -1;
@@ -972,30 +1015,15 @@ void NZBGet::Daemonize()
 		}
 	}
 
-	/* Drop user if there is one, and we were run as root */
-	if (getuid() == 0 || geteuid() == 0)
-	{
-		struct passwd *pw = getpwnam(m_options->GetDaemonUsername());
-		if (pw)
-		{
-			// Change owner of lock file
-			fchown(lfp, pw->pw_uid, pw->pw_gid);
-			// Set aux groups to null.
-			setgroups(0, (const gid_t*)0);
-			// Set primary group.
-			setgid(pw->pw_gid);
-			// Try setting aux groups correctly - not critical if this fails.
-			initgroups(m_options->GetDaemonUsername(), pw->pw_gid);
-			// Finally, set uid.
-			setuid(pw->pw_uid);
-		}
-	}
-
 	// record pid to lockfile
 	if (lfp > -1)
 	{
 		BString<100> str("%d\n", getpid());
-		write(lfp, str, strlen(str));
+		if ( write(lfp, str, strlen(str) == -1 ) )
+        {
+            error("Starting daemon failed: unable to write PID to lock-file %s", m_options->GetLockFile());
+            exit(1);
+        }
 	}
 
 	// ignore unwanted signals

@@ -67,7 +67,7 @@ fi
 # Checks for header files.
 #
 AC_CHECK_HEADERS(sys/prctl.h regex.h endian.h getopt.h)
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h netdb.h netinet/in.h stdint.h sys/file.h sys/socket.h sys/statvfs.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h netdb.h netinet/in.h stdint.h sys/capability.h sys/file.h sys/socket.h sys/statvfs.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
@@ -90,6 +90,7 @@ AC_SEARCH_LIBS([pthread_create], [pthread])
 AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([inet_addr], [nsl])
 AC_SEARCH_LIBS([hstrerror], [resolv])
+AC_SEARCH_LIBS([cap_get_proc],[cap])
 
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
@@ -99,7 +100,7 @@ AC_FUNC_MKTIME
 AC_FUNC_REALLOC
 AC_FUNC_STRERROR_R
 AC_FUNC_STRNLEN
-AC_CHECK_FUNCS([bzero dup2 fdatasync floor getcwd gethostbyname gettimeofday inet_ntoa memchr memmove memset mkdir pow regcomp rmdir select socket strcasecmp strchr strdup strerror strncasecmp strpbrk strrchr strspn strstr strtol strtoul])
+AC_CHECK_FUNCS([bzero dup2 fdatasync floor getcwd gethostbyname gettimeofday inet_ntoa memchr memmove memset mkdir pow realpath regcomp rmdir select socket strcasecmp strchr strdup strerror strncasecmp strpbrk strrchr strspn strstr strtol strtoul])
 
 #
 # Android NDK restrictions

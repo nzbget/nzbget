@@ -210,6 +210,7 @@ using namespace MSXML;
 #include <time.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <sys/capability.h>
 
 #include <string>
 #include <vector>
