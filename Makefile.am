@@ -456,7 +456,7 @@ nobase_dist_scripts_SCRIPTS = $(scripts_FILES)
 
 # Note about "sed": 
 # We need to make some changes in installed files.
-# On Linux "sed" has option "-i" for in-place-edit. Unfortunateley the BSD version of "sed"
+# On Linux "sed" has option "-i" for in-place-edit. Unfortunately the BSD version of "sed"
 # has incompatible syntax. To solve the problem we perform in-place-edit in three steps:
 # 1) copy the original file to original.temp (delete existing original.temp, if any);
 # 2) sed < original.temp > original
