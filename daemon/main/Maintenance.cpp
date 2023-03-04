@@ -41,13 +41,16 @@ private:
 	const char* m_inFilename;
 	const char* m_sigFilename;
 	const char* m_pubKeyFilename;
-	uchar m_inHash[SHA256_DIGEST_LENGTH];
-	uchar m_signature[256];
-	RSA* m_pubKey;
 
+    EVP_MD_CTX*     m_sha256Ctx;
+	uchar           m_sha256[EVP_MAX_MD_SIZE];
+    unsigned int    m_sha256Len;
+	uchar           m_signature[256];
+    EVP_PKEY_CTX*   m_pubKeyCtx;
+
+	bool ComputeSHA256();
 	bool ReadSignature();
-	bool ComputeInHash();
-	bool ReadPubKey();
+	bool ReadPublicKey();
 };
 #endif
 
@@ -320,30 +323,47 @@ Signature::Signature(const char *inFilename, const char *sigFilename, const char
 	m_inFilename = inFilename;
 	m_sigFilename = sigFilename;
 	m_pubKeyFilename = pubKeyFilename;
-	m_pubKey = nullptr;
+	m_sha256Ctx = nullptr;
+	m_pubKeyCtx = nullptr;
 }
 
 Signature::~Signature()
 {
-	RSA_free(m_pubKey);
+    if ( m_sha256Ctx == nullptr )
+    {
+        EVP_MD_CTX_free( m_sha256Ctx );
+    }
+    if ( m_pubKeyCtx == nullptr )
+    {
+    	EVP_PKEY_CTX_free( m_pubKeyCtx );
+    }
 }
 
 // Calculate SHA-256 for input file (m_inFilename)
-bool Signature::ComputeInHash()
+bool Signature::ComputeSHA256()
 {
 	DiskFile infile;
 	if (!infile.Open(m_inFilename, DiskFile::omRead))
 	{
 		return false;
 	}
-	SHA256_CTX sha256;
-	SHA256_Init(&sha256);
+    if ( m_sha256Ctx == nullptr ) {
+	    m_sha256Ctx = EVP_MD_CTX_new();
+        if ( m_sha256Ctx == nullptr )
+        {
+            return false;
+        }
+    }
+	EVP_DigestInit( m_sha256Ctx, EVP_sha256() );
 	CharBuffer buffer(32*1024);
-	while(int bytesRead = (int)infile.Read(buffer, buffer.Size()))
+    size_t bytesRead;
+	while ( ( bytesRead = infile.Read( buffer, buffer.Size() ) ) != 0 )
 	{
-		SHA256_Update(&sha256, buffer, bytesRead);
+		EVP_DigestUpdate( m_sha256Ctx, buffer, bytesRead);
 	}
-	SHA256_Final(m_inHash, &sha256);
+    // store the computed digest in m_sha256
+	EVP_DigestFinal( m_sha256Ctx, m_sha256, &m_sha256Len );
+
 	infile.Close();
 	return true;
 }
@@ -384,7 +404,7 @@ bool Signature::ReadSignature()
 				uchar ch = (c1 << 4) + c2;
 				*output++ = (char)ch;
 			}
-			ok = output == m_signature + sizeof(m_signature);
+			ok = ( output == ( m_signature + sizeof(m_signature) ) );
 
 			break;
 		}
@@ -395,22 +415,43 @@ bool Signature::ReadSignature()
 }
 
 // Read public key from file (m_szPubKeyFilename) into memory
-bool Signature::ReadPubKey()
+bool Signature::ReadPublicKey()
 {
+   	EVP_PKEY*       publicKey;
+
 	CharBuffer keybuf;
 	if (!FileSystem::LoadFileIntoBuffer(m_pubKeyFilename, keybuf, false))
 	{
 		return false;
 	}
 	BIO* mem = BIO_new_mem_buf(keybuf, keybuf.Size());
-	m_pubKey = PEM_read_bio_RSA_PUBKEY(mem, nullptr, nullptr, nullptr);
+	publicKey = PEM_read_bio_PUBKEY( mem, nullptr, nullptr, nullptr );
 	BIO_free(mem);
-	return m_pubKey != nullptr;
+
+    if ( publicKey == nullptr )
+    {
+        return false;
+    }
+    m_pubKeyCtx = EVP_PKEY_CTX_new( publicKey, NULL /* no engine */ );
+    EVP_PKEY_free( publicKey );
+
+    if  ( m_pubKeyCtx == nullptr
+     || ( EVP_PKEY_verify_init( m_pubKeyCtx) <= 0 )
+     || ( EVP_PKEY_CTX_set_rsa_padding( m_pubKeyCtx, RSA_PKCS1_PADDING ) <= 0)
+     || ( EVP_PKEY_CTX_set_signature_md( m_pubKeyCtx, EVP_sha256() ) <= 0) )
+    {
+        return false;
+    }
+	return true;
 }
 
 bool Signature::Verify()
 {
-	return ComputeInHash() && ReadSignature() && ReadPubKey() &&
-		RSA_verify(NID_sha256, m_inHash, sizeof(m_inHash), m_signature, sizeof(m_signature), m_pubKey) == 1;
+    bool result;
+    result = ReadPublicKey() && ReadSignature() && ComputeSHA256();
+	if ( result == true ) {
+        result = EVP_PKEY_verify( m_pubKeyCtx, m_signature, sizeof(m_signature), m_sha256, m_sha256Len );
+    }
+    return result;
 }
 #endif /* HAVE_OPENSSL */
