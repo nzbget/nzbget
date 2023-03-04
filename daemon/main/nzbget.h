@@ -155,13 +155,14 @@ using namespace MSXML;
 #include "config.h"
 
 #include <unistd.h>
+#include <stdint.h>
+#include <string.h>
+#include <dirent.h>
 #include <pwd.h>
 #include <grp.h>
 #include <signal.h>
 #include <netdb.h>
-#include <unistd.h>
 #include <pthread.h>
-#include <unistd.h>
 #include <getopt.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -172,9 +173,6 @@ using namespace MSXML;
 #include <sys/file.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <stdint.h>
-#include <pwd.h>
-#include <dirent.h>
 
 #ifndef DISABLE_LIBXML2
 #include <libxml/parser.h>
