@@ -87,7 +87,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,63,161,50,14
     CTEXT           "Version 15.0-testing-r1200",IDC_ABOUT_VERSION,16,70,145,8
     CTEXT           "Lightweight usenet downloader",IDC_STATIC,16,83,145,8
-    CTEXT           "http://nzbget.net",IDC_ABOUT_HOMEPAGE,55,144,64,9,SS_NOTIFY
+    CTEXT           "https://nzbget-ng.github.io",IDC_ABOUT_HOMEPAGE,55,144,64,9,SS_NOTIFY
     ICON            "",IDC_ABOUT_ICON,67,7,21,20
     CTEXT           "NZBGet",IDC_ABOUT_NAME,16,51,145,16
     CTEXT           "The package includes other software; see program's folder for licenses.",IDC_STATIC,16,121,145,20

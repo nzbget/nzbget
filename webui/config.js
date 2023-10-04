@@ -1,5 +1,5 @@
 /*
- * This file is part of nzbget. See <http://nzbget.net>.
+ * This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  * Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -2757,7 +2757,7 @@ var UpdateDialog = (new function($)
 			Refresher.pause();
 		}
 
-		RPC.call('readurl', ['http://nzbget.net/info/nzbget-version.json?nocache=' + new Date().getTime(), 'nzbget version info'], loadedUpstreamInfo, error);
+		RPC.call('readurl', ['https://nzbget-ng.github.io/info/nzbget-version.json?nocache=' + new Date().getTime(), 'nzbget version info'], loadedUpstreamInfo, error);
 	}
 
 	function error(e)

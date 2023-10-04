@@ -61,7 +61,7 @@ if not os.path.exists(os.environ['NZBPP_DIRECTORY']):
 
 # To get the item log we connect to NZBGet via XML-RPC and call
 # method "loadlog", which returns the log for a given nzb item.
-# For more info visit http://nzbget.net/RPC_API_reference
+# For more info visit https://nzbget-ng.github.io/RPC_API_reference
 
 # First we need to know connection info: host, port and password of NZBGet server.
 # NZBGet passes all configuration options to post-processing script as

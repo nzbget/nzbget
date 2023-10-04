@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  This file is part of nzbget. See <http://nzbget.net>.
+#  This file is part of nzbget. See <https://nzbget-ng.github.io>.
 #
 #  Copyright (C) 2015-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
 #
@@ -437,7 +437,7 @@ Linux2FreeBSD()
             fi
             if test "$MODLINUX" = ""; then
                 Info ""
-                Info "WARNING: Linux kernel module isn't loaded. See http://nzbget.net/installation-on-freebsd"
+                Info "WARNING: Linux kernel module isn't loaded. See https://nzbget-ng.github.io/installation-on-freebsd"
             fi
         fi
     fi
@@ -577,7 +577,7 @@ if test "$JUSTUNPACK" = "no"; then
     else
         Info "Successfully installed into $ABSOUTDIR"
     fi
-    Info "For support please visit http://nzbget.net/forum"
+    Info "For support please visit https://nzbget-ng.github.io/forum"
     Linux2FreeBSD "kernel-check"
 else
     Info "Unpacked into $ABSOUTDIR"
