@@ -163,7 +163,7 @@ UpdateFromRepository()
 {
     if [ ! -d nzbget ]; then
         echo "Initial checkout"
-        git clone https://github.com/nzbget/nzbget.git
+        git clone https://github.com/nzbget-ng/nzbget.git
     fi
 
     cd nzbget

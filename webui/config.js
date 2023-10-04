@@ -2789,10 +2789,10 @@ var UpdateDialog = (new function($)
 	function loadGitVerData(callback)
 	{
 		// fetching devel version number from github web-site
-		RPC.call('readurl', ['https://github.com/nzbget/nzbget', 'nzbget git revision info'],
+		RPC.call('readurl', ['https://github.com/nzbget-ng/nzbget', 'nzbget git revision info'],
 			function(gitRevData)
 			{
-				RPC.call('readurl', ['https://raw.githubusercontent.com/nzbget/nzbget/develop/configure.ac', 'nzbget git branch info'],
+				RPC.call('readurl', ['https://raw.githubusercontent.com/nzbget-ng/nzbget/develop/configure.ac', 'nzbget git branch info'],
 					function(gitBranchData)
 					{
 						var html = document.createElement('DIV');
