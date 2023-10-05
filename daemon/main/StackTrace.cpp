@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -150,7 +150,7 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* exPtrs)
 	return EXCEPTION_CONTINUE_SEARCH;
 #else
 	info("Detailed crash information can be printed by debug version of NZBGet."
-		" For more info visit http://nzbget.net/crash-dump");
+		" For more info visit https://nzbget-ng.github.io/crash-dump");
 	return EXCEPTION_EXECUTE_HANDLER;
 #endif
 }

@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2014-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -367,15 +367,15 @@ void WinConsole::ShowMenu()
 			}
 
 		case ID_INFO_HOMEPAGE:
-			ShellExecute(0, "open", "http://nzbget.net", nullptr, nullptr, SW_SHOWNORMAL);
+			ShellExecute(0, "open", "https://nzbget-ng.github.io", nullptr, nullptr, SW_SHOWNORMAL);
 			break;
 
 		case ID_INFO_DOWNLOADS:
-			ShellExecute(0, "open", "http://nzbget.net/download", nullptr, nullptr, SW_SHOWNORMAL);
+			ShellExecute(0, "open", "https://nzbget-ng.github.io/download", nullptr, nullptr, SW_SHOWNORMAL);
 			break;
 
 		case ID_INFO_FORUM:
-			ShellExecute(0, "open", "http://nzbget.net/forum", nullptr, nullptr, SW_SHOWNORMAL);
+			ShellExecute(0, "open", "https://nzbget-ng.github.io/forum", nullptr, nullptr, SW_SHOWNORMAL);
 			break;
 
 		case ID_ABOUT:
@@ -483,7 +483,7 @@ INT_PTR WinConsole::AboutDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 			}
 			else if (LOWORD(wParam) == IDC_ABOUT_HOMEPAGE && HIWORD(wParam) == STN_CLICKED)
 			{
-				ShellExecute(0, "open", "http://nzbget.net", nullptr, nullptr, SW_SHOWNORMAL);
+				ShellExecute(0, "open", "https://nzbget-ng.github.io", nullptr, nullptr, SW_SHOWNORMAL);
 			}
 			else if (LOWORD(wParam) == IDC_ABOUT_GPL && HIWORD(wParam) == STN_CLICKED)
 			{

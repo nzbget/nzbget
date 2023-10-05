@@ -2,7 +2,7 @@ NZBGet for Windows
 ==================
 
 > This is a summary. For full documentation visit
-http://nzbget.net/Installation_on_Windows
+https://nzbget-ng.github.io/Installation_on_Windows
 
 
 NZBGet can be used in application mode (with tray icon and an optional
