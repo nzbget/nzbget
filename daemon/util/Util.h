@@ -82,9 +82,18 @@ public:
 	* Returns program version and revision number as string formatted like "0.7.0-r295".
 	* If revision number is not available only version is returned ("0.7.0").
 	*/
-	static const char * VersionRevision() { return VersionRevisionString; };
+    static const char * VersionRevision() { return VersionRevisionString; };
 
-	static const char * VersionRevisionString;
+    static const char * VersionRevisionString;
+
+    /* create a separate 'protocol version' that lacks the extra release info suffixes.
+     * the extra suffixes confuse clients like Sonarr that are expecting only a dotted
+     * version number.
+     */
+    static const char * ProtocolVersion() { return ProtocolVersionString; };
+
+    static const char * ProtocolVersionString;
+
 
 	static void Init();
 

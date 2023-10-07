@@ -31,7 +31,7 @@
 static const char* OPTION_CONFIGFILE			= "ConfigFile";
 static const char* OPTION_APPBIN				= "AppBin";
 static const char* OPTION_APPDIR				= "AppDir";
-static const char* OPTION_VERSION				= "Version";
+static const char* OPTION_PROTOCOLVERSION		= "Version";
 static const char* OPTION_MAINDIR				= "MainDir";
 static const char* OPTION_DESTDIR				= "DestDir";
 static const char* OPTION_INTERDIR				= "InterDir";
@@ -315,7 +315,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	SetOption(OPTION_APPDIR, filename);
 	m_appDir = *filename;
 
-	SetOption(OPTION_VERSION, Util::VersionRevision());
+	SetOption(OPTION_PROTOCOLVERSION, Util::ProtocolVersion());
 
 	InitDefaults();
 
@@ -1514,7 +1514,7 @@ bool Options::SplitOptionString(const char* option, CString& optName, CString& o
 bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 {
 	if (!strcasecmp(optname, OPTION_CONFIGFILE) || !strcasecmp(optname, OPTION_APPBIN) ||
-		!strcasecmp(optname, OPTION_APPDIR) || !strcasecmp(optname, OPTION_VERSION))
+		!strcasecmp(optname, OPTION_APPDIR) || !strcasecmp(optname, OPTION_PROTOCOLVERSION))
 	{
 		// read-only options
 		return false;

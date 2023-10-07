@@ -1158,7 +1158,7 @@ void VersionXmlCommand::Execute()
 	const char* XML_RESPONSE_STRING_BODY = "<string>%s</string>";
 	const char* JSON_RESPONSE_STRING_BODY = "\"%s\"";
 
-	BString<1024> content(IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, Util::VersionRevision());
+	BString<1024> content(IsJson() ? JSON_RESPONSE_STRING_BODY : XML_RESPONSE_STRING_BODY, Util::ProtocolVersion());
 
 	AppendResponse(content);
 }

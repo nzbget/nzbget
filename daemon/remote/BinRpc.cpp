@@ -390,7 +390,7 @@ void VersionBinCommand::Execute()
 		return;
 	}
 
-	SendBoolResponse(true, Util::VersionRevision());
+	SendBoolResponse(true, Util::ProtocolVersion());
 }
 
 void DownloadBinCommand::Execute()
