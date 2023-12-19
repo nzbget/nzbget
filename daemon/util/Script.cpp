@@ -634,13 +634,13 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 
 #ifdef CHILD_WATCHDOG
 		fputc( '\n', stdout );
-		fsync(1);
+		fflush( stdout );
 #endif
 
 		if ( chdir( workingDir ) == -1 )
         {
             fprintf( stdout, "[ERROR] Could not change working directory for %s: %s\n", script, strerror(errno) );
-            fsync(1);
+            fflush( stdout );
             _exit(FORK_ERROR_EXIT_CODE);
         }
 		environ = envdata;
@@ -650,7 +650,7 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 		if ( errno == EACCES )
 		{
 			fprintf( stdout, "[WARNING] Fixing permissions for %s\n", script );
-            fsync(1);
+            fflush( stdout );
 			FileSystem::FixExecPermission(script);
 			execvp(script, argdata);
 		}
@@ -658,7 +658,7 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 		// NOTE: the text "[ERROR] Could not start " is checked later,
 		// if changed, adjust the dependent code below.
         fprintf( stdout, "[ERROR] Could not start %s: %s\n", script, strerror(errno) );
-		fsync(1);
+		fflush( stdout );
 		_exit(FORK_ERROR_EXIT_CODE);
 	}
 
