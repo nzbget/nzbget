@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
  *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
@@ -743,7 +743,7 @@ void QueueCoordinator::ArticleCompleted(ArticleDownloader* articleDownloader)
 			// if the name from article seems to be obfuscated
 			bool useFilenameFromArticle = g_Options->GetFileNaming() == Options::nfArticle ||
 				(g_Options->GetFileNaming() == Options::nfAuto &&
-				 !Util::AlphaNum(articleDownloader->GetArticleFilename()) &&
+				 !Util::IsObfuscated(articleDownloader->GetArticleFilename()) &&
 				 !nzbInfo->GetManyDupeFiles());
 			if (useFilenameFromArticle)
 			{

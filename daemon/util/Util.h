@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -50,6 +50,7 @@ public:
 	static std::vector<CString> SplitStr(const char* str, const char* separators);
 	static bool EndsWith(const char* str, const char* suffix, bool caseSensitive);
 	static bool AlphaNum(const char* str);
+    static bool IsObfuscated(const char* str);
 
 	/* replace all occurences of szFrom to szTo in string szStr with a limitation that szTo must be shorter than szFrom */
 	static char* ReduceStr(char* str, const char* from, const char* to);
@@ -81,9 +82,18 @@ public:
 	* Returns program version and revision number as string formatted like "0.7.0-r295".
 	* If revision number is not available only version is returned ("0.7.0").
 	*/
-	static const char* VersionRevision() { return VersionRevisionBuf; };
+    static const char * VersionRevision() { return VersionRevisionString; };
 
-	static char VersionRevisionBuf[100];
+    static const char * VersionRevisionString;
+
+    /* create a separate 'protocol version' that lacks the extra release info suffixes.
+     * the extra suffixes confuse clients like Sonarr that are expecting only a dotted
+     * version number.
+     */
+    static const char * ProtocolVersion() { return ProtocolVersionString; };
+
+    static const char * ProtocolVersionString;
+
 
 	static void Init();
 

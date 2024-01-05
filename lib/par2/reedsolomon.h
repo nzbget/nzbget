@@ -122,7 +122,7 @@ inline ReedSolomon<g>::ReedSolomon(std::ostream& cout, std::ostream& cerr) :
   datamissingindex = 0;
   database = 0;
 
-  outputrows.empty();
+  outputrows.resize( 0 );
 
   outputcount = 0;
 

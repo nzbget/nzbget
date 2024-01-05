@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -854,16 +854,18 @@ void CommandLineParser::InitFileArg(int argc, const char* argv[])
 #ifdef WIN32
 		m_argFilename = fileName;
 #else
-		if (fileName[0] == '/' || !strncasecmp(fileName, "http://", 6) || !strncasecmp(fileName, "https://", 7))
+		if ( strncasecmp(fileName, "http://", 7) == 0 || strncasecmp(fileName, "https://", 8) == 0 )
 		{
 			m_argFilename = fileName;
 		}
 		else
 		{
-			// TEST
-			m_argFilename.Reserve(1024 - 1);
-			getcwd(m_argFilename, 1024);
-			m_argFilename.AppendFmt("/%s", fileName);
+            char * absPath = realpath( fileName, NULL );
+			if ( absPath != NULL )
+            {
+                m_argFilename = absPath;
+                free( absPath );
+            }
 		}
 #endif
 

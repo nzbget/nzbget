@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -105,23 +105,13 @@ int getopt(int argc, char *argv[], char *optstring)
 }
 #endif
 
-
-char Util::VersionRevisionBuf[100];
+const char * Util::VersionRevisionString = VERSION;
+/* Manually updated when the protocol changes */
+const char * Util::ProtocolVersionString = "21.0.0";
 
 void Util::Init()
 {
-#ifndef WIN32
-	if ((strlen(code_revision()) > 0) && strstr(VERSION, "testing"))
-	{
-		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s-r%s", VERSION, code_revision());
-	}
-	else
-#endif
-	{
-		snprintf(VersionRevisionBuf, sizeof(VersionRevisionBuf), "%s", VERSION);
-	}
-
-	// init static vars there
+    // init static vars there
 	CurrentTicks();
 }
 
@@ -143,19 +133,19 @@ void Util::SplitInt64(int64 Int64, uint32* Hi, uint32* Lo)
 
 const static char BASE64_DEALPHABET [128] =
 {
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //   0 -   9
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  10 -  19
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  20 -  29
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //  30 -  39
-	0,  0,  0, 62,  0,  0,  0, 63, 52, 53, //  40 -  49
-	54, 55, 56, 57, 58, 59, 60, 61,  0,  0, //  50 -  59
-	0, 61,  0,  0,  0,  0,  1,  2,  3,  4, //  60 -  69
-	5,  6,  7,  8,  9, 10, 11, 12, 13, 14, //  70 -  79
-	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, //  80 -  89
-	25,  0,  0,  0,  0,  0,  0, 26, 27, 28, //  90 -  99
-	29, 30, 31, 32, 33, 34, 35, 36, 37, 38, // 100 - 109
-	39, 40, 41, 42, 43, 44, 45, 46, 47, 48, // 110 - 119
-	49, 50, 51,  0,  0,  0,  0,  0			// 120 - 127
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //   0 -   9
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //  10 -  19
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //  20 -  29
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //  30 -  39
+        0, 0, 0, 62, 0, 0, 0, 63, 52, 53, //  40 -  49
+        54, 55, 56, 57, 58, 59, 60, 61, 0, 0, //  50 -  59
+        0, 61, 0, 0, 0, 0, 1, 2, 3, 4, //  60 -  69
+        5, 6, 7, 8, 9, 10, 11, 12, 13, 14, //  70 -  79
+        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, //  80 -  89
+        25, 0, 0, 0, 0, 0, 0, 26, 27, 28, //  90 -  99
+        29, 30, 31, 32, 33, 34, 35, 36, 37, 38, // 100 - 109
+        39, 40, 41, 42, 43, 44, 45, 46, 47, 48, // 110 - 119
+        49, 50, 51, 0, 0, 0, 0, 0            // 120 - 127
 };
 
 uint32 DecodeByteQuartet(char* inputBuffer, char* outputBuffer)
@@ -472,6 +462,38 @@ bool Util::AlphaNum(const char* str)
 	}
 	return true;
 }
+
+/*
+ * like AlphaNum, but also ignores any extension and explicitly
+ * checks for the format 'abc.xyz.<string of hex digits>.ext'
+ * for which AlphaNum returns false.
+ */
+bool Util::IsObfuscated(const char* str)
+{
+    const char * p;
+
+    if (strncmp( str, "abc.xyz.", 8 ) == 0)
+    {
+        /* validate that the leading 'abc.xyz.' is followed by a series
+         * of hexadecimal chars, up to the extension/end of string */
+        for ( p = str + 8; *p != '\0' && *p != '.' ; ++p )
+        {
+            if ( !((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'F') || (*p >= 'a' && *p <= 'f')) )
+            {
+                return false;
+            }
+        }
+    }
+    else for ( p = str; *p != '\0'; ++p )
+    {
+        if ( !((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z')) )
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 /* Calculate Hash using Bob Jenkins (1996) algorithm
  * http://burtleburtle.net/bob/c/lookup2.c

@@ -1,0 +1,17 @@
+[Unit]
+Description=NZBGet Daemon
+Documentation=https://nzbget-ng.github.io
+After=network.target
+
+[Service]
+User=nzbget
+Group=media
+Type=forking
+ExecStart=/usr/bin/nzbget  --daemon
+ExecStop=/usr/bin/nzbget   --quit
+ExecReload=/usr/bin/nzbget --reload
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

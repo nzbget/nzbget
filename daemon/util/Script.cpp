@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2007-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -633,34 +633,32 @@ void ScriptController::StartProcess(int* pipein, int* pipeout)
 		}
 
 #ifdef CHILD_WATCHDOG
-		write(1, "\n", 1);
-		fsync(1);
+		fputc( '\n', stdout );
+		fflush( stdout );
 #endif
 
-		chdir(workingDir);
+		if ( chdir( workingDir ) == -1 )
+        {
+            fprintf( stdout, "[ERROR] Could not change working directory for %s: %s\n", script, strerror(errno) );
+            fflush( stdout );
+            _exit(FORK_ERROR_EXIT_CODE);
+        }
 		environ = envdata;
 
-		execvp(script, argdata);
+		execvp( script, argdata );
 
-		if (errno == EACCES)
+		if ( errno == EACCES )
 		{
-			write(1, "[WARNING] Fixing permissions for", 32);
-			write(1, script, strlen(script));
-			write(1, "\n", 1);
-			fsync(1);
+			fprintf( stdout, "[WARNING] Fixing permissions for %s\n", script );
+            fflush( stdout );
 			FileSystem::FixExecPermission(script);
 			execvp(script, argdata);
 		}
 
 		// NOTE: the text "[ERROR] Could not start " is checked later,
-		// by changing adjust the dependent code below.
-		write(1, "[ERROR] Could not start ", 24);
-		write(1, script, strlen(script));
-		write(1, ": ", 2);
-		char* errtext = strerror(errno);
-		write(1, errtext, strlen(errtext));
-		write(1, "\n", 1);
-		fsync(1);
+		// if changed, adjust the dependent code below.
+        fprintf( stdout, "[ERROR] Could not start %s: %s\n", script, strerror(errno) );
+		fflush( stdout );
 		_exit(FORK_ERROR_EXIT_CODE);
 	}
 

@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@sourceforge.net>
  *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
@@ -390,7 +390,7 @@ void VersionBinCommand::Execute()
 		return;
 	}
 
-	SendBoolResponse(true, Util::VersionRevision());
+	SendBoolResponse(true, Util::ProtocolVersion());
 }
 
 void DownloadBinCommand::Execute()

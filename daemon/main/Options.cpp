@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
@@ -31,7 +31,7 @@
 static const char* OPTION_CONFIGFILE			= "ConfigFile";
 static const char* OPTION_APPBIN				= "AppBin";
 static const char* OPTION_APPDIR				= "AppDir";
-static const char* OPTION_VERSION				= "Version";
+static const char* OPTION_PROTOCOLVERSION		= "Version";
 static const char* OPTION_MAINDIR				= "MainDir";
 static const char* OPTION_DESTDIR				= "DestDir";
 static const char* OPTION_INTERDIR				= "InterDir";
@@ -140,6 +140,7 @@ static const char* OPTION_QUOTASTARTDAY			= "QuotaStartDay";
 static const char* OPTION_DAILYQUOTA			= "DailyQuota";
 static const char* OPTION_REORDERFILES			= "ReorderFiles";
 static const char* OPTION_UPDATECHECK			= "UpdateCheck";
+static const char* OPTION_ARTICLEREADCHUNKSIZE		= "ArticleReadChunkSize";
 
 // obsolete options
 static const char* OPTION_POSTLOGKIND			= "PostLogKind";
@@ -314,7 +315,7 @@ void Options::Init(const char* exeName, const char* configFilename, bool noConfi
 	SetOption(OPTION_APPDIR, filename);
 	m_appDir = *filename;
 
-	SetOption(OPTION_VERSION, Util::VersionRevision());
+	SetOption(OPTION_PROTOCOLVERSION, Util::ProtocolVersion());
 
 	InitDefaults();
 
@@ -525,6 +526,7 @@ void Options::InitDefaults()
 	SetOption(OPTION_DAILYQUOTA, "0");
 	SetOption(OPTION_REORDERFILES, "no");
 	SetOption(OPTION_UPDATECHECK, "none");
+	SetOption(OPTION_ARTICLEREADCHUNKSIZE, "4");
 }
 
 void Options::InitOptFile()
@@ -728,6 +730,7 @@ void Options::InitOptions()
 	m_monthlyQuota			= ParseIntValue(OPTION_MONTHLYQUOTA, 10);
 	m_quotaStartDay			= ParseIntValue(OPTION_QUOTASTARTDAY, 10);
 	m_dailyQuota			= ParseIntValue(OPTION_DAILYQUOTA, 10);
+	m_articleReadChunkSize		= ParseIntValue(OPTION_ARTICLEREADCHUNKSIZE, 10) * 1024;
 
 	m_nzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
 	m_appendCategoryDir		= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
@@ -1511,7 +1514,7 @@ bool Options::SplitOptionString(const char* option, CString& optName, CString& o
 bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 {
 	if (!strcasecmp(optname, OPTION_CONFIGFILE) || !strcasecmp(optname, OPTION_APPBIN) ||
-		!strcasecmp(optname, OPTION_APPDIR) || !strcasecmp(optname, OPTION_VERSION))
+		!strcasecmp(optname, OPTION_APPDIR) || !strcasecmp(optname, OPTION_PROTOCOLVERSION))
 	{
 		// read-only options
 		return false;

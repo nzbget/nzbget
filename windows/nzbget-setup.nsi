@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2014-2017 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -41,6 +41,7 @@
 
 Name "NZBGet"
 OutFile "nzbget-setup.exe"
+Var displayVersion "21.1"
 
 ;Default installation folder
 InstallDir "$PROGRAMFILES64\NZBGet"
@@ -179,6 +180,7 @@ WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "U
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "InstallLocation" "$INSTDIR"
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "Publisher" "nzbget.net"
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "DisplayIcon" "$\"$INSTDIR\nzbget.exe$\",0"
+WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NZBGet" "DisplayVersion" "$displayVersion"
 
 ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
 IntFmt $0 "0x%08X" $0

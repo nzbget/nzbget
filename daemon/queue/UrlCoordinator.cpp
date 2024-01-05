@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2012-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -84,6 +84,8 @@ void UrlCoordinator::Run()
 {
 	debug("Entering UrlCoordinator-loop");
 
+	time_t lastReset = 0;
+
 	while (!DownloadQueue::IsLoaded())
 	{
 		Util::Sleep(20);
@@ -91,7 +93,6 @@ void UrlCoordinator::Run()
 
 	while (!IsStopped())
 	{
-		time_t lastReset = 0;
 		bool downloadStarted = false;
 
 		{

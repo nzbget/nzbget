@@ -160,7 +160,7 @@ if (os.environ.get('NZBPO_STATISTICS') == 'yes' or \
 	(os.environ.get('NZBPO_NZBLOG') == 'OnFailure' and not success)) and \
 	not test_mode:
 	# To get statistics or the post-processing log we connect to NZBGet via XML-RPC.
-	# For more info visit http://nzbget.net/api
+	# For more info visit https://nzbget-ng.github.io/api
 	# First we need to know connection info: host, port and password of NZBGet server.
 	# NZBGet passes all configuration options to post-processing script as
 	# environment variables.
@@ -207,9 +207,9 @@ if os.environ.get('NZBPO_STATISTICS') == 'yes' and not test_mode:
 		text += '\nAverage download speed: %.2f' % (avespeed) + unit
 
 	def format_time_sec(sec):
-		Hour = sec/3600
-		Min = (sec - (sec/3600)*3600)/60
-		Sec = (sec - (sec/3600)*3600)%60
+		Hour = sec / 3600
+		Min = (sec % 3600) / 60
+		Sec = (sec % 60)
 		return '%d:%02d:%02d' % (Hour,Min,Sec)
 
 	# add times
@@ -243,7 +243,7 @@ if (os.environ.get('NZBPO_NZBLOG') == 'Always' or \
 
 	# To get the item log we connect to NZBGet via XML-RPC and call
 	# method "loadlog", which returns the log for a given nzb item.
-	# For more info visit http://nzbget.net/api
+	# For more info visit https://nzbget-ng.github.io/api
 
 	# Call remote method 'loadlog'
 	nzbid = int(os.environ['NZBPP_NZBID'])

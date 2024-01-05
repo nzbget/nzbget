@@ -1,5 +1,5 @@
 ﻿/*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2007-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -38,9 +38,9 @@
 "Left.Minutes.Seconds"="%im %02is";
 "Left.Seconds"="%is";
 
-"Menu.LinkHomePage"="http://nzbget.net";
-"Menu.LinkDownloads"="http://nzbget.net/download";
-"Menu.LinkForum"="http://nzbget.net/forum";
+"Menu.LinkHomePage"="https://nzbget-ng.github.io";
+"Menu.LinkDownloads"="https://nzbget-ng.github.io/download";
+"Menu.LinkForum"="https://nzbget-ng.github.io/forum";
 
 "ShowWebUINoConnection.MessageText"="Could not establish connection to downloader (background process).";
 "ShowWebUINoConnection.InformativeText"="Try to restart the program via Troubleshooting-menu.";

@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2015-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
@@ -154,10 +154,9 @@ void CString::AppendFmtV(const char* format, va_list ap)
 	if (addLen < 0) return; // error
 
 	int curLen = Length();
-	int newLen = curLen + addLen;
-	m_data = (char*)realloc(m_data, newLen + 1);
+	m_data = (char*)realloc(m_data, curLen + addLen + 1);
 
-	vsnprintf(m_data + curLen, newLen + 1, format, ap2);
+	vsnprintf(m_data + curLen, addLen + 1, format, ap2);
 
 	va_end(ap2);
 }

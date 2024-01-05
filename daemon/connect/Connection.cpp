@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
@@ -1203,7 +1203,7 @@ static struct hostent * android_read_hostent(FILE* proxy, struct hostent* hp, ch
 	// and changes here need to be matched there.
 	int result_code = strtol(buf, nullptr, 10);
 	if (result_code != DnsProxyQueryResult) {
-		fread(&size, 1, sizeof(size), proxy);
+		size = fread(&size, 1, sizeof(size), proxy);
 		return nullptr;
 	}
 

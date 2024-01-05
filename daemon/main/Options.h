@@ -1,5 +1,5 @@
 /*
- *  This file is part of nzbget. See <http://nzbget.net>.
+ *  This file is part of nzbget. See <https://nzbget-ng.github.io>.
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
  *  Copyright (C) 2007-2019 Andrey Prygunkov <hugbug@users.sourceforge.net>
@@ -305,6 +305,8 @@ public:
 	Categories* GetCategories() { return &m_categories; }
 	Category* FindCategory(const char* name, bool searchAliases) { return m_categories.FindCategory(name, searchAliases); }
 
+	int GetArticleReadChunkSize() { return m_articleReadChunkSize; }
+
 	// Current state
 	void SetServerMode(bool serverMode) { m_serverMode = serverMode; }
 	bool GetServerMode() { return m_serverMode; }
@@ -434,6 +436,7 @@ private:
 	bool m_reorderFiles = false;
 	EFileNaming m_fileNaming = nfArticle;
 	int m_downloadRate = 0;
+	int m_articleReadChunkSize = 0;
 
 	// Application mode
 	bool m_serverMode = false;
